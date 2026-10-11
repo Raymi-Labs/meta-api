@@ -103,6 +103,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       />
 
       <PricingTags
+        hideUnavailable={filterVendor !== 'all'}
         filterTag={filterTag}
         setFilterTag={setFilterTag}
         models={tagModels}
@@ -112,6 +113,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       />
 
       <PricingGroups
+        hideUnavailable={filterVendor !== 'all'}
         filterGroup={filterGroup}
         setFilterGroup={setFilterGroup}
         usableGroup={categoryProps.usableGroup}
@@ -122,6 +124,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       />
 
       <PricingQuotaTypes
+        hideUnavailable={filterVendor !== 'all'}
         filterQuotaType={filterQuotaType}
         setFilterQuotaType={setFilterQuotaType}
         models={quotaTypeModels}
@@ -130,6 +133,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       />
 
       <PricingEndpointTypes
+        hideUnavailable={filterVendor !== 'all'}
         filterEndpointType={filterEndpointType}
         setFilterEndpointType={setFilterEndpointType}
         models={endpointTypeModels}

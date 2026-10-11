@@ -37,6 +37,7 @@ const PricingGroups = ({
   groupRatio = {},
   models = [],
   loading = false,
+  hideUnavailable = false,
   t,
 }) => {
   const groups = [
@@ -76,6 +77,8 @@ const PricingGroups = ({
       activeValue={filterGroup}
       onChange={setFilterGroup}
       loading={loading}
+      hideDisabled={hideUnavailable}
+      resetValue='all'
       t={t}
     />
   );
