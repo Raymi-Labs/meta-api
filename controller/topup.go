@@ -23,30 +23,11 @@ import (
 )
 
 func GetTopUpInfo(c *gin.Context) {
-	// 获取支付方式
-	payMethods := operation_setting.PayMethods
-
-	// 如果启用了 Stripe 支付，添加到支付方法列表
-	if isStripeTopUpEnabled() {
-		// 检查是否已经包含 Stripe
-		hasStripe := false
-		for _, method := range payMethods {
-			if method["type"] == "stripe" {
-				hasStripe = true
-				break
-			}
-		}
-
-		if !hasStripe {
-			stripeMethod := map[string]string{
-				"name":      "Stripe",
-				"type":      "stripe",
-				"color":     "rgba(var(--semi-purple-5), 1)",
-				"min_topup": strconv.Itoa(setting.StripeMinTopUp),
-			}
-			payMethods = append(payMethods, stripeMethod)
-		}
-	}
+	common.OptionMapRWMutex.RLock()
+	enableStripe := isStripeTopUpEnabled()
+	payMethods := stripeTopUpPayMethods(operation_setting.PayMethods, enableStripe,
+		setting.StripeDisplayName, setting.StripeDisplayIcon, setting.StripeMinTopUp)
+	common.OptionMapRWMutex.RUnlock()
 
 	enableWaffo := isWaffoTopUpEnabled()
 	if enableWaffo {
@@ -71,7 +52,7 @@ func GetTopUpInfo(c *gin.Context) {
 
 	data := gin.H{
 		"enable_online_topup":        isEpayTopUpEnabled(),
-		"enable_stripe_topup":        isStripeTopUpEnabled(),
+		"enable_stripe_topup":        enableStripe,
 		"enable_creem_topup":         isCreemTopUpEnabled(),
 		"enable_waffo_topup":         enableWaffo,
 		"enable_waffo_pancake_topup": enableWaffoPancake,

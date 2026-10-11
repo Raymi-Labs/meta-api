@@ -49,6 +49,8 @@ const PaymentSetting = () => {
     StripeUnitPrice: 8.0,
     StripeMinTopUp: 1,
     StripePromotionCodesEnabled: false,
+    StripeDisplayName: '',
+    StripeDisplayIcon: '',
 
     WaffoEnabled: false,
     WaffoApiKey: '',
@@ -176,16 +178,10 @@ const PaymentSetting = () => {
             contentStyle={{ paddingTop: 24 }}
           >
             <Tabs.TabPane tab={t('通用设置')} itemKey='general'>
-              <SettingsGeneralPayment
-                options={inputs}
-                refresh={onRefresh}
-              />
+              <SettingsGeneralPayment options={inputs} refresh={onRefresh} />
             </Tabs.TabPane>
             <Tabs.TabPane tab={t('易支付设置')} itemKey='epay'>
-              <SettingsPaymentGateway
-                options={inputs}
-                refresh={onRefresh}
-              />
+              <SettingsPaymentGateway options={inputs} refresh={onRefresh} />
             </Tabs.TabPane>
             <Tabs.TabPane tab={t('Stripe 设置')} itemKey='stripe'>
               <SettingsPaymentGatewayStripe

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Banner,
   Button,
@@ -35,6 +35,7 @@ import {
   showSuccess,
 } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
+import PaymentMethodIcon from '../../../components/topup/PaymentMethodIcon';
 
 export default function SettingsPaymentGateway(props) {
   const { t } = useTranslation();
@@ -46,9 +47,28 @@ export default function SettingsPaymentGateway(props) {
     StripeUnitPrice: 8.0,
     StripeMinTopUp: 1,
     StripePromotionCodesEnabled: false,
+    StripeDisplayName: '',
+    StripeDisplayIcon: '',
   });
   const [originInputs, setOriginInputs] = useState({});
   const formApiRef = useRef(null);
+  const legacyMethod = useMemo(() => {
+    try {
+      const methods = Array.isArray(props.options?.PayMethods)
+        ? props.options.PayMethods
+        : JSON.parse(props.options?.PayMethods || '[]');
+      return methods.find((method) => method?.type === 'stripe') || {};
+    } catch {
+      return {};
+    }
+  }, [props.options?.PayMethods]);
+  const previewMethod = {
+    ...legacyMethod,
+    type: 'stripe',
+    name:
+      inputs.StripeDisplayName?.trim() || legacyMethod.name?.trim() || 'Stripe',
+    display_icon: inputs.StripeDisplayIcon || legacyMethod.display_icon || '',
+  };
 
   useEffect(() => {
     if (props.options && formApiRef.current) {
@@ -56,6 +76,8 @@ export default function SettingsPaymentGateway(props) {
         StripeApiSecret: props.options.StripeApiSecret || '',
         StripeWebhookSecret: props.options.StripeWebhookSecret || '',
         StripePriceId: props.options.StripePriceId || '',
+        StripeDisplayName: props.options.StripeDisplayName || '',
+        StripeDisplayIcon: props.options.StripeDisplayIcon || '',
         StripeUnitPrice:
           props.options.StripeUnitPrice !== undefined
             ? parseFloat(props.options.StripeUnitPrice)
@@ -85,48 +107,56 @@ export default function SettingsPaymentGateway(props) {
       return;
     }
 
+    const values = formApiRef.current?.getValues() || inputs;
     setLoading(true);
     try {
       const options = [];
 
-      if (inputs.StripeApiSecret && inputs.StripeApiSecret !== '') {
-        options.push({ key: 'StripeApiSecret', value: inputs.StripeApiSecret });
+      for (const key of ['StripeDisplayName', 'StripeDisplayIcon']) {
+        const value = (values[key] || '').trim();
+        if (value !== (originInputs[key] || '')) {
+          options.push({ key, value });
+        }
       }
-      if (inputs.StripeWebhookSecret && inputs.StripeWebhookSecret !== '') {
+
+      if (values.StripeApiSecret && values.StripeApiSecret !== '') {
+        options.push({ key: 'StripeApiSecret', value: values.StripeApiSecret });
+      }
+      if (values.StripeWebhookSecret && values.StripeWebhookSecret !== '') {
         options.push({
           key: 'StripeWebhookSecret',
-          value: inputs.StripeWebhookSecret,
+          value: values.StripeWebhookSecret,
         });
       }
-      if (inputs.StripePriceId !== '') {
-        options.push({ key: 'StripePriceId', value: inputs.StripePriceId });
+      if (values.StripePriceId !== '') {
+        options.push({ key: 'StripePriceId', value: values.StripePriceId });
       }
       if (
-        inputs.StripeUnitPrice !== undefined &&
-        inputs.StripeUnitPrice !== null
+        values.StripeUnitPrice !== undefined &&
+        values.StripeUnitPrice !== null
       ) {
         options.push({
           key: 'StripeUnitPrice',
-          value: inputs.StripeUnitPrice.toString(),
+          value: values.StripeUnitPrice.toString(),
         });
       }
       if (
-        inputs.StripeMinTopUp !== undefined &&
-        inputs.StripeMinTopUp !== null
+        values.StripeMinTopUp !== undefined &&
+        values.StripeMinTopUp !== null
       ) {
         options.push({
           key: 'StripeMinTopUp',
-          value: inputs.StripeMinTopUp.toString(),
+          value: values.StripeMinTopUp.toString(),
         });
       }
       if (
         originInputs['StripePromotionCodesEnabled'] !==
-          inputs.StripePromotionCodesEnabled &&
-        inputs.StripePromotionCodesEnabled !== undefined
+          values.StripePromotionCodesEnabled &&
+        values.StripePromotionCodesEnabled !== undefined
       ) {
         options.push({
           key: 'StripePromotionCodesEnabled',
-          value: inputs.StripePromotionCodesEnabled ? 'true' : 'false',
+          value: values.StripePromotionCodesEnabled ? 'true' : 'false',
         });
       }
 
@@ -149,7 +179,7 @@ export default function SettingsPaymentGateway(props) {
       } else {
         showSuccess(t('更新成功'));
         // 更新本地存储的原始值
-        setOriginInputs({ ...inputs });
+        setOriginInputs({ ...values });
         props.refresh?.();
       }
     } catch (error) {
@@ -194,6 +224,44 @@ export default function SettingsPaymentGateway(props) {
             type='warning'
             description={`需要包含事件：checkout.session.completed 和 checkout.session.expired`}
           />
+          <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}>
+            <Col xs={24} md={12}>
+              <Form.Input
+                field='StripeDisplayName'
+                label={t('充值入口显示名称')}
+                placeholder={t('例如：微信支付；留空沿用现有名称')}
+                maxLength={40}
+                showClear
+              />
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Select
+                field='StripeDisplayIcon'
+                label={t('充值入口显示图标')}
+                placeholder={t('沿用现有图标')}
+                style={{ width: '100%' }}
+                optionList={[
+                  { label: t('沿用现有图标'), value: '' },
+                  { label: 'Stripe', value: 'stripe' },
+                  { label: t('微信支付'), value: 'wxpay' },
+                  { label: t('支付宝'), value: 'alipay' },
+                  { label: t('银行卡'), value: 'card' },
+                ]}
+              />
+            </Col>
+          </Row>
+          <div className='mb-4 space-y-2'>
+            <div className='flex items-center gap-2'>
+              <Text type='tertiary'>{t('用户端预览')}：</Text>
+              <PaymentMethodIcon method={previewMethod} />
+              <Text>{previewMethod.name}</Text>
+            </div>
+            <Text type='tertiary' size='small'>
+              {t(
+                '仅用于余额充值入口和确认页。实际支付方式由 Stripe 后台决定；显示为微信支付前，请确认结账页已支持微信支付。',
+              )}
+            </Text>
+          </div>
           <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}>
             <Col xs={24} sm={24} md={8} lg={8} xl={8}>
               <Form.Input

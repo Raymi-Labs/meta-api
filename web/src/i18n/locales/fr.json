@@ -1,5 +1,14 @@
 {
   "translation": {
+    "充值入口显示名称": "Nom affiché pour la recharge",
+    "例如：微信支付；留空沿用现有名称": "Ex. : WeChat Pay ; laisser vide pour conserver le nom actuel",
+    "充值入口显示图标": "Icône affichée pour la recharge",
+    "沿用现有图标": "Conserver l’icône actuelle",
+    "用户端预览": "Aperçu client",
+    "仅用于余额充值入口和确认页。实际支付方式由 Stripe 后台决定；显示为微信支付前，请确认结账页已支持微信支付。": "Uniquement pour la recharge du solde et sa confirmation. Les moyens de paiement sont gérés dans Stripe ; vérifiez que Checkout propose WeChat Pay avant d’utiliser ce nom.",
+    "{{method}} 最低支付金额为 US$0.50，请调整充值数量，使预计支付金额不低于 US$0.50。": "Le paiement minimum avec {{method}} est de 0,50 USD. Ajustez la recharge pour atteindre ce montant.",
+    "银行卡": "Carte bancaire",
+    "微信支付": "WeChat Pay",
     "正在更新文档配置…": "Mise à jour de la documentation…",
     "部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。": "Certains paramètres n’ont pas pu être chargés. Réessayez ; l’adresse du site actuel est utilisée. Consultez le catalogue des modèles.",
     "地址、分组和请求样例随站点配置自动更新": "Les adresses, groupes et exemples suivent automatiquement les paramètres du site",

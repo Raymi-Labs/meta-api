@@ -34,7 +34,6 @@ import {
   Tabs,
   TabPane,
 } from '@douyinfe/semi-ui';
-import { SiAlipay, SiWechat, SiStripe } from 'react-icons/si';
 import {
   CreditCard,
   Coins,
@@ -48,6 +47,7 @@ import {
 import { getCurrencyConfig } from '../../helpers/render';
 import SubscriptionPlansCard from './SubscriptionPlansCard';
 import CryptoPaymentNotice from './CryptoPaymentNotice';
+import PaymentMethodIcon from './PaymentMethodIcon';
 import { getEpayCryptoMethod } from '../../helpers/epayMethods';
 
 const { Text } = Typography;
@@ -293,7 +293,13 @@ const RechargeCard = ({
                             >
                               <Text type='danger' strong>
                                 {t(
-                                  'Stripe 最低支付金额为 US$0.50，请调整充值数量，使预计支付金额不低于 US$0.50。',
+                                  '{{method}} 最低支付金额为 US$0.50，请调整充值数量，使预计支付金额不低于 US$0.50。',
+                                  {
+                                    method:
+                                      payMethods.find(
+                                        (method) => method.type === 'stripe',
+                                      )?.name || 'Stripe',
+                                  },
                                 )}
                               </Text>
                             </div>
@@ -349,36 +355,7 @@ const RechargeCard = ({
                                   disabled={disabled}
                                   aria-pressed={isSelected}
                                   icon={
-                                    payMethod.icon ? (
-                                      <img
-                                        src={payMethod.icon}
-                                        alt=''
-                                        style={{
-                                          width: 18,
-                                          height: 18,
-                                          objectFit: 'contain',
-                                        }}
-                                      />
-                                    ) : payMethod.type === 'alipay' ? (
-                                      <SiAlipay size={18} color='#1677FF' />
-                                    ) : payMethod.type === 'wxpay' ? (
-                                      <SiWechat size={18} color='#07C160' />
-                                    ) : payMethod.type === 'stripe' ? (
-                                      <SiStripe size={18} color='#635BFF' />
-                                    ) : getEpayCryptoMethod(payMethod.type) ? (
-                                      <Coins
-                                        size={18}
-                                        color={getEpayCryptoMethod(payMethod.type).color}
-                                      />
-                                    ) : (
-                                      <CreditCard
-                                        size={18}
-                                        color={
-                                          payMethod.color ||
-                                          'var(--semi-color-text-2)'
-                                        }
-                                      />
-                                    )
+                                    <PaymentMethodIcon method={payMethod} />
                                   }
                                   className='!rounded-lg !px-4 !py-2 transition-colors'
                                 >
