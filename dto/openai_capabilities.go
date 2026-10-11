@@ -24,12 +24,14 @@ func GetOpenAIChatCapabilities(model, effort string) OpenAIChatCapabilities {
 		return c
 	}
 	isGPT5 := model == "gpt-5" || strings.HasPrefix(model, "gpt-5-") || strings.HasPrefix(model, "gpt-5.")
-	if !isGPT5 && !isOpenAIModelSnapshot(model, "gpt-6-astra") {
+	isGPT6SolLuna := isOpenAIModelSnapshot(model, "gpt-6-sol") || isOpenAIModelSnapshot(model, "gpt-6-luna")
+	if !isGPT5 && !isGPT6SolLuna && !isOpenAIModelSnapshot(model, "gpt-6-astra") {
 		return c
 	}
 	c.UseMaxCompletionTokens, c.UseDeveloperRole = true, true
 	sampling := false
-	if isGPT5 && (effort == "" || effort == "none") {
+	if effort == "" || effort == "none" {
+		sampling = isGPT6SolLuna
 		for _, base := range []string{"gpt-5.1", "gpt-5.2", "gpt-5.4"} {
 			if isOpenAIModelSnapshot(model, base) {
 				sampling = true

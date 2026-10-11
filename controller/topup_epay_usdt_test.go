@@ -121,7 +121,7 @@ func TestSubscriptionEpayCryptoUsesCNYAndCompletesOnce(t *testing.T) {
 			user := setupEpayUsdtTest(t)
 			operation_setting.PayMethods = []map[string]string{{"type": method, "name": method}}
 			require.NoError(t, model.DB.AutoMigrate(&model.SubscriptionPlan{}, &model.UserSubscription{}, &model.SubscriptionIssuance{}))
-			plan := &model.SubscriptionPlan{Id: 9876, Title: "USDT plan", PriceAmount: 7.3, Currency: "CNY", Enabled: true, DurationUnit: "month", DurationValue: 1}
+			plan := &model.SubscriptionPlan{Id: 9876, Title: "USDT & USDC plan", PriceAmount: 7.3, Currency: "CNY", Enabled: true, DurationUnit: "month", DurationValue: 1}
 			require.NoError(t, model.DB.Create(plan).Error)
 			model.InvalidateSubscriptionPlanCache(plan.Id)
 			t.Cleanup(func() { model.InvalidateSubscriptionPlanCache(plan.Id) })
@@ -137,6 +137,8 @@ func TestSubscriptionEpayCryptoUsesCNYAndCompletesOnce(t *testing.T) {
 			}
 			require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &response))
 			require.Equal(t, "success", response.Message, rec.Body.String())
+			require.Equal(t, "SUB:USDT ＆ USDC plan x2", response.Data["name"])
+			require.Equal(t, "USDT & USDC plan", plan.Title)
 			require.Equal(t, method, response.Data["type"])
 			require.Equal(t, "14.60", response.Data["money"])
 			tradeNo := response.Data["out_trade_no"]
@@ -152,6 +154,12 @@ func TestSubscriptionEpayCryptoUsesCNYAndCompletesOnce(t *testing.T) {
 				SubscriptionEpayNotify(ctx)
 				require.Equal(t, "success", rec.Body.String())
 			}
+			rec = httptest.NewRecorder()
+			ctx, _ = gin.CreateTestContext(rec)
+			ctx.Request = httptest.NewRequest(http.MethodGet, buildSignedEpayCallbackURL(t, "/api/subscription/epay/return", params), nil)
+			SubscriptionEpayReturn(ctx)
+			require.Equal(t, http.StatusFound, rec.Code)
+			require.NotContains(t, rec.Header().Get("Location"), "pay=fail")
 			require.Equal(t, common.TopUpStatusSuccess, model.GetSubscriptionOrderByTradeNo(tradeNo).Status)
 			var count int64
 			require.NoError(t, model.DB.Model(&model.SubscriptionIssuance{}).Where("user_id = ?", user.Id).Count(&count).Error)

@@ -98,9 +98,10 @@ func InitEnv() {
 	if TLSInsecureSkipVerify {
 		if tr, ok := http.DefaultTransport.(*http.Transport); ok && tr != nil {
 			if tr.TLSClientConfig != nil {
+				tr.TLSClientConfig = tr.TLSClientConfig.Clone()
 				tr.TLSClientConfig.InsecureSkipVerify = true
 			} else {
-				tr.TLSClientConfig = InsecureTLSConfig
+				tr.TLSClientConfig = InsecureTLSConfig.Clone()
 			}
 		}
 	}
@@ -137,6 +138,9 @@ func InitEnv() {
 	GlobalWebRateLimitEnable = GetEnvOrDefaultBool("GLOBAL_WEB_RATE_LIMIT_ENABLE", true)
 	GlobalWebRateLimitNum = GetEnvOrDefault("GLOBAL_WEB_RATE_LIMIT", 60)
 	GlobalWebRateLimitDuration = int64(GetEnvOrDefault("GLOBAL_WEB_RATE_LIMIT_DURATION", 180))
+	GlobalStaticRateLimitEnable = GetEnvOrDefaultBool("GLOBAL_STATIC_RATE_LIMIT_ENABLE", false)
+	GlobalStaticRateLimitNum = GetEnvOrDefault("GLOBAL_STATIC_RATE_LIMIT", 1000)
+	GlobalStaticRateLimitDuration = int64(GetEnvOrDefault("GLOBAL_STATIC_RATE_LIMIT_DURATION", 180))
 
 	PublicTokenUsageRateLimitEnable = GetEnvOrDefaultBool("PUBLIC_TOKEN_USAGE_RATE_LIMIT_ENABLE", true)
 	PublicTokenUsageRateLimitNum = GetEnvOrDefault("PUBLIC_TOKEN_USAGE_RATE_LIMIT", 90)

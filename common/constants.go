@@ -254,6 +254,10 @@ var (
 	GlobalWebRateLimitNum      int
 	GlobalWebRateLimitDuration int64
 
+	GlobalStaticRateLimitEnable   bool
+	GlobalStaticRateLimitNum      int
+	GlobalStaticRateLimitDuration int64
+
 	PublicTokenUsageRateLimitEnable   bool
 	PublicTokenUsageRateLimitNum      int
 	PublicTokenUsageRateLimitDuration int64

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -101,11 +102,40 @@ func rateLimitFactory(maxRequestNum int, duration int64, mark string) func(c *gi
 	}
 }
 
-func GlobalWebRateLimit() func(c *gin.Context) {
+func GlobalWebRateLimit(frontendFS http.FileSystem) func(c *gin.Context) {
+	webLimit, staticLimit := defNext, defNext
 	if common.GlobalWebRateLimitEnable {
-		return rateLimitFactory(common.GlobalWebRateLimitNum, common.GlobalWebRateLimitDuration, "GW")
+		webLimit = rateLimitFactory(common.GlobalWebRateLimitNum, common.GlobalWebRateLimitDuration, "GW")
 	}
-	return defNext
+	if common.GlobalStaticRateLimitEnable {
+		staticLimit = rateLimitFactory(common.GlobalStaticRateLimitNum, common.GlobalStaticRateLimitDuration, "GS")
+	}
+	return func(c *gin.Context) {
+		if isFrontendAsset(frontendFS, c.Request) {
+			staticLimit(c)
+			return
+		}
+		webLimit(c)
+	}
+}
+
+// Only real build assets bypass the page budget. HTML and fallback routes
+// remain pages, including prerendered and image-playground entry points.
+func isFrontendAsset(frontendFS http.FileSystem, request *http.Request) bool {
+	if frontendFS == nil || (request.Method != http.MethodGet && request.Method != http.MethodHead) {
+		return false
+	}
+	name := request.URL.Path
+	if name != path.Clean(name) || strings.EqualFold(path.Ext(name), ".html") {
+		return false
+	}
+	file, err := frontendFS.Open(name)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	return err == nil && info.Mode().IsRegular()
 }
 
 func GlobalAPIRateLimit() func(c *gin.Context) {

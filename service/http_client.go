@@ -75,7 +75,7 @@ func newRelayTransport(responseHeaderTimeout time.Duration) *http.Transport {
 		Proxy:                 http.ProxyFromEnvironment, // Support HTTP_PROXY, HTTPS_PROXY, NO_PROXY env vars
 	}
 	if common.TLSInsecureSkipVerify {
-		transport.TLSClientConfig = common.InsecureTLSConfig
+		transport.TLSClientConfig = common.InsecureTLSConfig.Clone()
 	}
 	return transport
 }
@@ -220,7 +220,7 @@ func NewProxyHttpClient(proxyURL string, imageRequest ...bool) (*http.Client, er
 			},
 		}
 		if common.TLSInsecureSkipVerify {
-			transport.TLSClientConfig = common.InsecureTLSConfig
+			transport.TLSClientConfig = common.InsecureTLSConfig.Clone()
 		}
 
 		client := &http.Client{Transport: transport, CheckRedirect: checkRedirect}

@@ -85,7 +85,8 @@ func createTopupCallbackTestUser(t *testing.T, username string) *model.User {
 func buildSignedEpayCallbackURL(t *testing.T, path string, params map[string]string) string {
 	t.Helper()
 
-	signed := epay.GenerateParams(params, operation_setting.EpayKey)
+	signed, err := epay.GenerateParamsWithError(params, operation_setting.EpayKey)
+	require.NoError(t, err)
 	query := url.Values{}
 	for key, value := range signed {
 		query.Set(key, value)

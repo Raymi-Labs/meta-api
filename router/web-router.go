@@ -15,14 +15,15 @@ import (
 )
 
 func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
+	frontendFS := common.EmbedFolder(buildFS, "web/dist")
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
-	router.Use(middleware.GlobalWebRateLimit())
+	router.Use(middleware.GlobalWebRateLimit(frontendFS))
 	router.Use(middleware.Cache())
 	if imagePlaygroundIndex, err := buildFS.ReadFile("web/dist/image-playground/index.html"); err == nil {
 		registerImagePlaygroundIndexRoutes(router, imagePlaygroundIndex)
 	}
 	registerPrerenderedIndexRoutes(router, indexPage)
-	router.Use(static.Serve("/", common.EmbedFolder(buildFS, "web/dist")))
+	router.Use(static.Serve("/", frontendFS))
 	router.NoRoute(func(c *gin.Context) {
 		c.Set(middleware.RouteTagKey, "web")
 		if redirectMalformedFullwidthQuery(c) {

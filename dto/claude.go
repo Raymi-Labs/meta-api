@@ -225,6 +225,7 @@ type ClaudeRequest struct {
 	Stream            bool            `json:"stream,omitempty"`
 	Tools             any             `json:"tools,omitempty"`
 	ContextManagement json.RawMessage `json:"context_management,omitempty"`
+	Safeguards        json.RawMessage `json:"safeguards,omitempty"`
 	OutputConfig      json.RawMessage `json:"output_config,omitempty"`
 	OutputFormat      json.RawMessage `json:"output_format,omitempty"`
 	Container         json.RawMessage `json:"container,omitempty"`

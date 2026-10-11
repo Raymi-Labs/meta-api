@@ -14,6 +14,8 @@ Epay 同步扩展已审核类型、对应停用模板、账号网络及地址校
 
 ## Related decisions
 
+签名 SDK 升级及历史歧义回调风险见[定向安全修复](../bug-fix/2026-10-12-upstream-security-static-compat.md)；币种范围与 CNY 金额不变。
+
 与单 TRC20 接入笔记部分重叠，本篇扩展币种范围；原 PayMethods 单一来源、CNY 与 Epay 回调边界仍成立。其他活跃笔记中的支付风险/记录不改变，本轮不重构订单提供方。
 
 ## Alternatives considered

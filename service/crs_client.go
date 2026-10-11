@@ -95,7 +95,7 @@ type crsDashboardResp struct {
 func newCRSHTTPClient() *http.Client {
 	transport := &http.Transport{}
 	if common.TLSInsecureSkipVerify {
-		transport.TLSClientConfig = common.InsecureTLSConfig
+		transport.TLSClientConfig = common.InsecureTLSConfig.Clone()
 	}
 	return &http.Client{
 		Transport: transport,

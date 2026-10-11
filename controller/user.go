@@ -1035,7 +1035,7 @@ func GetUserModels(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	var updatedUser model.User
 	err := common.DecodeJson(c.Request.Body, &updatedUser)
-	if err != nil || updatedUser.Id == 0 {
+	if err != nil || updatedUser.Id == 0 || !common.IsValidateRole(updatedUser.Role) {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
@@ -1321,7 +1321,7 @@ func CreateUser(c *gin.Context) {
 	var user model.User
 	err := common.DecodeJson(c.Request.Body, &user)
 	user.Username = strings.TrimSpace(user.Username)
-	if err != nil || user.Username == "" || user.Password == "" {
+	if err != nil || user.Username == "" || user.Password == "" || !common.IsValidateRole(user.Role) {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}

@@ -4,6 +4,8 @@ Status: implemented
 
 币种范围由[稳定币多网络配置](2026-10-09-epay-crypto-networks.md)扩展；下文单 TRC20 为首期约束，PayMethods、CNY 与 Epay 回调复用决定保持有效。
 
+签名分隔符拒绝与套餐网关展示名称的兼容边界见[定向安全修复](../bug-fix/2026-10-12-upstream-security-static-compat.md)，不改变本篇订单和到账契约。
+
 ## Problem
 
 Epay 项目已提供商户自配 BEpusdt 通道。业务站以 CNY 下单，支付类型为 `usdt.trc20`，到账后仍收到标准易支付签名通知。new-api 已支持自定义 PayMethods，但管理员只能编辑 JSON，付款提示与支付记录筛选没有覆盖此方式。
