@@ -32,6 +32,10 @@ import {
   Tooltip,
 } from '@douyinfe/semi-ui';
 import { IconChevronDown, IconChevronUp } from '@douyinfe/semi-icons';
+import {
+  getSelectableButtonItems,
+  isSelectableItemDisabled,
+} from './selectableButtonItems';
 
 /**
  * 通用可选择按钮组组件
@@ -46,6 +50,8 @@ import { IconChevronDown, IconChevronUp } from '@douyinfe/semi-icons';
  * @param {number} collapseHeight 折叠时的高度，默认200
  * @param {boolean} withCheckbox 是否启用前缀 Checkbox 来控制激活状态
  * @param {boolean} loading 是否处于加载状态
+ * @param {boolean} hideDisabled 隐藏不可用项，保留已选项与重置入口
+ * @param {*} resetValue 隐藏不可用项时仍保留的重置选项值
  */
 const SelectableButtonGroup = ({
   title,
@@ -58,10 +64,18 @@ const SelectableButtonGroup = ({
   collapseHeight = 200,
   withCheckbox = false,
   loading = false,
+  hideDisabled = false,
+  resetValue,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [skeletonCount] = useState(12);
   const [containerRef, containerWidth] = useContainerWidth();
+  const visibleItems = getSelectableButtonItems(
+    items,
+    activeValue,
+    hideDisabled,
+    resetValue,
+  );
 
   const ConditionalTooltipText = ({ text }) => {
     const textRef = useRef(null);
@@ -96,7 +110,8 @@ const SelectableButtonGroup = ({
 
   const { columns: perRow, showTags: shouldShowTags } = getResponsiveConfig();
   const maxVisibleRows = Math.max(1, Math.floor(collapseHeight / 32)); // Approx row height 32
-  const needCollapse = collapsible && items.length > perRow * maxVisibleRows;
+  const needCollapse =
+    collapsible && visibleItems.length > perRow * maxVisibleRows;
   const showSkeleton = useMinimumLoadingTime(loading);
 
   // 统一使用紧凑的网格间距
@@ -177,10 +192,10 @@ const SelectableButtonGroup = ({
     renderSkeletonButtons()
   ) : (
     <Row gutter={gutterSize} style={{ lineHeight: '32px', ...style }}>
-      {items.map((item) => {
-        const isDisabled =
-          item.disabled ||
-          (typeof item.tagCount === 'number' && item.tagCount === 0);
+      {visibleItems.map((item) => {
+        const isDisabled = hideDisabled
+          ? false
+          : isSelectableItemDisabled(item);
         const isActive = Array.isArray(activeValue)
           ? activeValue.includes(item.value)
           : activeValue === item.value;

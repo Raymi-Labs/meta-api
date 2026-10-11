@@ -34,6 +34,7 @@ const PricingEndpointTypes = ({
   models = [],
   allModels = [],
   loading = false,
+  hideUnavailable = false,
   t,
 }) => {
   // 获取系统中所有端点类型（基于 allModels，如果未提供则退化为 models）
@@ -96,6 +97,8 @@ const PricingEndpointTypes = ({
       activeValue={filterEndpointType}
       onChange={setFilterEndpointType}
       loading={loading}
+      hideDisabled={hideUnavailable}
+      resetValue='all'
       t={t}
     />
   );

@@ -33,6 +33,7 @@ const PricingQuotaTypes = ({
   setFilterQuotaType,
   models = [],
   loading = false,
+  hideUnavailable = false,
   t,
 }) => {
   const qtyCount = (type) =>
@@ -57,6 +58,8 @@ const PricingQuotaTypes = ({
       activeValue={filterQuotaType}
       onChange={setFilterQuotaType}
       loading={loading}
+      hideDisabled={hideUnavailable}
+      resetValue='all'
       t={t}
     />
   );

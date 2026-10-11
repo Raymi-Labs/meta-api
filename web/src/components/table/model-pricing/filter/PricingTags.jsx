@@ -35,6 +35,7 @@ const PricingTags = ({
   models = [],
   allModels = [],
   loading = false,
+  hideUnavailable = false,
   t,
 }) => {
   // 提取系统所有标签
@@ -102,6 +103,8 @@ const PricingTags = ({
       activeValue={filterTag}
       onChange={setFilterTag}
       loading={loading}
+      hideDisabled={hideUnavailable}
+      resetValue='all'
       t={t}
     />
   );
