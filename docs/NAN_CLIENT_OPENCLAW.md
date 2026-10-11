@@ -4,10 +4,10 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://cn.meta-api.vip/`。
+1. 登录 `https://meta-api.vip/`。
 2. 进入 `令牌管理` 创建令牌。
-3. Claude 模型选 `claude` 分组；Codex/OpenAI 模型不要选 `claude`。
-4. 可用模型以 `https://cn.meta-api.vip/pricing` 为准。
+3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
+4. 可用模型以 `https://meta-api.vip/pricing` 为准。
 5. 复制完整 API Key。
 
 ## 2. 安装前准备
@@ -79,18 +79,17 @@ onboard 时建议：
 {
   "agents": {
     "defaults": {
-      "model": { "primary": "crs/gpt-5.3-codex" },
+      "model": { "primary": "crs/MODEL_CODEX" },
       "models": {
-        "crs/gpt-5.3-codex": { "alias": "codex" }
-      },
-      "thinkingDefault": "xhigh"
+        "crs/MODEL_CODEX": { "alias": "codex" }
+      }
     }
   },
   "models": {
     "mode": "replace",
     "providers": {
       "crs": {
-        "baseUrl": "https://cn.meta-api.vip/v1",
+        "baseUrl": "https://meta-api.vip/v1",
         "api": "openai-responses",
         "auth": "api-key",
         "authHeader": true,
@@ -98,11 +97,9 @@ onboard 时建议：
         "apiKey": "你的key",
         "models": [
           {
-            "id": "gpt-5.3-codex",
-            "name": "GPT-5.3-Codex",
+            "id": "MODEL_CODEX",
+            "name": "MODEL_CODEX",
             "api": "openai-responses",
-            "reasoning": true,
-            "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
           }
         ]
@@ -118,28 +115,26 @@ onboard 时建议：
 {
   "agents": {
     "defaults": {
-      "model": { "primary": "opus/claude-opus-4-6" },
+      "model": { "primary": "opus/MODEL_CLAUDE" },
       "models": {
-        "opus/claude-opus-4-6": { "alias": "opus" }
-      },
-      "thinkingDefault": "high"
+        "opus/MODEL_CLAUDE": { "alias": "opus" }
+      }
     }
   },
   "models": {
     "mode": "replace",
     "providers": {
       "opus": {
-        "baseUrl": "https://nan.meta-api.vip/",
+        "baseUrl": "https://meta-api.vip/",
         "api": "anthropic-messages",
         "auth": "api-key",
         "authHeader": true,
         "apiKey": "你的key",
         "models": [
           {
-            "id": "claude-opus-4-6",
-            "name": "claude-opus-4-6",
-            "api": "anthropic-messages",
-            "input": ["text", "image"]
+            "id": "MODEL_CLAUDE",
+            "name": "MODEL_CLAUDE",
+            "api": "anthropic-messages"
           }
         ]
       }
@@ -154,19 +149,18 @@ onboard 时建议：
 {
   "agents": {
     "defaults": {
-      "model": { "primary": "opus/claude-opus-4-6" },
+      "model": { "primary": "opus/MODEL_CLAUDE" },
       "models": {
-        "opus/claude-opus-4-6": { "alias": "opus" },
-        "crs/gpt-5.3-codex": { "alias": "codex" }
-      },
-      "thinkingDefault": "high"
+        "opus/MODEL_CLAUDE": { "alias": "opus" },
+        "crs/MODEL_CODEX": { "alias": "codex" }
+      }
     }
   },
   "models": {
     "mode": "replace",
     "providers": {
       "crs": {
-        "baseUrl": "https://cn.meta-api.vip/v1",
+        "baseUrl": "https://meta-api.vip/v1",
         "api": "openai-responses",
         "auth": "api-key",
         "authHeader": true,
@@ -174,27 +168,24 @@ onboard 时建议：
         "apiKey": "你的key",
         "models": [
           {
-            "id": "gpt-5.3-codex",
-            "name": "GPT-5.3-Codex",
+            "id": "MODEL_CODEX",
+            "name": "MODEL_CODEX",
             "api": "openai-responses",
-            "reasoning": true,
-            "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
           }
         ]
       },
       "opus": {
-        "baseUrl": "https://nan.meta-api.vip/",
+        "baseUrl": "https://meta-api.vip/",
         "api": "anthropic-messages",
         "auth": "api-key",
         "authHeader": true,
         "apiKey": "你的key",
         "models": [
           {
-            "id": "claude-opus-4-6",
-            "name": "claude-opus-4-6",
-            "api": "anthropic-messages",
-            "input": ["text", "image"]
+            "id": "MODEL_CLAUDE",
+            "name": "MODEL_CLAUDE",
+            "api": "anthropic-messages"
           }
         ]
       }
@@ -205,9 +196,9 @@ onboard 时建议：
 
 字段说明：
 
-- `input`：模型支持的输入模态。
+- 输入模态和思考参数请按目标模型能力另行设置。
 - `cost`：仅用于成本统计/显示，不影响请求。
-- `thinkingDefault`：默认思考强度，Codex 示例为 `xhigh`。
+- 模型名由在线文档按协议同步；仍显示 MODEL\_\* 时，须先确认对应协议的模型。
 
 ## 8. 启动和检查
 

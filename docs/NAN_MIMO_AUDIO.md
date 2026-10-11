@@ -33,14 +33,14 @@ POST /v1/chat/completions
 | 配置项 | 填写内容 |
 | --- | --- |
 | API 类型 | OpenAI Compatible |
-| Base URL | `https://cn.meta-api.vip/v1` |
+| Base URL | `https://meta-api.vip/v1` |
 | API Key | 控制台令牌管理中创建的 `sk-...` |
-| REST 请求地址 | `https://cn.meta-api.vip/v1/chat/completions` |
+| REST 请求地址 | `https://meta-api.vip/v1/chat/completions` |
 
 设置环境变量：
 
 ```bash
-export NAN_BASE_URL="https://cn.meta-api.vip"
+export NAN_BASE_URL="https://meta-api.vip"
 export NAN_API_KEY="sk-替换为你的平台令牌"
 ```
 
@@ -399,7 +399,7 @@ scripts/mimo_audio_smoke_test.mjs
 运行条件：Node.js 18 或更高版本。
 
 ```bash
-export NAN_BASE_URL="https://cn.meta-api.vip"
+export NAN_BASE_URL="https://meta-api.vip"
 export NAN_API_KEY="sk-替换为你的平台令牌"
 export MIMO_TTS_VOICE="冰糖"
 
@@ -496,7 +496,7 @@ choices[0].delta.audio.data
 检查：
 
 - 是否使用平台生成的完整 `sk-...` 令牌。
-- Base URL 是否为 `https://cn.meta-api.vip/v1`。
+- Base URL 是否为 `https://meta-api.vip/v1`。
 - 是否误把平台令牌发给小米官方域名。
 
 ### 10.3 返回成功但没有音频

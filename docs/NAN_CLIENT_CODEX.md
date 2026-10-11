@@ -4,15 +4,13 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://cn.meta-api.vip/`。
+1. 登录 `https://meta-api.vip/`。
 2. 进入 `令牌管理` 创建令牌。
-3. Codex 建议使用 `vip` / `svip` / 土豪分组，不要选 `claude`。
-4. 可用模型以 `https://cn.meta-api.vip/pricing` 为准。
+3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
+4. 可用模型以 `https://meta-api.vip/pricing` 为准。
 5. 复制完整 API Key。
 
-![令牌管理入口和关键字段](./images/nan-token-management-overview.png)
-
-重点看 `添加令牌`、`分组`、`密钥` 三个位置。创建后把密钥复制到 Codex 配置里，分组要选 Codex/OpenAI 可用分组。
+令牌管理中，点击 `添加令牌`，按模型广场选择 `分组`，创建后复制 `密钥`。
 
 ## 2. 方法一：npx zcf 一键配置
 
@@ -37,7 +35,7 @@ npx zcf
 2. 首次安装选 `1`；已有配置/更新密钥选 `3`。
 3. 供应商选择“自定义”。
 4. 供应商名称填 `nan`。
-5. URL 填 `https://cn.meta-api.vip/v1`。
+5. URL 填 `https://meta-api.vip/v1`。
 6. Key 填平台生成的 API Key。
 7. MCP 建议直接回车跳过。
 8. 配置完成后设为默认供应商。
@@ -56,14 +54,13 @@ npm install -g @openai/codex
 
 ```toml
 model_provider = "crs"
-model = "gpt-5.3-codex"
-model_reasoning_effort = "high"
+model = "MODEL_CODEX"
 disable_response_storage = true
 preferred_auth_method = "apikey"
 
 [model_providers.crs]
 name = "crs"
-base_url = "https://cn.meta-api.vip/v1"
+base_url = "https://meta-api.vip/v1"
 wire_api = "responses"
 requires_openai_auth = true
 env_key = "NAN_API_KEY"
@@ -100,9 +97,9 @@ codex
 
 ## 5. 常见问题
 
-| 问题            | 处理                                                     |
-| --------------- | -------------------------------------------------------- |
-| 401             | 确认 `NAN_API_KEY` 已生效                                |
-| 404             | `base_url` 必须带 `/v1`                                  |
-| 模型不可用      | 检查令牌分组和模型广场                                   |
-| Claude 模型失败 | Claude 模型要用 `claude` 分组；Codex 模型不要选 `claude` |
+| 问题            | 处理                                     |
+| --------------- | ---------------------------------------- |
+| 401             | 确认 `NAN_API_KEY` 已生效                |
+| 404             | `base_url` 必须带 `/v1`                  |
+| 模型不可用      | 检查令牌分组和模型广场                   |
+| Claude 模型失败 | 在模型广场核对该模型当前支持的分组和协议 |

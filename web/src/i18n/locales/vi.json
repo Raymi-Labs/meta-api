@@ -1,5 +1,10 @@
 {
   "translation": {
+    "正在更新文档配置…": "Đang cập nhật cấu hình tài liệu…",
+    "部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。": "Không tải được một số cấu hình. Hãy thử lại; tạm dùng địa chỉ trang hiện tại. Xem danh mục mô hình để kiểm tra khả năng sử dụng.",
+    "地址、分组和请求样例随站点配置自动更新": "Địa chỉ, nhóm và ví dụ yêu cầu tự cập nhật theo cấu hình trang",
+    "MiMo 语音": "Âm thanh MiMo",
+    "TTS、音色设计、音色克隆和语音识别": "TTS, thiết kế giọng, nhân bản giọng và nhận dạng giọng nói",
     "启用 {{method}}": "Bật {{method}}",
     "复用上方易支付地址、商户 ID 和密钥。请先在 Epay 商户中心为每个币种和网络完成 BEpusdt 到账测试、启用并设为该组合的默认通道，再打开对应开关。": "Dùng URL Epay, ID người bán và khóa ở trên. Với từng loại tiền và mạng, hãy thử nhận tiền BEpusdt trong Epay, bật kênh và đặt làm mặc định cho cặp đó trước khi bật công tắc tương ứng.",
     "订单按人民币计价，客户使用所选网络的 USDT 或 USDC 付款。BEpusdt、钱包及各链代币合约在 Epay / 网关配置；同名代币的跨链版本不一定通用。": "Đơn hàng được định giá bằng CNY. Khách thanh toán USDT hoặc USDC trên mạng đã chọn. Cấu hình BEpusdt, ví và hợp đồng token trong Epay / cổng thanh toán; token cùng ký hiệu trên các chuỗi khác nhau có thể không tương thích.",

@@ -159,6 +159,19 @@
 .nan-docs-content {
   min-width: 0;
 }
+.nan-docs-sync {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.nan-docs-sync .semi-typography {
+  font-size: 12px;
+}
+.nan-docs-sync .semi-button {
+  flex-shrink: 0;
+}
 .nan-docs-card {
   width: 100%;
   max-width: 100%;
@@ -227,6 +240,10 @@
 }
 .nan-docs-card .markdown-body th {
   background: var(--semi-color-fill-1);
+}
+.nan-docs-card .markdown-body th:first-child,
+.nan-docs-card .markdown-body td:first-child {
+  min-width: 88px;
 }
 .nan-docs-card .markdown-body tbody tr:nth-child(even) {
   background: var(--semi-color-fill-0);

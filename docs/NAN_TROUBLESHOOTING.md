@@ -6,7 +6,7 @@
 
 1. API Key 是否完整，通常以 `sk-` 开头。
 2. 令牌是否启用、过期或额度受限。
-3. 账户余额或订阅额度是否充足。
+3. 账户余额是否充足。
 4. 模型是否在当前分组可用。
 5. Base URL 是否正确：OpenAI/Codex 通常带 `/v1`，Claude/Gemini 通常不带。
 
@@ -54,24 +54,24 @@ echo $env:CRS_OAI_KEY
 
 ## 4. 模型与分组
 
-| 报错                | 常见原因               | 处理                       |
-| ------------------- | ---------------------- | -------------------------- |
-| `model not found`   | 模型名写错或分组不可用 | 去模型广场复制模型名       |
-| `model unavailable` | 模型或渠道暂时不可用   | 换同类模型或联系管理员     |
-| Claude 调用失败     | 没选 `claude` 分组     | 修改令牌分组               |
-| Gemini 调用失败     | 没选 `gemini` 分组     | 修改令牌分组               |
-| Codex 调用失败      | 误选 `claude` 分组     | 改成 OpenAI/Codex 可用分组 |
+| 报错                | 常见原因               | 处理                                  |
+| ------------------- | ---------------------- | ------------------------------------- |
+| `model not found`   | 模型名写错或分组不可用 | 去模型广场复制模型名                  |
+| `model unavailable` | 模型或渠道暂时不可用   | 换同类模型或联系管理员                |
+| Claude 调用失败     | 分组或协议不匹配       | 核对模型广场后修改令牌分组            |
+| Gemini 调用失败     | 分组或协议不匹配       | 核对模型广场后修改令牌分组            |
+| Codex 调用失败      | 分组或协议不匹配       | 核对模型是否支持 Responses 和当前分组 |
 
 ## 5. 客户端配置
 
-| 客户端      | 必查项                                                                          |
-| ----------- | ------------------------------------------------------------------------------- |
-| Codex       | `base_url=https://cn.meta-api.vip/v1`，`wire_api=responses`，`NAN_API_KEY` 生效 |
-| Claude Code | `ANTHROPIC_BASE_URL` 不带 `/v1`，分组匹配模型类型                               |
-| Gemini      | `GOOGLE_GEMINI_BASE_URL` 不带 `/v1`，`GEMINI_MODEL` 可用                        |
-| OpenCode    | `baseURL` 带 `/v1`，`CRS_OAI_KEY` 生效                                          |
-| OpenClaw    | `openclaw status` 可达，配置为 Responses 新格式                                 |
-| CC Switch   | 已安装客户端，浏览器允许打开 `ccswitch://`                                      |
+| 客户端      | 必查项                                                                       |
+| ----------- | ---------------------------------------------------------------------------- |
+| Codex       | `base_url=https://meta-api.vip/v1`，`wire_api=responses`，`NAN_API_KEY` 生效 |
+| Claude Code | `ANTHROPIC_BASE_URL` 不带 `/v1`，分组匹配模型类型                            |
+| Gemini      | `GOOGLE_GEMINI_BASE_URL` 不带 `/v1`，`GEMINI_MODEL` 可用                     |
+| OpenCode    | `baseURL` 带 `/v1`，`CRS_OAI_KEY` 生效                                       |
+| OpenClaw    | `openclaw status` 可达，配置为 Responses 新格式                              |
+| CC Switch   | 已安装客户端，浏览器允许打开 `ccswitch://`                                   |
 
 ## 6. 流式与网络
 
@@ -88,9 +88,8 @@ echo $env:CRS_OAI_KEY
 | 现象           | 处理                                       |
 | -------------- | ------------------------------------------ |
 | 充值未到账     | 提供订单号、支付时间、金额，联系管理员补单 |
-| 余额不足       | 充值或购买订阅                             |
+| 余额不足       | 充值并检查令牌额度限制                     |
 | 不知道为何扣费 | 看使用日志的模型、时间、消耗、令牌         |
-| 订阅没生效     | 检查有效期、每日额度、分组限制             |
 | 扣费异常       | 截图使用日志，带请求时间联系管理员         |
 
 ## 8. 发票与明细账单

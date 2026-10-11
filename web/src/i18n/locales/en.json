@@ -1,5 +1,10 @@
 {
   "translation": {
+    "正在更新文档配置…": "Updating documentation settings…",
+    "部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。": "Some settings failed to load. Retry; the current site address is used for now. Check the model catalog for availability.",
+    "地址、分组和请求样例随站点配置自动更新": "Addresses, groups and request examples update automatically from site settings",
+    "MiMo 语音": "MiMo Audio",
+    "TTS、音色设计、音色克隆和语音识别": "TTS, voice design, voice cloning and speech recognition",
     "启用 {{method}}": "Enable {{method}}",
     "复用上方易支付地址、商户 ID 和密钥。请先在 Epay 商户中心为每个币种和网络完成 BEpusdt 到账测试、启用并设为该组合的默认通道，再打开对应开关。": "Uses the Epay URL, merchant ID and key above. In Epay, test a BEpusdt payment for each coin and network, enable it and set it as the default for that combination before turning on its switch.",
     "订单按人民币计价，客户使用所选网络的 USDT 或 USDC 付款。BEpusdt、钱包及各链代币合约在 Epay / 网关配置；同名代币的跨链版本不一定通用。": "Orders are priced in CNY. Customers pay USDT or USDC on the selected network. Configure BEpusdt, wallets and token contracts in Epay / the gateway; tokens with the same symbol on different chains may not be interchangeable.",

@@ -14,7 +14,7 @@
 
 ### 1.1 进入工作台
 
-1. 登录 `https://cn.meta-api.vip/`。
+1. 登录 `https://meta-api.vip/`。
 2. 在左侧菜单找到 `聊天 -> AI 生图`。
 3. 或直接打开 [平台 AI 生图](/console/image-playground)。
 4. 系统会创建临时访问会话并自动进入生图工作台。
@@ -153,7 +153,7 @@ python3 "${CODEX_HOME:-$HOME/.codex}/skills/meta-api-imagegen/scripts/meta_api_i
 ### 3.1 设置公共变量
 
 ```bash
-export NAN_BASE_URL="https://cn.meta-api.vip"
+export NAN_BASE_URL="https://meta-api.vip"
 export NAN_API_KEY="sk-替换为你的API密钥"
 ```
 

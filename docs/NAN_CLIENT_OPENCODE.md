@@ -4,9 +4,9 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://cn.meta-api.vip/`。
+1. 登录 `https://meta-api.vip/`。
 2. 进入 `令牌管理` 创建令牌。
-3. Codex/OpenAI 模型建议使用 `vip` / `svip`，不要选 `claude`。
+3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
 4. 复制完整 API Key。
 
 ## 2. 安装环境
@@ -50,7 +50,7 @@ source ~/.bashrc
 
 ## 4. 配置 OpenCode
 
-在 OpenCode 配置文件中添加：
+在 OpenCode 配置文件中添加。模型名由在线文档同步；上下文长度、模态及思考参数请按目标模型能力另行设置：
 
 ```json
 {
@@ -60,41 +60,17 @@ source ~/.bashrc
       "npm": "@ai-sdk/openai",
       "name": "NAN OpenAI Proxy",
       "options": {
-        "baseURL": "https://cn.meta-api.vip/v1",
+        "baseURL": "https://meta-api.vip/v1",
         "apiKey": "{env:CRS_OAI_KEY}"
       },
       "models": {
-        "gpt-5.3-codex": {
-          "name": "GPT-5.3-Codex",
-          "limit": { "context": 272000, "output": 128000 },
-          "modalities": { "input": ["text", "image"], "output": ["text"] },
-          "variants": {
-            "low": {
-              "reasoningEffort": "low",
-              "reasoningSummary": "auto",
-              "textVerbosity": "medium"
-            },
-            "medium": {
-              "reasoningEffort": "medium",
-              "reasoningSummary": "auto",
-              "textVerbosity": "medium"
-            },
-            "high": {
-              "reasoningEffort": "high",
-              "reasoningSummary": "detailed",
-              "textVerbosity": "medium"
-            },
-            "xhigh": {
-              "reasoningEffort": "xhigh",
-              "reasoningSummary": "detailed",
-              "textVerbosity": "medium"
-            }
-          }
+        "MODEL_OPENAI": {
+          "name": "MODEL_OPENAI"
         }
       }
     }
   },
-  "model": "nan/gpt-5.3-codex"
+  "model": "nan/MODEL_OPENAI"
 }
 ```
 

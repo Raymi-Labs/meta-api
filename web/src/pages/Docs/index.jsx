@@ -35,6 +35,9 @@ import ccSwitchMarkdown from '../../../../docs/NAN_CLIENT_CCSWITCH.md?raw';
 import imageGenerationMarkdown from '../../../../docs/NAN_IMAGE_GENERATION.md?raw';
 import apiExamplesMarkdown from '../../../../docs/NAN_API_EXAMPLES.md?raw';
 import troubleshootingMarkdown from '../../../../docs/NAN_TROUBLESHOOTING.md?raw';
+import mimoAudioMarkdown from '../../../../docs/NAN_MIMO_AUDIO.md?raw';
+import { renderRuntimeDocs } from './runtimeDocs';
+import useRuntimeDocs from './useRuntimeDocs';
 import './index.css';
 
 const { Title, Text } = Typography;
@@ -123,6 +126,14 @@ const DOCS = [
     content: imageGenerationMarkdown,
   },
   {
+    key: 'mimo-audio',
+    path: '/docs/mimo-audio',
+    group: '能力',
+    title: 'MiMo 语音',
+    description: 'TTS、音色设计、音色克隆和语音识别',
+    content: mimoAudioMarkdown,
+  },
+  {
     key: 'api-examples',
     path: '/docs/api-examples',
     group: '开发',
@@ -156,6 +167,7 @@ const DOC_LINK_REPLACEMENTS = [
   [/\.\/NAN_IMAGE_GENERATION\.md/g, '/docs/image-generation'],
   [/\.\/NAN_API_EXAMPLES\.md/g, '/docs/api-examples'],
   [/\.\/NAN_TROUBLESHOOTING\.md/g, '/docs/troubleshooting'],
+  [/\.\/NAN_MIMO_AUDIO\.md/g, '/docs/mimo-audio'],
   // 图片放 /docs-images/（不能叫 /docs/images/：dist 里出现 docs 目录会让
   // 静态文件服务把 /docs 当目录发 301，与 SPA 路由打架导致重定向死循环）
   [/\.\/images\//g, '/docs-images/'],
@@ -243,9 +255,21 @@ export default function DocsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const activeDoc = getActiveDoc(location.pathname);
+  const runtime = useRuntimeDocs();
   const content = useMemo(
-    () => prepareMarkdown(activeDoc.content),
-    [activeDoc.content],
+    () =>
+      prepareMarkdown(
+        renderRuntimeDocs(activeDoc.content, {
+          ...runtime,
+          origin: window.location.origin,
+        }),
+      ),
+    [
+      activeDoc.content,
+      runtime.serverAddress,
+      runtime.pricing,
+      runtime.loading,
+    ],
   );
   const headings = useMemo(() => extractHeadings(content), [content]);
 
@@ -315,6 +339,24 @@ export default function DocsPage() {
                 <Title heading={3}>{t(activeDoc.title)}</Title>
                 <Text type='tertiary'>{t(activeDoc.description)}</Text>
               </div>
+            </div>
+            <div className='nan-docs-sync' role='status'>
+              <Text type={runtime.failed ? 'warning' : 'tertiary'}>
+                {runtime.loading
+                  ? t('正在更新文档配置…')
+                  : runtime.failed
+                    ? t(
+                        '部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。',
+                      )
+                    : `${t('地址、分组和请求样例随站点配置自动更新')} · ${new Date(runtime.updatedAt).toLocaleTimeString()}`}
+              </Text>
+              <Button
+                size='small'
+                loading={runtime.loading}
+                onClick={runtime.refresh}
+              >
+                {t('刷新')}
+              </Button>
             </div>
             <MarkdownRenderer content={content} fontSize={15} />
           </Card>

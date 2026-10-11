@@ -4,10 +4,10 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://cn.meta-api.vip/`。
+1. 登录 `https://meta-api.vip/`。
 2. 进入 `令牌管理` 创建令牌。
-3. 如果要用 Claude 模型，令牌分组必须选 `claude`。
-4. 可用模型以 `https://cn.meta-api.vip/pricing` 为准。
+3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
+4. 可用模型以 `https://meta-api.vip/pricing` 为准。
 5. 复制完整 API Key。
 
 ## 2. 安装环境
@@ -40,7 +40,7 @@ claude --version
 需要两个变量：
 
 ```text
-ANTHROPIC_BASE_URL=https://cn.meta-api.vip
+ANTHROPIC_BASE_URL=https://meta-api.vip
 ANTHROPIC_AUTH_TOKEN=你的API密钥
 ```
 
@@ -49,14 +49,14 @@ ANTHROPIC_AUTH_TOKEN=你的API密钥
 临时设置：
 
 ```powershell
-$env:ANTHROPIC_BASE_URL = "https://cn.meta-api.vip"
+$env:ANTHROPIC_BASE_URL = "https://meta-api.vip"
 $env:ANTHROPIC_AUTH_TOKEN = "你的API密钥"
 ```
 
 永久设置：
 
 ```powershell
-[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://cn.meta-api.vip", [System.EnvironmentVariableTarget]::User)
+[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://meta-api.vip", [System.EnvironmentVariableTarget]::User)
 [System.Environment]::SetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN", "你的API密钥", [System.EnvironmentVariableTarget]::User)
 ```
 
@@ -67,14 +67,14 @@ $env:ANTHROPIC_AUTH_TOKEN = "你的API密钥"
 临时设置：
 
 ```bash
-export ANTHROPIC_BASE_URL="https://cn.meta-api.vip"
+export ANTHROPIC_BASE_URL="https://meta-api.vip"
 export ANTHROPIC_AUTH_TOKEN="你的API密钥"
 ```
 
 zsh 永久设置：
 
 ```bash
-echo 'export ANTHROPIC_BASE_URL="https://cn.meta-api.vip"' >> ~/.zshrc
+echo 'export ANTHROPIC_BASE_URL="https://meta-api.vip"' >> ~/.zshrc
 echo 'export ANTHROPIC_AUTH_TOKEN="你的API密钥"' >> ~/.zshrc
 source ~/.zshrc
 ```
@@ -82,7 +82,7 @@ source ~/.zshrc
 bash 永久设置：
 
 ```bash
-echo 'export ANTHROPIC_BASE_URL="https://cn.meta-api.vip"' >> ~/.bash_profile
+echo 'export ANTHROPIC_BASE_URL="https://meta-api.vip"' >> ~/.bash_profile
 echo 'export ANTHROPIC_AUTH_TOKEN="你的API密钥"' >> ~/.bash_profile
 source ~/.bash_profile
 ```
@@ -94,7 +94,7 @@ source ~/.bash_profile
 ```json
 {
   "env": {
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-5-20250929"
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "MODEL_CLAUDE"
   }
 }
 ```
