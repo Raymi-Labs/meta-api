@@ -27,4 +27,6 @@
 | 支付记录：稳定币网络标签和筛选 | [记录弹窗](../web/src/components/topup/modals/TopupHistoryModal.jsx)、[记录模型](../model/payment_record.go) | 用户 `/api/user/payment-records/self`、管理员 `/api/user/payment-records`；充值和套餐联合记录 | 用户仅见本人；记录保留人民币支付金额，不能当作实际代币数量或链上凭证 |
 | 令牌创建/编辑：个人收藏分组 | [表单](../web/src/components/table/tokens/modals/EditTokenModal.jsx)、[收藏入口](../web/src/components/table/tokens/TokenGroupFavorites.jsx)、[本地存储](../web/src/components/table/tokens/groupFavoriteStorage.js) | 已登录用户；仅 `/api/user/self/groups` 本次返回的可用组能成为收藏捷径；沿用原 `group` 字段和模型/渠道联动 | 当前浏览器按账号隔离，不跨设备/客户端同步；收藏不赋予权限、不改变计费/路由；编辑保留的失效组不加入收藏候选 |
 
+入口运维补充（2026-10-11）：公网反代站点、证书续期与 DNS 切换见 [反代迁移验收](REVERSE_PROXY_MIGRATION.md)。入口层转发到既有应用路由；迁移不修改模型渠道、数据库、计费或鉴权。公开状态入口与受保护接口分别核对，入口部署成功不等于 DNS 已切换。
+
 权限最终以 [API 路由](../router/api-router.go) 为准。新增渠道分析先对比统计面板、渠道管理和使用日志三处，确认数据定义、权限、分页/排序与跳转条件一致后再选方案。
