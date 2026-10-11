@@ -29,6 +29,7 @@ Status: implemented
 - `GOMAXPROCS=4 go test -p 4 ./...` 和 controller/service/middleware/OpenAI/Claude 相关定向 `-race` 回归通过。四个通知/返回入口分别验证 GET/POST 歧义签名拒绝，12 种稳定币类型验证 CNY 订单、关闭后在途通知与重复入账保护，套餐含 `&` 的名称下单及合法返回仍通过。
 - 非法角色创建/更新无写库；基础、HTTP/SOCKS 代理、CRS 与模型同步 TLS 指针隔离；OpenAI/Azure 预算、角色、采样及未知别名、Claude 任意 safeguards 深拷贝保真通过。
 - 网页与静态限流使用内存及模拟 Redis 分别验证 GS 开/关、GET/HEAD/POST、页面/HTML/目录/缺失文件边界。真实构建后端使用独立临时 SQLite，在页面限额 12/180 秒下连续读取 100 个 JS 均为 200，之后 login/pricing/image-playground 三入口仍为 200；真实 Chromium 系统初始化页加载 63 个静态请求。该实例不含生产数据或真实付款。
+- 限流回归为每次运行分配独立测试 IP，避免进程内重复执行继承上轮配额；定向 `-race -count=10` 通过。只隔离测试数据，不重置生产限流器或新增运行时行为。
 - Bun 构建及 Chromium 五个公开页预渲染、版本化后端构建通过。没有 MySQL/PostgreSQL 实机、真实供应商请求或链上付款测试；本轮无数据库结构/SQL 变化。发布资产与镜像验证结果单独记录在交付报告，不以本地构建代替发布完成。
 
 ## Consequences

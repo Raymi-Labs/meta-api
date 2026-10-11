@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+var frontendRateLimitTestSequence atomic.Uint64
 
 func TestFrontendRateLimitSeparatesAssetAndPageBudgets(t *testing.T) {
 	oldRedis, oldWeb, oldStatic := common.RedisEnabled, common.GlobalWebRateLimitEnable, common.GlobalStaticRateLimitEnable
@@ -46,7 +49,9 @@ func TestFrontendRateLimitSeparatesAssetAndPageBudgets(t *testing.T) {
 				r := gin.New()
 				r.Use(GlobalWebRateLimit(frontendFS))
 				r.NoRoute(func(c *gin.Context) { c.Status(http.StatusOK) })
-				ip := fmt.Sprintf("192.0.2.%d:1234", 10+len(t.Name()))
+				// Each run gets a fresh key without resetting the shared limiter or
+				// its cleanup goroutine; this also supports go test -count=N.
+				ip := fmt.Sprintf("[2001:db8::%x]:1234", frontendRateLimitTestSequence.Add(1))
 				request := func(method, target string) *httptest.ResponseRecorder {
 					rec := httptest.NewRecorder()
 					req := httptest.NewRequest(method, target, nil)
