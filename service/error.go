@@ -117,6 +117,13 @@ func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFai
 
 	err = common.Unmarshal(responseBody, &errResponse)
 	if err != nil {
+		if capabilityErr := recoverUpstreamCapabilityError(responseBody, upstreamStatusCode); capabilityErr != nil {
+			newApiErr = capabilityErr
+			if showBodyWhenFail {
+				newApiErr.Err = buildErrWithBody(newApiErr.Error())
+			}
+			return
+		}
 		if showBodyWhenFail {
 			newApiErr.Err = buildErrWithBody("")
 		} else {

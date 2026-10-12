@@ -84,7 +84,11 @@ func AppendRequestFailureAttempt(c *gin.Context, channel types.ChannelError, err
 	if len(list) >= 5 {
 		list = list[len(list)-4:]
 	}
-	list = append(list, map[string]interface{}{"channel_id": channel.ChannelId, "status_code": err.StatusCode, "error_code": err.GetErrorCode(), "message": requestLogMessage(err)})
+	attempt := map[string]interface{}{"channel_id": channel.ChannelId, "status_code": err.StatusCode, "error_code": err.GetErrorCode(), "message": requestLogMessage(err)}
+	if err.Upstream != nil {
+		attempt["upstream"] = *err.Upstream
+	}
+	list = append(list, attempt)
 	c.Set(requestFailureAttemptsKey, list)
 }
 
@@ -92,6 +96,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 	code := string(err.GetErrorCode())
 	message := strings.ToLower(err.Error())
 	switch {
+	case IsUpstreamCapabilityError(err):
+		return "unavailable", "上游渠道不支持当前模型或工具协议", "请稍后重试；若持续失败，请携带请求 ID 联系管理员。"
 	case types.ClassifyFailure(err) == types.FailureClientCanceled:
 		return "client_canceled", "客户端取消请求", "客户端已断开连接；请检查是否主动停止、客户端超时或网络中断。"
 	case IsContentSafetyPolicyError(err) || code == "content_safety_cooldown" || code == string(types.ErrorCodeSensitiveWordsDetected):

@@ -343,6 +343,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		newAPIError = service.NormalizeContentSafetyPolicyError(newAPIError)
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		newAPIError = service.NormalizeResponsesConversationStateError(newAPIError)
+		newAPIError = service.GuardUpstreamCapabilityRetry(c, relayInfo.Request, newAPIError)
 		if cooldown := service.RecordChannelRateLimitCooldown(c, channel, newAPIError); cooldown > 0 {
 			logger.LogInfo(c, fmt.Sprintf("upstream rate limit cooldown set: channel=%d ttl=%ds", channel.Id, int((cooldown+time.Second-1)/time.Second)))
 		}

@@ -127,6 +127,9 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, m
 
 	adminInfo := make(map[string]interface{})
 	adminInfo["use_channel"] = ctx.GetStringSlice("use_channel")
+	if attempts, exists := ctx.Get(requestFailureAttemptsKey); exists {
+		adminInfo["attempts"] = attempts
+	}
 	if relayInfo.KimiUsageEvidence != nil {
 		// An immutable metadata snapshot, stripped by formatUserLogs.
 		snapshot := *relayInfo.KimiUsageEvidence

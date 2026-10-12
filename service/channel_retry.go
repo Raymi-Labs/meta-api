@@ -31,6 +31,9 @@ func IsTemporaryUpstreamError(err *types.NewAPIError) bool {
 	if IsRetryableUpstreamOverloadError(err) {
 		return true
 	}
+	if IsUpstreamCapabilityError(err) {
+		return true
+	}
 	if IsQuotaRelatedError(err) || IsChannelModelMismatchError(err) {
 		return false
 	}
@@ -82,6 +85,9 @@ func ShouldRetryChannelError(c *gin.Context, openaiErr *types.NewAPIError, retry
 	}
 	if code < 100 || code > 599 {
 		return true
+	}
+	if IsUpstreamCapabilityError(openaiErr) {
+		return c.Writer != nil && !c.Writer.Written()
 	}
 	if IsUpstreamRequestTooLargeError(openaiErr) && isUpstreamRequestTooLargeBeyondKnownLimit(c, openaiErr) {
 		return false
