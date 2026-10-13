@@ -96,6 +96,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 	code := string(err.GetErrorCode())
 	message := strings.ToLower(err.Error())
 	switch {
+	case err.GetErrorCode() == types.ErrorCodeBadResponseBody && err.Error() == ResponsesStreamEmptyCompletedReason:
+		return "empty_response", "响应结束但未识别到有效输出", "请稍后重试；若持续出现，请携带请求 ID 联系管理员。"
 	case IsUpstreamCapabilityError(err):
 		return "unavailable", "上游渠道不支持当前模型或工具协议", "请稍后重试；若持续失败，请携带请求 ID 联系管理员。"
 	case types.ClassifyFailure(err) == types.FailureClientCanceled:
@@ -180,6 +182,9 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 	}
 	if usage, exists := c.Get(requestUnbilledUsageKey); exists {
 		adminInfo["unbilled_usage"] = usage
+	}
+	if diagnostics, exists := c.Get(requestResponsesStreamFailureKey); exists {
+		adminInfo["responses_stream_diagnostics"] = diagnostics
 	}
 	if apiErr.Upstream != nil && !apiErr.Upstream.IsZero() {
 		adminInfo["upstream"] = apiErr.Upstream

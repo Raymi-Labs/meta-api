@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
@@ -64,11 +65,12 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 	delta := "data: {\"type\":\"response.output_text.delta\",\"delta\":\"hello\"}\n\n"
 	withUsage := `"usage":{"input_tokens":41093,"output_tokens":1,"total_tokens":41094}`
 	cases := []struct {
-		name      string
-		body      string
-		estimated bool
-		canceled  bool
-		noOutput  bool
+		name           string
+		body           string
+		estimated      bool
+		canceled       bool
+		noOutput       bool
+		emptyCompleted bool
 	}{
 		{name: "upstream_failure_with_usage", body: delta + `data: {"type":"response.failed","response":{"status":"failed","error":{"code":"upstream_error","message":"temporarily unavailable"},` + withUsage + "}}\n\n"},
 		{name: "upstream_failure_without_usage", body: delta + "data: {\"type\":\"error\",\"error\":{\"code\":\"upstream_error\",\"message\":\"temporarily unavailable\"}}\n\n", estimated: true},
@@ -76,6 +78,7 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 		{name: "missing_completed", body: delta, estimated: true},
 		{name: "client_canceled", body: delta, estimated: true, canceled: true},
 		{name: "no_output", body: `data: {"type":"response.failed","response":{"status":"failed","error":{"code":"upstream_error","message":"temporarily unavailable"},` + withUsage + "}}\n\n", noOutput: true},
+		{name: "empty_completed", body: "data: malformed-json\n\n" + `data: {"type":"response.completed","response":{"status":"completed","output":[],` + withUsage + "}}\n\n", noOutput: true, emptyCompleted: true},
 	}
 	for _, funding := range []string{service.BillingSourceWallet, service.BillingSourceSubscription, service.BillingSourceToken} {
 		for _, tc := range cases {
@@ -124,6 +127,15 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				client.Transport = transport
 				t.Cleanup(func() { client.Transport = oldTransport })
 				channel := &model.Channel{Id: 993503, Name: "responses-refund-test", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Key: "test-key"}
+				if tc.emptyCompleted {
+					autoBan := 1
+					baseURL := "https://empty-output-" + funding + ".invalid"
+					channel.AutoBan, channel.BaseURL = &autoBan, &baseURL
+					monitor := operation_setting.GetMonitorSetting()
+					oldWait, oldMinutes := monitor.PreDisableWaitEnabled, monitor.PreDisableWaitMinutes
+					monitor.PreDisableWaitEnabled, monitor.PreDisableWaitMinutes = true, 1
+					t.Cleanup(func() { monitor.PreDisableWaitEnabled, monitor.PreDisableWaitMinutes = oldWait, oldMinutes })
+				}
 				require.NoError(t, db.Create(channel).Error)
 				r := gin.New()
 				r.Use(middleware.RequestFailureLog(), middleware.RouteTag("relay"))
@@ -168,6 +180,27 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				details, err := common.StrToMap(logs[0].Other)
 				require.NoError(t, err)
 				admin := details["admin_info"].(map[string]interface{})
+				if tc.emptyCompleted {
+					require.Contains(t, w.Body.String(), "event: response.failed")
+					require.NotContains(t, w.Body.String(), "event: response.completed")
+					require.False(t, service.ShouldDisableChannel(channel.Type, types.NewOpenAIError(fmt.Errorf("%s", service.ResponsesStreamEmptyCompletedReason), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())))
+					var current model.Channel
+					require.NoError(t, db.First(&current, channel.Id).Error)
+					require.Equal(t, common.ChannelStatusEnabled, current.Status)
+					require.False(t, service.IsChannelUnavailableForRequest(&current))
+					sibling := &model.Channel{Id: channel.Id + 1, Status: common.ChannelStatusEnabled, BaseURL: channel.BaseURL}
+					require.False(t, service.IsChannelUnavailableForRequest(sibling), "the same upstream address must remain selectable")
+					diagnostics := admin["responses_stream_diagnostics"].(map[string]interface{})
+					require.EqualValues(t, 1, diagnostics["json_decode_errors"])
+					require.Equal(t, true, diagnostics["completed_response_present"])
+					completed := diagnostics["responses_completed_summary"].(map[string]interface{})
+					require.Equal(t, "completed", completed["status"])
+					require.EqualValues(t, 0, completed["output_count"])
+					public, _, e := model.GetUserLogs(user.Id, model.LogTypeError, 0, 0, "", "", 0, 10, "", requestID)
+					require.NoError(t, e)
+					require.Len(t, public, 1)
+					require.NotContains(t, public[0].Other, "responses_stream_diagnostics")
+				}
 				if tc.noOutput {
 					require.NotContains(t, admin, "unbilled_usage")
 				} else {

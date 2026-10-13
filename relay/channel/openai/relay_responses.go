@@ -267,6 +267,7 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 	var billableDeltaBuilder strings.Builder
 	hasUpstreamUsage := false
 	completed := false
+	decodeErrors := 0
 	var terminalError *types.NewAPIError
 	hasEffectiveOutput := false
 	responseID := ""
@@ -438,8 +439,13 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 						info.StreamStatus.RecordError(reason)
 					}
 					flushBufferedPrelude()
-					scheduleResponsesStreamCooldownWithOptions(c, opts, reason)
 					sendSyntheticResponsesFailed(c, info, usage, reason, responseID, responseModel, responseCreatedAt)
+					// An empty result does not establish an outage of the shared upstream.
+					var summary *relaycommon.ResponsesCompletedSummary
+					if streamResponse.Response != nil {
+						summary = info.ResponsesCompletedSummary
+					}
+					service.CaptureResponsesEmptyOutputDiagnostics(c, summary, decodeErrors)
 					terminalError = types.NewOpenAIError(errors.New(reason), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
 					return false
 				} else {
@@ -469,6 +475,7 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 				}
 			}
 		} else {
+			decodeErrors++
 			logger.LogError(c, "failed to unmarshal stream response: "+err.Error())
 		}
 		return true
