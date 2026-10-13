@@ -2,6 +2,8 @@
 
 Status: implemented
 
+关联：[Responses 空输出取消共享冷却](2026-10-13-responses-empty-output-no-shared-cooldown.md)保留空输出的失败与禁止重试，只收窄共享冷却，不扩展本篇的能力拒绝切换范围。
+
 ## Problem
 
 已配置的模型可能被所选上游以 model_not_found / unknown provider 拒绝，工具请求也可能被上游账号的 Chat Completions 能力限制拒绝。普通 400 不重试的规则把这些渠道能力问题直接返回给用户。部分上游把 JSON 错误与 response.failed SSE 拼接，严格 JSON 解码失败后还会丢失具体原因。

@@ -621,10 +621,12 @@ func TestOaiResponsesStreamHandler_FailsWhenCompletedHasNoOutput(t *testing.T) {
 		`data: [DONE]`,
 	}, "\n")
 
-	usage, err := OaiResponsesStreamHandler(c, info, newResponsesStreamHTTPResponse(body))
+	opts, cooldowns := newResponsesStreamCooldownCounter()
+	usage, err := OaiResponsesStreamHandlerWithOptions(c, info, newResponsesStreamHTTPResponse(body), opts)
 	require.Nil(t, usage)
 	require.Error(t, err)
 	require.True(t, types.IsSkipRetryError(err))
+	require.Equal(t, 0, *cooldowns, "empty completion must not cool down a shared upstream")
 	require.True(t, info.StreamStatus.HasErrors())
 
 	responseBody := recorder.Body.String()
@@ -632,6 +634,43 @@ func TestOaiResponsesStreamHandler_FailsWhenCompletedHasNoOutput(t *testing.T) {
 	require.Contains(t, responseBody, `"status":"failed"`)
 	require.Contains(t, responseBody, "responses stream completed without visible output")
 	require.NotContains(t, responseBody, "event: response.completed")
+}
+
+func TestOaiResponsesStreamHandler_EmptyCompletionShapesDoNotCooldown(t *testing.T) {
+	setResponsesStreamTestTimeout(t)
+	for _, completed := range []string{
+		`{"type":"response.completed"}`,
+		`{"type":"response.completed","response":{"status":"completed","output":[]}}`,
+		`{"type":"response.completed","response":{"status":"completed","output":[{"type":"message","content":[]}]}}`,
+	} {
+		t.Run(completed, func(t *testing.T) {
+			c, recorder := newResponsesStreamTestContext()
+			info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: "test-empty"}}
+			opts, cooldowns := newResponsesStreamCooldownCounter()
+			usage, err := OaiResponsesStreamHandlerWithOptions(c, info, newResponsesStreamHTTPResponse("data: "+completed+"\n\n"), opts)
+			require.Nil(t, usage)
+			require.Error(t, err)
+			require.True(t, types.IsSkipRetryError(err))
+			require.Equal(t, http.StatusBadGateway, err.StatusCode)
+			require.Zero(t, *cooldowns)
+			require.Contains(t, recorder.Body.String(), "event: response.failed")
+			require.NotContains(t, recorder.Body.String(), "event: response.completed")
+		})
+	}
+}
+
+func TestOaiResponsesStreamHandler_ToolOnlyCompletionRemainsSuccessful(t *testing.T) {
+	setResponsesStreamTestTimeout(t)
+	c, recorder := newResponsesStreamTestContext()
+	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: "test-tool"}}
+	body := `data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"function_call","name":"test_tool","call_id":"call_1","arguments":"{}"}],"usage":{"input_tokens":2,"output_tokens":1,"total_tokens":3}}}` + "\n\n"
+	opts, cooldowns := newResponsesStreamCooldownCounter()
+	usage, err := OaiResponsesStreamHandlerWithOptions(c, info, newResponsesStreamHTTPResponse(body), opts)
+	require.Nil(t, err)
+	require.Equal(t, 3, usage.TotalTokens)
+	require.Zero(t, *cooldowns)
+	require.Contains(t, recorder.Body.String(), "event: response.completed")
+	require.NotContains(t, recorder.Body.String(), "event: response.failed")
 }
 
 func TestOaiResponsesStreamHandler_ChannelTestFailsWhenCompletedMissing(t *testing.T) {
