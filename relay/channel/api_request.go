@@ -322,6 +322,7 @@ func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		return nil, fmt.Errorf("setup request header failed: %w", err)
 	}
 	attachNewAPIRequestIDHeader(req.Header, info)
+	setupOpenCodeSessionHeader(c, req, info)
 	// 在 SetupRequestHeader 之后应用 Header Override，确保用户设置优先级最高
 	// 这样可以覆盖默认的 Authorization header 设置
 	headerOverride, err := processHeaderOverride(info, c)
@@ -610,6 +611,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	}
 
 	client = cpaIdentityHTTPClient(client, info)
+	client = openCodeSessionHTTPClient(client, req)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, newDoRequestError(c, err)

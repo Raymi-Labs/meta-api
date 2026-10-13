@@ -1,9 +1,10 @@
 # 功能地图
 
-核对日期：2026-10-12。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-13。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| OpenCode 会话头默认转发 | [转发入口](../relay/channel/api_request.go)、[目标识别与会话头](../relay/channel/opencode_session.go)、[说明](channel/opencode_session.md) | 官方 HTTPS opencode.ai 的 /zen/v1/、/zen/go/v1/ 实际出站地址；Chat/Messages/Responses 流式及非流式；后台渠道测试独立 UUID | 不依赖渠道 ID、名称或模型；显式请求头覆盖优先；普通请求缺头不合成会话；自定义代理沿用显式配置；重定向离开官方 API 范围时移除会话头，不保证多模态能力 |
 | 在线文档与动态请求样例 | [页面](../web/src/pages/Docs/index.jsx)、[配置刷新](../web/src/pages/Docs/useRuntimeDocs.js)、[动态渲染](../web/src/pages/Docs/runtimeDocs.js)、[源文档](NAN_USAGE.md) | `/api/status` 服务器地址、经 TryUserAuth 的 `/api/pricing`；模型启用组与当前可选组取交集，按声明协议生成样例；可见时每分钟/聚焦刷新 | 不暴露渠道配置，不推断未声明的协议/工具能力；读取失败显示重试、身份切换清除旧数据；令牌独立限制仍以 `/v1/models` 为准；文档无套餐购买指引，历史账单保留 |
 | 网页与静态文件限流 | [网页路由](../router/web-router.go)、[文件判定与限流](../middleware/rate-limit.go)、[配置](../.env.example) | 嵌入构建目录中的真实非 HTML 文件 GET/HEAD 使用 GS，默认关闭；页面 GW 默认 60 次/180 秒 | HTML、目录、缺失文件和其他方法仍受 GW 保护；API 限流独立；启用静态限流用 GLOBAL_STATIC_RATE_LIMIT_ENABLE / GLOBAL_STATIC_RATE_LIMIT / GLOBAL_STATIC_RATE_LIMIT_DURATION |
 | 原生 Chat / Claude 参数兼容 | [OpenAI 能力表](../dto/openai_capabilities.go)、[OpenAI 转发](../relay/channel/openai/adaptor.go)、[Claude DTO](../dto/claude.go) | GPT-6 Sol/Luna 精确名称及日期快照使用独立预算/角色/采样规则；原生 Claude safeguards 保留任意 JSON | 未知别名不猜测规则；不主动设定安全策略、不保证跨协议映射或供应商执行 |
