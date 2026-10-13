@@ -53,3 +53,19 @@ metar.uk 的百度验证文件在新旧入口的 HTTP/HTTPS 均返回 200，缺�
 旧机保持运行，覆盖 DNS 缓存与已有连接的过渡期。新机验收成功表示可以切换，不表示公网 DNS 已经完成切换。发现异常时将受影响 A 记录恢复旧 IP；DNS 回退也需要缓存消退。切换后确认各站点访问、真实 API 流式请求和证书挑战正常，再另行安排旧机退役。
 
 新机 `/root/qiyun-migration-20261011/` 保存 root 专用的安装后默认配置备份与源配置暂存副本。目录权限 700，私钥权限 600；不作为公开下载、Git 附件或支持工单材料。
+
+## edu.xlrdf.cn 同源入口（2026-10-13）
+
+`edu.xlrdf.cn` 的公开 A 记录指向 `154.44.1.123`，核对时没有 AAAA。该入口与 `meta-api.vip` 转发到同一 New API 源站；域名中的 `edu` 不表示复用 `edu.meta-api.vip` 的站点。
+
+- 独立配置：`/etc/nginx/sites-available/edu.xlrdf.cn`，通过同名 `sites-enabled` 链接启用；访问与错误日志使用 `edu.xlrdf.cn` 前缀。
+- 复用 `meta-api.vip` 文件定义的 `meta_nan_origin` upstream 和 `meta_connection_upgrade` map。回源 Host/SNI 仍是 `nan.meta-api.vip`，保留源站 TLS 校验、100 MB 请求体上限、WebSocket、关闭 SSE/请求缓冲和 3600 秒读写超时。单独停用主域名配置前必须保留或迁出这两个共享定义。
+- 外部 `X-Forwarded-Host`、源站重定向及 Cookie 域改写到 `edu.xlrdf.cn`。HTTP 保留原路径和查询参数跳转到同域 HTTPS；ACME 挑战路径独立处理，缺失文件返回 404。
+- 独立 Let's Encrypt ECDSA 证书位于 `/etc/letsencrypt/live/edu.xlrdf.cn/`，到期时间为 **2027-01-11 11:04:03（北京时间）**。HTTP-01 webroot 为 `/var/www/edu-xlrdf-acme`；沿用已启用的 `certbot.timer` 和校验后 reload Nginx 的 deploy hook。`certbot renew --cert-name edu.xlrdf.cn --dry-run --no-random-sleep-on-renew --run-deploy-hooks` 成功。
+- 原 Nginx 文件校验值保持不变。服务器 root 专用备份位于 `/root/edu-xlrdf-domain-20261013T040135Z/`；新增域名回退可停用同名 `sites-enabled` 链接，经 `nginx -t` 后 reload，无需恢复整个 Nginx 目录。
+
+公网验收：新域名首页及 `/api/status` 返回 200，状态接口 `success=true`；无凭据 `/v1/models` 和 `/api/user/self` 返回 401。首页与主域名字节一致；`/assets/index-D1ZUhTil.js` 两侧均为 183,355 字节，SHA-256 均为 `8851326492263ebc9ee105e65b83990c28878c6d800e5fe954295a026c96f97a`。所有成功 HTTPS 探测均正常校验证书，浏览器确认首页和同域 `/login` 正常显示。
+
+本机首次并发探测中，主域名模型列表和新域名状态接口各有一次 30 秒超时；随后分别复测为 401 与 200。新域名日志记录一次客户端中断 499，错误日志为空；现有证据不足以确定超时原因，不将短时验收视为长期稳定性证明。补充的异地服务器探测因 SSH 连接被关闭而未执行；本次访问验收来自用户 Mac 的指定 IP、普通域名及浏览器访问，另有 ACME 签发和续期演练的外部挑战验证。
+
+应用公开的默认服务器地址仍是 `https://meta-api.vip`，首页/文档会继续显示这一默认值；客户端可显式使用 `https://edu.xlrdf.cn/v1`。本次仅增加入口，账户、API Key、渠道、计费和应用版本沿用同一后端；跨域浏览器登录状态不会自动共享。未执行付费模型生成、第三方登录回调或长时 SSE/WebSocket 会话验收。
