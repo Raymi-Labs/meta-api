@@ -140,6 +140,10 @@ def check(args):
 
 
 def main():
+    # Redirected Windows streams may otherwise use a legacy code page.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     inst = commands.add_parser('install')

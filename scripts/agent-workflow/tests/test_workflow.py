@@ -28,7 +28,7 @@ class WorkflowTest(unittest.TestCase):
 
     def run_cli(self, *args, ok=True, installed=False):
         script = self.target / '.agents/workflow.py' if installed else self.package / 'workflow.py'
-        result = subprocess.run([sys.executable, str(script), *map(str, args)], capture_output=True, text=True, cwd=self.root)
+        result = subprocess.run([sys.executable, str(script), *map(str, args)], capture_output=True, text=True, encoding="utf-8", cwd=self.root)
         self.assertEqual(result.returncode == 0, ok, result.stdout + result.stderr)
         return result
 
