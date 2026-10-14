@@ -1,17 +1,19 @@
-# 可迁移的项目工作流 1.0.0
+# 项目能力核对与决策记录工具包 1.0.1
 
-将“先核对已有能力 → 记录真实决策 → 实现与验收 → 自动校验”带到其他项目、其他电脑。
+帮助 Agent 在改动前核对项目已有能力，记录方案取舍和验证结果，并自动检查决策笔记的结构、链接与归档完整性。
+
+包含能力地图模板、决策记录模板、校验工具及项目接入 Skill；支持跨项目、跨电脑复用。
 分发包仅含工作流、模板与工具，不含 new-api 的业务笔记、项目能力地图、账号或机器绝对路径。
 
 ## 推荐：安装到项目
 
-下载 Release 的 ZIP，解压后保留完整 `project-workflow` 目录。需要 Python 3.9+；校验还需要 Bun（CI 固定 1.3.14）。安装与打包仅使用 Python 标准库，不联网下载依赖。
+下载 Release 的 ZIP，解压后保留完整 `project-decision-kit` 目录。需要 Python 3.9+；校验还需要 Bun（CI 固定 1.3.14）。安装与打包仅使用 Python 标准库，不联网下载依赖。
 
 ```sh
 # 第一次先预览；路径含空格时加引号
-python3 project-workflow/workflow.py install "/path/to/project"
+python3 project-decision-kit/workflow.py install "/path/to/project"
 # 确认计划后应用；--ci 可选，生成独立 GitHub Actions
-python3 project-workflow/workflow.py install "/path/to/project" --apply --ci
+python3 project-decision-kit/workflow.py install "/path/to/project" --apply --ci
 cd "/path/to/project"
 python3 .agents/workflow.py doctor
 python3 .agents/workflow.py verify
@@ -25,9 +27,9 @@ Windows 使用相同命令，把 `python3` 换成 `python`，路径换成实际�
 
 ## 可选：作为 Codex Skill 随身携带
 
-将解压后的完整 `project-workflow` 文件夹放到新电脑的 Codex skills 目录（通常为 `~/.codex/skills/`；Windows 通常在用户目录下的 `.codex/skills/`，设置了 CODEX_HOME 时使用其 skills 子目录）。不要只复制 SKILL.md；已有同名目录时先比较，勿覆盖自定义内容。重新打开会话后可说：
+将解压后的完整 `project-decision-kit` 文件夹放到新电脑的 Codex skills 目录（通常为 `~/.codex/skills/`；Windows 通常在用户目录下的 `.codex/skills/`，设置了 CODEX_HOME 时使用其 skills 子目录）。不要只复制 SKILL.md；已有同名目录时先比较，勿覆盖自定义内容。重新打开会话后可说：
 
-> 使用 project-workflow，把这套能力核对、决策笔记和自动校验接入当前项目，保留原有规则，按真实代码补全功能地图。
+> 使用 project-decision-kit，把这套能力核对、决策笔记和自动校验接入当前项目，保留原有规则，按真实代码补全功能地图。
 
 全局 Skill 用于辅助接入；日常工作依靠项目内 AGENTS.md 和固定版本的笔记 Skill。
 
@@ -47,5 +49,9 @@ python3 -m unittest discover -s scripts/agent-workflow/tests -v
 python3 scripts/agent-workflow/build.py /tmp/agent-workflow-dist
 ```
 
-ZIP 与 SHA256SUMS.txt 是最终交付物；独立标签为 `agent-workflow-v<版本>`，不会触发主应用二进制/桌面/ARM 镜像发布。CI 在 Linux、macOS、Windows 验证后发布附件，不改变应用版本或生产部署。
+ZIP 与 SHA256SUMS.txt 是最终交付物；独立标签为 `project-decision-kit-v<版本>`，不会触发主应用二进制/桌面/ARM 镜像发布。CI 在 Linux、macOS、Windows 验证后发布附件，不改变应用版本或生产部署。
 复用的笔记工具来源及许可说明保存在 payload/write-notes-like-deepseek/UPSTREAM.md。保留上游归属；该固定提交没有独立 LICENSE，不补造许可文本。
+
+## 从 1.0.0 升级
+
+1.0.1 将对外名称、ZIP 和入口 Skill 改为 `project-decision-kit`，项目内 `.agents/workflow.py`、安装清单和规则标记保持兼容。用新包执行 install 即可。若此前已全局安装 `project-workflow` Skill，请检查本地自定义内容后迁移到新名称，避免同时保留重复入口。

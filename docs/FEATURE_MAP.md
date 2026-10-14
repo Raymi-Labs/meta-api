@@ -44,4 +44,4 @@
 
 | 能力 | 入口 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
-| 工作流跨项目迁移 | [迁移包](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
+| 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |

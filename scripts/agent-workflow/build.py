@@ -11,7 +11,7 @@ HERE = Path(__file__).resolve().parent
 def build(output):
     output.mkdir(parents=True, exist_ok=True)
     version = (HERE / 'VERSION').read_text().strip()
-    archive = output / ('agent-workflow-v' + version + '.zip')
+    archive = output / ('project-decision-kit-v' + version + '.zip')
     files = {name: HERE / name for name in ['SKILL.md', 'README.md', 'VERSION', 'CHANGELOG.md', 'workflow.py']}
     for p in sorted((HERE / 'templates').rglob('*')):
         if p.is_file():
@@ -22,7 +22,7 @@ def build(output):
             files['payload/write-notes-like-deepseek/' + p.relative_to(source).as_posix()] = p
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         for name, p in sorted(files.items()):
-            info = zipfile.ZipInfo('project-workflow/' + name, (2026, 10, 15, 0, 0, 0))
+            info = zipfile.ZipInfo('project-decision-kit/' + name, (2026, 10, 15, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             z.writestr(info, p.read_bytes())

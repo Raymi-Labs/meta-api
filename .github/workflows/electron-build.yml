@@ -8,6 +8,7 @@ on:
       - '!*-alpha*' # Ignore alpha tags like v1.0.0-alpha
       - '!cn-tunnel-*' # Published independently by cn-tunnel.yml
       - '!agent-workflow-*' # Published independently by agent-workflow.yml
+      - '!project-decision-kit-*' # Published independently by agent-workflow.yml
   workflow_dispatch:  # Allows manual triggering
 
 jobs:

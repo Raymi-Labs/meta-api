@@ -22,7 +22,7 @@ class WorkflowTest(unittest.TestCase):
         with zipfile.ZipFile(archive) as z:
             self.assertFalse(any('/notes/' in n or '__pycache__' in n for n in z.namelist()))
             z.extractall(self.root / 'unpacked')
-        self.package = self.root / 'unpacked/project-workflow'
+        self.package = self.root / 'unpacked/project-decision-kit'
         self.target = self.root / 'my project'
         self.target.mkdir()
 

@@ -1,4 +1,4 @@
-# Agent Note: 跨项目跨电脑的工作流迁移包
+# Agent Note: 项目能力核对与决策记录工具包
 
 Status: implemented
 
@@ -12,7 +12,7 @@ Status: implemented
 
 ## Existing capabilities and impact
 
-现有能力见[项目流程](2026-09-29-project-decision-notes.md)。既有笔记与本方案部分重叠，保留并互链；本方案只管理迁移和分发，不替换现有项目流程。新增 scripts/agent-workflow 和独立 CI，主应用发布排除工具包标签。
+现有能力见[项目流程](2026-09-29-project-decision-notes.md)。既有笔记与本方案部分重叠，保留并互链；本方案只管理迁移和分发，不替换现有项目流程。新增 scripts/agent-workflow 和独立 CI，主应用发布排除工具包标签。对外名称和分发标识为 project-decision-kit，项目内安装清单、规则标记及校验入口保持兼容。
 
 ## Alternatives considered
 
