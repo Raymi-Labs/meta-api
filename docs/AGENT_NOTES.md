@@ -27,3 +27,7 @@ bun .agents/skills/write-notes-like-deepseek/scripts/build-board.ts --bundle .ag
 CI 在 main 推送和 PR 时运行三项检查：目录/链接、格式/状态、归档哈希与历史基线。归档基线分别使用 push 的 before 或 PR 的 base.sha，需完整 Git 历史。失败显示 CI 失败；是否禁止合并由仓库分支保护配置决定，本次不改变分支保护。
 
 脚本只查结构，不会判断“相关功能是否查全”“备选是否合理”“是否漏写重要决策”。这些必须在方案和审查中提供证据。涉及共享统计时，还要核对相同过滤条件的数据一致性。不要用多写文档替代读代码。
+
+## 跨项目与跨电脑迁移
+
+使用[独立迁移包](../scripts/agent-workflow/README.md)进行安装、预览、冲突检查和升级。迁移包不含本项目业务笔记；已有项目规则与能力地图保留。新电脑克隆已接入的目标仓库并安装 Python/Bun 后即可校验；可选的全局 Codex Skill 仅辅助接入。

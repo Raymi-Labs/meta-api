@@ -5,6 +5,7 @@ on:
     tags:
       - '*'
       - '!cn-tunnel-*' # Published independently by cn-tunnel.yml
+      - '!agent-workflow-*' # Published independently by agent-workflow.yml
   workflow_dispatch:
     inputs:
       tag:
