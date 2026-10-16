@@ -52,4 +52,4 @@
 
 | 能力 | 实现 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
-| Flawless 整机流量与链路监控 | [部署说明](../scripts/relay-monitor/README.md)、[采集](../scripts/relay-monitor/collect.py)、[页面](../scripts/relay-monitor/index.html) | `/relay-monitor/` 独立 HTTPS Basic Auth；vnStat ens3 日/月累计、2秒速率采样、到业务服务器 ICMP；systemd 每分钟采集 | 非应用计费口径；监控起点前无日流量；不自动吞吐压测；旧跳板不在统计中，凭据不入库 |
+| Flawless 整机流量与链路监控 | [部署说明](../scripts/relay-monitor/README.md)、[采集](../scripts/relay-monitor/collect.py)、[页面](../scripts/relay-monitor/index.html) | `/relay-monitor/` 公开只读；vnStat ens3 汇总、24h曲线、30天月预估、到源站 ICMP；每分钟采集 | 明细仅留24h，汇总数字保留；月预估按有效观测窗口折算，非账单；不自动吞吐压测；不输出凭据和请求日志 |
