@@ -45,3 +45,5 @@
 | 能力 | 入口 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
+
+入口运维补充（2026-10-17）：Flawless 承接旧跳板的九个业务虚拟主机和十个域名，保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
