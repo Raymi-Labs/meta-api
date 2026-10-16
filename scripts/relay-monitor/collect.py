@@ -45,31 +45,55 @@ def server_status(cpu):
             'load': list(os.getloadavg()),
             'uptime_seconds': int(float(Path('/proc/uptime').read_text().split()[0]))}
 
+def rolling_usage(rows, created, updated, window, bucket):
+    """Prorate boundary buckets; incomplete days remain usable."""
+    rows = [r for r in rows if r['timestamp'] < updated]
+    start = max(created, updated - window, min((r['timestamp'] for r in rows), default=updated))
+    measured = {'rx': 0.0, 'tx': 0.0}
+    for row in rows:
+        left = max(created, row['timestamp'])
+        right = min(updated, row['timestamp'] + bucket)
+        overlap = max(0, right - max(start, left))
+        if right > left and overlap:
+            for key in measured:
+                measured[key] += row[key] * overlap / (right - left)
+    return {k: round(v) for k, v in measured.items()}, max(0, updated - start)
+
+def month_remaining(updated):
+    current = datetime.fromtimestamp(updated, timezone(timedelta(hours=8)))
+    end = current.replace(year=current.year + (current.month == 12),
+                          month=1 if current.month == 12 else current.month + 1,
+                          day=1, hour=0, minute=0, second=0, microsecond=0)
+    return max(0, int(end.timestamp()) - updated)
+
 def summarize(interface):
-    """Project a 30-day equivalent from measured bytes, never from sampled peaks."""
+    """Keep the 24h card; forecast month end using a rolling 168h mean."""
     if not interface:
         return None
     traffic = interface.get('traffic', {})
     created = interface.get('created', {}).get('timestamp', 0)
     updated = interface.get('updated', {}).get('timestamp', 0)
-    cutoff = max(created, updated - 86400)
-    # Do not charge a whole old bucket to a partially overlapping window.
-    rows = [r for r in traffic.get('fiveminute', [])
-            if r['timestamp'] < updated and
-            (r['timestamp'] >= cutoff or
-             (cutoff == created and r['timestamp'] <= created < r['timestamp'] + 300))]
-    start = max(cutoff, min((r['timestamp'] for r in rows), default=updated))
-    seconds = max(0, updated - start)
-    measured = {k: sum(r[k] for r in rows) for k in ('rx', 'tx')}
-    projection = {k: round(measured[k] * 30 * 86400 / seconds) for k in ('rx', 'tx')} if seconds else None
+    measured, seconds = rolling_usage(traffic.get('fiveminute', []), created, updated, 86400, 300)
+    forecast_rows = traffic.get('hour', [])
+    # Transitional fallback before the daemon persists its first hourly bucket.
+    forecast_measured, forecast_seconds = rolling_usage(
+        forecast_rows or traffic.get('fiveminute', []), created, updated,
+        7 * 86400, 3600 if forecast_rows else 300)
+    projection = {k: round(forecast_measured[k] * 30 * 86400 / forecast_seconds)
+                  for k in ('rx', 'tx')} if forecast_seconds else None
     date = interface.get('updated', {}).get('date', {})
     today = next((r for r in traffic.get('day', []) if r['date'] == date), None)
     month = next((r for r in traffic.get('month', [])
                   if r['date'].get('year') == date.get('year') and r['date'].get('month') == date.get('month')), None)
+    remaining = month_remaining(updated)
+    month_projection = {k: round(month[k] + forecast_measured[k] * remaining / forecast_seconds)
+                        for k in ('rx', 'tx')} if month and forecast_seconds else None
     pair = lambda r: {k: r[k] for k in ('rx', 'tx')} if r else None
     return {'today': pair(today), 'month': pair(month), 'total': pair(traffic.get('total')),
             'recent': measured if seconds else None, 'observed_seconds': seconds,
-            'forecast_30d': projection, 'as_of': updated}
+            'forecast_30d': projection, 'forecast_month': month_projection,
+            'forecast_observed_seconds': forecast_seconds, 'forecast_recent': forecast_measured,
+            'month_remaining_seconds': remaining, 'as_of': updated}
 
 def run():
     ROOT.mkdir(parents=True, exist_ok=True)
