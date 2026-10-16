@@ -24,6 +24,8 @@ import SearchActions from './SearchActions';
 
 const PricingTopSection = memo(
   ({
+    sortOrder,
+    setSortOrder,
     selectedRowKeys,
     copyText,
     handleChange,
@@ -62,6 +64,8 @@ const PricingTopSection = memo(
           <>
             <div className='w-full'>
               <SearchActions
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
                 selectedRowKeys={selectedRowKeys}
                 copyText={copyText}
                 handleChange={handleChange}
@@ -98,6 +102,8 @@ const PricingTopSection = memo(
           </>
         ) : (
           <PricingVendorIntroWithSkeleton
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
             loading={loading}
             filterVendor={filterVendor}
             models={filteredModels}

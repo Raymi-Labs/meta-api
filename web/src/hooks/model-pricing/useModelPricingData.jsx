@@ -17,6 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { sortPricingModels } from '../../helpers/modelPriceSorting';
+import { calculateModelPrice } from '../../helpers/utils';
+
 import { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, copy, showError, showInfo, showSuccess } from '../../helpers';
@@ -131,6 +134,11 @@ export const useModelPricingData = () => {
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [isModalOpenurl, setIsModalOpenurl] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState('all');
+  const [sortOrder, setSortOrder] = useState('default');
+  const changeSortOrder = (value) => {
+    setSortOrder(value);
+    setCurrentPage(1);
+  };
   const [showModelDetail, setShowModelDetail] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
   const [filterGroup, setFilterGroup] = useState('all'); // 用于 Table 的可用分组筛选，"all" 表示不过滤
@@ -319,8 +327,25 @@ export const useModelPricingData = () => {
       );
     }
 
-    return result;
+    return sortPricingModels(
+      result,
+      sortOrder,
+      (record) =>
+        calculateModelPrice({
+          record,
+          selectedGroup,
+          groupRatio,
+          timeRatioMap,
+          tokenUnit: 'M',
+          currency: 'USD',
+          displayPrice: (value) => `$${value}`,
+        }).sortPrices,
+    );
   }, [
+    sortOrder,
+    selectedGroup,
+    groupRatio,
+    timeRatioMap,
     models,
     searchValue,
     filterGroup,
@@ -528,6 +553,8 @@ export const useModelPricingData = () => {
 
   return {
     // 状态
+    sortOrder,
+    setSortOrder: changeSortOrder,
     searchValue,
     setSearchValue,
     selectedRowKeys,

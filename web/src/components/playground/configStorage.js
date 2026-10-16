@@ -22,19 +22,49 @@ import {
   DEFAULT_CONFIG,
 } from '../../constants/playground.constants';
 
-const MESSAGES_STORAGE_KEY = 'playground_messages';
+export const getPlaygroundOwner = () => {
+  try {
+    const id = JSON.parse(localStorage.getItem('user') || 'null')?.id;
+    return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
+  } catch {
+    return null;
+  }
+};
+
+// A delayed callback must never write an old account's data into the new account.
+const accountStorage = (owner) => {
+  const active = () => owner !== null && owner === getPlaygroundOwner();
+  const key = (name) => `${name}:user:${owner}`;
+  return {
+    getItem: (name) => (active() ? localStorage.getItem(key(name)) : null),
+    setItem: (name, value) => {
+      if (active()) localStorage.setItem(key(name), value);
+    },
+    removeItem: (name) => {
+      if (active()) localStorage.removeItem(key(name));
+    },
+  };
+};
+
+const clearLegacyStorage = () => {
+  localStorage.removeItem(STORAGE_KEYS.CONFIG);
+  localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+};
 
 /**
  * 保存配置到 localStorage
  * @param {Object} config - 要保存的配置对象
  */
-export const saveConfig = (config) => {
+export const saveConfig = (config, owner = getPlaygroundOwner()) => {
   try {
     const configToSave = {
       ...config,
       timestamp: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(configToSave));
+    accountStorage(owner).setItem(
+      STORAGE_KEYS.CONFIG,
+      JSON.stringify(configToSave),
+    );
   } catch (error) {
     console.error('保存配置失败:', error);
   }
@@ -44,13 +74,16 @@ export const saveConfig = (config) => {
  * 保存消息到 localStorage
  * @param {Array} messages - 要保存的消息数组
  */
-export const saveMessages = (messages) => {
+export const saveMessages = (messages, owner = getPlaygroundOwner()) => {
   try {
     const messagesToSave = {
       messages,
       timestamp: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messagesToSave));
+    accountStorage(owner).setItem(
+      STORAGE_KEYS.MESSAGES,
+      JSON.stringify(messagesToSave),
+    );
   } catch (error) {
     console.error('保存消息失败:', error);
   }
@@ -60,9 +93,10 @@ export const saveMessages = (messages) => {
  * 从 localStorage 加载配置
  * @returns {Object} 配置对象，如果不存在则返回默认配置
  */
-export const loadConfig = () => {
+export const loadConfig = (owner = getPlaygroundOwner()) => {
   try {
-    const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+    clearLegacyStorage();
+    const savedConfig = accountStorage(owner).getItem(STORAGE_KEYS.CONFIG);
     if (savedConfig) {
       const parsedConfig = JSON.parse(savedConfig);
 
@@ -96,9 +130,9 @@ export const loadConfig = () => {
  * 从 localStorage 加载消息
  * @returns {Array} 消息数组，如果不存在则返回 null
  */
-export const loadMessages = () => {
+export const loadMessages = (owner = getPlaygroundOwner()) => {
   try {
-    const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+    const savedMessages = accountStorage(owner).getItem(STORAGE_KEYS.MESSAGES);
     if (savedMessages) {
       const parsedMessages = JSON.parse(savedMessages);
       return parsedMessages.messages || null;
@@ -113,10 +147,10 @@ export const loadMessages = () => {
 /**
  * 清除保存的配置
  */
-export const clearConfig = () => {
+export const clearConfig = (owner = getPlaygroundOwner()) => {
   try {
-    localStorage.removeItem(STORAGE_KEYS.CONFIG);
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES); // 同时清除消息
+    accountStorage(owner).removeItem(STORAGE_KEYS.CONFIG);
+    accountStorage(owner).removeItem(STORAGE_KEYS.MESSAGES); // 同时清除消息
   } catch (error) {
     console.error('清除配置失败:', error);
   }
@@ -125,9 +159,9 @@ export const clearConfig = () => {
 /**
  * 清除保存的消息
  */
-export const clearMessages = () => {
+export const clearMessages = (owner = getPlaygroundOwner()) => {
   try {
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    accountStorage(owner).removeItem(STORAGE_KEYS.MESSAGES);
   } catch (error) {
     console.error('清除消息失败:', error);
   }
@@ -137,9 +171,9 @@ export const clearMessages = () => {
  * 检查是否有保存的配置
  * @returns {boolean} 是否存在保存的配置
  */
-export const hasStoredConfig = () => {
+export const hasStoredConfig = (owner = getPlaygroundOwner()) => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.CONFIG) !== null;
+    return accountStorage(owner).getItem(STORAGE_KEYS.CONFIG) !== null;
   } catch (error) {
     console.error('检查配置失败:', error);
     return false;
@@ -150,9 +184,9 @@ export const hasStoredConfig = () => {
  * 获取配置的最后保存时间
  * @returns {string|null} 最后保存时间的 ISO 字符串
  */
-export const getConfigTimestamp = () => {
+export const getConfigTimestamp = (owner = getPlaygroundOwner()) => {
   try {
-    const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+    const savedConfig = accountStorage(owner).getItem(STORAGE_KEYS.CONFIG);
     if (savedConfig) {
       const parsedConfig = JSON.parse(savedConfig);
       return parsedConfig.timestamp || null;
@@ -197,22 +231,17 @@ export const exportConfig = (config, messages = null) => {
  * @returns {Promise<Object>} 导入的配置对象
  */
 export const importConfig = (file) => {
+  const owner = getPlaygroundOwner();
   return new Promise((resolve, reject) => {
     try {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
+          if (!owner || owner !== getPlaygroundOwner())
+            throw new Error('登录状态已变化，请刷新页面');
           const importedConfig = JSON.parse(e.target.result);
 
           if (importedConfig.inputs && importedConfig.parameterEnabled) {
-            // 如果导入的配置包含消息，也一起导入
-            if (
-              importedConfig.messages &&
-              Array.isArray(importedConfig.messages)
-            ) {
-              saveMessages(importedConfig.messages);
-            }
-
             resolve(importedConfig);
           } else {
             reject(new Error('配置文件格式无效'));

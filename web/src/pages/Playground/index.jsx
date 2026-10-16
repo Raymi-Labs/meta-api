@@ -17,10 +17,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useCallback, useRef } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Layout, Toast, Modal } from '@douyinfe/semi-ui';
+import { Layout, Toast, Modal, Banner, Button } from '@douyinfe/semi-ui';
+
+import { getPlaygroundOwner } from '../../components/playground/configStorage';
 
 // Context
 import { UserContext } from '../../context/User';
@@ -77,14 +85,14 @@ const generateAvatarDataUrl = (username) => {
   return `data:image/svg+xml;base64,${encodeToBase64(svg)}`;
 };
 
-const Playground = () => {
+const AccountPlayground = ({ owner }) => {
   const { t } = useTranslation();
   const [userState] = useContext(UserContext);
   const isMobile = useIsMobile();
   const styleState = { isMobile };
   const [searchParams] = useSearchParams();
 
-  const state = usePlaygroundState();
+  const state = usePlaygroundState(owner);
   const {
     inputs,
     parameterEnabled,
@@ -564,6 +572,34 @@ const Playground = () => {
       </div>
     </PlaygroundProvider>
   );
+};
+
+const Playground = () => {
+  const [userState] = useContext(UserContext);
+  const { t } = useTranslation();
+  const [, refreshIdentity] = useState(0);
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === 'user' || event.key === null)
+        refreshIdentity((value) => value + 1);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+  const owner = userState?.user?.id ? String(userState.user.id) : null;
+  if (!owner || owner !== getPlaygroundOwner()) {
+    return (
+      <Banner
+        type='warning'
+        closeIcon={null}
+        description={t('登录状态已变化，请刷新页面')}
+        fullMode={false}
+      >
+        <Button onClick={() => window.location.reload()}>{t('刷新')}</Button>
+      </Banner>
+    );
+  }
+  return <AccountPlayground key={owner} owner={owner} />;
 };
 
 export default Playground;

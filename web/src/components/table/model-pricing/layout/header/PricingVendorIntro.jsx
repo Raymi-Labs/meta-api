@@ -138,6 +138,8 @@ const PricingVendorIntro = memo(
     models = [],
     allModels = [],
     t,
+    sortOrder,
+    setSortOrder,
     selectedRowKeys = [],
     copyText,
     handleChange,
@@ -279,6 +281,8 @@ const PricingVendorIntro = memo(
     const renderSearchActions = useCallback(
       () => (
         <SearchActions
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           selectedRowKeys={selectedRowKeys}
           copyText={copyText}
           handleChange={handleChange}
@@ -307,6 +311,8 @@ const PricingVendorIntro = memo(
         />
       ),
       [
+        sortOrder,
+        setSortOrder,
         selectedRowKeys,
         copyText,
         handleChange,

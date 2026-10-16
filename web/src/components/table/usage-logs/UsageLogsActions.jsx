@@ -33,6 +33,8 @@ function formatPercent(value) {
 }
 
 const LogsActions = ({
+  exporting,
+  exportLogs,
   stat,
   statError,
   loadingStat,
@@ -128,7 +130,16 @@ const LogsActions = ({
         )}
       </Skeleton>
 
-      <div className='flex items-center gap-2 self-end md:self-auto'>
+      <div className='flex flex-wrap items-center gap-2 self-end md:self-auto'>
+        <Button
+          type='primary'
+          size='small'
+          loading={exporting}
+          disabled={exporting}
+          onClick={exportLogs}
+        >
+          {t('导出日志')}
+        </Button>
         {isAdminUser && (
           <Button type='tertiary' size='small' onClick={openGroupSummary}>
             {t('分组汇总')}

@@ -17,12 +17,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { pricingSortOptions } from '../../../../../helpers/modelPriceSorting';
+
 import React, { memo, useCallback } from 'react';
 import { Input, Button, Switch, Select, Divider } from '@douyinfe/semi-ui';
 import { IconSearch, IconCopy, IconFilter } from '@douyinfe/semi-icons';
 
 const SearchActions = memo(
   ({
+    sortOrder,
+    setSortOrder,
     selectedRowKeys = [],
     copyText,
     handleChange,
@@ -80,8 +84,8 @@ const SearchActions = memo(
     );
 
     return (
-      <div className='flex items-center gap-2 w-full'>
-        <div className='flex-1'>
+      <div className='flex flex-wrap items-center gap-2 w-full'>
+        <div className='flex-1 min-w-[120px]'>
           <Input
             prefix={<IconSearch />}
             placeholder={t('模糊搜索模型名称')}
@@ -92,6 +96,15 @@ const SearchActions = memo(
             showClear
           />
         </div>
+
+        <Select
+          aria-label={t('价格排序')}
+          value={sortOrder}
+          onChange={setSortOrder}
+          style={{ width: isMobile ? '100%' : 180 }}
+          optionList={pricingSortOptions(t)}
+          title={t('动态或不适用的价格排在末尾')}
+        />
 
         <Button
           theme='outline'
@@ -133,7 +146,9 @@ const SearchActions = memo(
               <Select
                 value={selectedPlanId}
                 onChange={setSelectedPlanId}
-                placeholder={hasAvailablePlans ? t('选择套餐') : t('暂无可用套餐')}
+                placeholder={
+                  hasAvailablePlans ? t('选择套餐') : t('暂无可用套餐')
+                }
                 style={{ width: 180 }}
                 disabled={!hasAvailablePlans}
                 optionList={availablePlans.map((p) => ({

@@ -4,6 +4,10 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| 分组独立限流 | [中间件](../middleware/model-rate-limit.go) | 有独立限额的分组按用户与分组计数；未配置组共享用户全局限额，内存与 Redis 一致 | 总数与成功预占共用范围；保留失败释放、流式成功判定；独立组升级时首窗口重新计数 |
+| Playground 账户数据隔离 | [存储](../web/src/components/playground/configStorage.js)、[状态](../web/src/hooks/playground/usePlaygroundState.js)、[页面](../web/src/pages/Playground/index.jsx) | 配置与消息按账户 ID 存储；身份变化重建页面、停止流连接，延迟回调绑定原账户 | 未登录不持久化；旧共用缓存因无归属而清理；图片工作台独立应用不在本次范围 |
+| 使用日志 CSV 导出 | [入口](../web/src/components/table/usage-logs/UsageLogsActions.jsx)、[controller](../controller/log_export.go)、[游标读取](../model/log_export.go) | 管理员 `/api/log/export`、本人 `/api/log/self/export`；共用列表筛选、普通用户脱敏；UTC 时间、原始 quota 单位 | 明确时间范围且最多 31 天/10000 条/32 MB，超限失败不截断；完成临时文件后交付；同用户互斥；不限制既有查询与看板 |
+| 模型广场价格排序 | [排序](../web/src/helpers/modelPriceSorting.js)、[价格来源](../web/src/helpers/utils.jsx)、[数据](../web/src/hooks/model-pricing/useModelPricingData.jsx) | 输入/输出/按次价格升降序；复用可见分组及时段倍率，筛选后分页前排序；卡片/表格共用 | 零价有效；动态表达式、小时计费及不适用价格排尾；不改计费、默认顺序与分组健康筛选 |
 | OpenCode 会话头默认转发 | [转发入口](../relay/channel/api_request.go)、[目标识别与会话头](../relay/channel/opencode_session.go)、[说明](channel/opencode_session.md) | 官方 HTTPS opencode.ai 的 /zen/v1/、/zen/go/v1/ 实际出站地址；Chat/Messages/Responses 流式及非流式；后台渠道测试独立 UUID | 不依赖渠道 ID、名称或模型；显式请求头覆盖优先；普通请求缺头不合成会话；自定义代理沿用显式配置；重定向离开官方 API 范围时移除会话头，不保证多模态能力 |
 | 在线文档与动态请求样例 | [页面](../web/src/pages/Docs/index.jsx)、[配置刷新](../web/src/pages/Docs/useRuntimeDocs.js)、[动态渲染](../web/src/pages/Docs/runtimeDocs.js)、[源文档](NAN_USAGE.md) | `/api/status` 服务器地址、经 TryUserAuth 的 `/api/pricing`；模型启用组与当前可选组取交集，按声明协议生成样例；可见时每分钟/聚焦刷新 | 不暴露渠道配置，不推断未声明的协议/工具能力；读取失败显示重试、身份切换清除旧数据；令牌独立限制仍以 `/v1/models` 为准；文档无套餐购买指引，历史账单保留 |
 | 网页与静态文件限流 | [网页路由](../router/web-router.go)、[文件判定与限流](../middleware/rate-limit.go)、[配置](../.env.example) | 嵌入构建目录中的真实非 HTML 文件 GET/HEAD 使用 GS，默认关闭；页面 GW 默认 60 次/180 秒 | HTML、目录、缺失文件和其他方法仍受 GW 保护；API 限流独立；启用静态限流用 GLOBAL_STATIC_RATE_LIMIT_ENABLE / GLOBAL_STATIC_RATE_LIMIT / GLOBAL_STATIC_RATE_LIMIT_DURATION |

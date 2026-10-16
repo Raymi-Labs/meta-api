@@ -41,6 +41,10 @@ import {
 } from '../../helpers';
 import { getRequestFailureDetails } from '../../helpers/requestFailure';
 import { getResponseModelInfo } from '../../helpers/responseModel';
+import {
+  buildUsageLogQuery,
+  readLogExportError,
+} from '../../helpers/usageLogExport';
 import { ITEMS_PER_PAGE } from '../../constants';
 import { useTableCompactMode } from '../common/useTableCompactMode';
 
@@ -70,6 +74,8 @@ export const useLogsData = () => {
   const [expandData, setExpandData] = useState({});
   const [showStat, setShowStat] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportInFlight = useRef(false);
   const [loadingStat, setLoadingStat] = useState(false);
   const [activePage, setActivePage] = useState(1);
   const [logCount, setLogCount] = useState(0);
@@ -963,39 +969,14 @@ export const useLogsData = () => {
     setLogs([]);
     setLogCount(0);
 
-    const {
-      username,
-      token_name,
-      model_name,
-      startTimestamp,
-      endTimestamp,
-      channel,
-      channel_ids,
-      channel_keyword,
-      group_vendor,
-      group,
-      request_id,
-      logType: currentLogType,
-    } = normalizeLogQueryValues(customLogType);
-
     const queryParams = {
+      ...buildUsageLogQuery(
+        normalizeLogQueryValues(customLogType),
+        isAdminUser,
+      ),
       p: startIdx,
       page_size: pageSize,
-      type: currentLogType,
-      token_name,
-      model_name,
-      start_timestamp: startTimestamp,
-      end_timestamp: endTimestamp,
-      group,
-      request_id,
     };
-    if (isAdminUser) {
-      queryParams.username = username;
-      queryParams.channel = channel;
-      queryParams.channel_ids = channel_ids;
-      queryParams.channel_keyword = channel_keyword;
-      queryParams.group_vendor = group_vendor;
-    }
 
     const url = `${
       isAdminUser ? '/api/log/' : '/api/log/self/'
@@ -1026,6 +1007,53 @@ export const useLogsData = () => {
         setLoading(false);
       }
     }
+  };
+
+  const exportLogs = () => {
+    const query = buildUsageLogQuery(normalizeLogQueryValues(), isAdminUser);
+    if (
+      !query.start_timestamp ||
+      query.end_timestamp < query.start_timestamp ||
+      query.end_timestamp - query.start_timestamp > 31 * 86400
+    ) {
+      showError(t('请选择有效时间范围，单次导出最多 31 天'));
+      return;
+    }
+    Modal.confirm({
+      title: t('导出日志'),
+      content: t(
+        '按当前筛选导出全部匹配日志，最多 31 天、10000 条；额度保留 quota 单位，时间为 UTC。',
+      ),
+      onOk: async () => {
+        if (exportInFlight.current) return;
+        exportInFlight.current = true;
+        setExporting(true);
+        try {
+          const response = await API.get(
+            `${isAdminUser ? '/api/log/export' : '/api/log/self/export'}?${buildQueryString(query)}`,
+            { responseType: 'blob', timeout: 60000, skipErrorHandler: true },
+          );
+          if (!String(response.headers['content-type']).includes('text/csv')) {
+            throw { response };
+          }
+          const url = URL.createObjectURL(response.data);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `usage-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+          showError(
+            t(
+              await readLogExportError(error, '导出失败，请缩小筛选范围后重试'),
+            ),
+          );
+        } finally {
+          exportInFlight.current = false;
+          setExporting(false);
+        }
+      },
+    });
   };
 
   // Page handlers
@@ -1107,6 +1135,8 @@ export const useLogsData = () => {
   };
 
   return {
+    exporting,
+    exportLogs,
     fromChannelUsage: Boolean(usageLink),
     groupSummaryVisible,
     setGroupSummaryVisible,

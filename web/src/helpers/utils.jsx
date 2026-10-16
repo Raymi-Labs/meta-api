@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { getModelSortPrices } from './modelPriceSorting';
+
 import { Toast, Pagination } from '@douyinfe/semi-ui';
 import {
   toastConstants,
@@ -731,6 +733,7 @@ export const calculateModelPrice = ({
   }
   const timeRatio = usedTimeRatioInfo.ratio;
   const effectiveBillingRatio = usedGroupRatio * timeRatio;
+  const sortPrices = getModelSortPrices(record, effectiveBillingRatio);
 
   // 2. 动态计费（tiered_expr）
   if (record.billing_mode === 'tiered_expr' && record.billing_expr) {
@@ -742,6 +745,7 @@ export const calculateModelPrice = ({
       timeRatio,
       timeRatioInfo: usedTimeRatioInfo,
       effectiveBillingRatio,
+      sortPrices,
     };
   }
 
@@ -777,6 +781,7 @@ export const calculateModelPrice = ({
         timeRatio,
         timeRatioInfo: usedTimeRatioInfo,
         effectiveBillingRatio,
+        sortPrices,
       };
     }
 
@@ -842,6 +847,7 @@ export const calculateModelPrice = ({
       timeRatio,
       timeRatioInfo: usedTimeRatioInfo,
       effectiveBillingRatio,
+      sortPrices,
     };
   }
 
@@ -859,6 +865,7 @@ export const calculateModelPrice = ({
       timeRatio,
       timeRatioInfo: usedTimeRatioInfo,
       effectiveBillingRatio,
+      sortPrices,
     };
   }
 
@@ -875,6 +882,7 @@ export const calculateModelPrice = ({
       timeRatio,
       timeRatioInfo: usedTimeRatioInfo,
       effectiveBillingRatio,
+      sortPrices,
     };
   }
 

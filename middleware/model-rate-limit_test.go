@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/QuantumNous/new-api/common/limiter"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/alicebob/miniredis/v2"
@@ -8,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -25,9 +27,9 @@ func TestModelSuccessRateLimitReleasesHTTPAndStreamFailures(t *testing.T) {
 		modelSuccessWindow = limiter.SuccessWindow{}
 		r := gin.New()
 		r.Use(func(c *gin.Context) { c.Set("id", 919); c.Next() })
-		handler := memoryRateLimitHandler(int64(60), 0, 1)
+		handler := memoryRateLimitHandler("919", int64(60), 0, 1)
 		if useRedis {
-			handler = redisRateLimitHandler(60, 0, 1)
+			handler = redisRateLimitHandler("919", 60, 0, 1)
 		}
 		r.Use(handler)
 		r.GET("/fail", func(c *gin.Context) { c.Status(502) })
@@ -98,5 +100,85 @@ func TestModelRequestRateLimitMemory_AllowsZeroSuccessLimit(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Fatalf("request %d returned status %d, want %d", i+1, recorder.Code, http.StatusOK)
 		}
+	}
+}
+
+func TestModelRateLimitGroupScopes(t *testing.T) {
+	for _, useRedis := range []bool{false, true} {
+		for _, successOnly := range []bool{false, true} {
+			t.Run(fmt.Sprintf("redis=%v/success=%v", useRedis, successOnly), func(t *testing.T) {
+				oldRedis, oldDB := common.RedisEnabled, common.RDB
+				oldEnabled, oldDuration := setting.ModelRequestRateLimitEnabled, setting.ModelRequestRateLimitDurationMinutes
+				oldCount, oldSuccess, oldGroups := setting.ModelRequestRateLimitCount, setting.ModelRequestRateLimitSuccessCount, setting.ModelRequestRateLimitGroup
+				t.Cleanup(func() {
+					common.RedisEnabled, common.RDB = oldRedis, oldDB
+					setting.ModelRequestRateLimitEnabled, setting.ModelRequestRateLimitDurationMinutes = oldEnabled, oldDuration
+					setting.ModelRequestRateLimitCount, setting.ModelRequestRateLimitSuccessCount, setting.ModelRequestRateLimitGroup = oldCount, oldSuccess, oldGroups
+				})
+				srv := miniredis.RunT(t)
+				client := redis.NewClient(&redis.Options{Addr: srv.Addr()})
+				defer client.Close()
+				common.RedisEnabled, common.RDB = useRedis, client
+				modelSuccessWindow = limiter.SuccessWindow{}
+				inMemoryRateLimiter = common.InMemoryRateLimiter{}
+				setting.ModelRequestRateLimitEnabled, setting.ModelRequestRateLimitDurationMinutes = true, 1
+				limit := [2]int{1, 0}
+				if successOnly {
+					limit = [2]int{0, 1}
+				}
+				setting.ModelRequestRateLimitCount, setting.ModelRequestRateLimitSuccessCount = limit[0], limit[1]
+				setting.ModelRequestRateLimitGroup = map[string][2]int{"small": limit, "large": {limit[0] * 3, limit[1] * 3}}
+				r := gin.New()
+				r.Use(func(c *gin.Context) {
+					id, _ := strconv.Atoi(c.Query("user"))
+					c.Set("id", id)
+					common.SetContextKey(c, constant.ContextKeyUserGroup, "small")
+					common.SetContextKey(c, constant.ContextKeyTokenGroup, c.Query("group"))
+				}, ModelRequestRateLimit())
+				r.GET("/", func(c *gin.Context) { c.Status(200) })
+				request := func(user, group string, want int) {
+					w := httptest.NewRecorder()
+					r.ServeHTTP(w, httptest.NewRequest("GET", "/?user="+user+"&group="+group, nil))
+					require.Equal(t, want, w.Code, "user=%s group=%s", user, group)
+				}
+				request("1", "large", 200)
+				request("1", "large", 200)
+				request("1", "small", 200)
+				request("1", "small", 429)
+				request("1", "large", 200)
+				request("1", "large", 429)
+				request("2", "small", 200)
+				request("1", "default-a", 200)
+				request("1", "default-b", 429)
+				request("2", "default-b", 200)
+			})
+		}
+	}
+}
+
+func TestModelSuccessReservationGroupIsolation(t *testing.T) {
+	for _, useRedis := range []bool{false, true} {
+		srv := miniredis.RunT(t)
+		client := redis.NewClient(&redis.Options{Addr: srv.Addr()})
+		old := common.RDB
+		common.RDB = client
+		modelSuccessWindow = limiter.SuccessWindow{}
+		finishA, ok, err := reserveModelSuccess("user:group:A", 1, 60, useRedis)
+		require.NoError(t, err)
+		require.True(t, ok)
+		_, ok, err = reserveModelSuccess("user:group:A", 1, 60, useRedis)
+		require.NoError(t, err)
+		require.False(t, ok, "in-flight request must reserve capacity")
+		finishB, ok, err := reserveModelSuccess("user:group:B", 1, 60, useRedis)
+		require.NoError(t, err)
+		require.True(t, ok)
+		finishA(false)
+		finishA, ok, err = reserveModelSuccess("user:group:A", 1, 60, useRedis)
+		require.NoError(t, err)
+		require.True(t, ok, "failed request releases its own reservation")
+		finishA(true)
+		finishB(false)
+		common.RDB = old
+		client.Close()
 	}
 }

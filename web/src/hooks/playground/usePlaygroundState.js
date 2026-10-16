@@ -31,16 +31,18 @@ import {
   saveConfig,
   loadMessages,
   saveMessages,
+  clearMessages,
 } from '../../components/playground/configStorage';
 import { processIncompleteThinkTags } from '../../helpers';
 
-export const usePlaygroundState = () => {
+export const usePlaygroundState = (owner) => {
   const { t } = useTranslation();
+  const activeRef = useRef(true);
 
   // 使用惰性初始化，确保只在组件首次挂载时加载配置和消息
-  const [savedConfig] = useState(() => loadConfig());
+  const [savedConfig] = useState(() => loadConfig(owner));
   const [initialMessages] = useState(() => {
-    const loaded = loadMessages();
+    const loaded = loadMessages(owner);
     // 检查是否是旧的中文默认消息，如果是则清除
     if (
       loaded &&
@@ -55,7 +57,7 @@ export const usePlaygroundState = () => {
 
       if (hasOldChinese) {
         // 清除旧的默认消息
-        localStorage.removeItem('playground_messages');
+        clearMessages(owner);
         return null;
       }
     }
@@ -135,9 +137,9 @@ export const usePlaygroundState = () => {
   const saveMessagesImmediately = useCallback(
     (messagesToSave) => {
       // 如果提供了参数，使用参数；否则使用当前状态
-      saveMessages(messagesToSave || message);
+      if (activeRef.current) saveMessages(messagesToSave || message, owner);
     },
-    [message],
+    [message, owner],
   );
 
   // 配置保存
@@ -154,9 +156,10 @@ export const usePlaygroundState = () => {
         customRequestMode,
         customRequestBody,
       };
-      saveConfig(configToSave);
+      if (activeRef.current) saveConfig(configToSave, owner);
     }, 1000);
   }, [
+    owner,
     inputs,
     parameterEnabled,
     showDebugPanel,
@@ -165,30 +168,35 @@ export const usePlaygroundState = () => {
   ]);
 
   // 配置导入/重置
-  const handleConfigImport = useCallback((importedConfig) => {
-    if (importedConfig.inputs) {
-      setInputs((prev) => ({ ...prev, ...importedConfig.inputs }));
-    }
-    if (importedConfig.parameterEnabled) {
-      setParameterEnabled((prev) => ({
-        ...prev,
-        ...importedConfig.parameterEnabled,
-      }));
-    }
-    if (typeof importedConfig.showDebugPanel === 'boolean') {
-      setShowDebugPanel(importedConfig.showDebugPanel);
-    }
-    if (importedConfig.customRequestMode) {
-      setCustomRequestMode(importedConfig.customRequestMode);
-    }
-    if (importedConfig.customRequestBody) {
-      setCustomRequestBody(importedConfig.customRequestBody);
-    }
-    // 如果导入的配置包含消息，也恢复消息
-    if (importedConfig.messages && Array.isArray(importedConfig.messages)) {
-      setMessage(importedConfig.messages);
-    }
-  }, []);
+  const handleConfigImport = useCallback(
+    (importedConfig) => {
+      if (!activeRef.current) return;
+      if (importedConfig.inputs) {
+        setInputs((prev) => ({ ...prev, ...importedConfig.inputs }));
+      }
+      if (importedConfig.parameterEnabled) {
+        setParameterEnabled((prev) => ({
+          ...prev,
+          ...importedConfig.parameterEnabled,
+        }));
+      }
+      if (typeof importedConfig.showDebugPanel === 'boolean') {
+        setShowDebugPanel(importedConfig.showDebugPanel);
+      }
+      if (importedConfig.customRequestMode) {
+        setCustomRequestMode(importedConfig.customRequestMode);
+      }
+      if (importedConfig.customRequestBody) {
+        setCustomRequestBody(importedConfig.customRequestBody);
+      }
+      // 如果导入的配置包含消息，也恢复消息
+      if (importedConfig.messages && Array.isArray(importedConfig.messages)) {
+        setMessage(importedConfig.messages);
+        saveMessages(importedConfig.messages, owner);
+      }
+    },
+    [owner],
+  );
 
   const handleConfigReset = useCallback((options = {}) => {
     const { resetMessages = false } = options;
@@ -210,7 +218,11 @@ export const usePlaygroundState = () => {
 
   // 清理定时器
   useEffect(() => {
+    activeRef.current = true;
     return () => {
+      activeRef.current = false;
+      sseSourceRef.current?.close?.();
+      sseSourceRef.current?.abort?.();
       if (saveConfigTimeoutRef.current) {
         clearTimeout(saveConfigTimeoutRef.current);
       }
