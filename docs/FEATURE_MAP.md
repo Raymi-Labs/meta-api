@@ -1,6 +1,6 @@
 # 功能地图
 
-核对日期：2026-10-13。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-17。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
@@ -11,6 +11,7 @@
 | 用户角色与出站 TLS 隔离 | [用户写入](../controller/user.go)、[HTTP 客户端](../service/http_client.go)、[模型同步](../controller/model_sync.go) | 管理员创建/更新校验已有角色枚举及权限层级；relay、CRS、代理、模型/倍率同步各自克隆 TLS 配置 | 不新增角色、认证步骤或数据库字段，不更改证书校验开关与超时默认值 |
 | 易支付签名安全 | [充值](../controller/topup.go)、[套餐](../controller/subscription_payment_epay.go)、[接入说明](EPAY_USDT.md) | go-epay 0.0.5 拒绝分隔符歧义且不改写验签输入；通知/返回共用既有金额和幂等校验 | 套餐名称只在网关展示时转换 ASCII &；不改原标题、金额和历史订单，不以验签通过代替业务金额校验 |
 | 模型广场：供应商下筛选项可见性 | [桌面侧栏](../web/src/components/table/model-pricing/layout/PricingSidebar.jsx)、[移动筛选](../web/src/components/table/model-pricing/modal/components/FilterModalContent.jsx)、[计数](../web/src/hooks/model-pricing/usePricingFilterCounts.js) | `/api/pricing` 经 TryUserAuth → GetPricing；复用角色可见模型、usable_group 和 enable_groups 计算零匹配项 | 选供应商后隐藏未选中的不可用分组、标签、计费及端点；保留已选项与全部入口；不改变权限、计费、模型数据或公共组件默认行为 |
+| 模型广场：分组健康筛选 | [概览](../web/src/components/table/model-pricing/view/GroupHealthOverview.jsx)、[可见性规则](../web/src/components/group-health/healthUtils.js)、[统计接口](../controller/group_health.go) | 已登录 `/api/health/groups` 与 `/api/pricing` 的可见模型、enable_groups、usable_group；供应商/标签/计费/端点/搜索共用 filteredModels 关联分组 | 共享组保留，空结果不回退全量；汇总仍是整组指标，具体模型沿用 model 查询；未筛选及具体模型保留故障样本，无权限与 auto 不展示，不按组名猜供应商 |
 | Claude缓存时长计费与展示 | [组成规则](../dto/cache_creation.go)、[原生解析](../relay/channel/claude/usage.go)、[普通计算](../service/claude_cache_billing.go)、[阶梯规范化](../service/tiered_settle.go)、[日志展示](../web/src/helpers/cacheCreation.js)、[说明](CLAUDE_CACHE_BILLING.md) | Messages/Chat原生Claude语义；普通及阶梯共享总量/5m/1h/未细分组成；option只读TTL元数据、pricing派生1h价 | 不改价格/余额/路由；明确0与缺失区分，冲突拒绝成功扣费；缓存only保留；旧日志按当时记录解释；上游不报TTL时不造1h数据，部署/真实供应商需另验 |
 | 令牌管理：当前分组倍率 | [列表列](../web/src/components/table/tokens/TokensColumnDefs.jsx)、[只读响应](../controller/token_list_ratio.go)、[列表/搜索](../controller/token.go)、[倍率服务](../service/group.go) | 当前用户 `/api/token/`、`/api/token/search`；`group_ratio` + `group_ratio_status`，沿用用户可用分组和专属倍率覆盖；空组继承用户分组 | 每页最多读取一次用户分组；零倍率有效，auto 动态，未知/无权/旧后端显示 —；桌面与移动端共用；不写数据库、不修改扣费/路由，未含模型价格和时间倍率 |
 | 渠道非流式响应头等待 | [渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)、[设置校验](../dto/channel_settings.go)、[客户端覆盖](../service/http_client_header_override.go)、[转发入口](../relay/channel/api_request.go)、[说明](CHANNEL_NONSTREAM_TIMEOUT.md) | 管理员渠道接口，复用 setting JSON；0继承，1—600秒；消费/失败管理员日志记录实际客户端时限 | 仅非流式文本请求；流式/图片不变；保留代理、总时限及取消；有界连接池缓存；不改重试/计费、不自动配置生产渠道 |

@@ -36,6 +36,11 @@ const GroupHealthOverview = ({
   usableGroup = {},
   groupRatio = {},
   filterGroup = 'all',
+  filterVendor = 'all',
+  filterTag = 'all',
+  filterQuotaType = 'all',
+  filterEndpointType = 'all',
+  searchValue = '',
   loading: pricingLoading,
   t,
 }) => {
@@ -55,6 +60,12 @@ const GroupHealthOverview = ({
     usableGroup,
     filterGroup,
     exactModel: Boolean(currentModel),
+    filterByModels:
+      filterVendor !== 'all' ||
+      filterTag !== 'all' ||
+      filterQuotaType !== 'all' ||
+      filterEndpointType !== 'all' ||
+      searchValue.length > 0,
   });
 
   return (

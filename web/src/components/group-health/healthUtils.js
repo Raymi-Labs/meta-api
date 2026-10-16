@@ -40,13 +40,14 @@ export function resolveGroupHealthMetric(stats, group = '') {
   return 'ttft';
 }
 
-/** Keep outages visible even when pricing no longer lists an enabled channel. */
+/** Preserve outages in unfiltered/exact-model data, never in unrelated aggregates. */
 export function selectHealthGroups({
   groups = [],
   models = [],
   usableGroup = {},
   filterGroup = 'all',
   exactModel = false,
+  filterByModels = false,
 }) {
   const enabledGroups = new Set(
     models.flatMap((model) => model.enable_groups || []),
@@ -55,7 +56,9 @@ export function selectHealthGroups({
     ({ group, request_count: requestCount }) =>
       group !== 'auto' &&
       Object.prototype.hasOwnProperty.call(usableGroup || {}, group) &&
-      (!exactModel || enabledGroups.has(group) || Number(requestCount) > 0) &&
+      ((!exactModel && !filterByModels) ||
+        enabledGroups.has(group) ||
+        (exactModel && Number(requestCount) > 0)) &&
       (filterGroup === 'all' || group === filterGroup),
   );
 }

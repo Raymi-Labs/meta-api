@@ -59,15 +59,53 @@ const pricing = {
   })),
 };
 
+const fixtureUser = {
+  id: 7,
+  username: 'health-fixture',
+  role: 1,
+  group: 'user',
+};
+const healthGroups = [
+  'Claude',
+  'GPT',
+  'Shared',
+  'Empty',
+  'Forbidden',
+  'auto',
+].map((group) => ({
+  group,
+  request_count: 100,
+  success_count: 97,
+  failure_count: 3,
+  success_rate: 97,
+  avg_ttft_ms: 1500,
+  ttft_count: 97,
+  cache_hit_rate: 50,
+  cache_sample_count: 97,
+  series: Array.from({ length: 24 }, (_, i) => ({
+    ts: 1792180800 + i * 3600,
+    request_count: 100,
+    success_rate: 97,
+  })),
+}));
+
 try {
   for (const mobile of [false, true]) {
     const page = await browser.newPage();
     const errors = [];
+    let failHealth = false;
+    const healthQueries = [];
     page.on('pageerror', (err) => errors.push(err.message));
     await page.setViewport({ width: mobile ? 390 : 1440, height: 1100 });
-    await page.evaluateOnNewDocument(() => {
-      localStorage.setItem('i18nextLng', 'zh');
-    });
+    const initialStorage = await page.evaluateOnNewDocument(
+      (user, dark) => {
+        localStorage.setItem('i18nextLng', 'zh');
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('theme-mode', dark ? 'dark' : 'light');
+      },
+      fixtureUser,
+      mobile,
+    );
     await page.setRequestInterception(true);
     page.on('request', async (request) => {
       const url = new URL(request.url());
@@ -76,10 +114,39 @@ try {
       } else if (url.pathname.startsWith('/api/')) {
         let body = { success: true, data: [] };
         if (url.pathname === '/api/pricing') body = pricing;
+        if (url.pathname === '/api/user/self') {
+          body = { success: true, data: fixtureUser };
+        }
+        if (url.pathname === '/api/health/groups') {
+          healthQueries.push(url.search);
+          body = failHealth
+            ? { success: false, message: 'fixture health unavailable' }
+            : {
+                success: true,
+                data: {
+                  enabled: true,
+                  updated_at: 1792267200,
+                  groups: healthGroups
+                    .filter(
+                      (stats) =>
+                        !url.searchParams.get('group') ||
+                        stats.group === url.searchParams.get('group'),
+                    )
+                    .map((stats) =>
+                      url.searchParams.get('model') &&
+                      !['GPT', 'Shared', 'Empty'].includes(stats.group)
+                        ? { ...stats, request_count: 0, success_rate: null }
+                        : stats,
+                    ),
+                },
+              };
+        }
         if (url.pathname === '/api/status') {
           body = {
             success: true,
             data: {
+              system_name: 'New API',
+              logo: '/logo.png',
               price: 1,
               usd_exchange_rate: 1,
               quota_per_unit: 500000,
@@ -191,7 +258,10 @@ try {
     assert((await groupLabels()).some((b) => b.text === 'Empty' && b.disabled));
     await clickText('Anthropic');
     await clickText('Claude');
-    if (mobile) await clickText('确定', '.semi-modal');
+    if (mobile) {
+      await clickText('确定', '.semi-modal');
+      await page.waitForSelector('.semi-modal', { hidden: true });
+    }
     await page.$eval('input[placeholder*="搜索模型"]', (input) => {
       const setter = Object.getOwnPropertyDescriptor(
         HTMLInputElement.prototype,
@@ -217,6 +287,147 @@ try {
     );
     await clickText('重置', mobile ? '.semi-modal' : scope);
     assert((await groupLabels()).some((b) => b.text === 'GPT'));
+    if (mobile) {
+      await clickText('确定', '.semi-modal');
+      await page.waitForSelector('.semi-modal', { hidden: true });
+    }
+    const healthTab = async () => {
+      await page.waitForSelector('[role=tab]');
+      await page.evaluate(() => {
+        Array.from(document.querySelectorAll('[role=tab]'))
+          .find((tab) => tab.textContent.trim() === '分组健康')
+          .click();
+      });
+    };
+    const expectGroups = async (expected) => {
+      await page.waitForFunction(
+        (expected) => {
+          const actual = Array.from(
+            document.querySelectorAll(
+              '.group-health-overview .group-health-name',
+            ),
+          ).map((el) => el.textContent.trim());
+          return JSON.stringify(actual) === JSON.stringify(expected);
+        },
+        {},
+        expected,
+      );
+    };
+    const chooseFilters = async (...labels) => {
+      if (mobile) await clickText('筛选', 'body');
+      for (const label of labels)
+        await clickText(
+          label,
+          label === '重置' && mobile ? '.semi-modal' : scope,
+        );
+      if (mobile) {
+        await clickText('确定', '.semi-modal');
+        await page.waitForSelector('.semi-modal', { hidden: true });
+      }
+    };
+    await healthTab();
+    await expectGroups(['Claude', 'GPT', 'Shared', 'Empty']);
+    await chooseFilters('OpenAI');
+    await expectGroups(['GPT', 'Shared']);
+    assert(
+      await page.$eval('.group-health-overview', (el) =>
+        el.textContent.includes('分组汇总包含该组全部模型'),
+      ),
+    );
+    if (process.env.PRICING_SCREENSHOT_DIR) {
+      if (mobile) await page.setViewport({ width: 320, height: 1000 });
+      await page.screenshot({
+        path: `${process.env.PRICING_SCREENSHOT_DIR}/health-${mobile ? 'mobile-dark' : 'desktop'}.png`,
+        fullPage: true,
+      });
+    }
+    // Exact-model API samples preserve a disabled group's outage.
+    await page.click('.group-health-filter-select');
+    await page.waitForSelector('.semi-select-option');
+    const optionLabels = await page.$$eval('.semi-select-option', (options) =>
+      options.map((option) => option.textContent.trim()),
+    );
+    assert.deepEqual(optionLabels, ['全部模型 · 分组汇总', 'gpt-fixture']);
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.semi-select-option'))
+        .find((option) => option.textContent.trim() === 'gpt-fixture')
+        .click(),
+    );
+    await expectGroups(['GPT', 'Shared', 'Empty']);
+    assert(healthQueries.some((query) => query.includes('model=gpt-fixture')));
+    await chooseFilters('Anthropic');
+    await expectGroups(['Claude', 'Shared']);
+    await chooseFilters('未知供应商');
+    await expectGroups(['Shared']);
+    await chooseFilters('重置');
+    await page.click('.group-health-filter-select');
+    await page.waitForSelector('.semi-select-option');
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.semi-select-option'))
+        .find((option) => option.textContent.trim() === '全部模型 · 分组汇总')
+        .click(),
+    );
+    await chooseFilters('vision');
+    await expectGroups(['GPT', 'Shared']);
+    await chooseFilters('重置', '按次计费');
+    await expectGroups(['GPT', 'Shared']);
+    await chooseFilters('重置', 'anthropic');
+    await expectGroups(['Claude', 'Shared']);
+    await chooseFilters('重置', 'OpenAI', 'GPT');
+    await expectGroups(['GPT']);
+    await page.$eval('input[placeholder*="搜索模型"]', (input) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      ).set;
+      setter.call(input, 'no-such-model-fixture');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expectGroups([]);
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.group-health-overview')
+        ?.textContent.includes('当前筛选下没有可用分组'),
+    );
+    await chooseFilters('重置');
+    // The local exact-model choice can become valid again after reset.
+    await page.click('.group-health-filter-select');
+    await page.waitForSelector('.semi-select-option');
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.semi-select-option'))
+        .find((option) => option.textContent.trim() === '全部模型 · 分组汇总')
+        .click(),
+    );
+    await expectGroups(['Claude', 'GPT', 'Shared', 'Empty']);
+    failHealth = true;
+    await clickText('刷新', '.group-health-toolbar');
+    await page.waitForSelector('.group-health-overview [role=alert]');
+    await expectGroups([]);
+    failHealth = false;
+    await clickText('重试', '.group-health-overview');
+    await expectGroups(['Claude', 'GPT', 'Shared', 'Empty']);
+    await page.reload({ waitUntil: 'networkidle0' });
+    await healthTab();
+    await chooseFilters('OpenAI');
+    await expectGroups(['GPT', 'Shared']);
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+    );
+    const authenticatedHealthRequests = healthQueries.length;
+    await page.removeScriptToEvaluateOnNewDocument(initialStorage.identifier);
+    await page.evaluate(() => localStorage.removeItem('user'));
+    await page.reload({ waitUntil: 'networkidle0' });
+    await healthTab();
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.group-health-overview')
+        ?.textContent.includes('登录后查看可用分组的调用表现'),
+    );
+    assert.equal(healthQueries.length, authenticatedHealthRequests);
+    await expectGroups([]);
     assert.deepEqual(errors, []);
     console.log(`${mobile ? 'Mobile' : 'Desktop'} pricing workflow passed.`);
     await page.close();

@@ -196,4 +196,67 @@ describe('group health visibility', () => {
       [],
     );
   });
+
+  test('filtered aggregates use model relationships, never unrelated request counts', () => {
+    const stats = [
+      { group: 'standard', request_count: 0 },
+      { group: 'premium', request_count: 100 },
+      { group: 'shared', request_count: 80 },
+      { group: 'private', request_count: 100 },
+      { group: 'auto', request_count: 100 },
+    ];
+    const matchingModels = [
+      { enable_groups: ['standard', 'shared', 'private', 'auto'] },
+    ];
+    const result = selectHealthGroups({
+      groups: stats,
+      models: matchingModels,
+      usableGroup: { ...usableGroup, shared: '' },
+      filterByModels: true,
+    });
+    assert.deepEqual(result, [stats[0], stats[2]]);
+    assert.equal(result[1], stats[2]); // Retain the server aggregate unchanged.
+    assert.deepEqual(
+      selectHealthGroups({
+        groups: stats,
+        models: matchingModels,
+        usableGroup,
+        filterGroup: 'premium',
+        filterByModels: true,
+      }),
+      [],
+    );
+  });
+
+  test('zero matching models stays empty until filters are reset', () => {
+    assert.deepEqual(
+      selectHealthGroups({
+        groups,
+        models: [],
+        usableGroup,
+        filterByModels: true,
+      }),
+      [],
+    );
+    assert.deepEqual(
+      selectHealthGroups({ groups, models: [], usableGroup }).map(
+        ({ group }) => group,
+      ),
+      ['standard', 'premium'],
+    );
+  });
+
+  test('exact-model samples still preserve outages under a sidebar filter', () => {
+    const outage = { group: 'premium', request_count: 50, success_rate: 0 };
+    assert.deepEqual(
+      selectHealthGroups({
+        groups: [outage],
+        models: [models[0]],
+        usableGroup,
+        exactModel: true,
+        filterByModels: true,
+      }),
+      [outage],
+    );
+  });
 });

@@ -30,4 +30,6 @@ Status: implemented
 
 ## Related notes
 
+[分组健康筛选](../bug-fix/2026-10-17-group-health-filters.md)复用相同模型集合与权限边界，使健康内容区跟随已有筛选；本文继续负责侧栏与移动弹窗的选项可见性。
+
 检索模型广场、PricingGroups、筛选相关活跃笔记：渠道用量管理笔记涉及管理员统计，与本次展示规则无关，无现有同主题笔记。
