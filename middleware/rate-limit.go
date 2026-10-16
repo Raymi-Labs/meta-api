@@ -172,6 +172,14 @@ func CriticalRateLimit() func(c *gin.Context) {
 	return defNext
 }
 
+// Independent bounded public probes; never share model or account quotas.
+func RouteProbeRateLimit(stream bool) func(c *gin.Context) {
+	if stream {
+		return rateLimitFactory(12, 60, "RPS")
+	}
+	return rateLimitFactory(120, 60, "RP")
+}
+
 // PulseBenefitRateLimit protects the authenticated Pulse-to-new-api Benefit
 // boundary. It is deliberately keyed by the verified service role rather than
 // client IP: workers may run behind different addresses, while an invalid
