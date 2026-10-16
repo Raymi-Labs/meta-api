@@ -71,6 +71,24 @@ export function healthTone(stats) {
   return 'degraded';
 }
 
+// Colors have their own policy; keep measured rates and status wording intact.
+export function healthColorTone(stats) {
+  const requestCount = Number(stats?.request_count);
+  if (
+    stats?.request_count == null ||
+    !Number.isFinite(requestCount) ||
+    requestCount < 0
+  )
+    return 'empty';
+  if (requestCount < 100) return 'healthy';
+  const successRate = Number(stats?.success_rate);
+  if (stats?.success_rate == null || !Number.isFinite(successRate))
+    return 'empty';
+  if (successRate >= 95) return 'healthy';
+  if (successRate >= 80) return 'warning';
+  return 'degraded';
+}
+
 export function getHealthLatency(stats, metric = 'ttft') {
   return metric === 'completion'
     ? { value: stats?.avg_completion_ms, count: stats?.completion_count || 0 }

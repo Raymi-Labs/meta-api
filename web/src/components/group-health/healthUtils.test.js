@@ -23,12 +23,77 @@ import {
   formatHealthLatency,
   formatHealthRate,
   getHealthLatency,
+  healthColorTone,
   healthTone,
   resolveGroupHealthMetric,
   selectHealthGroups,
 } from './healthUtils.js';
 
 describe('group health display semantics', () => {
+  test('colors fewer than 100 requests as successful without rewriting statistics', () => {
+    for (const request_count of [0, 1, 29, 30, 99]) {
+      for (const success_rate of [null, 0, 50, 100]) {
+        const stats = Object.freeze({ request_count, success_rate });
+        assert.equal(healthColorTone(stats), 'healthy');
+        assert.equal(stats.success_rate, success_rate);
+        assert.equal(
+          formatHealthRate(stats.success_rate),
+          success_rate == null ? '—' : `${success_rate.toFixed(2)}%`,
+        );
+      }
+    }
+  });
+
+  test('uses the 95 and 80 percent boundaries once there are 100 requests', () => {
+    for (const request_count of [100, 101, 10000]) {
+      for (const [success_rate, expected] of [
+        [100, 'healthy'],
+        [95, 'healthy'],
+        [94.99, 'warning'],
+        [80, 'warning'],
+        [79.99, 'degraded'],
+        [0, 'degraded'],
+      ]) {
+        assert.equal(
+          healthColorTone({ request_count, success_rate }),
+          expected,
+        );
+      }
+    }
+    assert.equal(
+      healthColorTone({ request_count: '100', success_rate: '80' }),
+      'warning',
+    );
+  });
+
+  test('keeps missing or invalid data unknown without changing status descriptions', () => {
+    for (const stats of [
+      undefined,
+      {},
+      { request_count: null },
+      { request_count: -1 },
+      { request_count: NaN },
+      { request_count: 100, success_rate: null },
+      { request_count: 100, success_rate: NaN },
+    ]) {
+      assert.equal(healthColorTone(stats), 'empty');
+    }
+    assert.equal(healthTone({ request_count: 0, success_rate: null }), 'empty');
+    assert.equal(healthTone({ request_count: 29, success_rate: 0 }), 'limited');
+    assert.equal(
+      healthTone({ request_count: 99, success_rate: 0 }),
+      'degraded',
+    );
+    assert.equal(
+      healthTone({ request_count: 100, success_rate: 95 }),
+      'warning',
+    );
+    assert.equal(
+      healthTone({ request_count: 100, success_rate: 80 }),
+      'degraded',
+    );
+  });
+
   test('distinguishes missing samples from measured zero success or latency', () => {
     assert.equal(formatHealthRate(null), '—');
     assert.equal(formatHealthRate(undefined), '—');
