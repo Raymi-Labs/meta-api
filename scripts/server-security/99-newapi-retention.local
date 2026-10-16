@@ -1,0 +1,3 @@
+# Deploy to /etc/fail2ban/fail2ban.d/ so repeat bans survive service restarts.
+[Definition]
+dbpurgeage = 604800

@@ -58,3 +58,4 @@
 | 能力 | 实现 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
 | Flawless 整机流量与链路监控 | [部署说明](../scripts/relay-monitor/README.md)、[采集](../scripts/relay-monitor/collect.py)、[页面](../scripts/relay-monitor/index.html) | `/relay-monitor/` 公开只读；vnStat ens3 汇总、24h曲线、滚动168小时月末预估、到源站 ICMP、CPU/内存/系统盘/负载/运行时间当前快照；每分钟采集 | 明细仅留24h，汇总数字保留；月末预估按最近最多168小时均值计算剩余时间，非账单；不自动吞吐压测；不输出凭据和请求日志 |
+| 源站与跳板 SSH 自动封禁 | [配置与回退](../scripts/server-security/README.md)、[sshd jail](../scripts/server-security/99-newapi-sshd.local) | 宿主机 systemd SSH 日志、Fail2ban、nftables；root 运维；10分钟内6条失败事件封1小时，重复触发最长24小时 | 仅 TCP 22，不按代理对端误封网页流量；不改变密码/密钥登录方式；无应用版本发布 |
