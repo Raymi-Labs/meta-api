@@ -11,6 +11,12 @@
 - 预估展示采样时长，不把 2 秒瞬时速率或从月初至今的缺失数据当作依据。统计含双向中转、测速及管理流量，不能等同供应商账单或套餐余量。
 - 到源站的平均延迟/mdev/丢包率每分钟测 5 次 ICMP；电脑实际上传下载沿用 LibreSpeed，由用户主动触发。
 
+## 服务器状态
+
+复用2秒采样窗口读取 `/proc/stat`，CPU百分比排除 idle/iowait，不重复计算 guest；vCPU 显示系统逻辑处理器数量。内存用 MemTotal−MemAvailable，避免把可回收缓存误算为不可用；显示 Swap 已用/总量。系统盘显示已用、可用、总量及与 df 同口径的已用/(已用+可用)比例。负载分别为1/5/15分钟，运行时间来自 /proc/uptime。
+
+这些指标只保存当前快照，不增加历史明细、依赖或采集等待。CPU无有效窗口显示暂无数据，系统读取异常显式报错，流量采集继续运行；不公开进程、环境变量或文件列表。
+
 ## 部署与服务
 
 依赖 Ubuntu `vnstat`、Python 3、既有 Nginx。`collect.py` 放入 `/opt/relay-monitor/`，页面放入 `/var/lib/relay-monitor/index.html`，两个 systemd unit 放入 `/etc/systemd/system/`。无 shell 的 `relay-monitor` 系统用户只需写状态目录、读 vnStat 数据库和 ICMP datagram socket 权限。设置 `StateDirectory=relay-monitor`，启用 `relay-monitor.timer` 与 `vnstat`。

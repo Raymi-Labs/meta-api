@@ -1,5 +1,5 @@
 import unittest
-from collect import summarize
+from collect import summarize, cpu_usage, memory_usage
 
 class ForecastTest(unittest.TestCase):
     def source(self, created, updated, rows):
@@ -22,5 +22,17 @@ class ForecastTest(unittest.TestCase):
     def test_valid_zero_traffic(self):
         result = summarize(self.source(0, 300, [self.row(0, 0, 0)]))
         self.assertEqual(result['forecast_30d'], {'rx': 0, 'tx': 0})
+
+class ServerStatusTest(unittest.TestCase):
+    def test_cpu_excludes_idle_and_iowait(self):
+        self.assertEqual(cpu_usage([0]*8, [20,0,10,60,10,0,0,0]), 30)
+    def test_cpu_invalid_window(self):
+        self.assertIsNone(cpu_usage([0]*8, [0]*8))
+        self.assertIsNone(cpu_usage([1]*8, [0]*8))
+    def test_available_memory_includes_reclaimable_cache(self):
+        result = memory_usage('MemTotal: 1000 kB\nMemFree: 100 kB\nMemAvailable: 700 kB\nSwapTotal: 0 kB\nSwapFree: 0 kB')
+        self.assertEqual(result['used'], 300*1024)
+        self.assertEqual(result['percent'], 30)
+        self.assertEqual(result['swap_used'], 0)
 
 if __name__ == '__main__': unittest.main()

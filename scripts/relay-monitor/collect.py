@@ -12,6 +12,39 @@ def read_counters():
     return {name: int(Path(f'/sys/class/net/{IFACE}/statistics/{name}').read_text())
             for name in ('rx_bytes', 'tx_bytes', 'rx_dropped', 'tx_dropped', 'rx_errors', 'tx_errors')}
 
+def read_cpu():
+    # guest/guest_nice are already included in user/nice; count only first 8.
+    return [int(v) for v in Path('/proc/stat').read_text().splitlines()[0].split()[1:9]]
+
+def cpu_usage(before, after):
+    delta = [b - a for a, b in zip(before, after)]
+    if len(delta) != 8 or any(v < 0 for v in delta) or sum(delta) <= 0:
+        return None
+    return round(100 * (sum(delta) - delta[3] - delta[4]) / sum(delta), 2)
+
+def memory_usage(text):
+    values = {line.split(':')[0]: int(line.split()[1]) * 1024
+              for line in text.splitlines() if ':' in line}
+    total = values['MemTotal']
+    available = values['MemAvailable']
+    used = max(0, total - available)
+    return {'total': total, 'used': used, 'available': available,
+            'percent': round(100 * used / total, 2) if total else None,
+            'swap_total': values.get('SwapTotal', 0),
+            'swap_used': max(0, values.get('SwapTotal', 0) - values.get('SwapFree', 0))}
+
+def server_status(cpu):
+    disk = os.statvfs('/')
+    total = disk.f_blocks * disk.f_frsize
+    used = (disk.f_blocks - disk.f_bfree) * disk.f_frsize
+    available = disk.f_bavail * disk.f_frsize
+    return {'cpu_percent': cpu, 'cpu_cores': os.cpu_count(),
+            'memory': memory_usage(Path('/proc/meminfo').read_text()),
+            'disk': {'total': total, 'used': used, 'available': available,
+                     'percent': round(100 * used / (used + available), 2) if used + available else None},
+            'load': list(os.getloadavg()),
+            'uptime_seconds': int(float(Path('/proc/uptime').read_text().split()[0]))}
+
 def summarize(interface):
     """Project a 30-day equivalent from measured bytes, never from sampled peaks."""
     if not interface:
@@ -45,14 +78,25 @@ def run():
         old = json.loads(path.read_text())
     except (OSError, ValueError):
         old = {}
-    start = time.time()
+    errors = []
+    try:
+        cpu_before = read_cpu()
+    except (OSError, ValueError):
+        cpu_before = None
+    start = time.monotonic()
     counters = read_counters()
     time.sleep(2)
     end = read_counters()
-    elapsed = time.time() - start
+    elapsed = time.monotonic() - start
+    try:
+        server = server_status(cpu_usage(cpu_before, read_cpu()) if cpu_before else None)
+        if server["cpu_percent"] is None:
+            errors.append("CPU 采样暂不可用")
+    except (OSError, ValueError, KeyError):
+        server = None
+        errors.append("服务器状态读取失败")
     rates = {k: max(0, end[k] - counters[k]) * 8 / elapsed / 1e6 for k in ('rx_bytes', 'tx_bytes')}
     vn = subprocess.run(['vnstat', '--json', '-i', IFACE], capture_output=True, text=True, timeout=15)
-    errors = []
     try:
         traffic = json.loads(vn.stdout) if vn.returncode == 0 else None
     except ValueError:
@@ -78,7 +122,7 @@ def run():
         errors.append('流量汇总超过 3 分钟未更新，月预估可能过期')
     data = {'updated': now, 'started': next((i.get('created', {}).get('timestamp', now) for i in (traffic or {}).get('interfaces', []) if i.get('name') == IFACE), old.get('started', now)), 'interface': IFACE,
             'sample_seconds': round(elapsed, 2), 'rates': rates,
-            'summary': summary, 'latency': latency, 'history': history, 'errors': errors,
+            'server': server, 'summary': summary, 'latency': latency, 'history': history, 'errors': errors,
             'history_range': [stamp(history[0]['time']), stamp(history[-1]['time'])]}
     data['updated_label'] = stamp(now)
     data['started_label'] = stamp(data['started'])
