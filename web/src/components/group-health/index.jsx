@@ -25,6 +25,7 @@ import {
   formatHealthLatency,
   formatHealthRate,
   getHealthLatency,
+  healthColorTone,
   healthTone,
 } from './healthUtils';
 import './style.css';
@@ -140,7 +141,7 @@ export function GroupHealthSummary({
       <div>
         <span className='group-health-label'>{t('成功率')}</span>
         <strong
-          className={`group-health-number group-health-text-${healthTone(stats)}`}
+          className={`group-health-number group-health-text-${healthColorTone(stats)}`}
         >
           {formatHealthRate(stats?.success_rate)}
         </strong>
@@ -210,7 +211,9 @@ export function GroupHealthPanel({
                 {ratio}x
               </Tag>
             )}
-            <span className={`group-health-badge group-health-badge-${tone}`}>
+            <span
+              className={`group-health-badge group-health-badge-${healthColorTone(stats)}`}
+            >
               {labels[tone]}
             </span>
           </div>
@@ -226,7 +229,7 @@ export function GroupHealthPanel({
           <button
             key={bucket.ts}
             type='button'
-            className={`group-health-bar group-health-bar-${healthTone(bucket)}`}
+            className={`group-health-bar group-health-bar-${healthColorTone(bucket)}`}
             aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${t('{{count}} 次调用', { count: bucket.request_count || 0 })} · ${labels[healthTone(bucket)]}`}
             title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${labels[healthTone(bucket)]}`}
             aria-pressed={selectedTs === bucket.ts}

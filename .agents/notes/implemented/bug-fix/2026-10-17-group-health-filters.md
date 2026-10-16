@@ -16,6 +16,8 @@ Status: implemented
 
 [筛选项可见性](../../implemented/feature/2026-10-11-pricing-filter-visibility.md)部分重叠：复用其可用模型和权限边界，本文补齐内容区联动。令牌收藏笔记只涉及令牌页面，属无关。主工作区现有价格排序提案涉及结果顺序，属无关，不改动该提案。
 
+[健康颜色](../feature/2026-10-17-group-health-colors.md)复用本文的卡片与权限范围，独立调整着色规则，保留真实统计和描述。
+
 ## Alternatives considered
 
 - 按分组名匹配供应商：改动直接，但无法处理共享分组和自定义命名，采用 enable_groups 关系。

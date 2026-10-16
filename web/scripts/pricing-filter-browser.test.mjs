@@ -65,6 +65,14 @@ const fixtureUser = {
   role: 1,
   group: 'user',
 };
+const colorSamples = [
+  { request_count: 0, success_rate: null },
+  { request_count: 99, success_rate: 0 },
+  { request_count: 100, success_rate: 95 },
+  { request_count: 100, success_rate: 94 },
+  { request_count: 100, success_rate: 80 },
+  { request_count: 100, success_rate: 79 },
+];
 const healthGroups = [
   'Claude',
   'GPT',
@@ -84,9 +92,19 @@ const healthGroups = [
   cache_sample_count: 97,
   series: Array.from({ length: 24 }, (_, i) => ({
     ts: 1792180800 + i * 3600,
-    request_count: 100,
-    success_rate: 97,
+    ...colorSamples[i % colorSamples.length],
   })),
+  ...({
+    Claude: { success_count: 95, failure_count: 5, success_rate: 95 },
+    GPT: { success_count: 80, failure_count: 20, success_rate: 80 },
+    Shared: { success_count: 79, failure_count: 21, success_rate: 79 },
+    Empty: {
+      request_count: 99,
+      success_count: 0,
+      failure_count: 99,
+      success_rate: 0,
+    },
+  }[group] || {}),
 }));
 
 try {
@@ -327,6 +345,67 @@ try {
     };
     await healthTab();
     await expectGroups(['Claude', 'GPT', 'Shared', 'Empty']);
+    const colors = await page.$$eval(
+      '.group-health-overview .group-health-panel',
+      (panels) =>
+        panels.map((panel) => ({
+          name: panel.querySelector('.group-health-name').textContent,
+          rate: panel.querySelector('.group-health-number').textContent,
+          rateClass: panel.querySelector('.group-health-number').className,
+          label: panel.querySelector('.group-health-badge').textContent,
+          labelClass: panel.querySelector('.group-health-badge').className,
+          bars: Array.from(panel.querySelectorAll('.group-health-bar')).map(
+            (bar) => bar.className,
+          ),
+          firstBarTitle: panel.querySelector('.group-health-bar').title,
+        })),
+    );
+    const expectedColors = [
+      ['Claude', '95.00%', '部分波动', 'healthy'],
+      ['GPT', '80.00%', '失败较多', 'warning'],
+      ['Shared', '79.00%', '失败较多', 'degraded'],
+      ['Empty', '0.00%', '失败较多', 'healthy'],
+    ];
+    const expectedBars = [
+      'healthy',
+      'healthy',
+      'healthy',
+      'warning',
+      'warning',
+      'degraded',
+    ];
+    for (const [i, panel] of colors.entries()) {
+      const [name, rate, label, tone] = expectedColors[i];
+      assert.deepEqual(
+        [panel.name, panel.rate, panel.label],
+        [name, rate, label],
+      );
+      assert(panel.rateClass.includes(`group-health-text-${tone}`));
+      assert(panel.labelClass.includes(`group-health-badge-${tone}`));
+      assert.deepEqual(
+        panel.bars,
+        Array.from(
+          { length: 24 },
+          (_, j) => `group-health-bar group-health-bar-${expectedBars[j % 6]}`,
+        ),
+      );
+      assert(panel.firstBarTitle.includes('— · 暂无样本'));
+    }
+    // Clicking a green low-volume bucket still shows the measured 0% result.
+    await page.click('.group-health-panel .group-health-bar:nth-child(2)');
+    const bucketText = await page.$eval(
+      '.group-health-bucket',
+      (el) => el.textContent,
+    );
+    assert(bucketText.includes('0.00%'));
+    assert(bucketText.includes('失败较多'));
+    await page.click('.group-health-panel .group-health-bar:nth-child(2)');
+    if (process.env.PRICING_SCREENSHOT_DIR) {
+      await page.screenshot({
+        path: `${process.env.PRICING_SCREENSHOT_DIR}/colors-${mobile ? 'mobile-dark' : 'desktop'}.png`,
+        fullPage: true,
+      });
+    }
     await chooseFilters('OpenAI');
     await expectGroups(['GPT', 'Shared']);
     assert(
