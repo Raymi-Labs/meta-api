@@ -24,8 +24,8 @@ Status: implemented
 
 ## Testing
 
-`go test ./controller ./router ./middleware -run 'TestRouteProbe|TestRedisRateLimiter' -count=1` 通过：无认证访问、nonce/重复参数校验、不可缓存、真实 HTTP 分段抵达、取消和独立限流。`go build -o /tmp/newapi-route-probe .` 通过；生产端点尚未部署。
+`go test ./controller ./router ./middleware -run 'TestRouteProbe|TestRedisRateLimiter' -count=1` 通过：无认证访问、nonce/重复参数校验、不可缓存、真实 HTTP 分段抵达、取消和独立限流。`go build -o /tmp/newapi-route-probe .` 通过；用户另行授权后已部署生产镜像 `sha-135966d`，运行版本 `main-135966d`，容器零重启，Compose 与发布状态一致。升级前约2.9GB完整MySQL备份通过压缩校验，两次预检通过且schema指纹一致；可回退至原compat.42镜像。
 
 ## Consequences
 
-公共探测只证明入口到应用的传输能力，不证明账号、模型权限和服务性能。共享出口可能触发按IP限流，桌面端必须退避；生产部署、两入口缓存及流式实测单独验收。
+公共探测只证明入口到应用的传输能力，不证明账号、模型权限和服务性能。共享出口可能触发按IP限流，桌面端必须退避；2026-10-17从开发机分别访问 meta-api.vip 与 nan.meta-api.vip：普通探测均200、nonce/服务身份匹配且no-store；CF状态DYNAMIC。短流均完整返回0/1/2，抵达间隔347–351ms，无整批缓冲。该结果只覆盖当前网络的入口验收，不证明三网高峰或模型调用性能。
