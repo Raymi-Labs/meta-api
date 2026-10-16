@@ -1,5 +1,7 @@
 # 反代入口迁移与切换验收
 
+当前状态（2026-10-17）：`edu.xlrdf.cn`、`edu.gewu.uk` 已按用户要求从新旧跳板停用，不再列入 DNS 切换清单。下文此前验收记录保留其历史时点。
+
 核对日期：2026-10-11。本文记录入口层运维边界；服务器密码、私钥、ACME 账户与 Cloudflare 凭据不进入仓库。实际 IP 以当次交付的迁移结果为准。
 
 ## 站点与配置归属
@@ -13,7 +15,7 @@
 | chatshare.tv | `/etc/nginx/sites-available/chatshare.tv` | 修改现有 A 记录 |
 | metar.uk | `/etc/nginx/sites-available/metar.uk` | 修改现有 A 记录 |
 | www.metar.uk | 与 metar.uk 共用虚拟主机和证书 | 保留指向 metar.uk 的 CNAME |
-| edu.gewu.uk | `/etc/nginx/sites-available/edu.gewu.uk`，含 443/8443 | 核对时为 NXDOMAIN；需要启用时添加 A 记录 |
+| edu.gewu.uk | 原 443/8443 独立入口，2026-10-17 已停用 | 不再添加或迁移，可删除旧 DNS 记录 |
 
 原有 Host/SNI、可信源站 CA、请求体限制、WebSocket 头、SSE 缓冲开关、超时、Cookie/重定向改写与日志策略均保留。迁移不修改源站程序、数据库、计费或 API 鉴权。
 
@@ -73,7 +75,7 @@ metar.uk 的百度验证文件在新旧入口的 HTTP/HTTPS 均返回 200，缺�
 
 ## Flawless 替换旧跳板（2026-10-17）
 
-新入口为 `155.103.118.155`，旧入口为 `154.44.1.123`。本轮已将旧机当前启用的九个业务虚拟主机（十个域名）及九组证书、源站 CA、ACME 配置和必要 webroot 迁到新机。新增覆盖 `edu.xlrdf.cn`、`otd.meta-api.vip`；其余域名见上表。两个 LibreSpeed 入口 8989/8990 保留。DNS 尚由用户切换，旧机继续运行，业务源站和数据库未修改。
+新入口为 `155.103.118.155`，旧入口为 `154.44.1.123`。本轮已将旧机当前启用的九个业务虚拟主机（十个域名）及九组证书、源站 CA、ACME 配置和必要 webroot 迁到新机。迁移当时新增覆盖 `edu.xlrdf.cn`、`otd.meta-api.vip`；其余域名见上表。随后停用两个闲置教育域名，当前保留七个业务虚拟主机、八个域名及七组自动续期配置。两个 LibreSpeed 入口 8989/8990 保留。DNS 尚由用户切换，旧机继续运行，业务源站和数据库未修改。
 
 ### 配置与优化
 
@@ -100,3 +102,10 @@ metar.uk 的百度验证文件在新旧入口的 HTTP/HTTPS 均返回 200，缺�
 4. 切换后核对解析/负载均衡、各域名访问、新机日志、真实 API 流式请求及 HTTP-01 dry-run。发现问题时恢复原 A 记录或池内源站为旧 IP；旧机暂不退役。
 
 本轮为入口运维和文档更新，无应用版本、GitHub Release 或应用容器部署。
+
+
+## 停用闲置教育域名（2026-10-17）
+
+按用户要求，`edu.xlrdf.cn`、`edu.gewu.uk` 的 `sites-enabled` 链接、`sites-available` 配置及各自的 Certbot renewal 配置均从新旧跳板的活动目录移走，备份在两机 `/root/retired-edu-domains-20261017/`（700）。不再为这两个域名启用独立虚拟主机或自动续期；保留现有证书材料与 webroot 以便恢复。共享 `meta_nan_origin` / `meta_connection_upgrade` 仍由主站提供，不影响其他入口。
+
+两机 `nginx -t` 通过并完成平滑 reload。`edu.meta-api.vip` 继续使用，不在此次停用范围。Cloudflare DNS 未修改，用户可删除这两个闲置域名的记录，也不应将其加入新跳板切换清单。恢复时将对应三个配置文件/链接移回原路径，先 `nginx -t` 再 reload，并确认旧证书仍有效。

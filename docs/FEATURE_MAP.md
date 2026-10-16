@@ -36,7 +36,7 @@
 | 支付记录：稳定币网络标签和筛选 | [记录弹窗](../web/src/components/topup/modals/TopupHistoryModal.jsx)、[记录模型](../model/payment_record.go) | 用户 `/api/user/payment-records/self`、管理员 `/api/user/payment-records`；充值和套餐联合记录 | 用户仅见本人；记录保留人民币支付金额，不能当作实际代币数量或链上凭证 |
 | 令牌创建/编辑：个人收藏分组 | [表单](../web/src/components/table/tokens/modals/EditTokenModal.jsx)、[收藏入口](../web/src/components/table/tokens/TokenGroupFavorites.jsx)、[本地存储](../web/src/components/table/tokens/groupFavoriteStorage.js) | 已登录用户；仅 `/api/user/self/groups` 本次返回的可用组能成为收藏捷径；沿用原 `group` 字段和模型/渠道联动 | 当前浏览器按账号隔离，不跨设备/客户端同步；收藏不赋予权限、不改变计费/路由；编辑保留的失效组不加入收藏候选 |
 
-入口运维补充（2026-10-13）：公网反代站点、证书续期与 DNS 切换见 [反代迁移验收](REVERSE_PROXY_MIGRATION.md)。`edu.xlrdf.cn` 复用 `meta-api.vip` 的源站和流式转发规则，使用独立站点、日志及 HTTP-01 证书；应用默认服务器地址仍为主域名。入口层转发到既有应用路由，不修改模型渠道、数据库、计费或鉴权。公开状态入口与受保护接口分别核对，入口部署成功不等于 DNS 已切换。
+入口运维补充（2026-10-13）：公网反代站点、证书续期与 DNS 切换见 [反代迁移验收](REVERSE_PROXY_MIGRATION.md)。`edu.xlrdf.cn` 当时复用 `meta-api.vip` 的源站和流式转发规则，使用独立站点、日志及 HTTP-01 证书；该闲置入口已于 2026-10-17 停用。应用默认服务器地址仍为主域名。入口层转发到既有应用路由，不修改模型渠道、数据库、计费或鉴权。公开状态入口与受保护接口分别核对，入口部署成功不等于 DNS 已切换。
 
 权限最终以 [API 路由](../router/api-router.go) 为准。新增渠道分析先对比统计面板、渠道管理和使用日志三处，确认数据定义、权限、分页/排序与跳转条件一致后再选方案。
 
@@ -46,4 +46,4 @@
 | --- | --- | --- | --- |
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
 
-入口运维补充（2026-10-17）：Flawless 承接旧跳板的九个业务虚拟主机和十个域名，保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
+入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
