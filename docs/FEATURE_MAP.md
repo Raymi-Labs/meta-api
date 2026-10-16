@@ -47,3 +47,9 @@
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
 
 入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
+
+## 服务器运维监控
+
+| 能力 | 实现 | 数据与权限 | 边界 |
+| --- | --- | --- | --- |
+| Flawless 整机流量与链路监控 | [部署说明](../scripts/relay-monitor/README.md)、[采集](../scripts/relay-monitor/collect.py)、[页面](../scripts/relay-monitor/index.html) | `/relay-monitor/` 独立 HTTPS Basic Auth；vnStat ens3 日/月累计、2秒速率采样、到业务服务器 ICMP；systemd 每分钟采集 | 非应用计费口径；监控起点前无日流量；不自动吞吐压测；旧跳板不在统计中，凭据不入库 |

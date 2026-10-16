@@ -1,0 +1,16 @@
+[Unit]
+Description=Relay traffic and latency snapshot
+After=network-online.target vnstat.service
+[Service]
+Type=oneshot
+User=relay-monitor
+Group=relay-monitor
+StateDirectory=relay-monitor
+Environment=LC_ALL=C
+Environment=TZ=Asia/Shanghai
+ExecStart=/usr/bin/python3 /opt/relay-monitor/collect.py
+TimeoutStartSec=45
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
