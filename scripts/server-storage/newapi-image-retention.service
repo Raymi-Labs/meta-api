@@ -1,0 +1,11 @@
+[Unit]
+Description=Retain current, rollback and backup images; remove old new-api images
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/newapi-image-retain.py --apply
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=50%
+TimeoutStartSec=30min
