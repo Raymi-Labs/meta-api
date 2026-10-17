@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| Vertex 官方地址兼容 | [适配器](../relay/channel/vertex/adaptor.go)、[渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)、[配置 DTO](../dto/channel_settings.go) | global、us/eu 多区域及普通区域；API Key 可选 settings.vertex_project_id，空值保留 Express；JSON 使用凭据项目 | 管理员原渠道接口/权限，7 种界面语言；不新增表，不改变 token 获取/模型映射/计费；真实供应商权限另验 |
 | Claude thinking 与 beta 转发 | [DTO](../dto/claude.go)、[原生 handler](../relay/claude_handler.go)、[请求头](../relay/channel/claude/adaptor.go)、[Bedrock](../relay/channel/aws/dto.go) | 保留 block_binding/未知 thinking 字段和重试深拷贝；adaptive suffix 保留绑定控制；全部 beta 行合并 | 保留模型头配置、显式覆盖及已有 beta 清理；不主动启用 beta、不改变缓存计费或跨协议推理规则 |
 | 容器过载保护 | [采样](../common/container_usage.go)、[判定](../common/system_monitor.go)、[中间件](../middleware/performance.go) | cgroup v1/v2 有限额 CPU/内存工作集优先，失败回退宿主；5 秒采样、连续 3 次超限；30 秒新鲜度 | 保留已有开关/阈值、503 与协议错误格式；回落恢复，关闭/调高阈值立即放行；未修改生产配置 |
 | Vidu 任务参数保真 | [原生适配器](../relay/channel/task/vidu/adaptor.go)、[任务计价](../relay/relay_task.go) | 映射后的模型、顶层时长/分辨率在 metadata 合并后写入；保留 seed 等扩展 | 不允许 metadata 覆盖计价字段；保留参考图 viduq2 规范化，不修改价格、预扣及退款 |

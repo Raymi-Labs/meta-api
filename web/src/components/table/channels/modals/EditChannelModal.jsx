@@ -209,6 +209,7 @@ const EditChannelModal = (props) => {
     client_restriction_clients: [],
     // 仅 Vertex: 密钥格式（存入 settings.vertex_key_type）
     vertex_key_type: 'json',
+    vertex_project_id: '',
     // 仅 AWS: 密钥格式和区域（存入 settings.aws_key_type 和 settings.aws_region）
     aws_key_type: 'ak_sk',
     // 企业账户设置
@@ -915,6 +916,7 @@ const EditChannelModal = (props) => {
             parsedSettings.azure_responses_version || '';
           // 读取 Vertex 密钥格式
           data.vertex_key_type = parsedSettings.vertex_key_type || 'json';
+          data.vertex_project_id = parsedSettings.vertex_project_id || '';
           // 读取 AWS 密钥格式和区域
           data.aws_key_type = parsedSettings.aws_key_type || 'ak_sk';
           // 读取企业账户设置
@@ -957,6 +959,7 @@ const EditChannelModal = (props) => {
           data.azure_responses_version = '';
           data.region = '';
           data.vertex_key_type = 'json';
+          data.vertex_project_id = '';
           data.aws_key_type = 'ak_sk';
           data.is_enterprise_account = false;
           data.allow_service_tier = false;
@@ -977,6 +980,7 @@ const EditChannelModal = (props) => {
       } else {
         // 兼容历史数据：老渠道没有 settings 时，默认按 json 展示
         data.vertex_key_type = 'json';
+        data.vertex_project_id = '';
         data.aws_key_type = 'ak_sk';
         data.is_enterprise_account = false;
         data.allow_service_tier = false;
@@ -1964,8 +1968,10 @@ const EditChannelModal = (props) => {
     // type === 41 (Vertex): 始终保存 vertex_key_type 到 settings，避免编辑时被重置
     if (localInputs.type === 41) {
       settings.vertex_key_type = localInputs.vertex_key_type || 'json';
-    } else if ('vertex_key_type' in settings) {
+      settings.vertex_project_id = (localInputs.vertex_project_id || '').trim();
+    } else {
       delete settings.vertex_key_type;
+      delete settings.vertex_project_id;
     }
 
     const capabilityModes = [
@@ -2049,6 +2055,7 @@ const EditChannelModal = (props) => {
     delete localInputs.quota_policy_count_limit;
     // 顶层的 vertex_key_type 不应发送给后端
     delete localInputs.vertex_key_type;
+    delete localInputs.vertex_project_id;
     // 顶层的 aws_key_type 不应发送给后端
     delete localInputs.aws_key_type;
     // 清理字段透传控制的临时字段
@@ -2671,6 +2678,20 @@ const EditChannelModal = (props) => {
                             ? t('API Key 模式下不支持批量创建')
                             : t('JSON 模式支持手动输入或上传服务账号 JSON')
                         }
+                      />
+                    )}
+                    {inputs.type === 41 && inputs.vertex_key_type === 'api_key' && (
+                      <Form.Input
+                        field='vertex_project_id'
+                        label={t('Vertex 项目 ID（可选）')}
+                        placeholder='my-project-id'
+                        value={inputs.vertex_project_id || ''}
+                        onChange={(value) =>
+                          handleChannelOtherSettingsChange('vertex_project_id', value)
+                        }
+                        extraText={t(
+                          '填写后使用项目端点；留空沿用 Express 模式。JSON 密钥仍使用凭据中的项目。',
+                        )}
                       />
                     )}
                     {batch ? (

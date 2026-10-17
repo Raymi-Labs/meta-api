@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -125,83 +126,54 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 
 func (a *Adaptor) getRequestUrl(info *relaycommon.RelayInfo, modelName, suffix string) (string, error) {
 	region := GetModelRegion(info.ApiVersion, info.OriginModelName)
-	if info.ChannelOtherSettings.VertexKeyType != dto.VertexKeyTypeAPIKey {
+	apiKeyMode := info.ChannelOtherSettings.VertexKeyType == dto.VertexKeyTypeAPIKey
+	projectID := strings.TrimSpace(info.ChannelOtherSettings.VertexProjectID)
+	if !apiKeyMode {
 		adc := &Credentials{}
 		if err := common.Unmarshal([]byte(info.ApiKey), adc); err != nil {
 			return "", fmt.Errorf("failed to decode credentials file: %w", err)
 		}
 		a.AccountCredentials = *adc
-
-		if a.RequestMode == RequestModeGemini {
-			if region == "global" {
-				return fmt.Sprintf(
-					"https://aiplatform.googleapis.com/v1/projects/%s/locations/global/publishers/google/models/%s:%s",
-					adc.ProjectID,
-					modelName,
-					suffix,
-				), nil
-			} else {
-				return fmt.Sprintf(
-					"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
-					region,
-					adc.ProjectID,
-					region,
-					modelName,
-					suffix,
-				), nil
-			}
-		} else if a.RequestMode == RequestModeClaude {
-			if region == "global" {
-				return fmt.Sprintf(
-					"https://aiplatform.googleapis.com/v1/projects/%s/locations/global/publishers/anthropic/models/%s:%s",
-					adc.ProjectID,
-					modelName,
-					suffix,
-				), nil
-			} else {
-				return fmt.Sprintf(
-					"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/anthropic/models/%s:%s",
-					region,
-					adc.ProjectID,
-					region,
-					modelName,
-					suffix,
-				), nil
-			}
-		} else if a.RequestMode == RequestModeOpenSource {
-			return fmt.Sprintf(
-				"https://aiplatform.googleapis.com/v1beta1/projects/%s/locations/%s/endpoints/openapi/chat/completions",
-				adc.ProjectID,
-				region,
-			), nil
-		}
-	} else {
-		var keyPrefix string
-		if strings.HasSuffix(suffix, "?alt=sse") {
-			keyPrefix = "&"
-		} else {
-			keyPrefix = "?"
-		}
-		if region == "global" {
-			return fmt.Sprintf(
-				"https://aiplatform.googleapis.com/v1/publishers/google/models/%s:%s%skey=%s",
-				modelName,
-				suffix,
-				keyPrefix,
-				info.ApiKey,
-			), nil
-		} else {
-			return fmt.Sprintf(
-				"https://%s-aiplatform.googleapis.com/v1/publishers/google/models/%s:%s%skey=%s",
-				region,
-				modelName,
-				suffix,
-				keyPrefix,
-				info.ApiKey,
-			), nil
-		}
+		projectID = adc.ProjectID
 	}
-	return "", errors.New("unsupported request mode")
+	if a.RequestMode == RequestModeOpenSource {
+		if apiKeyMode {
+			return "", errors.New("unsupported request mode")
+		}
+		// Preserve the existing open-source endpoint; this change targets publishers.
+		return fmt.Sprintf("https://aiplatform.googleapis.com/v1beta1/projects/%s/locations/%s/endpoints/openapi/chat/completions", projectID, region), nil
+	}
+	publisher := "google"
+	if a.RequestMode == RequestModeClaude {
+		publisher = "anthropic"
+	} else if a.RequestMode != RequestModeGemini {
+		return "", errors.New("unsupported request mode")
+	}
+	requestURL := fmt.Sprintf("%s/publishers/%s/models/%s:%s", vertexAPIBaseURL(projectID, region), publisher, modelName, suffix)
+	if apiKeyMode {
+		separator := "?"
+		if strings.Contains(requestURL, "?") {
+			separator = "&"
+		}
+		requestURL += separator + "key=" + url.QueryEscape(info.ApiKey)
+	}
+	return requestURL, nil
+}
+
+// An empty project preserves the API-key Express-mode path.
+func vertexAPIBaseURL(projectID, region string) string {
+	host := region + "-aiplatform.googleapis.com"
+	switch region {
+	case "global":
+		host = "aiplatform.googleapis.com"
+	case "us", "eu":
+		host = "aiplatform." + region + ".rep.googleapis.com"
+	}
+	base := "https://" + host + "/v1"
+	if projectID != "" {
+		base += "/projects/" + url.PathEscape(projectID) + "/locations/" + url.PathEscape(region)
+	}
+	return base
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
