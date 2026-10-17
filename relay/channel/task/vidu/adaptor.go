@@ -226,17 +226,18 @@ func (a *TaskAdaptor) GetChannelName() string {
 
 func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq, info *relaycommon.RelayInfo) (*requestPayload, error) {
 	r := requestPayload{
-		Model:             taskcommon.DefaultString(info.UpstreamModelName, "viduq1"),
 		Images:            req.Images,
 		Prompt:            req.Prompt,
-		Duration:          taskcommon.DefaultInt(req.Duration, 5),
-		Resolution:        taskcommon.DefaultString(req.Size, "1080p"),
 		MovementAmplitude: "auto",
 		Bgm:               false,
 	}
 	if err := taskcommon.UnmarshalMetadata(req.Metadata, &r); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
 	}
+	// Routing and billing use the canonical request, not metadata overrides.
+	r.Model = taskcommon.DefaultString(info.UpstreamModelName, "viduq1")
+	r.Duration = taskcommon.DefaultInt(req.Duration, 5)
+	r.Resolution = taskcommon.DefaultString(req.Size, "1080p")
 	return &r, nil
 }
 

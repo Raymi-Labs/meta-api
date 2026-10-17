@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| Vidu 任务参数保真 | [原生适配器](../relay/channel/task/vidu/adaptor.go)、[任务计价](../relay/relay_task.go) | 映射后的模型、顶层时长/分辨率在 metadata 合并后写入；保留 seed 等扩展 | 不允许 metadata 覆盖计价字段；保留参考图 viduq2 规范化，不修改价格、预扣及退款 |
 | 分组独立限流 | [中间件](../middleware/model-rate-limit.go) | 有独立限额的分组按用户与分组计数；未配置组共享用户全局限额，内存与 Redis 一致 | 总数与成功预占共用范围；保留失败释放、流式成功判定；独立组升级时首窗口重新计数 |
 | Playground 账户数据隔离 | [存储](../web/src/components/playground/configStorage.js)、[状态](../web/src/hooks/playground/usePlaygroundState.js)、[页面](../web/src/pages/Playground/index.jsx) | 配置与消息按账户 ID 存储；身份变化重建页面、停止流连接，延迟回调绑定原账户 | 未登录不持久化；旧共用缓存因无归属而清理；图片工作台独立应用不在本次范围 |
 | 使用日志 CSV 导出 | [入口](../web/src/components/table/usage-logs/UsageLogsActions.jsx)、[controller](../controller/log_export.go)、[游标读取](../model/log_export.go) | 管理员 `/api/log/export`、本人 `/api/log/self/export`；共用列表筛选、普通用户脱敏；UTC 时间、原始 quota 单位 | 明确时间范围且最多 31 天/10000 条/32 MB，超限失败不截断；完成临时文件后交付；同用户互斥；不限制既有查询与看板 |
