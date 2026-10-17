@@ -25,3 +25,5 @@ Status: implemented
 ## Consequences
 
 独立分组升级时切换计数键，首个窗口重新计数；全局用户键保持兼容。
+
+[失败诊断](2026-10-17-relay-failure-diagnostics.md)补齐内存 429 错误体与失败标记，不改变本篇计数、预占或释放决定。
