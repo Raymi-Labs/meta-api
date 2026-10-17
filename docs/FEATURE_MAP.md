@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| Claude thinking 与 beta 转发 | [DTO](../dto/claude.go)、[原生 handler](../relay/claude_handler.go)、[请求头](../relay/channel/claude/adaptor.go)、[Bedrock](../relay/channel/aws/dto.go) | 保留 block_binding/未知 thinking 字段和重试深拷贝；adaptive suffix 保留绑定控制；全部 beta 行合并 | 保留模型头配置、显式覆盖及已有 beta 清理；不主动启用 beta、不改变缓存计费或跨协议推理规则 |
 | 容器过载保护 | [采样](../common/container_usage.go)、[判定](../common/system_monitor.go)、[中间件](../middleware/performance.go) | cgroup v1/v2 有限额 CPU/内存工作集优先，失败回退宿主；5 秒采样、连续 3 次超限；30 秒新鲜度 | 保留已有开关/阈值、503 与协议错误格式；回落恢复，关闭/调高阈值立即放行；未修改生产配置 |
 | Vidu 任务参数保真 | [原生适配器](../relay/channel/task/vidu/adaptor.go)、[任务计价](../relay/relay_task.go) | 映射后的模型、顶层时长/分辨率在 metadata 合并后写入；保留 seed 等扩展 | 不允许 metadata 覆盖计价字段；保留参考图 viduq2 规范化，不修改价格、预扣及退款 |
 | 分组独立限流 | [中间件](../middleware/model-rate-limit.go) | 有独立限额的分组按用户与分组计数；未配置组共享用户全局限额，内存与 Redis 一致 | 总数与成功预占共用范围；保留失败释放、流式成功判定；独立组升级时首窗口重新计数 |

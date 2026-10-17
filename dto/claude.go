@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -453,9 +454,48 @@ func ProcessTools(tools []any) ([]*Tool, []*ClaudeWebSearchTool) {
 }
 
 type Thinking struct {
-	Type         string `json:"type"`
-	BudgetTokens *int   `json:"budget_tokens,omitempty"`
-	Display      string `json:"display,omitempty"`
+	Type         string          `json:"type"`
+	BudgetTokens *int            `json:"budget_tokens,omitempty"`
+	Display      string          `json:"display,omitempty"`
+	BlockBinding json.RawMessage `json:"block_binding,omitempty"`
+	// Exported so request retry deep copies also isolate unknown thinking fields.
+	Extra map[string]json.RawMessage `json:"-"`
+}
+
+func (c *Thinking) UnmarshalJSON(data []byte) error {
+	type thinkingFields Thinking
+	var fields thinkingFields
+	if err := common.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var all map[string]json.RawMessage
+	if err := common.Unmarshal(data, &all); err != nil {
+		return err
+	}
+	for _, known := range []string{"type", "budget_tokens", "display", "block_binding"} {
+		delete(all, known)
+	}
+	*c = Thinking(fields)
+	if len(all) > 0 {
+		c.Extra = all
+	}
+	return nil
+}
+
+func (c Thinking) MarshalJSON() ([]byte, error) {
+	type thinkingFields Thinking
+	data, err := common.Marshal(thinkingFields(c))
+	if err != nil || len(c.Extra) == 0 {
+		return data, err
+	}
+	merged := make(map[string]json.RawMessage, len(c.Extra)+4)
+	for key, value := range c.Extra {
+		merged[key] = value
+	}
+	if err := common.Unmarshal(data, &merged); err != nil {
+		return nil, err
+	}
+	return common.Marshal(merged)
 }
 
 func (c *Thinking) GetBudgetTokens() int {
@@ -463,6 +503,14 @@ func (c *Thinking) GetBudgetTokens() int {
 		return 0
 	}
 	return *c.BudgetTokens
+}
+
+// PreserveBlockBinding keeps conversation controls when a model suffix rebuilds
+// adaptive thinking. Disabled/manual modes must not inherit adaptive controls.
+func (c *Thinking) PreserveBlockBinding(original *Thinking) {
+	if c != nil && c.Type == "adaptive" && len(c.BlockBinding) == 0 && original != nil {
+		c.BlockBinding = bytes.Clone(original.BlockBinding)
+	}
 }
 
 func (c *ClaudeRequest) IsStringSystem() bool {
