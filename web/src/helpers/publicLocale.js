@@ -167,6 +167,7 @@ const en = {
   '适用于 64 位 Windows 电脑': 'For 64-bit Windows PCs',
   '下载 DMG': 'Download DMG',
   下载安装程序: 'Download Installer',
+  备用线路: 'Alternative downloads',
   当前系统: 'Your System',
   推荐版本: 'Recommended',
   客户端暂未开放下载: 'Desktop App Is Not Available Yet',

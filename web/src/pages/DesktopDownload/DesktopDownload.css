@@ -189,7 +189,7 @@
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 330px;
+  min-height: 370px;
   flex-direction: column;
   padding: 22px;
   overflow: hidden;
@@ -216,7 +216,8 @@
   pointer-events: none;
 }
 
-.desktop-download-card:hover {
+.desktop-download-card:hover,
+.desktop-download-card:focus-within {
   z-index: 1;
   border-color: rgba(18, 92, 255, 0.34);
   box-shadow: 0 22px 48px rgba(18, 92, 255, 0.14);
@@ -291,7 +292,7 @@
 
 .desktop-download-card code {
   display: block;
-  margin-top: 12px;
+  margin: 12px 0 22px;
   overflow: hidden;
   color: #8290a8;
   font-family: 'SFMono-Regular', Consolas, monospace;
@@ -315,6 +316,38 @@
   background: linear-gradient(135deg, #125cff, #0049e6);
   box-shadow: 0 12px 28px rgba(18, 92, 255, 0.2);
   font-size: 13px;
+}
+
+a.desktop-download-action,
+a.desktop-download-action:hover {
+  color: #ffffff;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.desktop-download-backups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 15px;
+  color: var(--dd-muted);
+  font-size: 12px;
+}
+
+.desktop-download-backups a {
+  position: relative;
+  z-index: 1;
+  padding: 4px 0;
+  color: var(--dd-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.desktop-download-card a:focus-visible {
+  outline: 2px solid var(--dd-blue);
+  outline-offset: 4px;
 }
 
 .desktop-download-card.is-recommended .desktop-download-action {

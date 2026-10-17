@@ -200,11 +200,9 @@ const DesktopDownload = () => {
                 const recommended =
                   detectedOS === 'windows' && item.id === 'windows-x64';
                 return (
-                  <a
+                  <article
                     className={`desktop-download-card${recommended ? ' is-recommended' : ''}`}
-                    href={item.url}
                     key={item.id}
-                    download={item.filename}
                   >
                     <div className='desktop-download-card-top'>
                       <span className='desktop-download-platform-icon'>
@@ -224,11 +222,31 @@ const DesktopDownload = () => {
                       <span>{item.format.toUpperCase()}</span>
                     </div>
                     <code title={item.filename}>{item.filename}</code>
-                    <strong className='desktop-download-action'>
+                    <a
+                      className='desktop-download-action'
+                      href={item.url}
+                      download={item.filename}
+                      aria-label={`${presentation.title} · ${presentation.action}`}
+                    >
                       <Download size={18} />
                       {presentation.action}
-                    </strong>
-                  </a>
+                    </a>
+                    {item.backups.length > 0 && (
+                      <div className='desktop-download-backups'>
+                        <span>{t('备用线路')}</span>
+                        {item.backups.map((source) => (
+                          <a
+                            key={source.label}
+                            href={source.url}
+                            download={item.filename}
+                            aria-label={`${presentation.title} · ${source.label}`}
+                          >
+                            {source.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </article>
                 );
               })}
             </div>

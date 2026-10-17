@@ -45,6 +45,56 @@ assert.equal(
   'https://yuanheng.example/desktop/update/releases/1.2.3/YuanHeng_1.2.3_x64-setup.exe',
 );
 
+const officialPackage = (id, suffix) => ({
+  id,
+  filename: `YuanHeng.Desktop_1.2.3_${suffix}`,
+  size: 23000000,
+  url: `https://meta-api.vip/desktop/update/releases/1.2.3/YuanHeng.Desktop_1.2.3_${suffix}`,
+});
+for (const [id, suffix] of [
+  ['macos-arm64', 'aarch64.dmg'],
+  ['macos-x64', 'x64.dmg'],
+  ['windows-x64', 'x64-setup.exe'],
+]) {
+  const item = officialPackage(id, suffix);
+  const normalize = (item, version = '1.2.3') =>
+    normalizeDesktopDownloadCatalog({ version, packages: [item] }).packages[0];
+  const result = normalize(item);
+  assert.equal(result.url, `${item.url}?origin=1`);
+  assert.deepEqual(result.backups, [
+    {
+      label: 'R2',
+      url: item.url.replace('meta-api.vip', 'download.meta-api.vip'),
+    },
+    {
+      label: 'GitHub',
+      url: `https://github.com/nanashiwang/yuanheng-switch/releases/download/v1.2.3/${item.filename}`,
+    },
+  ]);
+  assert.deepEqual(normalize({ ...item, url: result.url }), result);
+  for (const url of [
+    `${item.url}?token=private`,
+    `${item.url}?origin=1&token=private`,
+    `${item.url}#fragment`,
+    item.url.replace('https:', 'http:'),
+    item.url.replace('meta-api.vip', 'meta-api.vip.evil.test'),
+    item.url.replace('meta-api.vip', 'meta-api.vip:444'),
+    item.url.replace('meta-api.vip', 'custom.example.com'),
+    item.url.replace('/1.2.3/', '/1.2.2/'),
+  ]) {
+    const custom = normalize({ ...item, url });
+    assert.equal(custom.url, url);
+    assert.deepEqual(custom.backups, []);
+  }
+  assert.deepEqual(normalize(item, '1.2.4').backups, []);
+  assert.deepEqual(normalize(item, '1.2.3-beta.1').backups, []);
+  assert.deepEqual(
+    normalize({ ...item, filename: `Custom_${suffix}` }).backups,
+    [],
+  );
+}
+assert.ok(catalog.packages.every((item) => item.backups.length === 0));
+
 assert.equal(
   detectDesktopOS({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0)',

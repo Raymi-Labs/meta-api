@@ -48,6 +48,29 @@ const packageDefinitionsByID = new Map(
 const desktopVersionPattern =
   /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
+// Preserve the server-owned URL unless it is our exact public stable asset.
+// Never copy private query parameters or guess mirrors for custom deployments.
+const officialDownloadLinks = (url, filename, version, definition) => {
+  const unchanged = { url: url.href, backups: [] };
+  if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(version)) return unchanged;
+  const expectedFilename = `YuanHeng.Desktop_${version}${definition.filenameSuffixes[0]}`;
+  if (filename !== expectedFilename) return unchanged;
+  const path = `/desktop/update/releases/${version}/${filename}`;
+  const mirror = `https://meta-api.vip${path}`;
+  if (url.href !== mirror && url.href !== `${mirror}?origin=1`)
+    return unchanged;
+  return {
+    url: `${mirror}?origin=1`,
+    backups: [
+      { label: 'R2', url: `https://download.meta-api.vip${path}` },
+      {
+        label: 'GitHub',
+        url: `https://github.com/nanashiwang/yuanheng-switch/releases/download/v${version}/${filename}`,
+      },
+    ],
+  };
+};
+
 export const normalizeDesktopDownloadCatalog = (
   value,
   baseURL = 'https://localhost/',
@@ -118,7 +141,7 @@ export const normalizeDesktopDownloadCatalog = (
       ...definition,
       filename,
       size: item.size,
-      url: parsedURL.href,
+      ...officialDownloadLinks(parsedURL, filename, version, definition),
     });
   }
 
