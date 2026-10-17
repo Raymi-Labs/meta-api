@@ -72,7 +72,7 @@ func shouldAppendClaudeBetaQuery(info *relaycommon.RelayInfo) bool {
 
 func CommonClaudeHeadersOperation(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) {
 	// common headers operation
-	anthropicBeta := strings.Join(c.Request.Header.Values("anthropic-beta"), ",")
+	anthropicBeta := strings.Join(claudeEndToEndHeaderValues(c.Request.Header, "anthropic-beta"), ",")
 	if anthropicBeta != "" {
 		req.Set("anthropic-beta", anthropicBeta)
 	}
@@ -81,8 +81,11 @@ func CommonClaudeHeadersOperation(c *gin.Context, req *http.Header, info *relayc
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) error {
 	channel.SetupApiRequestHeader(info, c, req)
+	if info.RelayFormat == types.RelayFormatClaude {
+		forwardClaudeClientHeaders(c.Request.Header, *req)
+	}
 	req.Set("x-api-key", info.ApiKey)
-	anthropicVersion := c.Request.Header.Get("anthropic-version")
+	anthropicVersion := strings.Join(claudeEndToEndHeaderValues(c.Request.Header, "anthropic-version"), ",")
 	if anthropicVersion == "" {
 		anthropicVersion = "2023-06-01"
 	}

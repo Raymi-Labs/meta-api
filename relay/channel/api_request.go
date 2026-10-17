@@ -610,6 +610,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		}
 	}
 
+	client = claudeClientContextHTTPClient(client, info)
 	client = cpaIdentityHTTPClient(client, info)
 	client = openCodeSessionHTTPClient(client, req)
 	resp, err := client.Do(req)
