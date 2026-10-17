@@ -228,6 +228,11 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 				terminalError = types.NewOpenAIError(fmt.Errorf("invalid OpenAI stream event"), types.ErrorCodeBadResponseBody, http.StatusBadGateway)
 				return false
 			}
+			if err := validateKimiUsageTotals(info, event.Usage); err != nil {
+				info.StreamStatus.RecordError("invalid K3 usage totals")
+				terminalError = types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusBadGateway)
+				return false
+			}
 			// Some providers append metadata chunks after the standard usage chunk.
 			// Keep the latest valid usage instead of assuming it is the final SSE event.
 			updateUsageFromStreamData(data, &usage, &containStreamUsage)
@@ -386,6 +391,9 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 	if oaiError := simpleResponse.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
 		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)
 	}
+	if err := validateKimiUsageTotals(info, &simpleResponse.Usage); err != nil {
+		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusBadGateway)
+	}
 	info.ObserveResponseModel(simpleResponse.Model)
 
 	for _, choice := range simpleResponse.Choices {
@@ -403,6 +411,12 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 		forceFormat = true
 	}
 
+	if usesKimiChatUsage(info) {
+		// Match the streaming total-token normalization before deciding
+		// whether local estimates are needed. Count authority is reapplied
+		// below from raw evidence, not from these generic alias copies.
+		normalizeOpenAIUsage(&simpleResponse.Usage)
+	}
 	usageModified := false
 	if simpleResponse.Usage.PromptTokens == 0 {
 		completionTokens := simpleResponse.Usage.CompletionTokens
@@ -1008,14 +1022,21 @@ func applyUsagePostProcessing(info *relaycommon.RelayInfo, usage *dto.Usage, res
 		return
 	}
 	if usesKimiChatUsage(info) {
-		normalized := normalizeKimiChatUsage(info, responseBody)
-		reported := usageObject(usageObject(normalized)["usage"])
+		root := usageObject(responseBody)
+		reported := usageObject(root["usage"])
 		if reported != nil {
-			if count, ok := nonnegativeUsageCount(usageObject(reported["prompt_tokens_details"])["cached_tokens"]); ok {
-				usage.PromptTokensDetails.CachedTokens = count
+			choice := singleChoiceUsage(info, root)
+			// Generic normalization can have copied a lower-priority alias.
+			// Rebuild both internal counts from the same authority rules as
+			// the wire normalizer and diagnostics, including unknown/invalid.
+			// These zero defaults are internal only, never fabricated on wire.
+			usage.PromptTokensDetails.CachedTokens = 0
+			usage.CompletionTokenDetails.ReasoningTokens = 0
+			if evidence := kimiCountEvidence(reported, choice, kimiUsageFields[0]); evidence.Status == "reported" {
+				usage.PromptTokensDetails.CachedTokens = *evidence.Value
 			}
-			if count, ok := nonnegativeUsageCount(usageObject(reported["completion_tokens_details"])["reasoning_tokens"]); ok {
-				usage.CompletionTokenDetails.ReasoningTokens = count
+			if evidence := kimiCountEvidence(reported, choice, kimiUsageFields[1]); evidence.Status == "reported" {
+				usage.CompletionTokenDetails.ReasoningTokens = *evidence.Value
 			}
 			return
 		}

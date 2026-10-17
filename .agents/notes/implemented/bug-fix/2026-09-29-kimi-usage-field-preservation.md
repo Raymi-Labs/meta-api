@@ -20,6 +20,7 @@ Status: implemented
 - 解析前统一原始usage，保留其未知字段；强制格式化也不把缺失的缓存/思考量制造成0。usage存在的块与尾部元数据分开保存，计费继续使用同一真实来源。
 - [流式保留与来源诊断](2026-09-29-kimi-stream-usage-evidence.md)进一步处理相同输入/输出总量的后续usage快照覆盖细项，扩展单choice思考位置，并在admin_info记录固定来源元数据；未报告数据仍不制造计数。
 - 缺失、0、大于0分别表示未知、报告为零、有用量，验收文档要求查嵌套路径及原始响应，不以字段存在直接判命中。
+- [冲突一致性修复](2026-09-29-kimi-usage-conflict-consistency.md)统一JSON/SSE内部计数选择，unknown/invalid不再沿用通用解析器复制的低优先级别名；K3非流式复用既有流式总量归一，负数总量不进入结算。
 
 ## Alternatives considered
 

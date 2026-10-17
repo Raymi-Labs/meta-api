@@ -3,6 +3,7 @@ package openai
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -37,6 +38,17 @@ func usesKimiChatUsage(info *relaycommon.RelayInfo) bool {
 		name = info.OriginModelName
 	}
 	return name == "kimi-k3" || name == "k3"
+}
+
+func validateKimiUsageTotals(info *relaycommon.RelayInfo, usage *dto.Usage) error {
+	if !usesKimiChatUsage(info) || usage == nil {
+		return nil
+	}
+	if usage.PromptTokens < 0 || usage.CompletionTokens < 0 || usage.TotalTokens < 0 ||
+		usage.InputTokens < 0 || usage.OutputTokens < 0 {
+		return fmt.Errorf("upstream returned negative token totals")
+	}
+	return nil
 }
 
 func usageObject(raw json.RawMessage) rawUsageObject {
@@ -74,11 +86,24 @@ func singleChoiceUsage(info *relaycommon.RelayInfo, root rawUsageObject) rawUsag
 }
 
 func kimiUsageTotal(usage rawUsageObject, field kimiUsageField) (int, bool) {
-	value, present := usage[field.total]
-	if !present {
-		value = usage[field.aliasTotal]
+	// A reusable snapshot needs an unambiguous total, not whichever alias
+	// one parser happens to prefer. Both supplied totals must be valid and
+	// agree, including explicit zero; null/invalid/conflicting totals cannot
+	// justify carrying a count into another event.
+	var total int
+	found := false
+	for _, name := range []string{field.total, field.aliasTotal} {
+		raw, present := usage[name]
+		if !present {
+			continue
+		}
+		value, valid := nonnegativeUsageCount(raw)
+		if !valid || (found && value != total) {
+			return 0, false
+		}
+		total, found = value, true
 	}
-	return nonnegativeUsageCount(value)
+	return total, found
 }
 
 // A present but invalid/null authoritative field blocks lower-priority aliases.
@@ -134,10 +159,17 @@ func kimiCountEvidence(usage, choice rawUsageObject, field kimiUsageField) relay
 		return evidence
 	}
 	count, valid := nonnegativeUsageCount(raw)
-	total, hasTotal := kimiUsageTotal(usage, field)
-	if !valid || (hasTotal && count > total) {
+	if !valid {
 		evidence.Status = "invalid"
 		return evidence
+	}
+	// A conflicting total disables cross-event restoration, but a fresh
+	// count still must not exceed *either* explicitly reported total.
+	for _, name := range []string{field.total, field.aliasTotal} {
+		if total, known := nonnegativeUsageCount(usage[name]); known && count > total {
+			evidence.Status = "invalid"
+			return evidence
+		}
 	}
 	evidence.Status = "reported"
 	evidence.Value = &count

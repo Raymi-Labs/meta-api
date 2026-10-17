@@ -38,17 +38,62 @@ func TestKimiUsageAliasesSettleIdenticallyWithoutDoubleCounting(t *testing.T) {
 	}
 	for _, stream := range []bool{false, true} {
 		for _, tc := range []struct {
-			name, fields    string
-			cached, charged int
+			name, fields, fullUsage, priorUsage, status string
+			cached, charged, prompt, completion         int
+			noTail                                      bool
 		}{
-			{"nested", `"prompt_tokens_details":{"cached_tokens":80},"completion_tokens_details":{"reasoning_tokens":18}`, 80, 48},
-			{"flat", `"cached_tokens":80,"reasoning_tokens":18`, 80, 48},
-			{"both", `"cached_tokens":80,"reasoning_tokens":18,"prompt_tokens_details":{"cached_tokens":80},"completion_tokens_details":{"reasoning_tokens":18}`, 80, 48},
-			{"zero_wins", `"cached_tokens":80,"reasoning_tokens":18,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}`, 0, 120},
-			{"cache_read_alias", `"cache_read_tokens":80,"cache_write_tokens":20,"completion_tokens_details":{"reasoning_tokens":18}`, 80, 48},
-			{"cache_read_zero_wins", `"cache_read_tokens":80,"prompt_tokens_details":{"cached_tokens":0}`, 0, 120},
+			{name: "nested", fields: `"prompt_tokens_details":{"cached_tokens":80},"completion_tokens_details":{"reasoning_tokens":18}`, cached: 80, charged: 48},
+			{name: "flat", fields: `"cached_tokens":80,"reasoning_tokens":18`, cached: 80, charged: 48},
+			{name: "both", fields: `"cached_tokens":80,"reasoning_tokens":18,"prompt_tokens_details":{"cached_tokens":80},"completion_tokens_details":{"reasoning_tokens":18}`, cached: 80, charged: 48},
+			{name: "zero_wins", fields: `"cached_tokens":80,"reasoning_tokens":18,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}`, charged: 120},
+			{name: "cache_read_alias", fields: `"cache_read_tokens":80,"cache_write_tokens":20,"completion_tokens_details":{"reasoning_tokens":18}`, cached: 80, charged: 48},
+			{name: "cache_read_zero_wins", fields: `"cache_read_tokens":80,"prompt_tokens_details":{"cached_tokens":0}`, charged: 120},
+			{
+				name: "null_blocks_details_aliases", noTail: true, status: "unknown", charged: 120,
+				fields: `"prompt_tokens_details":{"cached_tokens":null},"completion_tokens_details":{"reasoning_tokens":null},"input_tokens_details":{"cached_tokens":80},"output_tokens_details":{"reasoning_tokens":18}`,
+			},
+			{
+				name: "zero_blocks_details_aliases", noTail: true, charged: 120,
+				fields: `"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"input_tokens_details":{"cached_tokens":80},"output_tokens_details":{"reasoning_tokens":18}`,
+			},
+			{
+				name: "negative_blocks_details_aliases", noTail: true, status: "invalid", charged: 120,
+				fields: `"prompt_tokens_details":{"cached_tokens":-1},"completion_tokens_details":{"reasoning_tokens":-1},"input_tokens_details":{"cached_tokens":80},"output_tokens_details":{"reasoning_tokens":18}`,
+			},
+			{
+				name: "oversized_blocks_details_aliases", noTail: true, status: "invalid", charged: 120,
+				fields: `"prompt_tokens_details":{"cached_tokens":101},"completion_tokens_details":{"reasoning_tokens":21},"input_tokens_details":{"cached_tokens":80},"output_tokens_details":{"reasoning_tokens":18}`,
+			},
+			{
+				name: "conflicting_totals_invalidate_prior_counts", noTail: true, status: "missing",
+				fields: `"input_tokens":200,"output_tokens":40`, prompt: 200, completion: 40, charged: 240,
+				priorUsage: `{"prompt_tokens":100,"completion_tokens":20,"cached_tokens":80,"reasoning_tokens":18}`,
+			},
+			{
+				name: "fresh_counts_with_conflicting_totals", noTail: true,
+				fields: `"input_tokens":200,"output_tokens":40,"cached_tokens":80,"reasoning_tokens":18`,
+				prompt: 200, completion: 40, cached: 80, charged: 168,
+			},
+			{
+				name: "fresh_counts_exceed_smaller_alias_total", noTail: true, status: "invalid",
+				fields: `"input_tokens":50,"output_tokens":10,"cached_tokens":80,"reasoning_tokens":18`,
+				prompt: 50, completion: 10, charged: 60,
+			},
+			{
+				name: "responses_style_totals", noTail: true, cached: 80, charged: 48,
+				fullUsage: `{"input_tokens":100,"output_tokens":20,"input_tokens_details":{"cached_tokens":80},"output_tokens_details":{"reasoning_tokens":18}}`,
+			},
 		} {
 			t.Run(fmt.Sprintf("%s/stream=%t", tc.name, stream), func(t *testing.T) {
+				if tc.status == "" {
+					tc.status = "reported"
+				}
+				if tc.prompt == 0 {
+					tc.prompt = 100
+				}
+				if tc.completion == 0 {
+					tc.completion = 20
+				}
 				db := useControllerCapacityTestDB(t)
 				sqlDB, err := db.DB()
 				require.NoError(t, err)
@@ -76,13 +121,23 @@ func TestKimiUsageAliasesSettleIdenticallyWithoutDoubleCounting(t *testing.T) {
 				for _, row := range []any{&user, &token, &channel} {
 					require.NoError(t, db.Create(row).Error)
 				}
-				body := `{"model":"kimi-k3","choices":[{"index":0,"message":{"role":"assistant","content":"OK"},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":20,"total_tokens":120,` + tc.fields + `}}`
+				usageJSON := tc.fullUsage
+				if usageJSON == "" {
+					usageJSON = `{"prompt_tokens":100,"completion_tokens":20,"total_tokens":120,` + tc.fields + `}`
+				}
+				body := `{"model":"kimi-k3","choices":[{"index":0,"message":{"role":"assistant","content":"OK"},"finish_reason":"stop"}],"usage":` + usageJSON + `}`
 				transport := &kimiUsageBillingTransport{body: body, contentType: "application/json"}
 				if stream {
 					transport.contentType = "text/event-stream"
-					transport.body = "data: " + strings.Replace(body, `"message":{"role":"assistant","content":"OK"}`, `"delta":{"content":"OK"}`, 1) + "\n\ndata: " +
-						`{"choices":[],"usage":{"prompt_tokens":100,"completion_tokens":20,"total_tokens":120}}` + "\n\ndata: " +
-						`{"choices":[],"metadata":"trailer"}` + "\n\ndata: [DONE]\n\n"
+					transport.body = ""
+					if tc.priorUsage != "" {
+						transport.body += `data: {"choices":[],"usage":` + tc.priorUsage + "}\n\n"
+					}
+					transport.body += "data: " + strings.Replace(body, `"message":{"role":"assistant","content":"OK"}`, `"delta":{"content":"OK"}`, 1) + "\n\n"
+					if !tc.noTail {
+						transport.body += `data: {"choices":[],"usage":{"prompt_tokens":100,"completion_tokens":20,"total_tokens":120}}` + "\n\n"
+					}
+					transport.body += "data: " + `{"choices":[],"metadata":"trailer"}` + "\n\ndata: [DONE]\n\n"
 				}
 				client := service.GetHttpClient()
 				oldTransport := client.Transport
@@ -119,13 +174,20 @@ func TestKimiUsageAliasesSettleIdenticallyWithoutDoubleCounting(t *testing.T) {
 				var other map[string]any
 				require.NoError(t, common.UnmarshalJsonStr(logs[0].Other, &other))
 				require.EqualValues(t, tc.cached, other["cache_tokens"])
-				require.Equal(t, 20, logs[0].CompletionTokens, "reasoning already included in output total")
+				require.Equal(t, tc.prompt, logs[0].PromptTokens)
+				require.Equal(t, tc.completion, logs[0].CompletionTokens, "reasoning already included in output total")
 				evidence := other["admin_info"].(map[string]any)["kimi_usage_evidence"].(map[string]any)
 				cacheEvidence := evidence["cache"].(map[string]any)
-				require.Equal(t, "reported", cacheEvidence["status"])
-				require.EqualValues(t, tc.cached, cacheEvidence["value"])
-				if stream {
+				require.Equal(t, tc.status, cacheEvidence["status"])
+				if tc.status == "reported" {
+					require.EqualValues(t, tc.cached, cacheEvidence["value"])
+				} else {
+					require.NotContains(t, cacheEvidence, "value", "unknown/invalid counts are not reported as zero")
+				}
+				if stream && !tc.noTail {
 					require.Equal(t, true, cacheEvidence["restored_from_prior_chunk"])
+				} else {
+					require.NotContains(t, cacheEvidence, "restored_from_prior_chunk")
 				}
 				publicLogs, err := model.GetLogByTokenId(token.Id)
 				require.NoError(t, err)
