@@ -67,7 +67,12 @@ var defaultChannelCapabilities = map[int]ChannelCapabilities{
 	constant.ChannelTypeDeepSeek: {
 		SupportsChatStreamOptions:      true,
 		SupportsResponsesAPI:           true,
-		SupportsResponsesStreamOptions: true,
+		SupportsResponsesStreamOptions: false,
+		NativeTextFormats: NewTextProtocolSet(
+			types.RelayFormatOpenAI,
+			types.RelayFormatClaude,
+			types.RelayFormatOpenAIResponses,
+		),
 	},
 	constant.ChannelTypeBaiduV2: {
 		SupportsChatStreamOptions:      true,

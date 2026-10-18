@@ -293,6 +293,23 @@ func TestResponsesSessionBridge_DisabledSkipsMatch(t *testing.T) {
 	require.Nil(t, match)
 }
 
+func TestResponsesSessionBridge_DeepSeekKeepsFullHistory(t *testing.T) {
+	setResponsesBridgeTestOptions(t, map[string]string{
+		responsesSessionBridgeEnabledOption:  "true",
+		responsesSessionBridgeUseRedisOption: "false",
+	})
+	info := &relaycommon.RelayInfo{UserId: 997901, TokenId: 997902, OriginModelName: "deepseek-flash",
+		ChannelMeta: &relaycommon.ChannelMeta{ChannelId: 997903, ChannelType: constant.ChannelTypeDeepSeek, ApiType: constant.APITypeDeepSeek, ChannelBaseUrl: "https://api.deepseek.com", UpstreamModelName: "deepseek-flash"}}
+	initial := &dto.GeneralOpenAIRequest{Model: "deepseek-flash", Messages: []dto.Message{{Role: "user", Content: "Hi"}}}
+	require.NoError(t, StoreResponsesSessionBridge(info, initial, dto.Message{Role: "assistant", Content: "OK"}, "resp_deepseek"))
+	next := &dto.GeneralOpenAIRequest{Model: "deepseek-flash", Messages: []dto.Message{{Role: "user", Content: "Hi"}, {Role: "assistant", Content: "OK"}, {Role: "user", Content: "Continue"}}}
+	match, err := ApplyResponsesSessionBridge(info, next)
+	require.NoError(t, err)
+	require.Nil(t, match)
+	require.Len(t, next.Messages, 3)
+	require.True(t, hasResponsesPreviousResponseIDUnsupported(info))
+}
+
 func TestResponsesSessionBridge_PreviousResponseIDUnsupportedSkipsMatch(t *testing.T) {
 	setResponsesBridgeTestOptions(t, map[string]string{
 		responsesSessionBridgeEnabledOption:  "true",

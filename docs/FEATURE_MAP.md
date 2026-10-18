@@ -1,9 +1,10 @@
 # 功能地图
 
-核对日期：2026-10-17。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-18。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| DeepSeek 原生 Responses | [适配器](../relay/channel/deepseek/adaptor.go)、[最终请求校验](../relay/channel/deepseek/responses.go)、[接入说明](channel/deepseek_responses.md) | `/v1/responses` 经原鉴权/选渠/映射 → 基址 `/responses`；复用 JSON/SSE、推理与函数工具历史 | 无状态续接须完整 input；previous_response_id / conversation 明确400；最终体移除 stream_options；不改价格/数据库/生产渠道，不证明第三方实测可用 |
 | 请求失败诊断 | [请求体缓存](../common/gin.go)、[内存限流](../middleware/model-rate-limit.go)、[错误出口](../middleware/utils.go) | 首次读取失败保留至同一请求后续读取；内存 429 与 Redis 共用消息格式、请求 ID 和最终失败标记 | 保留本地三协议/全局 body 限额、413、分组 subject、成功预占/失败释放；不增加重试或收费 |
 | Vertex 官方地址兼容 | [适配器](../relay/channel/vertex/adaptor.go)、[渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)、[配置 DTO](../dto/channel_settings.go) | global、us/eu 多区域及普通区域；API Key 可选 settings.vertex_project_id，空值保留 Express；JSON 使用凭据项目 | 管理员原渠道接口/权限，7 种界面语言；不新增表，不改变 token 获取/模型映射/计费；真实供应商权限另验 |
 | Claude 审核与客户端上下文 | [Claude 适配器](../relay/channel/claude/adaptor.go)、[身份头](../relay/channel/claude/client_headers.go)、[重定向边界](../relay/channel/claude_client_context.go) | 原生 Messages 显式身份/会话头保真；Connection 提名头过滤；原生 Anthropic 跨源重定向拒绝 | 不转发客户端凭据/Cookie，不把身份头当权限，不修改审核结论、缓存或计费；管理员显式覆盖优先 |

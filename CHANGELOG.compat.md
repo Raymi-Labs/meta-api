@@ -1,5 +1,16 @@
 # 本地兼容更新
 
+## v1.0.0-compat.45 — 2026-10-18
+
+- 打通 DeepSeek 专用渠道的原生 Responses：客户端 `/v1/responses` 正确转发到基址 `/responses`，不再返回未实现或误发到 Chat Completions；保留原有鉴权、模型映射与计费流程。
+- 支持 `deepseek-flash` 元数据及 none/max 后缀，保留原生推理参数、文本/推理/工具 SSE 和完整历史工具续接；最终请求移除不支持的 Responses stream_options。
+- 对非空 previous_response_id / conversation 明确返回 400 并要求完整历史；DeepSeek 的 Chat 转 Responses 会话优化不生成服务端引用，避免上下文被上游静默忽略。
+- 保留上游 HTTP 状态和具体错误，不新增统一 502 包装；修复 Responses 非流式 HTTP 200 中只有 code/message 的错误或 failed 状态被当成成功的问题。接入说明见 `docs/channel/deepseek_responses.md`。
+- 同时包含此前已进入主线的 Claude 身份头透传与审核结果边界、Kimi 冲突用量在流式和非流式结算的一致性修复。
+- 验证：完整 Relay HTTP 协议桩覆盖原始请求、流式、推理、两轮工具续接和上游错误；相关 Go 包及定向竞态检查通过，包含失败退款回归；Go 与 Bun 完整构建、五个公开页预渲染、决策笔记校验通过。
+
+无数据库迁移，不修改生产渠道或价格。发布不自动部署生产；供应商真实账号与原始请求编号仍需单独验收。
+
 ## v1.0.0-compat.44 — 2026-10-17
 
 - 官网页面主下载按钮使用 meta-api.vip 新线路直链，同一安装包提供 R2 和 GitHub 备用链接，下载较慢时可手动切换。

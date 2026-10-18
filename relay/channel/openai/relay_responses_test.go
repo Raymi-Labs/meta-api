@@ -68,6 +68,27 @@ func TestResponsesUsageObservesDeclaredModelWithoutChangingBilling(t *testing.T)
 	require.Equal(t, "declared", response.Model)
 }
 
+func TestOaiResponsesHandler_FailedJSONNeverSucceeds(t *testing.T) {
+	for _, body := range []string{
+		`{"status":"failed","error":{"code":"provider_failure","message":"original provider failure"}}`,
+		`{"status":"failed","error":{"type":"server_error","message":"original provider failure"}}`,
+		`{"status":"failed","error":null}`,
+		`{"status":"completed","error":{"message":"original provider failure"}}`,
+	} {
+		c, w := newResponsesStreamTestContext()
+		resp := &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(strings.NewReader(body))}
+		usage, apiErr := OaiResponsesHandler(c, &relaycommon.RelayInfo{}, resp)
+		require.Nil(t, usage)
+		require.Error(t, apiErr)
+		require.GreaterOrEqual(t, apiErr.StatusCode, 400)
+		require.True(t, types.IsSkipRetryError(apiErr))
+		require.Empty(t, w.Body.String(), "failure must not be copied as a successful response")
+		if strings.Contains(body, "original provider failure") {
+			require.Contains(t, apiErr.Error(), "original provider failure")
+		}
+	}
+}
+
 type errorAfterBodyReadCloser struct {
 	reader *strings.Reader
 	err    error

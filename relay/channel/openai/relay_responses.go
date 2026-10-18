@@ -34,8 +34,11 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
-	if oaiError := responsesResponse.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
-		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)
+	if hasResponsesOpenAIError(responsesResponse.GetOpenAIError()) || strings.EqualFold(strings.TrimSpace(responsesResponse.Status), "failed") {
+		// Responses errors can contain only code/message (including DeepSeek).
+		// HTTP 200 transports a response object, not proof of semantic success.
+		apiErr := newResponsesStreamEventError(dto.ResponsesStreamResponse{Type: "response.failed", Response: &responsesResponse})
+		return nil, types.NewError(apiErr, apiErr.GetErrorCode(), types.ErrOptionWithSkipRetry())
 	}
 	info.RecordResponsesCompletedSummary(&responsesResponse)
 

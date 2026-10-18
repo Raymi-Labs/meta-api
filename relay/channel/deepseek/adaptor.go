@@ -57,6 +57,9 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if info.RelayMode == constant.RelayModeResponses {
+		return strings.TrimRight(info.ChannelBaseUrl, "/") + "/responses", nil
+	}
 	fimBaseUrl := info.ChannelBaseUrl
 	switch info.RelayFormat {
 	case types.RelayFormatClaude:
@@ -152,11 +155,33 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
-	// TODO implement me
-	return nil, errors.New("not implemented")
+	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(request.Model)
+	if ok {
+		request.Model = baseModel
+		if thinkingType == "disabled" {
+			effort = "none"
+		}
+		reasoningConfig := dto.Reasoning{}
+		if request.Reasoning != nil {
+			reasoningConfig = *request.Reasoning
+		}
+		reasoningConfig.Effort = effort
+		request.Reasoning = &reasoningConfig
+	}
+	if info != nil && request.Reasoning != nil {
+		info.ReasoningEffort = request.Reasoning.Effort
+	}
+	return &request, nil
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
+	if info.RelayMode == constant.RelayModeResponses {
+		var err error
+		requestBody, err = prepareResponsesRequestBody(requestBody)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return channel.DoApiRequest(a, c, info, requestBody)
 }
 

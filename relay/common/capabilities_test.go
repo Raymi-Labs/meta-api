@@ -67,6 +67,18 @@ func TestResolveChannelCapabilitiesHonorsOverrides(t *testing.T) {
 	}
 }
 
+func TestResolveChannelCapabilitiesDeepSeekNativeResponses(t *testing.T) {
+	caps := ResolveChannelCapabilities(constant.ChannelTypeDeepSeek, "https://api.deepseek.com", dto.ChannelOtherSettings{})
+	if !caps.SupportsChatStreamOptions || !caps.SupportsResponsesAPI || caps.SupportsResponsesStreamOptions {
+		t.Fatalf("incorrect DeepSeek stream/endpoint capabilities: %+v", caps)
+	}
+	for _, format := range []types.RelayFormat{types.RelayFormatOpenAI, types.RelayFormatClaude, types.RelayFormatOpenAIResponses} {
+		if !caps.NativeTextFormats.Supports(format) {
+			t.Fatalf("missing native DeepSeek format %s", format)
+		}
+	}
+}
+
 func TestResolveChannelCapabilitiesResponsesStreamRequiresResponsesAPI(t *testing.T) {
 	caps := ResolveChannelCapabilities(constant.ChannelTypeAzure, "https://example.openai.azure.com", dto.ChannelOtherSettings{
 		ResponsesAPIMode:           dto.CapabilityModeDisabled,

@@ -124,7 +124,7 @@ var (
 	openAIResponsesSessionStore = &responsesSessionStore{
 		entries: make(map[string]map[string]*responsesSessionEntry),
 	}
-	responsesBridgeInitOnce                    sync.Once
+	responsesBridgeInitOnce                     sync.Once
 	responsesPreviousResponseIDUnsupportedStore sync.Map
 )
 
@@ -361,6 +361,11 @@ func MarkResponsesPreviousResponseIDUnsupported(info *relaycommon.RelayInfo) {
 }
 
 func hasResponsesPreviousResponseIDUnsupported(info *relaycommon.RelayInfo) bool {
+	// Native DeepSeek Responses is stateless. Never trim caller history into a
+	// reference that the provider ignores, even before a capability probe fails.
+	if info != nil && info.ChannelMeta != nil && info.ChannelType == constant.ChannelTypeDeepSeek {
+		return true
+	}
 	key, err := buildResponsesPreviousResponseIDCapabilityKey(info)
 	if err != nil || key == "" {
 		return false
