@@ -1,12 +1,13 @@
 # 功能地图
 
-核对日期：2026-10-18。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-19。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
 | DeepSeek 原生 Responses | [适配器](../relay/channel/deepseek/adaptor.go)、[最终请求校验](../relay/channel/deepseek/responses.go)、[接入说明](channel/deepseek_responses.md) | `/v1/responses` 经原鉴权/选渠/映射 → 基址 `/responses`；复用 JSON/SSE、推理与函数工具历史 | 无状态续接须完整 input；previous_response_id / conversation 明确400；最终体移除 stream_options；不改价格/数据库/生产渠道，不证明第三方实测可用 |
 | 请求失败诊断 | [请求体缓存](../common/gin.go)、[内存限流](../middleware/model-rate-limit.go)、[错误出口](../middleware/utils.go) | 首次读取失败保留至同一请求后续读取；内存 429 与 Redis 共用消息格式、请求 ID 和最终失败标记 | 保留本地三协议/全局 body 限额、413、分组 subject、成功预占/失败释放；不增加重试或收费 |
 | Vertex 官方地址兼容 | [适配器](../relay/channel/vertex/adaptor.go)、[渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)、[配置 DTO](../dto/channel_settings.go) | global、us/eu 多区域及普通区域；API Key 可选 settings.vertex_project_id，空值保留 Express；JSON 使用凭据项目 | 管理员原渠道接口/权限，7 种界面语言；不新增表，不改变 token 获取/模型映射/计费；真实供应商权限另验 |
+| Claude 采样参数拒绝兼容 | [共用自愈](../relay/claude_param_heal.go)、[错误识别](../service/sampling_compatibility.go)、[诊断](../service/request_failure_log.go) | Chat 转 Messages 与原生 Messages；Anthropic 类型渠道的结构化 400 明确拒绝采样参数时，同渠道移除对应字段最多重发一次；管理员 attempts 保留上游请求 ID 与调整 | 只影响当前请求，不缓存模型能力；透传、取消、已输出、歧义及未知错误不重发；成功单次结算、失败退款；本地模型不可用提示核对令牌范围，不自动替换模型 |
 | Claude 审核与客户端上下文 | [Claude 适配器](../relay/channel/claude/adaptor.go)、[身份头](../relay/channel/claude/client_headers.go)、[重定向边界](../relay/channel/claude_client_context.go) | 原生 Messages 显式身份/会话头保真；Connection 提名头过滤；原生 Anthropic 跨源重定向拒绝 | 不转发客户端凭据/Cookie，不把身份头当权限，不修改审核结论、缓存或计费；管理员显式覆盖优先 |
 | Claude thinking 与 beta 转发 | [DTO](../dto/claude.go)、[原生 handler](../relay/claude_handler.go)、[请求头](../relay/channel/claude/adaptor.go)、[Bedrock](../relay/channel/aws/dto.go) | 保留 block_binding/未知 thinking 字段和重试深拷贝；adaptive suffix 保留绑定控制；全部 beta 行合并 | 保留模型头配置、显式覆盖及已有 beta 清理；不主动启用 beta、不改变缓存计费或跨协议推理规则 |
 | 容器过载保护 | [采样](../common/container_usage.go)、[判定](../common/system_monitor.go)、[中间件](../middleware/performance.go) | cgroup v1/v2 有限额 CPU/内存工作集优先，失败回退宿主；5 秒采样、连续 3 次超限；30 秒新鲜度 | 保留已有开关/阈值、503 与协议错误格式；回落恢复，关闭/调高阈值立即放行；未修改生产配置 |

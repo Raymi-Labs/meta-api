@@ -92,9 +92,24 @@ func AppendRequestFailureAttempt(c *gin.Context, channel types.ChannelError, err
 	c.Set(requestFailureAttemptsKey, list)
 }
 
+// Reuse the existing admin-only attempt list for same-channel adjustments too.
+func AppendRequestAdjustmentAttempt(c *gin.Context, channel types.ChannelError, err *types.NewAPIError, adjustment string) {
+	AppendRequestFailureAttempt(c, channel, err)
+	if !constant.ErrorLogEnabled || c == nil || err == nil {
+		return
+	}
+	value, _ := c.Get(requestFailureAttemptsKey)
+	if attempts, ok := value.([]map[string]interface{}); ok && len(attempts) > 0 {
+		attempt := attempts[len(attempts)-1]
+		attempt["retry_kind"] = "request_adjustment"
+		attempt["adjustment"] = adjustment
+	}
+}
+
 func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, reason, hint string) {
 	code := string(err.GetErrorCode())
 	message := strings.ToLower(err.Error())
+	rejectedSampling := RejectedSamplingParameter(err.Error())
 	switch {
 	case err.GetErrorCode() == types.ErrorCodeBadResponseBody && err.Error() == ResponsesStreamEmptyCompletedReason:
 		return "empty_response", "响应结束但未识别到有效输出", "请稍后重试；若持续出现，请携带请求 ID 联系管理员。"
@@ -106,6 +121,10 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "content_policy", "请求被内容安全策略拒绝", "请调整请求内容，遵守使用政策；处于冷静期时请等待结束。"
 	case code == string(types.ErrorCodeConversationStateNotFound):
 		return "conversation_state", "对话上下文已失效", "请新建会话并重新发送完整上下文。"
+	case !upstream && code == string(types.ErrorCodeModelNotFound):
+		return "model_unavailable", "当前令牌可用范围内未找到该模型", "请使用同一令牌查询 /v1/models，核对模型名称、令牌分组及渠道限制。"
+	case upstream && err.StatusCode == http.StatusBadRequest && rejectedSampling != "":
+		return "sampling_parameter", "上游模型不支持当前采样参数", fmt.Sprintf("请关闭客户端自定义 %s 参数后重试；若仍失败，请携带请求 ID 联系管理员。", rejectedSampling)
 	case code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed):
 		return "quota", "账户或令牌额度不足", "请检查账户余额、令牌额度及套餐限制。"
 	case err.StatusCode == http.StatusRequestEntityTooLarge:

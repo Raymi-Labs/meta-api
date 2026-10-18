@@ -3,58 +3,69 @@ package relay
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/sjson"
 )
 
-// 错误驱动的参数自愈：上游 400 明确指认某个采样参数（deprecated / not supported）时，
-// 剥除该参数并在同渠道原样重发一次。上游参数规则随模型版本演化，客户端永远滞后，
-// 枚举式适配（硬编码模型前缀）只能覆盖已知规则；这里对上游的明确反馈做自动响应，
-// 未来任何参数废弃都无需改代码。
-
+// Explicit upstream refusals are evidence for this request only. Do not cache
+// them as model-wide capabilities or strip parameters on other channels.
 const claudeParamHealDoneKey = "claude_param_heal_done"
-
 const emptyClaudeThinkingError = "each thinking block must contain thinking"
+const maxClaudeHealErrorBytes = 64 << 10
 
-// 只允许剥除采样类参数：剥掉它们不改变请求语义，最多损失一点采样偏好。
-// max_tokens/messages/tools 等语义参数绝不自动剥。
-var healableParams = map[string]struct{}{
-	"temperature": {},
-	"top_p":       {},
-	"top_k":       {},
+type claudeHealError struct {
+	Error struct {
+		Type    string `json:"type"`
+		Message string `json:"message"`
+	} `json:"error"`
 }
 
-// 匹配 Anthropic/OpenAI 风格的参数错误指认，如：
-//
-//	`temperature` is deprecated for this model.
-//	`top_k` is not supported ...
-//	Unsupported parameter: `top_p` ...
-var healableParamErrorRegexp = regexp.MustCompile(
-	"`([a-zA-Z_][a-zA-Z0-9_]*)`(?:[a-zA-Z ]*)? is (?:deprecated|not supported|unsupported)|[Uu]nsupported parameter[: ]+`?([a-zA-Z_][a-zA-Z0-9_]*)`?",
-)
+func claudeHealErrorMessage(body []byte) string {
+	var response claudeHealError
+	if common.Unmarshal(body, &response) != nil || response.Error.Type != "invalid_request_error" {
+		return ""
+	}
+	return response.Error.Message
+}
 
 func extractHealableParam(bodyText string) string {
-	m := healableParamErrorRegexp.FindStringSubmatch(bodyText)
-	if m == nil {
-		return ""
+	return service.RejectedSamplingParameter(claudeHealErrorMessage([]byte(bodyText)))
+}
+
+type claudeHealReplayBody struct {
+	io.Reader
+	io.Closer
+}
+
+// Always restore consumed bytes and preserve the underlying Close, including
+// oversized/error bodies that are ineligible for healing.
+func peekClaudeHealError(resp *http.Response) ([]byte, bool) {
+	if resp.Body == nil {
+		return nil, false
 	}
-	param := m[1]
-	if param == "" {
-		param = m[2]
-	}
-	if _, ok := healableParams[param]; !ok {
-		return ""
-	}
-	return param
+	original := resp.Body
+	body, err := io.ReadAll(io.LimitReader(original, maxClaudeHealErrorBytes+1))
+	resp.Body = &claudeHealReplayBody{Reader: io.MultiReader(bytes.NewReader(body), original), Closer: original}
+	return body, err == nil && len(body) <= maxClaudeHealErrorBytes
+}
+
+func recordClaudeAdjustment(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response, body []byte, adjustment string) {
+	snapshot := *resp
+	snapshot.Body = io.NopCloser(bytes.NewReader(body))
+	apiErr := service.RelayErrorHandler(c.Request.Context(), &snapshot, false)
+	service.AppendRequestAdjustmentAttempt(c, *types.NewChannelError(info.ChannelId, info.ChannelType, "", false, "", false), apiErr, adjustment)
 }
 
 // tryHealClaudeParamError 在上游返回 400 时尝试剥参重发一次。
@@ -69,10 +80,13 @@ func tryHealClaudeParamError(
 	if c == nil || info == nil || adaptor == nil || httpResp == nil || len(requestJSON) == 0 {
 		return httpResp, false
 	}
-	if info.ChannelType != constant.ChannelTypeAnthropic {
+	if info.ChannelMeta == nil || info.ChannelType != constant.ChannelTypeAnthropic {
 		return httpResp, false
 	}
 	if httpResp.StatusCode != http.StatusBadRequest {
+		return httpResp, false
+	}
+	if c.Request == nil || c.Request.Context().Err() != nil || c.Writer == nil || c.Writer.Written() {
 		return httpResp, false
 	}
 	// 每请求最多自愈一次，防止循环
@@ -80,17 +94,22 @@ func tryHealClaudeParamError(
 		return httpResp, false
 	}
 
-	bodyText, ok := peekResponseBody(httpResp)
-	if !ok || !strings.Contains(bodyText, "invalid_request_error") {
+	body, ok := peekClaudeHealError(httpResp)
+	if !ok || c.Request.Context().Err() != nil || c.Writer.Written() {
 		return httpResp, false
 	}
-	if strings.Contains(strings.ToLower(bodyText), emptyClaudeThinkingError) {
+	message := claudeHealErrorMessage(body)
+	if message == "" {
+		return httpResp, false
+	}
+	if strings.Contains(strings.ToLower(message), emptyClaudeThinkingError) {
 		cleanedJSON, result, err := sanitizeEmptyClaudeThinkingJSON(requestJSON)
 		if err != nil || !result.Changed() {
 			return httpResp, false
 		}
 
 		c.Set(claudeParamHealDoneKey, true)
+		recordClaudeAdjustment(c, info, httpResp, body, "empty_thinking")
 		logger.LogWarn(c, fmt.Sprintf(
 			"request self-heal: upstream rejected empty thinking; removed %d block(s), removed %d message(s), merged %d message(s), retrying once (channel #%d, model %s)",
 			result.RemovedBlocks,
@@ -106,7 +125,7 @@ func tryHealClaudeParamError(
 			return httpResp, false
 		}
 		healedResp, ok := retryResp.(*http.Response)
-		if !ok {
+		if !ok || healedResp == nil {
 			return httpResp, false
 		}
 		if healedResp != httpResp && httpResp.Body != nil {
@@ -115,7 +134,7 @@ func tryHealClaudeParamError(
 		c.Header("X-Request-Adjusted", "empty_thinking")
 		return healedResp, true
 	}
-	param := extractHealableParam(bodyText)
+	param := service.RejectedSamplingParameter(message)
 	if param == "" {
 		return httpResp, false
 	}
@@ -126,6 +145,7 @@ func tryHealClaudeParamError(
 	}
 
 	c.Set(claudeParamHealDoneKey, true)
+	recordClaudeAdjustment(c, info, httpResp, body, "remove_"+param)
 	logger.LogWarn(c, fmt.Sprintf(
 		"param self-heal: upstream 400 rejected `%s`, stripped and retrying once (channel #%d, model %s)",
 		param, info.ChannelId, info.UpstreamModelName,
@@ -137,7 +157,7 @@ func tryHealClaudeParamError(
 		return httpResp, false
 	}
 	healedResp, ok := retryResp.(*http.Response)
-	if !ok {
+	if !ok || healedResp == nil {
 		return httpResp, false
 	}
 	if healedResp != httpResp && httpResp.Body != nil {
