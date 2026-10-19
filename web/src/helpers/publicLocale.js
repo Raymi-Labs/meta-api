@@ -145,6 +145,23 @@ const en = {
     'Integrate now and unlock a unified LLM experience.',
   立即开始: 'Get Started',
   下载客户端: 'Download App',
+  下载元衡客户端: 'Download YuanHeng',
+  '在手机上直接使用 AI，在电脑上统一管理你的 AI 工具。':
+    'Use AI on your phone and manage your AI tools on your computer.',
+  公开测试版: 'Public alpha',
+  '元衡 Android': 'YuanHeng for Android',
+  '在手机上聊天、生图、查看额度和管理令牌，支持兑换码与官网充值。':
+    'Chat, create images, view your balance and manage API tokens. Redeem codes and top up on our website.',
+  '下载安卓 APK': 'Download Android APK',
+  'GitHub 备用下载': 'Download from GitHub',
+  '下载后打开 APK，按系统提示允许当前浏览器安装应用。':
+    'Open the downloaded APK and allow your browser to install apps when Android prompts you.',
+  '安卓测试版暂不支持应用内更新，新版本需重新下载安装。':
+    'This Android alpha does not support in-app updates. Download and install new versions when available.',
+  查看安装包校验信息: 'View package checksum',
+  下载校验文件: 'Download checksum file',
+  桌面版当前发布版本: 'Current desktop release',
+  桌面版支持应用内自动更新: 'Desktop apps support in-app updates',
   返回首页: 'Back to Home',
   '把你的 AI 工具，放进一个控制中心':
     'Bring Your AI Tools Into One Control Center',

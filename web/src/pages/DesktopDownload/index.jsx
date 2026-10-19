@@ -37,6 +37,7 @@ import {
   orderDesktopDownloadPackages,
 } from './desktopDownload';
 import './DesktopDownload.css';
+import AndroidDownloadCard from './AndroidDownloadCard';
 
 const packagePresentation = (item, t) => {
   if (item.id === 'macos-arm64') {
@@ -142,27 +143,25 @@ const DesktopDownload = () => {
         <div className='desktop-download-hero'>
           <div className='desktop-download-kicker'>
             <Sparkles size={16} />
-            YuanHeng Desktop
+            YuanHeng
           </div>
-          <h1 id='download-title'>{t('把你的 AI 工具，放进一个控制中心')}</h1>
-          <p>
-            {t(
-              '下载安装 YuanHeng Desktop，统一管理终端、客户端、模型和分组，后续版本可在应用内直接更新。',
-            )}
-          </p>
+          <h1 id='download-title'>{t('下载元衡客户端')}</h1>
+          <p>{t('在手机上直接使用 AI，在电脑上统一管理你的 AI 工具。')}</p>
+        </div>
+
+        <AndroidDownloadCard t={t} />
+
+        <section className='desktop-download-panel' aria-live='polite'>
           {state.catalog && (
             <div
               className='desktop-download-release'
-              aria-label={t('当前发布版本')}
+              aria-label={t('桌面版当前发布版本')}
             >
-              <span>v{state.catalog.version}</span>
+              <span>Desktop v{state.catalog.version}</span>
               {releaseDate && <small>{releaseDate}</small>}
               <em>{t('最新稳定版')}</em>
             </div>
           )}
-        </div>
-
-        <section className='desktop-download-panel' aria-live='polite'>
           <div className='desktop-download-panel-heading'>
             <div>
               <span>{t('选择安装包')}</span>
@@ -285,7 +284,7 @@ const DesktopDownload = () => {
           </span>
           <span>
             <CheckCircle2 size={19} />
-            {t('安装后支持应用内自动更新')}
+            {t('桌面版支持应用内自动更新')}
           </span>
         </div>
       </section>

@@ -38,3 +38,5 @@ ESLint、Prettier、Bun 完整前端构建及五个公开页 Chromium 预渲染�
 代码提交 d7e585e50，main 已推送。[compat.44 发布](https://github.com/nanashiwang/new-api/releases/tag/v1.0.0-compat.44) 沿用兼容版 prerelease 标记，四个平台二进制齐全且均有 GitHub SHA-256；构建 run 39016645990 全成功。Docker run 39016631660 成功，生产架构镜像 `ghcr.io/nanashiwang/new-api:sha-d7e585e` 的 manifest 为 `sha256:063e407a0ac20399246ea1e4dbdfd29de23af2afc997e4883946256a1dbc80ee`，源站只读查询可见。
 
 用户确认“仅发布，暂不升级官网”。生产仍为 `main-135966d` / `sha-135966d`，运行、Compose 与发布管理状态一致，未执行部署。新直链和备用按钮尚未上线；该决定不阻止独立桌面版本的已授权发布与安装包分发。
+
+安卓公开测试版使用独立版本路径和固定元数据，见 [安卓下载入口](2026-10-19-android-download.md)，不进入本篇的桌面目录契约。

@@ -156,6 +156,119 @@
   margin-bottom: 22px;
 }
 
+.desktop-download-panel > .desktop-download-release {
+  margin: 0 0 22px;
+  flex-wrap: wrap;
+}
+
+.android-download-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  margin-bottom: 28px;
+  scroll-margin-top: 100px;
+}
+
+.android-download-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.android-download-heading h2 {
+  margin: 6px 0 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.android-download-badge {
+  color: #9a5c00;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.android-download-description {
+  margin: 18px 0 14px;
+  color: var(--dd-muted);
+  line-height: 1.8;
+}
+
+.android-download-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: #53627e;
+  font-size: 13px;
+}
+
+.android-download-actions {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.android-download-actions a,
+.android-download-checksum a {
+  color: var(--dd-blue);
+}
+
+.android-download-actions .android-download-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 22px;
+  border-radius: 14px;
+  background: var(--dd-blue);
+  color: white;
+  font-size: 15px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.android-download-help {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border-top: 1px solid rgba(18, 92, 255, 0.12);
+  padding-top: 16px;
+  color: var(--dd-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.android-download-help p {
+  margin: 0 0 6px;
+}
+
+.android-download-help summary {
+  width: fit-content;
+  margin-top: 10px;
+  color: var(--dd-blue);
+  cursor: pointer;
+}
+
+.android-download-checksum {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.android-download-checksum code {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .android-download-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .android-download-actions .android-download-primary {
+    width: 100%;
+  }
+}
+
 .desktop-download-panel-heading span {
   color: var(--dd-blue);
   font-size: 12px;
