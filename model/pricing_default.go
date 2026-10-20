@@ -66,6 +66,7 @@ var defaultVendorIcons = map[string]string{
 	"Microsoft":  "AzureAI",
 	"Azure":      "AzureAI",
 	"小米 MiMo":    "Xiaomi.color='#FF6900'",
+	"Inception":  "Inception",
 }
 
 func hasModelNameSegment(modelName string, segments ...string) bool {
@@ -88,6 +89,12 @@ func hasModelNameSegment(modelName string, segments ...string) bool {
 }
 
 func getDefaultVendorName(modelName string) string {
+	if hasModelNameSegment(modelName, "mercury") {
+		if isInceptionModel(modelName) {
+			return defaultInceptionVendorName
+		}
+		return ""
+	}
 	// MiMo models contain a standalone mimo segment. Requiring that segment
 	// avoids treating every model in a broad xiaomi namespace as MiMo.
 	if hasModelNameSegment(modelName, "mimo") {
@@ -117,10 +124,11 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 		modelName := ability.Model
 		meta, exists := metaMap[modelName]
 		if exists && meta != nil {
-			if meta.VendorID != 0 || getDefaultVendorName(modelName) != defaultMiMoVendorName {
+			vendorName := getDefaultVendorName(modelName)
+			if meta.VendorID != 0 || (vendorName != defaultMiMoVendorName && vendorName != defaultInceptionVendorName) {
 				continue
 			}
-			vendorID := getOrCreateVendor(defaultMiMoVendorName, vendorMap)
+			vendorID := getOrCreateVendor(vendorName, vendorMap)
 			if vendorID == 0 {
 				continue
 			}
@@ -149,10 +157,24 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 	// 优先查找规范名称，避免 map 遍历顺序导致选中旧别名。
 	for id, vendor := range vendorMap {
 		if vendor.Name == vendorName {
+			fillInceptionVendorDefaults(vendor)
 			if vendor.Name == defaultMiMoVendorName && strings.TrimSpace(vendor.Icon) == "" {
 				vendor.Icon = getDefaultVendorIcon(vendorName)
 			}
 			return id
+		}
+	}
+	if vendorName == defaultInceptionVendorName {
+		var alias *Vendor
+		for id, vendor := range vendorMap {
+			if isInceptionVendorAlias(vendor.Name) && (alias == nil || id < alias.Id) {
+				alias = vendor
+			}
+		}
+		if alias != nil {
+			alias.Name = defaultInceptionVendorName
+			fillInceptionVendorDefaults(alias)
+			return alias.Id
 		}
 	}
 	// 兼容尚未执行持久化归一化的从节点或旧数据库快照。
@@ -175,6 +197,7 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 		Status: 1,
 		Icon:   getDefaultVendorIcon(vendorName),
 	}
+	fillInceptionVendorDefaults(newVendor)
 
 	if err := newVendor.Insert(); err != nil {
 		return 0

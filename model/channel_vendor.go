@@ -32,6 +32,7 @@ var channelVendorSegments = map[string][]string{
 	"xai":       {"grok"},
 	"minimax":   {"minimax"},
 	"mistral":   {"mistral", "mixtral", "codestral", "pixtral", "ministral", "devstral"},
+	"inception": {"mercury"},
 }
 
 type ChannelCategory struct {
@@ -61,6 +62,8 @@ func NormalizeChannelVendorSetting(vendor string) string {
 		return "zhipu"
 	case "grok":
 		return "xai"
+	case "inception labs", "inceptionlabs", "mercury":
+		return "inception"
 	case ChannelVendorMiMo, strings.ToLower(defaultMiMoVendorName), "xiaomi", "xiaomi mimo":
 		return ChannelVendorMiMo
 	default:

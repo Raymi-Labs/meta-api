@@ -75,7 +75,7 @@ const ChannelsTabs = ({
       t(vendor.label),
       vendor.type
         ? getChannelIcon(vendor.type)
-        : getLobeHubIcon("Xiaomi.color='#FF6900'", 16),
+        : getLobeHubIcon(vendor.icon, 16),
     ),
   );
   const typeTabs = visibleTypeOptions.map((option) =>

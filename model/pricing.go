@@ -186,6 +186,7 @@ func updatePricing() {
 	_ = DB.Find(&vendors).Error
 	vendorMap := make(map[int]*Vendor)
 	for i := range vendors {
+		fillInceptionVendorDefaults(&vendors[i])
 		vendorMap[vendors[i].Id] = &vendors[i]
 	}
 

@@ -21,7 +21,7 @@ import i18next from 'i18next';
 import { getCacheCreationBreakdown } from './cacheCreation';
 import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
 import { copy, showSuccess } from './utils';
-import { isMiMoModel } from './modelVendor';
+import { isMiMoModel, isInceptionModel } from './modelVendor';
 import {
   buildTieredBillingBreakdown,
   resolveTieredLogParams,
@@ -248,6 +248,11 @@ export const getModelCategories = (() => {
         label: '小米 MiMo',
         icon: getLobeHubIcon("Xiaomi.color='#FF6900'", 16),
         filter: (model) => isMiMoModel(model.model_name),
+      },
+      inception: {
+        label: 'Inception',
+        icon: getLobeHubIcon('Inception', 16),
+        filter: (model) => isInceptionModel(model.model_name),
       },
       deepseek: {
         label: 'DeepSeek',

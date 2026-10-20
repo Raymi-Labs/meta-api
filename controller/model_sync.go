@@ -254,7 +254,7 @@ func ensureVendorID(vendorName string, vendorByName map[string]upstreamVendor, v
 	uv := vendorByName[vendorName]
 	v := &model.Vendor{
 		Name:        vendorName,
-		Description: uv.Description,
+		Description: coalesce(uv.Description, model.GetDefaultVendorDescription(vendorName)),
 		Icon:        coalesce(uv.Icon, model.GetDefaultVendorIcon(vendorName)),
 		Status:      chooseStatus(uv.Status, 1),
 	}

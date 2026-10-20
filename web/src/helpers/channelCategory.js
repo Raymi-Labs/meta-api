@@ -38,7 +38,18 @@ export const CHANNEL_DISPLAY_VENDORS = [
   { value: 'xai', label: 'Grok', type: 48, groups: ['Grok', 'xAI'] },
   { value: 'minimax', label: 'MiniMax', type: 35, groups: ['MiniMax'] },
   { value: 'mistral', label: 'Mistral', type: 42, groups: ['Mistral'] },
-  { value: 'mimo', label: '小米 MiMo', groups: ['MiMo'] },
+  {
+    value: 'mimo',
+    label: '小米 MiMo',
+    icon: "Xiaomi.color='#FF6900'",
+    groups: ['MiMo'],
+  },
+  {
+    value: 'inception',
+    label: 'Inception',
+    icon: 'Inception',
+    groups: ['Inception'],
+  },
 ];
 
 const CATEGORY_GROUP_VENDOR_CANDIDATES = new Map([

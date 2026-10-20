@@ -25,6 +25,7 @@ var logVendorAliases = map[string]string{
 	"baidu": "baidu", "百度": "baidu", "spark": "spark", "讯飞": "spark",
 	"hunyuan": "hunyuan", "腾讯": "hunyuan", "yi": "yi", "零一万物": "yi",
 	"minimax": "minimax", "cohere": "cohere", "jina": "jina", "mistral": "mistral",
+	"inception": "inception", "inception labs": "inception", "inceptionlabs": "inception", "mercury": "inception",
 	"perplexity": "perplexity", "360": "360", "suno": "suno", "coze": "coze",
 	"kling": "kling", "可灵": "kling", "jimeng": "jimeng", "即梦": "jimeng", "vidu": "vidu",
 }

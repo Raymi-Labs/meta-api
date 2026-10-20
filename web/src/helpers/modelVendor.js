@@ -25,3 +25,14 @@ export const isMiMoModel = (modelName) => {
   const normalizedName = String(modelName ?? '').trim();
   return MIMO_MODEL_PATTERN.test(normalizedName);
 };
+
+const MERCURY_MODEL_PATTERN = /(^|[/:._-])mercury($|[/:._-])/i;
+// Match the other channelVendorSegments in model/channel_vendor.go: mixed
+// vendor names must not become an Inception model merely due to a namespace.
+const OTHER_VENDOR_PATTERN =
+  /(^|[/:._-])(mimo|deepseek|gpt|chatgpt|o1|o3|o4|dall|whisper|claude|gemini|gemma|qwen|qwen2|qwen3|qwq|qvq|kimi|moonshot|glm|chatglm|grok|minimax|mistral|mixtral|codestral|pixtral|ministral|devstral)($|[/:._-])/i;
+
+export const isInceptionModel = (modelName) => {
+  const name = String(modelName ?? '').trim();
+  return MERCURY_MODEL_PATTERN.test(name) && !OTHER_VENDOR_PATTERN.test(name);
+};

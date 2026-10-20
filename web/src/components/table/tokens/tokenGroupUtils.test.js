@@ -83,6 +83,37 @@ describe('tokenGroupUtils', () => {
     assert.equal(resolveTokenGroupVendor(''), '');
   });
 
+  test('Inception and Mercury group aliases share one facet without changing group values', () => {
+    const groups = [
+      'Inception · 标准',
+      'Mercury · 优质',
+      ' inception labs ',
+      'InceptionLabs·企业专属',
+      'default',
+    ].map((value) => ({ value }));
+    const original = groups.map((group) => group.value);
+    for (const group of groups.slice(0, 4))
+      assert.equal(resolveTokenGroupVendor(group.value), 'Inception');
+    assert.equal(
+      resolveTokenGroupVendor('notinception'),
+      TOKEN_GROUP_OTHER_VENDOR,
+    );
+    assert.deepEqual(buildTokenGroupVendorOptions(groups), [
+      { value: TOKEN_GROUP_OTHER_VENDOR, label: '多厂商通用 · 1' },
+      { value: 'Inception', label: 'Inception · 4' },
+    ]);
+    assert.deepEqual(
+      filterTokenGroupsByVendor(groups, 'Inception').map(
+        (group) => group.value,
+      ),
+      original.slice(0, 4),
+    );
+    assert.deepEqual(
+      groups.map((group) => group.value),
+      original,
+    );
+  });
+
   test('builds compact vendor options and puts common vendor first', () => {
     assert.deepEqual(
       buildTokenGroupVendorOptions(

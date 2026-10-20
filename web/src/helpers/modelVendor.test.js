@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { describe, expect, test } from 'bun:test';
-import { isMiMoModel } from './modelVendor';
+import { isMiMoModel, isInceptionModel } from './modelVendor';
 
 describe('isMiMoModel', () => {
   test.each([
@@ -40,5 +40,31 @@ describe('isMiMoModel', () => {
     null,
   ])('does not misclassify %s as MiMo', (modelName) => {
     expect(isMiMoModel(modelName)).toBe(false);
+  });
+});
+
+describe('isInceptionModel', () => {
+  test.each([
+    'mercury-3',
+    'mercury-2.5',
+    'mercury-coder',
+    'mercury-edit-2',
+    'mercury-decide',
+    'inception/Mercury-Voice',
+    'vendor:mercury-mini',
+  ])('recognizes %s', (name) => {
+    expect(isInceptionModel(name)).toBe(true);
+  });
+  test.each([
+    'notmercury-3',
+    'mercurial',
+    'inception/unknown',
+    'mercury-gpt-distill',
+    'qwen/mercury-3',
+    'mimo-mercury',
+    '',
+    null,
+  ])('does not misclassify %s', (name) => {
+    expect(isInceptionModel(name)).toBe(false);
   });
 });

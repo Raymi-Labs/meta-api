@@ -43,18 +43,24 @@ func isMiMoVendorAlias(name string) bool {
 	}
 }
 
-// CanonicalVendorName normalizes known legacy MiMo vendor names while leaving
+// CanonicalVendorName normalizes known display vendor aliases while leaving
 // unrelated administrator-defined vendor names untouched.
 func CanonicalVendorName(name string) string {
 	trimmed := strings.TrimSpace(name)
 	if isMiMoVendorAlias(trimmed) {
 		return defaultMiMoVendorName
 	}
+	if isInceptionVendorAlias(trimmed) {
+		return defaultInceptionVendorName
+	}
 	return trimmed
 }
 
 func vendorNameCandidates(name string) []string {
 	canonicalName := CanonicalVendorName(name)
+	if canonicalName == defaultInceptionVendorName {
+		return []string{defaultInceptionVendorName, "Inception Labs", "InceptionLabs"}
+	}
 	if canonicalName != defaultMiMoVendorName {
 		return []string{canonicalName}
 	}
@@ -75,7 +81,7 @@ func findVendorByCanonicalName(db *gorm.DB, name string) (*Vendor, error) {
 	}
 
 	query := db
-	if canonicalName == defaultMiMoVendorName {
+	if canonicalName == defaultMiMoVendorName || canonicalName == defaultInceptionVendorName {
 		candidates := vendorNameCandidates(canonicalName)
 		for i := range candidates {
 			candidates[i] = strings.ToLower(candidates[i])
@@ -102,16 +108,19 @@ func findVendorByCanonicalName(db *gorm.DB, name string) (*Vendor, error) {
 
 // FindVendorByCanonicalName finds the canonical record first and falls back to
 // legacy aliases. The fallback prevents a sync request from creating a second
-// MiMo vendor before startup normalization has run on an older database.
+// vendor when a known alias already exists in the database.
 func FindVendorByCanonicalName(name string) (*Vendor, error) {
 	return findVendorByCanonicalName(DB, name)
 }
 
-// ResolveVendorNameForModel keeps MiMo model-name inference in one place so
+// ResolveVendorNameForModel keeps model-name inference in one place so
 // upstream synchronization and the pricing cache use the same boundary rules.
 func ResolveVendorNameForModel(modelName string, fallbackVendorName string) string {
 	if getDefaultVendorName(modelName) == defaultMiMoVendorName {
 		return defaultMiMoVendorName
+	}
+	if isInceptionModel(modelName) {
+		return defaultInceptionVendorName
 	}
 	return CanonicalVendorName(fallbackVendorName)
 }

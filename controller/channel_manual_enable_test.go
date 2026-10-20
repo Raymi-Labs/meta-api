@@ -88,7 +88,7 @@ func TestUpdateChannel_ManualEnableClearsTemporaryUnavailableState(t *testing.T)
 }
 
 func TestUpdateChannel_UpdatesExplicitChannelVendor(t *testing.T) {
-	for _, vendor := range []string{"protocol", "deepseek", "openai", "anthropic", "google", "qwen", "moonshot", "zhipu", "xai", "minimax", "mistral", "mimo", "auto"} {
+	for _, vendor := range []string{"protocol", "deepseek", "openai", "anthropic", "google", "qwen", "moonshot", "zhipu", "xai", "minimax", "mistral", "mimo", "inception", "auto"} {
 		t.Run(vendor, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			setupChannelSearchControllerTestDB(t)

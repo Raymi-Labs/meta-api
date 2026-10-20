@@ -16,6 +16,8 @@ Status: implemented
 
 模型异步响应按请求序号隔离；编辑加载不裁剪原限制，只有主动换组才同步有效选项。创建未选组、编辑未加载、联动未完成时不能提交；失败保留输入。
 
+分组厂商命名扩展见 [Inception / Mercury 分类](2026-10-21-inception-vendor.md)，继续遵循供应商筛选不写 group、不扩大权限的约束。
+
 ## Existing capability review
 
 - EditTokenModal → token 与 user/self/groups 路由 → controller/group.go 的 GetUserGroups → service.GetUserGroupRatio 已返回可用组和专属倍率。

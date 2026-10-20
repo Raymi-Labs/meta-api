@@ -47,6 +47,49 @@ func setupChannelSearchControllerTestDB(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Ability{}))
 }
 
+func TestInceptionCategoryListAndSearchPagination(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupChannelSearchControllerTestDB(t)
+	explicit, protocol := "inception", "protocol"
+	for _, channel := range []*model.Channel{
+		{Id: 201, Name: "inception-auto", Type: 1, Models: "mercury-3,mercury-2.5"},
+		{Id: 202, Name: "inception-explicit", Type: 8, Models: "local-alias", ChannelVendor: &explicit},
+		{Id: 203, Name: "inception-protocol", Type: 1, Models: "mercury-3", ChannelVendor: &protocol},
+		{Id: 204, Name: "inception-mixed", Type: 1, Models: "mercury-3,gpt-4o"},
+	} {
+		channel.Status, channel.Group, channel.Key = common.ChannelStatusEnabled, "Inception · 标准", "fixture-only"
+		require.NoError(t, channel.Insert())
+	}
+	for _, endpoint := range []string{"/api/channel/", "/api/channel/search"} {
+		seen := map[int]bool{}
+		for _, page := range []string{"1", "2"} {
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodGet, endpoint+"?category=vendor:inception&p="+page+"&page_size=1", nil)
+			if endpoint == "/api/channel/" {
+				GetAllChannels(ctx)
+			} else {
+				SearchChannels(ctx)
+			}
+			var response struct {
+				Success bool `json:"success"`
+				Data    struct {
+					Items          []model.Channel  `json:"items"`
+					Total          int              `json:"total"`
+					CategoryCounts map[string]int64 `json:"category_counts"`
+				} `json:"data"`
+			}
+			require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+			require.True(t, response.Success)
+			require.Equal(t, 2, response.Data.Total)
+			require.EqualValues(t, 2, response.Data.CategoryCounts["vendor:inception"])
+			require.Len(t, response.Data.Items, 1)
+			seen[response.Data.Items[0].Id] = true
+		}
+		require.Equal(t, map[int]bool{201: true, 202: true}, seen)
+	}
+}
+
 func seedChannelSearchControllerTestData(t *testing.T) {
 	t.Helper()
 

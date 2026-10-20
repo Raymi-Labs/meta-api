@@ -86,3 +86,23 @@ test('all display vendors support category queries and matching group filters', 
     );
   }
 });
+
+test('Inception category matches only available Inception groups and has its own icon', () => {
+  const vendor = CHANNEL_DISPLAY_VENDORS.find(
+    ({ value }) => value === 'inception',
+  );
+  expect(vendor.icon).toBe('Inception');
+  expect(vendor.type).toBeUndefined();
+  expect(
+    resolveChannelCategoryGroupVendor('vendor:inception', [
+      'Inception',
+      'OpenAI',
+    ]),
+  ).toBe('Inception');
+  expect(
+    resolveChannelCategoryGroupVendor('vendor:inception', ['OpenAI']),
+  ).toBe('');
+  expect(
+    resolveChannelCategoryGroupVendor('vendor:inception', ['Inception'], true),
+  ).toBe('');
+});

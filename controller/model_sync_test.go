@@ -64,3 +64,18 @@ func TestEnsureVendorIDCreatesCanonicalMiMoVendorWithIcon(t *testing.T) {
 	require.Equal(t, canonicalName, persisted.Name)
 	require.Equal(t, "Xiaomi.color='#FF6900'", persisted.Icon)
 }
+
+func TestEnsureVendorIDInceptionDefaultsAndAliases(t *testing.T) {
+	db := setupModelSyncTestDB(t)
+	created := 0
+	id := ensureVendorID("Inception Labs", map[string]upstreamVendor{}, map[string]int{}, &created)
+	require.NotZero(t, id)
+	require.Equal(t, 1, created)
+	var vendor model.Vendor
+	require.NoError(t, db.First(&vendor, id).Error)
+	require.Equal(t, "Inception", vendor.Name)
+	require.Equal(t, "Inception", vendor.Icon)
+	require.NotEmpty(t, vendor.Description)
+	require.Equal(t, id, ensureVendorID("inceptionlabs", map[string]upstreamVendor{}, map[string]int{}, &created))
+	require.Equal(t, 1, created)
+}

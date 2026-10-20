@@ -48,7 +48,7 @@ func TestLogScopeSQLDialects(t *testing.T) {
 func TestLogScopeVendorAndChannels(t *testing.T) {
 	db := setupLogQueryTestDB(t)
 	now := time.Now().Unix()
-	groups := []string{"OpenAI · 企业专属", "OpenAI·优质", "Claude · 优质", "default", "企业专属", "gemini", "Gemini · 优质", "Deepseek · 优质", "xiaomi · 优质", "Custom · 优质", "Custom"}
+	groups := []string{"OpenAI · 企业专属", "OpenAI·优质", "Claude · 优质", "default", "企业专属", "gemini", "Gemini · 优质", "Deepseek · 优质", "xiaomi · 优质", "Custom · 优质", "Custom", "Inception · 标准", "Mercury · 优质", " inception labs ", "InceptionLabs·企业专属"}
 	for i, group := range groups {
 		for _, channel := range []int{1, 2} {
 			if err := db.Create(&Log{Type: LogTypeConsume, Group: group, ChannelId: channel,
@@ -64,6 +64,7 @@ func TestLogScopeVendorAndChannels(t *testing.T) {
 	}{
 		{"OpenAI", 2}, {"Claude", 1}, {"__other__", 3}, {"Gemini", 2},
 		{"DeepSeek", 1}, {"MiMo", 1}, {"Custom", 1}, {"absent", 0},
+		{"Inception", 4}, {"Mercury", 4}, {"inception labs", 4}, {"inceptionlabs", 4},
 		{"OpenAI' OR 1=1 --", 0},
 	}
 	for _, tc := range cases {
