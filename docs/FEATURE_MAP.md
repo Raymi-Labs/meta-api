@@ -1,6 +1,6 @@
 # 功能地图
 
-核对日期：2026-10-20。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-21。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
@@ -13,6 +13,8 @@
 | Claude thinking 与 beta 转发 | [DTO](../dto/claude.go)、[原生 handler](../relay/claude_handler.go)、[请求头](../relay/channel/claude/adaptor.go)、[Bedrock](../relay/channel/aws/dto.go) | 保留 block_binding/未知 thinking 字段和重试深拷贝；adaptive suffix 保留绑定控制；全部 beta 行合并 | 保留模型头配置、显式覆盖及已有 beta 清理；不主动启用 beta、不改变缓存计费或跨协议推理规则 |
 | 容器过载保护 | [采样](../common/container_usage.go)、[判定](../common/system_monitor.go)、[中间件](../middleware/performance.go) | cgroup v1/v2 有限额 CPU/内存工作集优先，失败回退宿主；5 秒采样、连续 3 次超限；30 秒新鲜度 | 保留已有开关/阈值、503 与协议错误格式；回落恢复，关闭/调高阈值立即放行；未修改生产配置 |
 | Vidu 任务参数保真 | [原生适配器](../relay/channel/task/vidu/adaptor.go)、[任务计价](../relay/relay_task.go) | 映射后的模型、顶层时长/分辨率在 metadata 合并后写入；保留 seed 等扩展 | 不允许 metadata 覆盖计价字段；保留参考图 viduq2 规范化，不修改价格、预扣及退款 |
+| 视频生成：任务、定价与展示（现状核对） | [路由](../router/video-router.go)、[适配器注册](../relay/relay_adaptor.go)、[任务计价](../relay/helper/price.go)、[轮询](../service/task_polling.go)、[价格详情](../web/src/components/table/model-pricing/modal/components/ModelPricingTable.jsx) | 已有多厂商任务适配器、部分时长/分辨率倍率、请求参数表达式、任务快照与退款；复用令牌鉴权和分组路由 | 普通价格无结构化视频档位；表达式任务跳过完成后的用量调整；适配器不代表最新模型已验收。通用按秒/档位/实际用量与展示方案仍为[提案](../.agents/notes/proposed/feature/2026-10-21-video-pricing-and-testing.md) |
+| 视频生成：渠道测试（现状核对） | [测试界面](../web/src/components/table/channels/modals/ModelTestModal.jsx)、[测试控制器](../controller/channel-test.go) | 部分视频模型可自动识别并提交上游任务；参数固定为 1 秒/480p，管理员渠道测试仍按原权限执行 | 界面无视频端点选项；部分厂商被排除；提交通过不等于生成完成，未复用完整任务轮询验收；可能产生上游费用，通用视频测试尚未实现 |
 | 分组独立限流 | [中间件](../middleware/model-rate-limit.go) | 有独立限额的分组按用户与分组计数；未配置组共享用户全局限额，内存与 Redis 一致 | 总数与成功预占共用范围；保留失败释放、流式成功判定；独立组升级时首窗口重新计数 |
 | Playground 账户数据隔离 | [存储](../web/src/components/playground/configStorage.js)、[状态](../web/src/hooks/playground/usePlaygroundState.js)、[页面](../web/src/pages/Playground/index.jsx) | 配置与消息按账户 ID 存储；身份变化重建页面、停止流连接，延迟回调绑定原账户 | 未登录不持久化；旧共用缓存因无归属而清理；图片工作台独立应用不在本次范围 |
 | 使用日志 CSV 导出 | [入口](../web/src/components/table/usage-logs/UsageLogsActions.jsx)、[controller](../controller/log_export.go)、[游标读取](../model/log_export.go) | 管理员 `/api/log/export`、本人 `/api/log/self/export`；共用列表筛选、普通用户脱敏；UTC 时间、原始 quota 单位 | 明确时间范围且最多 31 天/10000 条/32 MB，超限失败不截断；完成临时文件后交付；同用户互斥；不限制既有查询与看板 |
