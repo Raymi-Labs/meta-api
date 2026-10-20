@@ -30,6 +30,7 @@ import TokensTable from './TokensTable';
 import TokensActions from './TokensActions';
 import TokensFilters from './TokensFilters';
 import TokensDescription from './TokensDescription';
+import './tokensToolbar.css';
 import EditTokenModal from './modals/EditTokenModal';
 import TokenTestModal from './modals/TokenTestModal';
 import CCSwitchModal from './modals/CCSwitchModal';
@@ -184,7 +185,7 @@ function TokensPage() {
           />
         }
         actionsArea={
-          <div className='flex flex-col md:flex-row justify-between items-center gap-2 w-full'>
+          <div className='tokens-toolbar'>
             <TokensActions
               selectedKeys={selectedKeys}
               setEditingToken={setEditingToken}
@@ -198,7 +199,7 @@ function TokensPage() {
               t={t}
             />
 
-            <div className='w-full md:w-full lg:w-auto order-1 md:order-2'>
+            <div className='tokens-toolbar__filters'>
               <TokensFilters
                 formInitValues={formInitValues}
                 setFormApi={setFormApi}

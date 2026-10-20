@@ -133,12 +133,39 @@
   color: var(--semi-color-text-2);
 }
 .token-group-picker__row {
+  cursor: pointer;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 80px 32px;
   gap: 8px;
   align-items: center;
   padding: 12px 14px;
   border-top: 1px solid var(--semi-color-border);
+}
+.token-group-picker__row:not(.is-selected):hover {
+  background: var(--semi-color-fill-0);
+}
+.token-model-copy-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.token-group-picker .token-model-copy-list button {
+  border: 1px solid var(--semi-color-border);
+  border-radius: 5px;
+  padding: 4px 8px;
+  overflow-wrap: anywhere;
+  text-align: left;
+  user-select: text;
+}
+.token-model-copy-list button:hover {
+  background: var(--semi-color-fill-0);
+}
+.token-model-copy-feedback {
+  display: block;
+  margin-top: 4px;
+  color: var(--semi-color-text-2);
+  overflow-wrap: anywhere;
 }
 .token-group-picker__choice {
   display: flex;

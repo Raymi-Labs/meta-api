@@ -12,6 +12,7 @@ const { chromium } = await import(
   process.env.PLAYWRIGHT_MODULE || 'playwright'
 );
 const root = fileURLToPath(new URL('..', import.meta.url));
+process.chdir(root);
 const fixtureDir = await fs.mkdtemp(path.join(root, '.token-ratio-qa-'));
 const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), 'token-ratio-qa-'));
 let server;
@@ -193,6 +194,40 @@ createRoot(document.getElementById('root')).render(
   console.log(
     'PASS column order, ordinary/special/zero/inherited/auto/unknown/legacy/invalid values',
   );
+  assert.equal(
+    await page.getByRole('button', { name: '批量启用', exact: true }).count(),
+    0,
+  );
+  await tokenRow('普通倍率').getByRole('checkbox').focus();
+  await page.keyboard.press('Space');
+  await page.getByRole('group', { name: '批量操作', exact: true }).waitFor();
+  for (const label of ['批量启用', '批量禁用', '复制所选令牌', '删除所选令牌'])
+    assert(
+      await page.getByRole('button', { name: label, exact: true }).isEnabled(),
+    );
+  const actionBox = await page
+    .locator('.tokens-toolbar__actions')
+    .boundingBox();
+  const filterBox = await page
+    .locator('.tokens-toolbar__filters')
+    .boundingBox();
+  assert(
+    filterBox.y >= actionBox.y + actionBox.height,
+    'filters must be below actions',
+  );
+  await page.screenshot({
+    path: path.join(outputDir, 'selected-toolbar.png'),
+    fullPage: true,
+  });
+  await tokenRow('普通倍率').getByRole('checkbox').focus();
+  await page.keyboard.press('Space');
+  assert.equal(
+    await page.getByRole('group', { name: '批量操作', exact: true }).count(),
+    0,
+  );
+  console.log(
+    'PASS batch controls appear only for selection; filters have independent row',
+  );
   await ratioCell('普通倍率').hover();
   await page.getByText(/当前分组倍率，已包含适用的专属倍率/).waitFor();
   await page.mouse.move(0, 0);
@@ -231,6 +266,27 @@ createRoot(document.getElementById('root')).render(
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('table').waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: /显示操作项/ }).click();
+  await page.getByRole('button', { name: '添加令牌', exact: true }).waitFor();
+  const mobileFilters = await page
+    .locator('.tokens-toolbar__filters')
+    .boundingBox();
+  assert(
+    mobileFilters &&
+      mobileFilters.x >= 0 &&
+      mobileFilters.x + mobileFilters.width <= 390,
+  );
+  const mobileKeyword = await page.getByPlaceholder('搜索关键字').boundingBox();
+  const mobileKey = await page
+    .getByPlaceholder('密钥', { exact: true })
+    .boundingBox();
+  assert(
+    mobileKey.y >= mobileKeyword.y + mobileKeyword.height,
+    'mobile filters must stack',
+  );
+  await page.getByPlaceholder('搜索关键字').fill('普通倍率');
+  await page.getByRole('button', { name: '查询', exact: true }).click();
+  await page.getByRole('button', { name: '重置', exact: true }).click();
   const firstCard = page
     .locator('.semi-card')
     .filter({
