@@ -18,6 +18,7 @@ HISTORY_FILE="$STATE_DIR/history.tsv"
 LOCK_FILE="${NEWAPI_LOCK_FILE:-/run/newapi-release.lock}"
 HEALTH_URL="${NEWAPI_HEALTH_URL:-http://127.0.0.1:3000/api/status}"
 HEALTH_TIMEOUT="${NEWAPI_HEALTH_TIMEOUT:-120}"
+RESTART_STOP_TIMEOUT="${NEWAPI_RESTART_STOP_TIMEOUT:-30}"
 PREFLIGHT_PASSES="${NEWAPI_PREFLIGHT_PASSES:-2}"
 MIN_FREE_KB="${NEWAPI_MIN_FREE_KB:-2097152}"
 
@@ -60,6 +61,7 @@ usage() {
 Usage:
   newapi-update [latest|sha-abcdefg] [--dry-run]
   newapi-rollback [--dry-run]
+  newapi-restart [--dry-run]
   newapi-release status
   newapi-release init [sha-abcdefg]
 
@@ -67,6 +69,8 @@ The update command resolves latest to an immutable SHA image, backs up MySQL,
 tests migrations against a temporary schema, deploys, and rolls back on failure.
 The rollback command restores only the previous application image; it never
 restores MySQL automatically.
+The restart command starts a stopped container or restarts the existing running
+container, keeps its image/configuration, and verifies application health.
 EOF
 }
 
@@ -91,16 +95,97 @@ check_prerequisites() {
     || die "NEWAPI_PREFLIGHT_PASSES must be at least 2"
 }
 
+check_restart_prerequisites() {
+  local required_command
+  [ "$(id -u)" -eq 0 ] || die "run as root"
+  for required_command in docker flock curl timeout python3; do
+    require_command "$required_command"
+  done
+  [[ "$HEALTH_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || die "NEWAPI_HEALTH_TIMEOUT must be a positive integer"
+  [[ "$RESTART_STOP_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || die "NEWAPI_RESTART_STOP_TIMEOUT must be a positive integer"
+  timeout --kill-after=5 10 docker info --format '{{.ServerVersion}}' >/dev/null \
+    || die "Docker daemon is unavailable; check systemctl status docker"
+}
+
 acquire_lock() {
   install -d -m 700 "$(dirname "$LOCK_FILE")"
   exec 9>"$LOCK_FILE"
-  flock -n 9 || die "another new-api deployment is running"
+  flock -n 9 || die "another new-api deployment or maintenance operation holds $LOCK_FILE; inspect it before retrying (do not delete the lock file)"
 }
 
 require_online_update_source() {
   [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME")" = "true" ] \
     && curl -fsS --connect-timeout 2 --max-time 5 "$HEALTH_URL" >/dev/null 2>&1 \
-    || die "source service is offline; restore it or use newapi-rollback before updating (do not stop it before backup/preflight)"
+    || die "source service is offline; run newapi-restart or use newapi-rollback before updating (do not stop it before backup/preflight)"
+}
+
+wait_for_restart_health() {
+  local expected_container="$1" expected_image="$2"
+  local deadline=$((SECONDS + HEALTH_TIMEOUT)) next_report=0 stable=0 previous_start=""
+  local snapshot container_id running_id state started_at remaining request_timeout
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    remaining=$((deadline - SECONDS))
+    [ "$remaining" -gt 0 ] || break
+    request_timeout=$((remaining < 5 ? remaining : 5))
+    snapshot="$(timeout --kill-after=1 "$request_timeout" docker inspect -f \
+      '{{.Id}} {{.Image}} {{.State.Status}} {{.State.StartedAt}}' "$expected_container" 2>/dev/null)" || return 1
+    read -r container_id running_id state started_at <<<"$snapshot"
+    [ "$container_id" = "$expected_container" ] && [ "$running_id" = "$expected_image" ] || return 1
+    case "$state" in
+      running|restarting) ;;
+      *) return 1 ;;
+    esac
+    if [ "$started_at" != "$previous_start" ]; then stable=0; previous_start="$started_at"; fi
+    remaining=$((deadline - SECONDS))
+    [ "$remaining" -gt 0 ] || break
+    request_timeout=$((remaining < 5 ? remaining : 5))
+    if [ "$state" = running ] && curl -fsS --connect-timeout "$request_timeout" --max-time "$request_timeout" "$HEALTH_URL" 2>/dev/null \
+      | python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("success") is True else 1)' 2>/dev/null; then
+      stable=$((stable + 1))
+      [ "$stable" -ge 2 ] && return 0
+    else
+      stable=0
+    fi
+    if [ "$SECONDS" -ge "$next_report" ]; then
+      log "等待应用恢复：container=${state}，剩余最多 ${remaining}s"
+      next_report=$((SECONDS + 5))
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+command_restart() {
+  local snapshot container_id running_id state operation operation_timeout
+  parse_dry_run "$@"
+  [ "${#POSITIONAL_ARGS[@]}" -eq 0 ] || die "restart accepts only --dry-run"
+  acquire_lock
+  snapshot="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}}' "$CONTAINER_NAME")" \
+    || die "cannot inspect $CONTAINER_NAME; restart requires an existing container (no image will be pulled or recreated)"
+  read -r container_id running_id state <<<"$snapshot"
+  [ -n "$container_id" ] && [ -n "$running_id" ] || die "invalid container inspection result"
+  case "$state" in
+    exited|created) operation=start ;;
+    running|restarting) operation=restart ;;
+    *) die "unsupported container state: $state; inspect the container before retrying" ;;
+  esac
+  log "恢复当前容器：${CONTAINER_NAME}，状态=${state}，操作=${operation}，镜像=${running_id}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log "dry-run：仅预览，不启动或重启容器"
+    return 0
+  fi
+  operation_timeout=$((RESTART_STOP_TIMEOUT + 15))
+  if { [ "$operation" = start ] && timeout --kill-after=5 "$operation_timeout" docker start "$container_id" >/dev/null; } \
+    || { [ "$operation" = restart ] && timeout --kill-after=5 "$operation_timeout" docker restart --timeout "$RESTART_STOP_TIMEOUT" "$container_id" >/dev/null; }; then
+    log "Docker 已接受 ${operation}，正在检查应用健康（最多 ${HEALTH_TIMEOUT}s）"
+    if wait_for_restart_health "$container_id" "$running_id"; then
+      append_history "$operation" "$running_id" "$running_id" success "" || log "WARNING: cannot write restart history" >&2
+      log "恢复成功：${CONTAINER_NAME}，状态接口连续两次通过，容器和镜像保持不变"
+      return 0
+    fi
+  fi
+  append_history "$operation" "$running_id" "$running_id" failed "" || log "WARNING: cannot write restart history" >&2
+  die "恢复未通过或操作超时；检查 docker inspect ${CONTAINER_NAME} 和 docker logs --since 5m --tail 100 ${CONTAINER_NAME}；必要时 newapi-rollback。超时后 Docker 操作可能仍在完成，请先检查状态"
 }
 
 image_id() {
@@ -693,6 +778,7 @@ main() {
   case "$invoked" in
     newapi-update) command_name="update" ;;
     newapi-rollback) command_name="rollback" ;;
+    newapi-restart) command_name="restart" ;;
     *) command_name="${1:-}"; [ "$#" -gt 0 ] && shift ;;
   esac
 
@@ -700,12 +786,18 @@ main() {
     help|-h|--help|"") usage; return 0 ;;
   esac
 
-  check_prerequisites
-  cd "$APP_DIR"
+  if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then usage; return 0; fi
+  if [ "$command_name" = restart ]; then
+    check_restart_prerequisites
+  else
+    check_prerequisites
+    cd "$APP_DIR"
+  fi
 
   case "$command_name" in
     update) command_update "$@" ;;
     rollback) command_rollback "$@" ;;
+    restart) command_restart "$@" ;;
     init) command_init "$@" ;;
     status) command_status ;;
     *) usage >&2; die "unknown command: $command_name" ;;
