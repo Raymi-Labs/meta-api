@@ -71,6 +71,7 @@
 
 | 能力 | 实现 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
+| 正式发布与临时入口退役 | [更新/回退](../scripts/newapi-release)、[运维说明](installation/one-click-update.md)、[故障回归](../scripts/server-release/test_release_safety.py) | root 运维、同一发布锁；在线备份/MySQL schema 预检、健康检查、失败及 HUP/INT/TERM 恢复；旧入口返回78 | 更新源离线时提前拒绝，回退仍可用；封存缓存发布/演练及旧自动更新入口；不执行临时渠道 SQL，不上线缓存候选功能，不保证 SIGKILL/断电/不可逆迁移恢复 |
 | 源站磁盘维护与镜像保留 | [规则与回退](../scripts/server-storage/README.md)、[镜像预览/清理](../scripts/server-storage/image-retain.py) | root 运维；复用已有三份完整备份保留与无损日志压缩，每小时检查；指定仓库旧镜像每日检查 | 超过30天且无容器/当前/回滚/备份引用才删除；共用发布锁、默认预览、禁止 force；不删除业务记录、binlog、附件或日志历史，不发布应用版本 |
 | Flawless 整机流量与链路监控 | [部署说明](../scripts/relay-monitor/README.md)、[采集](../scripts/relay-monitor/collect.py)、[页面](../scripts/relay-monitor/index.html) | `/relay-monitor/` 公开只读；vnStat ens3 汇总、24h曲线、滚动168小时月末预估、到源站 ICMP、CPU/内存/系统盘/负载/运行时间当前快照；每分钟采集 | 明细仅留24h，汇总数字保留；月末预估按最近最多168小时均值计算剩余时间，非账单；不自动吞吐压测；不输出凭据和请求日志 |
 | 源站与跳板 SSH 自动封禁 | [配置与回退](../scripts/server-security/README.md)、[sshd jail](../scripts/server-security/99-newapi-sshd.local) | 宿主机 systemd SSH 日志、Fail2ban、nftables；root 运维；10分钟内6条失败事件封1小时，重复触发最长24小时 | 仅 TCP 22，不按代理对端误封网页流量；不改变密码/密钥登录方式；无应用版本发布 |

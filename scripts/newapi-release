@@ -97,6 +97,12 @@ acquire_lock() {
   flock -n 9 || die "another new-api deployment is running"
 }
 
+require_online_update_source() {
+  [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME")" = "true" ] \
+    && curl -fsS --connect-timeout 2 --max-time 5 "$HEALTH_URL" >/dev/null 2>&1 \
+    || die "source service is offline; restore it or use newapi-rollback before updating (do not stop it before backup/preflight)"
+}
+
 image_id() {
   docker image inspect -f '{{.Id}}' "$1"
 }
@@ -427,6 +433,8 @@ recover_previous_deployment() {
 on_exit() {
   local exit_code="$?"
   trap - EXIT
+  # Let recovery finish even if the terminal disconnects again.
+  trap '' HUP INT TERM
   set +e
   cleanup_preflight
   if [ "$exit_code" -ne 0 ]; then
@@ -435,6 +443,9 @@ on_exit() {
   exit "$exit_code"
 }
 trap on_exit EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 deploy_target() {
   local recovery_compose="$1" recovery_dir
@@ -546,6 +557,7 @@ command_update() {
   [ "${#POSITIONAL_ARGS[@]}" -le 1 ] || die "too many arguments"
   requested="${POSITIONAL_ARGS[0]:-latest}"
   acquire_lock
+  require_online_update_source
   resolve_target "$requested"
 
   current_image="$(actual_image)"
@@ -700,4 +712,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
