@@ -370,7 +370,7 @@ const EditChannelModal = (props) => {
   const [paramOverrideEditorVisible, setParamOverrideEditorVisible] =
     useState(false);
   const [clipboardConfig, setClipboardConfig] = useState(null);
-  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
+  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(!isEdit);
 
   // 周期配额相关状态
   const [quotaUsage, setQuotaUsage] = useState(null);
@@ -1383,7 +1383,7 @@ const EditChannelModal = (props) => {
       // 重置导航状态
       setCurrentSectionIndex(0);
       setAdvancedSettingsOpen(
-        isEdit &&
+        !isEdit ||
           localStorage.getItem(ADVANCED_SETTINGS_EXPANDED_KEY) === 'true',
       );
       if (!isEdit) {
