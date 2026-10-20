@@ -36,7 +36,7 @@ func (s *samplingCompatTransport) RoundTrip(req *http.Request) (*http.Response, 
 	s.requests = append(s.requests, string(body))
 	response := &http.Response{StatusCode: 200, Header: make(http.Header), Request: req}
 	response.Header.Set("Content-Type", "application/json")
-	response.Header.Set("X-Request-ID", "sampling-upstream-fixture")
+	response.Header.Set(common.RequestIdKey, fmt.Sprintf("sampling-upstream-fixture-%d", len(s.requests)))
 	var data string
 	if !s.accept && (len(s.requests) == 1 || s.alwaysFail) {
 		response.StatusCode = 400
@@ -109,7 +109,7 @@ func TestRelayClaudeSamplingCompatibility(t *testing.T) {
 					if format == types.RelayFormatOpenAI {
 						endpoint = "/v1/chat/completions"
 					}
-					requestID := fmt.Sprintf("sampling-%s-%t-%s", format, stream, scenario)
+					var requestID string
 					request := fmt.Sprintf(`{"model":"claude-haiku-5-5","max_tokens":256,"temperature":0.2,"messages":[{"role":"user","content":"preserve body"}],"stream":%t}`, stream)
 					temperature := 0.2
 					if scenario == "default_accepted" {
@@ -117,23 +117,28 @@ func TestRelayClaudeSamplingCompatibility(t *testing.T) {
 						request = strings.Replace(request, `"temperature":0.2`, `"temperature":1`, 1)
 					}
 					w := httptest.NewRecorder()
-					c, _ := gin.CreateTestContext(w)
-					c.Request = httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(request))
-					c.Request.Header.Set("Content-Type", "application/json")
-					// Distribution caches the body before native Claude validation reads it.
-					storage, err := common.GetBodyStorage(c)
-					require.NoError(t, err)
-					c.Request.Body = io.NopCloser(storage)
-					c.Set(common.RequestIdKey, requestID)
-					common.SetContextKey(c, constant.ContextKeyUserId, user.Id)
-					common.SetContextKey(c, constant.ContextKeyTokenId, token.Id)
-					common.SetContextKey(c, constant.ContextKeyTokenKey, token.Key)
-					common.SetContextKey(c, constant.ContextKeyUsingGroup, "default")
-					common.SetContextKey(c, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
-					require.Nil(t, middleware.SetupContextForSelectedChannel(c, &channel, "claude-haiku-5-5"))
-					Relay(c, format)
-					service.RecordFinalRequestFailure(c, time.Millisecond)
-					common.CleanupBodyStorage(c)
+					r := gin.New()
+					r.Use(middleware.RequestId(), middleware.RequestFailureLog(), middleware.RouteTag("relay"))
+					r.POST(endpoint, func(c *gin.Context) {
+						// Distribution caches the body before native Claude validation reads it.
+						storage, err := common.GetBodyStorage(c)
+						require.NoError(t, err)
+						c.Request.Body = io.NopCloser(storage)
+						requestID = c.GetString(common.RequestIdKey)
+						common.SetContextKey(c, constant.ContextKeyUserId, user.Id)
+						common.SetContextKey(c, constant.ContextKeyTokenId, token.Id)
+						common.SetContextKey(c, constant.ContextKeyTokenKey, token.Key)
+						common.SetContextKey(c, constant.ContextKeyUsingGroup, "default")
+						common.SetContextKey(c, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+						require.Nil(t, middleware.SetupContextForSelectedChannel(c, &channel, "claude-haiku-5-5"))
+						defer common.CleanupBodyStorage(c)
+						Relay(c, format)
+					})
+					req := httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(request))
+					req.Header.Set("Content-Type", "application/json")
+					r.ServeHTTP(w, req)
+					require.NotEmpty(t, requestID)
+					require.Equal(t, []string{requestID}, w.Result().Header.Values(common.RequestIdKey))
 					adjusted := scenario == "healed" || scenario == "final_failure"
 					calls := 1
 					if adjusted {
@@ -176,11 +181,17 @@ func TestRelayClaudeSamplingCompatibility(t *testing.T) {
 					} else {
 						require.Equal(t, model.LogTypeError, logs[0].Type)
 					}
+					ids := gjson.Get(logs[0].Other, "admin_info.upstream_request_ids").Array()
+					require.Len(t, ids, calls)
+					for i, id := range ids {
+						require.Equal(t, fmt.Sprintf("sampling-upstream-fixture-%d", i+1), id.Get("request_id").String())
+						require.EqualValues(t, channelID, id.Get("channel_id").Int())
+					}
 					attempts := gjson.Get(logs[0].Other, "admin_info.attempts").Array()
 					if adjusted {
 						require.Equal(t, "request_adjustment", attempts[0].Get("retry_kind").String())
 						require.Equal(t, "remove_temperature", attempts[0].Get("adjustment").String())
-						require.Equal(t, "sampling-upstream-fixture", attempts[0].Get("upstream.request_id").String())
+						require.Equal(t, "sampling-upstream-fixture-1", attempts[0].Get("upstream.request_id").String())
 						require.EqualValues(t, channelID, attempts[0].Get("channel_id").Int())
 					}
 					if scenario == "healed" {

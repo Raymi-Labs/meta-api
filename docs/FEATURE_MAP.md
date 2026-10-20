@@ -1,9 +1,10 @@
 # 功能地图
 
-核对日期：2026-10-19。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
+核对日期：2026-10-20。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| HTTP 请求 ID 一致性 | [ID 中间件](../middleware/request-id.go)、[出站 ID 采集](../service/upstream_request_id.go)、[日志说明](REQUEST_FAILURE_LOGS.md) | 全局 HTTP 输出的 `X-Oneapi-Request-Id` 固定为本站 context / 日志 ID；共用 HTTP 出站入口的最近五个上游 ID 存于管理员 `admin_info.upstream_request_ids` | JSON、SSE、音视频写出复用统一保护；重试共享本站 ID、逐响应保留渠道；普通用户日志隐藏上游信息；不改 body.id、计费、历史数据或 WebSocket 协议 |
 | DeepSeek 原生 Responses | [适配器](../relay/channel/deepseek/adaptor.go)、[最终请求校验](../relay/channel/deepseek/responses.go)、[接入说明](channel/deepseek_responses.md) | `/v1/responses` 经原鉴权/选渠/映射 → 基址 `/responses`；复用 JSON/SSE、推理与函数工具历史 | 无状态续接须完整 input；previous_response_id / conversation 明确400；最终体移除 stream_options；不改价格/数据库/生产渠道，不证明第三方实测可用 |
 | 请求失败诊断 | [请求体缓存](../common/gin.go)、[内存限流](../middleware/model-rate-limit.go)、[错误出口](../middleware/utils.go) | 首次读取失败保留至同一请求后续读取；内存 429 与 Redis 共用消息格式、请求 ID 和最终失败标记 | 保留本地三协议/全局 body 限额、413、分组 subject、成功预占/失败释放；不增加重试或收费 |
 | Vertex 官方地址兼容 | [适配器](../relay/channel/vertex/adaptor.go)、[渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)、[配置 DTO](../dto/channel_settings.go) | global、us/eu 多区域及普通区域；API Key 可选 settings.vertex_project_id，空值保留 Express；JSON 使用凭据项目 | 管理员原渠道接口/权限，7 种界面语言；不新增表，不改变 token 获取/模型映射/计费；真实供应商权限另验 |

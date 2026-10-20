@@ -203,6 +203,7 @@ func buildUpstreamDiagnostics(resp *http.Response, responseLength int64) *types.
 
 func getUpstreamRequestID(header http.Header) (string, string) {
 	for _, key := range []string{
+		common.RequestIdKey,
 		"X-Request-ID",
 		"X-Request-Id",
 		"OpenAI-Request-ID",
@@ -210,7 +211,7 @@ func getUpstreamRequestID(header http.Header) (string, string) {
 		"Request-Id",
 		"X-Correlation-ID",
 	} {
-		if value := strings.TrimSpace(header.Get(key)); value != "" {
+		if value := validUpstreamRequestID(header.Get(key)); value != "" {
 			return value, key
 		}
 	}

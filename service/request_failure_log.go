@@ -210,6 +210,7 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 	}
 	AppendChannelAffinityAdminInfo(c, adminInfo)
 	AppendRelayHTTPTimeout(c, adminInfo)
+	AppendUpstreamRequestIDs(c, adminInfo)
 	other["admin_info"] = adminInfo
 	group := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
 	if group == "" {

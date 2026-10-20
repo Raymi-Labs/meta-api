@@ -620,6 +620,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	if resp == nil {
 		return nil, errors.New("resp is nil")
 	}
+	service.RecordUpstreamRequestID(c, resp.Header)
 
 	_ = req.Body.Close()
 	_ = c.Request.Body.Close()

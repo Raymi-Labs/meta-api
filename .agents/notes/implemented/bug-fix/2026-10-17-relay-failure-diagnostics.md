@@ -22,3 +22,5 @@ common/middleware 全包与定向竞态回归、构建通过。读取错误/413 
 ## Consequences
 
 错误缓存限同一请求；不增加重试、不改变成功口径及费用。与 [Kimi 请求体上限](../../implemented/bug-fix/2026-09-29-kimi-retest-scope-correction.md)和[分组限流](../../implemented/bug-fix/2026-10-17-group-rate-limit-scope.md)部分相邻，保留其既有规则；本记录仅管理错误诊断，不取代原决定。
+
+响应头与日志的本站 ID 契约、上游 ID 的独立诊断由 [HTTP 请求 ID 一致性](2026-10-20-response-request-id-integrity.md) 约束；本篇继续管理请求体和限流失败出口。
