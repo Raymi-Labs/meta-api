@@ -325,6 +325,7 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.POST("/:id/manual_enable", controller.ManualEnableChannel)
 			channelRoute.GET("/test", controller.TestAllChannels)
 			channelRoute.GET("/test/:id", controller.TestChannel)
+			channelRoute.POST("/:id/video/preflight", controller.VideoChannelPreflight)
 			channelRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
 			channelRoute.GET("/update_balance/:id", controller.UpdateChannelBalance)
 			channelRoute.POST("/", controller.AddChannel)

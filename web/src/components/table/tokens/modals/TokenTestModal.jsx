@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import VideoPreflightResult from '../../../common/VideoPreflightResult';
+import { isVideoTestModel } from '../../../../helpers/videoTest';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Banner,
   Button,
@@ -15,6 +17,7 @@ import {
   selectFilter,
   showError,
   showSuccess,
+  showInfo,
 } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +38,10 @@ const normalizeTokenModel = (model) => {
 };
 
 const endpointOptionMap = {
+  'openai-video': {
+    label: 'Video /v1/videos',
+    helper: '视频模型仅检查本地配置，不提交生成任务。',
+  },
   'openai-response': {
     label: 'OpenAI Responses /v1/responses',
     helper: 'Responses 是较新的 OpenAI 文本接口。',
@@ -77,6 +84,15 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
   const [selectedModel, setSelectedModel] = useState('');
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState(null);
+  const requestSerial = useRef(0);
+  useEffect(() => {
+    requestSerial.current++;
+    setTesting(false);
+    setResult(null);
+    return () => {
+      requestSerial.current++;
+    };
+  }, [visible, token?.id, selectedModel]);
 
   useEffect(() => {
     if (!visible || !token?.id) {
@@ -157,9 +173,9 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
 
   const endpointHelperText = useMemo(() => {
     if (availableEndpointTypes.length === 1) {
-      return (
+      return t(
         endpointOptionMap[availableEndpointTypes[0]]?.helper ||
-        t('系统会自动按模型能力选择测试接口。')
+          '系统会自动按模型能力选择测试接口。',
       );
     }
     if (availableEndpointTypes.includes('openai-response')) {
@@ -178,20 +194,26 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
       showError(t('请选择模型'));
       return;
     }
+    const serial = ++requestSerial.current;
     setTesting(true);
     setResult(null);
     try {
       const res = await API.post(`/api/token/test/${token.id}`, {
         model: selectedModel,
       });
-      const { success, message, time } = res.data || {};
+      if (serial !== requestSerial.current) return;
+      const { success, message, time, test_kind, data } = res.data || {};
       const nextResult = {
         success: !!success,
+        testKind: test_kind,
+        preflight: data,
         message: message || '',
         time: Number(time || 0),
       };
       setResult(nextResult);
-      if (nextResult.success) {
+      if (test_kind === 'video_preflight') {
+        showInfo(t('视频仅进行配置预检，未生成视频，也不会改变渠道健康状态。'));
+      } else if (nextResult.success) {
         showSuccess(
           t('令牌测试成功，模型 {{model}} 耗时 {{time}} 秒', {
             model: selectedModel,
@@ -202,6 +224,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
         showError(message || t('测试失败'));
       }
     } catch (error) {
+      if (serial !== requestSerial.current) return;
       const message = error?.message || t('测试失败');
       setResult({
         success: false,
@@ -210,7 +233,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
       });
       showError(message);
     } finally {
-      setTesting(false);
+      if (serial === requestSerial.current) setTesting(false);
     }
   };
 
@@ -221,6 +244,11 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
     return t('自动匹配');
   }, [availableEndpointTypes, t]);
 
+  const video = isVideoTestModel(
+    selectedModel,
+    0,
+    availableEndpointTypes.includes('openai-video') ? 'openai-video' : '',
+  );
   return (
     <Modal
       visible={visible}
@@ -247,7 +275,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
             loading={testing}
             disabled={loadingModels || models.length === 0}
           >
-            {t('开始测试')}
+            {video ? t('检查配置') : t('开始测试')}
           </Button>
         </Space>
       }
@@ -259,7 +287,13 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
           type='warning'
           closeIcon={null}
           icon={<IconInfoCircle />}
-          description={t('该测试会按当前令牌与账户规则真实请求并正常计费，失败时按现有规则退款。')}
+          description={
+            video
+              ? t('视频模型仅检查本地配置，不提交生成任务。')
+              : t(
+                  '该测试会按当前令牌与账户规则真实请求并正常计费，失败时按现有规则退款。',
+                )
+          }
         />
 
         <div className='flex flex-col gap-2'>
@@ -285,10 +319,14 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
           <Tag shape='circle' color='blue'>
             {endpointTagText}
           </Tag>
-          <Typography.Text type='tertiary'>{endpointHelperText}</Typography.Text>
+          <Typography.Text type='tertiary'>
+            {endpointHelperText}
+          </Typography.Text>
         </div>
 
-        {result ? (
+        {result?.testKind === 'video_preflight' ? (
+          <VideoPreflightResult data={result.preflight} />
+        ) : result ? (
           <div className='rounded-xl border border-[var(--semi-color-border)] p-3 flex flex-col gap-2'>
             <div className='flex items-center gap-2'>
               <Typography.Text strong>{t('测试结果')}</Typography.Text>

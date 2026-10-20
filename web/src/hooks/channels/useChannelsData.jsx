@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isLiveTestSuccess,
+  summarizeModelTests,
+} from '../../helpers/videoTest';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   initialChannelUsage,
@@ -1316,9 +1320,9 @@ export const useChannelsData = () => {
     }
 
     try {
-      let url = `/api/channel/test/${record.id}?model=${normalizedModel}`;
+      let url = `/api/channel/test/${record.id}?model=${encodeURIComponent(normalizedModel)}`;
       if (endpointType) {
-        url += `&endpoint_type=${endpointType}`;
+        url += `&endpoint_type=${encodeURIComponent(endpointType)}`;
       }
       if (stream) {
         url += `&stream=true`;
@@ -1333,12 +1337,14 @@ export const useChannelsData = () => {
         });
       }
 
-      const { success, message, time, error_code } = res.data;
+      const { success, message, time, error_code, test_kind, data } = res.data;
       const result = {
         success,
         message,
         time: time || 0,
         errorCode: error_code || null,
+        testKind: test_kind,
+        preflight: data,
         channel: record,
         model: normalizedModel,
       };
@@ -1352,11 +1358,18 @@ export const useChannelsData = () => {
             time: time || 0,
             timestamp: Date.now(),
             errorCode: error_code || null,
+            testKind: test_kind,
+            preflight: data,
           },
         }));
       }
 
-      if (success) {
+      if (test_kind === 'video_preflight') {
+        if (!silent)
+          showInfo(
+            t('视频仅进行配置预检，未生成视频，也不会改变渠道健康状态。'),
+          );
+      } else if (success) {
         updateChannelProperty(record.id, (channel) => {
           channel.response_time = time * 1000;
           channel.test_time = Date.now() / 1000;
@@ -1476,16 +1489,29 @@ export const useChannelsData = () => {
       }
 
       const successChannels = results
-        .filter((result) => result.success)
+        .filter(isLiveTestSuccess)
         .map((result) => result.channel);
+      const preflightCount = results.filter(
+        (result) => result.testKind === 'video_preflight',
+      ).length;
       const summary = buildTagTestSummary(
         currentTagTestGroup?.tag ||
           currentTagTestGroup?.key ||
           currentTagTestGroup?.name,
         successChannels.length,
-        targets.length,
+        targets.length - preflightCount,
       );
 
+      if (preflightCount > 0)
+        showInfo(
+          t('视频配置预检 {{count}} 项，不计入生成成功或失败。', {
+            count: preflightCount,
+          }),
+        );
+      if (preflightCount === targets.length) {
+        closeTagTestModal();
+        return;
+      }
       if (summary.tone === 'success') {
         showSuccess(summary.message);
       } else if (summary.tone === 'error') {
@@ -1597,26 +1623,17 @@ export const useChannelsData = () => {
 
         // 使用当前状态重新计算结果统计
         setModelTestResults((currentResults) => {
-          let successCount = 0;
-          let failCount = 0;
-
-          models.forEach((model) => {
-            const testKey = `${currentTestChannel.id}-${model}`;
-            const result = currentResults[testKey];
-            if (result && result.success) {
-              successCount++;
-            } else {
-              failCount++;
-            }
-          });
-
-          // 显示完成消息
+          const counts = summarizeModelTests(
+            models.map(
+              (model) => currentResults[`${currentTestChannel.id}-${model}`],
+            ),
+          );
           setTimeout(() => {
-            showSuccess(
-              t('批量测试完成！成功: ${success}, 失败: ${fail}, 总计: ${total}')
-                .replace('${success}', successCount)
-                .replace('${fail}', failCount)
-                .replace('${total}', models.length),
+            showInfo(
+              t(
+                '批量检查完成：真实测试成功 {{success}}，失败 {{failed}}，视频配置预检 {{preflight}}。',
+                counts,
+              ),
             );
           }, 100);
 
@@ -1733,6 +1750,7 @@ export const useChannelsData = () => {
     modelSearchKeyword,
     setModelSearchKeyword,
     modelTestResults,
+    setModelTestResults,
     testingModels,
     selectedModelKeys,
     setSelectedModelKeys,

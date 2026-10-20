@@ -146,6 +146,10 @@ func TestToken(c *gin.Context) {
 		return
 	}
 	consumedTime, message, runErr := runTokenRelayTest(c, token, req.Model, "")
+	if value, exists := c.Get(videoPreflightKind); exists {
+		c.JSON(http.StatusOK, videoPreflightResponse(value.(*videoPreflight)))
+		return
+	}
 	if runErr != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

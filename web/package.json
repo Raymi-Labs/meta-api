@@ -56,6 +56,7 @@
     "i18n:sync": "bunx i18next-cli sync",
     "i18n:lint": "bunx i18next-cli lint",
     "i18n:audit": "node scripts/i18n-audit.mjs",
+    "test:video-preflight": "node scripts/video-preflight.test.mjs",
     "test:image-playground-static": "node scripts/image-playground-static-guard.test.mjs",
     "test:model-pricing-currency": "node scripts/model-pricing-currency.test.mjs",
     "test:tiered-billing-display": "node scripts/tiered-billing-display.test.mjs",

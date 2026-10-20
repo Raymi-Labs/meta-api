@@ -22,7 +22,6 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	"github.com/QuantumNous/new-api/relay"
-	relaychannel "github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relay/helper"
@@ -39,6 +38,7 @@ import (
 )
 
 type testResult struct {
+	preflight    *videoPreflight
 	context      *gin.Context
 	localErr     error
 	newAPIError  *types.NewAPIError
@@ -278,6 +278,11 @@ func executeChannelStyleTest(
 	isStream bool,
 	options testExecutionOptions,
 ) (result testResult) {
+	// A dashboard test must never submit a paid asynchronous video job.
+	if channelVideoTest(channel, testModel, endpointType) {
+		err := errors.New("视频测试仅支持本地预检，请通过正式视频接口进行真实生成")
+		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())}
+	}
 	var relayInfo *relaycommon.RelayInfo
 	billingStarted := false
 	defer func() {
@@ -318,6 +323,10 @@ func executeChannelStyleTest(
 	}
 
 	testModel = relayInfo.UpstreamModelName
+	if channelVideoTest(channel, testModel, endpointType) || relayInfo.RelayMode == relayconstant.RelayModeVideoSubmit {
+		err := errors.New("视频测试仅支持本地预检，请通过正式视频接口进行真实生成")
+		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())}
+	}
 	request.SetModelName(testModel)
 
 	meta := request.GetTokenCountMeta()
@@ -355,24 +364,8 @@ func executeChannelStyleTest(
 		billingStarted = true
 	}
 
-	var adaptor relaychannel.Adaptor
-	var taskAdaptor relaychannel.TaskAdaptor
-	isVideoTask := relayInfo.RelayMode == relayconstant.RelayModeVideoSubmit
 	apiType, _ := common.ChannelType2APIType(channel.Type)
-	if isVideoTask {
-		taskAdaptor = relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channel.Type)))
-		if taskAdaptor == nil {
-			err = fmt.Errorf("video task adaptor unavailable for channel type: %d", channel.Type)
-			result.context = c
-			result.info = relayInfo
-			result.localErr = err
-			result.newAPIError = types.NewError(err, types.ErrorCodeInvalidApiType)
-			return
-		}
-		taskAdaptor.Init(relayInfo)
-	} else {
-		adaptor = relay.GetAdaptor(apiType)
-	}
+	adaptor := relay.GetAdaptor(apiType)
 	if relayInfo.RelayMode == relayconstant.RelayModeResponsesCompact &&
 		apiType != constant.APITypeOpenAI &&
 		apiType != constant.APITypeCodex {
@@ -383,7 +376,7 @@ func executeChannelStyleTest(
 		result.newAPIError = types.NewError(err, types.ErrorCodeInvalidApiType)
 		return
 	}
-	if !isVideoTask && adaptor == nil {
+	if adaptor == nil {
 		err = fmt.Errorf("invalid api type: %d, adaptor is nil", apiType)
 		result.context = c
 		result.info = relayInfo
@@ -443,8 +436,6 @@ func executeChannelStyleTest(
 			result.newAPIError = types.NewError(err, types.ErrorCodeConvertRequestFailed)
 			return
 		}
-	case relayconstant.RelayModeVideoSubmit:
-		convertedRequest = request
 	case relayconstant.RelayModeResponsesCompact:
 		switch req := request.(type) {
 		case *dto.OpenAIResponsesCompactionRequest:
@@ -507,18 +498,14 @@ func executeChannelStyleTest(
 		}
 	}
 
+	if channelVideoTest(channel, gjson.GetBytes(jsonData, "model").String(), endpointType) {
+		err := errors.New("视频测试仅支持本地预检，请通过正式视频接口进行真实生成")
+		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())}
+	}
+
 	requestBody := bytes.NewBuffer(jsonData)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonData))
-	var resp any
-	if isVideoTask {
-		var videoBody io.Reader
-		videoBody, err = taskAdaptor.BuildRequestBody(c, relayInfo)
-		if err == nil {
-			resp, err = taskAdaptor.DoRequest(c, relayInfo, videoBody)
-		}
-	} else {
-		resp, err = adaptor.DoRequest(c, relayInfo, requestBody)
-	}
+	resp, err := adaptor.DoRequest(c, relayInfo, requestBody)
 	if err != nil {
 		result.context = c
 		result.info = relayInfo
@@ -531,9 +518,6 @@ func executeChannelStyleTest(
 	if resp != nil {
 		httpResp = resp.(*http.Response)
 		validStatus := httpResp.StatusCode == http.StatusOK
-		if isVideoTask {
-			validStatus = httpResp.StatusCode >= http.StatusOK && httpResp.StatusCode < http.StatusMultipleChoices
-		}
 		if !validStatus {
 			responseBody, readErr := io.ReadAll(httpResp.Body)
 			if readErr != nil {
@@ -569,34 +553,6 @@ func executeChannelStyleTest(
 			}
 			return
 		}
-	}
-
-	if isVideoTask {
-		_, _, taskErr := taskAdaptor.DoResponse(c, httpResp, relayInfo)
-		if taskErr != nil {
-			result.context = c
-			result.info = relayInfo
-			result.localErr = taskErr.Error
-			result.newAPIError = types.NewError(taskErr.Error, types.ErrorCodeBadResponseBody)
-			return
-		}
-		// Video tests are real upstream submissions but do not return token
-		// usage. Settle at the already calculated request price so a successful
-		// test cannot leave a BillingSession's pre-consume reservation open.
-		if options.enableBilling && relayInfo.Billing != nil {
-			if err = service.SettleBilling(c, relayInfo, priceData.Quota); err != nil {
-				result.context = c
-				result.info = relayInfo
-				result.priceData = priceData
-				result.localErr = err
-				result.newAPIError = types.NewError(err, types.ErrorCodeModelPriceError)
-				return
-			}
-		}
-		result.context = c
-		result.info = relayInfo
-		result.priceData = priceData
-		return
 	}
 
 	usageAny, respErr := adaptor.DoResponse(c, httpResp, relayInfo)
@@ -665,6 +621,10 @@ func executeChannelStyleTest(
 
 func testChannel(channel *model.Channel, testUserID int, testModel string, endpointType string, streamOverride *bool, forcedKeyIndex *int) testResult {
 	tik := time.Now()
+	testModel = channelTestModel(channel, testModel)
+	if channelVideoTest(channel, testModel, endpointType) {
+		return testResult{preflight: inspectVideoConfiguration(channel, testModel)}
+	}
 	var unsupportedTestChannelTypes = []int{
 		constant.ChannelTypeMidjourney,
 		constant.ChannelTypeMidjourneyPlus,
@@ -682,21 +642,6 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 	}
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-
-	testModel = strings.TrimSpace(testModel)
-	if testModel == "" {
-		if channel.TestModel != nil && *channel.TestModel != "" {
-			testModel = strings.TrimSpace(*channel.TestModel)
-		} else {
-			models := channel.GetModels()
-			if len(models) > 0 {
-				testModel = strings.TrimSpace(models[0])
-			}
-			if testModel == "" {
-				testModel = "gpt-4o-mini"
-			}
-		}
-	}
 
 	execution := buildChannelStyleTestExecution(channel, testModel, endpointType, streamOverride)
 
@@ -749,15 +694,14 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 		enableBilling: false,
 		isChannelTest: true,
 	})
-	if execResult.localErr != nil {
+	if execResult.localErr != nil || execResult.preflight != nil {
 		return execResult
 	}
 
 	info := execResult.info
 	usage := execResult.usage
 	if usage == nil {
-		// Asynchronous video submissions do not return token usage. Keep the
-		// log/settlement path total and avoid treating nil as a text response.
+		// Keep settlement total for adapters that omit optional usage.
 		usage = &dto.Usage{}
 	}
 	priceData := execResult.priceData
@@ -1041,11 +985,7 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 			}
 		case constant.EndpointTypeOpenAIVideo:
 			return &dto.OpenAIVideoRequest{
-				Model:       model,
-				Prompt:      "a simple test video",
-				Duration:    1,
-				Resolution:  "480p",
-				AspectRatio: "16:9",
+				Model: model,
 			}
 		case constant.EndpointTypeJinaRerank:
 			// 返回 RerankRequest
@@ -1193,6 +1133,10 @@ func TestChannel(c *gin.Context) {
 	}
 	tik := time.Now()
 	result := testChannel(channel, testUserID, testModel, endpointType, streamOverride, nil)
+	if result.preflight != nil {
+		c.JSON(http.StatusOK, videoPreflightResponse(result.preflight))
+		return
+	}
 	if result.localErr != nil {
 		c.JSON(http.StatusOK, buildChannelTestFailureResponse(result, 0.0))
 		return
@@ -1260,6 +1204,9 @@ func testAllChannels(notify bool) error {
 				streamOverride = common.GetPointer(true)
 			}
 			result := testChannel(channel, testUserID, "", "", streamOverride, nil)
+			if result.preflight != nil {
+				continue
+			} // Local checks are not channel health probes.
 			tok := time.Now()
 			milliseconds := tok.Sub(tik).Milliseconds()
 
@@ -1344,6 +1291,9 @@ func confirmSingleChannelPendingDisable(channel *model.Channel) {
 	}
 	endpointType, streamOverride := pendingDisableConfirmationTestOptions(channel.GetPendingDisableReason())
 	result := testChannel(channel, testUserID, "", endpointType, streamOverride, nil)
+	if result.preflight != nil {
+		return
+	} // No evidence to change pending-disable state.
 	if result.newAPIError == nil && result.localErr == nil {
 		if err := model.ClearChannelPreDisable(channel.Id, ""); err != nil {
 			common.SysError(fmt.Sprintf("clear pending disable failed after success: channel=%d err=%v", channel.Id, err))
@@ -1366,6 +1316,9 @@ func confirmMultiKeyPendingDisable(channel *model.Channel, keyIndex int) {
 	}
 	endpointType, streamOverride := pendingDisableConfirmationTestOptions(channel.GetPendingDisableKeyReason(keyIndex))
 	result := testChannel(channel, testUserID, "", endpointType, streamOverride, common.GetPointer(keyIndex))
+	if result.preflight != nil {
+		return
+	} // No evidence to change pending-disable state.
 	if result.newAPIError == nil && result.localErr == nil {
 		if err := model.ClearChannelPreDisable(channel.Id, key); err != nil {
 			common.SysError(fmt.Sprintf("clear pending key disable failed after success: channel=%d key_index=%d err=%v", channel.Id, keyIndex, err))

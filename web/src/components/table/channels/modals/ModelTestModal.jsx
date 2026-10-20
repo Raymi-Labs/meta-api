@@ -18,6 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import VideoPreflightModal from './VideoPreflightModal';
+import {
+  isVideoTestModel,
+  isLiveTestSuccess,
+} from '../../../../helpers/videoTest';
 import {
   Modal,
   Button,
@@ -45,6 +50,7 @@ const ModelTestModal = ({
   selectedModelKeys,
   setSelectedModelKeys,
   modelTestResults,
+  setModelTestResults,
   testingModels,
   testChannel,
   modelTablePage,
@@ -57,8 +63,13 @@ const ModelTestModal = ({
   isMobile,
   t,
 }) => {
+  const [videoModel, setVideoModel] = React.useState('');
+  React.useEffect(() => {
+    setVideoModel('');
+  }, [showModelTestModal, currentTestChannel?.id]);
   const hasChannel = Boolean(currentTestChannel);
   const streamToggleDisabled = [
+    'openai-video',
     'embeddings',
     'image-generation',
     'jina-rerank',
@@ -81,6 +92,7 @@ const ModelTestModal = ({
 
   const endpointTypeOptions = [
     { value: '', label: t('自动检测') },
+    { value: 'openai-video', label: t('视频（仅本地配置检查）') },
     { value: 'openai', label: 'OpenAI (/v1/chat/completions)' },
     { value: 'openai-response', label: 'OpenAI Response (/v1/responses)' },
     {
@@ -126,7 +138,7 @@ const ModelTestModal = ({
       .filter((m) => m.toLowerCase().includes(modelSearchKeyword.toLowerCase()))
       .filter((m) => {
         const result = modelTestResults[`${currentTestChannel.id}-${m}`];
-        return result && result.success;
+        return isLiveTestSuccess(result);
       });
     if (successKeys.length === 0) {
       showInfo(t('暂无成功模型'));
@@ -165,6 +177,19 @@ const ModelTestModal = ({
             <Tag color='grey' shape='circle'>
               {t('未开始')}
             </Tag>
+          );
+        }
+
+        if (testResult.testKind === 'video_preflight') {
+          return (
+            <div className='flex flex-col gap-1'>
+              <Tag color={testResult.success ? 'blue' : 'orange'}>
+                {testResult.success ? t('配置预检通过') : t('配置待完善')}
+              </Tag>
+              <Typography.Text type='tertiary' size='small'>
+                {t('未生成视频，未验证可用性')}
+              </Typography.Text>
+            </div>
           );
         }
 
@@ -218,21 +243,31 @@ const ModelTestModal = ({
       dataIndex: 'operate',
       render: (text, record) => {
         const isTesting = testingModels.has(record.model);
+        const video =
+          isVideoTestModel(
+            record.model,
+            currentTestChannel?.type,
+            selectedEndpointType,
+          ) ||
+          modelTestResults[`${currentTestChannel.id}-${record.model}`]
+            ?.testKind === 'video_preflight';
         return (
           <Button
             type='tertiary'
             onClick={() =>
-              testChannel(
-                currentTestChannel,
-                record.model,
-                selectedEndpointType,
-                isStreamTest,
-              )
+              video
+                ? setVideoModel(record.model)
+                : testChannel(
+                    currentTestChannel,
+                    record.model,
+                    selectedEndpointType,
+                    isStreamTest,
+                  )
             }
             loading={isTesting}
             size='small'
           >
-            {t('测试')}
+            {video ? t('检查配置') : t('测试')}
           </Button>
         );
       },
@@ -250,148 +285,167 @@ const ModelTestModal = ({
   })();
 
   return (
-    <Modal
-      title={
-        hasChannel ? (
-          <div className='flex flex-col gap-2 w-full'>
-            <div className='flex items-center gap-2'>
-              <Typography.Text
-                strong
-                className='!text-[var(--semi-color-text-0)] !text-base'
+    <>
+      <VideoPreflightModal
+        channel={currentTestChannel}
+        model={videoModel}
+        onCancel={() => setVideoModel('')}
+        onResult={(data) =>
+          setModelTestResults((prev) => ({
+            ...prev,
+            [`${currentTestChannel.id}-${videoModel}`]: {
+              success: data.passed,
+              testKind: 'video_preflight',
+              preflight: data,
+              time: 0,
+              timestamp: Date.now(),
+            },
+          }))
+        }
+      />
+      <Modal
+        title={
+          hasChannel ? (
+            <div className='flex flex-col gap-2 w-full'>
+              <div className='flex items-center gap-2'>
+                <Typography.Text
+                  strong
+                  className='!text-[var(--semi-color-text-0)] !text-base'
+                >
+                  {currentTestChannel.name} {t('渠道的模型测试')}
+                </Typography.Text>
+                <Typography.Text type='tertiary' size='small'>
+                  {t('共')} {currentTestChannel.models.split(',').length}{' '}
+                  {t('个模型')}
+                </Typography.Text>
+              </div>
+            </div>
+          ) : null
+        }
+        visible={showModelTestModal}
+        onCancel={handleCloseModal}
+        footer={
+          hasChannel ? (
+            <div className='flex justify-end'>
+              {isBatchTesting ? (
+                <Button type='danger' onClick={handleCloseModal}>
+                  {t('停止测试')}
+                </Button>
+              ) : (
+                <Button type='tertiary' onClick={handleCloseModal}>
+                  {t('取消')}
+                </Button>
+              )}
+              <Button
+                onClick={batchTestModels}
+                loading={isBatchTesting}
+                disabled={isBatchTesting}
               >
-                {currentTestChannel.name} {t('渠道的模型测试')}
-              </Typography.Text>
-              <Typography.Text type='tertiary' size='small'>
-                {t('共')} {currentTestChannel.models.split(',').length}{' '}
-                {t('个模型')}
-              </Typography.Text>
-            </div>
-          </div>
-        ) : null
-      }
-      visible={showModelTestModal}
-      onCancel={handleCloseModal}
-      footer={
-        hasChannel ? (
-          <div className='flex justify-end'>
-            {isBatchTesting ? (
-              <Button type='danger' onClick={handleCloseModal}>
-                {t('停止测试')}
+                {isBatchTesting
+                  ? t('测试中...')
+                  : t('批量测试${count}个模型').replace(
+                      '${count}',
+                      filteredModels.length,
+                    )}
               </Button>
-            ) : (
-              <Button type='tertiary' onClick={handleCloseModal}>
-                {t('取消')}
-              </Button>
-            )}
-            <Button
-              onClick={batchTestModels}
-              loading={isBatchTesting}
-              disabled={isBatchTesting}
-            >
-              {isBatchTesting
-                ? t('测试中...')
-                : t('批量测试${count}个模型').replace(
-                    '${count}',
-                    filteredModels.length,
-                  )}
-            </Button>
-          </div>
-        ) : null
-      }
-      maskClosable={!isBatchTesting}
-      className='!rounded-lg'
-      size={isMobile ? 'full-width' : 'large'}
-    >
-      {hasChannel && (
-        <div className='model-test-scroll'>
-          {/* Endpoint toolbar */}
-          <div className='flex flex-col sm:flex-row sm:items-center gap-2 w-full mb-2'>
-            <div className='flex items-center gap-2 flex-1 min-w-0'>
-              <Typography.Text strong className='shrink-0'>
-                {t('端点类型')}:
-              </Typography.Text>
-              <Select
-                value={selectedEndpointType}
-                onChange={setSelectedEndpointType}
-                optionList={endpointTypeOptions}
-                className='!w-full min-w-0'
-                placeholder={t('选择端点类型')}
-              />
             </div>
-            <div className='flex items-center justify-between sm:justify-end gap-2 shrink-0'>
-              <Typography.Text strong className='shrink-0'>
-                {t('流式')}:
-              </Typography.Text>
-              <Switch
-                checked={isStreamTest}
-                onChange={setIsStreamTest}
-                size='small'
-                disabled={streamToggleDisabled}
-                aria-label={t('流式')}
-              />
+          ) : null
+        }
+        maskClosable={!isBatchTesting}
+        className='!rounded-lg'
+        size={isMobile ? 'full-width' : 'large'}
+      >
+        {hasChannel && (
+          <div className='model-test-scroll'>
+            {/* Endpoint toolbar */}
+            <div className='flex flex-col sm:flex-row sm:items-center gap-2 w-full mb-2'>
+              <div className='flex items-center gap-2 flex-1 min-w-0'>
+                <Typography.Text strong className='shrink-0'>
+                  {t('端点类型')}:
+                </Typography.Text>
+                <Select
+                  value={selectedEndpointType}
+                  onChange={setSelectedEndpointType}
+                  optionList={endpointTypeOptions}
+                  className='!w-full min-w-0'
+                  placeholder={t('选择端点类型')}
+                />
+              </div>
+              <div className='flex items-center justify-between sm:justify-end gap-2 shrink-0'>
+                <Typography.Text strong className='shrink-0'>
+                  {t('流式')}:
+                </Typography.Text>
+                <Switch
+                  checked={isStreamTest}
+                  onChange={setIsStreamTest}
+                  size='small'
+                  disabled={streamToggleDisabled}
+                  aria-label={t('流式')}
+                />
+              </div>
             </div>
-          </div>
 
-          <Banner
-            type='info'
-            closeIcon={null}
-            icon={<IconInfoCircle />}
-            className='!rounded-lg mb-2'
-            description={t(
-              '说明：本页测试为非流式请求；若渠道仅支持流式返回，可能出现测试失败，请以实际使用为准。',
-            )}
-          />
-
-          {/* 搜索与操作按钮 */}
-          <div className='flex flex-col sm:flex-row sm:items-center gap-2 w-full mb-2'>
-            <Input
-              placeholder={t('搜索模型...')}
-              value={modelSearchKeyword}
-              onChange={(v) => {
-                setModelSearchKeyword(v);
-                setModelTablePage(1);
-              }}
-              className='!w-full sm:!flex-1'
-              prefix={<IconSearch />}
-              showClear
+            <Banner
+              type='info'
+              closeIcon={null}
+              icon={<IconInfoCircle />}
+              className='!rounded-lg mb-2'
+              description={t(
+                '视频模型只做配置预检，不产生生成费用；批量预检不代表视频已生成成功。其他模型仍按所选接口实际请求。',
+              )}
             />
 
-            <div className='flex items-center justify-end gap-2'>
-              <Button onClick={handleCopySelected}>{t('复制已选')}</Button>
-              <Button type='tertiary' onClick={handleSelectSuccess}>
-                {t('选择成功')}
-              </Button>
-            </div>
-          </div>
+            {/* 搜索与操作按钮 */}
+            <div className='flex flex-col sm:flex-row sm:items-center gap-2 w-full mb-2'>
+              <Input
+                placeholder={t('搜索模型...')}
+                value={modelSearchKeyword}
+                onChange={(v) => {
+                  setModelSearchKeyword(v);
+                  setModelTablePage(1);
+                }}
+                className='!w-full sm:!flex-1'
+                prefix={<IconSearch />}
+                showClear
+              />
 
-          <Table
-            columns={columns}
-            dataSource={dataSource}
-            rowSelection={{
-              selectedRowKeys: selectedModelKeys,
-              onChange: (keys) => {
-                if (allSelectingRef.current) {
-                  allSelectingRef.current = false;
-                  return;
-                }
-                setSelectedModelKeys(keys);
-              },
-              onSelectAll: (checked) => {
-                allSelectingRef.current = true;
-                setSelectedModelKeys(checked ? filteredModels : []);
-              },
-            }}
-            pagination={{
-              currentPage: modelTablePage,
-              pageSize: MODEL_TABLE_PAGE_SIZE,
-              total: filteredModels.length,
-              showSizeChanger: false,
-              onPageChange: (page) => setModelTablePage(page),
-            }}
-          />
-        </div>
-      )}
-    </Modal>
+              <div className='flex items-center justify-end gap-2'>
+                <Button onClick={handleCopySelected}>{t('复制已选')}</Button>
+                <Button type='tertiary' onClick={handleSelectSuccess}>
+                  {t('选择成功')}
+                </Button>
+              </div>
+            </div>
+
+            <Table
+              columns={columns}
+              dataSource={dataSource}
+              rowSelection={{
+                selectedRowKeys: selectedModelKeys,
+                onChange: (keys) => {
+                  if (allSelectingRef.current) {
+                    allSelectingRef.current = false;
+                    return;
+                  }
+                  setSelectedModelKeys(keys);
+                },
+                onSelectAll: (checked) => {
+                  allSelectingRef.current = true;
+                  setSelectedModelKeys(checked ? filteredModels : []);
+                },
+              }}
+              pagination={{
+                currentPage: modelTablePage,
+                pageSize: MODEL_TABLE_PAGE_SIZE,
+                total: filteredModels.length,
+                showSizeChanger: false,
+                onPageChange: (page) => setModelTablePage(page),
+              }}
+            />
+          </div>
+        )}
+      </Modal>
+    </>
   );
 };
 

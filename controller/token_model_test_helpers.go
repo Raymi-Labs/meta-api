@@ -463,6 +463,14 @@ func runTokenRelayTest(parent *gin.Context, token *model.Token, modelName string
 			common.SetContextKey(selectCtx, constant.ContextKeyUsingGroup, selectedGroup)
 		}
 
+		if channelVideoTest(channel, modelName, endpointType) {
+			preflight := inspectVideoConfiguration(channel, modelName)
+			preflight.History, err = loadVideoHistory(channel.Id, modelName, token.UserId)
+			preflight.HistoryUnavailable = err != nil
+			parent.Set(videoPreflightKind, preflight)
+			return 0, "", nil
+		}
+
 		execution := buildChannelStyleTestExecution(channel, modelName, endpointType, nil)
 		execCtx, execRecorder := createInternalJSONContext(parent, http.MethodPost, execution.requestPath, nil, tokenTestAcceptHeader(execution.isStream))
 
