@@ -31,11 +31,12 @@ import {
 import { quotaToUSDAmount, usdAmountToQuota } from '../../../../helpers/quota';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import { useGroupHealth } from '../../../../hooks/group-health/useGroupHealth';
-import { TokenGroupHealth, TokenGroupHealthOption } from '../TokenGroupHealth';
+import { TokenGroupHealth } from '../TokenGroupHealth';
 import {
   Button,
   Checkbox,
   SideSheet,
+  Modal,
   Select,
   Space,
   Spin,
@@ -48,24 +49,12 @@ import {
   Col,
   Row,
 } from '@douyinfe/semi-ui';
-import {
-  IconCreditCard,
-  IconLink,
-  IconSave,
-  IconClose,
-  IconKey,
-} from '@douyinfe/semi-icons';
+import { IconCreditCard, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
-import TokenGroupFavorites from '../TokenGroupFavorites';
+import TokenGroupPicker from '../TokenGroupPicker';
 import { UserContext } from '../../../../context/User';
 import { StatusContext } from '../../../../context/Status';
-import {
-  buildTokenGroupVendorOptions,
-  filterTokenGroupsByVendor,
-  formatTokenGroupSelectedLabel,
-  resolveTokenGroupVendor,
-  shouldClearTokenGroupForVendor,
-} from '../tokenGroupUtils';
+import { resolveTokenGroupVendor } from '../tokenGroupUtils';
 
 const { Text, Title } = Typography;
 const TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY = 'token-channel-limit-tag-mode';
@@ -84,7 +73,6 @@ const EditTokenModal = (props) => {
   const formApiRef = useRef(null);
   const loadedTokenValuesRef = useRef(null);
   const [models, setModels] = useState([]);
-  const [groups, setGroups] = useState([]);
   const [availableGroups, setAvailableGroups] = useState({
     userId: null,
     groups: [],
@@ -108,10 +96,20 @@ const EditTokenModal = (props) => {
   const [channelLimitTagMode, setChannelLimitTagMode] = useState(
     readStoredChannelLimitTagMode,
   );
-  const groupVendorOptions = useMemo(
-    () => buildTokenGroupVendorOptions(groups, t('多厂商通用')),
-    [groups, t],
-  );
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [groupsError, setGroupsError] = useState(false);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState(false);
+  const [channelsLoading, setChannelsLoading] = useState(false);
+  const [channelsError, setChannelsError] = useState(false);
+  const [tokenReady, setTokenReady] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const modelRequestRef = useRef(0);
+  const tokenRequestRef = useRef(0);
+  const submittingRef = useRef(false);
+  const quotaSectionRef = useRef(null);
+  const advancedSectionRef = useRef(null);
+  const Dialog = isEdit ? SideSheet : Modal;
 
   const getInitValues = () => ({
     name: '',
@@ -428,21 +426,36 @@ const EditTokenModal = (props) => {
   };
 
   const loadModels = async (groupValue = '', shouldNotify = false) => {
-    let res = await API.get(`/api/token/models`, {
-      params: {
-        group: groupValue,
-      },
-    });
-    const { success, message, data } = res.data;
-    if (success) {
-      const localModelOptions = buildModelOptions(
-        Array.isArray(data) ? data : [],
-      );
-      setModels(localModelOptions);
-      syncModelLimitsWithOptions(localModelOptions, shouldNotify);
-    } else {
-      setModels([]);
-      showError(t(message));
+    const requestId = ++modelRequestRef.current;
+    setModelsLoading(true);
+    setModelsError(false);
+    try {
+      let res = await API.get(`/api/token/models`, {
+        disableDuplicate: true,
+        params: {
+          group: groupValue,
+        },
+      });
+      if (requestId !== modelRequestRef.current) return;
+      const { success, message, data } = res.data;
+      if (success) {
+        const localModelOptions = buildModelOptions(
+          Array.isArray(data) ? data : [],
+        );
+        setModels(localModelOptions);
+        if (shouldNotify) syncModelLimitsWithOptions(localModelOptions, true);
+      } else {
+        setModels([]);
+        setModelsError(true);
+        showError(t(message));
+      }
+    } catch {
+      if (requestId === modelRequestRef.current) {
+        setModels([]);
+        setModelsError(true);
+      }
+    } finally {
+      if (requestId === modelRequestRef.current) setModelsLoading(false);
     }
   };
 
@@ -456,16 +469,30 @@ const EditTokenModal = (props) => {
       return [];
     }
     const requestId = ++channelRequestRef.current;
-    let res = await API.get(`/api/token/channels`, {
-      params: {
-        group: groupValue,
-        model_limits: Array.isArray(modelLimits)
-          ? modelLimits.join(',')
-          : String(modelLimits || ''),
-        token_id: isEdit ? props.editingToken.id : undefined,
-      },
-    });
+    setChannelsLoading(true);
+    setChannelsError(false);
+    let res;
+    try {
+      res = await API.get(`/api/token/channels`, {
+        disableDuplicate: true,
+        params: {
+          group: groupValue,
+          model_limits: Array.isArray(modelLimits)
+            ? modelLimits.join(',')
+            : String(modelLimits || ''),
+          token_id: isEdit ? props.editingToken.id : undefined,
+        },
+      });
+    } catch {
+      if (requestId === channelRequestRef.current) {
+        setChannelOptions([]);
+        setChannelsError(true);
+        setChannelsLoading(false);
+      }
+      return [];
+    }
     if (requestId !== channelRequestRef.current) return [];
+    setChannelsLoading(false);
     const { success, message, data } = res.data;
     if (success) {
       const selectedChannelLimits = getStoredChannelLimitValues();
@@ -474,9 +501,10 @@ const EditTokenModal = (props) => {
         selectedChannelLimits,
       );
       setChannelOptions(localChannelOptions);
-      syncChannelLimitsWithOptions(localChannelOptions, shouldNotify);
+      if (shouldNotify) syncChannelLimitsWithOptions(localChannelOptions, true);
       return localChannelOptions;
     } else {
+      setChannelsError(true);
       setChannelOptions([]);
       showError(t(message));
       return [];
@@ -485,6 +513,8 @@ const EditTokenModal = (props) => {
 
   const loadGroups = async () => {
     const requestId = ++groupRequestRef.current;
+    setGroupsLoading(true);
+    setGroupsError(false);
     setAvailableGroups({ userId: null, groups: [] });
     let res;
     try {
@@ -492,9 +522,14 @@ const EditTokenModal = (props) => {
       // not another subscriber to a previous account's in-flight GET.
       res = await API.get(`/api/user/self/groups`, { disableDuplicate: true });
     } catch {
+      if (requestId === groupRequestRef.current) {
+        setGroupsError(true);
+        setGroupsLoading(false);
+      }
       return;
     }
     if (requestId !== groupRequestRef.current) return;
+    setGroupsLoading(false);
     const { success, message, data } = res.data;
     if (success) {
       let localGroupOptions = Object.entries(data).map(([group, info]) => ({
@@ -502,126 +537,83 @@ const EditTokenModal = (props) => {
         value: group,
         ratio: info.ratio,
       }));
-      setAvailableGroups({
-        userId: userState?.user?.id,
-        groups: [...localGroupOptions],
-      });
       if (statusState?.status?.default_use_auto_group) {
         if (localGroupOptions.some((group) => group.value === 'auto')) {
           localGroupOptions.sort((a, b) => (a.value === 'auto' ? -1 : 1));
         }
       }
-      const currentGroup =
-        formApiRef.current?.getValue('group') ||
-        loadedTokenValuesRef.current?.group ||
-        '';
-      if (
-        currentGroup &&
-        !localGroupOptions.some((group) => group.value === currentGroup)
-      ) {
-        localGroupOptions.push({
-          label: t('令牌分组'),
-          value: currentGroup,
-          ratio: null,
-        });
-      }
-      setGroups(localGroupOptions);
-      if (currentGroup) {
-        formApiRef.current?.setValue(
-          'group_vendor',
-          resolveTokenGroupVendor(currentGroup),
-        );
-      }
+      setAvailableGroups({
+        userId: userState?.user?.id,
+        groups: localGroupOptions,
+      });
     } else {
+      setGroupsError(true);
       showError(t(message));
     }
   };
 
   const loadToken = async () => {
+    const requestId = ++tokenRequestRef.current;
+    setTokenReady(false);
     loadedTokenValuesRef.current = null;
     setLoading(true);
-    let res = await API.get(`/api/token/${props.editingToken.id}`);
-    const { success, message, data } = res.data;
-    if (success) {
-      if (data.expired_time !== -1) {
-        data.expired_time = timestamp2string(data.expired_time);
-      }
-      if (data.model_limits !== '') {
-        data.model_limits = data.model_limits.split(',');
-      } else {
-        data.model_limits = [];
-      }
-      if (data.channel_limits !== '') {
-        data.channel_limits = data.channel_limits.split(',');
-      } else {
-        data.channel_limits = [];
-      }
-      if (!data.package_period || data.package_period === 'none') {
-        data.package_period = 'daily';
-      }
-      data.remain_amount = quotaToUSDAmount(data.remain_quota || 0);
-      data.package_limit_amount = quotaToUSDAmount(
-        data.package_limit_quota || 0,
-      );
-      data.group_vendor = resolveTokenGroupVendor(data.group);
-      setGroups((currentGroups) => {
-        if (
-          !data.group ||
-          currentGroups.some((group) => group.value === data.group)
-        ) {
-          return currentGroups;
-        }
-        return [
-          ...currentGroups,
-          {
-            label: t('令牌分组'),
-            value: data.group,
-            ratio: null,
-          },
-        ];
+    try {
+      let res = await API.get(`/api/token/${props.editingToken.id}`, {
+        disableDuplicate: true,
       });
-      loadedTokenValuesRef.current = { ...getInitValues(), ...data };
-      applyLoadedTokenValues();
-      await loadModels(data.group || '');
-      const loadedOptions = await loadChannels(
-        data.group || '',
-        data.model_limits || [],
-      );
-      // 渠道选项加载完成后，重新同步 channel_limits 确保回显正确
-      if (
-        Array.isArray(data.channel_limits) &&
-        data.channel_limits.length > 0 &&
-        loadedOptions.length > 0
-      ) {
-        applyChannelLimitValues(data.channel_limits, loadedOptions);
+      if (requestId !== tokenRequestRef.current) return;
+      const { success, message, data } = res.data;
+      if (success) {
+        if (data.expired_time !== -1) {
+          data.expired_time = timestamp2string(data.expired_time);
+        }
+        if (data.model_limits !== '') {
+          data.model_limits = data.model_limits.split(',');
+        } else {
+          data.model_limits = [];
+        }
+        if (data.channel_limits !== '') {
+          data.channel_limits = data.channel_limits.split(',');
+        } else {
+          data.channel_limits = [];
+        }
+        if (!data.package_period || data.package_period === 'none') {
+          data.package_period = 'daily';
+        }
+        data.remain_amount = quotaToUSDAmount(data.remain_quota || 0);
+        data.package_limit_amount = quotaToUSDAmount(
+          data.package_limit_quota || 0,
+        );
+        data.group_vendor = resolveTokenGroupVendor(data.group);
+        loadedTokenValuesRef.current = { ...getInitValues(), ...data };
+        applyLoadedTokenValues();
+        await loadModels(data.group || '');
+        if (requestId !== tokenRequestRef.current) return;
+        const loadedOptions = await loadChannels(
+          data.group || '',
+          data.model_limits || [],
+        );
+        if (requestId !== tokenRequestRef.current) return;
+        // 渠道选项加载完成后，重新同步 channel_limits 确保回显正确
+        if (
+          Array.isArray(data.channel_limits) &&
+          data.channel_limits.length > 0 &&
+          loadedOptions.length > 0
+        ) {
+          applyChannelLimitValues(data.channel_limits, loadedOptions);
+        }
+        setTokenMode(data.package_enabled ? 'package' : 'standard');
+        setTokenReady(true);
+      } else {
+        showError(message);
       }
-      setTokenMode(data.package_enabled ? 'package' : 'standard');
-    } else {
-      showError(message);
+    } catch {
+      if (requestId === tokenRequestRef.current)
+        showError(t('令牌加载失败，请重新打开'));
+    } finally {
+      if (requestId === tokenRequestRef.current) setLoading(false);
     }
-    setLoading(false);
   };
-
-  useEffect(() => {
-    loadedTokenValuesRef.current = null;
-    setChannelOptions([]);
-    if (formApiRef.current) {
-      if (!isEdit) {
-        formApiRef.current.setValues(getInitValues());
-      }
-    }
-    if (!isEdit) {
-      formApiRef.current?.setValue(
-        'group_vendor',
-        resolveTokenGroupVendor(props.editingToken.group || ''),
-      );
-      loadModels(props.editingToken.group || '');
-      loadChannels(
-        props.editingToken.group || '',
-        props.editingToken.model_limits || [],
-      );
-    }
-  }, [props.editingToken.id]);
 
   useEffect(() => {
     setAvailableGroups({ userId: null, groups: [] });
@@ -632,6 +624,10 @@ const EditTokenModal = (props) => {
   }, [props.visiable, props.editingToken.id, userState?.user?.id]);
 
   useEffect(() => {
+    setTokenReady(false);
+    setSelectedGroup('');
+    if (quotaSectionRef.current) quotaSectionRef.current.open = false;
+    if (advancedSectionRef.current) advancedSectionRef.current.open = false;
     if (props.visiable) {
       setChannelLimitTagMode(readStoredChannelLimitTagMode());
       if (isEdit) {
@@ -640,6 +636,7 @@ const EditTokenModal = (props) => {
         loadedTokenValuesRef.current = null;
         formApiRef.current?.setValues(getInitValues());
         setTokenMode('standard');
+        setLoading(false);
         loadModels('');
         loadChannels('', []);
       }
@@ -649,7 +646,12 @@ const EditTokenModal = (props) => {
       setChannelOptions([]);
       setChannelLimitTagMode(readStoredChannelLimitTagMode());
     }
-  }, [props.visiable, props.editingToken.id]);
+    return () => {
+      tokenRequestRef.current += 1;
+      modelRequestRef.current += 1;
+      channelRequestRef.current += 1;
+    };
+  }, [props.visiable, props.editingToken.id, userState?.user?.id]);
 
   const channelTagGroups = useMemo(() => {
     const tagGroupMap = new Map();
@@ -913,167 +915,208 @@ const EditTokenModal = (props) => {
   };
 
   const sanitizeModelLimits = (modelLimits) => {
+    if (
+      isEdit &&
+      formApiRef.current?.getValue('group') ===
+        loadedTokenValuesRef.current?.group
+    )
+      return modelLimits || [];
     const allowedValues = new Set(models.map((item) => item.value));
     return (modelLimits || []).filter((model) => allowedValues.has(model));
   };
 
   const sanitizeChannelLimits = (channelLimits) => {
+    if (
+      isEdit &&
+      formApiRef.current?.getValue('group') ===
+        loadedTokenValuesRef.current?.group
+    )
+      return channelLimits || [];
     return alignChannelLimitValues(channelLimits);
   };
 
   const submit = async (values) => {
+    if (
+      submittingRef.current ||
+      loading ||
+      (isEdit && !tokenReady) ||
+      groupsLoading ||
+      groupsError ||
+      modelsLoading ||
+      modelsError ||
+      channelsLoading ||
+      channelsError
+    )
+      return;
+    if (
+      (!isEdit || values.group !== loadedTokenValuesRef.current?.group) &&
+      !availableGroups.groups.some((group) => group.value === values.group)
+    ) {
+      showError(t('请选择令牌分组'));
+      return;
+    }
+    submittingRef.current = true;
     setLoading(true);
-    if (isEdit) {
-      let { tokenCount: _tc, ...localInputs } = values;
-      if (!isSellableToken) {
-        const remainResult = normalizeRemainQuotaFields(localInputs);
-        if (!remainResult.ok) {
-          showError(remainResult.message);
-          setLoading(false);
-          return;
-        }
-        const packageResult = normalizePackageFields(localInputs);
-        if (!packageResult.ok) {
-          showError(packageResult.message);
-          setLoading(false);
-          return;
-        }
-        const runtimeLimitResult = normalizeRuntimeLimitFields(localInputs);
-        if (!runtimeLimitResult.ok) {
-          showError(runtimeLimitResult.message);
-          setLoading(false);
-          return;
-        }
-        localInputs.model_limits = sanitizeModelLimits(
-          localInputs.model_limits,
-        );
-        localInputs.channel_limits = isAdminUser
-          ? sanitizeChannelLimits(localInputs.channel_limits)
-          : [];
-        delete localInputs.remain_amount;
-        delete localInputs.package_limit_amount;
-        if (localInputs.expired_time !== -1) {
-          let time = Date.parse(localInputs.expired_time);
-          if (isNaN(time)) {
-            showError(t('过期时间格式错误！'));
+    try {
+      if (isEdit) {
+        let { tokenCount: _tc, ...localInputs } = values;
+        if (!isSellableToken) {
+          const remainResult = normalizeRemainQuotaFields(localInputs);
+          if (!remainResult.ok) {
+            showError(remainResult.message);
             setLoading(false);
             return;
           }
-          localInputs.expired_time = Math.ceil(time / 1000);
-        }
-        localInputs.model_limits = localInputs.model_limits.join(',');
-        localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
-        localInputs.channel_limits = localInputs.channel_limits.join(',');
-        localInputs.channel_limits_enabled =
-          localInputs.channel_limits.length > 0;
-        delete localInputs.group_vendor;
-      } else {
-        localInputs = {
-          name: localInputs.name,
-          group: localInputs.group,
-          status: props.editingToken.status,
-        };
-      }
-      let res = await API.put(`/api/token/`, {
-        ...localInputs,
-        id: parseInt(props.editingToken.id),
-      });
-      const { success, message } = res.data;
-      if (success) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY,
-            channelLimitTagMode ? 'true' : 'false',
+          const packageResult = normalizePackageFields(localInputs);
+          if (!packageResult.ok) {
+            showError(packageResult.message);
+            setLoading(false);
+            return;
+          }
+          const runtimeLimitResult = normalizeRuntimeLimitFields(localInputs);
+          if (!runtimeLimitResult.ok) {
+            showError(runtimeLimitResult.message);
+            setLoading(false);
+            return;
+          }
+          localInputs.model_limits = sanitizeModelLimits(
+            localInputs.model_limits,
           );
-        }
-        showSuccess(t('令牌更新成功！'));
-        props.refresh();
-        props.handleClose();
-      } else {
-        showError(t(message));
-      }
-    } else {
-      const count = parseInt(values.tokenCount, 10) || 1;
-      let successCount = 0;
-      for (let i = 0; i < count; i++) {
-        let { tokenCount: _tc, ...localInputs } = values;
-        const baseName =
-          values.name.trim() === '' ? 'default' : values.name.trim();
-        if (i !== 0 || values.name.trim() === '') {
-          localInputs.name = `${baseName}-${generateRandomSuffix()}`;
+          localInputs.channel_limits = isAdminUser
+            ? sanitizeChannelLimits(localInputs.channel_limits)
+            : loadedTokenValuesRef.current?.channel_limits || [];
+          delete localInputs.remain_amount;
+          delete localInputs.package_limit_amount;
+          if (localInputs.expired_time !== -1) {
+            let time = Date.parse(localInputs.expired_time);
+            if (isNaN(time)) {
+              showError(t('过期时间格式错误！'));
+              setLoading(false);
+              return;
+            }
+            localInputs.expired_time = Math.ceil(time / 1000);
+          }
+          localInputs.model_limits = localInputs.model_limits.join(',');
+          localInputs.model_limits_enabled =
+            localInputs.model_limits.length > 0;
+          localInputs.channel_limits = localInputs.channel_limits.join(',');
+          localInputs.channel_limits_enabled =
+            localInputs.channel_limits.length > 0;
+          delete localInputs.group_vendor;
         } else {
-          localInputs.name = baseName;
+          localInputs = {
+            name: localInputs.name,
+            group: localInputs.group,
+            status: props.editingToken.status,
+          };
         }
-        const remainResult = normalizeRemainQuotaFields(localInputs);
-        if (!remainResult.ok) {
-          showError(remainResult.message);
-          setLoading(false);
-          break;
+        let res = await API.put(`/api/token/`, {
+          ...localInputs,
+          id: parseInt(props.editingToken.id),
+        });
+        const { success, message } = res.data;
+        if (success) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY,
+              channelLimitTagMode ? 'true' : 'false',
+            );
+          }
+          showSuccess(t('令牌更新成功！'));
+          props.refresh();
+          props.handleClose();
+        } else {
+          showError(t(message));
         }
-        localInputs.model_limits = sanitizeModelLimits(
-          localInputs.model_limits,
-        );
-        localInputs.channel_limits = isAdminUser
-          ? sanitizeChannelLimits(localInputs.channel_limits)
-          : [];
-
-        if (localInputs.expired_time !== -1) {
-          let time = Date.parse(localInputs.expired_time);
-          if (isNaN(time)) {
-            showError(t('过期时间格式错误！'));
+      } else {
+        const count = parseInt(values.tokenCount, 10) || 1;
+        let successCount = 0;
+        for (let i = 0; i < count; i++) {
+          let { tokenCount: _tc, ...localInputs } = values;
+          const baseName =
+            values.name.trim() === '' ? 'default' : values.name.trim();
+          if (i !== 0 || values.name.trim() === '') {
+            localInputs.name = `${baseName}-${generateRandomSuffix()}`;
+          } else {
+            localInputs.name = baseName;
+          }
+          const remainResult = normalizeRemainQuotaFields(localInputs);
+          if (!remainResult.ok) {
+            showError(remainResult.message);
             setLoading(false);
             break;
           }
-          localInputs.expired_time = Math.ceil(time / 1000);
-        }
-        localInputs.model_limits = localInputs.model_limits.join(',');
-        localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
-        localInputs.channel_limits = localInputs.channel_limits.join(',');
-        localInputs.channel_limits_enabled =
-          localInputs.channel_limits.length > 0;
-        delete localInputs.group_vendor;
-        const packageResult = normalizePackageFields(localInputs);
-        if (!packageResult.ok) {
-          showError(packageResult.message);
-          setLoading(false);
-          break;
-        }
-        const runtimeLimitResult = normalizeRuntimeLimitFields(localInputs);
-        if (!runtimeLimitResult.ok) {
-          showError(runtimeLimitResult.message);
-          setLoading(false);
-          break;
-        }
-        delete localInputs.remain_amount;
-        delete localInputs.package_limit_amount;
-        let res = await API.post(`/api/token/`, localInputs);
-        const { success, message } = res.data;
-        if (success) {
-          successCount++;
-        } else {
-          showError(t(message));
-          break;
-        }
-      }
-      if (successCount > 0) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY,
-            channelLimitTagMode ? 'true' : 'false',
+          localInputs.model_limits = sanitizeModelLimits(
+            localInputs.model_limits,
           );
+          localInputs.channel_limits = isAdminUser
+            ? sanitizeChannelLimits(localInputs.channel_limits)
+            : [];
+
+          if (localInputs.expired_time !== -1) {
+            let time = Date.parse(localInputs.expired_time);
+            if (isNaN(time)) {
+              showError(t('过期时间格式错误！'));
+              setLoading(false);
+              break;
+            }
+            localInputs.expired_time = Math.ceil(time / 1000);
+          }
+          localInputs.model_limits = localInputs.model_limits.join(',');
+          localInputs.model_limits_enabled =
+            localInputs.model_limits.length > 0;
+          localInputs.channel_limits = localInputs.channel_limits.join(',');
+          localInputs.channel_limits_enabled =
+            localInputs.channel_limits.length > 0;
+          delete localInputs.group_vendor;
+          const packageResult = normalizePackageFields(localInputs);
+          if (!packageResult.ok) {
+            showError(packageResult.message);
+            setLoading(false);
+            break;
+          }
+          const runtimeLimitResult = normalizeRuntimeLimitFields(localInputs);
+          if (!runtimeLimitResult.ok) {
+            showError(runtimeLimitResult.message);
+            setLoading(false);
+            break;
+          }
+          delete localInputs.remain_amount;
+          delete localInputs.package_limit_amount;
+          let res = await API.post(`/api/token/`, localInputs);
+          const { success, message } = res.data;
+          if (success) {
+            successCount++;
+          } else {
+            showError(t(message));
+            break;
+          }
         }
-        showSuccess(t('令牌创建成功，请在列表页面点击复制获取令牌！'));
-        props.refresh();
-        props.handleClose();
+        if (successCount > 0) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY,
+              channelLimitTagMode ? 'true' : 'false',
+            );
+          }
+          showSuccess(t('令牌创建成功，请在列表页面点击复制获取令牌！'));
+          props.refresh();
+          props.handleClose();
+        }
       }
+    } catch {
+      showError(t('保存失败，请重试'));
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
-    setLoading(false);
-    formApiRef.current?.setValues(getInitValues());
   };
 
   return (
-    <SideSheet
-      placement={isEdit ? 'right' : 'left'}
+    <Dialog
+      {...(isEdit
+        ? { placement: 'right' }
+        : { className: 'token-create-dialog', centered: true })}
       title={
         <Space>
           {isEdit ? (
@@ -1092,27 +1135,35 @@ const EditTokenModal = (props) => {
       }
       bodyStyle={{ padding: '0' }}
       visible={props.visiable}
-      width={isMobile ? '100%' : 600}
+      width={isMobile ? '100%' : isEdit ? 600 : 1040}
       footer={
-        <div className='flex justify-end bg-white'>
+        <div className='token-editor__footer'>
           <Space>
-            <Button
-              theme='solid'
-              className='!rounded-lg'
-              onClick={() => formApiRef.current?.submitForm()}
-              icon={<IconSave />}
-              loading={loading}
-            >
-              {t('提交')}
-            </Button>
             <Button
               theme='light'
               className='!rounded-lg'
-              type='primary'
               onClick={handleCancel}
-              icon={<IconClose />}
             >
               {t('取消')}
+            </Button>
+            <Button
+              theme='solid'
+              className='!rounded-lg token-editor__submit'
+              onClick={() => formApiRef.current?.submitForm()}
+              icon={<IconSave />}
+              disabled={
+                loading ||
+                groupsLoading ||
+                groupsError ||
+                modelsLoading ||
+                modelsError ||
+                channelsLoading ||
+                channelsError ||
+                (isEdit ? !tokenReady : !selectedGroup)
+              }
+              loading={loading}
+            >
+              {t(isEdit ? '提交' : '创建令牌')}
             </Button>
           </Space>
         </div>
@@ -1122,29 +1173,14 @@ const EditTokenModal = (props) => {
     >
       <Spin spinning={loading}>
         <Form
-          key={isEdit ? 'edit' : 'new'}
+          key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}`}
           initValues={getInitValues()}
           getFormApi={(api) => {
             formApiRef.current = api;
             applyLoadedTokenValues();
           }}
           onValueChange={(values, changedValues) => {
-            if (
-              Object.prototype.hasOwnProperty.call(
-                changedValues,
-                'group_vendor',
-              )
-            ) {
-              const currentGroup = formApiRef.current?.getValue('group') || '';
-              if (
-                shouldClearTokenGroupForVendor(
-                  currentGroup,
-                  values.group_vendor,
-                )
-              ) {
-                formApiRef.current?.setValue('group', '');
-              }
-            }
+            setSelectedGroup(values.group || '');
             if (Object.prototype.hasOwnProperty.call(changedValues, 'group')) {
               if (values.group) {
                 const nextVendor = resolveTokenGroupVendor(values.group);
@@ -1154,11 +1190,18 @@ const EditTokenModal = (props) => {
                   formApiRef.current?.setValue('group_vendor', nextVendor);
                 }
               }
-              loadModels(values.group || '', true);
+              loadModels(
+                values.group || '',
+                !isEdit ||
+                  (tokenReady &&
+                    values.group !== loadedTokenValuesRef.current?.group),
+              );
               loadChannels(
                 values.group || '',
                 formApiRef.current?.getValue('model_limits') || [],
-                true,
+                !isEdit ||
+                  (tokenReady &&
+                    values.group !== loadedTokenValuesRef.current?.group),
               );
             }
             if (
@@ -1170,12 +1213,15 @@ const EditTokenModal = (props) => {
               loadChannels(
                 formApiRef.current?.getValue('group') || '',
                 values.model_limits || [],
-                true,
+                !isEdit || tokenReady,
               );
             }
           }}
           onSubmit={submit}
           onSubmitFail={(errs) => {
+            if (quotaSectionRef.current) quotaSectionRef.current.open = true;
+            if (advancedSectionRef.current)
+              advancedSectionRef.current.open = true;
             const first = Object.values(errs || {})[0];
             if (first) {
               showError(Array.isArray(first) ? first[0] : first);
@@ -1184,7 +1230,7 @@ const EditTokenModal = (props) => {
           }}
         >
           {({ values }) => (
-            <div className='p-2'>
+            <div className='token-editor p-2'>
               {isSellableToken ? (
                 <Card className='!rounded-2xl shadow-sm border-0 mb-4 bg-[var(--semi-color-primary-light-default)]'>
                   <Text className='text-sm'>
@@ -1195,57 +1241,8 @@ const EditTokenModal = (props) => {
                 </Card>
               ) : null}
 
-              {!isSellableToken && (
-                <Card className='!rounded-2xl shadow-sm border-0'>
-                  <div className='flex items-center mb-2'>
-                    <Avatar
-                      size='small'
-                      color='orange'
-                      className='mr-2 shadow-md'
-                    >
-                      <IconCreditCard size={16} />
-                    </Avatar>
-                    <div>
-                      <Text className='text-lg font-medium'>
-                        {t('创建模式')}
-                      </Text>
-                      <div className='text-xs text-gray-600'>
-                        {t('标准令牌保持现有体验；套餐令牌可按周期配置额度')}
-                      </div>
-                    </div>
-                  </div>
-                  <Space wrap>
-                    <Button
-                      type={tokenMode === 'standard' ? 'primary' : 'tertiary'}
-                      theme={tokenMode === 'standard' ? 'solid' : 'light'}
-                      onClick={() => switchTokenMode('standard')}
-                    >
-                      {t('标准令牌')}
-                    </Button>
-                    <Button
-                      type={tokenMode === 'package' ? 'primary' : 'tertiary'}
-                      theme={tokenMode === 'package' ? 'solid' : 'light'}
-                      onClick={() => switchTokenMode('package')}
-                    >
-                      {t('套餐令牌')}
-                    </Button>
-                  </Space>
-                </Card>
-              )}
-
               {/* 基础信息 */}
-              <Card className='!rounded-2xl shadow-sm border-0'>
-                <div className='flex items-center mb-2'>
-                  <Avatar size='small' color='blue' className='mr-2 shadow-md'>
-                    <IconKey size={16} />
-                  </Avatar>
-                  <div>
-                    <Text className='text-lg font-medium'>{t('基本信息')}</Text>
-                    <div className='text-xs text-gray-600'>
-                      {t('设置令牌的基本信息')}
-                    </div>
-                  </div>
-                </div>
+              <Card className='token-editor__basic !rounded-lg border-0'>
                 <Row gutter={12}>
                   <Col span={24}>
                     <Form.Input
@@ -1257,8 +1254,18 @@ const EditTokenModal = (props) => {
                     />
                   </Col>
                   <Col span={24}>
-                    <TokenGroupFavorites
-                      key={userState?.user?.id ?? 'anonymous'}
+                    <Form.Input
+                      field='group'
+                      noLabel
+                      fieldStyle={{ display: 'none' }}
+                      rules={
+                        isEdit
+                          ? []
+                          : [{ required: true, message: t('请选择令牌分组') }]
+                      }
+                    />
+                    <TokenGroupPicker
+                      key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
                       userId={userState?.user?.id}
                       groups={
                         availableGroups.userId === userState?.user?.id
@@ -1266,749 +1273,800 @@ const EditTokenModal = (props) => {
                           : []
                       }
                       value={values.group}
+                      loading={groupsLoading}
+                      error={groupsError}
+                      onRetry={loadGroups}
                       onSelect={(group) =>
                         formApiRef.current?.setValue('group', group)
                       }
-                    />
-                  </Col>
-                  {groups.length > 0 ? (
-                    <>
-                      <Col xs={24} sm={10}>
-                        <Form.Select
-                          field='group_vendor'
-                          label={t('供应商')}
-                          placeholder={t('选择模型供应商')}
-                          optionList={groupVendorOptions}
-                          filter={selectFilter}
-                          rules={[
-                            {
-                              required: true,
-                              message: t('选择模型供应商'),
-                            },
-                          ]}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col xs={24} sm={14}>
-                        <Form.Select
-                          field='group'
-                          label={t('令牌分组')}
-                          placeholder={
-                            values.group_vendor
-                              ? t('请选择令牌分组')
-                              : t('选择模型供应商')
-                          }
-                          optionList={filterTokenGroupsByVendor(
-                            groups,
-                            values.group_vendor,
-                          )}
-                          disabled={!values.group_vendor}
-                          filter={selectFilter}
-                          renderOptionItem={(item) => (
-                            <TokenGroupHealthOption
-                              item={item}
-                              stats={groupHealthByName.get(item.value)}
-                              loading={groupHealth.loading}
-                              error={groupHealth.error}
-                              collectionEnabled={
-                                groupHealth.data?.enabled !== false
-                              }
-                            />
-                          )}
-                          dropdownMatchSelectWidth={false}
-                          dropdownStyle={{
-                            minWidth: 0,
-                            width: 440,
-                            maxWidth: 'calc(100vw - 24px)',
-                          }}
-                          renderSelectedItem={(optionNode) =>
-                            formatTokenGroupSelectedLabel(optionNode)
-                          }
-                          rules={[
-                            {
-                              required: true,
-                              message: t('请选择令牌分组'),
-                            },
-                          ]}
-                          style={{ width: '100%' }}
-                          fieldStyle={
-                            values.group ? { paddingBottom: 4 } : undefined
-                          }
-                        />
-                        <TokenGroupHealth
-                          key={values.group}
-                          group={values.group}
-                          description={
-                            groups.find(
-                              (option) => option.value === values.group,
-                            )?.label
-                          }
-                          stats={groupHealthByName.get(values.group)}
-                          loading={groupHealth.loading}
-                          error={groupHealth.error}
-                          onRetry={groupHealth.refresh}
-                          collectionEnabled={
-                            groupHealth.data?.enabled !== false
-                          }
-                          collectionData={groupHealth.data}
-                        />
-                      </Col>
-                    </>
-                  ) : (
-                    <>
-                      <Col xs={24} sm={10}>
-                        <Form.Select
-                          placeholder={t('管理员未设置用户可选分组')}
-                          disabled
-                          label={t('供应商')}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col xs={24} sm={14}>
-                        <Form.Select
-                          placeholder={t('管理员未设置用户可选分组')}
-                          disabled
-                          label={t('令牌分组')}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                    </>
-                  )}
-                  {!isSellableToken && (
-                    <>
-                      <Col
-                        span={24}
-                        style={{
-                          display: values.group === 'auto' ? 'block' : 'none',
-                        }}
-                      >
-                        <Form.Switch
-                          field='cross_group_retry'
-                          label={t('跨分组重试')}
-                          size='default'
-                          extraText={t(
-                            '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
-                          )}
-                        />
-                      </Col>
-                      <Col xs={24} sm={24} md={24} lg={10} xl={10}>
-                        <Form.DatePicker
-                          field='expired_time'
-                          label={t('过期时间')}
-                          type='dateTime'
-                          placeholder={t('请选择过期时间')}
-                          rules={[
-                            { required: true, message: t('请选择过期时间') },
-                            {
-                              validator: (rule, value) => {
-                                // 允许 -1 表示永不过期，空值交给必填校验处理。
-                                if (value === -1 || !value)
-                                  return Promise.resolve();
-                                const time = Date.parse(value);
-                                if (isNaN(time)) {
-                                  return Promise.reject(
-                                    t('过期时间格式错误！'),
-                                  );
-                                }
-                                if (time <= Date.now()) {
-                                  return Promise.reject(
-                                    t('过期时间不能早于当前时间！'),
-                                  );
-                                }
-                                return Promise.resolve();
-                              },
-                            },
-                          ]}
-                          showClear
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col xs={24} sm={24} md={24} lg={14} xl={14}>
-                        <Form.Slot label={t('过期时间快捷设置')}>
-                          <Space wrap>
-                            <Button
-                              theme='light'
-                              type='primary'
-                              onClick={() => setExpiredTime(0, 0, 0, 0)}
-                            >
-                              {t('永不过期')}
-                            </Button>
-                            <Button
-                              theme='light'
-                              type='tertiary'
-                              onClick={() => setExpiredTime(1, 0, 0, 0)}
-                            >
-                              {t('一个月')}
-                            </Button>
-                            <Button
-                              theme='light'
-                              type='tertiary'
-                              onClick={() => setExpiredTime(0, 1, 0, 0)}
-                            >
-                              {t('一天')}
-                            </Button>
-                            <Button
-                              theme='light'
-                              type='tertiary'
-                              onClick={() => setExpiredTime(0, 0, 1, 0)}
-                            >
-                              {t('一小时')}
-                            </Button>
-                          </Space>
-                        </Form.Slot>
-                      </Col>
-                      {!isEdit && (
-                        <Col span={24}>
-                          <Form.InputNumber
-                            field='tokenCount'
-                            label={t('新建数量')}
-                            min={1}
-                            extraText={t(
-                              '批量创建时会在名称后自动添加随机后缀',
-                            )}
-                            rules={[
-                              { required: true, message: t('请输入新建数量') },
-                            ]}
-                            style={{ width: '100%' }}
+                      details={
+                        <>
+                          <TokenGroupHealth
+                            group={values.group}
+                            stats={groupHealthByName.get(values.group)}
+                            loading={groupHealth.loading}
+                            error={groupHealth.error}
+                            onRetry={groupHealth.refresh}
+                            collectionEnabled={
+                              groupHealth.data?.enabled !== false
+                            }
+                            collectionData={groupHealth.data}
                           />
-                        </Col>
-                      )}
-                    </>
-                  )}
+                          <div className='text-xs mt-2 break-words'>
+                            {t('支持模型')}：
+                            {modelsLoading
+                              ? t('加载中...')
+                              : modelsError
+                                ? t('暂不可用')
+                                : models
+                                    .map((model) => model.value)
+                                    .join('、') || t('暂无可用模型')}
+                          </div>
+                        </>
+                      }
+                    />
+                    {modelsError && (
+                      <div role='alert'>
+                        {t('模型加载失败')}{' '}
+                        <Button
+                          htmlType='button'
+                          onClick={() => loadModels(values.group || '')}
+                        >
+                          {t('重试')}
+                        </Button>
+                      </div>
+                    )}
+                    {channelsError && (
+                      <div role='alert'>
+                        {t('渠道加载失败')}{' '}
+                        <Button
+                          htmlType='button'
+                          onClick={() =>
+                            loadChannels(
+                              values.group || '',
+                              values.model_limits || [],
+                            )
+                          }
+                        >
+                          {t('重试')}
+                        </Button>
+                      </div>
+                    )}
+                  </Col>
                 </Row>
               </Card>
 
               {!isSellableToken && (
                 <>
-                  {/* 额度设置 */}
-                  <Card className='!rounded-2xl shadow-sm border-0'>
-                    <div className='flex items-center mb-2'>
-                      <Avatar
-                        size='small'
-                        color='green'
-                        className='mr-2 shadow-md'
-                      >
-                        <IconCreditCard size={16} />
-                      </Avatar>
-                      <div>
-                        <Text className='text-lg font-medium'>
-                          {t('额度设置')}
-                        </Text>
-                        <div className='text-xs text-gray-600'>
-                          {t('设置令牌可用额度和数量')}
+                  <details
+                    className='token-editor__section'
+                    ref={quotaSectionRef}
+                  >
+                    <summary>
+                      {t('额度与有效期')}
+                      <span>
+                        {tokenMode === 'package' ? t('套餐令牌') + ' · ' : ''}
+                        {values.unlimited_quota
+                          ? t('无限额度')
+                          : String(values.remain_amount ?? 0) + ' USD'}{' '}
+                        ·{' '}
+                        {values.expired_time === -1
+                          ? t('永不过期')
+                          : String(values.expired_time || '')}
+                      </span>
+                    </summary>
+                    {!isSellableToken && (
+                      <Card className='!rounded-2xl shadow-sm border-0'>
+                        <div className='flex items-center mb-2'>
+                          <Avatar
+                            size='small'
+                            color='orange'
+                            className='mr-2 shadow-md'
+                          >
+                            <IconCreditCard size={16} />
+                          </Avatar>
+                          <div>
+                            <Text className='text-lg font-medium'>
+                              {t('创建模式')}
+                            </Text>
+                            <div className='text-xs text-gray-600'>
+                              {t(
+                                '标准令牌保持现有体验；套餐令牌可按周期配置额度',
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <Row gutter={12}>
-                      <Col span={24}>
-                        <Form.InputNumber
-                          field='remain_amount'
-                          label={t('总额度金额 (USD)')}
-                          placeholder={t('例如 500（USD）')}
-                          prefix='$'
-                          min={0}
-                          precision={2}
-                          disabled={values.unlimited_quota}
-                          rules={
-                            values.unlimited_quota
-                              ? []
-                              : [
+                        <Space wrap>
+                          <Button
+                            type={
+                              tokenMode === 'standard' ? 'primary' : 'tertiary'
+                            }
+                            theme={tokenMode === 'standard' ? 'solid' : 'light'}
+                            onClick={() => switchTokenMode('standard')}
+                          >
+                            {t('标准令牌')}
+                          </Button>
+                          <Button
+                            type={
+                              tokenMode === 'package' ? 'primary' : 'tertiary'
+                            }
+                            theme={tokenMode === 'package' ? 'solid' : 'light'}
+                            onClick={() => switchTokenMode('package')}
+                          >
+                            {t('套餐令牌')}
+                          </Button>
+                        </Space>
+                      </Card>
+                    )}
+
+                    <Card className='!rounded-lg shadow-none border-0'>
+                      <Row gutter={12}>
+                        {!isSellableToken && (
+                          <>
+                            <Col
+                              span={24}
+                              style={{
+                                display:
+                                  values.group === 'auto' ? 'block' : 'none',
+                              }}
+                            >
+                              <Form.Switch
+                                field='cross_group_retry'
+                                label={t('跨分组重试')}
+                                size='default'
+                                extraText={t(
+                                  '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
+                                )}
+                              />
+                            </Col>
+                            <Col xs={24} sm={24} md={24} lg={10} xl={10}>
+                              <Form.DatePicker
+                                field='expired_time'
+                                label={t('过期时间')}
+                                type='dateTime'
+                                placeholder={t('请选择过期时间')}
+                                rules={[
                                   {
                                     required: true,
-                                    message: t('请输入总额度金额（USD）'),
+                                    message: t('请选择过期时间'),
                                   },
-                                ]
-                          }
-                          extraText={t(
-                            '按 USD 输入，仅用于换算，实际保存的是额度',
-                          )}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col span={24}>
-                        <Form.Switch
-                          field='unlimited_quota'
-                          label={t('无限额度')}
-                          size='default'
-                          extraText={t(
-                            '令牌的额度仅用于限制令牌本身的最大额度使用量，实际的使用受到账户的剩余额度限制',
-                          )}
-                        />
-                      </Col>
-                    </Row>
-                  </Card>
-
-                  {tokenMode === 'package' && (
+                                  {
+                                    validator: (rule, value) => {
+                                      // 允许 -1 表示永不过期，空值交给必填校验处理。
+                                      if (value === -1 || !value)
+                                        return Promise.resolve();
+                                      const time = Date.parse(value);
+                                      if (isNaN(time)) {
+                                        return Promise.reject(
+                                          t('过期时间格式错误！'),
+                                        );
+                                      }
+                                      if (time <= Date.now()) {
+                                        return Promise.reject(
+                                          t('过期时间不能早于当前时间！'),
+                                        );
+                                      }
+                                      return Promise.resolve();
+                                    },
+                                  },
+                                ]}
+                                showClear
+                                style={{ width: '100%' }}
+                              />
+                            </Col>
+                            <Col xs={24} sm={24} md={24} lg={14} xl={14}>
+                              <Form.Slot label={t('过期时间快捷设置')}>
+                                <Space wrap>
+                                  <Button
+                                    theme='light'
+                                    type='primary'
+                                    onClick={() => setExpiredTime(0, 0, 0, 0)}
+                                  >
+                                    {t('永不过期')}
+                                  </Button>
+                                  <Button
+                                    theme='light'
+                                    type='tertiary'
+                                    onClick={() => setExpiredTime(1, 0, 0, 0)}
+                                  >
+                                    {t('一个月')}
+                                  </Button>
+                                  <Button
+                                    theme='light'
+                                    type='tertiary'
+                                    onClick={() => setExpiredTime(0, 1, 0, 0)}
+                                  >
+                                    {t('一天')}
+                                  </Button>
+                                  <Button
+                                    theme='light'
+                                    type='tertiary'
+                                    onClick={() => setExpiredTime(0, 0, 1, 0)}
+                                  >
+                                    {t('一小时')}
+                                  </Button>
+                                </Space>
+                              </Form.Slot>
+                            </Col>
+                            {!isEdit && (
+                              <Col span={24}>
+                                <Form.InputNumber
+                                  field='tokenCount'
+                                  label={t('新建数量')}
+                                  min={1}
+                                  extraText={t(
+                                    '批量创建时会在名称后自动添加随机后缀',
+                                  )}
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: t('请输入新建数量'),
+                                    },
+                                  ]}
+                                  style={{ width: '100%' }}
+                                />
+                              </Col>
+                            )}
+                          </>
+                        )}
+                      </Row>
+                    </Card>
+                    {/* 额度设置 */}
                     <Card className='!rounded-2xl shadow-sm border-0'>
                       <div className='flex items-center mb-2'>
                         <Avatar
                           size='small'
-                          color='red'
+                          color='green'
                           className='mr-2 shadow-md'
                         >
                           <IconCreditCard size={16} />
                         </Avatar>
                         <div>
                           <Text className='text-lg font-medium'>
-                            {t('套餐配置')}
+                            {t('额度设置')}
                           </Text>
                           <div className='text-xs text-gray-600'>
-                            {t('仅设置周期和每周期额度，计费规则保持不变')}
+                            {t('设置令牌可用额度和数量')}
+                          </div>
+                        </div>
+                      </div>
+                      <Row gutter={12}>
+                        <Col span={24}>
+                          <Form.InputNumber
+                            field='remain_amount'
+                            label={t('总额度金额 (USD)')}
+                            placeholder={t('例如 500（USD）')}
+                            prefix='$'
+                            min={0}
+                            precision={2}
+                            disabled={values.unlimited_quota}
+                            rules={
+                              values.unlimited_quota
+                                ? []
+                                : [
+                                    {
+                                      required: true,
+                                      message: t('请输入总额度金额（USD）'),
+                                    },
+                                  ]
+                            }
+                            extraText={t(
+                              '按 USD 输入，仅用于换算，实际保存的是额度',
+                            )}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                        <Col span={24}>
+                          <Form.Switch
+                            field='unlimited_quota'
+                            label={t('无限额度')}
+                            size='default'
+                            extraText={t(
+                              '令牌的额度仅用于限制令牌本身的最大额度使用量，实际的使用受到账户的剩余额度限制',
+                            )}
+                          />
+                        </Col>
+                      </Row>
+                    </Card>
+
+                    {tokenMode === 'package' && (
+                      <Card className='!rounded-2xl shadow-sm border-0'>
+                        <div className='flex items-center mb-2'>
+                          <Avatar
+                            size='small'
+                            color='red'
+                            className='mr-2 shadow-md'
+                          >
+                            <IconCreditCard size={16} />
+                          </Avatar>
+                          <div>
+                            <Text className='text-lg font-medium'>
+                              {t('套餐配置')}
+                            </Text>
+                            <div className='text-xs text-gray-600'>
+                              {t('仅设置周期和每周期额度，计费规则保持不变')}
+                            </div>
+                          </div>
+                        </div>
+                        <Row gutter={12}>
+                          <Col span={24}>
+                            <Form.Select
+                              field='package_period'
+                              label={t('套餐周期')}
+                              optionList={[
+                                { label: t('每小时'), value: 'hourly' },
+                                { label: t('每日'), value: 'daily' },
+                                { label: t('每周'), value: 'weekly' },
+                                { label: t('每月'), value: 'monthly' },
+                                { label: t('自定义'), value: 'custom' },
+                              ]}
+                              style={{ width: '100%' }}
+                            />
+                          </Col>
+                          <Col
+                            span={24}
+                            style={{
+                              display:
+                                values.package_period === 'custom'
+                                  ? 'none'
+                                  : 'block',
+                            }}
+                          >
+                            <Form.Select
+                              field='package_period_mode'
+                              label={t('周期模式')}
+                              optionList={[
+                                { label: t('相对周期'), value: 'relative' },
+                                { label: t('自然周期'), value: 'natural' },
+                              ]}
+                              extraText={
+                                values.package_period_mode === 'natural'
+                                  ? t('每日/每周一/每月1号 00:00 重置')
+                                  : t('从激活时间起按固定间隔重置')
+                              }
+                              style={{ width: '100%' }}
+                            />
+                          </Col>
+                          <Col span={24}>
+                            <Form.InputNumber
+                              field='package_limit_amount'
+                              label={t('周期金额 (USD)')}
+                              placeholder={t('例如 10（USD）')}
+                              prefix='$'
+                              min={0}
+                              precision={2}
+                              style={{ width: '100%' }}
+                              rules={[
+                                {
+                                  required: true,
+                                  message: t('请输入周期金额（USD）'),
+                                },
+                              ]}
+                            />
+                          </Col>
+                          <Col
+                            span={24}
+                            style={{
+                              display:
+                                values.package_period === 'custom'
+                                  ? 'block'
+                                  : 'none',
+                            }}
+                          >
+                            <Form.InputNumber
+                              field='package_custom_seconds'
+                              label={t('自定义周期秒数')}
+                              min={1}
+                              extraText={t('例如 86400 表示每天重置')}
+                              style={{ width: '100%' }}
+                            />
+                          </Col>
+                        </Row>
+                      </Card>
+                    )}
+                  </details>
+                  <details
+                    className='token-editor__section'
+                    ref={advancedSectionRef}
+                  >
+                    <summary>
+                      {t('高级设置')}
+                      <span>
+                        {values.model_limits?.length ||
+                        values.channel_limits?.length ||
+                        values.allow_ips ||
+                        values.max_concurrency ||
+                        values.window_request_limit
+                          ? t('已设置访问限制')
+                          : t('未设置额外限制')}
+                      </span>
+                    </summary>
+                    {/* 访问限制 */}
+                    <Card className='!rounded-2xl shadow-sm border-0'>
+                      <div className='flex items-center mb-2'>
+                        <Avatar
+                          size='small'
+                          color='purple'
+                          className='mr-2 shadow-md'
+                        >
+                          <IconLink size={16} />
+                        </Avatar>
+                        <div>
+                          <Text className='text-lg font-medium'>
+                            {t('访问限制')}
+                          </Text>
+                          <div className='text-xs text-gray-600'>
+                            {t('设置令牌的访问限制')}
                           </div>
                         </div>
                       </div>
                       <Row gutter={12}>
                         <Col span={24}>
                           <Form.Select
-                            field='package_period'
-                            label={t('套餐周期')}
-                            optionList={[
-                              { label: t('每小时'), value: 'hourly' },
-                              { label: t('每日'), value: 'daily' },
-                              { label: t('每周'), value: 'weekly' },
-                              { label: t('每月'), value: 'monthly' },
-                              { label: t('自定义'), value: 'custom' },
-                            ]}
+                            field='model_limits'
+                            label={t('模型限制列表')}
+                            placeholder={t(
+                              '请选择该令牌支持的模型，留空支持所有模型',
+                            )}
+                            multiple
+                            optionList={models}
+                            extraText={t('非必要，不建议启用模型限制')}
+                            filter={selectFilter}
+                            autoClearSearchValue={false}
+                            searchPosition='dropdown'
+                            showClear
                             style={{ width: '100%' }}
                           />
                         </Col>
-                        <Col
-                          span={24}
-                          style={{
-                            display:
-                              values.package_period === 'custom'
-                                ? 'none'
-                                : 'block',
-                          }}
-                        >
-                          <Form.Select
-                            field='package_period_mode'
-                            label={t('周期模式')}
-                            optionList={[
-                              { label: t('相对周期'), value: 'relative' },
-                              { label: t('自然周期'), value: 'natural' },
-                            ]}
-                            extraText={
-                              values.package_period_mode === 'natural'
-                                ? t('每日/每周一/每月1号 00:00 重置')
-                                : t('从激活时间起按固定间隔重置')
-                            }
-                            style={{ width: '100%' }}
-                          />
-                        </Col>
-                        <Col span={24}>
-                          <Form.InputNumber
-                            field='package_limit_amount'
-                            label={t('周期金额 (USD)')}
-                            placeholder={t('例如 10（USD）')}
-                            prefix='$'
-                            min={0}
-                            precision={2}
-                            style={{ width: '100%' }}
-                            rules={[
-                              {
-                                required: true,
-                                message: t('请输入周期金额（USD）'),
-                              },
-                            ]}
-                          />
-                        </Col>
-                        <Col
-                          span={24}
-                          style={{
-                            display:
-                              values.package_period === 'custom'
-                                ? 'block'
-                                : 'none',
-                          }}
-                        >
-                          <Form.InputNumber
-                            field='package_custom_seconds'
-                            label={t('自定义周期秒数')}
-                            min={1}
-                            extraText={t('例如 86400 表示每天重置')}
-                            style={{ width: '100%' }}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  )}
-
-                  {/* 访问限制 */}
-                  <Card className='!rounded-2xl shadow-sm border-0'>
-                    <div className='flex items-center mb-2'>
-                      <Avatar
-                        size='small'
-                        color='purple'
-                        className='mr-2 shadow-md'
-                      >
-                        <IconLink size={16} />
-                      </Avatar>
-                      <div>
-                        <Text className='text-lg font-medium'>
-                          {t('访问限制')}
-                        </Text>
-                        <div className='text-xs text-gray-600'>
-                          {t('设置令牌的访问限制')}
-                        </div>
-                      </div>
-                    </div>
-                    <Row gutter={12}>
-                      <Col span={24}>
-                        <Form.Select
-                          field='model_limits'
-                          label={t('模型限制列表')}
-                          placeholder={t(
-                            '请选择该令牌支持的模型，留空支持所有模型',
-                          )}
-                          multiple
-                          optionList={models}
-                          extraText={t('非必要，不建议启用模型限制')}
-                          filter={selectFilter}
-                          autoClearSearchValue={false}
-                          searchPosition='dropdown'
-                          showClear
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      {isAdminUser && (
-                        <Col span={24}>
-                          <Form.Slot
-                            label={
-                              <div className='flex w-full items-center justify-between gap-3'>
-                                <span>{t('渠道限制列表')}</span>
-                                <div className='flex items-center gap-2'>
-                                  <Text className='text-xs text-gray-500'>
-                                    {t('标签聚合显示')}
-                                  </Text>
-                                  <Switch
-                                    size='small'
-                                    checked={channelLimitTagMode}
-                                    onChange={updateChannelLimitTagMode}
-                                  />
+                        {isAdminUser && (
+                          <Col span={24}>
+                            <Form.Slot
+                              label={
+                                <div className='flex w-full items-center justify-between gap-3'>
+                                  <span>{t('渠道限制列表')}</span>
+                                  <div className='flex items-center gap-2'>
+                                    <Text className='text-xs text-gray-500'>
+                                      {t('标签聚合显示')}
+                                    </Text>
+                                    <Switch
+                                      size='small'
+                                      checked={channelLimitTagMode}
+                                      onChange={updateChannelLimitTagMode}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            }
-                          >
-                            {(() => {
-                              const selectedChannelValues =
-                                sanitizeChannelLimits(
-                                  getStoredChannelLimitValues(),
-                                );
-                              const selectedChannelSet = new Set(
-                                selectedChannelValues.map((channelId) =>
-                                  String(channelId),
-                                ),
-                              );
-                              const selectedUnavailableChannels =
-                                channelOptions.filter(
-                                  (option) =>
-                                    option.available === false &&
-                                    selectedChannelSet.has(option.value),
-                                );
-                              const selectedTagItems =
-                                channelTagGroups.tagGroups
-                                  .map((tagGroup) => {
-                                    const selectedCount =
-                                      getChannelTagSelectionCount(
-                                        selectedChannelSet,
-                                        tagGroup.channelIds,
-                                      );
-                                    if (selectedCount <= 0) {
-                                      return null;
-                                    }
-                                    return {
-                                      ...tagGroup,
-                                      selectedCount,
-                                      selectedChannelIds:
-                                        tagGroup.channelIds.filter(
-                                          (channelId) =>
-                                            selectedChannelSet.has(
-                                              String(channelId),
-                                            ),
-                                        ),
-                                    };
-                                  })
-                                  .filter(Boolean);
-                              const selectedUntaggedChannels =
-                                channelTagGroups.untaggedChannels.filter(
-                                  (option) =>
-                                    selectedChannelSet.has(option.value),
-                                );
-
-                              if (!channelLimitTagMode) {
-                                return (
-                                  <Select
-                                    value={selectedChannelValues}
-                                    placeholder={t(
-                                      '请选择该令牌允许使用的渠道，留空表示不限制渠道',
-                                    )}
-                                    multiple
-                                    optionList={channelOptions}
-                                    filter={selectFilter}
-                                    autoClearSearchValue={false}
-                                    searchPosition='dropdown'
-                                    renderSelectedItem={(optionNode) => {
-                                      const channelName =
-                                        optionNode?.channelName ||
-                                        optionNode?.value ||
-                                        t('未知渠道');
-                                      return {
-                                        isRenderInTag: true,
-                                        content: (
-                                          <span
-                                            className='cursor-default select-none'
-                                            title={
-                                              optionNode?.channelSummary ||
-                                              channelName
-                                            }
-                                          >
-                                            {channelName}
-                                          </span>
-                                        ),
-                                      };
-                                    }}
-                                    onChange={(nextValues) =>
-                                      applyChannelLimitValues(nextValues || [])
-                                    }
-                                    showClear
-                                    style={{ width: '100%' }}
-                                  />
-                                );
                               }
+                            >
+                              {(() => {
+                                const selectedChannelValues =
+                                  sanitizeChannelLimits(
+                                    getStoredChannelLimitValues(),
+                                  );
+                                const selectedChannelSet = new Set(
+                                  selectedChannelValues.map((channelId) =>
+                                    String(channelId),
+                                  ),
+                                );
+                                const selectedUnavailableChannels =
+                                  channelOptions.filter(
+                                    (option) =>
+                                      option.available === false &&
+                                      selectedChannelSet.has(option.value),
+                                  );
+                                const selectedTagItems =
+                                  channelTagGroups.tagGroups
+                                    .map((tagGroup) => {
+                                      const selectedCount =
+                                        getChannelTagSelectionCount(
+                                          selectedChannelSet,
+                                          tagGroup.channelIds,
+                                        );
+                                      if (selectedCount <= 0) {
+                                        return null;
+                                      }
+                                      return {
+                                        ...tagGroup,
+                                        selectedCount,
+                                        selectedChannelIds:
+                                          tagGroup.channelIds.filter(
+                                            (channelId) =>
+                                              selectedChannelSet.has(
+                                                String(channelId),
+                                              ),
+                                          ),
+                                      };
+                                    })
+                                    .filter(Boolean);
+                                const selectedUntaggedChannels =
+                                  channelTagGroups.untaggedChannels.filter(
+                                    (option) =>
+                                      selectedChannelSet.has(option.value),
+                                  );
 
-                              return (
-                                <div className='rounded-xl border border-[var(--semi-color-border)] bg-[var(--semi-color-fill-0)] px-3 py-3'>
-                                  {selectedTagItems.length > 0 ||
-                                  selectedUntaggedChannels.length > 0 ||
-                                  selectedUnavailableChannels.length > 0 ? (
-                                    <div className='mb-3 flex flex-wrap gap-2'>
-                                      {selectedTagItems.map((tagGroup) => (
-                                        <Tag
-                                          key={tagGroup.value}
-                                          closable
-                                          size='small'
-                                          color={
-                                            tagGroup.selectedCount ===
-                                            tagGroup.channelIds.length
-                                              ? 'blue'
-                                              : 'orange'
-                                          }
-                                          shape='circle'
-                                          onClose={() =>
-                                            removeChannelLimitValues(
-                                              tagGroup.selectedChannelIds,
-                                            )
-                                          }
-                                        >
-                                          {tagGroup.selectedCount ===
-                                          tagGroup.channelIds.length
-                                            ? tagGroup.tag
-                                            : `${tagGroup.tag}（已选 ${tagGroup.selectedCount}/${tagGroup.channelIds.length}）`}
-                                        </Tag>
-                                      ))}
-                                      {selectedUntaggedChannels.map(
-                                        (option) => (
-                                          <Tag
-                                            key={option.value}
-                                            closable
-                                            size='small'
-                                            color='cyan'
-                                            shape='circle'
-                                            onClose={() =>
-                                              removeChannelLimitValues([
-                                                option.value,
-                                              ])
-                                            }
-                                          >
-                                            {option.channelName}
-                                          </Tag>
-                                        ),
+                                if (!channelLimitTagMode) {
+                                  return (
+                                    <Select
+                                      value={selectedChannelValues}
+                                      placeholder={t(
+                                        '请选择该令牌允许使用的渠道，留空表示不限制渠道',
                                       )}
-                                      {selectedUnavailableChannels.map(
-                                        (option) => (
-                                          <Tag
-                                            key={option.value}
-                                            closable
-                                            size='small'
-                                            color='grey'
-                                            shape='circle'
-                                            onClose={() =>
-                                              removeChannelLimitValues([
-                                                option.value,
-                                              ])
-                                            }
-                                          >
-                                            {option.channelName}
-                                          </Tag>
-                                        ),
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className='mb-3 text-xs text-gray-500'>
-                                      {t('当前未选择任何渠道限制')}
-                                    </div>
-                                  )}
+                                      multiple
+                                      optionList={channelOptions}
+                                      filter={selectFilter}
+                                      autoClearSearchValue={false}
+                                      searchPosition='dropdown'
+                                      renderSelectedItem={(optionNode) => {
+                                        const channelName =
+                                          optionNode?.channelName ||
+                                          optionNode?.value ||
+                                          t('未知渠道');
+                                        return {
+                                          isRenderInTag: true,
+                                          content: (
+                                            <span
+                                              className='cursor-default select-none'
+                                              title={
+                                                optionNode?.channelSummary ||
+                                                channelName
+                                              }
+                                            >
+                                              {channelName}
+                                            </span>
+                                          ),
+                                        };
+                                      }}
+                                      onChange={(nextValues) =>
+                                        applyChannelLimitValues(
+                                          nextValues || [],
+                                        )
+                                      }
+                                      showClear
+                                      style={{ width: '100%' }}
+                                    />
+                                  );
+                                }
 
-                                  <div className='flex max-h-64 flex-col gap-2 overflow-y-auto pr-1'>
-                                    {channelTagGroups.tagGroups.map(
-                                      (tagGroup) => {
-                                        const selectedCount =
-                                          getChannelTagSelectionCount(
-                                            selectedChannelSet,
-                                            tagGroup.channelIds,
-                                          );
-                                        return (
-                                          <div
+                                return (
+                                  <div className='rounded-xl border border-[var(--semi-color-border)] bg-[var(--semi-color-fill-0)] px-3 py-3'>
+                                    {selectedTagItems.length > 0 ||
+                                    selectedUntaggedChannels.length > 0 ||
+                                    selectedUnavailableChannels.length > 0 ? (
+                                      <div className='mb-3 flex flex-wrap gap-2'>
+                                        {selectedTagItems.map((tagGroup) => (
+                                          <Tag
                                             key={tagGroup.value}
+                                            closable
+                                            size='small'
+                                            color={
+                                              tagGroup.selectedCount ===
+                                              tagGroup.channelIds.length
+                                                ? 'blue'
+                                                : 'orange'
+                                            }
+                                            shape='circle'
+                                            onClose={() =>
+                                              removeChannelLimitValues(
+                                                tagGroup.selectedChannelIds,
+                                              )
+                                            }
+                                          >
+                                            {tagGroup.selectedCount ===
+                                            tagGroup.channelIds.length
+                                              ? tagGroup.tag
+                                              : `${tagGroup.tag}（已选 ${tagGroup.selectedCount}/${tagGroup.channelIds.length}）`}
+                                          </Tag>
+                                        ))}
+                                        {selectedUntaggedChannels.map(
+                                          (option) => (
+                                            <Tag
+                                              key={option.value}
+                                              closable
+                                              size='small'
+                                              color='cyan'
+                                              shape='circle'
+                                              onClose={() =>
+                                                removeChannelLimitValues([
+                                                  option.value,
+                                                ])
+                                              }
+                                            >
+                                              {option.channelName}
+                                            </Tag>
+                                          ),
+                                        )}
+                                        {selectedUnavailableChannels.map(
+                                          (option) => (
+                                            <Tag
+                                              key={option.value}
+                                              closable
+                                              size='small'
+                                              color='grey'
+                                              shape='circle'
+                                              onClose={() =>
+                                                removeChannelLimitValues([
+                                                  option.value,
+                                                ])
+                                              }
+                                            >
+                                              {option.channelName}
+                                            </Tag>
+                                          ),
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className='mb-3 text-xs text-gray-500'>
+                                        {t('当前未选择任何渠道限制')}
+                                      </div>
+                                    )}
+
+                                    <div className='flex max-h-64 flex-col gap-2 overflow-y-auto pr-1'>
+                                      {channelTagGroups.tagGroups.map(
+                                        (tagGroup) => {
+                                          const selectedCount =
+                                            getChannelTagSelectionCount(
+                                              selectedChannelSet,
+                                              tagGroup.channelIds,
+                                            );
+                                          return (
+                                            <div
+                                              key={tagGroup.value}
+                                              className='rounded-xl border border-[var(--semi-color-border)] bg-white px-3 py-2'
+                                            >
+                                              <Checkbox
+                                                checked={
+                                                  selectedCount ===
+                                                    tagGroup.channelIds
+                                                      .length &&
+                                                  tagGroup.channelIds.length > 0
+                                                }
+                                                indeterminate={
+                                                  selectedCount > 0 &&
+                                                  selectedCount <
+                                                    tagGroup.channelIds.length
+                                                }
+                                                onChange={(e) =>
+                                                  toggleChannelTagGroup(
+                                                    tagGroup,
+                                                    e.target.checked,
+                                                  )
+                                                }
+                                              >
+                                                <div className='flex flex-col gap-1'>
+                                                  <span className='text-sm font-medium'>
+                                                    {tagGroup.tag}
+                                                  </span>
+                                                  <span className='text-xs text-gray-500'>
+                                                    {selectedCount > 0
+                                                      ? `${t('已选')} ${selectedCount}/${tagGroup.channelIds.length} | `
+                                                      : ''}
+                                                    {getChannelTagSummary(
+                                                      tagGroup,
+                                                    )}
+                                                  </span>
+                                                </div>
+                                              </Checkbox>
+                                            </div>
+                                          );
+                                        },
+                                      )}
+
+                                      {channelTagGroups.untaggedChannels.map(
+                                        (option) => (
+                                          <div
+                                            key={option.value}
                                             className='rounded-xl border border-[var(--semi-color-border)] bg-white px-3 py-2'
                                           >
                                             <Checkbox
-                                              checked={
-                                                selectedCount ===
-                                                  tagGroup.channelIds.length &&
-                                                tagGroup.channelIds.length > 0
-                                              }
-                                              indeterminate={
-                                                selectedCount > 0 &&
-                                                selectedCount <
-                                                  tagGroup.channelIds.length
-                                              }
+                                              checked={selectedChannelSet.has(
+                                                option.value,
+                                              )}
                                               onChange={(e) =>
-                                                toggleChannelTagGroup(
-                                                  tagGroup,
+                                                toggleSingleChannelLimit(
+                                                  option.value,
                                                   e.target.checked,
                                                 )
                                               }
                                             >
                                               <div className='flex flex-col gap-1'>
                                                 <span className='text-sm font-medium'>
-                                                  {tagGroup.tag}
+                                                  {option.channelName}
                                                 </span>
-                                                <span className='text-xs text-gray-500'>
-                                                  {selectedCount > 0
-                                                    ? `${t('已选')} ${selectedCount}/${tagGroup.channelIds.length} | `
-                                                    : ''}
-                                                  {getChannelTagSummary(
-                                                    tagGroup,
-                                                  )}
-                                                </span>
+                                                {option.channelSummary ? (
+                                                  <span className='text-xs text-gray-500'>
+                                                    {option.channelSummary}
+                                                  </span>
+                                                ) : null}
                                               </div>
                                             </Checkbox>
                                           </div>
-                                        );
-                                      },
-                                    )}
+                                        ),
+                                      )}
 
-                                    {channelTagGroups.untaggedChannels.map(
-                                      (option) => (
-                                        <div
-                                          key={option.value}
-                                          className='rounded-xl border border-[var(--semi-color-border)] bg-white px-3 py-2'
-                                        >
-                                          <Checkbox
-                                            checked={selectedChannelSet.has(
-                                              option.value,
-                                            )}
-                                            onChange={(e) =>
-                                              toggleSingleChannelLimit(
-                                                option.value,
-                                                e.target.checked,
-                                              )
-                                            }
-                                          >
-                                            <div className='flex flex-col gap-1'>
-                                              <span className='text-sm font-medium'>
-                                                {option.channelName}
-                                              </span>
-                                              {option.channelSummary ? (
-                                                <span className='text-xs text-gray-500'>
-                                                  {option.channelSummary}
-                                                </span>
-                                              ) : null}
-                                            </div>
-                                          </Checkbox>
+                                      {channelTagGroups.tagGroups.length ===
+                                        0 &&
+                                      channelTagGroups.untaggedChannels
+                                        .length === 0 ? (
+                                        <div className='py-2 text-sm text-gray-500'>
+                                          {t(
+                                            '当前分组和模型限制下暂无可选渠道',
+                                          )}
                                         </div>
-                                      ),
-                                    )}
+                                      ) : null}
+                                    </div>
 
-                                    {channelTagGroups.tagGroups.length === 0 &&
-                                    channelTagGroups.untaggedChannels.length ===
-                                      0 ? (
-                                      <div className='py-2 text-sm text-gray-500'>
-                                        {t('当前分组和模型限制下暂无可选渠道')}
+                                    {channelTagGroups.tagGroups.length > 0 ? (
+                                      <div className='mt-3 text-xs text-gray-500'>
+                                        {t(
+                                          '勾选标签会一次性选中该标签下全部渠道；关闭已选标签会移除该标签下当前已选渠道',
+                                        )}
                                       </div>
                                     ) : null}
                                   </div>
-
-                                  {channelTagGroups.tagGroups.length > 0 ? (
-                                    <div className='mt-3 text-xs text-gray-500'>
-                                      {t(
-                                        '勾选标签会一次性选中该标签下全部渠道；关闭已选标签会移除该标签下当前已选渠道',
-                                      )}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              );
-                            })()}
-                            <div className='mt-1 text-xs text-gray-600'>
-                              {t(
-                                '仅管理员可配置；可选渠道会随分组和模型限制自动联动',
-                              )}
-                            </div>
-                          </Form.Slot>
+                                );
+                              })()}
+                              <div className='mt-1 text-xs text-gray-600'>
+                                {t(
+                                  '仅管理员可配置；可选渠道会随分组和模型限制自动联动',
+                                )}
+                              </div>
+                            </Form.Slot>
+                          </Col>
+                        )}
+                        <Col span={24}>
+                          <Form.TextArea
+                            field='allow_ips'
+                            label={t('IP白名单（支持CIDR表达式）')}
+                            placeholder={t(
+                              '允许的IP，一行一个，不填写则不限制',
+                            )}
+                            autosize
+                            rows={1}
+                            extraText={t(
+                              '请勿过度信任此功能，IP可能被伪造，请配合nginx和cdn等网关使用',
+                            )}
+                            showClear
+                            style={{ width: '100%' }}
+                          />
                         </Col>
-                      )}
-                      <Col span={24}>
-                        <Form.TextArea
-                          field='allow_ips'
-                          label={t('IP白名单（支持CIDR表达式）')}
-                          placeholder={t('允许的IP，一行一个，不填写则不限制')}
-                          autosize
-                          rows={1}
-                          extraText={t(
-                            '请勿过度信任此功能，IP可能被伪造，请配合nginx和cdn等网关使用',
-                          )}
-                          showClear
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <Form.InputNumber
-                          field='max_concurrency'
-                          label={t('并发上限')}
-                          min={0}
-                          style={{ width: '100%' }}
-                          extraText={t('0 表示不限制')}
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <Form.InputNumber
-                          field='window_request_limit'
-                          label={t('窗口请求上限')}
-                          min={0}
-                          style={{ width: '100%' }}
-                          extraText={t('0 表示不限制')}
-                        />
-                      </Col>
-                      <Col span={8}>
-                        <Form.InputNumber
-                          field='window_seconds'
-                          label={t('窗口时长（秒）')}
-                          min={0}
-                          style={{ width: '100%' }}
-                          extraText={t('与窗口请求上限配合使用，0 表示不限制')}
-                        />
-                      </Col>
-                    </Row>
-                  </Card>
+                        <Col span={8}>
+                          <Form.InputNumber
+                            field='max_concurrency'
+                            label={t('并发上限')}
+                            min={0}
+                            style={{ width: '100%' }}
+                            extraText={t('0 表示不限制')}
+                          />
+                        </Col>
+                        <Col span={8}>
+                          <Form.InputNumber
+                            field='window_request_limit'
+                            label={t('窗口请求上限')}
+                            min={0}
+                            style={{ width: '100%' }}
+                            extraText={t('0 表示不限制')}
+                          />
+                        </Col>
+                        <Col span={8}>
+                          <Form.InputNumber
+                            field='window_seconds'
+                            label={t('窗口时长（秒）')}
+                            min={0}
+                            style={{ width: '100%' }}
+                            extraText={t(
+                              '与窗口请求上限配合使用，0 表示不限制',
+                            )}
+                          />
+                        </Col>
+                      </Row>
+                    </Card>
+                  </details>
                 </>
               )}
             </div>
           )}
         </Form>
       </Spin>
-    </SideSheet>
+    </Dialog>
   );
 };
 
