@@ -1,5 +1,8 @@
 {
   "translation": {
+    "复制失败，请手动选择模型名称复制": "Copy failed. Select the model name and copy manually.",
+    "复制模型名称": "Copy model name",
+    "已选择 {{count}} 个令牌": "{{count}} tokens selected",
     "支持模型": "Supported models",
     "搜索分组": "Search groups",
     "搜索分组名称或说明": "Search group names or descriptions",

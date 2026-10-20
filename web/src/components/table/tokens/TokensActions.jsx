@@ -66,12 +66,10 @@ const TokensActions = ({
 
   return (
     <>
-      <div
-        className='flex flex-wrap gap-2 w-full md:w-auto order-2 md:order-1'
-        data-onboarding='tokens-actions'
-      >
+      <div className='tokens-toolbar__actions' data-onboarding='tokens-actions'>
         <Button
           type='primary'
+          theme='solid'
           className='flex-1 md:flex-initial'
           data-onboarding='create-token-button'
           onClick={() => {
@@ -85,49 +83,59 @@ const TokensActions = ({
           {t('添加令牌')}
         </Button>
         <ApiAddressesButton copyText={copyText} t={t} />
+        {selectedKeys.length > 0 && (
+          <div
+            className='tokens-toolbar__batch'
+            role='group'
+            aria-label={t('批量操作')}
+          >
+            <span className='tokens-toolbar__count' role='status'>
+              {t('已选择 {{count}} 个令牌', { count: selectedKeys.length })}
+            </span>
+            <Button
+              type='tertiary'
+              className='flex-1 md:flex-initial'
+              onClick={batchEnableTokens}
+              disabled={selectedKeys.length === 0 || loading}
+              loading={loading}
+              size='small'
+            >
+              {t('批量启用')}
+            </Button>
 
-        <Button
-          type='tertiary'
-          className='flex-1 md:flex-initial'
-          onClick={batchEnableTokens}
-          disabled={selectedKeys.length === 0 || loading}
-          loading={loading}
-          size='small'
-        >
-          {t('批量启用')}
-        </Button>
+            <Button
+              type='tertiary'
+              className='flex-1 md:flex-initial'
+              onClick={batchDisableTokens}
+              disabled={selectedKeys.length === 0 || loading}
+              loading={loading}
+              size='small'
+            >
+              {t('批量禁用')}
+            </Button>
 
-        <Button
-          type='tertiary'
-          className='flex-1 md:flex-initial'
-          onClick={batchDisableTokens}
-          disabled={selectedKeys.length === 0 || loading}
-          loading={loading}
-          size='small'
-        >
-          {t('批量禁用')}
-        </Button>
+            <Button
+              type='tertiary'
+              className='flex-1 md:flex-initial'
+              onClick={handleCopySelectedTokens}
+              disabled={selectedKeys.length === 0 || loading}
+              size='small'
+            >
+              {t('复制所选令牌')}
+            </Button>
 
-        <Button
-          type='tertiary'
-          className='flex-1 md:flex-initial'
-          onClick={handleCopySelectedTokens}
-          disabled={selectedKeys.length === 0 || loading}
-          size='small'
-        >
-          {t('复制所选令牌')}
-        </Button>
-
-        <Button
-          type='danger'
-          className='w-full md:w-auto'
-          onClick={handleDeleteSelectedTokens}
-          disabled={selectedKeys.length === 0 || loading}
-          loading={loading}
-          size='small'
-        >
-          {t('删除所选令牌')}
-        </Button>
+            <Button
+              type='danger'
+              className='w-full md:w-auto'
+              onClick={handleDeleteSelectedTokens}
+              disabled={selectedKeys.length === 0 || loading}
+              loading={loading}
+              size='small'
+            >
+              {t('删除所选令牌')}
+            </Button>
+          </div>
+        )}
       </div>
 
       <CopyTokensModal

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "复制失败，请手动选择模型名称复制": "Échec de la copie. Sélectionnez le nom et copiez-le manuellement.",
+    "复制模型名称": "Copier le nom du modèle",
+    "已选择 {{count}} 个令牌": "{{count}} jetons sélectionnés",
     "支持模型": "Modèles pris en charge",
     "搜索分组": "Rechercher des groupes",
     "搜索分组名称或说明": "Rechercher un nom ou une description",

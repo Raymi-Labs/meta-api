@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   buildTokenGroupVendorOptions,
   resolveTokenGroupVendor,
+  sortTokenGroupsByRatio,
 } from './tokenGroupUtils';
 import {
   favoriteStorageKey,
@@ -93,7 +94,8 @@ export default function TokenGroupPicker({
     () => buildTokenGroupVendorOptions(groups, t('多厂商通用')),
     [groups, t],
   );
-  const filtered = groups.filter((group) => {
+  const sortedGroups = useMemo(() => sortTokenGroupsByRatio(groups), [groups]);
+  const filtered = sortedGroups.filter((group) => {
     const inVendor =
       vendor === '__favorites__'
         ? favorites.includes(group.value)
@@ -179,6 +181,16 @@ export default function TokenGroupPicker({
                 <div
                   key={group.value}
                   className={`token-group-picker__row${group.value === value ? ' is-selected' : ''}`}
+                  onClick={(event) => {
+                    // Native labels/radios own their activation. Keep child
+                    // actions independent and do not select while copying text.
+                    if (
+                      event.target.closest('button, a, input, label, summary')
+                    )
+                      return;
+                    if (window.getSelection()?.toString()) return;
+                    if (value !== group.value) onSelect(group.value);
+                  }}
                 >
                   <label className='token-group-picker__choice'>
                     <input

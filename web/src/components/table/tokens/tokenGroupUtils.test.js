@@ -28,9 +28,43 @@ import {
   resolveTokenGroupVendor,
   shouldClearTokenGroupForVendor,
   sortTokenGroupOptions,
+  sortTokenGroupsByRatio,
 } from './tokenGroupUtils.js';
 
 describe('tokenGroupUtils', () => {
+  test('ratio sort is descending, stable, non-mutating and handles unknown values', () => {
+    const groups = [
+      { value: 'auto', ratio: 99 },
+      { value: 'unknown', ratio: null },
+      { value: 'low', ratio: 0.4 },
+      { value: 'same-a', ratio: 0.55 },
+      { value: 'zero', ratio: 0 },
+      { value: 'high', ratio: 0.68 },
+      { value: 'same-b', ratio: 0.55 },
+      { value: 'string', ratio: '0.9' },
+      { value: 'negative', ratio: -1 },
+      { value: 'nan', ratio: NaN },
+      { value: 'infinite', ratio: Infinity },
+    ];
+    const original = groups.slice();
+    assert.deepEqual(
+      sortTokenGroupsByRatio(groups).map((g) => g.value),
+      [
+        'high',
+        'same-a',
+        'same-b',
+        'low',
+        'zero',
+        'auto',
+        'unknown',
+        'string',
+        'negative',
+        'nan',
+        'infinite',
+      ],
+    );
+    assert.deepEqual(groups, original);
+  });
   test('resolves configured and legacy vendor group names', () => {
     assert.equal(resolveTokenGroupVendor('OpenAI · 优质'), 'OpenAI');
     assert.equal(resolveTokenGroupVendor('Claude · 企业专属'), 'Claude');

@@ -19,6 +19,22 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const TOKEN_GROUP_OTHER_VENDOR = '__other__';
 
+// Presentation only: no mutation of the permission catalog or routing order.
+export const sortTokenGroupsByRatio = (groups = []) => {
+  const validRatio = (group) =>
+    group.value !== 'auto' &&
+    typeof group.ratio === 'number' &&
+    Number.isFinite(group.ratio) &&
+    group.ratio >= 0;
+  return [...groups].sort((left, right) => {
+    const leftValid = validRatio(left);
+    const rightValid = validRatio(right);
+    if (leftValid && rightValid) return right.ratio - left.ratio;
+    if (leftValid !== rightValid) return leftValid ? -1 : 1;
+    return 0;
+  });
+};
+
 const TOKEN_GROUP_VENDOR_ORDER = [
   'OpenAI',
   'Claude',

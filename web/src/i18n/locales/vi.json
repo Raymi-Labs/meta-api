@@ -1,5 +1,8 @@
 {
   "translation": {
+    "复制失败，请手动选择模型名称复制": "Sao chép thất bại. Hãy chọn tên mô hình và sao chép thủ công.",
+    "复制模型名称": "Sao chép tên mô hình",
+    "已选择 {{count}} 个令牌": "Đã chọn {{count}} token",
     "支持模型": "Mô hình được hỗ trợ",
     "搜索分组": "Tìm nhóm",
     "搜索分组名称或说明": "Tìm tên hoặc mô tả nhóm",

@@ -166,6 +166,17 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     await route.fulfill({ json: { success: true, data } });
   });
   await page.addInitScript(() => {
+    window.qaClipboard = { fail: false, values: [] };
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          if (window.qaClipboard.fail)
+            throw new Error('synthetic denied clipboard');
+          window.qaClipboard.values.push(text);
+        },
+      },
+    });
     localStorage.setItem('quota_per_unit', '500000');
     localStorage.setItem('user', JSON.stringify({ id: 901, role: 100 }));
     localStorage.setItem(
@@ -206,9 +217,102 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   assert.equal(await page.getByRole('radio', { checked: true }).count(), 0);
   assert.equal(await page.getByText('0×', { exact: true }).count(), 1);
   assert.equal(await page.getByText('动态', { exact: true }).count(), 1);
+  const row = (group) =>
+    page
+      .locator('.token-group-picker__row')
+      .filter({ has: page.getByRole('radio', { name: group, exact: true }) });
+  const order = () =>
+    page.getByRole('radio').evaluateAll((nodes) => nodes.map((n) => n.value));
+  assert.deepEqual(await order(), [
+    'OpenAI · 独享账号',
+    'OpenAI · 优质',
+    'Claude · 优质',
+    'auto',
+  ]);
   await name().fill('simple token');
   await choose('OpenAI · 独享账号');
   await enabled(create());
+  await row('OpenAI · 优质')
+    .locator('.token-group-picker__description')
+    .click();
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 优质',
+  );
+  await row('OpenAI · 独享账号').locator('.token-group-picker__ratio').click();
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 独享账号',
+  );
+  await row('OpenAI · 优质').click({ position: { x: 4, y: 4 } });
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 优质',
+  );
+  await page.getByRole('button', { name: '展开说明', exact: true }).click();
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 优质',
+  );
+  await page.getByRole('button', { name: '收起说明', exact: true }).click();
+  await row('OpenAI · 独享账号').locator('strong').click();
+  await enabled(create());
+  // Selecting description text must not accidentally change the token group.
+  await row('OpenAI · 优质')
+    .locator('.token-group-picker__description')
+    .evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 独享账号',
+  );
+  await page.evaluate(() => window.getSelection().removeAllRanges());
+  await page.getByText('查看详情', { exact: true }).click();
+  const copyButton = page.getByRole('button', {
+    name: '复制模型名称 openai-test',
+    exact: true,
+  });
+  await copyButton.waitFor();
+  const beforeCopyRequests = modelRequests.length;
+  await copyButton.click();
+  await page
+    .getByText('已复制模型名称：openai-test', { exact: true })
+    .waitFor();
+  assert.deepEqual(await page.evaluate(() => window.qaClipboard.values), [
+    'openai-test',
+  ]);
+  assert.equal(writes.length, 0);
+  assert.equal(modelRequests.length, beforeCopyRequests);
+  await page.evaluate(() => (window.qaClipboard.fail = true));
+  await copyButton.click();
+  await page
+    .getByText('复制失败，请手动选择模型名称复制', { exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByText('已复制模型名称：openai-test', { exact: true })
+      .count(),
+    0,
+  );
+  await page.evaluate(() => (window.qaClipboard.fail = false));
+  await copyButton.focus();
+  await page.keyboard.press('Enter');
+  await page
+    .getByText('已复制模型名称：openai-test', { exact: true })
+    .waitFor();
+  assert.deepEqual(await page.evaluate(() => window.qaClipboard.values), [
+    'openai-test',
+    'openai-test',
+  ]);
+  await page.getByText('查看详情', { exact: true }).click();
+  console.log(
+    'PASS whole-row selection, independent expansion, text selection and truthful clipboard feedback',
+  );
   const requestsBefore = modelRequests.length;
   await page
     .getByRole('button', { name: '取消收藏 OpenAI · 独享账号', exact: true })
@@ -231,6 +335,14 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       .getByText('已选分组：OpenAI · 独享账号', { exact: true })
       .isVisible(),
   );
+  await page.getByRole('button', { name: '全部', exact: true }).click();
+  await page
+    .getByRole('button', { name: '收藏当前分组 OpenAI · 优质', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: '☆ 我的收藏分组', exact: true })
+    .click();
+  assert.deepEqual(await order(), ['OpenAI · 独享账号', 'OpenAI · 优质']);
   await page.getByRole('button', { name: '全部', exact: true }).click();
   await page
     .getByRole('textbox', { name: '搜索分组', exact: true })
@@ -319,12 +431,18 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await choose('OpenAI · 优质');
   for (let i = 0; !releaseModel && i < 80; i++) await delay(25);
   assert(releaseModel);
-  await choose('Claude · 优质');
+  await row('Claude · 优质').locator('.token-group-picker__ratio').click();
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'Claude · 优质',
+  );
   await enabled(create());
   releaseModel();
   await delay(150);
   await page.getByText('查看详情', { exact: true }).click();
-  await page.getByText(/支持模型.*claude-test/).waitFor({ state: 'visible' });
+  await page
+    .getByRole('button', { name: '复制模型名称 claude-test', exact: true })
+    .waitFor({ state: 'visible' });
   assert.equal(await page.getByText(/stale-model/).count(), 0);
   await create().click();
   await delay(200);

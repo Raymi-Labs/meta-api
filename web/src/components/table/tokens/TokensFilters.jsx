@@ -18,7 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useRef, useState } from 'react';
-import { Form, Button, SideSheet, Space, Divider, Typography } from '@douyinfe/semi-ui';
+import {
+  Form,
+  Button,
+  SideSheet,
+  Space,
+  Divider,
+  Typography,
+} from '@douyinfe/semi-ui';
 import { IconSearch, IconFilter } from '@douyinfe/semi-icons';
 
 const TokensFilters = ({
@@ -112,10 +119,10 @@ const TokensFilters = ({
       layout='horizontal'
       trigger='change'
       stopValidateWithError={false}
-      className='w-full md:w-auto order-1 md:order-2'
+      className='tokens-filter-form'
     >
-      <div className='flex flex-col md:flex-row items-center gap-2 w-full md:w-auto'>
-        <div className='relative w-full md:w-48'>
+      <div className='tokens-filter-row'>
+        <div className='tokens-filter-row__field'>
           <Form.Input
             field='searchKeyword'
             prefix={<IconSearch />}
@@ -126,7 +133,7 @@ const TokensFilters = ({
           />
         </div>
 
-        <div className='relative w-full md:w-48'>
+        <div className='tokens-filter-row__field'>
           <Form.Input
             field='searchToken'
             prefix={<IconSearch />}
@@ -137,7 +144,7 @@ const TokensFilters = ({
           />
         </div>
 
-        <div className='w-full md:w-64'>
+        <div className='tokens-filter-row__field'>
           <Form.Select
             field='searchGroup'
             placeholder={t('选择分组')}
@@ -155,7 +162,7 @@ const TokensFilters = ({
           />
         </div>
 
-        <div className='flex gap-2 w-full md:w-auto'>
+        <div className='tokens-filter-row__buttons'>
           <Button
             type='tertiary'
             htmlType='submit'
@@ -201,7 +208,11 @@ const TokensFilters = ({
               <Button type='tertiary' onClick={clearAdvancedFilters}>
                 {t('清空当前设置')}
               </Button>
-              <Button type='primary' theme='solid' onClick={applyAdvancedFilters}>
+              <Button
+                type='primary'
+                theme='solid'
+                onClick={applyAdvancedFilters}
+              >
                 {t('应用筛选')}
               </Button>
             </Space>

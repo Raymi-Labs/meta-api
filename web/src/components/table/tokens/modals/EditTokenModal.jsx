@@ -52,6 +52,7 @@ import {
 import { IconCreditCard, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
 import TokenGroupPicker from '../TokenGroupPicker';
+import TokenModelCopyList from '../TokenModelCopyList';
 import { UserContext } from '../../../../context/User';
 import { StatusContext } from '../../../../context/Status';
 import { resolveTokenGroupVendor } from '../tokenGroupUtils';
@@ -1294,13 +1295,18 @@ const EditTokenModal = (props) => {
                           />
                           <div className='text-xs mt-2 break-words'>
                             {t('支持模型')}：
-                            {modelsLoading
-                              ? t('加载中...')
-                              : modelsError
-                                ? t('暂不可用')
-                                : models
-                                    .map((model) => model.value)
-                                    .join('、') || t('暂无可用模型')}
+                            {modelsLoading ? (
+                              t('加载中...')
+                            ) : modelsError ? (
+                              t('暂不可用')
+                            ) : models.length ? (
+                              <TokenModelCopyList
+                                key={values.group}
+                                models={models}
+                              />
+                            ) : (
+                              t('暂无可用模型')
+                            )}
                           </div>
                         </>
                       }
