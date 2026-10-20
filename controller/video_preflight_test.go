@@ -207,3 +207,13 @@ func TestVideoTokenTestUsesOwnedTokenWithoutGeneration(t *testing.T) {
 	require.NoError(t, model.DB.Model(&model.Log{}).Count(&count).Error)
 	require.Zero(t, count)
 }
+
+func TestVideoPreflightNeverClaimsLegacyLiveSuccess(t *testing.T) {
+	for _, passed := range []bool{true, false} {
+		r := &videoPreflight{Kind: videoPreflightKind, Passed: passed}
+		response := videoPreflightResponse(r)
+		require.Equal(t, false, response["success"], "legacy clients must not enable channels after local checks")
+		require.Equal(t, videoPreflightKind, response["test_kind"])
+		require.Equal(t, passed, response["data"].(*videoPreflight).Passed)
+	}
+}

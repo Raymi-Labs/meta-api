@@ -157,7 +157,9 @@ func inspectVideoConfiguration(ch *model.Channel, name string) *videoPreflight {
 
 func videoPreflightResponse(r *videoPreflight) gin.H {
 	return gin.H{
-		"success": r.Passed, "test_kind": videoPreflightKind, "time": 0,
+		// Legacy clients only inspect success and may enable a channel on true.
+		// A local preflight must never satisfy that live-test success contract.
+		"success": false, "test_kind": videoPreflightKind, "time": 0,
 		"message": "视频仅进行本地配置预检，未调用上游生成；预检通过不代表生成可用。",
 		"data":    r,
 	}

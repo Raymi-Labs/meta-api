@@ -1337,7 +1337,16 @@ export const useChannelsData = () => {
         });
       }
 
-      const { success, message, time, error_code, test_kind, data } = res.data;
+      const {
+        success: liveSuccess,
+        message,
+        time,
+        error_code,
+        test_kind,
+        data,
+      } = res.data;
+      const success =
+        test_kind === 'video_preflight' ? data?.passed === true : liveSuccess;
       const result = {
         success,
         message,
