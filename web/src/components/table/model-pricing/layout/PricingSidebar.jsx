@@ -18,143 +18,25 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button } from '@douyinfe/semi-ui';
 import PricingGroups from '../filter/PricingGroups';
-import PricingQuotaTypes from '../filter/PricingQuotaTypes';
-import PricingEndpointTypes from '../filter/PricingEndpointTypes';
-import PricingVendors from '../filter/PricingVendors';
-import PricingTags from '../filter/PricingTags';
 
-import { resetPricingFilters } from '../../../../helpers/utils';
-import { usePricingFilterCounts } from '../../../../hooks/model-pricing/usePricingFilterCounts';
-
-const PricingSidebar = ({
-  showWithRecharge,
-  setShowWithRecharge,
-  setPriceConvertMode,
-  setSelectedPlanId,
-  currency,
-  setCurrency,
-  handleChange,
-  setActiveKey,
-  showRatio,
-  setShowRatio,
-  viewMode,
-  setViewMode,
-  filterGroup,
-  setFilterGroup,
-  handleGroupClick,
-  filterQuotaType,
-  setFilterQuotaType,
-  filterEndpointType,
-  setFilterEndpointType,
-  filterVendor,
-  setFilterVendor,
-  filterTag,
-  setFilterTag,
-  currentPage,
-  setCurrentPage,
-  tokenUnit,
-  setTokenUnit,
-  loading,
-  t,
-  ...categoryProps
-}) => {
-  const {
-    quotaTypeModels,
-    endpointTypeModels,
-    vendorModels,
-    tagModels,
-    groupCountModels,
-  } = usePricingFilterCounts({
-    models: categoryProps.models,
-    filterGroup,
-    filterQuotaType,
-    filterEndpointType,
-    filterVendor,
-    filterTag,
-    searchValue: categoryProps.searchValue,
-  });
-
-  const handleResetFilters = () =>
-    resetPricingFilters({
-      handleChange,
-      setShowWithRecharge,
-      setCurrency,
-      setPriceConvertMode,
-      setSelectedPlanId,
-      setShowRatio,
-      setViewMode,
-      setFilterGroup,
-      setFilterQuotaType,
-      setFilterEndpointType,
-      setFilterVendor,
-      setFilterTag,
-      setCurrentPage,
-      setTokenUnit,
-    });
-
+const PricingSidebar = (props) => {
+  // Group availability depends on vendor, not on a transient model search.
+  const models = props.models.filter(
+    (model) =>
+      props.filterVendor === 'all' ||
+      (props.filterVendor === 'unknown'
+        ? !model.vendor_name
+        : model.vendor_name === props.filterVendor),
+  );
   return (
-    <div className='p-2'>
-      <div className='flex items-center justify-between mb-6'>
-        <div className='text-lg font-semibold text-gray-800'>{t('筛选')}</div>
-        <Button
-          theme='outline'
-          type='tertiary'
-          onClick={handleResetFilters}
-          className='text-gray-500 hover:text-gray-700'
-        >
-          {t('重置')}
-        </Button>
-      </div>
-
-      <PricingVendors
-        filterVendor={filterVendor}
-        setFilterVendor={setFilterVendor}
-        models={vendorModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingTags
-        hideUnavailable={filterVendor !== 'all'}
-        filterTag={filterTag}
-        setFilterTag={setFilterTag}
-        models={tagModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
+    <div className='pricing-group-sidebar'>
       <PricingGroups
-        hideUnavailable={filterVendor !== 'all'}
-        filterGroup={filterGroup}
-        setFilterGroup={handleGroupClick}
-        usableGroup={categoryProps.usableGroup}
-        groupRatio={categoryProps.groupRatio}
-        models={groupCountModels}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingQuotaTypes
-        hideUnavailable={filterVendor !== 'all'}
-        filterQuotaType={filterQuotaType}
-        setFilterQuotaType={setFilterQuotaType}
-        models={quotaTypeModels}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingEndpointTypes
-        hideUnavailable={filterVendor !== 'all'}
-        filterEndpointType={filterEndpointType}
-        setFilterEndpointType={setFilterEndpointType}
-        models={endpointTypeModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
+        {...props}
+        models={models}
+        setFilterGroup={props.handleGroupClick}
+        hideUnavailable
+        vertical
       />
     </div>
   );

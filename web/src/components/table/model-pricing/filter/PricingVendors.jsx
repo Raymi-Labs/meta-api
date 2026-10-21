@@ -36,6 +36,7 @@ const PricingVendors = ({
   models = [],
   allModels = [],
   loading = false,
+  horizontal = false,
   t,
 }) => {
   // 获取系统中所有供应商（基于 allModels，如果未提供则退化为 models）
@@ -113,6 +114,25 @@ const PricingVendors = ({
 
     return result;
   }, [getAllVendors, getVendorCount, t]);
+
+  if (horizontal) {
+    return (
+      <nav className='pricing-vendors' aria-label={t('供应商')}>
+        {items.map((item) => (
+          <button
+            type='button'
+            key={item.value}
+            aria-pressed={filterVendor === item.value}
+            disabled={loading}
+            onClick={() => setFilterVendor(item.value)}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <SelectableButtonGroup

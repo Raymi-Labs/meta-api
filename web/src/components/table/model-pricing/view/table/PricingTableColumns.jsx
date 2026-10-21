@@ -18,95 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Tag, Space, Tooltip } from '@douyinfe/semi-ui';
-import { IconHelpCircle } from '@douyinfe/semi-icons';
+import { Button } from '@douyinfe/semi-ui';
+import { IconCopy } from '@douyinfe/semi-icons';
 import {
   calculateModelPrice,
+  getModelPriceItems,
+  parseTiersFromExpr,
   formatTimeRatioValue,
-  formatPriceInfo,
-  getLobeHubIcon,
-  renderModelTag,
-  stringToColor,
 } from '../../../../../helpers';
-import {
-  renderLimitedItems,
-  renderDescription,
-} from '../../../../common/ui/RenderUtils';
-import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
-
-function renderQuotaType(type, t) {
-  switch (type) {
-    case 1:
-      return (
-        <Tag color='teal' shape='circle'>
-          {t('按次计费')}
-        </Tag>
-      );
-    case 0:
-      return (
-        <Tag color='violet' shape='circle'>
-          {t('按量计费')}
-        </Tag>
-      );
-    case 2:
-      return (
-        <Tag color='blue' shape='circle'>
-          {t('按量计费')} / {t('小时')}
-        </Tag>
-      );
-    default:
-      return t('未知');
-  }
-}
-
-// Render vendor name
-const renderVendor = (vendorName, vendorIcon, t) => {
-  if (!vendorName) return '-';
-  return (
-    <Tag
-      color='white'
-      shape='circle'
-      prefixIcon={getLobeHubIcon(vendorIcon || 'Layers', 14)}
-    >
-      {vendorName}
-    </Tag>
-  );
-};
-
-// Render tags list using RenderUtils
-const renderTags = (text) => {
-  if (!text) return '-';
-  const tagsArr = text.split(',').filter((tag) => tag.trim());
-  return renderLimitedItems({
-    items: tagsArr,
-    renderItem: (tag, idx) => (
-      <Tag
-        key={idx}
-        color={stringToColor(tag.trim())}
-        shape='circle'
-        size='small'
-      >
-        {tag.trim()}
-      </Tag>
-    ),
-    maxDisplay: 3,
-  });
-};
-
-function renderSupportedEndpoints(endpoints) {
-  if (!endpoints || endpoints.length === 0) {
-    return null;
-  }
-  return (
-    <Space wrap>
-      {endpoints.map((endpoint, idx) => (
-        <Tag key={endpoint} color={stringToColor(endpoint)} shape='circle'>
-          {endpoint}
-        </Tag>
-      ))}
-    </Space>
-  );
-}
+import { buildFirstTierGroupPriceItems } from '../../../../../helpers/tieredBillingDisplay';
+import { splitBillingExprAndRequestRules } from '../../../../../pages/Setting/Ratio/components/requestRuleExpr';
 
 export const getPricingTableColumns = ({
   t,
@@ -114,20 +35,17 @@ export const getPricingTableColumns = ({
   groupRatio,
   timeRatioMap,
   copyText,
-  setModalImageUrl,
-  setIsModalOpenurl,
   currency,
   tokenUnit,
   displayPrice,
   showRatio,
+  siteDisplayType,
+  openModelDetail,
 }) => {
-  const isMobile = useIsMobile();
-  const priceDataCache = new WeakMap();
-
-  const getPriceData = (record) => {
-    let cache = priceDataCache.get(record);
-    if (!cache) {
-      cache = calculateModelPrice({
+  const cache = new WeakMap();
+  const pricing = (record) => {
+    if (!cache.has(record)) {
+      const data = calculateModelPrice({
         record,
         selectedGroup,
         groupRatio,
@@ -135,129 +53,135 @@ export const getPricingTableColumns = ({
         tokenUnit,
         displayPrice,
         currency,
+        quotaDisplayType: siteDisplayType,
       });
-      priceDataCache.set(record, cache);
+      const { billingExpr } = splitBillingExprAndRequestRules(
+        record.billing_expr || '',
+      );
+      const tier = data.isDynamicPricing
+        ? buildFirstTierGroupPriceItems({
+            tiers: parseTiersFromExpr(billingExpr),
+            effectiveBillingRatio: data.effectiveBillingRatio,
+            displayPrice,
+            t,
+          })
+        : null;
+      cache.set(record, {
+        data,
+        items: tier ? tier.items : getModelPriceItems(data, t, siteDisplayType),
+      });
     }
-    return cache;
+    return cache.get(record);
   };
-
-  const endpointColumn = {
-    title: t('可用端点类型'),
-    dataIndex: 'supported_endpoint_types',
-    render: (text, record, index) => {
-      return renderSupportedEndpoints(text);
-    },
-  };
-
-  const modelNameColumn = {
-    title: t('模型名称'),
-    dataIndex: 'model_name',
-    render: (text, record, index) => {
-      return renderModelTag(text, {
-        onClick: () => {
-          copyText(text);
-        },
-      });
-    },
-    onFilter: (value, record) =>
-      record.model_name.toLowerCase().includes(value.toLowerCase()),
-  };
-
-  const quotaColumn = {
-    title: t('计费类型'),
-    dataIndex: 'quota_type',
-    render: (text, record, index) => {
-      return renderQuotaType(parseInt(text), t);
-    },
-    sorter: (a, b) => a.quota_type - b.quota_type,
-  };
-
-  const descriptionColumn = {
-    title: t('描述'),
-    dataIndex: 'description',
-    render: (text) => renderDescription(text, 200),
-  };
-
-  const tagsColumn = {
-    title: t('标签'),
-    dataIndex: 'tags',
-    render: renderTags,
-  };
-
-  const vendorColumn = {
-    title: t('供应商'),
-    dataIndex: 'vendor_name',
-    render: (text, record) => renderVendor(text, record.vendor_icon, t),
-  };
-
-  const baseColumns = [
-    modelNameColumn,
-    vendorColumn,
-    descriptionColumn,
-    tagsColumn,
-    quotaColumn,
-  ];
-
-  const ratioColumn = {
-    title: () => (
-      <div className='flex items-center space-x-1'>
-        <span>{t('倍率')}</span>
-        <Tooltip content={t('倍率是为了方便换算不同价格的模型')}>
-          <IconHelpCircle
-            className='text-blue-500 cursor-pointer'
-            onClick={() => {
-              setModalImageUrl('/ratio.png');
-              setIsModalOpenurl(true);
-            }}
-          />
-        </Tooltip>
+  const renderPrice = (record, keys, includeFixed = false) => {
+    const { data, items } = pricing(record);
+    const item = items.find(
+      (item) =>
+        keys.includes(item.key) ||
+        (includeFixed && ['fixed', 'audio-duration'].includes(item.key)),
+    );
+    if (!item) return data.isDynamicPricing ? t('见价格详情') : '—';
+    return (
+      <div className='whitespace-nowrap'>
+        <div>{item.value}</div>
+        <div className='pricing-group-description'>{item.suffix}</div>
       </div>
+    );
+  };
+  const columns = [
+    {
+      title: t('模型名称'),
+      dataIndex: 'model_name',
+      render: (name, record) => (
+        <div>
+          <div className='flex items-center gap-1'>
+            <span className='font-medium'>{name}</span>
+            <Button
+              theme='borderless'
+              size='small'
+              icon={<IconCopy />}
+              aria-label={t('复制模型名称') + ': ' + name}
+              onClick={(event) => {
+                event.stopPropagation();
+                copyText(name);
+              }}
+            />
+          </div>
+          <div className='pricing-group-description'>
+            {record.vendor_name} ·{' '}
+            {record.billing_mode === 'tiered_expr'
+              ? t('阶梯计费：展示首档参考价，完整规则见详情')
+              : record.quota_type === 0
+                ? t('按量计费')
+                : record.quota_type === 2
+                  ? t('按小时计费')
+                  : t('按次计费')}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: t('输入 / 单价'),
+      dataIndex: 'input_price',
+      render: (_, record) =>
+        renderPrice(record, ['input', 'input-ratio', 'tiered-p'], true),
+    },
+    {
+      title: t('输出'),
+      dataIndex: 'output_price',
+      render: (_, record) =>
+        renderPrice(record, ['completion', 'completion-ratio', 'tiered-c']),
+    },
+    {
+      title: t('缓存读取'),
+      dataIndex: 'cache_price',
+      render: (_, record) =>
+        renderPrice(record, ['cache', 'cache-ratio', 'tiered-cr']),
+    },
+  ];
+  if (showRatio)
+    columns.push({
+      title: t('倍率'),
+      dataIndex: 'ratio',
+      render: (_, record) => {
+        const { data } = pricing(record);
+        return (
+          <div>
+            {record.quota_type === 0 && (
+              <>
+                <div>
+                  {t('模型倍率')}：{record.model_ratio ?? '—'}
+                </div>
+                <div>
+                  {t('补全倍率')}：{record.completion_ratio ?? '—'}
+                </div>
+              </>
+            )}
+            <div>
+              {t('分组倍率')}：{data.usedGroupRatio}×
+            </div>
+            <div>
+              {t('时间倍率')}：{formatTimeRatioValue(data.timeRatio)}×
+            </div>
+          </div>
+        );
+      },
+    });
+  columns.push({
+    title: t('详情'),
+    dataIndex: 'details',
+    render: (_, record) => (
+      <Button
+        theme='borderless'
+        type='primary'
+        onClick={(event) => {
+          event.stopPropagation();
+          openModelDetail?.(record);
+        }}
+      >
+        {t('价格详情')}
+      </Button>
     ),
-    dataIndex: 'model_ratio',
-    render: (text, record, index) => {
-      const completionRatio = parseFloat(record.completion_ratio.toFixed(3));
-      const priceData = getPriceData(record);
-
-      return (
-        <div className='space-y-1'>
-          <div className='text-gray-700'>
-            {t('模型倍率')}：{record.quota_type === 0 ? text : t('无')}
-          </div>
-          <div className='text-gray-700'>
-            {t('补全倍率')}：
-            {record.quota_type === 0 ? completionRatio : t('无')}
-          </div>
-          <div className='text-gray-700'>
-            {t('分组倍率')}：{priceData?.usedGroupRatio ?? '-'}
-          </div>
-          <div className='text-gray-700'>
-            {t('时间倍率')}：
-            {formatTimeRatioValue(priceData?.timeRatioInfo?.ratio)}x
-          </div>
-        </div>
-      );
-    },
-  };
-
-  const priceColumn = {
-    title: t('模型价格'),
-    dataIndex: 'model_price',
-    ...(isMobile ? {} : { fixed: 'right' }),
-    render: (text, record, index) => {
-      const priceData = getPriceData(record);
-      return (
-        <div className='flex flex-wrap gap-2 py-1'>
-          {formatPriceInfo(priceData, t)}
-        </div>
-      );
-    },
-  };
-
-  const columns = [...baseColumns];
-  columns.push(endpointColumn);
-  if (showRatio) {
-    columns.push(ratioColumn);
-  }
-  columns.push(priceColumn);
+  });
   return columns;
 };

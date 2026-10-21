@@ -4,6 +4,8 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| 模型广场：厂商横栏与分组侧栏 | [页面](../web/src/components/table/model-pricing/layout/PricingPage.jsx)、[分组](../web/src/components/table/model-pricing/filter/PricingGroups.jsx)、[价格列](../web/src/components/table/model-pricing/view/table/PricingTableColumns.jsx) | `/pricing` → `GET /api/pricing` → `controller.GetPricing` → 可见模型、usable_group、用户适用倍率与时间倍率；复用价格计算及详情 | 厂商完整换行；左侧分组按倍率稳定降序、搜索与说明；共享组按模型关联；保留不适用的当前组并提示，切换厂商不换价格组；手机共用筛选弹窗；普通/首档/按次/小时按原单位显示，不改后端计费。见[决策](../.agents/notes/implemented/feature/2026-10-21-pricing-wallet-layout.md) |
+| 钱包：到账与实付说明、兑换码入口 | [充值卡](../web/src/components/topup/RechargeCard.jsx)、[钱包](../web/src/components/topup/index.jsx) | 原 `/api/user/topup/info`、各支付方式 amount 报价、原 WalletRedemptionModal | 支付说明在按钮下，到账额度与预计实付相邻；创建兑换码为描边按钮，文案明确可转赠额度；档位、下单、转赠校验不变 |
 | HTTP 请求 ID 一致性 | [ID 中间件](../middleware/request-id.go)、[出站 ID 采集](../service/upstream_request_id.go)、[日志说明](REQUEST_FAILURE_LOGS.md) | 全局 HTTP 输出的 `X-Oneapi-Request-Id` 固定为本站 context / 日志 ID；共用 HTTP 出站入口的最近五个上游 ID 存于管理员 `admin_info.upstream_request_ids` | JSON、SSE、音视频写出复用统一保护；重试共享本站 ID、逐响应保留渠道；普通用户日志隐藏上游信息；不改 body.id、计费、历史数据或 WebSocket 协议 |
 | DeepSeek 原生 Responses | [适配器](../relay/channel/deepseek/adaptor.go)、[最终请求校验](../relay/channel/deepseek/responses.go)、[接入说明](channel/deepseek_responses.md) | `/v1/responses` 经原鉴权/选渠/映射 → 基址 `/responses`；复用 JSON/SSE、推理与函数工具历史 | 无状态续接须完整 input；previous_response_id / conversation 明确400；最终体移除 stream_options；不改价格/数据库/生产渠道，不证明第三方实测可用 |
 | 请求失败诊断 | [请求体缓存](../common/gin.go)、[内存限流](../middleware/model-rate-limit.go)、[错误出口](../middleware/utils.go) | 首次读取失败保留至同一请求后续读取；内存 429 与 Redis 共用消息格式、请求 ID 和最终失败标记 | 保留本地三协议/全局 body 限额、413、分组 subject、成功预占/失败释放；不增加重试或收费 |

@@ -17,129 +17,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState, memo } from 'react';
+import React, { useState } from 'react';
 import PricingFilterModal from '../../modal/PricingFilterModal';
-import PricingVendorIntroWithSkeleton from './PricingVendorIntroWithSkeleton';
 import SearchActions from './SearchActions';
 
-const PricingTopSection = memo(
-  ({
-    sortOrder,
-    setSortOrder,
-    selectedRowKeys,
-    copyText,
-    handleChange,
-    handleCompositionStart,
-    handleCompositionEnd,
-    isMobile,
-    sidebarProps,
-    filterVendor,
-    models,
-    filteredModels,
-    loading,
-    searchValue,
-    showWithRecharge,
-    setShowWithRecharge,
-    priceConvertMode,
-    setPriceConvertMode,
-    subscriptionPlans,
-    availablePlans,
-    selectedPlanId,
-    setSelectedPlanId,
-    currency,
-    setCurrency,
-    showRatio,
-    setShowRatio,
-    viewMode,
-    setViewMode,
-    tokenUnit,
-    setTokenUnit,
-    t,
-  }) => {
-    const [showFilterModal, setShowFilterModal] = useState(false);
-
-    return (
-      <>
-        {isMobile ? (
-          <>
-            <div className='w-full'>
-              <SearchActions
-                sortOrder={sortOrder}
-                setSortOrder={setSortOrder}
-                selectedRowKeys={selectedRowKeys}
-                copyText={copyText}
-                handleChange={handleChange}
-                handleCompositionStart={handleCompositionStart}
-                handleCompositionEnd={handleCompositionEnd}
-                isMobile={isMobile}
-                searchValue={searchValue}
-                setShowFilterModal={setShowFilterModal}
-                showWithRecharge={showWithRecharge}
-                setShowWithRecharge={setShowWithRecharge}
-                priceConvertMode={priceConvertMode}
-                setPriceConvertMode={setPriceConvertMode}
-                subscriptionPlans={subscriptionPlans}
-                availablePlans={availablePlans}
-                selectedPlanId={selectedPlanId}
-                setSelectedPlanId={setSelectedPlanId}
-                currency={currency}
-                setCurrency={setCurrency}
-                showRatio={showRatio}
-                setShowRatio={setShowRatio}
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                tokenUnit={tokenUnit}
-                setTokenUnit={setTokenUnit}
-                t={t}
-              />
-            </div>
-            <PricingFilterModal
-              visible={showFilterModal}
-              onClose={() => setShowFilterModal(false)}
-              sidebarProps={sidebarProps}
-              t={t}
-            />
-          </>
-        ) : (
-          <PricingVendorIntroWithSkeleton
-            sortOrder={sortOrder}
-            setSortOrder={setSortOrder}
-            loading={loading}
-            filterVendor={filterVendor}
-            models={filteredModels}
-            allModels={models}
-            t={t}
-            selectedRowKeys={selectedRowKeys}
-            copyText={copyText}
-            handleChange={handleChange}
-            handleCompositionStart={handleCompositionStart}
-            handleCompositionEnd={handleCompositionEnd}
-            isMobile={isMobile}
-            searchValue={searchValue}
-            setShowFilterModal={setShowFilterModal}
-            showWithRecharge={showWithRecharge}
-            setShowWithRecharge={setShowWithRecharge}
-            priceConvertMode={priceConvertMode}
-            setPriceConvertMode={setPriceConvertMode}
-            subscriptionPlans={subscriptionPlans}
-            availablePlans={availablePlans}
-            selectedPlanId={selectedPlanId}
-            setSelectedPlanId={setSelectedPlanId}
-            currency={currency}
-            setCurrency={setCurrency}
-            showRatio={showRatio}
-            setShowRatio={setShowRatio}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            tokenUnit={tokenUnit}
-            setTokenUnit={setTokenUnit}
-          />
-        )}
-      </>
-    );
-  },
-);
-
-PricingTopSection.displayName = 'PricingTopSection';
+const PricingTopSection = ({ sidebarProps, ...props }) => {
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const { filterGroup, t } = sidebarProps;
+  return (
+    <>
+      <h1 className='text-xl font-semibold mb-3'>{t('模型广场')}</h1>
+      <SearchActions {...props} setShowFilterModal={setShowFilterModal} />
+      <p className='pricing-price-context' aria-live='polite'>
+        {filterGroup === 'all'
+          ? t('全部分组：每个模型展示其最低适用倍率价格')
+          : t('当前分组：{{group}} · 价格已包含分组倍率', {
+              group: filterGroup,
+            })}
+      </p>
+      <PricingFilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        sidebarProps={sidebarProps}
+        t={t}
+      />
+    </>
+  );
+};
 
 export default PricingTopSection;
