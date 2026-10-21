@@ -1,6 +1,7 @@
 # Agent Note: 分组健康颜色独立于统计与描述
 
 Status: implemented
+Archived: 2026-10-22
 
 ## Problem
 

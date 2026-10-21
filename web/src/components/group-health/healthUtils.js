@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 export const HEALTH_MIN_SAMPLES = 30;
+export const HEALTH_HEALTHY_RATE = 95;
+export const HEALTH_WARNING_RATE = 80;
 
 export function formatHealthLatency(value) {
   if (value == null || !Number.isFinite(Number(value)) || Number(value) < 0)
@@ -64,29 +66,29 @@ export function selectHealthGroups({
 }
 
 export function healthTone(stats) {
-  if (!stats?.request_count || stats?.success_rate == null) return 'empty';
-  if (stats.request_count < HEALTH_MIN_SAMPLES) return 'limited';
-  if (stats.success_rate >= 99) return 'healthy';
-  if (stats.success_rate >= 90) return 'warning';
-  return 'degraded';
-}
-
-// Colors have their own policy; keep measured rates and status wording intact.
-export function healthColorTone(stats) {
   const requestCount = Number(stats?.request_count);
   if (
     stats?.request_count == null ||
     !Number.isFinite(requestCount) ||
-    requestCount < 0
+    requestCount <= 0
   )
     return 'empty';
-  if (requestCount < 100) return 'healthy';
   const successRate = Number(stats?.success_rate);
-  if (stats?.success_rate == null || !Number.isFinite(successRate))
+  if (
+    stats?.success_rate == null ||
+    !Number.isFinite(successRate) ||
+    successRate < 0 ||
+    successRate > 100
+  )
     return 'empty';
-  if (successRate >= 95) return 'healthy';
-  if (successRate >= 80) return 'warning';
+  if (successRate >= HEALTH_HEALTHY_RATE) return 'healthy';
+  if (successRate >= HEALTH_WARNING_RATE) return 'warning';
   return 'degraded';
+}
+
+export function isHealthSampleLimited(stats) {
+  const count = Number(stats?.request_count);
+  return healthTone(stats) !== 'empty' && count < HEALTH_MIN_SAMPLES;
 }
 
 export function getHealthLatency(stats, metric = 'ttft') {

@@ -22,11 +22,13 @@ import { Button, Spin, Tag } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import {
   HEALTH_MIN_SAMPLES,
+  HEALTH_HEALTHY_RATE,
+  HEALTH_WARNING_RATE,
   formatHealthLatency,
   formatHealthRate,
   getHealthLatency,
-  healthColorTone,
   healthTone,
+  isHealthSampleLimited,
 } from './healthUtils';
 import './style.css';
 
@@ -108,7 +110,7 @@ export function GroupHealthSummary({
   const { t } = useTranslation();
   const latency = getHealthLatency(stats, metric);
   const hasSamples = Number(stats?.request_count) > 0;
-  const limited = hasSamples && stats.request_count < HEALTH_MIN_SAMPLES;
+  const limited = isHealthSampleLimited(stats);
   if (compact)
     return (
       <span className='group-health-inline'>
@@ -118,7 +120,9 @@ export function GroupHealthSummary({
           <>
             <span>
               {t('成功率')}{' '}
-              <strong>{formatHealthRate(stats.success_rate)}</strong>
+              <strong className={`group-health-text-${healthTone(stats)}`}>
+                {formatHealthRate(stats.success_rate)}
+              </strong>
             </span>
             <span>
               {metric === 'completion' ? t('平均完成') : t('首字均值')}{' '}
@@ -141,7 +145,7 @@ export function GroupHealthSummary({
       <div>
         <span className='group-health-label'>{t('成功率')}</span>
         <strong
-          className={`group-health-number group-health-text-${healthColorTone(stats)}`}
+          className={`group-health-number group-health-text-${healthTone(stats)}`}
         >
           {formatHealthRate(stats?.success_rate)}
         </strong>
@@ -193,11 +197,12 @@ export function GroupHealthPanel({
   const tone = healthTone(stats);
   const labels = {
     empty: t('暂无样本'),
-    limited: t('样本不足'),
     healthy: t('运行稳定'),
     warning: t('部分波动'),
     degraded: t('失败较多'),
   };
+  const statusDescription = (value) =>
+    `${labels[healthTone(value)]}${isHealthSampleLimited(value) ? ` · ${t('样本不足')}` : ''}`;
   return (
     <section className='group-health-panel'>
       {showTitle && (
@@ -211,11 +216,14 @@ export function GroupHealthPanel({
                 {ratio}x
               </Tag>
             )}
-            <span
-              className={`group-health-badge group-health-badge-${healthColorTone(stats)}`}
-            >
+            <span className={`group-health-badge group-health-badge-${tone}`}>
               {labels[tone]}
             </span>
+            {isHealthSampleLimited(stats) && (
+              <span className='group-health-badge group-health-badge-limited'>
+                {t('样本不足')}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -229,9 +237,9 @@ export function GroupHealthPanel({
           <button
             key={bucket.ts}
             type='button'
-            className={`group-health-bar group-health-bar-${healthColorTone(bucket)}`}
-            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${t('{{count}} 次调用', { count: bucket.request_count || 0 })} · ${labels[healthTone(bucket)]}`}
-            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${labels[healthTone(bucket)]}`}
+            className={`group-health-bar group-health-bar-${healthTone(bucket)}`}
+            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${t('{{count}} 次调用', { count: bucket.request_count || 0 })} · ${statusDescription(bucket)}`}
+            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)}`}
             aria-pressed={selectedTs === bucket.ts}
             aria-controls={detailsId}
             onClick={() =>
@@ -282,27 +290,33 @@ export function GroupHealthPanel({
 export function GroupHealthLegend() {
   const { t } = useTranslation();
   return (
-    <div className='group-health-legend'>
-      <span>
-        <i className='group-health-bar-healthy' />
-        {t('成功率 ≥ 99%')}
-      </span>
-      <span>
-        <i className='group-health-bar-warning' />
-        {t('90%–99%')}
-      </span>
-      <span>
-        <i className='group-health-bar-degraded' />
-        {t('成功率 < 90%')}
-      </span>
-      <span>
-        <i className='group-health-bar-limited' />
-        {t('不足 30 次')}
-      </span>
-      <span>
-        <i className='group-health-bar-empty' />
-        {t('暂无样本')}
-      </span>
-    </div>
+    <>
+      <div className='group-health-legend'>
+        <span>
+          <i className='group-health-bar-healthy' />
+          {t('成功率 ≥ {{rate}}%', { rate: HEALTH_HEALTHY_RATE })}
+        </span>
+        <span>
+          <i className='group-health-bar-warning' />
+          {t('{{min}}% ≤ 成功率 < {{max}}%', {
+            min: HEALTH_WARNING_RATE,
+            max: HEALTH_HEALTHY_RATE,
+          })}
+        </span>
+        <span>
+          <i className='group-health-bar-degraded' />
+          {t('成功率 < {{rate}}%', { rate: HEALTH_WARNING_RATE })}
+        </span>
+        <span>
+          <i className='group-health-bar-empty' />
+          {t('暂无样本')}
+        </span>
+      </div>
+      <p className='group-health-note'>
+        {t('少于 {{count}} 次调用时提示样本不足，颜色仍按实际成功率显示。', {
+          count: HEALTH_MIN_SAMPLES,
+        })}
+      </p>
+    </>
   );
 }

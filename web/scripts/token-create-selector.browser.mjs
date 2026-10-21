@@ -15,7 +15,10 @@ const files = [
   path.join(root, prefix + '.html'),
   path.join(root, prefix + '.jsx'),
 ];
-const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), 'token-selector-qa-'));
+const artifacts = process.env.TOKEN_SELECTOR_ARTIFACTS_DIR
+  ? path.resolve(process.env.TOKEN_SELECTOR_ARTIFACTS_DIR)
+  : fs.mkdtempSync(path.join(os.tmpdir(), 'token-selector-qa-'));
+fs.mkdirSync(artifacts, { recursive: true });
 let server, browser, page;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 try {
@@ -70,6 +73,32 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'Claude · 优质': { desc: '<script>不得执行</script> 后台原文', ratio: 0 },
     auto: { desc: '按配置选择可用分组', ratio: '自动' },
   };
+  const currentHour = Math.floor(Date.now() / 3600000) * 3600;
+  const healthStats = (requestCount, successCount) => ({
+    request_count: requestCount,
+    success_count: successCount,
+    failure_count: requestCount - successCount,
+    success_rate: requestCount ? (successCount / requestCount) * 100 : null,
+    avg_ttft_ms: successCount ? 5200 : null,
+    ttft_count: successCount,
+    cache_hit_rate: successCount ? 60 : null,
+    cache_sample_count: successCount,
+  });
+  const healthGroups = [
+    ['OpenAI · 优质', 40, 38],
+    ['OpenAI · 独享账号', 7, 1],
+    ['Claude · 优质', 0, 0],
+  ].map(([group, requestCount, successCount]) => ({
+    group,
+    ...healthStats(requestCount, successCount),
+    series: Array.from({ length: 24 }, (_, index) => ({
+      ts: currentHour - (23 - index) * 3600,
+      ...healthStats(
+        index === 0 ? requestCount : 0,
+        index === 0 ? successCount : 0,
+      ),
+    })),
+  }));
   let failGroups = false,
     failModels = false,
     failSave = false,
@@ -162,7 +191,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     else if (url.pathname === '/api/token/99')
       data = structuredClone(savedToken);
     else if (url.pathname === '/api/health/groups')
-      data = { enabled: false, groups: [] };
+      data = { enabled: true, groups: structuredClone(healthGroups) };
     await route.fulfill({ json: { success: true, data } });
   });
   await page.addInitScript(() => {
@@ -309,6 +338,72 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'openai-test',
     'openai-test',
   ]);
+  const health = page.locator('.token-group-health');
+  const healthSummary = health.locator('.token-group-health-line');
+  const lowRate = healthSummary.locator('strong.group-health-text-degraded');
+  assert.equal(await lowRate.textContent(), '14.29%');
+  assert.equal(
+    await healthSummary.getByText('样本不足', { exact: true }).count(),
+    1,
+  );
+  assert.notEqual(
+    await lowRate.evaluate((element) => getComputedStyle(element).color),
+    await healthSummary
+      .locator('strong:not([class])')
+      .first()
+      .evaluate((element) => getComputedStyle(element).color),
+    'token health color must not be overridden by default metric styling',
+  );
+  await health.getByRole('button', { name: /趋势/ }).click();
+  for (const text of ['成功率 ≥ 95%', '80% ≤ 成功率 < 95%', '成功率 < 80%'])
+    assert(
+      await health
+        .locator('.group-health-legend')
+        .getByText(text, { exact: true })
+        .isVisible(),
+    );
+  assert(
+    await health
+      .getByText('少于 30 次调用时提示样本不足，颜色仍按实际成功率显示。', {
+        exact: true,
+      })
+      .isVisible(),
+  );
+  const lowHour = health.locator('button.group-health-bar-degraded');
+  assert.equal(await lowHour.count(), 1);
+  assert.equal(
+    await health.locator('button.group-health-bar-empty').count(),
+    23,
+  );
+  assert.match(
+    await lowHour.getAttribute('aria-label'),
+    /14\.29%.*7 次调用.*失败较多 · 样本不足/,
+  );
+  await lowHour.click();
+  assert.equal(
+    await health
+      .locator('.group-health-bucket strong.group-health-text-degraded')
+      .textContent(),
+    '14.29%',
+  );
+  assert(
+    await health
+      .locator('.group-health-bucket')
+      .getByText('样本不足', { exact: true })
+      .isVisible(),
+  );
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'OpenAI · 独享账号',
+  );
+  await health.screenshot({
+    path: path.join(artifacts, 'token-health-limited.png'),
+    animations: 'disabled',
+    style: '.semi-toast-wrapper { visibility:hidden !important; }',
+  });
+  console.log(
+    'PASS token low-sample rate, independent sample notice, shared legend and hourly colors; selection unchanged',
+  );
   await page.getByText('查看详情', { exact: true }).click();
   console.log(
     'PASS whole-row selection, independent expansion, text selection and truthful clipboard feedback',
@@ -444,6 +539,48 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     .getByRole('button', { name: '复制模型名称 claude-test', exact: true })
     .waitFor({ state: 'visible' });
   assert.equal(await page.getByText(/stale-model/).count(), 0);
+  const emptyRate = healthSummary.locator('strong.group-health-text-empty');
+  assert.equal(await emptyRate.textContent(), '—');
+  assert.equal(
+    await healthSummary.getByText('样本不足', { exact: true }).count(),
+    0,
+  );
+  assert.equal(
+    await emptyRate.evaluate((element) => getComputedStyle(element).color),
+    await healthSummary
+      .locator('.token-group-health-metrics')
+      .evaluate((element) => getComputedStyle(element).color),
+    'empty health rate should use the muted gray color',
+  );
+  await health.getByRole('button', { name: /趋势/ }).click();
+  assert.equal(
+    await health.locator('button.group-health-bar-empty').count(),
+    24,
+  );
+  assert.equal(
+    await health.locator('button.group-health-bar-healthy').count(),
+    0,
+  );
+  await health.locator('button.group-health-bar-empty').first().click();
+  assert(
+    await health
+      .locator('.group-health-bucket .group-health-inline')
+      .getByText('暂无样本', { exact: true })
+      .isVisible(),
+  );
+  assert.equal(await health.getByText('样本不足', { exact: true }).count(), 0);
+  assert.equal(
+    await page.getByRole('radio', { checked: true }).inputValue(),
+    'Claude · 优质',
+  );
+  await health.screenshot({
+    path: path.join(artifacts, 'token-health-empty.png'),
+    animations: 'disabled',
+    style: '.semi-toast-wrapper { visibility:hidden !important; }',
+  });
+  console.log(
+    'PASS token zero-sample gray, no limited-sample notice, empty hourly details; selection unchanged',
+  );
   await create().click();
   await delay(200);
   assert.equal(writes.at(-1).group, 'Claude · 优质');

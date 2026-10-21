@@ -26,6 +26,7 @@
 }
 .group-health-tags {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
@@ -100,9 +101,11 @@
   line-height: 1.6;
 }
 .group-health-inline strong {
-  color: var(--semi-color-text-1);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+.group-health-inline strong:not([class]) {
+  color: var(--semi-color-text-1);
 }
 .group-health-trend-heading,
 .group-health-axis {
@@ -154,9 +157,6 @@
 }
 .group-health-bar-degraded {
   --health-bar-color: #ed6d68;
-}
-.group-health-bar-limited {
-  --health-bar-color: #afbdd1;
 }
 .group-health-bar-empty {
   --health-bar-color: var(--semi-color-fill-1);

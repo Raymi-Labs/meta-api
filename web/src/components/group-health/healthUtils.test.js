@@ -23,29 +23,15 @@ import {
   formatHealthLatency,
   formatHealthRate,
   getHealthLatency,
-  healthColorTone,
   healthTone,
+  isHealthSampleLimited,
   resolveGroupHealthMetric,
   selectHealthGroups,
 } from './healthUtils.js';
 
 describe('group health display semantics', () => {
-  test('colors fewer than 100 requests as successful without rewriting statistics', () => {
-    for (const request_count of [0, 1, 29, 30, 99]) {
-      for (const success_rate of [null, 0, 50, 100]) {
-        const stats = Object.freeze({ request_count, success_rate });
-        assert.equal(healthColorTone(stats), 'healthy');
-        assert.equal(stats.success_rate, success_rate);
-        assert.equal(
-          formatHealthRate(stats.success_rate),
-          success_rate == null ? '—' : `${success_rate.toFixed(2)}%`,
-        );
-      }
-    }
-  });
-
-  test('uses the 95 and 80 percent boundaries once there are 100 requests', () => {
-    for (const request_count of [100, 101, 10000]) {
+  test('uses the same measured-rate boundaries for every positive sample size', () => {
+    for (const request_count of [1, 7, 29, 30, 99, 100, 101, 10000]) {
       for (const [success_rate, expected] of [
         [100, 'healthy'],
         [95, 'healthy'],
@@ -54,44 +40,48 @@ describe('group health display semantics', () => {
         [79.99, 'degraded'],
         [0, 'degraded'],
       ]) {
+        const stats = Object.freeze({ request_count, success_rate });
+        assert.equal(healthTone(stats), expected);
+        assert.equal(stats.success_rate, success_rate);
         assert.equal(
-          healthColorTone({ request_count, success_rate }),
-          expected,
+          formatHealthRate(stats.success_rate),
+          `${success_rate.toFixed(2)}%`,
         );
       }
     }
     assert.equal(
-      healthColorTone({ request_count: '100', success_rate: '80' }),
+      healthTone({ request_count: '7', success_rate: '80' }),
       'warning',
     );
   });
 
-  test('keeps missing or invalid data unknown without changing status descriptions', () => {
+  test('keeps absent, zero, and invalid samples gray rather than marking them healthy', () => {
     for (const stats of [
       undefined,
       {},
       { request_count: null },
+      { request_count: 0, success_rate: null },
+      { request_count: 0, success_rate: 100 },
+      { request_count: '0', success_rate: 0 },
       { request_count: -1 },
       { request_count: NaN },
+      { request_count: Infinity, success_rate: 100 },
+      { request_count: -Infinity, success_rate: 0 },
+      { request_count: 'invalid', success_rate: 100 },
+      { request_count: 7 },
+      { request_count: 7, success_rate: null },
+      { request_count: 7, success_rate: NaN },
       { request_count: 100, success_rate: null },
       { request_count: 100, success_rate: NaN },
+      { request_count: 100, success_rate: Infinity },
+      { request_count: 100, success_rate: -Infinity },
+      { request_count: 100, success_rate: -0.01 },
+      { request_count: 100, success_rate: 100.01 },
+      { request_count: 100, success_rate: 'invalid' },
     ]) {
-      assert.equal(healthColorTone(stats), 'empty');
+      assert.equal(healthTone(stats), 'empty');
+      assert.equal(isHealthSampleLimited(stats), false);
     }
-    assert.equal(healthTone({ request_count: 0, success_rate: null }), 'empty');
-    assert.equal(healthTone({ request_count: 29, success_rate: 0 }), 'limited');
-    assert.equal(
-      healthTone({ request_count: 99, success_rate: 0 }),
-      'degraded',
-    );
-    assert.equal(
-      healthTone({ request_count: 100, success_rate: 95 }),
-      'warning',
-    );
-    assert.equal(
-      healthTone({ request_count: 100, success_rate: 80 }),
-      'degraded',
-    );
   });
 
   test('distinguishes missing samples from measured zero success or latency', () => {
@@ -105,32 +95,40 @@ describe('group health display semantics', () => {
     assert.equal(formatHealthLatency(1234), '1.23 s');
   });
 
-  test('does not label low-volume 100% traffic as stable or empty traffic as failed', () => {
-    assert.equal(healthTone({ request_count: 0, success_rate: null }), 'empty');
-    assert.equal(
-      healthTone({ request_count: 29, success_rate: 100 }),
-      'limited',
-    );
-    assert.equal(
-      healthTone({ request_count: 30, success_rate: 99 }),
-      'healthy',
-    );
-    assert.equal(
-      healthTone({ request_count: 30, success_rate: 98.99 }),
-      'warning',
-    );
-    assert.equal(
-      healthTone({ request_count: 30, success_rate: 90 }),
-      'warning',
-    );
-    assert.equal(
-      healthTone({ request_count: 30, success_rate: 89.99 }),
-      'degraded',
-    );
-    assert.equal(
-      healthTone({ request_count: 30, success_rate: 0 }),
-      'degraded',
-    );
+  test('reports sample limitations separately from the measured health tone', () => {
+    for (const request_count of [1, 7, 29, '29']) {
+      for (const success_rate of [0, 80, 95, 100]) {
+        assert.equal(
+          isHealthSampleLimited({ request_count, success_rate }),
+          true,
+        );
+      }
+    }
+    for (const request_count of [30, 99, 100, 10000]) {
+      assert.equal(
+        isHealthSampleLimited({ request_count, success_rate: 0 }),
+        false,
+      );
+    }
+  });
+
+  test('shows the reported Kimi daily and hourly failures with the same tone', () => {
+    const daily = Object.freeze({
+      request_count: 201,
+      success_count: 65,
+      success_rate: (65 / 201) * 100,
+    });
+    const hour = Object.freeze({
+      request_count: 7,
+      success_count: 1,
+      success_rate: (1 / 7) * 100,
+    });
+    assert.equal(formatHealthRate(daily.success_rate), '32.34%');
+    assert.equal(formatHealthRate(hour.success_rate), '14.29%');
+    assert.equal(healthTone(daily), 'degraded');
+    assert.equal(healthTone(hour), 'degraded');
+    assert.equal(isHealthSampleLimited(daily), false);
+    assert.equal(isHealthSampleLimited(hour), true);
   });
 
   test('keeps first-output and completed-image populations independent', () => {

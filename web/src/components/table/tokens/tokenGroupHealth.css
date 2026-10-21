@@ -49,9 +49,12 @@
 }
 
 .token-group-health-metrics strong {
-  color: var(--semi-color-text-0);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.token-group-health-metrics strong:not([class]) {
+  color: var(--semi-color-text-0);
 }
 
 .token-group-health {

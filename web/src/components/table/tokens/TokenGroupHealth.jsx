@@ -28,13 +28,18 @@ import { useTranslation } from 'react-i18next';
 import { renderRatio } from '../../../helpers';
 import {
   GroupHealthCollectionNote,
+  GroupHealthLegend,
   GroupHealthPanel,
   GroupHealthScopeNote,
   formatHealthLatency,
   formatHealthRate,
   resolveGroupHealthMetric,
 } from '../../group-health';
-import { getHealthLatency } from '../../group-health/healthUtils';
+import {
+  getHealthLatency,
+  healthTone,
+  isHealthSampleLimited,
+} from '../../group-health/healthUtils';
 import './tokenGroupHealth.css';
 
 const { Text } = Typography;
@@ -45,7 +50,10 @@ function TokenGroupHealthMetrics({ stats, metric }) {
   return (
     <span className='token-group-health-metrics'>
       <span>
-        {t('成功率')} <strong>{formatHealthRate(stats?.success_rate)}</strong>
+        {t('成功率')}{' '}
+        <strong className={`group-health-text-${healthTone(stats)}`}>
+          {formatHealthRate(stats?.success_rate)}
+        </strong>
       </span>
       <span>
         {metric === 'completion' ? t('平均完成') : t('首字')}{' '}
@@ -54,6 +62,9 @@ function TokenGroupHealthMetrics({ stats, metric }) {
       <span title={t('缓存命中率')}>
         {t('缓存')} <strong>{formatHealthRate(stats?.cache_hit_rate)}</strong>
       </span>
+      {isHealthSampleLimited(stats) && (
+        <span className='group-health-muted'>{t('样本不足')}</span>
+      )}
     </span>
   );
 }
@@ -256,6 +267,7 @@ export const TokenGroupHealth = ({
           >
             {expanded ? (
               <>
+                <GroupHealthLegend />
                 <GroupHealthPanel
                   stats={stats || { group, series: [] }}
                   metric={metric}
