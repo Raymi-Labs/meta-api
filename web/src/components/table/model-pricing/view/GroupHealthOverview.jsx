@@ -74,7 +74,7 @@ const GroupHealthOverview = ({
         <div>
           <div className='group-health-toolbar-title'>{t('分组健康')}</div>
           <div className='group-health-caption'>
-            {t('近 24 小时 · 每分钟更新')}
+            {t('最近 24 个小时段 · 每分钟更新')}
             {data?.updated_at
               ? ` · ${t('最近采样')} ${new Date(data.updated_at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
               : ''}
@@ -157,7 +157,7 @@ const GroupHealthOverview = ({
               )}
               <GroupHealthScopeNote />
               <p className='group-health-note'>
-                {t('仅展示你可用的分组。灰色表示无样本。')}
+                {t('仅展示你可用的分组。灰色表示无有效统计样本。')}
               </p>
             </>
           )}

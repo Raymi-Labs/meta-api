@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -137,6 +138,19 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		return
 	}
 
+	var healthRequest *grouphealth.Request
+	var healthWriter *groupHealthWriter
+	if grouphealth.SupportsRequest(c.Request.Method, c.Request.URL.Path) {
+		healthRequest = grouphealth.NewRequest(relayInfo.OriginModelName, relayInfo.IsStream)
+		healthWriter = &groupHealthWriter{ResponseWriter: c.Writer}
+		c.Writer = healthWriter
+		defer func() {
+			healthRequest.ObserveUnrecordedFailure(relayInfo.UsingGroup, service.NormalizeClientCancellation(c, newAPIError))
+			healthRequest.Finish()
+			c.Writer = healthWriter.ResponseWriter
+		}()
+	}
+
 	c.Set(service.RequestLogStreamKey, relayInfo.IsStream)
 	defer func() {
 		success := newAPIError == nil && c.Request.Context().Err() == nil && c.Writer.Status() < 400 && relayInfo.StreamStatus.IsSuccessful()
@@ -169,6 +183,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 				Type:    "content_safety_cooldown",
 				Code:    "content_safety_cooldown",
 			}, http.StatusTooManyRequests, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+			healthRequest.ExcludeUserError(relayInfo.UsingGroup)
 			return
 		}
 	}
@@ -189,6 +204,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if contains {
 			logger.LogWarn(c, fmt.Sprintf("user sensitive words detected: %s", strings.Join(words, ", ")))
 			newAPIError = types.NewError(err, types.ErrorCodeSensitiveWordsDetected)
+			healthRequest.ExcludeUserError(relayInfo.UsingGroup)
 			return
 		}
 	}
@@ -242,12 +258,6 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		Retry:           common.GetPointer(0),
 	}
 
-	var healthRequest *grouphealth.Request
-	if grouphealth.SupportsRequest(c.Request.Method, c.Request.URL.Path) {
-		healthRequest = grouphealth.NewRequest(relayInfo.OriginModelName, relayInfo.IsStream)
-		defer healthRequest.Finish()
-	}
-
 	// lastRelayError 保留最近一次上游错误，避免重试找不到新渠道时用 (retry) 错误覆盖原始错误。
 	var lastRelayError *types.NewAPIError
 
@@ -258,9 +268,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 		channel, releaseSlot, channelErr, overloadControl := selectChannelWithConcurrency(c, relayInfo, retryParam)
 		if channelErr != nil {
-			if healthRequest != nil && (channelErr.StatusCode >= 500 || channelErr.StatusCode == http.StatusTooManyRequests) {
-				healthRequest.Failure(relayInfo.UsingGroup)
-			}
+			healthRequest.ObserveFailure(relayInfo.UsingGroup, channelErr)
 			logger.LogError(c, channelErr.Error())
 			if overloadControl {
 				// Layer C 过载控制的终态错误（429/503 / 客户端断开）：直接采用，
@@ -299,6 +307,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			c.Request.Body = io.NopCloser(bodyStorage)
 			if healthRequest != nil {
 				grouphealth.ResetAttempt(relayInfo)
+				healthWriter.beginAttempt()
 			}
 
 			switch relayFormat {
@@ -316,7 +325,13 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			break
 		}
 		newAPIError = service.NormalizeClientCancellation(c, newAPIError)
-		healthRequest.ObserveResult(relayInfo, newAPIError, c.Request.Context().Err() == nil, time.Now())
+		healthErr := newAPIError
+		if healthErr == nil && !healthWriter.delivered() && errors.Is(c.Request.Context().Err(), context.Canceled) {
+			// A disconnected response with no successful write is still unknown,
+			// not proof of an intentional user stop. Only health attribution changes.
+			healthErr = types.NewClientCanceledError()
+		}
+		healthRequest.ObserveResult(relayInfo, healthErr, healthWriter.delivered(), time.Now())
 
 		if newAPIError == nil {
 			service.ClearUserScopedCircuit(c, channel)

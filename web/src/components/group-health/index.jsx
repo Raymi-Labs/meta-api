@@ -26,6 +26,7 @@ import {
   HEALTH_WARNING_RATE,
   formatHealthLatency,
   formatHealthRate,
+  getHealthCounts,
   getHealthLatency,
   healthTone,
   isHealthSampleLimited,
@@ -38,6 +39,63 @@ export {
   resolveGroupHealthMetric,
   selectHealthGroups,
 } from './healthUtils';
+
+export function formatHealthOutcomeDescription(stats, t) {
+  const counts = getHealthCounts(stats);
+  return [
+    t('已观测 {{observed}} 次 · 计入统计 {{included}} 次', {
+      observed: counts.observed,
+      included: counts.request,
+    }),
+    t('成功 {{success}} · 服务失败 {{service}} · 未归因失败 {{unknown}}', {
+      success: counts.success,
+      service: counts.service,
+      unknown: counts.unknown,
+    }),
+    counts.disconnected > 0 &&
+      t('客户端断开 {{count}} 次（包含在未归因失败中）', {
+        count: counts.disconnected,
+      }),
+    counts.excluded > 0 &&
+      t('已排除用户错误 {{count}} 次', { count: counts.excludedUser }),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export function GroupHealthCountNotice({ stats }) {
+  const { t } = useTranslation();
+  const counts = getHealthCounts(stats);
+  const notices = [
+    counts.unknown > 0 && t('未归因 {{count}} 次', { count: counts.unknown }),
+    counts.excluded > 0 && t('已排除 {{count}} 次', { count: counts.excluded }),
+  ].filter(Boolean);
+  return notices.length ? (
+    <span className='group-health-count-notice group-health-muted'>
+      {notices.join(' · ')}
+    </span>
+  ) : null;
+}
+
+export function GroupHealthOutcomeDetails({ stats }) {
+  const { t } = useTranslation();
+  return (
+    <div className='group-health-caption'>
+      {formatHealthOutcomeDescription(stats, t)}
+      <p className='group-health-note'>
+        {t(
+          '成功率为成功次数除以计入统计的次数；服务失败和未归因失败均计入，明确的用户错误排除。',
+        )}{' '}
+        {t(
+          '历史未分类失败归入未归因失败；客户端断开包含在未归因失败中，不能视为主动取消。',
+        )}
+      </p>
+    </div>
+  );
+}
+
+const emptyHealthLabel = (stats, t) =>
+  getHealthCounts(stats).observed > 0 ? t('无有效统计样本') : t('暂无调用');
 
 const timeLabel = (ts) =>
   new Date(ts * 1000).toLocaleTimeString([], {
@@ -78,6 +136,7 @@ export function GroupHealthScopeNote() {
   return (
     <p className='group-health-note'>
       {t('平台分组统计，不限于个人请求。')}{' '}
+      {t('统计覆盖当前小时及此前 23 个完整小时，当前小时尚未结束。')}{' '}
       {t(
         '同组重试合并统计；跨组重试分别记录各组结果。首字均值仅统计成功流式请求，含排队和重试等待。',
       )}{' '}
@@ -109,13 +168,17 @@ export function GroupHealthSummary({
 }) {
   const { t } = useTranslation();
   const latency = getHealthLatency(stats, metric);
-  const hasSamples = Number(stats?.request_count) > 0;
+  const counts = getHealthCounts(stats);
+  const hasSamples = counts.request > 0;
   const limited = isHealthSampleLimited(stats);
   if (compact)
     return (
-      <span className='group-health-inline'>
+      <span
+        className='group-health-inline'
+        title={formatHealthOutcomeDescription(stats, t)}
+      >
         {!hasSamples ? (
-          t('暂无样本')
+          emptyHealthLabel(stats, t)
         ) : (
           <>
             <span>
@@ -138,6 +201,7 @@ export function GroupHealthSummary({
             )}
           </>
         )}
+        <GroupHealthCountNotice stats={stats} />
       </span>
     );
   return (
@@ -149,12 +213,16 @@ export function GroupHealthSummary({
         >
           {formatHealthRate(stats?.success_rate)}
         </strong>
-        <span className='group-health-caption'>
+        <span
+          className='group-health-caption'
+          title={formatHealthOutcomeDescription(stats, t)}
+        >
           {hasSamples
-            ? t('{{count}} 次调用', { count: stats.request_count })
-            : t('暂无样本')}
+            ? t('计入统计 {{count}} 次', { count: counts.request })
+            : emptyHealthLabel(stats, t)}
           {limited ? ` · ${t('样本不足')}` : ''}
         </span>
+        <GroupHealthCountNotice stats={stats} />
       </div>
       <div>
         <span className='group-health-label'>
@@ -196,13 +264,16 @@ export function GroupHealthPanel({
   const selected = series.find((bucket) => bucket.ts === selectedTs);
   const tone = healthTone(stats);
   const labels = {
-    empty: t('暂无样本'),
     healthy: t('运行稳定'),
     warning: t('部分波动'),
     degraded: t('失败较多'),
   };
+  const statusLabel = (value) =>
+    healthTone(value) === 'empty'
+      ? emptyHealthLabel(value, t)
+      : labels[healthTone(value)];
   const statusDescription = (value) =>
-    `${labels[healthTone(value)]}${isHealthSampleLimited(value) ? ` · ${t('样本不足')}` : ''}`;
+    `${statusLabel(value)}${isHealthSampleLimited(value) ? ` · ${t('样本不足')}` : ''}`;
   return (
     <section className='group-health-panel'>
       {showTitle && (
@@ -217,7 +288,7 @@ export function GroupHealthPanel({
               </Tag>
             )}
             <span className={`group-health-badge group-health-badge-${tone}`}>
-              {labels[tone]}
+              {statusLabel(stats)}
             </span>
             {isHealthSampleLimited(stats) && (
               <span className='group-health-badge group-health-badge-limited'>
@@ -228,8 +299,12 @@ export function GroupHealthPanel({
         </div>
       )}
       <GroupHealthSummary stats={stats} metric={metric} />
+      <details className='group-health-outcomes'>
+        <summary>{t('统计明细')}</summary>
+        <GroupHealthOutcomeDetails stats={stats} />
+      </details>
       <div className='group-health-trend-heading'>
-        <span>{t('近 24 小时成功率')}</span>
+        <span>{t('最近 24 个小时段成功率')}</span>
         <span>{t('点击时段查看详情')}</span>
       </div>
       <div className='group-health-bars' aria-label={t('每格代表一小时')}>
@@ -238,8 +313,8 @@ export function GroupHealthPanel({
             key={bucket.ts}
             type='button'
             className={`group-health-bar group-health-bar-${healthTone(bucket)}`}
-            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${t('{{count}} 次调用', { count: bucket.request_count || 0 })} · ${statusDescription(bucket)}`}
-            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)}`}
+            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
+            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
             aria-pressed={selectedTs === bucket.ts}
             aria-controls={detailsId}
             onClick={() =>
@@ -260,15 +335,11 @@ export function GroupHealthPanel({
             <strong>
               {dateLabel(selected.ts)}–{timeLabel(selected.ts + 3600)}
             </strong>
-            <span>{labels[healthTone(selected)]}</span>
+            <span>{statusLabel(selected)}</span>
           </div>
           <GroupHealthSummary stats={selected} metric={metric} compact />
+          <GroupHealthOutcomeDetails stats={selected} />
           <div className='group-health-caption'>
-            {t('成功 {{success}} · 失败 {{failure}}', {
-              success: selected.success_count || 0,
-              failure: selected.failure_count || 0,
-            })}{' '}
-            ·{' '}
             {t('{{count}} 个有效样本', {
               count: getHealthLatency(selected, metric).count,
             })}
@@ -278,7 +349,7 @@ export function GroupHealthPanel({
           </div>
         </div>
       )}
-      {!Number(stats?.request_count) && (
+      {!getHealthCounts(stats).observed && (
         <p className='group-health-note'>
           {t('该时段暂无调用记录，产生新请求后显示统计。')}
         </p>
@@ -309,13 +380,16 @@ export function GroupHealthLegend() {
         </span>
         <span>
           <i className='group-health-bar-empty' />
-          {t('暂无样本')}
+          {t('无有效统计样本')}
         </span>
       </div>
       <p className='group-health-note'>
-        {t('少于 {{count}} 次调用时提示样本不足，颜色仍按实际成功率显示。', {
-          count: HEALTH_MIN_SAMPLES,
-        })}
+        {t(
+          '计入统计少于 {{count}} 次时提示样本不足，颜色仍按实际成功率显示。',
+          {
+            count: HEALTH_MIN_SAMPLES,
+          },
+        )}
       </p>
     </>
   );

@@ -69,7 +69,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
       {!error && data && data.enabled !== false && (
         <>
           <div className='group-health-caption' style={{ marginBottom: 10 }}>
-            {modelName} · {t('近 24 小时 · 每分钟更新')}
+            {modelName} · {t('最近 24 个小时段 · 每分钟更新')}
           </div>
           <GroupHealthLegend />
           <div className='group-health-stack'>
@@ -106,7 +106,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
           <div className='group-health-price-summary'>
             <div className='group-health-price-summary-heading'>
               <span>
-                {t('该模型的分组表现')} · {t('近 24 小时')}
+                {t('该模型的分组表现')} · {t('最近 24 个小时段')}
               </span>
               <Button
                 size='small'

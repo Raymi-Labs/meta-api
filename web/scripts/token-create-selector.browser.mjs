@@ -88,17 +88,60 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     ['OpenAI · 优质', 40, 38],
     ['OpenAI · 独享账号', 7, 1],
     ['Claude · 优质', 0, 0],
-  ].map(([group, requestCount, successCount]) => ({
-    group,
-    ...healthStats(requestCount, successCount),
-    series: Array.from({ length: 24 }, (_, index) => ({
-      ts: currentHour - (23 - index) * 3600,
-      ...healthStats(
-        index === 0 ? requestCount : 0,
-        index === 0 ? successCount : 0,
-      ),
-    })),
-  }));
+  ].map(([group, requestCount, successCount]) => {
+    const classifiedStats = (hasCalls) => ({
+      ...healthStats(hasCalls ? requestCount : 0, hasCalls ? successCount : 0),
+      service_failure_count: hasCalls && requestCount > 0 ? 2 : 0,
+      unknown_failure_count: hasCalls && requestCount === 7 ? 4 : 0,
+      client_canceled_count: hasCalls && requestCount === 7 ? 3 : 0,
+      excluded_user_error_count: hasCalls && requestCount === 7 ? 5 : 0,
+      excluded_count: hasCalls && requestCount === 7 ? 5 : 0,
+      observed_count: hasCalls
+        ? requestCount + (requestCount === 7 ? 5 : 0)
+        : 0,
+    });
+    return {
+      group,
+      ...classifiedStats(true),
+      series: Array.from({ length: 24 }, (_, index) => ({
+        ts: currentHour - (23 - index) * 3600,
+        ...classifiedStats(index === 0),
+      })),
+    };
+  });
+  let healthVariant = 'classified';
+  const healthFixture = () => {
+    const result = structuredClone(healthGroups);
+    const claude = result.find(({ group }) => group === 'Claude · 优质');
+    if (healthVariant === 'excluded-only') {
+      const excluded = {
+        ...healthStats(0, 0),
+        service_failure_count: 0,
+        unknown_failure_count: 0,
+        client_canceled_count: 0,
+        excluded_user_error_count: 4,
+        excluded_count: 4,
+        observed_count: 4,
+      };
+      Object.assign(claude, excluded);
+      Object.assign(claude.series[0], excluded);
+    } else if (healthVariant === 'legacy') {
+      const legacy = healthStats(10, 2);
+      const fields = [
+        'service_failure_count',
+        'unknown_failure_count',
+        'client_canceled_count',
+        'excluded_user_error_count',
+        'excluded_count',
+        'observed_count',
+      ];
+      Object.assign(claude, legacy);
+      Object.assign(claude.series[0], legacy);
+      for (const stats of [claude, ...claude.series])
+        for (const field of fields) delete stats[field];
+    }
+    return result;
+  };
   let failGroups = false,
     failModels = false,
     failSave = false,
@@ -191,7 +234,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     else if (url.pathname === '/api/token/99')
       data = structuredClone(savedToken);
     else if (url.pathname === '/api/health/groups')
-      data = { enabled: true, groups: structuredClone(healthGroups) };
+      data = { enabled: true, groups: healthFixture() };
     await route.fulfill({ json: { success: true, data } });
   });
   await page.addInitScript(() => {
@@ -346,6 +389,16 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     await healthSummary.getByText('样本不足', { exact: true }).count(),
     1,
   );
+  assert.equal(
+    await healthSummary.locator('.group-health-count-notice').textContent(),
+    '未归因 4 次 · 已排除 5 次',
+  );
+  assert.match(
+    await healthSummary
+      .locator('.token-group-health-metrics')
+      .getAttribute('title'),
+    /已观测 12 次 · 计入统计 7 次.*成功 1 · 服务失败 2 · 未归因失败 4.*客户端断开 3 次（包含在未归因失败中）.*已排除用户错误 5 次/,
+  );
   assert.notEqual(
     await lowRate.evaluate((element) => getComputedStyle(element).color),
     await healthSummary
@@ -364,7 +417,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     );
   assert(
     await health
-      .getByText('少于 30 次调用时提示样本不足，颜色仍按实际成功率显示。', {
+      .getByText('计入统计少于 30 次时提示样本不足，颜色仍按实际成功率显示。', {
         exact: true,
       })
       .isVisible(),
@@ -377,7 +430,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   );
   assert.match(
     await lowHour.getAttribute('aria-label'),
-    /14\.29%.*7 次调用.*失败较多 · 样本不足/,
+    /14\.29%.*失败较多 · 样本不足.*计入统计 7 次.*服务失败 2.*未归因失败 4.*客户端断开 3 次.*已排除用户错误 5 次/,
   );
   await lowHour.click();
   assert.equal(
@@ -400,6 +453,59 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     path: path.join(artifacts, 'token-health-limited.png'),
     animations: 'disabled',
     style: '.semi-toast-wrapper { visibility:hidden !important; }',
+  });
+  const outcomeDetails = health.locator('details.group-health-outcomes');
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate((dark) => {
+      document.documentElement.classList.toggle('dark', dark);
+      document.body.setAttribute('theme-mode', dark ? 'dark' : 'light');
+    }, width < 1280);
+    await outcomeDetails.locator('summary').click();
+    assert.match(
+      await outcomeDetails.textContent(),
+      /成功 1 · 服务失败 2 · 未归因失败 4/,
+    );
+    assert.match(
+      await outcomeDetails.textContent(),
+      /客户端断开 3 次（包含在未归因失败中）/,
+    );
+    assert.match(await outcomeDetails.textContent(), /已排除用户错误 5 次/);
+    assert(await outcomeDetails.locator('.group-health-caption').isVisible());
+    assert(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+      `health details must not overflow at ${width}px`,
+    );
+    assert(
+      await health
+        .locator('.group-health-number')
+        .evaluateAll((numbers) =>
+          numbers.every((number) => number.scrollWidth <= number.clientWidth),
+        ),
+      `metric values must fit their columns at ${width}px`,
+    );
+    if (width < 1280) {
+      await health.locator('.group-health-metrics').scrollIntoViewIfNeeded();
+      await page.screenshot({
+        path: path.join(artifacts, `token-health-metrics-${width}.png`),
+        animations: 'disabled',
+        style: '.semi-toast-wrapper { visibility:hidden !important; }',
+      });
+      await outcomeDetails.scrollIntoViewIfNeeded();
+    }
+    await (width < 1280 ? page : health).screenshot({
+      path: path.join(artifacts, `token-health-classified-${width}.png`),
+      animations: 'disabled',
+      style: '.semi-toast-wrapper { visibility:hidden !important; }',
+    });
+    await outcomeDetails.locator('summary').click();
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.evaluate(() => {
+    document.documentElement.classList.remove('dark');
+    document.body.setAttribute('theme-mode', 'light');
   });
   console.log(
     'PASS token low-sample rate, independent sample notice, shared legend and hourly colors; selection unchanged',
@@ -565,7 +671,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   assert(
     await health
       .locator('.group-health-bucket .group-health-inline')
-      .getByText('暂无样本', { exact: true })
+      .getByText('暂无调用', { exact: true })
       .isVisible(),
   );
   assert.equal(await health.getByText('样本不足', { exact: true }).count(), 0);
@@ -683,6 +789,125 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.keyboard.press('Enter');
   await delay(200);
   assert.equal(writes.at(-1).name, 'mobile');
+  for (const variant of ['excluded-only', 'legacy']) {
+    healthVariant = variant;
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.evaluate(() => {
+      document.documentElement.classList.add('dark');
+      document.body.setAttribute('theme-mode', 'dark');
+      window.qa.open();
+    });
+    await ready();
+    await name().fill(variant);
+    await choose('Claude · 优质');
+    await enabled(create());
+    await page.getByText('查看详情', { exact: true }).click();
+    await healthSummary.waitFor();
+    const description = await healthSummary
+      .locator('.token-group-health-metrics')
+      .getAttribute('title');
+    if (variant === 'excluded-only') {
+      assert.match(
+        description,
+        /已观测 4 次 · 计入统计 0 次.*成功 0 · 服务失败 0 · 未归因失败 0.*已排除用户错误 4 次/,
+      );
+      assert(
+        await healthSummary
+          .getByText('无有效统计样本', { exact: true })
+          .isVisible(),
+      );
+      assert(
+        await healthSummary
+          .getByText('已排除 4 次', { exact: true })
+          .isVisible(),
+      );
+      assert.equal(
+        await healthSummary.getByText('暂无调用', { exact: true }).count(),
+        0,
+      );
+      assert.equal(
+        await healthSummary.getByText('样本不足', { exact: true }).count(),
+        0,
+      );
+      assert.equal(
+        await healthSummary
+          .locator('strong.group-health-text-empty')
+          .textContent(),
+        '—',
+      );
+    } else {
+      assert.match(
+        description,
+        /已观测 10 次 · 计入统计 10 次.*成功 2 · 服务失败 0 · 未归因失败 8/,
+      );
+      assert.doesNotMatch(description, /客户端断开 \d+ 次|已排除用户错误/);
+      assert.equal(
+        await healthSummary
+          .locator('strong.group-health-text-degraded')
+          .textContent(),
+        '20.00%',
+      );
+      assert(
+        await healthSummary
+          .getByText('未归因 8 次', { exact: true })
+          .isVisible(),
+      );
+    }
+    await health.getByRole('button', { name: /趋势/ }).click();
+    assert(
+      await health
+        .getByText('最近 24 个小时段成功率', { exact: true })
+        .isVisible(),
+    );
+    await outcomeDetails.locator('summary').click();
+    await health.locator('button.group-health-bar').first().click();
+    const bucket = health.locator('.group-health-bucket');
+    if (variant === 'excluded-only') {
+      assert.equal(
+        await health.locator('button.group-health-bar-empty').count(),
+        24,
+      );
+      assert.match(await bucket.textContent(), /无有效统计样本.*已排除 4 次/);
+      assert.match(await bucket.textContent(), /已观测 4 次 · 计入统计 0 次/);
+      assert.equal(
+        await health
+          .getByText('该时段暂无调用记录，产生新请求后显示统计。', {
+            exact: true,
+          })
+          .count(),
+        0,
+      );
+    } else {
+      assert.match(await bucket.textContent(), /20\.00%.*未归因 8 次/);
+      assert.match(
+        await bucket.textContent(),
+        /成功 2 · 服务失败 0 · 未归因失败 8/,
+      );
+    }
+    assert.equal(
+      await page.getByRole('radio', { checked: true }).inputValue(),
+      'Claude · 优质',
+    );
+    assert(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+      `${variant} health details must not overflow at 320px`,
+    );
+    await outcomeDetails.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: path.join(artifacts, `token-health-${variant}-320.png`),
+      animations: 'disabled',
+      style: '.semi-toast-wrapper { visibility:hidden !important; }',
+    });
+    await health.locator('button.group-health-bar').last().click();
+    assert.match(await bucket.textContent(), /当前小时尚未结束/);
+    await page.evaluate(() => window.qa.close());
+    await delay(100);
+  }
+  console.log(
+    'PASS excluded-only and legacy classifications, hourly agreement, current-hour wording, 320px dark details and unchanged selection',
+  );
   assert.deepEqual(errors, []);
   console.log(
     'PASS mobile width, visible footer, keyboard submit; ARTIFACTS=' +

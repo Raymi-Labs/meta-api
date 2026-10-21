@@ -42,6 +42,46 @@ export function resolveGroupHealthMetric(stats, group = '') {
   return 'ttft';
 }
 
+const healthCount = (value) => {
+  const count = Number(value);
+  return Number.isFinite(count) && count > 0 ? count : 0;
+};
+
+export function getHealthCounts(stats) {
+  const request = healthCount(stats?.request_count);
+  const success = healthCount(stats?.success_count);
+  const failure =
+    stats?.failure_count == null
+      ? Math.max(0, request - success)
+      : healthCount(stats.failure_count);
+  const service = healthCount(stats?.service_failure_count);
+  const unknown =
+    stats?.unknown_failure_count == null
+      ? Math.max(0, failure - service)
+      : healthCount(stats.unknown_failure_count);
+  const disconnected = healthCount(stats?.client_canceled_count);
+  const excludedUser = healthCount(stats?.excluded_user_error_count);
+  const excluded =
+    stats?.excluded_count == null
+      ? excludedUser
+      : healthCount(stats.excluded_count);
+  const observed =
+    stats?.observed_count == null
+      ? request + excluded
+      : healthCount(stats.observed_count);
+  return {
+    request,
+    success,
+    failure,
+    service,
+    unknown,
+    disconnected,
+    excludedUser,
+    excluded,
+    observed,
+  };
+}
+
 /** Preserve outages in unfiltered/exact-model data, never in unrelated aggregates. */
 export function selectHealthGroups({
   groups = [],
@@ -55,13 +95,13 @@ export function selectHealthGroups({
     models.flatMap((model) => model.enable_groups || []),
   );
   return groups.filter(
-    ({ group, request_count: requestCount }) =>
-      group !== 'auto' &&
-      Object.prototype.hasOwnProperty.call(usableGroup || {}, group) &&
+    (stats) =>
+      stats.group !== 'auto' &&
+      Object.prototype.hasOwnProperty.call(usableGroup || {}, stats.group) &&
       ((!exactModel && !filterByModels) ||
-        enabledGroups.has(group) ||
-        (exactModel && Number(requestCount) > 0)) &&
-      (filterGroup === 'all' || group === filterGroup),
+        enabledGroups.has(stats.group) ||
+        (exactModel && getHealthCounts(stats).observed > 0)) &&
+      (filterGroup === 'all' || stats.group === filterGroup),
   );
 }
 

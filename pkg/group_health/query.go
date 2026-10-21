@@ -10,18 +10,25 @@ import (
 )
 
 const MetricScope = "per_request_per_group_final_outcome"
+const WindowScope = "current_hour_and_previous_23_hours"
 
 type Metrics struct {
-	CacheHitRate     *float64 `json:"cache_hit_rate"`
-	CacheSampleCount int64    `json:"cache_sample_count"`
-	RequestCount     int64    `json:"request_count"`
-	SuccessCount     int64    `json:"success_count"`
-	FailureCount     int64    `json:"failure_count"`
-	SuccessRate      *float64 `json:"success_rate"`
-	AvgTTFTMs        *float64 `json:"avg_ttft_ms"`
-	TTFTCount        int64    `json:"ttft_count"`
-	AvgCompletionMs  *float64 `json:"avg_completion_ms"`
-	CompletionCount  int64    `json:"completion_count"`
+	CacheHitRate           *float64 `json:"cache_hit_rate"`
+	CacheSampleCount       int64    `json:"cache_sample_count"`
+	RequestCount           int64    `json:"request_count"`
+	SuccessCount           int64    `json:"success_count"`
+	FailureCount           int64    `json:"failure_count"`
+	ServiceFailureCount    int64    `json:"service_failure_count"`
+	UnknownFailureCount    int64    `json:"unknown_failure_count"`
+	ClientCanceledCount    int64    `json:"client_canceled_count"`
+	ExcludedUserErrorCount int64    `json:"excluded_user_error_count"`
+	ExcludedCount          int64    `json:"excluded_count"`
+	ObservedCount          int64    `json:"observed_count"`
+	SuccessRate            *float64 `json:"success_rate"`
+	AvgTTFTMs              *float64 `json:"avg_ttft_ms"`
+	TTFTCount              int64    `json:"ttft_count"`
+	AvgCompletionMs        *float64 `json:"avg_completion_ms"`
+	CompletionCount        int64    `json:"completion_count"`
 }
 
 type Bucket struct {
@@ -42,6 +49,7 @@ type Result struct {
 	UpdatedAt            int64   `json:"updated_at"`
 	BucketSeconds        int64   `json:"bucket_seconds"`
 	MetricScope          string  `json:"metric_scope"`
+	WindowScope          string  `json:"window_scope"`
 	CollectionIncomplete bool    `json:"collection_incomplete"`
 	Groups               []Group `json:"groups"`
 }
@@ -67,7 +75,7 @@ func Query(ctx context.Context, groups []string, modelName string, role int, now
 }
 
 func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int64) Result {
-	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: BucketSeconds, MetricScope: MetricScope, Groups: make([]Group, 0, len(groups))}
+	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: BucketSeconds, MetricScope: MetricScope, WindowScope: WindowScope, Groups: make([]Group, 0, len(groups))}
 	byGroup := make(map[string]map[int64]model.GroupHealthMetric, len(groups))
 	for _, group := range groups {
 		byGroup[group] = make(map[int64]model.GroupHealthMetric)
@@ -107,6 +115,9 @@ func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
 	dst.CacheSampleCount += src.CacheSampleCount
 	dst.RequestCount += src.RequestCount
 	dst.SuccessCount += src.SuccessCount
+	dst.ServiceFailureCount += src.ServiceFailureCount
+	dst.ExcludedUserErrorCount += src.ExcludedUserErrorCount
+	dst.ClientCanceledCount += src.ClientCanceledCount
 	dst.TTFTSumMs += src.TTFTSumMs
 	dst.TTFTCount += src.TTFTCount
 	dst.CompletionSumMs += src.CompletionSumMs
@@ -115,6 +126,14 @@ func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
 
 func summarize(row model.GroupHealthMetric) Metrics {
 	result := Metrics{RequestCount: row.RequestCount, SuccessCount: row.SuccessCount, FailureCount: row.RequestCount - row.SuccessCount, TTFTCount: row.TTFTCount, CompletionCount: row.CompletionCount}
+	result.ServiceFailureCount = row.ServiceFailureCount
+	// The original schema cannot attribute historical failures. Residual failures
+	// remain unknown, including disconnected clients; no history is reclassified.
+	result.UnknownFailureCount = result.FailureCount - row.ServiceFailureCount
+	result.ClientCanceledCount = row.ClientCanceledCount
+	result.ExcludedUserErrorCount = row.ExcludedUserErrorCount
+	result.ExcludedCount = row.ExcludedUserErrorCount
+	result.ObservedCount = observedCount(row)
 	result.CacheSampleCount = row.CacheSampleCount
 	if row.CacheInputTokens > 0 && row.CacheSampleCount > 0 {
 		value := float64(row.CacheReadTokens) / float64(row.CacheInputTokens) * 100

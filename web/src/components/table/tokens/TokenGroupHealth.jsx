@@ -28,15 +28,19 @@ import { useTranslation } from 'react-i18next';
 import { renderRatio } from '../../../helpers';
 import {
   GroupHealthCollectionNote,
+  GroupHealthCountNotice,
   GroupHealthLegend,
+  GroupHealthOutcomeDetails,
   GroupHealthPanel,
   GroupHealthScopeNote,
   formatHealthLatency,
   formatHealthRate,
+  formatHealthOutcomeDescription,
   resolveGroupHealthMetric,
 } from '../../group-health';
 import {
   getHealthLatency,
+  getHealthCounts,
   healthTone,
   isHealthSampleLimited,
 } from '../../group-health/healthUtils';
@@ -47,8 +51,12 @@ const { Text } = Typography;
 function TokenGroupHealthMetrics({ stats, metric }) {
   const { t } = useTranslation();
   const latency = getHealthLatency(stats, metric);
+  const counts = getHealthCounts(stats);
   return (
-    <span className='token-group-health-metrics'>
+    <span
+      className='token-group-health-metrics'
+      title={formatHealthOutcomeDescription(stats, t)}
+    >
       <span>
         {t('成功率')}{' '}
         <strong className={`group-health-text-${healthTone(stats)}`}>
@@ -65,6 +73,12 @@ function TokenGroupHealthMetrics({ stats, metric }) {
       {isHealthSampleLimited(stats) && (
         <span className='group-health-muted'>{t('样本不足')}</span>
       )}
+      {!counts.request && (
+        <span className='group-health-muted'>
+          {counts.observed ? t('无有效统计样本') : t('暂无调用')}
+        </span>
+      )}
+      <GroupHealthCountNotice stats={stats} />
     </span>
   );
 }
@@ -222,16 +236,10 @@ export const TokenGroupHealth = ({
                       </p>
                     ) : null}
                     <p>
-                      {t('近24小时')} · {t('全部模型')}
+                      {t('最近 24 个小时段')} · {t('全部模型')}
                     </p>
-                    <p>
-                      {t('成功 {{success}} · 失败 {{failure}}', {
-                        success: stats?.success_count || 0,
-                        failure: stats?.failure_count || 0,
-                      })}
-                      {' · '}
-                      {t('{{count}} 个有效样本', { count: latency.count })}
-                    </p>
+                    <GroupHealthOutcomeDetails stats={stats} />
+                    <p>{t('{{count}} 个有效样本', { count: latency.count })}</p>
                     <GroupHealthCollectionNote data={collectionData} />
                     <GroupHealthScopeNote />
                     <p className='group-health-note'>

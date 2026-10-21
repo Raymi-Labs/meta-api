@@ -78,9 +78,9 @@ const colorSamples = [
   { request_count: 99, success_rate: 0 },
   { request_count: 100, success_rate: 0 },
   { request_count: 100, success_rate: 95 },
-  { request_count: 100, success_rate: 94.99 },
+  { request_count: 10000, success_rate: 94.99 },
   { request_count: 100, success_rate: 80 },
-  { request_count: 100, success_rate: 79.99 },
+  { request_count: 10000, success_rate: 79.99 },
   {
     request_count: 7,
     success_count: 1,
@@ -93,7 +93,16 @@ const colorSamples = [
     failure_count: 136,
     success_rate: 6500 / 201,
   },
-];
+].map((stats) => {
+  const success =
+    stats.success_count ??
+    Math.round((stats.request_count * (stats.success_rate || 0)) / 100);
+  return {
+    ...stats,
+    success_count: success,
+    failure_count: stats.request_count - success,
+  };
+});
 const reportedSeries = [
   [7, 1],
   [8, 4],
@@ -134,6 +143,51 @@ assert.equal(
   reportedSeries.reduce((total, bucket) => total + bucket.success_count, 0),
   65,
 );
+const emptyStats = {
+  request_count: 0,
+  success_count: 0,
+  failure_count: 0,
+  service_failure_count: 0,
+  unknown_failure_count: 0,
+  client_canceled_count: 0,
+  excluded_user_error_count: 0,
+  excluded_count: 0,
+  observed_count: 0,
+  success_rate: null,
+};
+const withSeries = (stats) => ({
+  ...stats,
+  series: reportedSeries.map(({ ts }, index) => ({
+    ts,
+    ...(index === 0 ? stats : emptyStats),
+  })),
+});
+const classifiedStats = withSeries({
+  request_count: 7,
+  success_count: 1,
+  failure_count: 6,
+  service_failure_count: 2,
+  unknown_failure_count: 4,
+  client_canceled_count: 3,
+  excluded_user_error_count: 5,
+  excluded_count: 5,
+  observed_count: 12,
+  success_rate: 100 / 7,
+  avg_ttft_ms: 5200,
+  ttft_count: 1,
+  cache_hit_rate: 61.87,
+  cache_sample_count: 1,
+});
+const excludedOnlyStats = withSeries({
+  ...emptyStats,
+  excluded_user_error_count: 4,
+  excluded_count: 4,
+  observed_count: 4,
+  avg_ttft_ms: null,
+  ttft_count: 0,
+  cache_hit_rate: null,
+  cache_sample_count: 0,
+});
 const healthGroups = [
   'Claude',
   'GPT',
@@ -219,7 +273,7 @@ try {
                     .map((stats) =>
                       url.searchParams.get('model') &&
                       !['GPT', 'Shared', 'Empty'].includes(stats.group)
-                        ? { ...stats, request_count: 0, success_rate: null }
+                        ? { ...stats, ...emptyStats }
                         : stats,
                     ),
                 },
@@ -492,7 +546,40 @@ try {
         await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
       }
     };
-    const screenshotPanel = async (group, prefix) => {
+    const findPanel = async (group, root = '.group-health-overview') => {
+      const handle = await page.evaluateHandle(
+        (group, root) =>
+          Array.from(
+            document.querySelectorAll(`${root} .group-health-panel`),
+          ).find(
+            (panel) =>
+              panel.querySelector('.group-health-name')?.textContent === group,
+          ),
+        group,
+        root,
+      );
+      const panel = handle.asElement();
+      assert(panel, `Missing health panel: ${group}`);
+      return panel;
+    };
+    const openOutcomeDetails = async (group, root) => {
+      const panel = await findPanel(group, root);
+      const summary = await panel.$('.group-health-outcomes > summary');
+      await summary.click();
+      assert(await panel.$eval('.group-health-outcomes', (el) => el.open));
+      const text = await panel.$eval(
+        '.group-health-outcomes',
+        (el) => el.textContent,
+      );
+      await summary.dispose();
+      await panel.dispose();
+      return text;
+    };
+    const screenshotPanel = async (
+      group,
+      prefix,
+      root = '.group-health-overview',
+    ) => {
       if (!process.env.PRICING_SCREENSHOT_DIR) return;
       await page.mouse.move(0, 0);
       await page.waitForFunction(
@@ -500,28 +587,41 @@ try {
           document.querySelectorAll('.semi-toast-content, .Toastify__toast')
             .length === 0,
       );
-      const handle = await page.evaluateHandle(
-        (group) =>
-          Array.from(
-            document.querySelectorAll(
-              '.group-health-overview .group-health-panel',
-            ),
-          ).find(
-            (panel) =>
-              panel.querySelector('.group-health-name')?.textContent === group,
-          ),
-        group,
-      );
-      const panel = handle.asElement();
-      assert(panel, `Missing screenshot panel: ${group}`);
+      const panel = await findPanel(group, root);
       await panel.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await page.waitForFunction(
+        (panel) => {
+          const rect = panel.getBoundingClientRect();
+          const sheet = panel.closest('.semi-sidesheet-inner');
+          return (
+            rect.left >= 0 &&
+            rect.right <= window.innerWidth + 1 &&
+            (!sheet ||
+              Math.abs(
+                sheet.getBoundingClientRect().right - window.innerWidth,
+              ) < 1)
+          );
+        },
+        {},
+        panel,
+      );
       await panel.screenshot({
         path: `${process.env.PRICING_SCREENSHOT_DIR}/${prefix}-${mobile ? 'mobile-dark' : 'desktop'}.png`,
       });
-      await handle.dispose();
+      await panel.dispose();
     };
     await healthTab();
     await expectGroups(['Claude', 'GPT', 'Shared', 'Empty']);
+    assert(
+      await page.$eval(
+        '.group-health-overview',
+        (el) =>
+          el.textContent.includes('最近 24 个小时段 · 每分钟更新') &&
+          el.textContent.includes(
+            '统计覆盖当前小时及此前 23 个完整小时，当前小时尚未结束。',
+          ),
+      ),
+    );
     const colors = await page.$$eval(
       '.group-health-overview .group-health-panel',
       (panels) =>
@@ -577,7 +677,7 @@ try {
             `group-health-bar group-health-bar-${expectedBars[j % expectedBars.length]}`,
         ),
       );
-      assert(panel.firstBarTitle.includes('— · 暂无样本'));
+      assert(panel.firstBarTitle.includes('— · 暂无调用'));
     }
     const legend = await page.$eval(
       '.group-health-legend',
@@ -587,7 +687,7 @@ try {
       '成功率 ≥ 95%',
       '80% ≤ 成功率 < 95%',
       '成功率 < 80%',
-      '暂无样本',
+      '无有效统计样本',
     ]) {
       assert(legend.includes(label), `Missing health legend: ${label}`);
     }
@@ -597,7 +697,7 @@ try {
     assert(
       await page.$eval('.group-health-overview', (el) =>
         el.textContent.includes(
-          '少于 30 次调用时提示样本不足，颜色仍按实际成功率显示。',
+          '计入统计少于 30 次时提示样本不足，颜色仍按实际成功率显示。',
         ),
       ),
     );
@@ -675,6 +775,9 @@ try {
               panel.querySelectorAll('.group-health-badge'),
             ).map((el) => ({ text: el.textContent, className: el.className })),
             caption: panel.querySelector('.group-health-caption').textContent,
+            countTitle: panel.querySelector('.group-health-caption').title,
+            notice: panel.querySelector('.group-health-count-notice')
+              ?.textContent,
           };
         },
         group,
@@ -686,16 +789,22 @@ try {
       dailySnapshot.badges.map(({ text }) => text),
       ['失败较多'],
     );
-    assert(dailySnapshot.caption.includes('201 次调用'));
+    assert(dailySnapshot.caption.includes('计入统计 201 次'));
     assert(!dailySnapshot.caption.includes('样本不足'));
+    assert(
+      dailySnapshot.countTitle.includes(
+        '成功 65 · 服务失败 0 · 未归因失败 136',
+      ),
+    );
+    assert.equal(dailySnapshot.notice, '未归因 136 次');
     const emptySnapshot = await panelSnapshot('Empty');
     assert.equal(emptySnapshot.rate, '—');
     assert(emptySnapshot.rateClass.includes('group-health-text-empty'));
     assert.deepEqual(
       emptySnapshot.badges.map(({ text }) => text),
-      ['暂无样本'],
+      ['暂无调用'],
     );
-    assert.equal(emptySnapshot.caption, '暂无样本');
+    assert.equal(emptySnapshot.caption, '暂无调用');
     await page.evaluate(() =>
       Array.from(document.querySelectorAll('.group-health-panel'))
         .find(
@@ -709,7 +818,12 @@ try {
       '.group-health-bucket',
       (el) => el.textContent,
     );
-    for (const text of ['14.29%', '失败较多', '样本不足', '成功 1 · 失败 6'])
+    for (const text of [
+      '14.29%',
+      '失败较多',
+      '样本不足',
+      '成功 1 · 服务失败 0 · 未归因失败 6',
+    ])
       assert(screenshotBucket.includes(text));
     assert(
       await page.$eval(
@@ -728,27 +842,8 @@ try {
         .click(),
     );
     // Apply the same low-sample semantics to the daily summary and its status badge.
-    healthOverrides.Shared = {
-      request_count: 7,
-      success_count: 1,
-      failure_count: 6,
-      success_rate: 100 / 7,
-      avg_ttft_ms: 5200,
-      ttft_count: 1,
-      cache_hit_rate: 61.87,
-      cache_sample_count: 1,
-      series: reportedSeries.map((bucket, i) =>
-        i === 0
-          ? bucket
-          : {
-              ts: bucket.ts,
-              request_count: 0,
-              success_count: 0,
-              failure_count: 0,
-              success_rate: null,
-            },
-      ),
-    };
+    healthOverrides.Shared = classifiedStats;
+    healthOverrides.Empty = excludedOnlyStats;
     await clickText('刷新', '.group-health-toolbar');
     await page.waitForFunction(() =>
       Array.from(document.querySelectorAll('.group-health-panel')).some(
@@ -777,9 +872,86 @@ try {
           className.includes('group-health-badge-limited'),
       ),
     );
-    assert(limitedSnapshot.caption.includes('7 次调用'));
+    assert(limitedSnapshot.caption.includes('计入统计 7 次'));
     assert(limitedSnapshot.caption.includes('样本不足'));
+    assert.equal(limitedSnapshot.notice, '未归因 4 次 · 已排除 5 次');
+    const classifiedDetails = await openOutcomeDetails('Shared');
+    for (const expected of [
+      '已观测 12 次 · 计入统计 7 次',
+      '成功 1 · 服务失败 2 · 未归因失败 4',
+      '客户端断开 3 次（包含在未归因失败中）',
+      '已排除用户错误 5 次',
+    ])
+      assert(classifiedDetails.includes(expected), expected);
+    const classifiedPanel = await findPanel('Shared');
+    const classifiedHour = await classifiedPanel.$('.group-health-bar');
+    assert.match(
+      await classifiedHour.evaluate((el) => el.title),
+      /计入统计 7 次.*服务失败 2.*未归因失败 4.*客户端断开 3 次.*已排除用户错误 5 次/,
+    );
+    await classifiedHour.click();
+    const classifiedHourText = await classifiedPanel.$eval(
+      '.group-health-bucket',
+      (el) => el.textContent,
+    );
+    assert.match(
+      classifiedHourText,
+      /14\.29%.*计入统计 7 次.*服务失败 2.*未归因失败 4.*客户端断开 3 次.*已排除用户错误 5 次/,
+    );
+    assert(
+      await classifiedPanel.$$eval('.group-health-number', (numbers) =>
+        numbers.every((el) => el.scrollWidth <= el.clientWidth),
+      ),
+    );
     await screenshotPanel('Shared', 'colors');
+    await classifiedHour.click();
+    await classifiedHour.dispose();
+    await classifiedPanel.dispose();
+    const excludedSnapshot = await panelSnapshot('Empty');
+    assert.equal(excludedSnapshot.rate, '—');
+    assert(excludedSnapshot.rateClass.includes('group-health-text-empty'));
+    assert.equal(excludedSnapshot.caption, '无有效统计样本');
+    assert.equal(excludedSnapshot.notice, '已排除 4 次');
+    assert.deepEqual(
+      excludedSnapshot.badges.map(({ text }) => text),
+      ['无有效统计样本'],
+    );
+    const excludedDetails = await openOutcomeDetails('Empty');
+    assert.match(
+      excludedDetails,
+      /已观测 4 次 · 计入统计 0 次.*已排除用户错误 4 次/,
+    );
+    const excludedPanel = await findPanel('Empty');
+    assert.equal(
+      await excludedPanel.$$eval(
+        '.group-health-bar-empty',
+        (bars) => bars.length,
+      ),
+      24,
+    );
+    const excludedHour = await excludedPanel.$('.group-health-bar');
+    assert.match(
+      await excludedHour.evaluate((el) => el.title),
+      /无有效统计样本.*已观测 4 次 · 计入统计 0 次.*已排除用户错误 4 次/,
+    );
+    await excludedHour.click();
+    const excludedHourText = await excludedPanel.$eval(
+      '.group-health-bucket',
+      (el) => el.textContent,
+    );
+    assert.match(
+      excludedHourText,
+      /无有效统计样本.*已排除 4 次.*已观测 4 次 · 计入统计 0 次/,
+    );
+    assert(!excludedHourText.includes('暂无调用'));
+    assert(
+      !(await excludedPanel.evaluate((el) =>
+        el.textContent.includes('该时段暂无调用记录，产生新请求后显示统计。'),
+      )),
+    );
+    await screenshotPanel('Empty', 'excluded-only');
+    await excludedHour.dispose();
+    await excludedPanel.dispose();
     healthOverrides = {};
     await clickText('刷新', '.group-health-toolbar');
     await page.waitForFunction(() =>
@@ -804,6 +976,7 @@ try {
       });
     }
     // Exact-model API samples preserve a disabled group's outage.
+    healthOverrides.Empty = excludedOnlyStats;
     await page.click('.group-health-filter-select');
     await page.waitForSelector('.semi-select-option');
     const optionLabels = await page.$$eval('.semi-select-option', (options) =>
@@ -817,6 +990,9 @@ try {
     );
     await expectGroups(['GPT', 'Shared', 'Empty']);
     assert(healthQueries.some((query) => query.includes('model=gpt-fixture')));
+    const exactExcluded = await panelSnapshot('Empty');
+    assert.equal(exactExcluded.caption, '无有效统计样本');
+    assert.equal(exactExcluded.notice, '已排除 4 次');
     await chooseFilters('Anthropic');
     await expectGroups(['Claude', 'Shared']);
     await chooseFilters('未知供应商');
@@ -896,15 +1072,8 @@ try {
     // The model drawer reuses the same tones in its compact pricing summary
     // and in the expanded performance tab.
     healthOverrides = {
-      Shared: {
-        request_count: 7,
-        success_count: 1,
-        failure_count: 6,
-        success_rate: 100 / 7,
-        avg_ttft_ms: 5200,
-        ttft_count: 1,
-        cache_sample_count: 1,
-      },
+      Shared: classifiedStats,
+      Empty: excludedOnlyStats,
     };
     await page.evaluate(() =>
       Array.from(document.querySelectorAll('[role=tab]'))
@@ -941,16 +1110,30 @@ try {
           rateClass: row.querySelector('.group-health-inline strong')
             ?.className,
           text: row.textContent,
+          title: row.querySelector('.group-health-inline')?.title,
         })),
     );
     const compactShared = compactRows.find(({ group }) => group === 'Shared');
     assert.equal(compactShared.rate, '14.29%');
     assert(compactShared.rateClass.includes('group-health-text-degraded'));
     assert(compactShared.text.includes('样本不足'));
+    assert(compactShared.text.includes('未归因 4 次 · 已排除 5 次'));
+    assert.match(
+      compactShared.title,
+      /已观测 12 次 · 计入统计 7 次.*服务失败 2.*未归因失败 4.*客户端断开 3 次.*已排除用户错误 5 次/,
+    );
     const compactGPT = compactRows.find(({ group }) => group === 'GPT');
     assert.equal(compactGPT.rate, '80.00%');
     assert(compactGPT.rateClass.includes('group-health-text-warning'));
     assert(!compactGPT.text.includes('样本不足'));
+    const compactExcluded = compactRows.find(({ group }) => group === 'Empty');
+    assert(
+      compactExcluded,
+      'Exact-model drawer must retain an excluded-only group',
+    );
+    assert(compactExcluded.text.includes('无有效统计样本'));
+    assert(compactExcluded.text.includes('已排除 4 次'));
+    assert(!compactExcluded.text.includes('暂无调用'));
     await clickText('查看时间趋势', '.semi-sidesheet');
     await page.waitForSelector('.semi-sidesheet .group-health-panel');
     const detailPanels = await page.$$eval(
@@ -973,6 +1156,28 @@ try {
     assert(detailGPT.rateClass.includes('group-health-text-warning'));
     assert.equal(detailGPT.status, '部分波动');
     assert.equal(detailGPT.limited, false);
+    const detailExcluded = detailPanels.find(({ group }) => group === 'Empty');
+    assert(detailExcluded.rateClass.includes('group-health-text-empty'));
+    assert.equal(detailExcluded.status, '无有效统计样本');
+    assert.equal(detailExcluded.limited, false);
+    const modelDetails = await openOutcomeDetails('Shared', '.semi-sidesheet');
+    for (const expected of [
+      '已观测 12 次 · 计入统计 7 次',
+      '成功 1 · 服务失败 2 · 未归因失败 4',
+      '客户端断开 3 次（包含在未归因失败中）',
+      '已排除用户错误 5 次',
+    ])
+      assert(modelDetails.includes(expected), expected);
+    await screenshotPanel('Shared', 'model-details', '.semi-sidesheet');
+    const modelExcludedDetails = await openOutcomeDetails(
+      'Empty',
+      '.semi-sidesheet',
+    );
+    assert.match(
+      modelExcludedDetails,
+      /已观测 4 次 · 计入统计 0 次.*已排除用户错误 4 次/,
+    );
+    await screenshotPanel('Empty', 'model-excluded-only', '.semi-sidesheet');
     const detailLegend = await page.$eval(
       '.semi-sidesheet .group-health-legend',
       (el) => el.textContent,
@@ -981,13 +1186,13 @@ try {
       '成功率 ≥ 95%',
       '80% ≤ 成功率 < 95%',
       '成功率 < 80%',
-      '暂无样本',
+      '无有效统计样本',
     ])
       assert(detailLegend.includes(label));
     assert(
       await page.$eval('.semi-sidesheet', (el) =>
         el.textContent.includes(
-          '少于 30 次调用时提示样本不足，颜色仍按实际成功率显示。',
+          '计入统计少于 30 次时提示样本不足，颜色仍按实际成功率显示。',
         ),
       ),
     );

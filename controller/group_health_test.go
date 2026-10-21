@@ -42,9 +42,10 @@ func TestGroupHealthUsesCurrentMembershipAndModelPermissions(t *testing.T) {
 	now := time.Now()
 	ts := now.Unix() / 3600 * 3600
 	require.NoError(t, model.SaveGroupHealthSnapshots(context.Background(), []model.GroupHealthMetric{
-		{ID: "visible", GroupName: "public", ModelName: "normal", BucketTs: ts, RequestCount: 10, SuccessCount: 9},
-		{ID: "hidden", GroupName: "public", ModelName: "hidden", BucketTs: ts, RequestCount: 1000, SuccessCount: 1000},
-		{ID: "private", GroupName: "private", ModelName: "normal", BucketTs: ts, RequestCount: 500, SuccessCount: 500},
+		{ID: "visible", GroupName: "public", ModelName: "normal", BucketTs: ts, RequestCount: 10, SuccessCount: 7, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 2},
+		{ID: "excluded-only", GroupName: "own", ModelName: "normal", BucketTs: ts, ExcludedUserErrorCount: 3},
+		{ID: "hidden", GroupName: "public", ModelName: "hidden", BucketTs: ts, RequestCount: 1000, SuccessCount: 500, ServiceFailureCount: 200, ClientCanceledCount: 100, ExcludedUserErrorCount: 100},
+		{ID: "private", GroupName: "private", ModelName: "normal", BucketTs: ts, RequestCount: 500, SuccessCount: 200, ServiceFailureCount: 100, ClientCanceledCount: 100, ExcludedUserErrorCount: 100},
 	}))
 	request := func(query string, id int) (*httptest.ResponseRecorder, grouphealth.Result) {
 		t.Helper()
@@ -67,7 +68,30 @@ func TestGroupHealthUsesCurrentMembershipAndModelPermissions(t *testing.T) {
 	require.Equal(t, "own", data.Groups[0].Group)
 	require.Equal(t, "public", data.Groups[1].Group)
 	require.EqualValues(t, 10, data.Groups[1].RequestCount, "all-model aggregate must exclude hidden model")
+	require.Equal(t, grouphealth.WindowScope, data.WindowScope)
+	public := data.Groups[1]
+	require.EqualValues(t, 7, public.SuccessCount)
+	require.EqualValues(t, 3, public.FailureCount)
+	require.EqualValues(t, 1, public.ServiceFailureCount)
+	require.EqualValues(t, 2, public.UnknownFailureCount)
+	require.EqualValues(t, 1, public.ClientCanceledCount)
+	require.EqualValues(t, 2, public.ExcludedUserErrorCount)
+	require.EqualValues(t, 2, public.ExcludedCount)
+	require.EqualValues(t, 12, public.ObservedCount)
+	require.InDelta(t, 70, *public.SuccessRate, 0.001, "excluded user errors must not enter the denominator")
+	for _, bucket := range public.Series {
+		require.Equal(t, bucket.RequestCount, bucket.SuccessCount+bucket.ServiceFailureCount+bucket.UnknownFailureCount)
+		require.Equal(t, bucket.ObservedCount, bucket.RequestCount+bucket.ExcludedCount)
+		require.LessOrEqual(t, bucket.ClientCanceledCount, bucket.UnknownFailureCount)
+	}
+	require.Zero(t, data.Groups[0].RequestCount)
+	require.EqualValues(t, 3, data.Groups[0].ObservedCount)
+	require.EqualValues(t, 3, data.Groups[0].ExcludedCount)
+	require.Nil(t, data.Groups[0].SuccessRate)
 	require.Len(t, data.Groups[1].Series, 24)
+	_, exact := request("?model=normal&group=public", 1)
+	require.Len(t, exact.Groups, 1)
+	require.Equal(t, public.Metrics, exact.Groups[0].Metrics, "exact model and permitted aggregate must agree")
 	_, data = request("?group=private", 1)
 	require.Empty(t, data.Groups)
 	_, data = request("?model=hidden", 1)

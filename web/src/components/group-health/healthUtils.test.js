@@ -22,6 +22,7 @@ import { describe, test } from 'node:test';
 import {
   formatHealthLatency,
   formatHealthRate,
+  getHealthCounts,
   getHealthLatency,
   healthTone,
   isHealthSampleLimited,
@@ -30,6 +31,74 @@ import {
 } from './healthUtils.js';
 
 describe('group health display semantics', () => {
+  test('keeps disconnections inside unknown failures and exclusions outside the denominator', () => {
+    const stats = Object.freeze({
+      request_count: 7,
+      success_count: 1,
+      failure_count: 6,
+      service_failure_count: 2,
+      unknown_failure_count: 4,
+      client_canceled_count: 3,
+      excluded_user_error_count: 5,
+      excluded_count: 5,
+      observed_count: 12,
+      success_rate: (1 / 7) * 100,
+    });
+    assert.deepEqual(getHealthCounts(stats), {
+      request: 7,
+      success: 1,
+      failure: 6,
+      service: 2,
+      unknown: 4,
+      disconnected: 3,
+      excludedUser: 5,
+      excluded: 5,
+      observed: 12,
+    });
+    assert.equal(formatHealthRate(stats.success_rate), '14.29%');
+    assert.equal(healthTone(stats), 'degraded');
+    assert.equal(isHealthSampleLimited(stats), true);
+  });
+
+  test('treats historical failures without classification as unknown, never as user errors', () => {
+    assert.deepEqual(
+      getHealthCounts({
+        request_count: 10,
+        success_count: 2,
+        failure_count: 8,
+      }),
+      {
+        request: 10,
+        success: 2,
+        failure: 8,
+        service: 0,
+        unknown: 8,
+        disconnected: 0,
+        excludedUser: 0,
+        excluded: 0,
+        observed: 10,
+      },
+    );
+  });
+
+  test('preserves observed excluded-only calls without reporting a success rate or limited samples', () => {
+    const stats = {
+      request_count: 0,
+      success_count: 0,
+      failure_count: 0,
+      excluded_user_error_count: 40,
+      excluded_count: 40,
+      observed_count: 40,
+      success_rate: null,
+    };
+    assert.equal(getHealthCounts(stats).observed, 40);
+    assert.equal(getHealthCounts(stats).request, 0);
+    assert.equal(healthTone(stats), 'empty');
+    assert.equal(isHealthSampleLimited(stats), false);
+    assert.equal(formatHealthRate(stats.success_rate), '—');
+    assert.equal(getHealthCounts(undefined).observed, 0);
+  });
+
   test('uses the same measured-rate boundaries for every positive sample size', () => {
     for (const request_count of [1, 7, 29, 30, 99, 100, 101, 10000]) {
       for (const [success_rate, expected] of [
@@ -255,6 +324,44 @@ describe('group health visibility', () => {
         models: [],
         usableGroup,
         exactModel: true,
+      }),
+      [],
+    );
+  });
+
+  test('retains an allowed exact-model group with only excluded calls', () => {
+    const excludedOnly = {
+      group: 'premium',
+      request_count: 0,
+      excluded_user_error_count: 3,
+      excluded_count: 3,
+      observed_count: 3,
+      success_rate: null,
+    };
+    assert.deepEqual(
+      selectHealthGroups({
+        groups: [excludedOnly],
+        models: [],
+        usableGroup,
+        exactModel: true,
+      }),
+      [excludedOnly],
+    );
+    assert.deepEqual(
+      selectHealthGroups({
+        groups: [{ ...excludedOnly, group: 'private' }],
+        models: [],
+        usableGroup,
+        exactModel: true,
+      }),
+      [],
+    );
+    assert.deepEqual(
+      selectHealthGroups({
+        groups: [excludedOnly],
+        models: [models[0]],
+        usableGroup,
+        filterByModels: true,
       }),
       [],
     );

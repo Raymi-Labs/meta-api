@@ -22,9 +22,21 @@ const (
 	maxHotBuckets = 8192
 )
 
+// Outcome records only what the relay can establish. A disconnected client is
+// an unknown failure, not evidence of an intentional stop, so it stays counted.
+type Outcome string
+
+const (
+	OutcomeSuccess        Outcome = "success"
+	OutcomeServiceFailure Outcome = "service_failure"
+	OutcomeUnknownFailure Outcome = "unknown_failure"
+	OutcomeUserError      Outcome = "user_error"
+	OutcomeClientCanceled Outcome = "client_canceled"
+)
+
 type Sample struct {
 	Group, Model string
-	Success      bool
+	Outcome      Outcome
 	TTFTMs       *int64
 	CompletionMs *int64
 	CacheUsage   *relaycommon.GroupHealthCacheUsage
@@ -83,8 +95,20 @@ func (c *collector) record(sample Sample) {
 		}
 		row = model.GroupHealthMetric{ID: uuid.NewString(), GroupName: sample.Group, ModelName: sample.Model, BucketTs: key.ts}
 	}
-	row.RequestCount++
-	if sample.Success {
+	if sample.Outcome == OutcomeUserError {
+		row.ExcludedUserErrorCount++
+	} else {
+		row.RequestCount++
+		switch sample.Outcome {
+		case OutcomeServiceFailure:
+			row.ServiceFailureCount++
+		case OutcomeClientCanceled:
+			row.ClientCanceledCount++
+		}
+	}
+	// Unknown or absent outcome values remain unknown failures. Only explicit
+	// success can contribute successful latency or cache measurements.
+	if sample.Outcome == OutcomeSuccess {
 		row.SuccessCount++
 		if usage := sample.CacheUsage; usage != nil && usage.InputTokens > 0 && usage.ReadTokens >= 0 && usage.ReadTokens <= usage.InputTokens {
 			row.CacheReadTokens += usage.ReadTokens
@@ -104,6 +128,10 @@ func (c *collector) record(sample Sample) {
 	c.buckets[key] = row
 }
 
+func observedCount(row model.GroupHealthMetric) int64 {
+	return row.RequestCount + row.ExcludedUserErrorCount
+}
+
 func (c *collector) markDropped(reason string) {
 	count := c.dropped.Add(1)
 	c.lastDrop.Store(time.Now().Unix())
@@ -118,7 +146,7 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 	c.mu.Lock()
 	rows := make([]model.GroupHealthMetric, 0, len(c.buckets))
 	for key, row := range c.buckets {
-		if c.persisted[key] != row.RequestCount {
+		if c.persisted[key] != observedCount(row) {
 			rows = append(rows, row)
 		}
 	}
@@ -133,12 +161,12 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 	defer c.mu.Unlock()
 	for _, saved := range rows {
 		key := bucketKey{group: saved.GroupName, model: saved.ModelName, ts: saved.BucketTs}
-		c.persisted[key] = saved.RequestCount
+		c.persisted[key] = observedCount(saved)
 	}
 	for key, current := range c.buckets {
 		// Keep current-hour totals for stable idempotent overwrites. Retire only
 		// fully saved old buckets; a late concurrent sample keeps the same ID.
-		if key.ts < currentBucket && current.RequestCount == c.persisted[key] {
+		if key.ts < currentBucket && observedCount(current) == c.persisted[key] {
 			delete(c.buckets, key)
 			delete(c.persisted, key)
 		}

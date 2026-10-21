@@ -146,9 +146,7 @@ func Distribute() func(c *gin.Context) {
 
 			channel, selectGroup, selectErr := selectChannelForRequest(c, modelRequest.Model, usingGroup, clientID, specificChannelID)
 			if selectErr != nil {
-				if selectErr.StatusCode >= 500 || selectErr.StatusCode == http.StatusTooManyRequests {
-					recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup)
-				}
+				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup, grouphealth.OutcomeForError(selectErr))
 				abortWithOpenAiMessage(c, selectErr.StatusCode, selectErr.Error(), selectErr.GetErrorCode())
 				return
 			}
@@ -157,7 +155,7 @@ func Distribute() func(c *gin.Context) {
 					abortWithOpenAiMessage(c, http.StatusNotFound, i18n.T(c, i18n.MsgDistributorModelNotFound, map[string]any{"Model": modelRequest.Model}), types.ErrorCodeModelNotFound)
 					return
 				}
-				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup)
+				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup, grouphealth.OutcomeServiceFailure)
 				showGroup := usingGroup
 				if usingGroup == "auto" && selectGroup != "" {
 					showGroup = fmt.Sprintf("auto(%s)", selectGroup)
@@ -660,12 +658,12 @@ func hasConfiguredRequestModel(c *gin.Context, modelName, usingGroup string) boo
 	return err != nil || exists
 }
 
-func recordUnavailableGroupHealth(c *gin.Context, modelName, usingGroup, selectedGroup string) {
+func recordUnavailableGroupHealth(c *gin.Context, modelName, usingGroup, selectedGroup string, outcome grouphealth.Outcome) {
 	if !grouphealth.SupportsRequest(c.Request.Method, c.Request.URL.Path) {
 		return
 	}
 	for _, group := range unavailableHealthGroups(c, modelName, usingGroup, selectedGroup) {
-		grouphealth.Record(grouphealth.Sample{Group: group, Model: modelName, Success: false})
+		grouphealth.Record(grouphealth.Sample{Group: group, Model: modelName, Outcome: outcome})
 	}
 }
 

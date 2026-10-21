@@ -23,29 +23,97 @@ func NewRequest(modelName string, clientStream bool) *Request {
 }
 
 func (r *Request) Failure(group string) {
+	r.observeGroup(group, OutcomeServiceFailure)
+}
+
+// OutcomeForError keeps uncertain failures (including downstream disconnects)
+// in the availability denominator. A disconnect does not prove user intent.
+func OutcomeForError(err *types.NewAPIError) Outcome {
+	if err != nil && err.GetErrorType() == types.ErrorTypeNewAPIError && err.UpstreamStatusCode == 0 {
+		if (err.GetErrorCode() == types.ErrorCodeInvalidRequest && err.StatusCode == http.StatusBadRequest) ||
+			(err.GetErrorCode() == types.ErrorCodeAccessDenied && err.StatusCode == http.StatusForbidden) {
+			return OutcomeUserError
+		}
+	}
+	switch types.ClassifyFailure(err) {
+	case types.FailureUserRequest:
+		return OutcomeUserError
+	case types.FailureClientCanceled:
+		return OutcomeClientCanceled
+	case types.FailureService:
+		return OutcomeServiceFailure
+	default:
+		return OutcomeUnknownFailure
+	}
+}
+
+// ExcludeUserError is reserved for trusted local policy rejection sites. An
+// upstream status or provider-supplied error code cannot call this path.
+func (r *Request) ExcludeUserError(group string) {
+	r.observeGroup(group, OutcomeUserError)
+}
+
+func (r *Request) ObserveFailure(group string, err *types.NewAPIError) {
+	r.observeGroup(group, OutcomeForError(err))
+}
+
+// ObserveUnrecordedFailure covers failures before an upstream attempt without
+// rewriting the result already attributed to this group inside the retry loop.
+func (r *Request) ObserveUnrecordedFailure(group string, err *types.NewAPIError) {
+	if r == nil || err == nil {
+		return
+	}
+	if _, exists := r.groups[group]; !exists {
+		r.ObserveFailure(group, err)
+	}
+}
+
+func (r *Request) observeGroup(group string, outcome Outcome) {
 	if r == nil || group == "" || group == "auto" {
 		return
 	}
-	r.groups[group] = Sample{Group: group, Model: r.model}
+	r.store(Sample{Group: group, Model: r.model, Outcome: outcome})
 }
 
-// ObserveResult keeps earlier service failures when a later retry is rejected
-// for a user request problem; an excluded attempt never creates a success.
-func (r *Request) ObserveResult(info *relaycommon.RelayInfo, err *types.NewAPIError, connected bool, now time.Time) {
-	if types.ClassifyFailure(err) == types.FailureUserRequest {
+// delivered describes the observed response writes, not the current request
+// context: a client may disconnect after a response has already completed.
+func (r *Request) ObserveResult(info *relaycommon.RelayInfo, err *types.NewAPIError, delivered bool, now time.Time) {
+	if err != nil {
+		r.observe(info, OutcomeForError(err), now)
 		return
 	}
-	r.Observe(info, err == nil && connected, now)
+	outcome := OutcomeUnknownFailure
+	if delivered {
+		outcome = OutcomeSuccess
+	}
+	r.observe(info, outcome, now)
 }
 
 func (r *Request) Observe(info *relaycommon.RelayInfo, success bool, now time.Time) {
+	outcome := OutcomeUnknownFailure
+	if success {
+		outcome = OutcomeSuccess
+	}
+	r.observe(info, outcome, now)
+}
+
+func (r *Request) observe(info *relaycommon.RelayInfo, outcome Outcome, now time.Time) {
 	if r == nil || info == nil || info.UsingGroup == "" || info.UsingGroup == "auto" {
 		return
 	}
-	if !info.StreamStatus.IsSuccessful() {
-		success = false
+	if outcome == OutcomeSuccess && !info.StreamStatus.IsSuccessful() {
+		// Stream errors also include downstream write failures, so an incomplete
+		// protocol alone does not establish service-side responsibility.
+		outcome = OutcomeUnknownFailure
+		if info.StreamStatus.EndReason == relaycommon.StreamEndReasonTimeout {
+			outcome = OutcomeServiceFailure
+		}
 	}
-	sample := Sample{Group: info.UsingGroup, Model: r.model, Success: success}
+	if outcome == OutcomeUnknownFailure && info.StreamStatus != nil && info.StreamStatus.EndReason == relaycommon.StreamEndReasonClientGone {
+		outcome = OutcomeClientCanceled
+	}
+	success := outcome == OutcomeSuccess
+	sample := Sample{Group: info.UsingGroup, Model: r.model, Outcome: outcome}
 	if success && info.GroupHealthCacheUsage != nil {
 		usage := *info.GroupHealthCacheUsage
 		sample.CacheUsage = &usage
@@ -62,7 +130,20 @@ func (r *Request) Observe(info *relaycommon.RelayInfo, success bool, now time.Ti
 			sample.CompletionMs = &value
 		}
 	}
-	r.groups[info.UsingGroup] = sample
+	r.store(sample)
+}
+
+func (r *Request) store(sample Sample) {
+	previous, exists := r.groups[sample.Group]
+	if exists && (previous.Outcome == OutcomeSuccess ||
+		(previous.Outcome == OutcomeServiceFailure && sample.Outcome != OutcomeSuccess) ||
+		(sample.Outcome == OutcomeUserError && previous.Outcome != OutcomeUserError)) {
+		// A later cancellation cannot undo delivered success; an excluded request
+		// error or uncertain interruption cannot erase an established service
+		// failure from an earlier same-group attempt. A successful retry can.
+		return
+	}
+	r.groups[sample.Group] = sample
 }
 
 func (r *Request) Samples(now time.Time) []Sample {

@@ -2,11 +2,16 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -32,6 +37,9 @@ func TestGroupHealthPersistenceAcrossProcessesAndExactFilters(t *testing.T) {
 	rows[0].RequestCount = 11
 	rows[0].CacheInputTokens = 200
 	rows[0].CacheSampleCount = 2
+	rows[0].ServiceFailureCount = 1
+	rows[0].ClientCanceledCount = 1
+	rows[0].ExcludedUserErrorCount = 4
 	require.NoError(t, SaveGroupHealthSnapshots(ctx, rows[:1]))
 	got, err := QueryGroupHealthMetrics(ctx, []string{"public"}, "model-a", ts, now.Unix())
 	require.NoError(t, err)
@@ -42,6 +50,9 @@ func TestGroupHealthPersistenceAcrossProcessesAndExactFilters(t *testing.T) {
 	require.EqualValues(t, 110, got[0].CacheReadTokens)
 	require.EqualValues(t, 370, got[0].CacheInputTokens)
 	require.EqualValues(t, 4, got[0].CacheSampleCount)
+	require.EqualValues(t, 1, got[0].ServiceFailureCount)
+	require.EqualValues(t, 1, got[0].ClientCanceledCount)
+	require.EqualValues(t, 4, got[0].ExcludedUserErrorCount)
 	got, err = QueryGroupHealthMetrics(ctx, nil, "", ts, now.Unix())
 	require.NoError(t, err)
 	require.Empty(t, got)
@@ -80,4 +91,97 @@ func TestGroupHealthCacheMigrationKeepsLegacyRowsUnknown(t *testing.T) {
 	require.EqualValues(t, 10, rows[0].RequestCount)
 	require.Zero(t, rows[0].CacheSampleCount)
 	require.Zero(t, rows[0].CacheInputTokens)
+}
+
+// Keep the pre-attribution schema explicit: migration must add columns without
+// rewriting or reclassifying historical outcomes, including during a rollout
+// in which an older process continues to write its original columns.
+type groupHealthMetricLegacy struct {
+	ID               string `gorm:"type:varchar(36);primaryKey"`
+	GroupName        string `gorm:"size:64;index:idx_group_health_window,priority:1"`
+	ModelName        string `gorm:"size:255;index:idx_group_health_model,priority:1"`
+	BucketTs         int64  `gorm:"index:idx_group_health_window,priority:2;index:idx_group_health_model,priority:2;index"`
+	RequestCount     int64
+	SuccessCount     int64
+	TTFTSumMs        int64
+	TTFTCount        int64
+	CompletionSumMs  int64
+	CompletionCount  int64
+	CacheReadTokens  int64 `gorm:"default:0"`
+	CacheInputTokens int64 `gorm:"default:0"`
+	CacheSampleCount int64 `gorm:"default:0"`
+	UpdatedAt        int64 `gorm:"autoUpdateTime:false"`
+}
+
+func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
+	for _, dialect := range []string{"sqlite", "mysql", "postgres"} {
+		t.Run(dialect, func(t *testing.T) {
+			var dialector gorm.Dialector = sqlite.Open(":memory:")
+			switch dialect {
+			case "mysql":
+				dsn := strings.TrimSpace(os.Getenv("TEST_MYSQL_DSN"))
+				if dsn == "" {
+					t.Skip("disposable TEST_MYSQL_DSN is not configured")
+				}
+				dialector = mysqlMigrationDialector{mysql.Dialector{Config: &mysql.Config{DSN: dsn}}}
+			case "postgres":
+				dsn := strings.TrimSpace(os.Getenv("TEST_POSTGRES_DSN"))
+				if dsn == "" {
+					t.Skip("disposable TEST_POSTGRES_DSN is not configured")
+				}
+				dialector = postgresMigrationDialector{postgres.Dialector{Config: &postgres.Config{DSN: dsn, PreferSimpleProtocol: true}}}
+			}
+			db, err := gorm.Open(dialector, &gorm.Config{})
+			require.NoError(t, err)
+			sqlDB, err := db.DB()
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+			table := fmt.Sprintf("group_health_outcome_%d", time.Now().UnixNano())
+			t.Cleanup(func() { require.NoError(t, db.Migrator().DropTable(table)) })
+			tableDB := db.Table(table).Session(&gorm.Session{})
+			require.NoError(t, tableDB.AutoMigrate(&groupHealthMetricLegacy{}))
+			require.NoError(t, tableDB.Create(&groupHealthMetricLegacy{ID: "legacy", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 10, SuccessCount: 6}).Error)
+			recorder := &migrationSQLRecorder{}
+			require.NoError(t, tableDB.Session(&gorm.Session{Logger: recorder}).AutoMigrate(&GroupHealthMetric{}))
+			mutations := recorder.schemaMutations()
+			require.Len(t, mutations, 3, "attribution migration should only add its three counters")
+			for _, statement := range mutations {
+				require.Contains(t, strings.ToUpper(statement), "ADD")
+				require.NotContains(t, strings.ToUpper(statement), "DROP")
+			}
+			recorder.reset()
+			require.NoError(t, tableDB.Session(&gorm.Session{Logger: recorder}).AutoMigrate(&GroupHealthMetric{}))
+			require.Empty(t, recorder.schemaMutations(), "repeated startup must not change the schema")
+
+			var legacy GroupHealthMetric
+			require.NoError(t, tableDB.Where("id = ?", "legacy").First(&legacy).Error)
+			require.EqualValues(t, 10, legacy.RequestCount)
+			require.EqualValues(t, 6, legacy.SuccessCount)
+			require.Zero(t, legacy.ServiceFailureCount)
+			require.Zero(t, legacy.ExcludedUserErrorCount)
+			require.Zero(t, legacy.ClientCanceledCount)
+
+			previous := DB
+			DB = tableDB
+			t.Cleanup(func() { DB = previous })
+			ctx := context.Background()
+			fresh := GroupHealthMetric{ID: "new", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 5, SuccessCount: 2, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 3}
+			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}))
+			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}), "ambiguous commit retries must be idempotent")
+			// Only the excluded count changes in this later absolute snapshot.
+			fresh.ExcludedUserErrorCount = 4
+			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}))
+			require.NoError(t, tableDB.Model(&groupHealthMetricLegacy{}).Where("id = ?", "legacy").Update("request_count", 11).Error)
+			rows, err := QueryGroupHealthMetrics(ctx, []string{"g"}, "m", 3600, 7200)
+			require.NoError(t, err)
+			require.Len(t, rows, 1)
+			require.EqualValues(t, 16, rows[0].RequestCount)
+			require.EqualValues(t, 8, rows[0].SuccessCount)
+			require.EqualValues(t, 1, rows[0].ServiceFailureCount)
+			require.EqualValues(t, 1, rows[0].ClientCanceledCount)
+			require.EqualValues(t, 4, rows[0].ExcludedUserErrorCount)
+			// Legacy residual 5 + newly unknown 2, without claiming a cause.
+			require.EqualValues(t, 7, rows[0].RequestCount-rows[0].SuccessCount-rows[0].ServiceFailureCount)
+		})
+	}
 }
