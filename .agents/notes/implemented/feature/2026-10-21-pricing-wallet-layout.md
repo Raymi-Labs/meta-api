@@ -32,6 +32,6 @@ Status: implemented
 
 ## Related notes
 
-[厂商切换修正](../bug-fix/2026-10-21-pricing-vendor-transition.md)部分替代本文的“不适用组继续保留”交互：仅在用户主动切换厂商时重置不适用组；蓝色紧凑标题条与厂商顺序同见该笔记，其余布局和钱包决定保留。
+[厂商切换修正](../bug-fix/2026-10-21-pricing-vendor-transition.md)部分替代本文的“不适用组继续保留”交互：仅在用户主动切换厂商时重置不适用组；蓝色视觉与厂商顺序同见该笔记，其余布局和钱包决定保留。
 
 [筛选可见性](../../implemented/feature/2026-10-11-pricing-filter-visibility.md)继续负责保留已选零匹配项；[价格排序](../../implemented/feature/2026-10-17-model-price-sorting.md)和[健康筛选](../../implemented/bug-fix/2026-10-17-group-health-filters.md)保持原规则。检索命中的协议及缓存计费笔记与本次布局无关。

@@ -1567,6 +1567,9 @@ html.dark .with-pastel-balls::before {
 
 /* ==================== 模型定价页面布局 ==================== */
 .pricing-page {
+  --pricing-sidebar-bg: #f5f7fc;
+  --pricing-input-bg: #fff;
+  --pricing-table-heading-bg: #f8fafc;
   /* PageLayout 已为固定导航预留 64px，这里只占用剩余视口。 */
   height: calc(100vh - 64px);
   height: calc(100dvh - 64px);
@@ -1574,6 +1577,12 @@ html.dark .with-pastel-balls::before {
   display: flex;
   flex-direction: column;
   background: var(--semi-color-bg-0);
+}
+
+body[theme-mode='dark'] .pricing-page {
+  --pricing-sidebar-bg: #191e2a;
+  --pricing-input-bg: var(--semi-color-bg-1);
+  --pricing-table-heading-bg: #1d2330;
 }
 
 .pricing-layout {
@@ -1589,6 +1598,11 @@ html.dark .with-pastel-balls::before {
   gap: 8px;
   padding: 16px;
   border-bottom: 1px solid var(--semi-color-border);
+  background: linear-gradient(
+    90deg,
+    rgba(var(--semi-blue-5), 0.06),
+    transparent 75%
+  );
 }
 
 .pricing-vendors button {
@@ -1614,11 +1628,39 @@ html.dark .with-pastel-balls::before {
   background: var(--semi-color-fill-0);
 }
 
+.pricing-group-list button[aria-pressed='true'],
+.pricing-group-list button[aria-pressed='true']:hover {
+  background: var(--semi-color-primary-light-default);
+  box-shadow: inset 3px 0 var(--semi-color-primary);
+}
+
+.pricing-group-list button:focus-visible,
+.pricing-vendors button:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
+
 .pricing-group-sidebar {
   padding: 16px;
 }
+.pricing-group-sidebar h2 {
+  height: 24px;
+  line-height: 24px;
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.pricing-group-sidebar .semi-input-wrapper {
+  background-color: var(--pricing-input-bg);
+  border: 1px solid var(--semi-color-border);
+}
 .pricing-model-table table {
   min-width: 100%;
+}
+.pricing-page .pricing-model-table thead > tr > th {
+  background-color: var(--pricing-table-heading-bg) !important;
+}
+.pricing-model-table tbody > tr:hover > td {
+  background-color: var(--semi-color-fill-0);
 }
 .pricing-group-list {
   display: flex;
@@ -1658,30 +1700,39 @@ html.dark .with-pastel-balls::before {
   margin: 12px 0;
 }
 
-.pricing-title-banner {
+.pricing-section-heading {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  height: 24px;
+  min-width: 0;
   gap: 12px;
   margin-bottom: 12px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  color: white;
-  background:
-    linear-gradient(90deg, rgba(29, 78, 216, 0.88), rgba(30, 64, 175, 0.86)),
-    url('/cover-4.webp') center / cover;
+  color: var(--semi-color-text-0);
 }
-.pricing-title-banner h1 {
-  font-size: 20px;
+.pricing-section-heading h1 {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 24px;
   font-weight: 600;
   margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--semi-color-primary);
+}
+.pricing-current-vendor {
+  min-width: 0;
+  color: var(--semi-color-text-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .pricing-title-count {
+  flex-shrink: 0;
   font-size: 12px;
-  padding: 3px 10px;
+  line-height: 20px;
+  padding: 0 8px;
   border-radius: 12px;
-  background: white;
-  color: #1e3a8a;
+  background: var(--semi-color-primary-light-default);
+  color: var(--semi-color-primary);
 }
 
 @media (max-width: 767px) {
@@ -1699,7 +1750,8 @@ html.dark .with-pastel-balls::before {
   min-width: 260px !important;
   max-width: 260px !important;
   height: 100%;
-  background-color: var(--semi-color-bg-0);
+  background-color: var(--pricing-sidebar-bg);
+  border-right: 1px solid var(--semi-color-border);
   overflow: auto;
 }
 
@@ -1726,7 +1778,7 @@ html.dark .with-pastel-balls::before {
 }
 
 .pricing-search-header {
-  padding: 0.5rem;
+  padding: 16px 16px 0;
   background-color: var(--semi-color-bg-0);
   flex-shrink: 0;
   position: sticky;
@@ -1738,6 +1790,7 @@ html.dark .with-pastel-balls::before {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  padding: 0 6px;
 }
 
 /* ==================== semi-ui 组件自定义样式 ==================== */

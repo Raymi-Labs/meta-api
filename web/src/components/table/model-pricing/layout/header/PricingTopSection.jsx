@@ -26,9 +26,12 @@ const PricingTopSection = ({ sidebarProps, ...props }) => {
   const { filterGroup, t } = sidebarProps;
   return (
     <>
-      <div className='pricing-title-banner'>
+      <div className='pricing-section-heading'>
         <h1>{t('模型广场')}</h1>
-        <span>
+        <span
+          className='pricing-current-vendor'
+          title={sidebarProps.filterVendor}
+        >
           {sidebarProps.filterVendor === 'all'
             ? t('全部供应商')
             : sidebarProps.filterVendor === 'unknown'

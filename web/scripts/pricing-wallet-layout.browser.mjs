@@ -173,6 +173,75 @@ try {
       );
     };
     await page.goto(baseURL + '/pricing', { waitUntil: 'networkidle0' });
+    if (!mobile) {
+      // Both independent columns must keep their search fields on one baseline.
+      for (const width of [1440, 1024, 768]) {
+        await page.setViewport({ width, height: 1000 });
+        for (const dark of [false, true]) {
+          await page.evaluate((dark) => {
+            if (dark) document.body.setAttribute('theme-mode', 'dark');
+            else document.body.removeAttribute('theme-mode');
+            document.documentElement.classList.toggle('dark', dark);
+          }, dark);
+          await page.waitForFunction(
+            (dark) =>
+              getComputedStyle(
+                document.querySelector('.pricing-model-table th'),
+              ).backgroundColor ===
+              (dark ? 'rgb(29, 35, 48)' : 'rgb(248, 250, 252)'),
+            {},
+            dark,
+          );
+          const layout = await page.evaluate(() => {
+            const left = document.querySelector('.pricing-sidebar input');
+            const right = document.querySelector(
+              '.pricing-search-header input',
+            );
+            return {
+              delta: Math.abs(
+                left.getBoundingClientRect().top -
+                  right.getBoundingClientRect().top,
+              ),
+              sidebar: getComputedStyle(
+                document.querySelector('.pricing-sidebar'),
+              ).backgroundColor,
+              content: getComputedStyle(
+                document.querySelector('.pricing-content'),
+              ).backgroundColor,
+              overflow: document.documentElement.scrollWidth > innerWidth,
+              tableHeader: getComputedStyle(
+                document.querySelector('.pricing-model-table th'),
+              ).backgroundColor,
+              selectedMarker: getComputedStyle(
+                document.querySelector(
+                  '.pricing-group-list button[aria-pressed="true"]',
+                ),
+              ).boxShadow,
+            };
+          });
+          assert(
+            layout.delta <= 1,
+            `Search alignment ${width}/${dark}: ${layout.delta}px`,
+          );
+          assert.notEqual(layout.sidebar, layout.content);
+          assert.notEqual(layout.selectedMarker, 'none');
+          assert.equal(
+            layout.tableHeader,
+            dark ? 'rgb(29, 35, 48)' : 'rgb(248, 250, 252)',
+          );
+          assert.equal(layout.overflow, false);
+          await page.screenshot({
+            path: `/tmp/pricing-alignment-${width}-${dark ? 'dark' : 'light'}.png`,
+            fullPage: true,
+          });
+        }
+      }
+      await page.evaluate(() => {
+        document.body.removeAttribute('theme-mode');
+        document.documentElement.classList.remove('dark');
+      });
+      await page.setViewport({ width: 1440, height: 1000 });
+    }
     assert.deepEqual(
       await page.$$eval('.pricing-vendors button', (els) =>
         els.map((e) => e.textContent),
