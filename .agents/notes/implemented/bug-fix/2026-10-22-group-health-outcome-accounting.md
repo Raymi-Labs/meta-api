@@ -18,7 +18,7 @@ Status: implemented
 
 ## Related notes
 
-检索 active notes 的 group-health、分组健康、成功率和 FailureUserRequest：[颜色规则](../../implemented/bug-fix/2026-10-22-group-health-truthful-colors.md)部分重叠，继续负责实际率着色、统一阈值和样本量提示，本篇承接用户新授权的后端统计细化；[分组筛选](../../implemented/bug-fix/2026-10-17-group-health-filters.md)继续管理模型关联与权限，保留仅有排除样本的已有分组。管理端渠道用量基于日志，与本采集口径独立，不混用。
+检索 active notes 的 group-health、分组健康、成功率和 FailureUserRequest：[颜色规则](../../implemented/bug-fix/2026-10-22-group-health-truthful-colors.md)部分重叠，[不足三十次统一灰色](2026-10-22-group-health-limited-gray.md)随后按用户要求调整低样本展示，达到门槛后继续使用统一成功率阈值；本篇负责后端统计细化；[分组筛选](../../implemented/bug-fix/2026-10-17-group-health-filters.md)继续管理模型关联与权限，保留仅有排除样本的已有分组。管理端渠道用量基于日志，与本采集口径独立，不混用。
 
 ## Alternatives considered
 

@@ -84,6 +84,7 @@
   color: var(--semi-color-danger);
 }
 .group-health-text-empty,
+.group-health-text-limited,
 .group-health-muted {
   color: var(--semi-color-text-2);
 }
@@ -175,7 +176,8 @@
 .group-health-bar-degraded {
   --health-bar-color: #ed6d68;
 }
-.group-health-bar-empty {
+.group-health-bar-empty,
+.group-health-bar-limited {
   --health-bar-color: var(--semi-color-fill-1);
 }
 .group-health-axis {

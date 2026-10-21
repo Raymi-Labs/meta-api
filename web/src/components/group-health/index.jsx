@@ -264,6 +264,7 @@ export function GroupHealthPanel({
   const selected = series.find((bucket) => bucket.ts === selectedTs);
   const tone = healthTone(stats);
   const labels = {
+    limited: t('样本不足'),
     healthy: t('运行稳定'),
     warning: t('部分波动'),
     degraded: t('失败较多'),
@@ -272,8 +273,6 @@ export function GroupHealthPanel({
     healthTone(value) === 'empty'
       ? emptyHealthLabel(value, t)
       : labels[healthTone(value)];
-  const statusDescription = (value) =>
-    `${statusLabel(value)}${isHealthSampleLimited(value) ? ` · ${t('样本不足')}` : ''}`;
   return (
     <section className='group-health-panel'>
       {showTitle && (
@@ -290,11 +289,6 @@ export function GroupHealthPanel({
             <span className={`group-health-badge group-health-badge-${tone}`}>
               {statusLabel(stats)}
             </span>
-            {isHealthSampleLimited(stats) && (
-              <span className='group-health-badge group-health-badge-limited'>
-                {t('样本不足')}
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -313,8 +307,8 @@ export function GroupHealthPanel({
             key={bucket.ts}
             type='button'
             className={`group-health-bar group-health-bar-${healthTone(bucket)}`}
-            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
-            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusDescription(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
+            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
+            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
             aria-pressed={selectedTs === bucket.ts}
             aria-controls={detailsId}
             onClick={() =>
@@ -380,12 +374,12 @@ export function GroupHealthLegend() {
         </span>
         <span>
           <i className='group-health-bar-empty' />
-          {t('无有效统计样本')}
+          {t('样本不足或无有效统计样本')}
         </span>
       </div>
       <p className='group-health-note'>
         {t(
-          '计入统计少于 {{count}} 次时提示样本不足，颜色仍按实际成功率显示。',
+          '计入统计少于 {{count}} 次时显示灰色；达到 {{count}} 次后按实际成功率着色。',
           {
             count: HEALTH_MIN_SAMPLES,
           },

@@ -162,6 +162,14 @@ const withSeries = (stats) => ({
     ...(index === 0 ? stats : emptyStats),
   })),
 });
+const boundaryStats = (requestCount) =>
+  withSeries({
+    ...emptyStats,
+    request_count: requestCount,
+    success_count: requestCount,
+    observed_count: requestCount,
+    success_rate: requestCount ? 100 : null,
+  });
 const classifiedStats = withSeries({
   request_count: 7,
   success_count: 1,
@@ -629,12 +637,8 @@ try {
           name: panel.querySelector('.group-health-name').textContent,
           rate: panel.querySelector('.group-health-number').textContent,
           rateClass: panel.querySelector('.group-health-number').className,
-          label: panel.querySelector(
-            '.group-health-badge:not(.group-health-badge-limited)',
-          ).textContent,
-          labelClass: panel.querySelector(
-            '.group-health-badge:not(.group-health-badge-limited)',
-          ).className,
+          label: panel.querySelector('.group-health-badge').textContent,
+          labelClass: panel.querySelector('.group-health-badge').className,
           bars: Array.from(panel.querySelectorAll('.group-health-bar')).map(
             (bar) => bar.className,
           ),
@@ -649,8 +653,8 @@ try {
     ];
     const expectedBars = [
       'empty',
-      'degraded',
-      'healthy',
+      'limited',
+      'limited',
       'degraded',
       'degraded',
       'degraded',
@@ -658,7 +662,7 @@ try {
       'warning',
       'warning',
       'degraded',
-      'degraded',
+      'limited',
       'degraded',
     ];
     for (const [i, panel] of colors.entries()) {
@@ -693,27 +697,27 @@ try {
     }
     assert(!legend.includes('99%'));
     assert(!legend.includes('90%'));
-    assert(!legend.includes('不足 30 次'));
+    assert(legend.includes('样本不足'));
     assert(
       await page.$eval('.group-health-overview', (el) =>
         el.textContent.includes(
-          '计入统计少于 30 次时提示样本不足，颜色仍按实际成功率显示。',
+          '计入统计少于 30 次时显示灰色；达到 30 次后按实际成功率着色。',
         ),
       ),
     );
-    // Low-volume failures remain red and expose the sample warning independently.
+    // Low-volume results remain numerical but use the shared gray sample state.
     await page.click('.group-health-panel .group-health-bar:nth-child(2)');
     const bucketText = await page.$eval(
       '.group-health-bucket',
       (el) => el.textContent,
     );
     assert(bucketText.includes('0.00%'));
-    assert(bucketText.includes('失败较多'));
+    assert(!bucketText.includes('失败较多'));
     assert(bucketText.includes('样本不足'));
     assert(
       await page.$eval(
         '.group-health-bucket .group-health-inline strong',
-        (el) => el.classList.contains('group-health-text-degraded'),
+        (el) => el.classList.contains('group-health-text-limited'),
       ),
     );
     const lowSampleBar = await page.$eval(
@@ -721,7 +725,7 @@ try {
       (el) => ({ title: el.title, label: el.getAttribute('aria-label') }),
     );
     for (const text of [lowSampleBar.title, lowSampleBar.label]) {
-      assert(text.includes('失败较多'));
+      assert(!text.includes('失败较多'));
       assert(text.includes('样本不足'));
     }
     await page.click('.group-health-panel .group-health-bar:nth-child(2)');
@@ -820,7 +824,6 @@ try {
     );
     for (const text of [
       '14.29%',
-      '失败较多',
       '样本不足',
       '成功 1 · 服务失败 0 · 未归因失败 6',
     ])
@@ -828,7 +831,7 @@ try {
     assert(
       await page.$eval(
         '.group-health-bucket .group-health-inline strong',
-        (el) => el.classList.contains('group-health-text-degraded'),
+        (el) => el.classList.contains('group-health-text-limited'),
       ),
     );
     await screenshotPanel('Shared', 'reported');
@@ -853,18 +856,10 @@ try {
       ),
     );
     const limitedSnapshot = await panelSnapshot('Shared');
-    assert(limitedSnapshot.rateClass.includes('group-health-text-degraded'));
-    assert.deepEqual(
-      limitedSnapshot.badges.map(({ text }) => text).sort(),
-      ['失败较多', '样本不足'].sort(),
-    );
-    assert(
-      limitedSnapshot.badges.some(
-        ({ text, className }) =>
-          text === '失败较多' &&
-          className.includes('group-health-badge-degraded'),
-      ),
-    );
+    assert(limitedSnapshot.rateClass.includes('group-health-text-limited'));
+    assert.deepEqual(limitedSnapshot.badges.map(({ text }) => text).sort(), [
+      '样本不足',
+    ]);
     assert(
       limitedSnapshot.badges.some(
         ({ text, className }) =>
@@ -952,6 +947,87 @@ try {
     await screenshotPanel('Empty', 'excluded-only');
     await excludedHour.dispose();
     await excludedPanel.dispose();
+    // The threshold is the valid count, applied independently to totals and hours.
+    const countBoundaries = [
+      ['Claude', 0, 'empty', '暂无调用'],
+      ['GPT', 1, 'limited', '样本不足'],
+      ['Shared', 29, 'limited', '样本不足'],
+      ['Empty', 30, 'healthy', '运行稳定'],
+    ];
+    healthOverrides = Object.fromEntries(
+      countBoundaries.map(([group, count]) => [group, boundaryStats(count)]),
+    );
+    await clickText('刷新', '.group-health-toolbar');
+    await page.waitForFunction(() =>
+      Array.from(document.querySelectorAll('.group-health-panel')).some(
+        (panel) =>
+          panel.querySelector('.group-health-name')?.textContent === 'Shared' &&
+          panel
+            .querySelector('.group-health-caption')
+            ?.textContent.includes('计入统计 29 次'),
+      ),
+    );
+    for (const [group, count, tone, label] of countBoundaries) {
+      const snapshot = await panelSnapshot(group);
+      assert.equal(snapshot.rate, count ? '100.00%' : '—');
+      assert(snapshot.rateClass.includes(`group-health-text-${tone}`));
+      assert.deepEqual(
+        snapshot.badges.map(({ text }) => text),
+        [label],
+      );
+      assert(
+        snapshot.badges[0].className.includes(`group-health-badge-${tone}`),
+      );
+      const panel = await findPanel(group);
+      const firstBar = await panel.$('.group-health-bar');
+      assert.equal(
+        await firstBar.evaluate((el) => el.className),
+        `group-health-bar group-health-bar-${tone}`,
+      );
+      assert((await firstBar.evaluate((el) => el.title)).includes(label));
+      const grayBar = await panel.$('.group-health-bar-empty:last-child');
+      if (tone === 'limited') {
+        assert.equal(
+          await firstBar.evaluate((el) => getComputedStyle(el).backgroundColor),
+          await grayBar.evaluate((el) => getComputedStyle(el).backgroundColor),
+        );
+      }
+      if (
+        (await firstBar.evaluate((el) => el.getAttribute('aria-pressed'))) !==
+        'true'
+      )
+        await firstBar.click();
+      await panel.waitForSelector('.group-health-bucket-header span');
+      assert.equal(
+        await panel.$eval(
+          '.group-health-bucket-header span',
+          (el) => el.textContent,
+        ),
+        label,
+      );
+      if (count) {
+        assert.equal(
+          await panel.$eval(
+            '.group-health-bucket .group-health-inline strong',
+            (el) => el.textContent,
+          ),
+          '100.00%',
+        );
+        assert(
+          await panel.$eval(
+            '.group-health-bucket .group-health-inline strong',
+            (el, tone) => el.classList.contains(`group-health-text-${tone}`),
+            tone,
+          ),
+        );
+      }
+      await firstBar.click();
+      await firstBar.dispose();
+      await grayBar.dispose();
+      await panel.dispose();
+    }
+    await screenshotPanel('Shared', 'sample-29-gray');
+    await screenshotPanel('Empty', 'sample-30-green');
     healthOverrides = {};
     await clickText('刷新', '.group-health-toolbar');
     await page.waitForFunction(() =>
@@ -1075,23 +1151,26 @@ try {
       Shared: classifiedStats,
       Empty: excludedOnlyStats,
     };
-    await page.evaluate(() =>
-      Array.from(document.querySelectorAll('[role=tab]'))
-        .find((tab) => tab.textContent.trim() === '模型列表')
-        .click(),
-    );
-    await page.waitForFunction(() =>
-      Array.from(
-        document.querySelectorAll('.semi-card h3, .semi-table-row span'),
-      ).some((el) => el.textContent.trim() === 'gpt-fixture'),
-    );
-    await page.evaluate(() =>
-      Array.from(
-        document.querySelectorAll('.semi-card h3, .semi-table-row span'),
-      )
-        .find((el) => el.textContent.trim() === 'gpt-fixture')
-        .click(),
-    );
+    const openModelDrawer = async () => {
+      await page.evaluate(() =>
+        Array.from(document.querySelectorAll('[role=tab]'))
+          .find((tab) => tab.textContent.trim() === '模型列表')
+          .click(),
+      );
+      await page.waitForFunction(() =>
+        Array.from(
+          document.querySelectorAll('.semi-card h3, .semi-table-row span'),
+        ).some((el) => el.textContent.trim() === 'gpt-fixture'),
+      );
+      await page.evaluate(() =>
+        Array.from(
+          document.querySelectorAll('.semi-card h3, .semi-table-row span'),
+        )
+          .find((el) => el.textContent.trim() === 'gpt-fixture')
+          .click(),
+      );
+    };
+    await openModelDrawer();
     await page.waitForFunction(() =>
       Array.from(
         document.querySelectorAll('.semi-sidesheet .group-health-price-row'),
@@ -1115,7 +1194,7 @@ try {
     );
     const compactShared = compactRows.find(({ group }) => group === 'Shared');
     assert.equal(compactShared.rate, '14.29%');
-    assert(compactShared.rateClass.includes('group-health-text-degraded'));
+    assert(compactShared.rateClass.includes('group-health-text-limited'));
     assert(compactShared.text.includes('样本不足'));
     assert(compactShared.text.includes('未归因 4 次 · 已排除 5 次'));
     assert.match(
@@ -1142,15 +1221,13 @@ try {
         panels.map((panel) => ({
           group: panel.querySelector('.group-health-name').textContent,
           rateClass: panel.querySelector('.group-health-number').className,
-          status: panel.querySelector(
-            '.group-health-badge:not(.group-health-badge-limited)',
-          ).textContent,
+          status: panel.querySelector('.group-health-badge').textContent,
           limited: Boolean(panel.querySelector('.group-health-badge-limited')),
         })),
     );
     const detailShared = detailPanels.find(({ group }) => group === 'Shared');
-    assert(detailShared.rateClass.includes('group-health-text-degraded'));
-    assert.equal(detailShared.status, '失败较多');
+    assert(detailShared.rateClass.includes('group-health-text-limited'));
+    assert.equal(detailShared.status, '样本不足');
     assert.equal(detailShared.limited, true);
     const detailGPT = detailPanels.find(({ group }) => group === 'GPT');
     assert(detailGPT.rateClass.includes('group-health-text-warning'));
@@ -1192,7 +1269,7 @@ try {
     assert(
       await page.$eval('.semi-sidesheet', (el) =>
         el.textContent.includes(
-          '计入统计少于 30 次时提示样本不足，颜色仍按实际成功率显示。',
+          '计入统计少于 30 次时显示灰色；达到 30 次后按实际成功率着色。',
         ),
       ),
     );
@@ -1203,9 +1280,66 @@ try {
         .querySelector('.semi-sidesheet-close')
         .click(),
     );
-    await page.waitForSelector('.semi-sidesheet .group-health-panel', {
+    await page.waitForSelector('.semi-sidesheet', {
       hidden: true,
     });
+    for (const count of [1, 29, 30]) {
+      const tone = count < 30 ? 'limited' : 'healthy';
+      const label = count < 30 ? '样本不足' : '运行稳定';
+      healthOverrides = { Shared: boundaryStats(count) };
+      // Reload each fixture so the existing delayed drawer cleanup cannot
+      // overwrite a newly opened model while this test checks only colors.
+      await page.reload({ waitUntil: 'networkidle0' });
+      await openModelDrawer();
+      await page.waitForFunction(
+        (count) =>
+          Array.from(
+            document.querySelectorAll(
+              '.semi-sidesheet .group-health-price-row',
+            ),
+          ).some(
+            (row) =>
+              row.firstElementChild.textContent === 'Shared' &&
+              row
+                .querySelector('.group-health-inline')
+                ?.title.includes(`计入统计 ${count} 次`),
+          ),
+        {},
+        count,
+      );
+      const compactBoundary = await page.$$eval(
+        '.semi-sidesheet .group-health-price-row',
+        (rows) => {
+          const row = rows.find(
+            (row) => row.firstElementChild.textContent === 'Shared',
+          );
+          return {
+            rate: row.querySelector('.group-health-inline strong').textContent,
+            rateClass: row.querySelector('.group-health-inline strong')
+              .className,
+            text: row.textContent,
+          };
+        },
+      );
+      assert.equal(compactBoundary.rate, '100.00%');
+      assert(compactBoundary.rateClass.includes(`group-health-text-${tone}`));
+      assert.equal(compactBoundary.text.includes('样本不足'), count < 30);
+      await clickText('查看时间趋势', '.semi-sidesheet');
+      await page.waitForSelector('.semi-sidesheet .group-health-panel');
+      const boundaryPanel = await findPanel('Shared', '.semi-sidesheet');
+      assert.equal(
+        await boundaryPanel.$eval(
+          '.group-health-badge',
+          (el) => el.textContent,
+        ),
+        label,
+      );
+      assert.equal(
+        await boundaryPanel.$eval('.group-health-bar', (el) => el.className),
+        `group-health-bar group-health-bar-${tone}`,
+      );
+      await boundaryPanel.dispose();
+    }
     healthOverrides = {};
     const authenticatedHealthRequests = healthQueries.length;
     await page.removeScriptToEvaluateOnNewDocument(initialStorage.identifier);

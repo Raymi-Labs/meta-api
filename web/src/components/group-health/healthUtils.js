@@ -121,14 +121,14 @@ export function healthTone(stats) {
     successRate > 100
   )
     return 'empty';
+  if (requestCount < HEALTH_MIN_SAMPLES) return 'limited';
   if (successRate >= HEALTH_HEALTHY_RATE) return 'healthy';
   if (successRate >= HEALTH_WARNING_RATE) return 'warning';
   return 'degraded';
 }
 
 export function isHealthSampleLimited(stats) {
-  const count = Number(stats?.request_count);
-  return healthTone(stats) !== 'empty' && count < HEALTH_MIN_SAMPLES;
+  return healthTone(stats) === 'limited';
 }
 
 export function getHealthLatency(stats, metric = 'ttft') {

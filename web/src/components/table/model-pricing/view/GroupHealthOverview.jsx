@@ -157,7 +157,7 @@ const GroupHealthOverview = ({
               )}
               <GroupHealthScopeNote />
               <p className='group-health-note'>
-                {t('仅展示你可用的分组。灰色表示无有效统计样本。')}
+                {t('仅展示你可用的分组。灰色表示样本不足或无有效统计样本。')}
               </p>
             </>
           )}

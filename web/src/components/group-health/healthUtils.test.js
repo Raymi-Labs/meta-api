@@ -56,7 +56,7 @@ describe('group health display semantics', () => {
       observed: 12,
     });
     assert.equal(formatHealthRate(stats.success_rate), '14.29%');
-    assert.equal(healthTone(stats), 'degraded');
+    assert.equal(healthTone(stats), 'limited');
     assert.equal(isHealthSampleLimited(stats), true);
   });
 
@@ -99,7 +99,7 @@ describe('group health display semantics', () => {
     assert.equal(getHealthCounts(undefined).observed, 0);
   });
 
-  test('uses the same measured-rate boundaries for every positive sample size', () => {
+  test('keeps fewer than 30 included calls gray, then uses measured-rate boundaries', () => {
     for (const request_count of [1, 7, 29, 30, 99, 100, 101, 10000]) {
       for (const [success_rate, expected] of [
         [100, 'healthy'],
@@ -110,7 +110,10 @@ describe('group health display semantics', () => {
         [0, 'degraded'],
       ]) {
         const stats = Object.freeze({ request_count, success_rate });
-        assert.equal(healthTone(stats), expected);
+        assert.equal(
+          healthTone(stats),
+          request_count < 30 ? 'limited' : expected,
+        );
         assert.equal(stats.success_rate, success_rate);
         assert.equal(
           formatHealthRate(stats.success_rate),
@@ -120,7 +123,20 @@ describe('group health display semantics', () => {
     }
     assert.equal(
       healthTone({ request_count: '7', success_rate: '80' }),
+      'limited',
+    );
+    assert.equal(
+      healthTone({ request_count: '30', success_rate: '80' }),
       'warning',
+    );
+    assert.equal(
+      healthTone({
+        request_count: 29,
+        excluded_count: 100,
+        observed_count: 129,
+        success_rate: 100,
+      }),
+      'limited',
     );
   });
 
@@ -164,7 +180,7 @@ describe('group health display semantics', () => {
     assert.equal(formatHealthLatency(1234), '1.23 s');
   });
 
-  test('reports sample limitations separately from the measured health tone', () => {
+  test('uses the same sample threshold for the gray tone and sample notice', () => {
     for (const request_count of [1, 7, 29, '29']) {
       for (const success_rate of [0, 80, 95, 100]) {
         assert.equal(
@@ -181,7 +197,7 @@ describe('group health display semantics', () => {
     }
   });
 
-  test('shows the reported Kimi daily and hourly failures with the same tone', () => {
+  test('evaluates daily and hourly sample counts independently without changing rates', () => {
     const daily = Object.freeze({
       request_count: 201,
       success_count: 65,
@@ -195,7 +211,7 @@ describe('group health display semantics', () => {
     assert.equal(formatHealthRate(daily.success_rate), '32.34%');
     assert.equal(formatHealthRate(hour.success_rate), '14.29%');
     assert.equal(healthTone(daily), 'degraded');
-    assert.equal(healthTone(hour), 'degraded');
+    assert.equal(healthTone(hour), 'limited');
     assert.equal(isHealthSampleLimited(daily), false);
     assert.equal(isHealthSampleLimited(hour), true);
   });
