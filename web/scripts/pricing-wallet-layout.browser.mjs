@@ -45,6 +45,9 @@ const pricing = {
   supported_endpoint: {},
   auto_groups: [],
   data: [
+    { model_name: 'gpt-5.9', vendor_id: 1, quota_type: 0 },
+    { model_name: 'gpt-5.10', vendor_id: 1, quota_type: 0 },
+    { model_name: 'gpt-6.1', vendor_id: 1, quota_type: 0 },
     {
       model_name: 'ordinary-fixture',
       vendor_id: 1,
@@ -170,6 +173,12 @@ try {
       );
     };
     await page.goto(baseURL + '/pricing', { waitUntil: 'networkidle0' });
+    assert.deepEqual(
+      await page.$$eval('.pricing-vendors button', (els) =>
+        els.map((e) => e.textContent),
+      ),
+      ['全部供应商', 'Claude', 'OpenAI', 'Inception'],
+    );
     await click('OpenAI', '.pricing-vendors');
     if (mobile) {
       await page.waitForFunction(() =>
@@ -220,6 +229,17 @@ try {
     const rows = await page.$$eval('.semi-table-row', (els) =>
       els.map((e) => e.textContent),
     );
+    const versionRows = rows.filter((row) => row.includes('gpt-'));
+    assert(
+      versionRows[0].includes('gpt-6.1') &&
+        versionRows[1].includes('gpt-5.10') &&
+        versionRows[2].includes('gpt-5.9'),
+    );
+    assert(
+      !(await page.evaluate(() =>
+        document.body.textContent.includes('当前查看的分组为'),
+      )),
+    );
     const ordinary = rows.find((r) => r.includes('ordinary-fixture'));
     assert(
       ordinary.includes('¥0.4000') &&
@@ -266,6 +286,69 @@ try {
     });
     await page.$eval('.semi-sidesheet-close', (el) => el.click());
     await page.waitForSelector('.semi-sidesheet', { hidden: true });
+    // An exclusive group is cleared atomically when changing vendor.
+    await click('Claude', '.pricing-vendors');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.pricing-price-context')
+        .textContent.includes('全部分组'),
+    );
+    assert(
+      await page.$eval(
+        '.pricing-view-container',
+        (el) =>
+          el.textContent.includes('other-fixture') &&
+          el.textContent.includes('¥0.4000'),
+      ),
+    );
+    await click('更多筛选');
+    await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.semi-modal-body button'))
+        .find((b) => b.textContent.startsWith('Shared'))
+        .click(),
+    );
+    await click('确定', '.semi-modal');
+    await page.waitForSelector('.semi-modal', { hidden: true });
+    await click('OpenAI', '.pricing-vendors');
+    assert(
+      await page.$eval('.pricing-price-context', (el) =>
+        el.textContent.includes('Shared'),
+      ),
+    );
+    // Empty search results must never reset a usable group.
+    await page.$eval('input[placeholder*="搜索模型"]', (input) => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      ).set.call(input, 'no-matching-model');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector('.pricing-view-container')
+          .textContent.includes('ordinary-fixture'),
+    );
+    await click('OpenAI', '.pricing-vendors');
+    assert(
+      await page.$eval('.pricing-price-context', (el) =>
+        el.textContent.includes('Shared'),
+      ),
+    );
+    await click('更多筛选');
+    await click('重置', '.semi-modal');
+    await click('确定', '.semi-modal');
+    await page.waitForSelector('.semi-modal', { hidden: true });
+    assert(
+      await page.$eval('.pricing-price-context', (el) =>
+        el.textContent.includes('全部分组'),
+      ),
+    );
+    assert(
+      !(await page.evaluate(() =>
+        document.body.textContent.includes('当前查看的分组为'),
+      )),
+    );
     assert.equal(
       await page.evaluate(
         () => document.documentElement.scrollWidth > innerWidth,

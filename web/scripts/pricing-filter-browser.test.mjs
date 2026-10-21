@@ -211,13 +211,14 @@ try {
       await clickText('Claude', '.pricing-group-list');
       await clickText('OpenAI', '.pricing-vendors');
       assert(
-        await page.$eval('.pricing-group-list', (el) =>
-          el.textContent.includes('当前厂商无可用模型'),
+        await page.$eval(
+          '.pricing-group-list',
+          (el) => !el.textContent.includes('Claude'),
         ),
       );
       assert(
         await page.$eval('.pricing-price-context', (el) =>
-          el.textContent.includes('Claude'),
+          el.textContent.includes('全部分组'),
         ),
       );
       await clickText('GPT', '.pricing-group-list');

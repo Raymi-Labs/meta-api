@@ -26,7 +26,21 @@ const PricingTopSection = ({ sidebarProps, ...props }) => {
   const { filterGroup, t } = sidebarProps;
   return (
     <>
-      <h1 className='text-xl font-semibold mb-3'>{t('模型广场')}</h1>
+      <div className='pricing-title-banner'>
+        <h1>{t('模型广场')}</h1>
+        <span>
+          {sidebarProps.filterVendor === 'all'
+            ? t('全部供应商')
+            : sidebarProps.filterVendor === 'unknown'
+              ? t('未知供应商')
+              : sidebarProps.filterVendor}
+        </span>
+        <span className='pricing-title-count'>
+          {t('共 {{count}} 个模型', {
+            count: props.filteredModels?.length ?? 0,
+          })}
+        </span>
+      </div>
       <SearchActions {...props} setShowFilterModal={setShowFilterModal} />
       <p className='pricing-price-context' aria-live='polite'>
         {filterGroup === 'all'
