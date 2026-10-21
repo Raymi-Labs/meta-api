@@ -17,7 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Input, Spin } from '@douyinfe/semi-ui';
 import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
 
 /**
@@ -38,11 +39,15 @@ const PricingGroups = ({
   models = [],
   loading = false,
   hideUnavailable = false,
+  vertical = false,
   t,
 }) => {
+  const [search, setSearch] = useState('');
   const groups = [
     'all',
-    ...Object.keys(usableGroup).filter((key) => key !== ''),
+    ...Object.keys(usableGroup)
+      .filter((key) => key !== '')
+      .sort((a, b) => (groupRatio[b] ?? 1) - (groupRatio[a] ?? 1)),
   ];
 
   const items = groups.map((g) => {
@@ -69,6 +74,66 @@ const PricingGroups = ({
       disabled: modelCount === 0,
     };
   });
+
+  if (vertical) {
+    const visible = items.filter(
+      (item) =>
+        item.value === 'all' ||
+        item.value === filterGroup ||
+        (!item.disabled &&
+          item.label.toLowerCase().includes(search.toLowerCase().trim())),
+    );
+    return (
+      <section aria-label={t('可用令牌分组')}>
+        <h2 className='font-semibold mb-3'>{t('可用令牌分组')}</h2>
+        <Input
+          value={search}
+          onChange={setSearch}
+          showClear
+          aria-label={t('搜索分组')}
+          placeholder={t('搜索分组')}
+        />
+        {loading ? (
+          <Spin />
+        ) : (
+          <div className='pricing-group-list'>
+            {visible.map((item) => (
+              <button
+                type='button'
+                key={item.value}
+                aria-pressed={filterGroup === item.value}
+                onClick={() => setFilterGroup(item.value)}
+              >
+                <span className='pricing-group-label'>
+                  <span>{item.label}</span>
+                  {item.value !== 'all' && (
+                    <span className='pricing-group-ratio'>
+                      {groupRatio[item.value] ?? 1}×
+                    </span>
+                  )}
+                </span>
+                {usableGroup[item.value] && (
+                  <span className='pricing-group-description'>
+                    {usableGroup[item.value]}
+                  </span>
+                )}
+                {item.disabled &&
+                  item.value === filterGroup &&
+                  item.value !== 'all' && (
+                    <span className='pricing-group-description'>
+                      {t('当前厂商无可用模型，请选择其他分组')}
+                    </span>
+                  )}
+              </button>
+            ))}
+            {visible.every((item) => item.value === 'all' || item.disabled) && (
+              <p className='pricing-group-description'>{t('搜索无结果')}</p>
+            )}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <SelectableButtonGroup

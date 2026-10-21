@@ -1566,17 +1566,112 @@ html.dark .with-pastel-balls::before {
 }
 
 /* ==================== 模型定价页面布局 ==================== */
-.pricing-layout {
+.pricing-page {
   /* PageLayout 已为固定导航预留 64px，这里只占用剩余视口。 */
   height: calc(100vh - 64px);
   height: calc(100dvh - 64px);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--semi-color-bg-0);
+}
+
+.pricing-layout {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pricing-vendors {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid var(--semi-color-border);
+}
+
+.pricing-vendors button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--semi-color-text-1);
+  cursor: pointer;
+}
+
+.pricing-vendors button[aria-pressed='true'],
+.pricing-group-list button[aria-pressed='true'] {
+  color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+}
+
+.pricing-vendors button:hover,
+.pricing-group-list button:hover {
+  background: var(--semi-color-fill-0);
+}
+
+.pricing-group-sidebar {
+  padding: 16px;
+}
+.pricing-model-table table {
+  min-width: 100%;
+}
+.pricing-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.pricing-group-list button {
+  text-align: left;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px;
+  background: transparent;
+  color: var(--semi-color-text-0);
+  cursor: pointer;
+}
+.pricing-group-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.pricing-group-ratio {
+  white-space: nowrap;
+}
+.pricing-group-description {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+  overflow-wrap: anywhere;
+}
+.pricing-price-context {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+  margin: 12px 0;
+}
+
+@media (max-width: 767px) {
+  .pricing-vendors {
+    gap: 4px;
+    padding: 8px;
+  }
+  .pricing-vendors button {
+    padding: 6px 8px;
+  }
 }
 
 .pricing-sidebar {
-  width: clamp(280px, 24vw, 520px) !important;
-  min-width: clamp(280px, 24vw, 520px) !important;
-  max-width: clamp(280px, 24vw, 520px) !important;
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
   height: 100%;
   background-color: var(--semi-color-bg-0);
   overflow: auto;

@@ -1093,14 +1093,15 @@ const TopUp = () => {
                 }
               />
             </Form>
-            <div className='mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3'>
+            <div className='mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3'>
               <Text type='tertiary' size='small'>
-                {t('可以把钱包额度转换为兑换码赠送给其他用户')}
+                {t('将可转赠额度生成兑换码，赠送给其他用户')}
               </Text>
               <Button
                 type='primary'
-                theme='light'
-                size='small'
+                theme='outline'
+                className='shrink-0'
+                style={{ borderColor: 'var(--semi-color-primary)' }}
                 icon={<IconGift />}
                 onClick={() => setOpenWalletRedemption(true)}
               >

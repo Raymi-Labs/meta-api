@@ -182,7 +182,7 @@ try {
       }
     });
     await page.goto(`${baseURL}/pricing`, { waitUntil: 'networkidle0' });
-    const scope = mobile ? '.semi-modal-body' : '.pricing-sidebar';
+    const scope = '.semi-modal-body';
     const clickText = async (text, root = scope) => {
       await page.waitForFunction(
         (root, text) =>
@@ -203,7 +203,38 @@ try {
         text,
       );
     };
-    if (mobile) await clickText('筛选', 'body');
+    // Top vendor buttons are never hidden behind an overflow menu.
+    await page.waitForSelector('.pricing-vendors button');
+    if (!mobile) {
+      await page.waitForSelector('.pricing-group-list button');
+      await clickText('Anthropic', '.pricing-vendors');
+      await clickText('Claude', '.pricing-group-list');
+      await clickText('OpenAI', '.pricing-vendors');
+      assert(
+        await page.$eval('.pricing-group-list', (el) =>
+          el.textContent.includes('当前厂商无可用模型'),
+        ),
+      );
+      assert(
+        await page.$eval('.pricing-price-context', (el) =>
+          el.textContent.includes('Claude'),
+        ),
+      );
+      await clickText('GPT', '.pricing-group-list');
+      assert(
+        await page.$eval('.pricing-price-context', (el) =>
+          el.textContent.includes('GPT'),
+        ),
+      );
+      assert(
+        !(await page.$eval('.pricing-sidebar', (el) =>
+          el.textContent.includes('Forbidden'),
+        )),
+      );
+      await clickText('全部分组', '.pricing-group-list');
+      await clickText('全部供应商', '.pricing-vendors');
+    }
+    await clickText('更多筛选', 'body');
     await page.waitForFunction(
       (root) => document.querySelector(root)?.textContent.includes('Shared'),
       {},
@@ -272,11 +303,11 @@ try {
       (await groupLabels()).map((b) => b.text),
       ['全部分组', 'Shared'],
     );
-    await clickText('重置', mobile ? '.semi-modal' : scope);
+    await clickText('重置', '.semi-modal');
     assert((await groupLabels()).some((b) => b.text === 'Empty' && b.disabled));
     await clickText('Anthropic');
     await clickText('Claude');
-    if (mobile) {
+    {
       await clickText('确定', '.semi-modal');
       await page.waitForSelector('.semi-modal', { hidden: true });
     }
@@ -292,7 +323,7 @@ try {
     await page.waitForFunction(
       () => !document.body.textContent.includes('claude-fixture'),
     );
-    if (mobile) await clickText('筛选', 'body');
+    await clickText('更多筛选', 'body');
     assert.deepEqual(
       (await groupLabels()).map((b) => b.text),
       ['全部分组', 'Claude'],
@@ -303,9 +334,9 @@ try {
       (await groupLabels()).map((b) => b.text),
       ['全部分组'],
     );
-    await clickText('重置', mobile ? '.semi-modal' : scope);
+    await clickText('重置', '.semi-modal');
     assert((await groupLabels()).some((b) => b.text === 'GPT'));
-    if (mobile) {
+    {
       await clickText('确定', '.semi-modal');
       await page.waitForSelector('.semi-modal', { hidden: true });
     }
@@ -332,13 +363,10 @@ try {
       );
     };
     const chooseFilters = async (...labels) => {
-      if (mobile) await clickText('筛选', 'body');
+      await clickText('更多筛选', 'body');
       for (const label of labels)
-        await clickText(
-          label,
-          label === '重置' && mobile ? '.semi-modal' : scope,
-        );
-      if (mobile) {
+        await clickText(label, label === '重置' ? '.semi-modal' : scope);
+      {
         await clickText('确定', '.semi-modal');
         await page.waitForSelector('.semi-modal', { hidden: true });
       }
@@ -439,6 +467,14 @@ try {
     await chooseFilters('未知供应商');
     await expectGroups(['Shared']);
     await chooseFilters('重置');
+    await expectGroups(['GPT', 'Shared', 'Empty']);
+    await page.waitForFunction(() => {
+      const el = document.querySelector('.group-health-filter-select');
+      const r = el.getBoundingClientRect();
+      return el.contains(
+        document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+      );
+    });
     await page.click('.group-health-filter-select');
     await page.waitForSelector('.semi-select-option');
     await page.evaluate(() =>
@@ -470,6 +506,13 @@ try {
     );
     await chooseFilters('重置');
     // The local exact-model choice can become valid again after reset.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('.group-health-filter-select');
+      const r = el.getBoundingClientRect();
+      return el.contains(
+        document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+      );
+    });
     await page.click('.group-health-filter-select');
     await page.waitForSelector('.semi-select-option');
     await page.evaluate(() =>
@@ -511,6 +554,12 @@ try {
     console.log(`${mobile ? 'Mobile' : 'Desktop'} pricing workflow passed.`);
     await page.close();
   }
+} catch (error) {
+  const pages = await browser.pages();
+  await pages
+    .at(-1)
+    ?.screenshot({ path: '/tmp/pricing-layout-failure.png', fullPage: true });
+  throw error;
 } finally {
   await browser.close();
 }

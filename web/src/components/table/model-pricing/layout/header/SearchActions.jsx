@@ -197,16 +197,16 @@ const SearchActions = memo(
           </>
         )}
 
-        {isMobile && (
+        {
           <Button
             theme='outline'
             type='tertiary'
             icon={<IconFilter />}
             onClick={handleFilterClick}
           >
-            {t('筛选')}
+            {t('更多筛选')}
           </Button>
-        )}
+        }
       </div>
     );
   },

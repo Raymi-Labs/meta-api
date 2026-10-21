@@ -96,7 +96,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       <PricingVendors
         filterVendor={filterVendor}
         setFilterVendor={setFilterVendor}
-        models={vendorModels}
+        models={categoryProps.models}
         allModels={categoryProps.models}
         loading={loading}
         t={t}
@@ -115,7 +115,7 @@ const FilterModalContent = ({ sidebarProps, t }) => {
       <PricingGroups
         hideUnavailable={filterVendor !== 'all'}
         filterGroup={filterGroup}
-        setFilterGroup={setFilterGroup}
+        setFilterGroup={sidebarProps.handleGroupClick}
         usableGroup={categoryProps.usableGroup}
         groupRatio={categoryProps.groupRatio}
         models={groupCountModels}

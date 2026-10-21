@@ -44,7 +44,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-import { getCurrencyConfig } from '../../helpers/render';
+import { getCurrencyConfig, getQuotaPerUnit } from '../../helpers/render';
 import SubscriptionPlansCard from './SubscriptionPlansCard';
 import CryptoPaymentNotice from './CryptoPaymentNotice';
 import PaymentMethodIcon from './PaymentMethodIcon';
@@ -274,12 +274,24 @@ const RechargeCard = ({
                       }
                       extraText={
                         <div className='min-h-[44px]'>
+                          <div className='mb-1'>
+                            <Text type='secondary'>
+                              {t('到账额度：')}
+                              {renderQuota(
+                                getCurrencyConfig().type === 'TOKENS'
+                                  ? Number(topUpCount || 0)
+                                  : Number(topUpCount || 0) * getQuotaPerUnit(),
+                              )}
+                            </Text>
+                          </div>
                           <Text type='secondary' className='text-red-600'>
                             {t('预计支付金额：')}
                             <span style={{ color: 'red' }}>
-                              {hasSelectedPayMethod
-                                ? renderAmount()
-                                : t('请选择支付方式')}
+                              {amountLoading
+                                ? t('价格重新计算中...')
+                                : hasSelectedPayMethod
+                                  ? renderAmount()
+                                  : t('请选择支付方式')}
                             </span>
                           </Text>
                           {payWay === 'stripe' && (
@@ -326,7 +338,7 @@ const RechargeCard = ({
                   <Col xs={24} sm={24} md={24} lg={14} xl={14}>
                     <Form.Slot label={t('选择支付方式')}>
                       {payMethods && payMethods.length > 0 ? (
-                        <div className='space-y-2'>
+                        <div className='flex flex-col items-start gap-2'>
                           <Space wrap>
                             {payMethods.map((payMethod) => {
                               const minTopupVal =

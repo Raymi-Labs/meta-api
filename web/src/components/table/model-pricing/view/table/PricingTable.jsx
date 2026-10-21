@@ -38,9 +38,11 @@ const PricingTable = ({
   setModalImageUrl,
   setIsModalOpenurl,
   currency,
+  siteDisplayType,
+  currentPage,
+  setCurrentPage,
   tokenUnit,
   displayPrice,
-  searchValue,
   showRatio,
   compactMode = false,
   openModelDetail,
@@ -59,6 +61,8 @@ const PricingTable = ({
       tokenUnit,
       displayPrice,
       showRatio,
+      siteDisplayType,
+      openModelDetail,
     });
   }, [
     t,
@@ -72,31 +76,24 @@ const PricingTable = ({
     tokenUnit,
     displayPrice,
     showRatio,
+    siteDisplayType,
+    openModelDetail,
   ]);
 
-  // 更新列定义中的 searchValue
+  // Search is already applied by the shared hook, including descriptions/tags.
   const processedColumns = useMemo(() => {
-    const cols = columns.map((column) => {
-      if (column.dataIndex === 'model_name') {
-        return {
-          ...column,
-          filteredValue: searchValue ? [searchValue] : [],
-        };
-      }
-      return column;
-    });
-
     // Remove fixed property when in compact mode (mobile view)
     if (compactMode) {
-      return cols.map(({ fixed, ...rest }) => rest);
+      return columns.map(({ fixed, ...rest }) => rest);
     }
-    return cols;
-  }, [columns, searchValue, compactMode]);
+    return columns;
+  }, [columns, compactMode]);
 
   const ModelTable = useMemo(
     () => (
       <Card className='!rounded-xl overflow-hidden' bordered={false}>
         <Table
+          className='pricing-model-table'
           columns={processedColumns}
           dataSource={filteredModels}
           loading={loading}
@@ -121,6 +118,8 @@ const PricingTable = ({
           pagination={{
             defaultPageSize: 20,
             pageSize: pageSize,
+            currentPage,
+            onPageChange: setCurrentPage,
             showSizeChanger: true,
             pageSizeOptions: [10, 20, 50, 100],
             onPageSizeChange: (size) => setPageSize(size),
@@ -134,6 +133,8 @@ const PricingTable = ({
       processedColumns,
       rowSelection,
       pageSize,
+      currentPage,
+      setCurrentPage,
       setPageSize,
       openModelDetail,
       t,
