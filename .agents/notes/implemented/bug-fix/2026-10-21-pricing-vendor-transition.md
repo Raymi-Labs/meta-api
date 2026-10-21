@@ -12,7 +12,7 @@ Status: implemented
 
 默认使用名称中的自然版本降序，同系列内按数值比较而非字符串比较；无版本名不虚构日期，按稳定名称顺序处理。保留旧默认顺序和价格排序选项，菜单明确“版本从新到旧”而非官方发布时间。现有 /pricing 没有发布时间，Model.CreatedTime 是后台录入时间，不用于伪装发布日期。
 
-厂商顺序为 Anthropic、OpenAI、DeepSeek、Google、Moonshot、xAI，别名同排名但不合并身份，剩余名称稳定排序；全部最前、未知最后。右侧加回使用现有 cover-4.webp 的紧凑蓝色标题条，普通文本和价格区域维持纯色。
+厂商顺序为 Anthropic、OpenAI、DeepSeek、Google、Moonshot、xAI，别名同排名但不合并身份，剩余名称稳定排序；全部最前、未知最后。蓝色风格通过标题细标记、选中状态及厂商栏浅底呈现；左右标题保持等高，使搜索行对齐，左栏浅灰蓝底加细分隔线、右侧表头浅底，暗色使用对应深色变量。普通文本和价格区维持高对比，不使用右侧独占的高横幅。
 
 ## Alternatives considered
 
@@ -24,7 +24,7 @@ Status: implemented
 
 `pricing-vendor-selection.test.mjs` 覆盖专属组清空、共享/零倍率保留、未知/全部厂商、权限交集、厂商别名排名和版本自然降序/稳定性/不修改输入。`upstream-optimizations.test.mjs` 验证原价格排序及分组/时段计算。
 
-`pricing-filter-browser.test.mjs` 与 `pricing-wallet-layout.browser.mjs` 覆盖桌面/手机实际筛选入口、切厂商后模型与价格同步、重置、搜索空结果保持分组、无选组通知、版本顺序与厂商顺序、健康及钱包流程。截图使用合成数据目视检查紧凑蓝色标题条；测试进程在 finally 关闭。
+`pricing-filter-browser.test.mjs` 与 `pricing-wallet-layout.browser.mjs` 覆盖桌面/手机实际筛选入口、切厂商后模型与价格同步、重置、搜索空结果保持分组、无选组通知、版本顺序与厂商顺序、健康及钱包流程。截图使用合成数据；1440/1024/768px 明暗主题断言搜索行误差不超过 1px、无页面横向溢出、左右底色不同且选中标记存在，390px 手机流程保留；截图目视检查。测试进程在 finally 关闭。
 
 ## Consequences
 
