@@ -43,6 +43,30 @@ export const getModelSortPrices = (record, effectiveRatio) => {
 };
 
 export const sortPricingModels = (models, order, getPrices) => {
+  if (order === 'version-desc') {
+    const collator = new Intl.Collator('en', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    const parts = (name = '') => {
+      const match = name.match(/\d/);
+      return {
+        family: match
+          ? name.slice(0, match.index).toLowerCase()
+          : name.toLowerCase(),
+        version: match ? name.slice(match.index) : '',
+      };
+    };
+    return models
+      .map((model, index) => ({ model, index, ...parts(model.model_name) }))
+      .sort(
+        (a, b) =>
+          collator.compare(a.family, b.family) ||
+          collator.compare(b.version, a.version) ||
+          a.index - b.index,
+      )
+      .map(({ model }) => model);
+  }
   if (!/^(input|output|request)-(asc|desc)$/.test(order)) return models;
   const [field, direction] = order.split('-');
   return models
@@ -63,6 +87,7 @@ export const sortPricingModels = (models, order, getPrices) => {
 };
 
 export const pricingSortOptions = (t) => [
+  { value: 'version-desc', label: t('版本从新到旧') },
   { value: 'default', label: t('默认排序') },
   { value: 'input-asc', label: t('输入价格从低到高') },
   { value: 'input-desc', label: t('输入价格从高到低') },

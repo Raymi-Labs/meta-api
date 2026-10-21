@@ -12,6 +12,8 @@ Status: implemented
 
 ## Existing notes
 
+[厂商切换与版本顺序](../bug-fix/2026-10-21-pricing-vendor-transition.md)新增默认的自然版本降序，原默认名称顺序仍作为可选项；本文价格排序和零价/未知价规则不变。
+
 [筛选可见性](2026-10-11-pricing-filter-visibility.md)及 [分组健康筛选](../bug-fix/2026-10-17-group-health-filters.md)管理结果范围，本次只扩展模型结果顺序，保留其权限和解除筛选入口。价格来源沿用 `calculateModelPrice`，不改变计费。
 
 ## Alternatives considered

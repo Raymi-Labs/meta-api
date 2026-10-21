@@ -24,7 +24,8 @@ import FilterModalContent from './components/FilterModalContent';
 import FilterModalFooter from './components/FilterModalFooter';
 
 const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
-  const handleResetFilters = () =>
+  const handleResetFilters = () => {
+    sidebarProps.setSortOrder('version-desc');
     resetPricingFilters({
       handleChange: sidebarProps.handleChange,
       setShowWithRecharge: sidebarProps.setShowWithRecharge,
@@ -41,6 +42,7 @@ const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
       setCurrentPage: sidebarProps.setCurrentPage,
       setTokenUnit: sidebarProps.setTokenUnit,
     });
+  };
 
   const footer = (
     <FilterModalFooter onReset={handleResetFilters} onConfirm={onClose} t={t} />
