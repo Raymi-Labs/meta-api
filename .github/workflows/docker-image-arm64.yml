@@ -60,8 +60,8 @@ jobs:
           else
             TAG=${GITHUB_REF#refs/tags/}
           fi
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "BUILD_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "BUILD_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "$TAG" > VERSION
           echo "Building tag: $TAG for ${{ matrix.arch }}"
 
