@@ -12,6 +12,7 @@ Status: implemented
 - Docker 前端及 Go 编译阶段固定 BUILDPLATFORM；现有 CGO_ENABLED=0 配合 TARGETOS/TARGETARCH 交叉编译，运行时镜像仍使用目标架构。每个镜像实际检查 ELF 架构和版本，防止只改标签而放入错误架构程序。
 - 保留主分支 SHA 镜像流程，受保护更新入口依赖其不可变版本映射；不为减少一次构建而改变线上更新协议。按架构隔离构建缓存；版本和 latest 清单使用本次版本的架构镜像。
 - 发布仅生成产物，不触发生产升级。桌面客户端独立工作流不属于本次服务端程序包调整。
+- 手动 Linux 补包也检出指定的已有标签，只上传缺失附件，不创建新标签草稿、不重写 Release 元数据。常规标签发布去掉对已有标签无效的 target_commitish。compat.53 验证中，自动动作创建和更新元数据均返回 403，即使作业已有 Contents write；维护者已创建 Release 后仍需避开元数据更新，不能重复同一失败动作。具体的 GitHub 权限策略触发条件未由日志确认，不推断为缺少某个固定权限。
 
 现有笔记审计：[受保护发布入口](../../implemented/process/2026-10-21-release-entrypoint-safety.md)部分相关但管理生产切换，本篇管理 CI 产物，两者独立保留；[项目流程](../../implemented/process/2026-09-29-project-decision-notes.md)及工具包分发不改变。未找到持有多平台应用发布选择的现行笔记。
 
@@ -21,13 +22,14 @@ Status: implemented
 - 只关掉 Mac/Windows：能消除非必要任务，但 ARM64 的模拟编译仍会让镜像耗时较长。
 - 将 ARM64 改到原生托管执行器：不改变编译方式，但引入另一个执行器资源池依赖；现有 Go 镜像已禁用 CGO，直接复用 x86 构建机交叉编译更合适。
 - 删除所有独立程序包或主分支镜像：任务最少，但改变现有 Linux 下载和更新入口契约，不在本轮范围内。
+- 继续重跑旧 Release 动作：无需改流程，但实际创建后重跑仍在编辑元数据时失败；补包复用 GitHub 附件上传接口更直接，也不需要把维护者个人令牌存进 CI。
 
 ## Testing
 
-- 发布策略检查、9 项手动发布边界回归、bash 语法和 actionlint 通过。Linux/可选附件流程的 checkout 与 setup-go 更新到当前 v7，避免旧 Node 运行时被 actionlint 拒绝。
+- 发布策略检查、13 项手动发布与 Linux 补包边界回归、bash 语法和带 ShellCheck 的 actionlint 通过。Linux/可选附件流程的 checkout 与 setup-go 更新到当前 v7，避免旧 Node 运行时被 actionlint 拒绝；原脚本未引用变量已补齐。
 - 本机使用 CGO=0、GOOS=linux 和两种 GOARCH 交叉编译通过，检查 ELF 机器类型，并在隔离的双架构最小容器中执行 `-version`，均返回 compat.53。复用已有前端构建文件，本轮没有前端代码变更。
 - 本机完整 Docker 构建在安装 Chromium 时受 Docker Desktop 内存限制失败；它不证明应用构建失败，也不计为完整镜像验收。正式镜像流程必须重新构建前端、Go 与运行时层，在各平台实际验证程序后才能合并清单。
-- 发布验收以 compat.53 的 Linux 附件、双架构镜像及手动 Windows 作业实际结果为准；另验证重复补包跳过构建机。macOS 不属于本轮必需产物，无需为验收排队。生产没有在本轮部署。
+- compat.53 双架构镜像实际检查 ELF/版本通过，注册表核对版本和提交一致；耗时 6 分 52 秒，compat.52 同流程为 31 分 15 秒（单次实测，不保证固定耗时）。已有 compat.52 Mac 附件在准备阶段跳过构建，11 秒完成。Linux 补包与 Windows 实际上传继续以对应运行结果为准；macOS 无需为本轮排队。生产没有在本轮部署。
 
 ## Consequences
 

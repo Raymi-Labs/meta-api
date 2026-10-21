@@ -10,6 +10,12 @@ const main = workflow('docker-publish');
 
 assert.deepEqual(Object.keys(linux.jobs), ['linux'], 'tags must not allocate optional platform runners');
 assert.ok(linux.on.push.tags.includes('*'));
+assert.equal(linux.jobs.linux.steps[0].with.ref, '${{ inputs.release_tag || github.ref }}');
+const automaticRelease = linux.jobs.linux.steps.find((step) => step.name === 'Release');
+assert.equal(automaticRelease.with.target_commitish, undefined, 'existing pushed tags do not need a target override');
+const linuxFill = linux.jobs.linux.steps.find((step) => step.name === 'Fill missing Linux assets without updating release metadata').run;
+assert.match(linuxFill, /'release', 'upload'/);
+assert.doesNotMatch(linuxFill, /--clobber|'release', '(create|edit)'/);
 assert.deepEqual(Object.keys(optional.on), ['workflow_dispatch'], 'optional binaries must remain manual-only');
 assert.deepEqual(optional.on.workflow_dispatch.inputs.platform.options, ['windows', 'macos']);
 assert.equal(optional.jobs.build.if, "needs.prepare.outputs.build_needed == 'true'");

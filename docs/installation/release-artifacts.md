@@ -13,6 +13,14 @@
 
 主分支仍生成 `sha-<commit>` 镜像，供 `newapi-update` 解析不可变版本；不可直接删除这个流程。生产更新/回退继续使用 [受保护入口](one-click-update.md)。
 
+## Release 创建权限失败时
+
+如果编译均成功，但创建 Release 返回 `403 Resource not accessible by integration`，先查看该作业的实际 token 权限和失败步骤，不要将其当成编译或执行器故障。GitHub 的 [Release 创建接口](https://docs.github.com/en/rest/releases/releases#create-a-release)区分权限组合；仅看到工作流声明 `contents: write` 不能证明这次创建已获准。
+
+维护者可以通过已授权的发布入口，核对已有标签及提交后创建含中文说明的 Release，再从当前 main 手动运行 `Release (Linux)`，将 `release_tag` 设为该已有标签。该路径检出原标签源码，只上传缺失附件，保留完整已有附件及发布说明、草稿状态；不再从当前分支创建新标签草稿。不要复跑旧版本中会重新编辑 Release 的动作：compat.53 的旧动作在更新元数据时同样返回过 403。
+
+创建 Release 本身不算发布完成，必须继续核对两份 Linux 附件和双架构镜像。无需向仓库新增个人令牌，也不要修改已发布标签、覆盖已有包或扩大生产权限。标签自动发布省略多余的 target_commitish 参数：GitHub 对已存在的标签不使用该参数。可选平台流程只向已有完整 Linux Release 添加附件，不负责创建 Release。
+
 ## 手动补充 Mac 或 Windows 包
 
 在 GitHub Actions 中打开 **Optional server binaries (macOS / Windows)**，点击 Run workflow：

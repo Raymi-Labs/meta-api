@@ -9,7 +9,7 @@ on:
         description: 'reason'
         required: false
       release_tag:
-        description: '指定 VERSION 中的版本号，从当前 ref 构建发布草稿'
+        description: '已有应用标签，补齐 Linux 附件并保留发布状态'
         required: false
         type: string
   push:
@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref }}
       - name: Determine Version
         env:
           REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
@@ -70,13 +71,35 @@ jobs:
           CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$VERSION' -extldflags '-static'" -o "new-api-arm64-$VERSION"
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ env.VERSION }}
-          target_commitish: ${{ github.sha }}
-          draft: ${{ github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ contains(env.VERSION, '-') }}
           files: |
             new-api-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fill missing Linux assets without updating release metadata
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          version = os.environ['VERSION']
+          repo = os.environ['GITHUB_REPOSITORY']
+          release = json.loads(subprocess.check_output([
+              'gh', 'release', 'view', version, '--repo', repo, '--json', 'assets',
+          ], text=True))
+          for filename in [f'new-api-{version}', f'new-api-arm64-{version}']:
+              existing = [a for a in release['assets'] if a['name'] == filename]
+              if existing:
+                  if len(existing) != 1 or existing[0]['state'] != 'uploaded' or existing[0]['size'] <= 0:
+                      raise RuntimeError(f'已有附件不完整，拒绝覆盖: {filename}')
+                  print(f'保留已有附件: {filename}')
+                  continue
+              subprocess.run(['gh', 'release', 'upload', version, filename, '--repo', repo], check=True)
+          PY
