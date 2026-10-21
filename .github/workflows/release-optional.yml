@@ -1,0 +1,98 @@
+name: Optional server binaries (macOS / Windows)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '已发布的应用标签，例如 v1.0.0-compat.53'
+        required: true
+        type: string
+      platform:
+        description: '按需补充一个平台的服务端程序包'
+        required: true
+        default: windows
+        type: choice
+        options:
+          - windows
+          - macos
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+concurrency:
+  group: optional-server-${{ inputs.release_tag }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      revision: ${{ steps.plan.outputs.revision }}
+      asset: ${{ steps.plan.outputs.asset }}
+      runner: ${{ steps.plan.outputs.runner }}
+      build_needed: ${{ steps.plan.outputs.build_needed }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve release and skip existing assets
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          OPTIONAL_PLATFORM: ${{ inputs.platform }}
+        run: |
+          python3 scripts/release/plan-optional.py \
+            --tag "$RELEASE_TAG" --platform "$OPTIONAL_PLATFORM" \
+            --repository "$GITHUB_REPOSITORY" --output "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.build_needed == 'true'
+    name: Build optional ${{ inputs.platform }} server binary
+    runs-on: ${{ needs.prepare.outputs.runner }}
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      ASSET_NAME: ${{ needs.prepare.outputs.asset }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.revision }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.0'
+      - name: Build frontend
+        env:
+          CI: ''
+          NODE_OPTIONS: '--max-old-space-size=4096'
+        run: |
+          cd web
+          bun install --frozen-lockfile
+          DISABLE_ESLINT_PLUGIN=true VITE_REACT_APP_VERSION="$RELEASE_TAG" bun run build
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '>=1.25.1'
+      - name: Build server binary
+        env:
+          BUILD_REVISION: ${{ needs.prepare.outputs.revision }}
+        run: |
+          if [[ "$RUNNER_OS" == Darwin || "$RUNNER_OS" == macOS ]]; then
+            export MACOSX_DEPLOYMENT_TARGET=12.0
+            export CGO_CFLAGS='-O2 -g -mmacosx-version-min=12.0'
+            export CGO_LDFLAGS='-O2 -g -mmacosx-version-min=12.0'
+          fi
+          go build -ldflags "-X github.com/QuantumNous/new-api/common.Version=$RELEASE_TAG -X github.com/QuantumNous/new-api/common.BuildCommit=$BUILD_REVISION" -o "$ASSET_NAME"
+          actual=$("./$ASSET_NAME" -version)
+          [[ "$actual" == "$RELEASE_TAG" ]] || { echo "程序版本不匹配: $actual"; exit 1; }
+      - name: Add asset to existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$RELEASE_TAG" "$ASSET_NAME" --repo "$GITHUB_REPOSITORY"
+          echo "已补充 $ASSET_NAME；保留已有发布说明与发布状态。" >> "$GITHUB_STEP_SUMMARY"

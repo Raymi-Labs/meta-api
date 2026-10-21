@@ -70,6 +70,7 @@
 | 能力 | 入口 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
+| Linux 优先发布与可选服务端包 | [发布说明](installation/release-artifacts.md)、[Linux 附件](../.github/workflows/release.yml)、[手动跨平台附件](../.github/workflows/release-optional.yml)、[镜像](../.github/workflows/docker-image-arm64.yml) | 标签自动构建 Linux 双架构程序/镜像；Mac、Windows 仅手动选择已有发布标签；准备任务锁定提交、跳过已有附件 | 构建机本机编译、Go 交叉输出目标架构；检查 ELF/版本后组清单；不改变 SHA 更新入口、不重写已有发布、不自动部署生产 |
 
 入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
 

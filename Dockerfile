@@ -1,4 +1,5 @@
-FROM oven/bun:1.4.0@sha256:5ff609364c049b54eb0ff560ec96319729a972078ef2c755d758f0c6ef89c2d6 AS builder
+# Compile on the builder CPU; only the runtime stage uses the target platform.
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.0@sha256:5ff609364c049b54eb0ff560ec96319729a972078ef2c755d758f0c6ef89c2d6 AS builder
 
 # 预渲染（SEO 阶段 2）需要在 build 后跑 puppeteer-core 控制真浏览器抓取页面 HTML，
 # 这里在 builder 阶段装系统 chromium + 中文字体（避免预渲染 HTML 出现方框乱码）。
@@ -21,7 +22,7 @@ RUN BUILD_VERSION="${APP_VERSION:-$(cat VERSION 2>/dev/null)}"; \
     if [ -z "$BUILD_VERSION" ]; then BUILD_VERSION="dev"; fi; \
     DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$BUILD_VERSION" bun run build
 
-FROM golang:alpine AS builder2
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder2
 ENV GO111MODULE=on CGO_ENABLED=0
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn

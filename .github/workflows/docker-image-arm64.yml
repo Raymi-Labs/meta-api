@@ -22,7 +22,7 @@ env:
 
 jobs:
   build_single_arch:
-    name: Build & push (${{ matrix.arch }}) [native]
+    name: Build & push (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +61,7 @@ jobs:
             TAG=${GITHUB_REF#refs/tags/}
           fi
           echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "BUILD_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "$TAG" > VERSION
           echo "Building tag: $TAG for ${{ matrix.arch }}"
 
@@ -123,6 +124,9 @@ jobs:
         with:
           images: |
             ${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.revision=${{ env.BUILD_COMMIT }}
+            org.opencontainers.image.version=${{ env.TAG }}
 
       - name: Build & push single-arch (GHCR + optional Docker Hub)
         uses: docker/build-push-action@v6
@@ -132,10 +136,20 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=release-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=release-${{ matrix.arch }}
           provenance: false
           sbom: false
+          build-args: |
+            BUILD_COMMIT=${{ env.BUILD_COMMIT }}
+            BUILD_REPOSITORY=${{ github.repository }}
+            BUILD_BRANCH=${{ env.TAG }}
+
+      - name: Verify image architecture and version
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}:${{ env.TAG }}-${{ matrix.arch }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: bash scripts/release/verify-image.sh "$IMAGE_REF" "$TAG" "$TARGET_ARCH"
 
   create_manifests:
     name: Create multi-arch manifests (GHCR + optional Docker Hub)
@@ -193,8 +207,8 @@ jobs:
         run: |
           docker buildx imagetools create \
             -t "${IMAGE_NAME}:latest" \
-            "${IMAGE_NAME}:latest-amd64" \
-            "${IMAGE_NAME}:latest-arm64"
+            "${IMAGE_NAME}:${TAG}-amd64" \
+            "${IMAGE_NAME}:${TAG}-arm64"
 
       - name: Create & push manifest (Docker Hub - version)
         if: steps.dockerhub.outputs.enabled == 'true'
@@ -209,5 +223,5 @@ jobs:
         run: |
           docker buildx imagetools create \
             -t "calciumion/new-api:latest" \
-            "calciumion/new-api:latest-amd64" \
-            "calciumion/new-api:latest-arm64"
+            "calciumion/new-api:${TAG}-amd64" \
+            "calciumion/new-api:${TAG}-arm64"

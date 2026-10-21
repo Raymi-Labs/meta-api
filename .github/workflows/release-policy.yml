@@ -1,0 +1,42 @@
+name: Release pipeline checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'scripts/release/**'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/docker-*.yml'
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - 'scripts/release/**'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/docker-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.0'
+      - name: Check release boundaries
+        run: |
+          bun scripts/release/check-policy.mjs
+          python3 -B -m unittest discover -s scripts/release -p 'test_*.py' -v
+          bash -n scripts/release/verify-image.sh
+      - name: Check workflow syntax
+        run: |
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 \
+            .github/workflows/release.yml .github/workflows/release-optional.yml \
+            .github/workflows/release-policy.yml .github/workflows/docker-image-arm64.yml
