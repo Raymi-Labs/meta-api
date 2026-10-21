@@ -18,10 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal } from '@douyinfe/semi-ui';
+import { SideSheet, Button } from '@douyinfe/semi-ui';
 import { resetPricingFilters } from '../../../../helpers/utils';
 import FilterModalContent from './components/FilterModalContent';
-import FilterModalFooter from './components/FilterModalFooter';
+import './pricingFilterDrawer.css';
 
 const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
   const handleResetFilters = () => {
@@ -44,27 +44,41 @@ const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
     });
   };
 
-  const footer = (
-    <FilterModalFooter onReset={handleResetFilters} onConfirm={onClose} t={t} />
-  );
-
   return (
-    <Modal
-      title={t('筛选')}
+    <SideSheet
+      className='pricing-filter-drawer'
+      placement='right'
+      width='min(640px, 100vw)'
+      closeOnEsc
+      aria-label={t('筛选')}
+      title={
+        <div>
+          <h2 className='pricing-filter-title'>{t('筛选')}</h2>
+          <p className='pricing-filter-subtitle'>
+            {t('按供应商、分组、类型、端点和标签筛选模型。')}
+          </p>
+        </div>
+      }
       visible={visible}
       onCancel={onClose}
-      footer={footer}
-      style={{ width: '100%', height: '100%', margin: 0 }}
-      bodyStyle={{
-        padding: 0,
-        height: 'calc(100vh - 160px)',
-        overflowY: 'auto',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}
+      maskStyle={{ backdropFilter: 'blur(3px)' }}
+      footer={
+        <div className='pricing-filter-footer'>
+          <Button theme='outline' onClick={handleResetFilters}>
+            {t('重置')}
+          </Button>
+          <Button theme='solid' onClick={onClose}>
+            {t('关闭')}
+          </Button>
+        </div>
+      }
+      bodyStyle={{ padding: '0 24px', overflowY: 'auto' }}
     >
+      <p className='pricing-filter-hint'>
+        {t('选择后立即生效，关闭后保留筛选条件。')}
+      </p>
       <FilterModalContent sidebarProps={sidebarProps} t={t} />
-    </Modal>
+    </SideSheet>
   );
 };
 

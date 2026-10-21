@@ -261,18 +261,25 @@ try {
       });
       await click('更多筛选');
       await page.evaluate(() =>
-        Array.from(document.querySelectorAll('.semi-modal-body button'))
+        Array.from(
+          document.querySelectorAll(
+            '.pricing-filter-drawer .semi-sidesheet-body button',
+          ),
+        )
           .find((b) => b.textContent.trim() === '表格视图')
-          .querySelector('input')
           .click(),
       );
       await page.evaluate(() =>
-        Array.from(document.querySelectorAll('.semi-modal-body button'))
+        Array.from(
+          document.querySelectorAll(
+            '.pricing-filter-drawer .semi-sidesheet-body button',
+          ),
+        )
           .find((b) => b.textContent.startsWith('Standard'))
           .click(),
       );
-      await click('确定', '.semi-modal');
-      await page.waitForSelector('.semi-modal', { hidden: true });
+      await click('关闭', '.pricing-filter-drawer');
+      await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
     } else {
       const groups = await page.$$eval('.pricing-group-label', (els) =>
         els.map((e) => e.textContent),
@@ -372,12 +379,16 @@ try {
     );
     await click('更多筛选');
     await page.evaluate(() =>
-      Array.from(document.querySelectorAll('.semi-modal-body button'))
+      Array.from(
+        document.querySelectorAll(
+          '.pricing-filter-drawer .semi-sidesheet-body button',
+        ),
+      )
         .find((b) => b.textContent.startsWith('Shared'))
         .click(),
     );
-    await click('确定', '.semi-modal');
-    await page.waitForSelector('.semi-modal', { hidden: true });
+    await click('关闭', '.pricing-filter-drawer');
+    await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
     await click('OpenAI', '.pricing-vendors');
     assert(
       await page.$eval('.pricing-price-context', (el) =>
@@ -405,9 +416,9 @@ try {
       ),
     );
     await click('更多筛选');
-    await click('重置', '.semi-modal');
-    await click('确定', '.semi-modal');
-    await page.waitForSelector('.semi-modal', { hidden: true });
+    await click('重置', '.pricing-filter-drawer');
+    await click('关闭', '.pricing-filter-drawer');
+    await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
     assert(
       await page.$eval('.pricing-price-context', (el) =>
         el.textContent.includes('全部分组'),

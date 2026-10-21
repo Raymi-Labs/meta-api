@@ -21,7 +21,12 @@ const pricing = {
     Shared: '',
     Empty: '',
     ...Object.fromEntries(
-      Array.from({ length: 24 }, (_, i) => [`Unused-${i}`, '']),
+      Array.from({ length: 24 }, (_, i) => [
+        i === 0
+          ? 'LongGroupName-用于检查非常长的分组名称是否能够完整换行显示而不挤掉倍率标签'
+          : `Unused-${i}`,
+        '',
+      ]),
     ),
   },
   group_ratio: { Claude: 1, GPT: 1, Shared: 0, Empty: 1, Forbidden: 1 },
@@ -182,7 +187,7 @@ try {
       }
     });
     await page.goto(`${baseURL}/pricing`, { waitUntil: 'networkidle0' });
-    const scope = '.semi-modal-body';
+    const scope = '.pricing-filter-drawer .semi-sidesheet-body';
     const clickText = async (text, root = scope) => {
       await page.waitForFunction(
         (root, text) =>
@@ -236,6 +241,45 @@ try {
       await clickText('全部供应商', '.pricing-vendors');
     }
     await clickText('更多筛选', 'body');
+    await page.waitForSelector('.pricing-filter-section summary');
+    // Collapsing a section must not clear or alter filters.
+    const summary = await page.$('.pricing-filter-section summary');
+    await summary.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(
+      await page.$eval('.pricing-filter-section', (el) => el.open),
+      false,
+    );
+    await page.keyboard.press('Enter');
+    assert.equal(
+      await page.$eval('.pricing-filter-section', (el) => el.open),
+      true,
+    );
+    await page.waitForFunction(() => {
+      const r = document
+        .querySelector('.pricing-filter-drawer .semi-sidesheet-inner')
+        .getBoundingClientRect();
+      return Math.abs(r.right - innerWidth) < 1;
+    });
+    assert.equal(
+      await page.$eval(
+        '.pricing-filter-drawer',
+        (el) => el.scrollWidth > el.clientWidth,
+      ),
+      false,
+    );
+    assert(
+      await page.$$eval('.pricing-filter-chip', (chips) =>
+        chips.every((chip) => chip.scrollWidth <= chip.clientWidth + 1),
+      ),
+    );
+    await page.screenshot({
+      path: `/tmp/pricing-drawer-${mobile ? 'mobile-dark' : 'desktop'}.png`,
+      fullPage: true,
+    });
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
+    await clickText('更多筛选', 'body');
     await page.waitForFunction(
       (root) => document.querySelector(root)?.textContent.includes('Shared'),
       {},
@@ -245,12 +289,12 @@ try {
       page.evaluate(
         (root, heading) => {
           const title = Array.from(
-            document.querySelectorAll(`${root} .semi-divider_inner-text`),
+            document.querySelectorAll(`${root} summary`),
           ).find((el) => el.textContent.trim() === heading);
           return Array.from(
-            title.closest('.mb-8').querySelectorAll('button'),
+            title.closest('.pricing-filter-section').querySelectorAll('button'),
           ).map((b) => ({
-            text: b.querySelector('.sbg-ellipsis').textContent,
+            text: b.querySelector('.pricing-filter-chip-label').textContent,
             disabled: b.disabled,
           }));
         },
@@ -277,12 +321,24 @@ try {
       (await filterLabels('端点类型')).map((b) => b.text),
       ['全部端点', 'anthropic'],
     );
+    await page.waitForFunction(() => {
+      const r = document
+        .querySelector('.pricing-filter-drawer .semi-sidesheet-inner')
+        .getBoundingClientRect();
+      return Math.abs(r.right - innerWidth) < 1;
+    });
+    await page.screenshot({
+      path: `/tmp/pricing-drawer-selected-${mobile ? 'mobile-dark' : 'desktop'}.png`,
+      fullPage: true,
+    });
     assert.equal(
       await page.evaluate((root) => {
         const title = Array.from(
-          document.querySelectorAll(`${root} .semi-divider_inner-text`),
+          document.querySelectorAll(`${root} summary`),
         ).find((el) => el.textContent.trim() === '可用令牌分组');
-        return title.closest('.mb-8').textContent.includes('展开更多');
+        return title
+          .closest('.pricing-filter-section')
+          .textContent.includes('展开更多');
       }, scope),
       false,
     );
@@ -304,13 +360,13 @@ try {
       (await groupLabels()).map((b) => b.text),
       ['全部分组', 'Shared'],
     );
-    await clickText('重置', '.semi-modal');
+    await clickText('重置', '.pricing-filter-drawer');
     assert((await groupLabels()).some((b) => b.text === 'Empty' && b.disabled));
     await clickText('Anthropic');
     await clickText('Claude');
     {
-      await clickText('确定', '.semi-modal');
-      await page.waitForSelector('.semi-modal', { hidden: true });
+      await clickText('关闭', '.pricing-filter-drawer');
+      await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
     }
     await page.$eval('input[placeholder*="搜索模型"]', (input) => {
       const setter = Object.getOwnPropertyDescriptor(
@@ -335,11 +391,11 @@ try {
       (await groupLabels()).map((b) => b.text),
       ['全部分组'],
     );
-    await clickText('重置', '.semi-modal');
+    await clickText('重置', '.pricing-filter-drawer');
     assert((await groupLabels()).some((b) => b.text === 'GPT'));
     {
-      await clickText('确定', '.semi-modal');
-      await page.waitForSelector('.semi-modal', { hidden: true });
+      await clickText('关闭', '.pricing-filter-drawer');
+      await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
     }
     const healthTab = async () => {
       await page.waitForSelector('[role=tab]');
@@ -366,10 +422,13 @@ try {
     const chooseFilters = async (...labels) => {
       await clickText('更多筛选', 'body');
       for (const label of labels)
-        await clickText(label, label === '重置' ? '.semi-modal' : scope);
+        await clickText(
+          label,
+          label === '重置' ? '.pricing-filter-drawer' : scope,
+        );
       {
-        await clickText('确定', '.semi-modal');
-        await page.waitForSelector('.semi-modal', { hidden: true });
+        await clickText('关闭', '.pricing-filter-drawer');
+        await page.waitForSelector('.pricing-filter-drawer', { hidden: true });
       }
     };
     await healthTab();

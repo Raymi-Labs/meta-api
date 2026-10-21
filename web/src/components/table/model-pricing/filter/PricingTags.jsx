@@ -35,6 +35,7 @@ const PricingTags = ({
   models = [],
   allModels = [],
   loading = false,
+  pills = false,
   hideUnavailable = false,
   t,
 }) => {
@@ -98,6 +99,7 @@ const PricingTags = ({
 
   return (
     <SelectableButtonGroup
+      pills={pills}
       title={t('标签')}
       items={items}
       activeValue={filterTag}

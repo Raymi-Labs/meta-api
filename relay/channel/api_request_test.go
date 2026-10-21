@@ -56,7 +56,7 @@ func TestProcessHeaderOverride_ChannelTestSkipsClientHeaderPlaceholder(t *testin
 
 	headers, err := processHeaderOverride(info, ctx)
 	require.NoError(t, err)
-	_, ok := headers["X-Upstream-Trace"]
+	_, ok := headers["x-upstream-trace"]
 	require.False(t, ok)
 }
 
@@ -103,9 +103,9 @@ func TestProcessHeaderOverride_PassthroughSkipsAcceptEncoding(t *testing.T) {
 
 	headers, err := processHeaderOverride(info, ctx)
 	require.NoError(t, err)
-	require.Equal(t, "trace-123", headers["X-Trace-Id"])
+	require.Equal(t, "trace-123", headers["x-trace-id"])
 
-	_, hasAcceptEncoding := headers["Accept-Encoding"]
+	_, hasAcceptEncoding := headers["accept-encoding"]
 	require.False(t, hasAcceptEncoding)
 }
 

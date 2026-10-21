@@ -1,0 +1,118 @@
+.pricing-filter-drawer .semi-sidesheet-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: 100dvh;
+}
+.pricing-filter-drawer .semi-sidesheet-body {
+  flex: 1;
+  min-height: 0;
+}
+.pricing-filter-drawer .semi-sidesheet-header {
+  border-bottom: 1px solid var(--semi-color-border);
+  padding: 24px;
+}
+.pricing-filter-title {
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: var(--semi-color-text-0);
+}
+.pricing-filter-subtitle,
+.pricing-filter-hint {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--semi-color-text-2);
+  margin: 0;
+  font-weight: normal;
+}
+.pricing-filter-hint {
+  padding: 16px 0 0;
+}
+.pricing-filter-section {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--semi-color-border);
+}
+.pricing-filter-section > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  color: var(--semi-color-text-0);
+}
+.pricing-filter-section > summary::-webkit-details-marker {
+  display: none;
+}
+.pricing-filter-section[open] > summary > .pricing-filter-chevron {
+  transform: rotate(180deg);
+}
+.pricing-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 16px;
+}
+.pricing-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 7px 12px;
+  min-height: 36px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 22px;
+  background: transparent;
+  color: var(--semi-color-text-1);
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+.pricing-filter-chip-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pricing-filter-chip-count {
+  flex-shrink: 0;
+  border-radius: 14px;
+  padding: 1px 7px;
+  background: var(--semi-color-fill-0);
+  font-size: 12px;
+}
+.pricing-filter-chip-icon {
+  display: flex;
+  flex-shrink: 0;
+}
+.pricing-filter-chip[aria-pressed='true'] {
+  border-color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+  color: var(--semi-color-primary);
+}
+.pricing-filter-chip:hover:not(:disabled) {
+  border-color: var(--semi-color-primary);
+}
+.pricing-filter-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.pricing-filter-chip:focus-visible,
+.pricing-filter-section > summary:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 3px;
+}
+.pricing-filter-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--semi-color-border);
+}
+@media (max-width: 767px) {
+  .pricing-filter-drawer .semi-sidesheet-header {
+    padding: 20px 24px;
+  }
+  .pricing-filter-chip {
+    min-height: 40px;
+  }
+}

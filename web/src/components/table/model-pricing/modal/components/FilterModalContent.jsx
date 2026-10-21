@@ -75,7 +75,61 @@ const FilterModalContent = ({ sidebarProps, t }) => {
 
   return (
     <>
+      <PricingGroups
+        pills
+        hideUnavailable={filterVendor !== 'all'}
+        filterGroup={filterGroup}
+        setFilterGroup={sidebarProps.handleGroupClick}
+        usableGroup={categoryProps.usableGroup}
+        groupRatio={categoryProps.groupRatio}
+        models={groupCountModels}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingVendors
+        pills
+        filterVendor={filterVendor}
+        setFilterVendor={setFilterVendor}
+        models={categoryProps.models}
+        allModels={categoryProps.models}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingTags
+        pills
+        hideUnavailable={filterVendor !== 'all'}
+        filterTag={filterTag}
+        setFilterTag={setFilterTag}
+        models={tagModels}
+        allModels={categoryProps.models}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingQuotaTypes
+        pills
+        hideUnavailable={filterVendor !== 'all'}
+        filterQuotaType={filterQuotaType}
+        setFilterQuotaType={setFilterQuotaType}
+        models={quotaTypeModels}
+        loading={loading}
+        t={t}
+      />
+
+      <PricingEndpointTypes
+        pills
+        hideUnavailable={filterVendor !== 'all'}
+        filterEndpointType={filterEndpointType}
+        setFilterEndpointType={setFilterEndpointType}
+        models={endpointTypeModels}
+        allModels={categoryProps.models}
+        loading={loading}
+        t={t}
+      />
       <PricingDisplaySettings
+        pills
         showWithRecharge={showWithRecharge}
         setShowWithRecharge={setShowWithRecharge}
         priceConvertMode={priceConvertMode}
@@ -89,55 +143,6 @@ const FilterModalContent = ({ sidebarProps, t }) => {
         setViewMode={setViewMode}
         tokenUnit={tokenUnit}
         setTokenUnit={setTokenUnit}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingVendors
-        filterVendor={filterVendor}
-        setFilterVendor={setFilterVendor}
-        models={categoryProps.models}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingTags
-        hideUnavailable={filterVendor !== 'all'}
-        filterTag={filterTag}
-        setFilterTag={setFilterTag}
-        models={tagModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingGroups
-        hideUnavailable={filterVendor !== 'all'}
-        filterGroup={filterGroup}
-        setFilterGroup={sidebarProps.handleGroupClick}
-        usableGroup={categoryProps.usableGroup}
-        groupRatio={categoryProps.groupRatio}
-        models={groupCountModels}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingQuotaTypes
-        hideUnavailable={filterVendor !== 'all'}
-        filterQuotaType={filterQuotaType}
-        setFilterQuotaType={setFilterQuotaType}
-        models={quotaTypeModels}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingEndpointTypes
-        hideUnavailable={filterVendor !== 'all'}
-        filterEndpointType={filterEndpointType}
-        setFilterEndpointType={setFilterEndpointType}
-        models={endpointTypeModels}
-        allModels={categoryProps.models}
         loading={loading}
         t={t}
       />

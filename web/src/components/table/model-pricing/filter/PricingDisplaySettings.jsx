@@ -35,6 +35,7 @@ const PricingDisplaySettings = ({
   tokenUnit,
   setTokenUnit,
   loading = false,
+  pills = false,
   t,
 }) => {
   const hasAvailablePlans = availablePlans.length > 0;
@@ -98,6 +99,7 @@ const PricingDisplaySettings = ({
   return (
     <div>
       <SelectableButtonGroup
+        pills={pills}
         title={t('显示设置')}
         items={items}
         activeValue={getActiveValues()}
@@ -109,6 +111,7 @@ const PricingDisplaySettings = ({
       />
 
       <SelectableButtonGroup
+        pills={pills}
         title={t('价格模式')}
         items={priceModeItems}
         activeValue={priceConvertMode || 'recharge'}
@@ -123,6 +126,7 @@ const PricingDisplaySettings = ({
 
       <div style={{ display: 'none' }} aria-hidden='true'>
         <SelectableButtonGroup
+          pills={pills}
           title={t('货币单位')}
           items={currencyItems}
           activeValue={currency}

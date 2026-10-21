@@ -66,6 +66,7 @@ const SelectableButtonGroup = ({
   loading = false,
   hideDisabled = false,
   resetValue,
+  pills = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [skeletonCount] = useState(12);
@@ -187,6 +188,61 @@ const SelectableButtonGroup = ({
       <Skeleton loading={true} active placeholder={placeholder}></Skeleton>
     );
   };
+
+  if (pills) {
+    return (
+      <details className='pricing-filter-section' open>
+        <summary>
+          {title}
+          <span className='pricing-filter-chevron' aria-hidden='true'>
+            <IconChevronDown />
+          </span>
+        </summary>
+        <div
+          className='pricing-filter-chips'
+          aria-label={title}
+          aria-busy={showSkeleton}
+        >
+          {showSkeleton ? (
+            <Skeleton.Title active style={{ width: '100%', height: 32 }} />
+          ) : (
+            visibleItems.map((item) => {
+              const active = Array.isArray(activeValue)
+                ? activeValue.includes(item.value)
+                : activeValue === item.value;
+              const disabled = hideDisabled
+                ? false
+                : isSelectableItemDisabled(item);
+              return (
+                <button
+                  type='button'
+                  key={item.value}
+                  className='pricing-filter-chip'
+                  aria-pressed={active}
+                  disabled={disabled}
+                  onClick={() => onChange(item.value)}
+                >
+                  {item.icon && (
+                    <span className='pricing-filter-chip-icon'>
+                      {item.icon}
+                    </span>
+                  )}
+                  <span className='pricing-filter-chip-label'>
+                    {item.label}
+                  </span>
+                  {item.tagCount !== undefined && item.tagCount !== null && (
+                    <span className='pricing-filter-chip-count'>
+                      {item.tagCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </details>
+    );
+  }
 
   const contentElement = showSkeleton ? (
     renderSkeletonButtons()

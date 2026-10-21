@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -41,6 +42,7 @@ func SetupApiRequestHeader(info *common.RelayInfo, c *gin.Context, req *http.Hea
 }
 
 const clientHeaderPlaceholderPrefix = "{client_header:"
+const authenticatedUserIDPlaceholder = "{authenticated_user_id}"
 
 const (
 	headerPassthroughAllKey        = "*"
@@ -128,6 +130,16 @@ func shouldSkipPassthroughHeader(name string) bool {
 
 func applyHeaderOverridePlaceholders(template string, c *gin.Context, apiKey string) (string, bool, error) {
 	trimmed := strings.TrimSpace(template)
+	if strings.Contains(trimmed, authenticatedUserIDPlaceholder) {
+		if trimmed != authenticatedUserIDPlaceholder {
+			return "", false, errors.New("authenticated_user_id placeholder must be the full value")
+		}
+		// Authentication middleware owns id. Client headers are never an identity fallback.
+		if c == nil || c.GetInt("id") <= 0 {
+			return "", false, errors.New("authenticated_user_id requires an authenticated user")
+		}
+		return strconv.Itoa(c.GetInt("id")), true, nil
+	}
 	if strings.HasPrefix(trimmed, clientHeaderPlaceholderPrefix) {
 		afterPrefix := trimmed[len(clientHeaderPlaceholderPrefix):]
 		end := strings.Index(afterPrefix, "}")
@@ -162,6 +174,7 @@ func applyHeaderOverridePlaceholders(template string, c *gin.Context, apiKey str
 // processHeaderOverride applies channel header overrides, with placeholder substitution.
 // Supported placeholders:
 //   - {api_key}: resolved to the channel API key
+//   - {authenticated_user_id}: positive authenticated user ID; full-value only
 //   - {client_header:<name>}: resolved to the incoming request header value
 //
 // Header passthrough rules (keys only; values are ignored):
@@ -236,7 +249,9 @@ func processHeaderOverride(info *common.RelayInfo, c *gin.Context) (map[string]s
 			if value == "" {
 				continue
 			}
-			headerOverride[name] = value
+			// Explicit overrides are normalized to lowercase by GetEffectiveHeaderOverride.
+			// Use the same key here so HTTP-equivalent names cannot survive side by side.
+			headerOverride[strings.ToLower(name)] = value
 		}
 	}
 
@@ -284,7 +299,17 @@ func applyHeaderOverrideToRequest(req *http.Request, headerOverride map[string]s
 	if req == nil {
 		return
 	}
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
 	for key, value := range headerOverride {
+		// Adapters can construct non-canonical keys directly; Header.Set alone only
+		// replaces the canonical spelling and would leave an ambiguous duplicate.
+		for existing := range req.Header {
+			if strings.EqualFold(existing, key) {
+				delete(req.Header, existing)
+			}
+		}
 		req.Header.Set(key, value)
 		// set Host in req
 		if strings.EqualFold(key, "Host") {

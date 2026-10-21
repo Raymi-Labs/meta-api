@@ -1,5 +1,7 @@
 {
   "translation": {
+    "按供应商、分组、类型、端点和标签筛选模型。": "Filtrez les modèles par fournisseur, groupe, type, point de terminaison et étiquettes.",
+    "选择后立即生效，关闭后保留筛选条件。": "Les changements sont immédiats et conservés à la fermeture.",
     "版本从新到旧": "Version : la plus récente en premier",
     "到账额度：": "Crédit reçu :",
     "将可转赠额度生成兑换码，赠送给其他用户": "Créez un code avec votre crédit transférable pour un autre utilisateur",

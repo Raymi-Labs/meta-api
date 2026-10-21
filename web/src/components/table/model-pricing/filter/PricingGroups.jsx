@@ -38,6 +38,7 @@ const PricingGroups = ({
   groupRatio = {},
   models = [],
   loading = false,
+  pills = false,
   hideUnavailable = false,
   vertical = false,
   t,
@@ -70,7 +71,7 @@ const PricingGroups = ({
     return {
       value: g,
       label: g === 'all' ? t('全部分组') : g,
-      tagCount: ratioDisplay,
+      tagCount: pills && g === 'all' ? undefined : ratioDisplay,
       disabled: modelCount === 0,
     };
   });
@@ -137,6 +138,7 @@ const PricingGroups = ({
 
   return (
     <SelectableButtonGroup
+      pills={pills}
       title={t('可用令牌分组')}
       items={items}
       activeValue={filterGroup}

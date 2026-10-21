@@ -33,6 +33,7 @@ const PricingQuotaTypes = ({
   setFilterQuotaType,
   models = [],
   loading = false,
+  pills = false,
   hideUnavailable = false,
   t,
 }) => {
@@ -53,6 +54,7 @@ const PricingQuotaTypes = ({
 
   return (
     <SelectableButtonGroup
+      pills={pills}
       title={t('计费类型')}
       items={items}
       activeValue={filterQuotaType}

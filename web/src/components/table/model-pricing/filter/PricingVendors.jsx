@@ -37,6 +37,7 @@ const PricingVendors = ({
   models = [],
   allModels = [],
   loading = false,
+  pills = false,
   horizontal = false,
   t,
 }) => {
@@ -137,6 +138,7 @@ const PricingVendors = ({
 
   return (
     <SelectableButtonGroup
+      pills={pills}
       title={t('供应商')}
       items={items}
       activeValue={filterVendor}

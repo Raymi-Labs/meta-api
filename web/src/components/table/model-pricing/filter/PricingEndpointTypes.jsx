@@ -34,6 +34,7 @@ const PricingEndpointTypes = ({
   models = [],
   allModels = [],
   loading = false,
+  pills = false,
   hideUnavailable = false,
   t,
 }) => {
@@ -92,6 +93,7 @@ const PricingEndpointTypes = ({
 
   return (
     <SelectableButtonGroup
+      pills={pills}
       title={t('端点类型')}
       items={items}
       activeValue={filterEndpointType}
