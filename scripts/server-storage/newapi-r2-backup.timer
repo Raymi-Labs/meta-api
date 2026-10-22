@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily verified NewAPI database backup to R2
+
+[Timer]
+OnCalendar=*-*-* 04:10:00 Asia/Shanghai
+Persistent=true
+AccuracySec=1min
+Unit=newapi-r2-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -12,6 +12,29 @@
 
 这两个已有脚本仍以服务器已安装版本为准，本目录不覆盖它们，也不是新服务器的一键安装包。
 
+## 周期数据库 R2 备份
+
+`mysql-r2-backup.py` 复用生产已有 `r2` Cloudflare 后端、`/root/.config/rclone/r2.env` 中的 AWS 环境凭据，以及 `newapi-prod-backup` 桶。在桶内专用 `encrypted` 前缀增加 `r2-backup` crypt remote，不替换或删除原 `full/2026/09` 备份。密码、salt 和恢复配置在操作者 Mac 的私有目录独立保管，秘密不得写入仓库或 journal；crypt 的 obscure 字符串同样属于秘密。
+
+每天北京时间04:10执行，失败间隔30分钟重试，12小时最多启动3次；窗口覆盖最长3小时任务加重试间隔，避免长任务失败后无限重试。定时器使用 Persistent=true 补执行关机期间错过的任务。手动运行原 `/usr/local/sbin/newapi-mysql-full-backup.sh` 也进入同一 systemd 服务，不另起旧的落盘上传流程。查询运行记录：
+
+```bash
+systemctl status newapi-r2-backup.timer newapi-r2-backup.service
+systemctl show newapi-r2-backup.service -p Result -p ExecMainStatus
+journalctl -u newapi-r2-backup.service --since '2 days ago'
+cat /var/lib/newapi-r2-backup/latest-success.json
+```
+
+默认 `preview` 只检查配置，显式 `run` 才备份。数据库预检要求所有基础表为 InnoDB；mysqldump、gzip、rclone rcat全程流式，不在本机累积大dump。先检查磁盘余量，转储与发布迁移共享 `/run/newapi-release.lock`。网络背压仍可能延长一致性快照与持锁时间，因此设容器内转储时限及整轮超时；不得声称网络完全不占发布锁。单元的CPU/IO限制作用于备份客户端，不直接限制既有MySQL容器内部扫表。
+
+每轮使用唯一目录 `r2-backup:full/YYYY/MM/<run-id>/`。检查每个管道进程成功，远端解密读回完整dump并校验SHA-256、大小及gzip，验证manifest后最后发布SUCCESS标记。只认同时具有有效成功标记、manifest和dump校验链的目录，不覆盖已有成功对象。最后确认或本机落盘失败时，远端标记可能已经写入；此时本机保守记录失败，恢复工具可重新验证远端完整链，不能直接凭对象存在认定成功或删除它。读回阶段释放发布锁；本机私有状态保留最近成功和失败记录，不包含业务数据或凭据。
+
+本轮不清理任何远端历史，不改变本机三份部署备份、LAST_BACKUP_DIR、MySQL logs、binlog、镜像或应用版本。每日备份在连续成功情况下提供约一天的备份间隔；失败会扩大间隔。没有外部告警通道时，systemd和状态文件可检查，但不等于已接通主动通知。
+
+备份仅包含 `new-api` 数据库，不含Compose、`.env`、MySQL账号授权等完整主机恢复材料。本轮不使用 `--source-data=2` 或刷新binlog，避免引入全局读锁等待；没有采集binlog起点、连续异地binlog和重放演练，不宣称PITR。解密读回验证不能代替在另一台容量足够的隔离MySQL上恢复及核对账务；禁止在当前空间紧张的生产机直接导入演练。
+
+安装前备份现有同名文件，验证工具与故障测试后再安装服务与timer，先手动运行一轮且确认完整读回通过，最后启用timer。停止后续计划用 `systemctl disable --now newapi-r2-backup.timer`；正在运行的任务另用 `systemctl stop newapi-r2-backup.service`。保留解密配置和Mac恢复副本，不因停用计划而删除历史备份或密钥。
+
 ## 超过30天的文本日志离机归档
 
 `log-offload.py` 复用应用已有轮转及 `newapi-log-archive.py` 的 gzip 产物，不增加另一套 logrotate。第一阶段保持三份数据库备份和 `LAST_BACKUP_DIR`，不清理镜像、binlog 或业务数据库。保留期不得小于30天；扩大至14天需要另行调整策略及验收。
@@ -65,7 +88,7 @@ python3 -B -m unittest discover -s scripts/server-storage -p 'test_*.py' -v
 sudo env NEWAPI_RCLONE_INTEGRATION=1 python3 -B -m unittest discover -s scripts/server-storage -p 'test_log_offload_rclone.py' -v
 ```
 
-2026-10-22 已完成源站隔离验证和工具安装，原发布工具及核验记录保存在 `/root/newapi-archive-tools-20261022-w6ogt0pt/`；业务容器及发布状态保持不变。实际日志仅预览30个候选、约3.58GiB，存储桶/前缀与独立凭据保管尚待指定，未执行生产上传或退役。该记录不代表异地归档、数据库恢复或磁盘回收已完成。
+2026-10-22 已完成源站隔离验证和工具安装，原发布工具及核验记录保存在 `/root/newapi-archive-tools-20261022-w6ogt0pt/`；业务容器及发布状态保持不变。实际日志仅预览30个候选、约3.58GiB，当时存储桶/前缀与独立凭据保管尚未核查；后续周期数据库备份已复用现有R2并设置独立密钥副本，但文本日志尚未执行生产上传或退役。该记录不代表异地归档、数据库恢复或磁盘回收已完成。
 
 `image-retain.py` 默认只预览；传入 `--apply` 才删除。只处理全部已知标签/摘要都属于 `ghcr.io/nanashiwang/new-api` 且创建超过30天的镜像，保护：
 

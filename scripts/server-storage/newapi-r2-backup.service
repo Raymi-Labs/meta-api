@@ -1,0 +1,22 @@
+[Unit]
+Description=Verified encrypted NewAPI MySQL backup to existing R2
+Wants=network-online.target
+After=network-online.target docker.service
+StartLimitIntervalSec=12h
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+EnvironmentFile=/root/.config/rclone/r2.env
+ExecStart=/usr/local/sbin/newapi-mysql-r2-backup run --rclone-config /root/.config/rclone/rclone.conf --remote r2-backup:full --state-dir /var/lib/newapi-r2-backup
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=75%
+TimeoutStartSec=3h
+TimeoutStopSec=60s
+KillMode=control-group
+Restart=on-failure
+RestartSec=30min
