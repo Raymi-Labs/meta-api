@@ -64,6 +64,7 @@ Usage:
   newapi-restart [--dry-run]
   newapi-release status
   newapi-release init [sha-abcdefg]
+  newapi-release verify-backup DIRECTORY
 
 The update command resolves latest to an immutable SHA image, backs up MySQL,
 tests migrations against a temporary schema, deploys, and rolls back on failure.
@@ -71,6 +72,8 @@ The rollback command restores only the previous application image; it never
 restores MySQL automatically.
 The restart command starts a stopped container or restarts the existing running
 container, keeps its image/configuration, and verifies application health.
+The verify-backup command checks a sealed recovery package offline; it does not
+require root or Docker and does not perform a database restore.
 EOF
 }
 
@@ -83,7 +86,7 @@ check_prerequisites() {
   [ "$(id -u)" -eq 0 ] || die "run as root"
   [ -d "$APP_DIR" ] || die "app directory not found: $APP_DIR"
   [ -f "$COMPOSE_FILE" ] || die "compose file not found: $COMPOSE_FILE"
-  for required_command in docker flock curl gzip sha256sum awk sed grep mktemp stat; do
+  for required_command in docker flock curl gzip sha256sum awk sed grep mktemp stat python3; do
     require_command "$required_command"
   done
   docker compose version >/dev/null
@@ -401,8 +404,9 @@ create_database_backup() {
   [ "$(available_kb)" -ge "$MIN_FREE_KB" ] || die "less than $((MIN_FREE_KB / 1024)) MiB free disk space"
   timestamp="$(date +%Y%m%d-%H%M%S)"
   label="$(safe_label "${current_version}-to-${target_version}")"
-  ACTIVE_BACKUP_DIR="$BACKUP_ROOT/${timestamp}-${label}"
-  install -d -m 700 "$ACTIVE_BACKUP_DIR"
+  ACTIVE_BACKUP_DIR="$BACKUP_ROOT/${timestamp}-${label}-$$"
+  install -d -m 700 "$BACKUP_ROOT"
+  mkdir -m 700 "$ACTIVE_BACKUP_DIR"
   cp -a "$COMPOSE_FILE" "$ACTIVE_BACKUP_DIR/docker-compose.yml"
   [ -f "$APP_DIR/.env" ] && cp -a "$APP_DIR/.env" "$ACTIVE_BACKUP_DIR/.env"
   [ -f "$STATE_FILE" ] && cp -a "$STATE_FILE" "$ACTIVE_BACKUP_DIR/state.env"
@@ -413,8 +417,194 @@ create_database_backup() {
     | gzip -1 >"$temporary_dump"
   mv "$temporary_dump" "$ACTIVE_BACKUP_DIR/mysql.sql.gz"
   gzip -t "$ACTIVE_BACKUP_DIR/mysql.sql.gz"
-  sha256sum "$ACTIVE_BACKUP_DIR"/* >"$ACTIVE_BACKUP_DIR/SHA256SUMS"
-  log "backup completed: $ACTIVE_BACKUP_DIR"
+  (cd "$ACTIVE_BACKUP_DIR" && sha256sum mysql.sql.gz >DATABASE_SHA256SUMS)
+  log "database dump completed (recovery package not yet sealed): $ACTIVE_BACKUP_DIR"
+}
+
+# A self-contained offline verifier keeps the installed entrypoint a single file.
+backup_manifest() {
+  python3 - "$@" <<'PY'
+import hashlib
+import os
+from pathlib import PurePosixPath
+import re
+import stat
+import sys
+import uuid
+
+mode, directory = sys.argv[1:]
+# Normalize a trailing slash so O_NOFOLLOW still rejects a linked package root.
+directory = os.path.abspath(directory)
+manifest_name = "SHA256SUMS"
+required = {"mysql.sql.gz", "DATABASE_SHA256SUMS", "docker-compose.yml",
+            "release-state-after.env", "recovery-metadata.env", "deploy-success.log"}
+root = None
+staged = None
+published = False
+
+
+def identity(value):
+    return (value.st_dev, value.st_ino, value.st_mode, value.st_nlink,
+            value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+
+
+def safe_path(name):
+    parts = PurePosixPath(name)
+    if (not name or parts.is_absolute() or parts.as_posix() != name
+            or any(part in (".", "..") for part in name.split("/"))
+            or any(ord(char) < 32 or ord(char) == 127 or char in "\\\x85\u2028\u2029" for char in name)):
+        raise ValueError("unsafe manifest path")
+
+
+def read_file(parent, name, expected, collect=False):
+    if not stat.S_ISREG(expected.st_mode) or expected.st_nlink != 1:
+        raise ValueError("links and non-regular files are not allowed: " + name)
+    descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+    digest = hashlib.sha256()
+    data = bytearray()
+    with os.fdopen(descriptor, "rb") as source:
+        if identity(os.fstat(source.fileno())) != identity(expected):
+            raise ValueError("file replaced before reading: " + name)
+        while True:
+            block = source.read(1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
+            if collect:
+                if len(data) + len(block) > 16 * 1024 * 1024:
+                    raise ValueError("manifest exceeds 16 MiB")
+                data.extend(block)
+        if identity(os.fstat(source.fileno())) != identity(expected):
+            raise ValueError("file changed while reading: " + name)
+    return bytes(data) if collect else digest.hexdigest()
+
+
+def scan(hashes=False):
+    entries, checksums = {}, {}
+
+    def visit(parent, prefix=""):
+        for name in sorted(os.listdir(parent)):
+            relative = prefix + name
+            safe_path(relative)
+            info = os.stat(name, dir_fd=parent, follow_symlinks=False)
+            if not prefix and name in (manifest_name, staged):
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    raise ValueError("invalid manifest file")
+                continue
+            entries[relative] = identity(info)
+            if stat.S_ISDIR(info.st_mode):
+                child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                try:
+                    if identity(os.fstat(child)) != identity(info):
+                        raise ValueError("directory replaced: " + relative)
+                    visit(child, relative + "/")
+                finally:
+                    os.close(child)
+            elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
+                checksums[relative] = read_file(parent, name, info) if hashes else None
+            else:
+                raise ValueError("links and special files are not allowed: " + relative)
+
+    visit(root)
+    # Opening child directories through anchored descriptors prevents link traversal.
+    # Also reject replacement of the root path itself while the tree was inspected.
+    current = os.stat(directory, follow_symlinks=False)
+    if (current.st_dev, current.st_ino) != (os.fstat(root).st_dev, os.fstat(root).st_ino):
+        raise ValueError("backup directory replaced")
+    return entries, checksums
+
+
+def parse_manifest(name):
+    info = os.stat(name, dir_fd=root, follow_symlinks=False)
+    data = read_file(root, name, info, collect=True).decode("utf-8")
+    values = {}
+    for line in data.splitlines():
+        if not re.fullmatch(r"[0-9a-f]{64}  .+", line):
+            raise ValueError("invalid SHA-256 manifest line")
+        checksum, relative = line[:64], line[66:]
+        safe_path(relative)
+        if relative == manifest_name or relative in values:
+            raise ValueError("duplicate or self-referencing manifest entry")
+        values[relative] = checksum
+    if not required.issubset(values):
+        raise ValueError("recovery package is missing required files")
+    return values, identity(info)
+
+
+def verify(name):
+    expected, before_manifest = parse_manifest(name)
+    before, actual = scan(hashes=True)
+    after, _ = scan()
+    if before != after or identity(os.stat(name, dir_fd=root, follow_symlinks=False)) != before_manifest:
+        raise ValueError("recovery package changed during verification")
+    if expected.keys() != actual.keys():
+        raise ValueError("manifest file set does not match recovery package")
+    if expected != actual:
+        raise ValueError("recovery package checksum mismatch")
+    return before
+
+
+try:
+    if mode not in ("seal", "verify"):
+        raise ValueError("unsupported manifest operation")
+    root = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    if mode == "seal":
+        if manifest_name in os.listdir(root):
+            raise ValueError("recovery package is already sealed; refusing to replace its manifest")
+        before, checksums = scan(hashes=True)
+        if not required.issubset(checksums):
+            raise ValueError("recovery package is missing required files")
+        staged = ".SHA256SUMS-" + uuid.uuid4().hex + ".tmp"
+        descriptor = os.open(staged, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=root)
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
+            for relative, checksum in sorted(checksums.items()):
+                output.write(checksum + "  " + relative + "\n")
+            output.flush()
+            os.fsync(output.fileno())
+        if verify(staged) != before:
+            raise ValueError("recovery package changed during sealing")
+        # Publish the completion marker only after the complete second read passes.
+        os.rename(staged, manifest_name, src_dir_fd=root, dst_dir_fd=root)
+        staged = None
+        published = True
+        os.fsync(root)
+    else:
+        verify(manifest_name)
+    print("recovery package " + ("sealed" if mode == "seal" else "verified") + ": " + directory)
+except (OSError, ValueError, UnicodeError) as error:
+    if published:
+        os.unlink(manifest_name, dir_fd=root)
+    print("ERROR: recovery package " + mode + " failed: " + str(error), file=sys.stderr)
+    sys.exit(1)
+finally:
+    if staged is not None:
+        try:
+            os.unlink(staged, dir_fd=root)
+        except FileNotFoundError:
+            pass
+    if root is not None:
+        os.close(root)
+PY
+}
+
+finalize_recovery_backup() {
+  local source_version="$1"
+  cp -a "$STATE_FILE" "$ACTIVE_BACKUP_DIR/release-state-after.env" || return
+  {
+    printf 'FORMAT_VERSION=1\n'
+    printf 'DB_BACKUP_FORMAT=mysqldump-single-transaction\n'
+    printf 'DB_BACKUP_SCOPE=configured-MYSQL_DATABASE-with-routines-triggers-events\n'
+    printf 'PITR_VERIFIED=0\n'
+    printf 'SOURCE_IMAGE=%q\n' "$RECOVERY_IMAGE"
+    printf 'SOURCE_ID=%q\n' "$RECOVERY_ID"
+    printf 'SOURCE_VERSION=%q\n' "$source_version"
+    printf 'TARGET_IMAGE=%q\n' "$TARGET_IMAGE"
+    printf 'TARGET_ID=%q\n' "$TARGET_ID"
+    printf 'TARGET_VERSION=%q\n' "$TARGET_VERSION"
+    printf 'SEALED_AT=%q\n' "$(timestamp_iso)"
+  } >"$ACTIVE_BACKUP_DIR/recovery-metadata.env" || return
+  docker logs "$CONTAINER_NAME" >"$ACTIVE_BACKUP_DIR/deploy-success.log" 2>&1 || return
+  backup_manifest seal "$ACTIVE_BACKUP_DIR"
 }
 
 replace_compose_image() {
@@ -676,8 +866,11 @@ command_update() {
   RECOVERY_REQUIRED=0
   append_history update "$current_image" "$TARGET_IMAGE" success "$ACTIVE_BACKUP_DIR" \
     || log "WARNING: could not append update history"
-  docker logs "$CONTAINER_NAME" >"$ACTIVE_BACKUP_DIR/deploy-success.log" 2>&1 \
-    || log "WARNING: could not save deployment log"
+  if ! finalize_recovery_backup "$current_version"; then
+    append_history backup-seal "$current_image" "$TARGET_IMAGE" failed "$ACTIVE_BACKUP_DIR" \
+      || log "WARNING: could not append backup sealing failure"
+    die "application update is healthy, but recovery package sealing failed: $ACTIVE_BACKUP_DIR; MySQL dump retained, no complete SHA256SUMS marker; application was not rolled back"
+  fi
   log "update succeeded: $TARGET_IMAGE"
 }
 
@@ -787,6 +980,12 @@ main() {
   esac
 
   if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then usage; return 0; fi
+  if [ "$command_name" = verify-backup ]; then
+    [ "$#" -eq 1 ] || die "verify-backup requires exactly one directory"
+    require_command python3
+    backup_manifest verify "$1"
+    return
+  fi
   if [ "$command_name" = restart ]; then
     check_restart_prerequisites
   else

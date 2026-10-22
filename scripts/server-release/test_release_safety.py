@@ -59,24 +59,37 @@ class ReleaseSafetyTests(unittest.TestCase):
         self.assertEqual((self.root / "runtime").read_text().strip(), "old-image")
         self.assertFalse((self.root / "stopped").exists())
 
+    def assert_backup_unsealed(self):
+        self.assertFalse((self.root / "backups/one-click/test/SHA256SUMS").exists())
+
     def test_success_keeps_source_online_until_switch_and_does_not_recover(self):
         result, events = self.run_case("success")
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(events, ["resolve", "backup:old-image", "preflight:old-image", "up:new-image", "cleanup"])
         self.assertIn("CURRENT_IMAGE=new-image", (self.state / "state.env").read_text())
         self.assertIn("PREVIOUS_IMAGE=old-image", (self.state / "state.env").read_text())
+        backup = self.root / "backups/one-click/test"
+        manifest = (backup / "SHA256SUMS").read_text()
+        for name in [".env", "mysql.sql.gz", "release-state-before.env", "release-state-after.env",
+                     "recovery-metadata.env", "deploy-success.log"]:
+            self.assertIn("  " + name + "\n", manifest)
+        metadata = (backup / "recovery-metadata.env").read_text()
+        self.assertIn("SOURCE_IMAGE=old-image", metadata)
+        self.assertIn("TARGET_IMAGE=new-image", metadata)
 
     def test_backup_failure_never_recreates_service(self):
         result, events = self.run_case("backup-failure")
         self.assertEqual(result.returncode, 31)
         self.assertNotIn("up:new-image", events)
         self.assert_old_restored()
+        self.assert_backup_unsealed()
 
     def test_preflight_failure_never_recreates_service(self):
         result, events = self.run_case("preflight-failure")
         self.assertEqual(result.returncode, 32)
         self.assertNotIn("up:new-image", events)
         self.assert_old_restored()
+        self.assert_backup_unsealed()
 
     def test_deployment_failure_restores_service_compose_and_state(self):
         result, events = self.run_case("deploy-failure")
@@ -84,12 +97,14 @@ class ReleaseSafetyTests(unittest.TestCase):
         self.assertIn("up:old-image", events)
         self.assertIn("automatic recovery succeeded", result.stdout)
         self.assert_old_restored()
+        self.assert_backup_unsealed()
 
     def test_failed_health_recovers_old_service(self):
         result, events = self.run_case("health-failure")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("up:old-image", events)
         self.assert_old_restored()
+        self.assert_backup_unsealed()
 
     def test_signals_during_switch_restore_old_service(self):
         for signal_name, expected in [("HUP", 129), ("INT", 130), ("TERM", 143)]:
@@ -98,7 +113,34 @@ class ReleaseSafetyTests(unittest.TestCase):
                 self.assertEqual(result.returncode, expected, result.stderr + result.stdout)
                 self.assertIn("automatic recovery succeeded", result.stdout)
                 self.assert_old_restored()
+                self.assert_backup_unsealed()
                 (self.root / "events").unlink()
+
+    def test_sealing_failure_reports_error_and_keeps_healthy_new_service(self):
+        result, events = self.run_case("seal-failure")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("application update is healthy", result.stderr)
+        self.assertNotIn("up:old-image", events)
+        self.assertEqual((self.root / "runtime").read_text().strip(), "new-image")
+        self.assertIn("CURRENT_IMAGE=new-image", (self.state / "state.env").read_text())
+        self.assertTrue((self.root / "backups/one-click/test/mysql.sql.gz").exists())
+        self.assert_backup_unsealed()
+
+    def test_missing_final_log_does_not_publish_complete_marker(self):
+        result, events = self.run_case("final-log-failure")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("application update is healthy", result.stderr)
+        self.assertNotIn("up:old-image", events)
+        self.assertEqual((self.root / "runtime").read_text().strip(), "new-image")
+        self.assert_backup_unsealed()
+
+    def test_signal_after_success_keeps_new_service_and_incomplete_dump(self):
+        result, events = self.run_case("seal-signal-TERM")
+        self.assertEqual(result.returncode, 143)
+        self.assertNotIn("up:old-image", events)
+        self.assertEqual((self.root / "runtime").read_text().strip(), "new-image")
+        self.assertTrue((self.root / "backups/one-click/test/mysql.sql.gz").exists())
+        self.assert_backup_unsealed()
 
     def test_offline_source_fails_before_pull_or_backup(self):
         (self.root / "stopped").touch()

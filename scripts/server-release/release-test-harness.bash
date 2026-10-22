@@ -18,7 +18,10 @@ create_database_backup() {
   ACTIVE_BACKUP_DIR="$BACKUP_ROOT/test"
   mkdir -p "$ACTIVE_BACKUP_DIR"
   cp "$COMPOSE_FILE" "$ACTIVE_BACKUP_DIR/docker-compose.yml"
+  printf 'example private configuration\n' >"$ACTIVE_BACKUP_DIR/.env"
   if [[ "$CASE" == backup-failure ]]; then return 31; fi
+  printf 'test SQL dump\n' | gzip >"$ACTIVE_BACKUP_DIR/mysql.sql.gz"
+  printf 'test intermediate dump checksum\n' >"$ACTIVE_BACKUP_DIR/DATABASE_SHA256SUMS"
 }
 preflight_target() {
   event "preflight:$(actual_image)"
@@ -43,7 +46,14 @@ docker() {
         '{{.RestartCount}}') echo 0 ;;
         *) return 98 ;;
       esac ;;
-    logs) return 0 ;;
+    logs)
+      if [[ "$CASE" == seal-failure && "$RECOVERY_REQUIRED" == 0 ]]; then
+        ln -s "$APP_DIR/runtime" "$ACTIVE_BACKUP_DIR/unsafe-link"
+      fi
+      if [[ "$CASE" == seal-signal-TERM && "$RECOVERY_REQUIRED" == 0 ]]; then kill -TERM "$$"; fi
+      if [[ "$CASE" == final-log-failure && "$RECOVERY_REQUIRED" == 0 ]]; then return 34; fi
+      printf 'test deployment log\n'
+      ;;
     pull) event "pull:$1" ;;
     compose)
       [[ "$1" == -f ]] || return 98
