@@ -66,7 +66,7 @@ class Store:
 
     def get(self, destination, maximum):
         process = self.remote.processes.start(
-            self.remote.command("lsjson", destination, "--stat"),
+            self.remote.command("lsjson", destination, "--stat", "--files-only"),
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, env=self.remote.env)
         listing, _ = process.communicate()
         if process.returncode in (3, 4):
@@ -74,7 +74,14 @@ class Store:
         self.remote.processes.check(process, "remote object existence check failed")
         try:
             info = json.loads(listing)
-            if info.get("IsDir") or not 0 <= info["Size"] <= maximum:
+            # Bucket backends otherwise report a missing key as a virtual
+            # directory (IsDir=true, Size=-1). File-only stat returns JSON null.
+            if info is None:
+                return None
+            if not isinstance(info, dict):
+                raise ValueError()
+            if (info.get("IsDir") is not False or type(info.get("Size")) is not int
+                    or not 0 <= info["Size"] <= maximum):
                 raise ArchiveError("remote object has an unexpected type or size")
         except (ValueError, KeyError, TypeError):
             raise ArchiveError("remote object metadata is invalid") from None

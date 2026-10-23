@@ -1,10 +1,12 @@
 import copy
 import importlib.util
+import io
 import json
 import struct
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from pitr_binlog import HEADER, canonical_json, normalize, parse_chunk
 from test_pitr_binlog import event, fde, fixture, MAGIC
@@ -12,6 +14,71 @@ from test_pitr_binlog import event, fde, fixture, MAGIC
 spec = importlib.util.spec_from_file_location("binlog_archive", Path(__file__).with_name("mysql-binlog-archive.py"))
 archive = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(archive)
+
+
+class StoreTests(unittest.TestCase):
+    def remote(self, listing, code=0, data=b"verified"):
+        remote = mock.Mock()
+        remote.env = {}
+        stat = mock.Mock(returncode=code)
+        stat.communicate.return_value = (listing, None)
+        remote.processes.start.return_value = stat
+        reader = mock.Mock(returncode=0, stdout=io.BytesIO(data))
+        remote.reader.return_value = reader
+
+        def check(child, message):
+            if child.returncode:
+                raise archive.ArchiveError(message)
+
+        remote.processes.check.side_effect = check
+        return remote
+
+    def test_existing_file_is_read_and_verified_as_file_only(self):
+        remote = self.remote(b'{"IsDir":false,"Size":8}')
+        self.assertEqual(archive.Store(remote).get("crypt:root.json", 8), b"verified")
+        remote.command.assert_called_once_with("lsjson", "crypt:root.json", "--stat", "--files-only")
+        remote.reader.assert_called_once_with("crypt:root.json")
+
+    def test_bucket_missing_object_null_is_not_read(self):
+        remote = self.remote(b"null\n")
+        self.assertIsNone(archive.Store(remote).get("crypt:root.json", 8))
+        remote.reader.assert_not_called()
+
+    def test_explicit_missing_exit_codes_are_not_read(self):
+        for code in (3, 4):
+            with self.subTest(code=code):
+                remote = self.remote(b"", code)
+                self.assertIsNone(archive.Store(remote).get("crypt:root.json", 8))
+                remote.reader.assert_not_called()
+
+    def test_remote_errors_do_not_become_missing_or_trigger_upload(self):
+        for code in (1, 5, 7):
+            with self.subTest(code=code):
+                remote = self.remote(b"null\n", code)
+                with self.assertRaisesRegex(archive.ArchiveError, "existence check failed"):
+                    archive.Store(remote).put("crypt:root.json", b"verified")
+                remote.reader.assert_not_called()
+                remote.writer.assert_not_called()
+
+    def test_directory_and_invalid_size_fail_closed(self):
+        for info in ({"IsDir": True, "Size": -1}, {"IsDir": True, "Size": 0},
+                     {"IsDir": False, "Size": -1}, {"IsDir": False, "Size": 9},
+                     {"IsDir": False, "Size": True}, {"IsDir": False, "Size": "8"},
+                     {"IsDir": False}, {"Size": 8}):
+            with self.subTest(info=info):
+                remote = self.remote(json.dumps(info).encode())
+                with self.assertRaisesRegex(archive.ArchiveError, "unexpected type or size"):
+                    archive.Store(remote).put("crypt:root.json", b"verified")
+                remote.reader.assert_not_called()
+                remote.writer.assert_not_called()
+
+    def test_malformed_metadata_does_not_trigger_upload(self):
+        for listing in (b"[]", b"true", b"{}broken", b'"null"'):
+            with self.subTest(listing=listing):
+                remote = self.remote(listing)
+                with self.assertRaisesRegex(archive.ArchiveError, "metadata is invalid"):
+                    archive.Store(remote).put("crypt:root.json", b"verified")
+                remote.writer.assert_not_called()
 
 
 class FakeStore:
