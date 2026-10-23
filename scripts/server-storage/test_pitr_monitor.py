@@ -3,6 +3,8 @@ import hashlib
 import importlib.util
 import io
 import json
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,6 +24,106 @@ class MonitorTests(unittest.TestCase):
             'covered_sample_at': (self.now-dt.timedelta(seconds=120)).isoformat(),
             'last_complete_transaction_frontier': {'file': 'binlog.000001', 'position': 200}}
         self.current = {'source_uuid': 'uuid', 'file': 'binlog.000001', 'position': 300}
+
+    def unit_processes(self, **changes):
+        values = {'LoadState': 'loaded', 'ActiveState': 'inactive', 'SubState': 'dead',
+                  'Result': 'success', 'ExecMainStatus': '0'}
+        values.update(changes)
+        processes = MagicMock()
+        child = processes.start.return_value
+        child.returncode = 0
+        child.communicate.return_value = ('\n'.join(key + '=' + value for key, value in values.items()).encode(), None)
+        return processes
+
+    def test_service_success_and_current_run_are_not_failures(self):
+        for active, substate, prior_status in (('inactive', 'dead', '0'), ('active', 'running', '0'),
+                                              ('active', 'exited', '0'), ('activating', 'start', '1'),
+                                              ('activating', 'start-pre', '0'), ('activating', 'start-post', '0')):
+            with self.subTest(active=active, substate=substate):
+                processes = self.unit_processes(ActiveState=active, SubState=substate, ExecMainStatus=prior_status)
+                result = m.check_unit('newapi-pitr-backup.service', processes)
+                self.assertEqual(result['ActiveState'], active)
+                command = processes.start.call_args.args[0]
+                self.assertEqual(command[:3], ['systemctl', '--no-pager', 'show'])
+                self.assertEqual(command[-2:], ['--', 'newapi-pitr-backup.service'])
+                self.assertNotIn('is-enabled', command)
+
+    def test_service_failure_signal_timeout_and_auto_restart_are_errors(self):
+        cases = [{'Result': result} for result in ('exit-code', 'signal', 'timeout', 'core-dump', 'watchdog', 'oom-kill')]
+        cases += [{'ActiveState': 'failed', 'SubState': 'failed'},
+                  {'ActiveState': 'activating', 'SubState': 'auto-restart'},
+                  {'ActiveState': 'activating', 'SubState': 'auto-restart-queued'},
+                  {'ExecMainStatus': '15'}]
+        for changes in cases:
+            with self.subTest(changes=changes), self.assertRaises(m.Error):
+                m.check_unit('newapi-pitr-backup.service', self.unit_processes(**changes))
+
+    def test_missing_unreadable_or_malformed_service_cannot_report_health(self):
+        for state in ('not-found', 'masked', 'error'):
+            with self.subTest(state=state), self.assertRaisesRegex(m.Error, 'not loaded'):
+                m.check_unit('missing.service', self.unit_processes(LoadState=state))
+        processes = self.unit_processes()
+        processes.start.return_value.returncode = 4
+        with self.assertRaisesRegex(m.Error, 'unavailable'):
+            m.check_unit('missing.service', processes)
+        processes = self.unit_processes()
+        processes.start.return_value.communicate.side_effect = subprocess.TimeoutExpired('systemctl', 5)
+        with self.assertRaisesRegex(m.Error, 'timed out'):
+            m.check_unit('missing.service', processes)
+        for raw in (b'LoadState=loaded\n', b'not-properties', b'LoadState=loaded\nLoadState=loaded\n'):
+            processes = self.unit_processes()
+            processes.start.return_value.communicate.return_value = (raw, None)
+            with self.subTest(raw=raw), self.assertRaisesRegex(m.Error, 'invalid'):
+                m.check_unit('newapi-pitr-backup.service', processes)
+
+    def test_service_checks_are_explicit_repeatable_and_reject_non_service_names(self):
+        self.assertEqual(m.parse_args([]).check_unit, [])
+        self.assertEqual(m.parse_args(['--check-unit', 'backup.service', '--check-unit', 'archive.service']).check_unit,
+                         ['backup.service', 'archive.service'])
+        for value in ('../backup.service', 'backup.timer', '--all', 'bad name.service'):
+            with self.subTest(value=value), patch('sys.stderr', new=io.StringIO()), self.assertRaises(SystemExit):
+                m.parse_args(['--check-unit=' + value])
+
+    def test_failed_backup_alerts_before_old_success_receipt_can_mask_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            config = root / 'alert.json'
+            config.write_text('{}')
+            config.chmod(0o600)
+            latest = root / 'latest-success.json'
+            latest.write_text(json.dumps({'status': 'success', 'finished_at': dt.datetime.now(dt.timezone.utc).isoformat()}))
+            latest.chmod(0o600)
+            args = m.parse_args(['--state-dir', str(root / 'state'), '--lock', str(root / 'monitor.lock'),
+                                 '--full-backup-status', str(latest), '--alert-config', str(config),
+                                 '--check-unit', 'newapi-pitr-backup.service'])
+            with patch.object(m, 'check_unit', side_effect=m.Error('PITR service failed: newapi-pitr-backup.service')) as check, \
+                    patch.object(m, 'alert') as deliver, patch.object(m, 'source_position') as source:
+                report = m.execute(args)
+                check.assert_called_once()
+                source.assert_not_called()
+                deliver.assert_called_once()
+                self.assertEqual(deliver.call_args.args[1], '[New API PITR FAILURE]')
+                self.assertFalse(report['healthy'])
+                self.assertIn('newapi-pitr-backup.service', report['error'])
+
+    def test_main_returns_failure_for_unhealthy_report_and_monitor_errors(self):
+        with patch('sys.stdout', new=io.StringIO()), patch('sys.stderr', new=io.StringIO()):
+            for healthy, expected in ((True, 0), (False, 1)):
+                with patch.object(m, 'execute', return_value={'healthy': healthy}):
+                    self.assertEqual(m.main([]), expected)
+            for error in (m.Error('delivery failed'), OSError('input failed'), ValueError('invalid input')):
+                with patch.object(m, 'execute', side_effect=error):
+                    self.assertEqual(m.main([]), 1)
+
+    def test_cli_monitor_and_notification_failure_exits_nonzero(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            result = subprocess.run([sys.executable, '-B', str(Path(m.__file__).resolve()),
+                '--state-dir', str(root / 'state'), '--lock', str(root / 'monitor.lock'),
+                '--archive-status', str(root / 'missing-status.json'), '--alert-config', str(root / 'missing-alert.json')],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(b'PITR monitor failed', result.stderr)
 
     def test_backlog_uses_covered_sampling_time(self):
         self.assertEqual(m.coverage(self.status, self.current, self.now, 300, 180), 120)

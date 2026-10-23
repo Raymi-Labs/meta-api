@@ -82,6 +82,8 @@ systemctl enable --now newapi-pitr-backup.timer
 
 监控每分钟独立执行，重新核对远端尾段内容及回执。源 UUID/位置倒退、worker 观测超过 180 秒、全备超过 36 小时、磁盘不足 5 GiB、归档错误或覆盖超过五分钟都会失败。通知按错误状态去重，一小时仍未恢复再提醒，恢复后发送恢复通知。投递失败不推进通知状态，下一轮继续尝试；`last-delivery.json` 记录 SMTP 接受或失败，不将 SMTP 接受等同用户已读。
 
+生产监控 unit 还通过重复的 `--check-unit` 检查新全备和归档 service 的最近运行结果。服务缺失、失败、超时、信号退出或自动重试会在下一次监控时告警，不能被尚未过期的上一份成功全备回执掩盖。正常启动、运行和成功结束不报警；候选阶段不要求新全备 timer 已启用。手动运行监控器时如需同样检查，须传入这两个 service 参数。
+
 ```bash
 systemctl list-timers 'newapi-*'
 journalctl -u newapi-binlog-archive.service -u newapi-pitr-monitor.service --since '30 minutes ago'

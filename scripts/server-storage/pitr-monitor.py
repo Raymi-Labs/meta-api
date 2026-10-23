@@ -85,6 +85,48 @@ def source_position(args, processes):
         raise Error('source binlog status is unavailable') from None
 
 
+def check_unit(unit, processes):
+    """Read the latest service result without starting it or inspecting timers."""
+    fields = ('LoadState', 'ActiveState', 'SubState', 'Result', 'ExecMainStatus')
+    child = processes.start(['systemctl', '--no-pager', 'show',
+                             '--property=' + ','.join(fields), '--', unit],
+                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    try:
+        raw, _ = child.communicate(timeout=5)
+    except subprocess.TimeoutExpired:
+        raise Error('PITR service status query timed out: ' + unit) from None
+    if child.returncode:
+        raise Error('PITR service status is unavailable: ' + unit)
+    try:
+        values = {}
+        for line in raw.decode('ascii').splitlines():
+            key, value = line.split('=', 1)
+            if key not in fields or key in values:
+                raise ValueError()
+            values[key] = value
+        if values.get('LoadState') != 'loaded':
+            raise Error('PITR service is not loaded: ' + unit)
+        if (set(values) != set(fields)
+                or any(not re.fullmatch(r'[a-z][a-z-]*', values[key]) for key in fields[:-1])
+                or not re.fullmatch(r'[0-9]+', values['ExecMainStatus'])):
+            raise ValueError()
+        exit_status = int(values['ExecMainStatus'])
+    except (UnicodeError, ValueError, KeyError):
+        raise Error('PITR service status is invalid: ' + unit) from None
+    active, substate, result = values['ActiveState'], values['SubState'], values['Result']
+    if (active == 'failed' or substate == 'failed' or substate.startswith('auto-restart')
+            or result != 'success'):
+        raise Error('PITR service failed: ' + unit + ' (result=' + result
+                    + ', state=' + active + '/' + substate + ')')
+    if active not in ('active', 'activating', 'reloading', 'deactivating', 'inactive'):
+        raise Error('PITR service status is invalid: ' + unit)
+    # ExecMainStatus can describe the previous main process while a new start
+    # is in progress. Result/SubState still expose failed automatic retries.
+    if active == 'inactive' and exit_status != 0:
+        raise Error('PITR service exited unsuccessfully: ' + unit)
+    return values
+
+
 def remote_bytes(remote, path, maximum):
     reader = remote.reader(path)
     data = reader.stdout.read(maximum + 1)
@@ -247,6 +289,9 @@ def execute(args):
         try:
             # Reserve time for mail even when a remote verification hangs.
             with backup.deadline(65):
+                report['services'] = {}
+                for unit in args.check_unit:
+                    report['services'][unit] = check_unit(unit, processes)
                 status = object_json(backup.private_bytes(args.archive_status), 'archive status is invalid')
                 remote = backup.CryptRemote(status['root'], args.rclone_config, processes)
                 current = source_position(args, processes)
@@ -310,6 +355,8 @@ def execute(args):
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--container', default='newapi-mysql')
+    parser.add_argument('--check-unit', action='append', default=[],
+                        help='also alert on the latest result of this systemd service (repeatable)')
     parser.add_argument('--archive-status', default='/var/lib/newapi-binlog-archive/status.json')
     parser.add_argument('--full-backup-status', default='/var/lib/newapi-pitr-backup/latest-success.json')
     parser.add_argument('--rclone-config', default='/root/.config/rclone/rclone.conf')
@@ -328,14 +375,20 @@ def parse_args(argv=None):
         parser.error('thresholds must be positive')
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', args.container):
         parser.error('invalid container name')
+    if any(not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.@-]*\.service', unit) for unit in args.check_unit):
+        parser.error('check-unit must be a service name without paths or options')
     return args
 
 
-if __name__ == '__main__':
+def main(argv=None):
     try:
-        result = execute(parse_args())
+        result = execute(parse_args(argv))
         print(json.dumps(result, sort_keys=True))
-        sys.exit(0 if result['healthy'] else 1)
+        return 0 if result['healthy'] else 1
     except (Error, OSError, ValueError):
         print('PITR monitor failed; inspect its private health and notification receipts', file=sys.stderr)
-        sys.exit(1)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
