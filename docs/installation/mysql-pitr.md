@@ -49,6 +49,8 @@
 5. A 的锚点和连续链验证通过、SMTP 测试通知获接受后，可启用候选归档与独立监控，让隔离演练期间的增量继续异地保存；此时仍保留旧每日全备任务，不能宣称 PITR 已验收。取得独立全备 B，其锚点作为目标 T；归档必须覆盖 T。在工作站恢复 A 加真实增量至 T，再独立恢复 B，核对整库摘要与账务。恢复不在生产机运行。
 6. 完整恢复验收通过后启用每日北京时间 04:10 的新全备 timer。停用旧全备 timer，但保留 service 和原程序作回退。观察多个周期的远端已验证位置，不能只检查 timer 为 active。
 
+切换前确认新旧全备 service 均已成功结束、没有活动进程、排队任务或自动重试，且最新独立监控仍正常。停用旧 timer 必须同时停止其当前调度（`disable --now`）；单独 `disable` 只取消开机启用。若持有备份 job lock 和发布锁做最后复核，须在启用新 timer 前释放，避免即时补跑取锁失败。`Persistent=true` 可能根据已有触发时间记录立即补跑，手动执行全备不等于 timer 已触发；保留其记录，检查 `LastTriggerUSec`、`NextElapseUSecRealtime`，若发生补跑则继续等到新回执验证成功。
+
 安装时将同版本的 `mysql-r2-backup.py`、`pitr_anchor.py`、`pitr_binlog.py`、`mysql-binlog-archive.py`、`pitr-monitor.py`、`pitr-alert-config.py` 一起部署；不要只复制入口漏掉相邻模块。systemd 文件在 `scripts/server-storage/`，使用已有 `/root/.config/rclone/r2.env`，不把 AWS 凭据写入 unit。
 
 ```bash
@@ -70,7 +72,7 @@ python3 /usr/local/lib/newapi-storage/mysql-binlog-archive.py \
 systemctl enable --now newapi-binlog-archive.timer newapi-pitr-monitor.timer
 
 # A/B 完整恢复验收通过后才切换每日任务。systemd 自动加载已有 AWS 环境。
-systemctl disable newapi-r2-backup.timer
+systemctl disable --now newapi-r2-backup.timer
 systemctl enable --now newapi-pitr-backup.timer
 ```
 
@@ -126,6 +128,16 @@ A/B 来自同实例但必须是不同快照；B 的锚点决定 T。工具下载
 按指定位置恢复时使用 `--stop-file` 和 `--stop-position` 替代 `--backup-b`。位置是事务执行后的结束位置；先确定所需事务边界，工具拒绝缺段、CRC 错误、未知事件及半个事务。需要交付恢复数据时添加 `--export-restored-dump`，在私有工作目录生成 `recovered.sql.gz` 和内容指纹，需要额外磁盘。此模式提供隔离恢复审计；它不自带独立 B 快照对照，也不会自动切换生产数据库。
 
 审计覆盖实际 schema、所有表行数、按主键排序的全字段 SHA-256；无主键使用保留重复行的行摘要排序。仅忽略非事务性的 AUTO_INCREMENT 分配器高水位差异，同时保留原始 schema 摘要。还核对钱包余额、付费资金、充值、预扣/退款、订阅、令牌、任务和使用记录。按币种/状态分组，不把套餐镜像充值重复计入钱包；异步日志和累计计数不能用一条简单等式强行“对平”。工具只输出摘要和汇总，不输出用户令牌、付款 payload 或秘密配置。
+
+## 2026-10-23 生产验收记录
+
+已在独立 MySQL 8.0.46 环境完成真实生产恢复：全备 A 从 `binlog.000182:999096542` 回放至独立全备 B 的 `binlog.000182:1039603177`，验证 65 份连续归档回执。两份恢复结果的 71 张表结构、行数、全字段指纹及 17 张表财务汇总一致，差异为零。窗口内新增充值类日志 14 条、扣费日志 3,509 条；充值类日志不能等同支付交易笔数。本窗口没有新增退款日志样本，既有退款相关数据状态参与全表核对，新增退款场景另由真实 MySQL 隔离演练覆盖。
+
+验收证书绑定的连续监控窗口为 05:32:13–09:32:41 UTC，共 234 个正常周期，实测最大覆盖落后 90.541764 秒，满足正常运行不超过 300 秒的目标。证书已保存至现有 crypt remote 的 `pitr-validation/<B-run>/acceptance.json` 并完成解密读回校验；原始对账结果及该窗口的固定观测快照保存在私有验收目录。验收证书独立保存，原备份成功标记保持不可变。
+
+09:36:20 UTC 完成每日任务交接：新 PITR 全备 timer 已启用，下一次计划执行为北京时间 2026-10-24 04:10；旧 timer 已停止调度，原程序、service、timer 文件和历史备份保留。本次没有触发即时补跑。归档和独立邮件监控继续运行，生产应用及数据库容器的 ID、启动时间和重启次数保持不变。
+
+本次包含下载、两次恢复和整库审计的完整流程耗时约 3 小时 40 分 29 秒，不能用五分钟 RPO 推断恢复耗时。已验证链从本次带锚点全备开始；此前旧全备和本地七天 binlog 保留，不代表此前七天均已完成 PITR 验收。
 
 ## 回退与故障处理
 
