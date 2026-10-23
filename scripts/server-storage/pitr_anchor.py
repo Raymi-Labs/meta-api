@@ -198,7 +198,33 @@ clock_now() {
   whole=${value%%.*}; fraction=${value#*.}
   clock_ns=$(( (10#$whole*100 + 10#$fraction) * 10000000 ))
 }
-sql() { MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" timeout --signal=TERM --kill-after=1s 2s mysql --protocol=SOCKET --skip-reconnect --user=root --batch --skip-column-names --execute="$1" 2>/dev/null; }
+sql() {
+  local limit=2s kill_after=1s remaining_ms
+  if [ -n "${cancel_deadline_ns:-}" ]; then
+    clock_now || return 1
+    remaining_ms=$(( (cancel_deadline_ns-clock_ns)/1000000 ))
+    [ "$remaining_ms" -gt 0 ] || return 124
+    [ "$remaining_ms" -le 2000 ] || remaining_ms=2000
+    printf -v limit '%d.%03ds' "$((remaining_ms/1000))" "$((remaining_ms%1000))"
+    kill_after=0.2s
+  fi
+  MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" timeout --signal=TERM --kill-after="$kill_after" "$limit" mysql --protocol=SOCKET --skip-reconnect --user=root --batch --skip-column-names --execute="$1" 2>/dev/null
+}
+terminate_client() {
+  # Signals are bound to this exact process lifetime, even when P_S is unable
+  # to answer. A vanished client still requires server-side confirmation.
+  [ -r "/proc/$dump_pid/stat" ] || return 0
+  [ -n "${dump_start:-}" ] || return 1
+  if [ "$(awk '{print $22}' "/proc/$dump_pid/stat" 2>/dev/null)" != "$dump_start" ]; then
+    [ ! -d "/proc/$dump_pid" ] && return 0
+    return 1
+  fi
+  if [ "$(cat "/proc/$dump_pid/comm" 2>/dev/null)" != mysqldump ]; then
+    [ ! -d "/proc/$dump_pid" ] && return 0
+    return 1
+  fi
+  kill -TERM "$dump_pid" 2>/dev/null || :
+}
 connections() {
   if [ -r "/proc/$dump_pid/stat" ] && [ -n "${dump_start:-}" ]; then
     [ "$(awk '{print $22}' "/proc/$dump_pid/stat")" = "$dump_start" ] || return 1
@@ -224,18 +250,25 @@ unlock_evidence() {
 }
 cancel_sql() {
   local ids id remaining
-  ids=$(connections) || return 1
+  # The bound lives inside the container: killing a host docker-exec client
+  # does not stop the SQL cancellation command it has already launched.
+  clock_now || { terminate_client; return 1; }
+  cancel_deadline_ns=$((clock_ns+8000000000))
+  ids=$(connections) || ids=
   for id in $ids; do
     case "$id" in *[!0-9]*|'') return 1;; esac
     kill_connection "$id" || :
   done
-  # Kill the client after cancelling its server connection, then recheck to
-  # close the race where a connection was still being established above.
-  kill -TERM "$dump_pid" 2>/dev/null || :
-  for attempt in {1..20}; do
-    remaining=$(connections) || return 1
+  # Always attempt the identity-checked signal, including when the first
+  # inventory failed. This can release socket backpressure before rechecking.
+  terminate_client || return 1
+  while clock_now && [ "$clock_ns" -lt "$cancel_deadline_ns" ]; do
+    if ! remaining=$(connections); then sleep 0.05; continue; fi
     if [ -z "$remaining" ]; then return 0; fi
-    for id in $remaining; do kill_connection "$id" || :; done
+    for id in $remaining; do
+      case "$id" in *[!0-9]*|'') return 1;; esac
+      kill_connection "$id" || :
+    done
     sleep 0.05
   done
   return 1

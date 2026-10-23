@@ -22,6 +22,8 @@
 
 容器内 watchdog 使用单调时钟检查五秒启动期限，并给整轮转储设置时限。预检要求 MySQL 的 statement history、当前事务和元数据锁可观测；守卫按精确 mysqldump 会话核验已成功完成 UNLOCK，或已进入一致性事务且不再持有 GLOBAL/COMMIT 锁。不能仅凭“没有锁记录”认定已解锁。小型 dump 提前断开时，只有期限内的解锁后标记可作为回退证据；晚到标记不能解除超时取消。
 
+上传背压可能堵住 Docker 输出桥，连带阻塞同容器的新 `docker exec` 控制命令。外部中断先关闭本次宿主输出桥，再执行精确 SQL 取消与消失确认。容器内取消共用八秒预算，首次状态查询失败也会核验 PID/starttime/进程名后终止本次客户端；宿主 CLI 或客户端退出都不能代替服务器确认。未确认时保留失败状态和原始错误，不能发布 SUCCESS。
+
 超时先按 mysqldump PID 与客户端连接属性精确 `KILL CONNECTION`，再取消客户端并确认服务器连接消失。仅终止宿主 docker exec 或客户端不能证明等待读锁已经取消；反过来，Docker 输出管道仍等待消费，也不能证明数据库会话仍存活。回执中的 `startup_lock_window_upper_bound_seconds` 是启动至确认解锁的保守上界，不是精确持锁时长，`startup_unlock_evidence` 记录采用的固定证据类型。
 
 独立连接持有 `LOCK INSTANCE FOR BACKUP` 防止转储期间结构变化，普通业务读写可继续。获得实例锁时短持发布锁，此后释放发布锁；`newapi-update`/`newapi-rollback`/`newapi-restart` 检测实例锁并快速报错，运维待快照结束后重试。重启入口在停止运行中容器之前检查，避免启动迁移等待 DDL 锁。完整转储读完后释放实例锁，远端读回不持锁。心跳失联的实例锁连接通过十秒空闲租约释放。网络背压仍可能延长数据库快照和 DDL 保护时间，不能将流式上传说成无影响。

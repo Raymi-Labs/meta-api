@@ -36,6 +36,14 @@ jobs:
         run: python3 -B -m unittest discover -s scripts/server-release -p 'test_*.py' -v
       - name: Exercise storage retention and verified log offload
         run: python3 -B -m unittest discover -s scripts/server-storage -p 'test_*.py' -v
+      - name: Exercise real MySQL snapshot locks and cancellation
+        timeout-minutes: 5
+        env:
+          NEWAPI_PITR_TEST_MYSQL_IMAGE: mysql:8.0.46
+          NEWAPI_PITR_TEST_DELAY_LIBRARY: /tmp/newapi-pitr-delay.so
+        run: |
+          gcc -shared -fPIC -O2 scripts/server-storage/test_pitr_delay.c -o "$NEWAPI_PITR_TEST_DELAY_LIBRARY" -ldl
+          python3 -B -m unittest discover -s scripts/server-storage -p 'test_pitr_anchor.py' -v
       - name: Install rclone for isolated encryption roundtrip
         run: |
           sudo apt-get update -qq
@@ -46,14 +54,6 @@ jobs:
         run: python3 -B scripts/server-release/exercise-restart.py --help
       - name: Build exact MySQL PITR recovery tools
         run: docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
-      - name: Exercise real MySQL snapshot locks and cancellation
-        timeout-minutes: 5
-        env:
-          NEWAPI_PITR_TEST_MYSQL_IMAGE: mysql:8.0.46
-          NEWAPI_PITR_TEST_DELAY_LIBRARY: /tmp/newapi-pitr-delay.so
-        run: |
-          gcc -shared -fPIC -O2 scripts/server-storage/test_pitr_delay.c -o "$NEWAPI_PITR_TEST_DELAY_LIBRARY" -ldl
-          python3 -B -m unittest discover -s scripts/server-storage -p 'test_pitr_anchor.py' -v
       - name: Exercise archive event boundary under the production memory limit
         timeout-minutes: 20
         run: |

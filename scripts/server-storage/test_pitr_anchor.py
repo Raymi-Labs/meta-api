@@ -6,15 +6,19 @@ NEWAPI_PITR_TEST_MYSQL_IMAGE=mysql:8.0 python3 -m unittest discover \
 """
 import gzip
 import faulthandler
+import fcntl
 import importlib.util
 import io
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import traceback
 import unittest
 import uuid
 from unittest import mock
@@ -148,15 +152,20 @@ class RealMySQLTests(unittest.TestCase):
             command[-1] = transform(command[-1])
         child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         def reap():
-            if child.poll() is None:
-                try:
-                    backup.cancel_dump(self.args, self.run_id)
-                finally:
+            try:
+                if child.poll() is None:
                     try:
-                        child.communicate(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        child.kill()
-                        child.communicate(timeout=3)
+                        backup.cancel_dump(self.args, self.run_id)
+                    finally:
+                        try:
+                            child.communicate(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            child.kill()
+                            child.communicate(timeout=3)
+            finally:
+                for stream in (child.stdout, child.stderr):
+                    if stream is not None:
+                        stream.close()
         self.addCleanup(reap)
         return child
 
@@ -167,6 +176,35 @@ class RealMySQLTests(unittest.TestCase):
 
     def assert_no_dump_connections(self):
         self.assertEqual(anchor.query(self.container, "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE ATTR_NAME='program_name' AND ATTR_VALUE='mysqldump'"), "0")
+
+    def dump_diagnostics(self, phase, child):
+        print("\nPITR failure phase=" + phase + " docker_returncode=" + str(child.poll()), file=sys.stderr, flush=True)
+        script = r'''
+for name in pids guard-pid held-consumer guard-first-poll transaction-starting post-unlock-marker ready ready-method done timed-out cancellation-started cancel-confirmed cancel-failed cancelled; do
+  if [ -f "$1/$name" ]; then printf '%s=' "$name"; head -c 256 "$1/$name"; printf '\n'; fi
+done
+for pid in $(cat "$1/pids" "$1/guard-pid" "$1/held-consumer" 2>/dev/null); do
+  case "$pid" in *[!0-9]*|'') continue;; esac
+  if [ -r "/proc/$pid/stat" ]; then
+    printf 'proc_stat='; cat "/proc/$pid/stat"
+    printf 'proc_wchan='; cat "/proc/$pid/wchan"; printf '\n'
+  fi
+done
+'''
+        try:
+            result = subprocess.run(['docker', 'exec', self.container, 'bash', '-c', script, 'diagnostic', self.directory],
+                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
+            print(result.stdout.decode('utf-8', 'replace')[:8192], file=sys.stderr, flush=True)
+        except subprocess.SubprocessError as error:
+            print('PITR process diagnostics unavailable: ' + type(error).__name__, file=sys.stderr, flush=True)
+        try:
+            rows = anchor.query(self.container, "SELECT t.PROCESSLIST_ID,t.PROCESSLIST_COMMAND,t.PROCESSLIST_TIME,"
+                "COALESCE(t.PROCESSLIST_STATE,''),a.ATTR_VALUE FROM performance_schema.threads t JOIN "
+                "performance_schema.session_connect_attrs a ON a.PROCESSLIST_ID=t.PROCESSLIST_ID "
+                "WHERE a.ATTR_NAME='program_name' AND a.ATTR_VALUE IN ('mysql','mysqldump') ORDER BY t.PROCESSLIST_ID")
+            print('PITR connection metadata:\n' + rows[:4096], file=sys.stderr, flush=True)
+        except anchor.AnchorError:
+            print('PITR connection metadata unavailable within five seconds', file=sys.stderr, flush=True)
 
     def test_real_stream_anchor_and_gzip(self):
         with backup.deadline(30), tempfile.TemporaryDirectory() as directory, backup.Processes() as processes:
@@ -249,6 +287,99 @@ else: sys.stdout.buffer.write(path.read_bytes())
         self.assertNotEqual(child.returncode, 0)
         self.assert_no_dump_connections()
 
+    def exercise_upload_backpressure(self, interrupt):
+        for offset in (100, 200, 400, 800, 1600):
+            anchor.query(self.container, "INSERT INTO pitr_anchor_test.pad SELECT id+" + str(offset) + ",v FROM pitr_anchor_test.pad")
+        self.addCleanup(lambda: anchor.query(self.container, "DELETE FROM pitr_anchor_test.pad WHERE id<>1"))
+        with backup.Processes() as processes:
+            class Remote:
+                child = None
+                def writer(self, _destination):
+                    self.child = processes.start([sys.executable, '-c', 'import time; time.sleep(60)'],
+                                                 stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+                    # Four KiB fills well before this 32 MiB dump completes.
+                    # The uploader never consumes stdin, leaving the backup
+                    # host's Docker output bridge genuinely backpressured.
+                    fcntl.fcntl(self.child.stdin, fcntl.F_SETPIPE_SZ, 4096)
+                    return self.child
+            remote = Remote()
+            lock = anchor.InstanceLock(self.container).acquire()
+            timer = None
+            try:
+                source = backup.preflight(self.args, processes)
+                expected = 'backup was interrupted' if interrupt else 'backup exceeded its time limit'
+                with self.assertRaisesRegex(backup.BackupError, expected):
+                    with backup.deadline(20 if interrupt else 4):
+                        if interrupt:
+                            timer = threading.Timer(4, lambda: os.kill(os.getpid(), signal.SIGTERM))
+                            timer.start()
+                        backup.stream_dump(self.args, remote, 'fixture', processes, self.run_id, source, lock)
+                self.assertIsNotNone(remote.child)
+                self.assertIsNone(remote.child.poll(), 'uploader must still be withholding reads at cancellation')
+                self.assert_no_dump_connections()
+            finally:
+                if timer:
+                    timer.cancel()
+                    timer.join(timeout=1)
+                lock.close()
+            self.assertEqual(anchor.query(self.container, "SELECT COUNT(*) FROM performance_schema.metadata_locks WHERE OBJECT_TYPE='BACKUP LOCK'"), '0')
+
+    @unittest.skipUnless(hasattr(fcntl, 'F_SETPIPE_SZ'), 'Linux pipe backpressure test')
+    def test_deadline_cancels_sql_under_host_upload_backpressure(self):
+        self.exercise_upload_backpressure(False)
+
+    @unittest.skipUnless(hasattr(fcntl, 'F_SETPIPE_SZ'), 'Linux pipe backpressure test')
+    def test_sigterm_cancels_sql_under_host_upload_backpressure(self):
+        self.exercise_upload_backpressure(True)
+
+    def test_initial_cancel_inventory_failure_still_terminates_and_confirms(self):
+        self.start_blocker()
+        child = self.dump()
+        time.sleep(.3)
+        script = anchor.cancel_script(self.run_id).replace('connections() {', 'original_connections() {', 1)
+        injected = r'''
+connections() {
+  if [ ! -f "$run_dir/injected-inventory-failure" ]; then
+    : > "$run_dir/injected-inventory-failure"
+    return 1
+  fi
+  original_connections
+}
+cancel_sql || exit 74
+'''
+        script = script.replace('cancel_sql || exit 74', injected)
+        result = subprocess.run(['docker', 'exec', self.container, 'bash', '-c', script],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=12)
+        self.assertEqual(result.returncode, 0, 'initial inventory failure must not bypass client cancellation')
+        self.assertEqual(self.coordination_file('injected-inventory-failure'), b'')
+        child.communicate(timeout=8)
+        self.assertNotEqual(child.returncode, 0)
+        self.assert_no_dump_connections()
+
+    def test_unconfirmed_cancellation_has_one_container_deadline(self):
+        self.start_blocker()
+        child = self.dump()
+        time.sleep(.3)
+        script = anchor.cancel_script(self.run_id)
+        # An unavailable observer keeps reporting a connection; each attempted
+        # cancellation also takes server time. Client death must not become a
+        # false success, and a host CLI timeout must not be the primary bound.
+        injected = r'''
+connections() { printf '999999999\n'; }
+kill_connection() { sql 'SELECT SLEEP(2)' >/dev/null; return 1; }
+cancel_sql || exit 74
+'''
+        script = script.replace('cancel_sql || exit 74', injected)
+        started = time.monotonic()
+        result = subprocess.run(['docker', 'exec', self.container, 'bash', '-c', script],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=12)
+        self.assertEqual(result.returncode, 74, 'unconfirmed server cancellation must remain a failure')
+        self.assertGreater(time.monotonic() - started, 7)
+        self.assertLess(time.monotonic() - started, 12)
+        child.communicate(timeout=8)
+        self.assertNotEqual(child.returncode, 0)
+        self.assert_no_dump_connections()
+
     @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
     def test_actual_ftwrl_wait_is_cancelled(self):
         library = '/tmp/newapi-pitr-test-delay.so'
@@ -280,13 +411,19 @@ else: sys.stdout.buffer.write(path.read_bytes())
                 child.communicate(timeout=8)
 
     def test_suspended_guard_rejects_late_ready_before_dump_completes(self):
-        # Exceed Docker's output buffering so the client cannot finish while
-        # the test deliberately withholds reads after its startup marker.
+        # Apply backpressure inside the container. Holding Docker's transport
+        # stdout unread can block unrelated docker exec observations on Linux,
+        # hiding a successful SQL cancellation behind the test's own bridge.
         for offset in (100, 200, 400, 800, 1600):
             anchor.query(self.container, "INSERT INTO pitr_anchor_test.pad SELECT id+" + str(offset) + ",v FROM pitr_anchor_test.pad")
         self.start_blocker()
-        child = self.dump()
+        def hold_output(script):
+            script = script.replace('cleanup() {\n', 'cleanup() {\n  [ ! -f "$run_dir/held-consumer" ] || kill "$(cat "$run_dir/held-consumer")" 2>/dev/null || :\n', 1)
+            script = script.replace('monitor_pid=$!\n', 'monitor_pid=$!\nmkfifo -m 600 "$run_dir/held-output"\nsleep 30 < "$run_dir/held-output" >/dev/null 2>&1 &\nprintf "%s\\n" "$!" > "$run_dir/held-consumer"\n', 1)
+            return script.replace(' 2> "$run_dir/events" &', ' > "$run_dir/held-output" 2> "$run_dir/events" &', 1)
+        child = self.dump(hold_output)
         guard = None
+        phase = 'waiting-for-guard'
         try:
             for _ in range(50):
                 guard = self.coordination_file('guard-pid')
@@ -294,10 +431,12 @@ else: sys.stdout.buffer.write(path.read_bytes())
                     break
                 time.sleep(.02)
             self.assertIsNotNone(guard)
+            phase = 'suspending-guard'
             subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -STOP "$1"', "guard-test", guard.decode()], check=True, timeout=5)
             # Let a real FLUSH wait cross the deadline while its guard cannot
             # run, then release the blocker and allow a late savepoint marker.
             time.sleep(5.3)
+            phase = 'releasing-table-blocker'
             ids = anchor.query(self.container, "SELECT ID FROM information_schema.PROCESSLIST WHERE INFO='SELECT SLEEP(30) FROM pitr_anchor_test.pad'")
             for identity in ids.splitlines():
                 anchor.query(self.container, "KILL CONNECTION " + identity)
@@ -307,28 +446,55 @@ else: sys.stdout.buffer.write(path.read_bytes())
                     break
                 time.sleep(.02)
             self.assertGreater(int(late), 5000000000)
+            phase = 'publishing-late-ready'
+            self.assertEqual(anchor.query(self.container, "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE ATTR_NAME='program_name' AND ATTR_VALUE='mysqldump'"), '1')
             # Model the exact previous bug: a late producer has written ready
             # before the suspended guard observes the deadline.
             subprocess.run(["docker", "exec", self.container, "cp", self.directory + '/post-unlock-marker', self.directory + '/ready'], check=True, timeout=5)
             subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=True, timeout=5)
             guard = None
+            phase = 'waiting-for-cancellation-proof'
             limit = time.monotonic() + 4
             while self.coordination_file('cancel-confirmed') is None and time.monotonic() < limit:
                 time.sleep(.05)
             self.assertEqual(self.coordination_file('timed-out'), b'')
             self.assertEqual(self.coordination_file('cancel-confirmed'), b'')
             self.assert_no_dump_connections()
-            # Docker's output bridge can wait for the consumer even after the
-            # real server connection and container client are gone. Verify SQL
-            # cancellation under backpressure, then drain only buffered output.
+            phase = 'draining-buffered-output'
+            # The real client was blocked on the private FIFO until cancelled;
+            # Docker's observation channel remains free throughout this check.
             child.communicate(timeout=4)
             self.assertNotEqual(child.returncode, 0)
+        except BaseException:
+            # Print the primary error before cleanup. A secondary cancellation
+            # timeout must never replace the failure that triggered cleanup.
+            traceback.print_exc(file=sys.stderr)
+            self.dump_diagnostics(phase, child)
+            raise
         finally:
+            original_error = sys.exc_info()[1]
+            cleanup_errors = []
             if guard:
-                subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=False, timeout=5)
+                try:
+                    subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=False, timeout=5)
+                except subprocess.SubprocessError as error:
+                    cleanup_errors.append(error)
             if child.poll() is None:
-                backup.cancel_dump(self.args, self.run_id)
-            child.communicate(timeout=8)
+                try:
+                    backup.cancel_dump(self.args, self.run_id)
+                except backup.BackupError as error:
+                    cleanup_errors.append(error)
+            try:
+                child.communicate(timeout=8)
+            except subprocess.SubprocessError as error:
+                cleanup_errors.append(error)
+            if cleanup_errors:
+                self.dump_diagnostics('cleanup-after-' + phase, child)
+                for error in cleanup_errors:
+                    detail = str(error) if isinstance(error, backup.BackupError) else ' timeout=' + str(getattr(error, 'timeout', None))
+                    print('PITR additional cleanup error: ' + type(error).__name__ + ': ' + detail, file=sys.stderr, flush=True)
+                if original_error is None:
+                    raise cleanup_errors[0]
 
     @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
     def test_post_unlock_show_create_delay_uses_server_evidence(self):

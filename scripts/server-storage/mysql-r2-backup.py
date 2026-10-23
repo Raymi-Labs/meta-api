@@ -435,9 +435,11 @@ def cancel_dump(args, run_id):
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL, timeout=15, check=False)
             if result.returncode != 0:
-                raise BackupError("PITR dump SQL connection cancellation could not be confirmed")
-        except (OSError, subprocess.TimeoutExpired):
-            raise BackupError("PITR dump SQL connection cancellation could not be confirmed") from None
+                raise BackupError("PITR dump SQL connection cancellation could not be confirmed (exit " + str(result.returncode) + ")")
+        except subprocess.TimeoutExpired:
+            raise BackupError("PITR dump cancellation command exceeded its 15-second deadline") from None
+        except OSError:
+            raise BackupError("PITR dump cancellation command could not be started") from None
         return
     directory = "/tmp/newapi-r2-backup-" + run_id
     command = ("run_dir=" + shlex.quote(directory) + "\n"
@@ -521,6 +523,7 @@ def stream_anchored_dump(args, remote, destination, processes, run_id, options, 
     processes.capture(["docker", "exec", args.container, "mkdir", "-m", "700", "--", directory])
     parser, compressor = anchor.Header(), zlib.compressobj(1, zlib.DEFLATED, 31)
     digest, size, finished = hashlib.sha256(), 0, False
+    dump = None
     try:
         dump = processes.start(dump_command(args, run_id, options), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
         upload = remote.writer(destination)
@@ -565,7 +568,32 @@ def stream_anchored_dump(args, remote, destination, processes, run_id, options, 
         raise BackupError(str(exc) if isinstance(exc, anchor.AnchorError) else "PITR backup streaming failed") from None
     finally:
         if not finished:
-            cancel_dump(args, run_id)
+            primary_error = sys.exc_info()[1]
+            cleanup_errors = []
+            # A blocked Docker stdout bridge can also block new docker-exec
+            # observations. Release this host-side bridge before asking a new
+            # exec to cancel and verify the exact server connection. Stopping
+            # the CLI alone is never accepted as SQL cancellation evidence.
+            try:
+                if dump is not None:
+                    if dump.poll() is None:
+                        dump.terminate()
+                    if dump.stdout is not None:
+                        dump.stdout.close()
+                    try:
+                        dump.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        dump.kill()
+                        dump.wait(timeout=2)
+            except (OSError, subprocess.SubprocessError):
+                cleanup_errors.append("PITR host output bridge could not be closed")
+            try:
+                cancel_dump(args, run_id)
+            except BackupError as error:
+                cleanup_errors.append(str(error))
+            if cleanup_errors:
+                primary = str(primary_error) if isinstance(primary_error, BackupError) else "PITR backup failed"
+                raise BackupError(primary + "; " + "; ".join(cleanup_errors)) from None
         # Only ephemeral coordination files are removed, never a database file.
         subprocess.run(["docker", "exec", args.container, "rm", "-rf", "--", directory],
                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
