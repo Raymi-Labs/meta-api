@@ -86,7 +86,7 @@ check_prerequisites() {
   [ "$(id -u)" -eq 0 ] || die "run as root"
   [ -d "$APP_DIR" ] || die "app directory not found: $APP_DIR"
   [ -f "$COMPOSE_FILE" ] || die "compose file not found: $COMPOSE_FILE"
-  for required_command in docker flock curl gzip sha256sum awk sed grep mktemp stat python3; do
+  for required_command in docker flock curl gzip sha256sum awk sed grep mktemp stat python3 timeout; do
     require_command "$required_command"
   done
   docker compose version >/dev/null
@@ -114,6 +114,18 @@ acquire_lock() {
   install -d -m 700 "$(dirname "$LOCK_FILE")"
   exec 9>"$LOCK_FILE"
   flock -n 9 || die "another new-api deployment or maintenance operation holds $LOCK_FILE; inspect it before retrying (do not delete the lock file)"
+}
+
+require_no_snapshot_ddl_guard() {
+  # The PITR snapshot acquires its MySQL backup lock under our release flock,
+  # then releases the flock before streaming. Refuse promptly instead of
+  # allowing migration DDL to wait behind a slow remote upload.
+  local active
+  active="$(timeout --kill-after=2 10 docker exec "$MYSQL_CONTAINER" sh -c \
+    'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET --batch --skip-column-names --execute="SELECT COUNT(*) FROM performance_schema.metadata_locks WHERE OBJECT_TYPE=\"BACKUP LOCK\" AND LOCK_STATUS=\"GRANTED\""' 2>/dev/null)" \
+    || die "cannot verify MySQL snapshot lock; no deployment started"
+  [[ "$active" =~ ^[0-9]+$ ]] || die "unrecognized MySQL snapshot lock status; no deployment started"
+  [ "$active" -eq 0 ] || die "a consistent PITR snapshot protects MySQL DDL; retry after the snapshot finishes (do not kill the backup or remove locks)"
 }
 
 require_online_update_source() {
@@ -177,6 +189,9 @@ command_restart() {
     log "dry-run：仅预览，不启动或重启容器"
     return 0
   fi
+  # Startup can execute automatic schema migrations even for the current image.
+  # Check before stopping a running container, not after its replacement starts.
+  require_no_snapshot_ddl_guard
   operation_timeout=$((RESTART_STOP_TIMEOUT + 15))
   if { [ "$operation" = start ] && timeout --kill-after=5 "$operation_timeout" docker start "$container_id" >/dev/null; } \
     || { [ "$operation" = restart ] && timeout --kill-after=5 "$operation_timeout" docker restart --timeout "$RESTART_STOP_TIMEOUT" "$container_id" >/dev/null; }; then
@@ -833,6 +848,7 @@ command_update() {
   requested="${POSITIONAL_ARGS[0]:-latest}"
   acquire_lock
   require_online_update_source
+  require_no_snapshot_ddl_guard
   resolve_target "$requested"
 
   current_image="$(actual_image)"
@@ -879,6 +895,7 @@ command_rollback() {
   parse_dry_run "$@"
   [ "${#POSITIONAL_ARGS[@]}" -eq 0 ] || die "rollback does not accept an image argument"
   acquire_lock
+  require_no_snapshot_ddl_guard
   load_state
   [ -n "${PREVIOUS_IMAGE:-}" ] || die "no previous image is available"
 

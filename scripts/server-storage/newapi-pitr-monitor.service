@@ -1,0 +1,16 @@
+[Unit]
+Description=Independently verify New API remote PITR coverage and alert
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+EnvironmentFile=/root/.config/rclone/r2.env
+ExecStart=/usr/bin/python3 /usr/local/lib/newapi-storage/pitr-monitor.py
+TimeoutStartSec=120
+TimeoutStopSec=10
+KillMode=control-group
+Nice=19
+IOSchedulingClass=idle

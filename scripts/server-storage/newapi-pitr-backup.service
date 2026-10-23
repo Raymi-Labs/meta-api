@@ -1,0 +1,22 @@
+[Unit]
+Description=New API anchored MySQL full backup to encrypted R2
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=12h
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+EnvironmentFile=/root/.config/rclone/r2.env
+ExecStart=/usr/bin/python3 /usr/local/lib/newapi-storage/mysql-r2-backup.py run --pitr-anchor --state-dir /var/lib/newapi-pitr-backup
+TimeoutStartSec=3h
+TimeoutStopSec=40
+KillMode=control-group
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=75%
+Restart=on-failure
+RestartSec=30min

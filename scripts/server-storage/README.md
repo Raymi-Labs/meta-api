@@ -1,5 +1,7 @@
 # New API 源站磁盘维护
 
+完整备份加连续 binlog 的新能力见 [MySQL PITR 运维、恢复与回退](../../docs/installation/mysql-pitr.md)。原每日全备模式保留作回退，PITR 必须单独启用并通过真实恢复验收。
+
 适用于 `/opt/newapi` 的既有部署。独立 root 运维工具，不改变应用版本，不清理数据库记录、发票附件、Docker volume 或 MySQL binlog。既有维护仍只压缩历史文本日志；新增离机归档工具的显式 `retire` 才允许退役已经过远端读回验证的旧压缩日志。
 
 ## 现有能力与保留规则

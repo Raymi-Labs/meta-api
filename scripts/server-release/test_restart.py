@@ -21,6 +21,9 @@ operation=args[0]
 with (root/"events").open("a") as out: out.write("docker:"+" ".join(args)+"\n")
 if operation=="info":
     sys.exit(1 if os.environ.get("CASE")=="daemon-down" else 0)
+if operation=="exec":
+    print(1 if os.environ.get("CASE")=="pitr-snapshot-active" else 0)
+    sys.exit(0)
 if operation=="inspect":
     if data["status"]=="missing": sys.exit(1)
     if os.environ.get("CASE")=="crash-loop" and data.get("acted"):
@@ -112,6 +115,16 @@ class RestartTests(unittest.TestCase):
         self.data["status"] = "created"
         self.write_runtime()
         self.assert_success(self.run_cli(), "start")
+
+    def test_pitr_snapshot_refuses_before_stopping_running_container(self):
+        self.data['status'] = 'running'
+        self.write_runtime()
+        before = (self.root / 'runtime.json').read_bytes()
+        result = self.run_cli(CASE='pitr-snapshot-active')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('PITR snapshot', result.stderr)
+        self.assertNotIn('docker:restart', self.events)
+        self.assertEqual((self.root / 'runtime.json').read_bytes(), before)
 
     def test_running_or_restarting_container_restarts(self):
         for state in ("running", "restarting"):

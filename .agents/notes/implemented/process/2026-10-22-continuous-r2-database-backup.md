@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+后续 [MySQL PITR](2026-10-23-mysql-pitr.md) 的 opt-in 路径承接快照坐标、DDL 保护和连续归档；本篇默认旧模式仍保留作回退，其不采集坐标的边界不变。
+
 独立 root 运维入口以每日北京时间04:10的 systemd timer 触发 MySQL 逻辑全量备份。复用既有 r2 后端及 AWS 环境凭据，在同桶专用 encrypted 前缀增加 crypt 层；随机密码、salt及恢复配置在用户 Mac 私有目录独立保存，秘密不进入仓库、日志或回执。既有明文备份与所有部署备份保持不变，不自动删除远端历史。
 
 MySQL引擎检查及一致性dump期间共享发布锁；mysqldump、gzip、rclone rcat流式连接，不在本机落大型临时dump。网络背压可能延长快照及发布锁，设硬时限并观察首轮业务健康；不把客户端CPU限制描述为数据库扫描限速。每次使用唯一run目录，任一进程失败均不得发布完成标记；失败不覆盖以前成功备份。

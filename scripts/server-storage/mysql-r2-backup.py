@@ -24,6 +24,16 @@ import tempfile
 import uuid
 import zlib
 
+import importlib.util
+
+# Load the adjacent optional helper without changing sys.path or running main.
+_anchor_spec = importlib.util.spec_from_file_location("newapi_pitr_anchor", Path(__file__).with_name("pitr_anchor.py"))
+anchor = importlib.util.module_from_spec(_anchor_spec) if _anchor_spec and _anchor_spec.loader else None
+if anchor is not None and Path(_anchor_spec.origin).is_file():
+    _anchor_spec.loader.exec_module(anchor)
+else:
+    anchor = None
+
 
 BLOCK = 1024 * 1024
 NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
@@ -302,6 +312,8 @@ def gzip_digest(stream, maximum):
 
 
 def mysql_command(args, program, options):
+    if getattr(args, 'pitr_anchor', False):
+        options = ['--protocol=SOCKET', *options]
     command = ('MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec ' + program
                + " --user=root " + " ".join(shlex.quote(option) for option in options))
     return ["docker", "exec", args.container, "sh", "-c", command]
@@ -324,12 +336,59 @@ def preflight(args, processes):
         raise BackupError("MySQL version output was not recognized")
     if total <= 0 or non_innodb != 0:
         raise BackupError("database must exist and all base tables must use InnoDB")
-    return {"mysql_version": version, "database": args.database, "base_table_count": total,
+    result = {"mysql_version": version, "database": args.database, "base_table_count": total,
             "consistency": "single-transaction; all base tables checked as InnoDB",
             "binlog_coordinates": "not collected; PITR chain not verified"}
+    if args.pitr_anchor:
+        if not re.fullmatch(r"8\.0\.(?:[3-9][0-9]|2[6-9])(?:[.-][A-Za-z0-9_.-]+)?", version):
+            raise BackupError("PITR anchors require a tested MySQL 8.0.26 or newer 8.0 client/server")
+        query = ("SELECT @@server_uuid,@@log_bin,@@binlog_format,@@binlog_row_image,"
+                 "@@gtid_mode,@@sync_binlog,@@innodb_flush_log_at_trx_commit,"
+                 "@@binlog_checksum,@@binlog_expire_logs_seconds,@@server_id,"
+                 "@@performance_schema,@@performance_schema_session_connect_attrs_size,"
+                 "@@binlog_transaction_compression,@@binlog_encryption; "
+                 "SELECT COUNT(*) FROM performance_schema.setup_instruments WHERE "
+                 "NAME='wait/lock/metadata/sql/mdl' AND ENABLED='YES'; "
+                 "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE "
+                 "PROCESSLIST_ID=CONNECTION_ID() AND ATTR_NAME='_pid' AND ATTR_VALUE REGEXP '^[1-9][0-9]*$'; "
+                 "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN "
+                 "('mysql','information_schema','performance_schema','sys') ORDER BY SCHEMA_NAME;")
+        data = processes.capture(mysql_command(args, "mysql", ["--batch", "--skip-column-names", "--execute=" + query]))
+        try:
+            rows = data.decode("ascii").strip().splitlines()
+            fields = rows[0].split("\t")
+            keys = ("server_uuid", "log_bin", "binlog_format", "binlog_row_image", "gtid_mode",
+                    "sync_binlog", "innodb_flush_log_at_trx_commit", "binlog_checksum", "binlog_expire_logs_seconds", "server_id",
+                    "performance_schema", "performance_schema_session_connect_attrs_size", "binlog_transaction_compression", "binlog_encryption")
+            if len(fields) != len(keys) or rows[1:3] != ["1", "1"] or rows[3:] != [args.database]:
+                raise ValueError()
+            values = dict(zip(keys, fields))
+            if not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", values["server_uuid"]):
+                raise ValueError()
+            for key in ("log_bin", "sync_binlog", "innodb_flush_log_at_trx_commit", "binlog_expire_logs_seconds", "server_id",
+                        "performance_schema", "performance_schema_session_connect_attrs_size", "binlog_transaction_compression", "binlog_encryption"):
+                values[key] = int(values[key])
+        except (ValueError, UnicodeError, IndexError):
+            raise BackupError("PITR source metadata or database scope is unsupported") from None
+        if (values["log_bin"] != 1 or values["binlog_format"] != "ROW" or values["binlog_row_image"] != "FULL"
+                or values["sync_binlog"] != 1 or values["innodb_flush_log_at_trx_commit"] != 1
+                or values["gtid_mode"] != "OFF" or values["binlog_checksum"] != "CRC32"
+                or values["binlog_transaction_compression"] != 0 or values["binlog_encryption"] != 0
+                or values["performance_schema"] != 1 or values["performance_schema_session_connect_attrs_size"] <= 0):
+            raise BackupError("PITR requires ROW/FULL CRC32 binlogs, stable GTID mode and durable commits")
+        client = processes.capture(["docker", "exec", args.container, "mysqldump", "--version"]).decode("ascii")
+        if "Ver " + version.split("-")[0] + " " not in client:
+            raise BackupError("PITR mysqldump version must match the source MySQL version")
+        result.update(values, database_scope=[args.database], ddl_protection="LOCK INSTANCE FOR BACKUP",
+                      metadata_lock_instrument_enabled=True, session_connect_pid_visible=True)
+        result.pop("binlog_coordinates")
+    return result
 
 
 def dump_command(args, run_id, options):
+    if args.pitr_anchor:
+        return ["docker", "exec", args.container, "bash", "-c",
+                anchor.dump_script(run_id, options, args.dump_timeout_seconds)]
     # timeout owns a process group; the private run directory identifies only
     # this invocation when an interrupted Docker client leaves exec running.
     directory = "/tmp/newapi-r2-backup-" + run_id
@@ -362,6 +421,16 @@ def dump_command(args, run_id, options):
 
 def cancel_dump(args, run_id):
     """Cancel only the wrapper whose /proc command line contains our run ID."""
+    if args.pitr_anchor:
+        try:
+            result = subprocess.run(["docker", "exec", args.container, "bash", "-c", anchor.cancel_script(run_id)],
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL, timeout=15, check=False)
+            if result.returncode != 0:
+                raise BackupError("PITR dump SQL connection cancellation could not be confirmed")
+        except (OSError, subprocess.TimeoutExpired):
+            raise BackupError("PITR dump SQL connection cancellation could not be confirmed") from None
+        return
     directory = "/tmp/newapi-r2-backup-" + run_id
     command = ("run_dir=" + shlex.quote(directory) + "\n"
                '[ -d "$run_dir" ] && [ ! -L "$run_dir" ] || exit 0\n'
@@ -392,10 +461,13 @@ def cancel_dump(args, run_id):
         raise BackupError("container dump cancellation could not be confirmed; container timeout remains active") from None
 
 
-def stream_dump(args, remote, destination, processes, run_id):
+def stream_dump(args, remote, destination, processes, run_id, source=None, instance_lock=None):
     options = ["--single-transaction", "--quick", "--routines", "--triggers", "--events",
                "--hex-blob", "--set-gtid-purged=OFF",
                "--no-tablespaces", "--default-character-set=utf8mb4", "--databases", args.database]
+    if args.pitr_anchor:
+        options.insert(0, "--source-data=2")
+        return stream_anchored_dump(args, remote, destination, processes, run_id, options, source, instance_lock)
     processes.capture(["docker", "exec", args.container, "mkdir", "-m", "700", "--",
                        "/tmp/newapi-r2-backup-" + run_id])
     digest, size = hashlib.sha256(), 0
@@ -436,6 +508,59 @@ def stream_dump(args, remote, destination, processes, run_id):
     return {"sha256": digest.hexdigest(), "size": size}
 
 
+def stream_anchored_dump(args, remote, destination, processes, run_id, options, source, instance_lock):
+    directory = "/tmp/newapi-r2-backup-" + run_id
+    processes.capture(["docker", "exec", args.container, "mkdir", "-m", "700", "--", directory])
+    parser, compressor = anchor.Header(), zlib.compressobj(1, zlib.DEFLATED, 31)
+    digest, size, finished = hashlib.sha256(), 0, False
+    try:
+        dump = processes.start(dump_command(args, run_id, options), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+        upload = remote.writer(destination)
+        while True:
+            instance_lock.check()
+            if shutil.disk_usage(args.disk_path).free < args.stop_free_bytes:
+                raise BackupError("free disk space fell below the snapshot low-water mark")
+            block = dump.stdout.read(BLOCK)
+            if not block:
+                break
+            parser.feed(block)
+            compressed = compressor.compress(block)
+            if compressed:
+                upload.stdin.write(compressed)
+                digest.update(compressed)
+                size += len(compressed)
+        final = compressor.flush()
+        upload.stdin.write(final)
+        digest.update(final)
+        size += len(final)
+        upload.stdin.close()
+        processes.check(dump, "PITR mysqldump failed or its startup guard expired")
+        instance_lock.check()
+        value = parser.finish()
+        elapsed = processes.capture(["docker", "exec", args.container, "cat", directory + "/ready"])
+        if not re.fullmatch(rb"[0-9]+\n", elapsed) or not 0 < int(elapsed) <= 5000000000:
+            raise BackupError("PITR startup lock window exceeded five seconds")
+        value.update(server_uuid=source["server_uuid"],
+                     method="mysqldump --single-transaction --source-data=2",
+                     startup_lock_window_upper_bound_seconds=int(elapsed) / 1000000000)
+        source["binlog_anchor"] = value
+        # The consistent read is now complete; release DDL protection before
+        # waiting for the uploader's completion or starting remote readback.
+        instance_lock.close()
+        finished = True
+        processes.check(upload, "database backup upload failed")
+    except (anchor.AnchorError, BrokenPipeError, OSError) as exc:
+        raise BackupError(str(exc) if isinstance(exc, anchor.AnchorError) else "PITR backup streaming failed") from None
+    finally:
+        if not finished:
+            cancel_dump(args, run_id)
+        # Only ephemeral coordination files are removed, never a database file.
+        subprocess.run(["docker", "exec", args.container, "rm", "-rf", "--", directory],
+                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, timeout=5, check=False)
+    return {"sha256": digest.hexdigest(), "size": size}
+
+
 def require_root():
     if os.geteuid() != 0:
         raise BackupError("run requires root on the MySQL Docker host")
@@ -462,11 +587,29 @@ def execute(args):
                        "scope": "database-only", "pitr_verified": False}
             atomic_json(receipt_path, receipt)
             try:
-                with locked(args.release_lock):
-                    receipt["stage"] = "dump-and-upload"
-                    receipt["source"] = preflight(args, processes)
-                    atomic_json(receipt_path, receipt)
-                    receipt["dump"] = stream_dump(args, remote, destination + "/mysql.sql.gz", processes, run_id)
+                if args.pitr_anchor:
+                    instance_lock = anchor.InstanceLock(args.container)
+                    try:
+                        with locked(args.release_lock):
+                            instance_lock.acquire()
+                        receipt["stage"] = "dump-and-upload"
+                        receipt["source"] = preflight(args, processes)
+                        atomic_json(receipt_path, receipt)
+                        receipt["dump"] = stream_dump(args, remote, destination + "/mysql.sql.gz", processes, run_id,
+                                                      receipt["source"], instance_lock)
+                    except anchor.AnchorError as exc:
+                        raise BackupError(str(exc)) from None
+                    finally:
+                        try:
+                            instance_lock.close()
+                        except anchor.AnchorError as exc:
+                            raise BackupError(str(exc)) from None
+                else:
+                    with locked(args.release_lock):
+                        receipt["stage"] = "dump-and-upload"
+                        receipt["source"] = preflight(args, processes)
+                        atomic_json(receipt_path, receipt)
+                        receipt["dump"] = stream_dump(args, remote, destination + "/mysql.sql.gz", processes, run_id)
                 receipt["stage"] = "readback"
                 atomic_json(receipt_path, receipt)
                 remote.verify_dump(destination + "/mysql.sql.gz", receipt["dump"])
@@ -510,7 +653,10 @@ def parse_args(argv=None):
     parser.add_argument("--disk-path", default="/opt/newapi")
     parser.add_argument("--min-free-bytes", type=int, default=5 * 1024 ** 3)
     parser.add_argument("--stop-free-bytes", type=int, default=3 * 1024 ** 3)
+    parser.add_argument("--pitr-anchor", action="store_true", help="opt in to a guarded MySQL 8.0 binlog snapshot anchor")
     args = parser.parse_args(argv)
+    if args.pitr_anchor and anchor is None:
+        parser.error("PITR mode requires the adjacent pitr_anchor.py helper")
     for value in (args.container, args.database):
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", value):
             parser.error("container and database must be simple identifiers")

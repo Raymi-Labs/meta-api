@@ -44,3 +44,11 @@ jobs:
         run: sudo env NEWAPI_RCLONE_INTEGRATION=1 python3 -B -m unittest discover -s scripts/server-storage -p 'test_log_offload_rclone.py' -v
       - name: Check opt-in Docker exercise entrypoint
         run: python3 -B scripts/server-release/exercise-restart.py --help
+      - name: Build exact MySQL PITR recovery tools
+        run: docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
+      - name: Exercise real MySQL snapshot locks and cancellation
+        env:
+          NEWAPI_PITR_TEST_MYSQL_IMAGE: mysql:8.0.46
+        run: python3 -B -m unittest discover -s scripts/server-storage -p 'test_pitr_anchor.py' -v
+      - name: Restore full snapshot and real binlogs against an independent target snapshot
+        run: python3 -B scripts/server-storage/integration_pitr.py

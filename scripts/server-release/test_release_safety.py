@@ -169,6 +169,15 @@ class ReleaseSafetyTests(unittest.TestCase):
         self.assertIn("up:previous-image", events)
         self.assertFalse((self.root / "stopped").exists())
 
+    def test_pitr_snapshot_or_unknown_lock_state_fails_before_release_work(self):
+        for case in ("pitr-snapshot-active", "pitr-snapshot-query-failure", "pitr-snapshot-invalid"):
+            with self.subTest(case=case):
+                result, events = self.run_case(case)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(events, ["cleanup"])
+                self.assert_old_restored()
+                (self.root / "events").unlink()
+
     def test_retired_entrypoints_cannot_call_deployment_commands(self):
         for command in ["docker", "mysql", "curl", "systemctl"]:
             path = self.bin / command

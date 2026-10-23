@@ -1,0 +1,575 @@
+#!/usr/bin/env python3
+"""Restore only into newly created, network-isolated disposable MySQL instances.
+
+No existing container/server/address can be supplied. Production is never a
+restore target. Remote reads use the existing encrypted-backup implementation.
+"""
+import argparse
+import gzip
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import subprocess
+import time
+import uuid
+import zlib
+
+import pitr_audit
+
+
+HERE = Path(__file__).resolve().parent
+spec = importlib.util.spec_from_file_location("pitr_backup", HERE / "mysql-r2-backup.py")
+backup = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(backup)
+BLOCK = 1024 * 1024
+LABEL = "org.newapi.pitr.run"
+FILE_RE = re.compile(r"[A-Za-z0-9_-]+\.[0-9]{6,}")
+
+
+class RestoreError(Exception):
+    """Fixed diagnostics only: subprocess output can contain database secrets."""
+
+
+def coordinate(value):
+    if (not isinstance(value, dict) or not isinstance(value.get("file"), str)
+            or not FILE_RE.fullmatch(value["file"]) or type(value.get("position")) is not int
+            or value["position"] < 4):
+        raise RestoreError("invalid binary log coordinate")
+    return {"file": value["file"], "position": value["position"]}
+
+
+def position_key(value):
+    value = coordinate(value)
+    prefix, number = value["file"].rsplit(".", 1)
+    return prefix, int(number), value["position"]
+
+
+def ddl_tokens(sql):
+    """Conservative lexer, never a SQL rewriter; ambiguous syntax is rejected."""
+    tokens, offset = [], 0
+    while offset < len(sql):
+        char = sql[offset:offset + 1]
+        if char.isspace():
+            offset += 1
+            continue
+        if sql[offset:offset + 2] in (b"/*", b"--") or char in (b'"', b"#", b";"):
+            return None
+        if char in (b"'", b"`"):
+            quote, content = char, bytearray()
+            offset += 1
+            while offset < len(sql):
+                char = sql[offset:offset + 1]
+                if char == b"\\" and quote == b"'":
+                    offset += 2
+                    continue
+                if char == quote:
+                    if sql[offset + 1:offset + 2] == quote:
+                        content.extend(quote)
+                        offset += 2
+                        continue
+                    offset += 1
+                    break
+                content.extend(char)
+                offset += 1
+            else:
+                return None
+            tokens.append(bytes(content) if quote == b"`" else b"<literal>")
+            continue
+        word = re.match(rb"[A-Z_][A-Z0-9_$]*|[0-9]+(?:\.[0-9]+)?", sql[offset:])
+        if word:
+            tokens.append(word[0])
+            offset += len(word[0])
+        else:
+            tokens.append(char)
+            offset += 1
+    return tokens
+
+
+def scoped_table_ddl(sql, database, forbidden_database=None):
+    if not re.match(rb"^(?:CREATE(?: UNIQUE)?|ALTER|DROP|RENAME|TRUNCATE)\s+(?:TABLE|INDEX)\b", sql):
+        return False
+    tokens = ddl_tokens(sql)
+    if tokens is None or forbidden_database is not None and forbidden_database.upper() in tokens:
+        return False
+    default = database.upper()
+    return all(i > 0 and tokens[i - 1] == default for i, token in enumerate(tokens) if token == b".")
+
+
+def safe_preflight_ddl(sql, default_db, database):
+    """Recognize only the protected release tool's disposable schema family.
+
+Ambiguous syntax and stored programs are rejected, as are any identifiers
+naming the real database or qualified names outside the disposable schema.
+String literals never act as identifiers.
+"""
+    family = rb"NEWAPI_PREFLIGHT_[0-9]{14}_[1-9][0-9]*"
+    create_drop = rb"^(?:CREATE DATABASE(?: IF NOT EXISTS)?|DROP DATABASE(?: IF EXISTS)?)\s+`?(" + family + rb")`?(?: CHARACTER SET [A-Z0-9_]+)?(?: COLLATE [A-Z0-9_]+)?$"
+    if re.fullmatch(create_drop, sql):
+        return True
+    return bool(re.fullmatch(family, default_db.upper())) and scoped_table_ddl(sql, default_db, database.encode())
+
+
+def validate_query_scope(data, file, start, anchor, target, database):
+    """ROW filtering is table-based; QUERY/DDL filtering uses its default DB.
+
+Do not infer the target of arbitrary SQL. Reject DDL with any other default
+database. Only explicit account privilege statements are outside our one
+business-database scope, and those must also have a non-business default DB.
+"""
+    import pitr_binlog
+    offset = 4 if start == 0 else 0
+    while offset < len(data):
+        _, kind, _, length, end, _ = pitr_binlog.HEADER.unpack_from(data, offset)
+        point = {"file": file, "position": end}
+        if kind == 2 and position_key(anchor) < position_key(point) <= position_key(target):
+            payload = data[offset + 19:offset + length - 4]
+            status_length = int.from_bytes(payload[11:13], "little")
+            default_db = payload[13 + status_length:13 + status_length + payload[8]]
+            sql = pitr_binlog.query_text(payload)
+            transaction = sql in (b"BEGIN", b"COMMIT", b"ROLLBACK") or sql.startswith((b"SAVEPOINT ", b"ROLLBACK TO ", b"RELEASE SAVEPOINT "))
+            account = bool(re.match(rb"^(?:(?:CREATE|ALTER|DROP)\s+USER|GRANT|REVOKE)\b", sql))
+            if not transaction:
+                if account and default_db == database.encode():
+                    raise RestoreError("system account statement uses the business default database")
+                if not account:
+                    if default_db == database.encode():
+                        if not scoped_table_ddl(sql, default_db):
+                            raise RestoreError("business DDL is ambiguous or references a different database")
+                    elif not safe_preflight_ddl(sql, default_db, database):
+                        raise RestoreError("business DDL default database is outside the recovery scope")
+        offset += length
+
+
+def read_json(remote, destination):
+    child = remote.reader(destination)
+    raw = child.stdout.read(BLOCK + 1)
+    if len(raw) > BLOCK:
+        child.terminate()
+        raise RestoreError("remote metadata exceeds the limit")
+    remote.processes.check(child, "remote metadata read failed")
+    try:
+        value = json.loads(raw)
+        if not isinstance(value, dict):
+            raise ValueError()
+    except (ValueError, UnicodeError):
+        raise RestoreError("invalid remote JSON metadata") from None
+    return value, raw
+
+
+def download(remote, destination, path, expected):
+    if (type(expected.get("size")) is not int or expected["size"] <= 0
+            or not re.fullmatch(r"[0-9a-f]{64}", expected.get("sha256", ""))):
+        raise RestoreError("invalid remote object fingerprint")
+    if shutil.disk_usage(path.parent).free < expected["size"] + 512 * BLOCK:
+        raise RestoreError("insufficient isolated workstation space for download")
+    child = remote.reader(destination)
+    digest, size = hashlib.sha256(), 0
+    with path.open("xb") as out:
+        os.chmod(path, 0o600)
+        while True:
+            block = child.stdout.read(BLOCK)
+            if not block:
+                break
+            size += len(block)
+            if size > expected["size"]:
+                raise RestoreError("remote object exceeds recorded size")
+            digest.update(block)
+            out.write(block)
+        out.flush()
+        os.fsync(out.fileno())
+    remote.processes.check(child, "remote object read failed")
+    if size != expected["size"] or digest.hexdigest() != expected["sha256"]:
+        raise RestoreError("remote object fingerprint mismatch")
+
+
+def load_backup(remote, destination, directory):
+    marker, _ = read_json(remote, destination + "/SUCCESS.json")
+    manifest, raw = read_json(remote, destination + "/manifest.json")
+    if (marker.get("status") != "success" or marker.get("format_version") != 1
+            or marker.get("manifest_sha256") != hashlib.sha256(raw).hexdigest()
+            or marker.get("run_id") != manifest.get("run_id")
+            or manifest.get("scope") != "database-only"):
+        raise RestoreError("backup has no matching verified completion marker")
+    source = manifest.get("source", {})
+    anchor = source.get("binlog_anchor", {})
+    coordinate(anchor)
+    if (not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", anchor.get("server_uuid", ""))
+            or anchor.get("server_uuid") != source.get("server_uuid")
+            or source.get("mysql_version", "").split("-")[0] != "8.0.46"
+            or source.get("database_scope") != [source.get("database")]
+            or not isinstance(source.get("database"), str)
+            or not source["database"]):
+        raise RestoreError("backup source UUID, MySQL version or database scope is unsupported")
+    dump = manifest.get("dump", {})
+    if dump.get("name") != "mysql.sql.gz":
+        raise RestoreError("unsupported backup dump object")
+    path = directory / "mysql.sql.gz"
+    download(remote, destination + "/mysql.sql.gz", path, dump)
+    with path.open("rb") as stream:
+        actual = backup.gzip_digest(stream, dump["size"])
+    if actual != {k: dump[k] for k in ("sha256", "size")}:
+        raise RestoreError("backup gzip fingerprint mismatch")
+    import pitr_anchor
+    header = pitr_anchor.Header()
+    try:
+        with gzip.open(path, "rb") as stream:
+            header.feed(stream.read(65537))
+        if header.finish() != coordinate(anchor):
+            raise RestoreError("dump coordinate does not match its verified manifest")
+    except pitr_anchor.AnchorError:
+        raise RestoreError("dump lacks a valid snapshot coordinate") from None
+    return {"manifest": manifest, "manifest_sha256": hashlib.sha256(raw).hexdigest(), "path": path,
+            "anchor": coordinate(anchor), "source_uuid": anchor["server_uuid"], "database": source["database"]}
+
+
+def reconstruct(remote, destination, directory, source_uuid, start, stop, database=None):
+    # Imported lazily so basic integrity/unit tests do not require network or a
+    # Docker daemon. This shared parser enforces CRC, row transactions and DDL.
+    import pitr_binlog
+    root, _ = read_json(remote, destination + "/root.json")
+    if (root.get("schema") != 1 or root.get("uuid") != source_uuid
+            or root.get("normalization") != "fde-clear-in-use-v1"):
+        raise RestoreError("archive epoch does not match the backup source")
+    if database is not None and root.get("database_scope") != [database]:
+        raise RestoreError("archive database scope does not match the backup")
+    if position_key(stop) < position_key(start) or position_key(stop)[0] != position_key(start)[0]:
+        raise RestoreError("target precedes anchor or changes binary log prefix")
+    listing = remote.processes.capture(remote.command("lsf", destination + "/receipts", "--files-only", "--max-depth", "1"), env=remote.env)
+    try:
+        names = listing.decode("ascii").splitlines()
+    except UnicodeError:
+        raise RestoreError("invalid archive receipt listing") from None
+    if not names or len(names) > 1000000 or any(not re.fullmatch(r"[0-9]{12}\.json", x) for x in names):
+        raise RestoreError("invalid or empty archive receipt inventory")
+    previous, state, start_seen, stop_seen = None, None, False, False
+    files, verified = {}, []
+    for seq, name in enumerate(sorted(names), 1):
+        if name != f"{seq:012d}.json":
+            raise RestoreError("archive receipt sequence has a gap")
+        receipt, raw = read_json(remote, destination + "/receipts/" + name)
+        try:
+            pitr_binlog.validate_receipt(receipt, previous, root)
+        except (ValueError, KeyError, TypeError):
+            raise RestoreError("archive receipt chain is invalid") from None
+        file = receipt["file"]
+        if not FILE_RE.fullmatch(file) or receipt["size"] > 256 * BLOCK:
+            raise RestoreError("archive segment exceeds safety bounds")
+        object_name = receipt["object"]
+        if (not isinstance(object_name, str) or not object_name.startswith("segments/")
+                or any(part in ("", ".", "..") for part in object_name.split("/"))):
+            raise RestoreError("invalid archive segment object path")
+        segment_path = directory / ("segment-" + str(seq))
+        download(remote, destination + "/" + object_name, segment_path, receipt)
+        data = segment_path.read_bytes()
+        try:
+            parsed = pitr_binlog.parse_chunk(data, file, receipt["start"], state)
+        except (ValueError, KeyError, TypeError):
+            raise RestoreError("binary log CRC or transaction sequence is invalid") from None
+        state = parsed["state"]
+        if parsed["data"] != data:
+            raise RestoreError("archive data was not normalized before hashing")
+        if database is not None:
+            validate_query_scope(data, file, receipt["start"], start, stop, database)
+        if state != receipt["parser_state"] or parsed["last_complete_transaction_frontier"] != receipt.get("last_complete_transaction_frontier"):
+            raise RestoreError("archive parser state or transaction frontier mismatch")
+        safe = set(parsed["safe_boundaries"]) | set(parsed["boundaries"])
+        if file == start["file"] and start["position"] in safe:
+            start_seen = True
+        if file == stop["file"] and stop["position"] in safe:
+            stop_seen = True
+        # Verify every historical byte and receipt from the epoch root, but
+        # materialize only files needed for replay. Retain the whole anchor
+        # file (including magic/FDE), even when its snapshot starts mid-file.
+        if position_key({"file": file, "position": 4})[1] >= position_key(start)[1]:
+            path = directory / file
+            if file not in files:
+                if receipt["start"] != 0:
+                    raise RestoreError("archive file begins after its header")
+                files[file] = path
+            mode = "xb" if receipt["start"] == 0 else "ab"
+            with path.open(mode) as stream:
+                os.chmod(path, 0o600)
+                if stream.tell() != receipt["start"]:
+                    raise RestoreError("archive segment overlaps or leaves a byte gap")
+                stream.write(data)
+        segment_path.unlink()
+        verified.append({"seq": seq, "receipt_sha256": pitr_binlog.receipt_digest(receipt)})
+        previous = receipt
+        if stop_seen:
+            break
+        if file == stop["file"] and receipt["end"] > stop["position"]:
+            raise RestoreError("requested position is not a committed transaction boundary")
+    if not start_seen or not stop_seen:
+        raise RestoreError("archive does not contain both committed anchor and target boundaries")
+    selected = [files[name] for name in files if position_key({"file": name, "position": 4})[1] >= position_key(start)[1]
+                and position_key({"file": name, "position": 4})[1] <= position_key(stop)[1]]
+    if not selected or selected[0].name != start["file"] or selected[-1].name != stop["file"]:
+        raise RestoreError("archive does not cover the requested file range")
+    return selected, {"root": root, "verified_receipts": verified, "start": start, "stop": stop}
+
+
+class IsolatedMySQL:
+    """Own exactly one new container and volume; no existing-target interface."""
+    def __init__(self, image="newapi-pitr-tools:8.0.46", *, binlog=False):
+        self.run_id = uuid.uuid4().hex
+        self.name = "newapi-pitr-" + self.run_id
+        self.volume = self.name + "-data"
+        self.image, self.binlog, self.container_id = image, binlog, None
+        self.volume_created = False
+        self.password = secrets.token_hex(24)  # Throwaway fixture-only credential.
+
+    @staticmethod
+    def run(args, **kwargs):
+        result = subprocess.run(args, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE, **kwargs)
+        if result.returncode:
+            raise RestoreError("isolated Docker/MySQL command failed")
+        return result.stdout
+
+    def assert_owned(self):
+        if not self.container_id:
+            raise RestoreError("isolated container was not created")
+        data = json.loads(self.run(["docker", "inspect", self.container_id]))[0]
+        mounts = data.get("Mounts", [])
+        if (data["Id"] != self.container_id or data["Config"].get("Labels", {}).get(LABEL) != self.run_id
+                or data["HostConfig"]["NetworkMode"] != "none" or data["HostConfig"].get("PortBindings")
+                or len(mounts) != 1 or mounts[0].get("Type") != "volume"
+                or mounts[0].get("Name") != self.volume or mounts[0].get("Destination") != "/var/lib/mysql"):
+            raise RestoreError("isolated container ownership or isolation changed")
+
+    def __enter__(self):
+        try:
+            image = json.loads(self.run(["docker", "image", "inspect", self.image]))[0]
+            if image["Config"].get("Labels", {}).get("org.newapi.pitr.tools") != "8.0.46":
+                raise RestoreError("build the exact-version PITR tools image first")
+            self.run(["docker", "volume", "create", "--label", LABEL + "=" + self.run_id, self.volume])
+            self.volume_created = True
+            options = ["--skip-networking", "--event-scheduler=OFF", "--innodb-buffer-pool-size=512M"]
+            options += ["--server-id=901", "--log-bin=binlog", "--binlog-format=ROW", "--binlog-row-image=FULL", "--binlog-checksum=CRC32"] if self.binlog else ["--skip-log-bin"]
+            self.container_id = self.run(["docker", "create", "--name", self.name, "--label", LABEL + "=" + self.run_id,
+                "--network", "none", "--no-healthcheck", "--env", "MYSQL_ROOT_PASSWORD=" + self.password,
+                "--mount", "type=volume,src=" + self.volume + ",dst=/var/lib/mysql", self.image, *options]).decode().strip()
+            self.assert_owned()
+            self.run(["docker", "start", self.container_id])
+            for _ in range(180):
+                process = subprocess.run(["docker", "exec", "--env", "MYSQL_PWD=" + self.password, self.container_id, "mysql", "--user=root", "--batch", "--skip-column-names", "-e", "SELECT VERSION()"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                final_server = subprocess.run(["docker", "exec", self.container_id, "cat", "/proc/1/comm"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.strip()
+                if process.returncode == 0 and final_server == b"mysqld":
+                    if process.stdout.strip() != b"8.0.46":
+                        raise RestoreError("isolated MySQL version differs from 8.0.46")
+                    self.run(["docker", "exec", "-i", self.container_id, "sh", "-c", "umask 077; cat > /root/.my.cnf"],
+                             input=("[client]\nuser=root\npassword=" + self.password + "\n").encode())
+                    self.exec(["mkdir", "-m", "700", "/tmp/pitr"])
+                    return self
+                time.sleep(1)
+            raise RestoreError("isolated MySQL did not become ready")
+        except BaseException:
+            self.close()
+            raise
+
+    def exec(self, args, **kwargs):
+        self.assert_owned()
+        return self.run(["docker", "exec", self.container_id, *args], **kwargs)
+
+    def query(self, sql):
+        data = self.exec(["mysql", "--user=root", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql])
+        try:
+            if sql.startswith("SHOW CREATE"):
+                # mysql --raw emits literal newlines in DDL. First tab separates
+                # name from definition, and SHOW CREATE VIEW adds charset fields.
+                first, ddl = data.decode().rstrip("\n").split("\t", 1)
+                if sql.startswith("SHOW CREATE VIEW"):
+                    ddl = ddl.rsplit("\t", 2)[0]
+                return [[first, ddl]]
+            return [json.loads(line) for line in data.decode().splitlines()]
+        except (ValueError, UnicodeError):
+            raise RestoreError("isolated SQL audit output is invalid") from None
+
+    def lines(self, sql):
+        self.assert_owned()
+        child = subprocess.Popen(["docker", "exec", self.container_id, "mysql", "--user=root", "--quick", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            yield from child.stdout
+            if child.wait():
+                raise RestoreError("isolated row fingerprint query failed")
+        finally:
+            if child.poll() is None:
+                child.terminate()
+                child.wait()
+
+    def load(self, path):
+        self.assert_owned()
+        child = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            with gzip.open(path, "rb") as stream:
+                shutil.copyfileobj(stream, child.stdin, BLOCK)
+            child.stdin.close()
+            if child.wait():
+                raise RestoreError("isolated full database restoration failed")
+        except (OSError, EOFError):
+            raise RestoreError("isolated full database restoration stream failed") from None
+        finally:
+            if child.poll() is None:
+                child.terminate()
+                child.wait()
+
+    def replay(self, files, start, stop, database):
+        self.assert_owned()
+        if start == stop:
+            return
+        for path in files:
+            if not FILE_RE.fullmatch(path.name):
+                raise RestoreError("unsafe reconstructed binlog filename")
+            self.run(["docker", "cp", str(path), self.container_id + ":/tmp/pitr/" + path.name])
+        reader = subprocess.Popen(["docker", "exec", self.container_id, "mysqlbinlog", "--verify-binlog-checksum", "--skip-gtids", "--database=" + database, "--start-position=" + str(start["position"]), "--stop-position=" + str(stop["position"]), *["/tmp/pitr/" + p.name for p in files]], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        writer = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=reader.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        reader.stdout.close()
+        try:
+            write_status, read_status = writer.wait(), reader.wait()
+            if write_status or read_status:
+                raise RestoreError("real mysqlbinlog incremental replay failed")
+        finally:
+            for process in (reader, writer):
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait()
+
+    def export(self, database, directory):
+        """Publish a private usable dump only after mysqldump exits successfully."""
+        self.assert_owned()
+        path, partial = directory / "recovered.sql.gz", directory / "recovered.sql.gz.partial"
+        if path.exists() or partial.exists() or shutil.disk_usage(directory).free < 512 * BLOCK:
+            raise RestoreError("insufficient space or conflicting restored export path")
+        child = subprocess.Popen(["docker", "exec", self.container_id, "mysqldump", "--user=root", "--single-transaction", "--no-tablespaces", "--set-gtid-purged=OFF", "--routines", "--events", "--triggers", "--hex-blob", "--databases", database], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        digest, size = hashlib.sha256(), 0
+        compressor = zlib.compressobj(6, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+        try:
+            with partial.open("xb") as stream:
+                os.chmod(partial, 0o600)
+                while True:
+                    block = child.stdout.read(BLOCK)
+                    if not block:
+                        break
+                    if shutil.disk_usage(directory).free < 256 * BLOCK:
+                        raise RestoreError("workstation space became insufficient during export")
+                    compressed = compressor.compress(block)
+                    stream.write(compressed)
+                    digest.update(compressed)
+                    size += len(compressed)
+                if child.wait():
+                    raise RestoreError("isolated restored database export failed")
+                compressed = compressor.flush()
+                stream.write(compressed)
+                digest.update(compressed)
+                size += len(compressed)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(partial, path)
+            return {"path": str(path), "size": size, "sha256": digest.hexdigest(), "scope": "business database only; coordinate is recorded in result.json"}
+        finally:
+            if child.poll() is None:
+                child.terminate()
+                child.wait()
+            if partial.exists():
+                partial.unlink()
+
+    def close(self):
+        if self.container_id:
+            self.assert_owned()
+            self.run(["docker", "rm", "--force", self.container_id])
+            self.container_id = None
+        if self.volume_created:
+            volume = json.loads(self.run(["docker", "volume", "inspect", self.volume]))[0]
+            if volume.get("Labels", {}).get(LABEL) != self.run_id:
+                raise RestoreError("refusing to remove an unowned recovery volume")
+            self.run(["docker", "volume", "rm", self.volume])
+            self.volume_created = False
+
+    def __exit__(self, *_):
+        self.close()
+
+
+def execute(args):
+    work = Path(args.work_dir)
+    if not work.is_absolute() or work.exists() or work.is_symlink():
+        raise RestoreError("work directory must be a new absolute path")
+    work = backup.safe_path(work.resolve())
+    work.mkdir(mode=0o700)
+    output = work / "result.json"
+    outcome = {"format_version": 1, "status": "failed", "started_at": backup.timestamp(), "isolation": "new labelled containers; network none; no ports or host binds"}
+    try:
+        with backup.deadline(args.timeout_seconds), backup.Processes() as processes:
+            remote = backup.CryptRemote(args.backup_a, args.rclone_config, processes)
+            for value in filter(None, (args.backup_b, args.epoch)):
+                _, name = backup.remote_prefix(value)
+                if name != remote.name:
+                    raise RestoreError("all recovery objects must use the same crypt remote")
+            for name in ("a", "b", "binlogs"):
+                (work / name).mkdir(mode=0o700)
+            a = load_backup(remote, args.backup_a, work / "a")
+            b = load_backup(remote, args.backup_b, work / "b") if args.backup_b else None
+            if b and (a["source_uuid"] != b["source_uuid"] or a["database"] != b["database"] or a["manifest_sha256"] == b["manifest_sha256"]):
+                raise RestoreError("comparison backup must be an independent snapshot of the same source")
+            target = b["anchor"] if b else coordinate({"file": args.stop_file, "position": args.stop_position})
+            files, chain = reconstruct(remote, args.epoch, work / "binlogs", a["source_uuid"], a["anchor"], target, a["database"])
+            outcome.update(source_uuid=a["source_uuid"], database=a["database"], chain=chain,
+                           backup_a_manifest_sha256=a["manifest_sha256"], backup_b_manifest_sha256=b["manifest_sha256"] if b else None,
+                           verification="independent-snapshot-comparison" if b else "explicit-position-restoration")
+            with IsolatedMySQL(args.image) as server:
+                server.load(a["path"])
+                before = pitr_audit.window_snapshot(server.query, a["database"])
+                server.replay(files, a["anchor"], target, a["database"])
+                after = pitr_audit.window_snapshot(server.query, a["database"])
+                outcome["replay_window"] = pitr_audit.window_changes(server.query, a["database"], before, after)
+                outcome["incremental_audit"] = pitr_audit.audit_database(server.query, server.lines, a["database"])
+                if args.export_restored_dump:
+                    outcome["export"] = server.export(a["database"], work)
+            if b:
+                with IsolatedMySQL(args.image) as server:
+                    server.load(b["path"])
+                    outcome["reference_audit"] = pitr_audit.audit_database(server.query, server.lines, b["database"])
+                outcome["differences"] = pitr_audit.compare_audits(outcome["incremental_audit"], outcome["reference_audit"])
+                if outcome["differences"]:
+                    raise RestoreError("PITR recovery differs from the independent target snapshot")
+            outcome.update(status="success", finished_at=backup.timestamp())
+    except BaseException as exc:
+        outcome.update(error=str(exc) if isinstance(exc, (RestoreError, backup.BackupError)) else "isolated recovery failed", finished_at=backup.timestamp())
+        backup.atomic_json(output, outcome)
+        raise
+    backup.atomic_json(output, outcome)
+    return {"status": outcome["status"], "result": str(output), "tables": len(outcome["incremental_audit"]["tables"]), "target": target}
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--backup-a", required=True, help="verified encrypted full backup directory")
+    parser.add_argument("--backup-b", help="independent full backup whose exact anchor is the replay target")
+    parser.add_argument("--stop-file", help="explicit transaction boundary file, instead of comparison backup")
+    parser.add_argument("--stop-position", type=int, help="explicit transaction boundary position")
+    parser.add_argument("--export-restored-dump", action="store_true", help="explicit-position mode only: export recovered.sql.gz privately before cleanup")
+    parser.add_argument("--epoch", required=True, help="encrypted archive epoch directory")
+    parser.add_argument("--rclone-config", required=True)
+    parser.add_argument("--work-dir", required=True, help="new private workstation directory; never production")
+    parser.add_argument("--image", default="newapi-pitr-tools:8.0.46")
+    parser.add_argument("--timeout-seconds", type=int, default=21600)
+    args = parser.parse_args(argv)
+    if args.backup_b:
+        if args.stop_file is not None or args.stop_position is not None or args.export_restored_dump:
+            parser.error("choose comparison backup or explicit position, not both")
+    elif args.stop_file is None or args.stop_position is None:
+        parser.error("supply --backup-b or both --stop-file and --stop-position")
+    if args.timeout_seconds < 1:
+        parser.error("timeout must be positive")
+    return args
+
+
+if __name__ == "__main__":
+    try:
+        print(json.dumps(execute(parse_args()), sort_keys=True))
+    except (RestoreError, backup.BackupError, OSError, ValueError):
+        print('{"status":"failed","error":"recovery failed; see private result.json"}')
+        raise SystemExit(1)

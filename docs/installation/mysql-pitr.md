@@ -1,0 +1,131 @@
+# MySQL 事务位置恢复（PITR）
+
+本工具扩展已有 R2 周期备份：带精确坐标的全量快照、连续加密 binlog、独立覆盖监控、隔离恢复和账务核对。上传成功、SHA 校验成功和恢复通过是不同状态；只有真实全量加增量回放并通过独立快照对照，才记为生产恢复验收。
+
+生产范围为 MySQL 8.0.46、唯一业务库 `new-api`、全部基础表 InnoDB、ROW/FULL、CRC32、GTID OFF、未压缩且未在 MySQL 内加密的 binlog、`sync_binlog=1`、`innodb_flush_log_at_trx_commit=1`。源 binlog 已经通过 rclone crypt 加密保存到现有 `r2-backup`。不更改七天本地保留，不执行 FLUSH/PURGE，不删除旧备份或业务行，不更新应用版本。
+
+## 组件与状态
+
+| 组件 | 作用 | 私有状态 |
+| --- | --- | --- |
+| `mysql-r2-backup.py run --pitr-anchor` | 同一 mysqldump 的一致快照与坐标，流式上传和完整读回 | `/var/lib/newapi-pitr-backup` |
+| `mysql-binlog-archive.py` | 每分钟归档完整事件区间；远端读回后推进连续链 | `/var/lib/newapi-binlog-archive` |
+| `pitr-monitor.py` | 独立查询源位置、重读远端回执及尾段、校验全备新鲜度和磁盘 | `/var/lib/newapi-pitr-monitor` |
+| `pitr-alert-config.py` | 复用现有 SMTP 与唯一启用的超级管理员邮箱 | `/root/.config/newapi-pitr/alerts.json` |
+| `mysql-pitr-restore.py` | 只创建独立隔离 MySQL，按明确位置恢复或做 A/B 对照 | 用户指定的新建 0700 工作目录 |
+
+新工具及相邻 Python 模块安装到 `/usr/local/lib/newapi-storage`。原 `/usr/local/sbin/newapi-mysql-r2-backup`、`newapi-r2-backup.service` 和 timer 保留为回退入口。两种全备共用 job lock，避免同时运行；启用 PITR 日常全备时只停用旧 timer，不删除其文件或历史。
+
+## 快照锚点与锁
+
+`--single-transaction --source-data=2` 在开始时短暂获取全局读锁，建立一致快照、输出坐标，然后解锁。元数据的 `source.binlog_anchor` 必须与该 dump 头部坐标一致；独立查询的 `SHOW MASTER STATUS` 不能替代这一锚点。
+
+容器内 watchdog 将初始化窗口限制为五秒，并给整轮转储设置时限。超时先按 mysqldump PID 与客户端连接属性精确 `KILL CONNECTION`，再取消客户端并确认服务器连接消失。仅终止宿主 docker exec 或客户端不能证明等待读锁已经取消。回执中的 `startup_lock_window_upper_bound_seconds` 是启动至确认解锁的保守上界，不是精确持锁时长。
+
+独立连接持有 `LOCK INSTANCE FOR BACKUP` 防止转储期间结构变化，普通业务读写可继续。获得实例锁时短持发布锁，此后释放发布锁；`newapi-update`/`newapi-rollback`/`newapi-restart` 检测实例锁并快速报错，运维待快照结束后重试。重启入口在停止运行中容器之前检查，避免启动迁移等待 DDL 锁。完整转储读完后释放实例锁，远端读回不持锁。心跳失联的实例锁连接通过十秒空闲租约释放。网络背压仍可能延长数据库快照和 DDL 保护时间，不能将流式上传说成无影响。
+
+## 归档协议与失败行为
+
+远端目录为 `r2-backup:pitr/<server_uuid>/<epoch>`，包含不可变 `root.json`、`segments/` 和递增 `receipts/000000000001.json`。回执包含文件、起止字节、SHA-256、前条回执摘要、解析状态、源采样位置及时间、最后完整事务位置。序号和字节区间必须连续；跨文件必须连续并验证 ROTATE。
+
+目标分段 16 MiB，按完整事件结束；单个较大事件有 64 MiB 上限。事务可以跨分段，恢复终点必须是完整事务或安全元数据边界，不能在半个事务中停止。只规范化 FDE 的 `BINLOG_IN_USE` 位，避免活跃文件关闭时改变首段摘要；其余内容不改写。每个事件验证长度、位置及 CRC32。XA、压缩事务载荷、未知事件、语句模式 DML 明确失败。
+
+先原子记录 pending，再上传、解密读回、上传并读回回执，最后推进 checkpoint。中断后重放同一 pending，不能跳到新位置。UUID 改变、文件缩短/复用、FDE 改变、源文件已过期、范围不连续或远端已有对象不一致都停止归档。缺口不能靠重新命名 epoch 或跳过坏对象掩盖：需要先保留故障证据，恢复缺段，或建立一份新的验证全备及明确的新恢复链。
+
+本机状态丢失时，远端 root 与有序回执仍可用于灾难恢复。正常归档不会擅自重建已有远端链的本机 checkpoint；应先离线完整验证，显式恢复状态或建立新的全备链。恢复材料包括 crypt 密码、可选 salt 和远端配置；这些材料独立保管，不能与唯一生产主机一起丢失。
+
+## 分阶段安装与启用
+
+1. 在独立 Linux/MySQL 8.0.46 环境通过单测、失败中断测试和真实完整流程；CI 运行同样的安全门禁。
+2. 确认当前生产库、binlog 设置、文件和持久化来源；记录容器 ID、启动时间、重启次数、发布状态与磁盘。不能将 AI OS 主机当成 New API 主机。
+3. 备份原发布工具、原备份任务与待安装文件摘要。取得 `/run/newapi-release.lock` 后安装保护入口与新工具；新 timer 保持未启用。`systemctl daemon-reload` 不重启业务容器。
+4. 手动执行一份候选带锚点全备 A；从其锚点所在文件的 offset 0 启动归档，等待内容读回与连续链校验完成。首轮追赶可给较长 deadline，正常单轮保持 45 秒。失败保留 A、原任务和所有源文件。
+5. 取得独立全备 B，其锚点作为目标 T；归档必须覆盖 T。在工作站恢复 A 加真实增量至 T，再独立恢复 B，核对整库摘要与账务。恢复不在生产机运行。
+6. 配置并验证 SMTP 测试通知；通过恢复验收后启用归档与独立监控，以及每日北京时间 04:10 的新全备 timer。停用旧全备 timer，但保留 service 和原程序作回退。观察多个周期的远端已验证位置，不能只检查 timer 为 active。
+
+安装时将同版本的 `mysql-r2-backup.py`、`pitr_anchor.py`、`pitr_binlog.py`、`mysql-binlog-archive.py`、`pitr-monitor.py`、`pitr-alert-config.py` 一起部署；不要只复制入口漏掉相邻模块。systemd 文件在 `scripts/server-storage/`，使用已有 `/root/.config/rclone/r2.env`，不把 AWS 凭据写入 unit。
+
+```bash
+# 先预览；输出只有配置是否齐全，不包含地址或凭据。
+python3 /usr/local/lib/newapi-storage/pitr-alert-config.py
+# 已选择现有管理员邮箱时，保存独立 0600 配置，不发送邮件。
+python3 /usr/local/lib/newapi-storage/pitr-alert-config.py --write
+
+# 候选全备，旧入口保持可用；与旧任务共用 job lock。
+systemctl start --no-block newapi-pitr-backup.service
+systemctl show newapi-pitr-backup.service -p ActiveState -p Result -p ExecMainStatus
+# 必须等待任务结束，检查 latest-success.json 的真实新 run 和远端 SUCCESS。
+
+# 归档首轮：用 A 的真实文件名替换占位值，不能随意跳过历史。
+python3 /usr/local/lib/newapi-storage/mysql-binlog-archive.py \
+  --start-file binlog.XXXXXX --deadline 600
+
+# 验收通过后再启用。生产命令需要已有 AWS 环境，systemd 自动加载。
+systemctl disable newapi-r2-backup.timer
+systemctl enable --now newapi-binlog-archive.timer newapi-pitr-monitor.timer newapi-pitr-backup.timer
+```
+
+不要直接将 `binlog.XXXXXX` 示例用于生产。手动运行 rclone 相关命令时，凭据必须由 root 私有环境文件加载；不要复制到 shell 历史或聊天。
+
+## RPO 与告警
+
+正常运行目标是远端已验证的事务覆盖落后不超过 300 秒。记录源位置、采样时间、远端读回完成时间及最新完整事务位置；欠账以最近已完全覆盖的源采样时间计算，不能拿 binlog 事件时间或“最近上传时间”代替。完全空闲时以实际位置相等确认没有欠账；FDE/ROTATE 等安全元数据不伪造新事务。
+
+监控每分钟独立执行，重新核对远端尾段内容及回执。源 UUID/位置倒退、worker 观测超过 180 秒、全备超过 36 小时、磁盘不足 5 GiB、归档错误或覆盖超过五分钟都会失败。通知按错误状态去重，一小时仍未恢复再提醒，恢复后发送恢复通知。投递失败不推进通知状态，下一轮继续尝试；`last-delivery.json` 记录 SMTP 接受或失败，不将 SMTP 接受等同用户已读。
+
+```bash
+systemctl list-timers 'newapi-*'
+journalctl -u newapi-binlog-archive.service -u newapi-pitr-monitor.service --since '30 minutes ago'
+# 已完成配置与链验证后，发送明确标注 TEST 的邮件。
+# 此手动命令同样需要私有 AWS 环境。
+python3 /usr/local/lib/newapi-storage/pitr-monitor.py --test-alert
+```
+
+这是正常运行的实测目标，不是主机损坏、网络中断时的零丢失保证。监控独立于应用和归档 worker，但同主机断电仍需要外部存活检测；SMTP 故障也不能保证邮件抵达。
+
+## 在独立环境恢复
+
+先准备可访问现有 R2 的私有 crypt 配置和凭据、Python3、rclone、Docker，以及足够的工作站/虚拟机磁盘。工具不接受现有 MySQL 地址或容器作为恢复目标。容量必须分别核对：
+
+- 宿主工作目录容纳 A、B 两份压缩全备、从 A 所在文件起点至覆盖 T 的分段末尾的 binlog，以及至少一个分段的临时空间。显式位置导出还需一份 `recovered.sql.gz` 的空间。
+- Docker 数据盘容纳一份恢复后的完整数据库、回放 binlog 的额外副本，以及 InnoDB redo/undo、索引构建和排序临时文件余量。A 增量恢复容器清理后才创建 B 对照容器，两份恢复数据库不会同时存在。
+
+Docker Desktop 虚拟磁盘或独立 Docker 数据分区的可用空间不能用宿主工作目录的 `df` 代替；同一物理磁盘还要合计上述占用。工具下载前的余量检查只覆盖工作目录，不代表 Docker 数据盘容量已通过验收。
+
+恢复仍从 epoch 起点逐段下载并校验至 T，以验证完整回执链和解析状态；早于 A 所在文件的分段通过校验后即删除，只保留验证摘要，不拼接保存历史文件。网络读取量、验证时间和回执摘要规模仍随 epoch 历史增长，不能将较新的全备理解为只需读取 A→T 的远端对象。远端连续归档自身的存储量也会随历史增长，本工具不自动删除它。
+
+`--timeout-seconds` 默认 21600（六小时），覆盖下载、gzip 校验、两次恢复及整库审计的全过程，可按独立环境的实测速率调大。恢复和行哈希均流式处理；整库行哈希、行数与财务分组仍需扫描大表，无主键表还可能需要磁盘排序，六小时不是恢复时间承诺。失败后保留私有工作材料，但当前不支持在原目录续跑；重试必须使用新的工作目录并重新校验，先把已有材料占用纳入容量预算。
+
+```bash
+docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
+python3 scripts/server-storage/mysql-pitr-restore.py \
+  --backup-a 'r2-backup:full/YYYY/MM/A-RUN' \
+  --backup-b 'r2-backup:full/YYYY/MM/B-RUN' \
+  --epoch 'r2-backup:pitr/UUID/EPOCH' \
+  --rclone-config '/absolute/private/rclone.conf' \
+  --work-dir '/absolute/private/new-pitr-drill'
+```
+
+归档保留全部源事件；恢复仅回放已声明的业务库。受保护发布入口的 `newapi_preflight_<14位时间戳>_<非零PID>` 临时库及对应账户操作会经过严格识别后排除。普通业务库的 TABLE/INDEX DDL 仅在范围可确定时允许；复杂存储程序、歧义注释/引号、跨业务库 DDL 会拒绝自动回放，不能靠强制跳过完成验收。
+
+A/B 来自同实例但必须是不同快照；B 的锚点决定 T。工具下载验证 SUCCESS、manifest、gzip、dump 内锚点和连续 binlog，使用官方签名校验过的 MySQL 8.0.46 `mysqlbinlog` 实际回放。临时容器带独有标签、`network none`、无端口、无宿主目录挂载，关闭事件调度器；完成或失败只清理自己创建的容器与卷。私有工作目录保留结果和下载材料。
+
+按指定位置恢复时使用 `--stop-file` 和 `--stop-position` 替代 `--backup-b`。位置是事务执行后的结束位置；先确定所需事务边界，工具拒绝缺段、CRC 错误、未知事件及半个事务。需要交付恢复数据时添加 `--export-restored-dump`，在私有工作目录生成 `recovered.sql.gz` 和内容指纹，需要额外磁盘。此模式提供隔离恢复审计；它不自带独立 B 快照对照，也不会自动切换生产数据库。
+
+审计覆盖实际 schema、所有表行数、按主键排序的全字段 SHA-256；无主键使用保留重复行的行摘要排序。仅忽略非事务性的 AUTO_INCREMENT 分配器高水位差异，同时保留原始 schema 摘要。还核对钱包余额、付费资金、充值、预扣/退款、订阅、令牌、任务和使用记录。按币种/状态分组，不把套餐镜像充值重复计入钱包；异步日志和累计计数不能用一条简单等式强行“对平”。工具只输出摘要和汇总，不输出用户令牌、付款 payload 或秘密配置。
+
+## 回退与故障处理
+
+若新全备失败或链验证未通过，保持旧任务运行，不清理任何备份或 binlog。已切换后需要回退时：
+
+```bash
+systemctl disable --now newapi-pitr-backup.timer
+systemctl enable --now newapi-r2-backup.timer
+# 有归档故障时保留其状态、pending、远端对象和所有源 binlog。
+# 停用自动尝试不等于解决缺口；保留监控告警，按回执定位原因。
+systemctl disable --now newapi-binlog-archive.timer
+```
+
+停止 timer 不会取消已运行的全备。需要取消本轮时使用 `systemctl stop newapi-pitr-backup.service`，等待工具取消自身 SQL 连接并确认实例锁消失；不能停止 MySQL 或 New API。不要删锁文件、跳过失败回执、使用 `--force-if-open`/`--force-read`，或用自动 purge 追求磁盘目标。
+
+参考：[MySQL 一致性转储](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)、[备份实例锁](https://dev.mysql.com/doc/refman/8.0/en/lock-instance-for-backup.html)、[按事件位置恢复](https://dev.mysql.com/doc/refman/8.0/en/point-in-time-recovery-positions.html)。

@@ -1,0 +1,11 @@
+[Unit]
+Description=Check New API PITR coverage independently every minute
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit=newapi-pitr-monitor.service
+
+[Install]
+WantedBy=timers.target

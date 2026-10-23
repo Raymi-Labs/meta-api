@@ -1,0 +1,11 @@
+[Unit]
+Description=Continuously archive New API binlog every minute
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=1
+Unit=newapi-binlog-archive.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,25 @@
+[Unit]
+Description=New API verified encrypted continuous binlog archive
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+EnvironmentFile=/root/.config/rclone/r2.env
+ExecStart=/usr/bin/python3 /usr/local/lib/newapi-storage/mysql-binlog-archive.py --deadline 45
+TimeoutStartSec=55
+KillMode=control-group
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+MemoryMax=384M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+StateDirectory=newapi-binlog-archive
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/newapi-binlog-archive /run
+ReadOnlyPaths=/opt/newapi/mysql_data /root/.config/rclone

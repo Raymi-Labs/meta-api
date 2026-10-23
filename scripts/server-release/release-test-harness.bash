@@ -33,10 +33,18 @@ curl() {
   if [[ "$CASE" == health-failure && "$(actual_image)" == new-image ]]; then return 22; fi
   return 0
 }
+timeout() { shift 2; "$@"; }
 docker() {
   local operation="$1" format file target
   shift
   case "$operation" in
+    exec)
+      case "$CASE" in
+        pitr-snapshot-active) echo 1 ;;
+        pitr-snapshot-query-failure) return 35 ;;
+        pitr-snapshot-invalid) echo invalid ;;
+        *) echo 0 ;;
+      esac ;;
     inspect)
       format="$2"
       case "$format" in

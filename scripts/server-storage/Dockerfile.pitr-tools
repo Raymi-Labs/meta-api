@@ -1,0 +1,16 @@
+FROM mysql:8.0.46@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+
+# The official minimal server image omits mysqlbinlog. Fetch its exact-version
+# official RPM and require the MySQL signature trusted by the base image.
+RUN microdnf --disablerepo='mysql*' install -y cpio && microdnf clean all
+RUN arch="$(rpm --eval '%{_arch}')" && \
+    curl --fail --show-error --silent --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 \
+      "https://repo.mysql.com/yum/mysql-8.0-community/el/9/${arch}/mysql-community-client-8.0.46-1.el9.${arch}.rpm" \
+      -o /tmp/mysql-client.rpm && \
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql && \
+    rpmkeys --checksig --verbose /tmp/mysql-client.rpm && \
+    test "$(rpm -qp --queryformat '%{VERSION}' /tmp/mysql-client.rpm)" = '8.0.46' && \
+    cd / && rpm2cpio /tmp/mysql-client.rpm | cpio -idm './usr/bin/mysqlbinlog' && \
+    mysqlbinlog --version && rm /tmp/mysql-client.rpm && microdnf clean all
+
+LABEL org.newapi.pitr.tools="8.0.46"
