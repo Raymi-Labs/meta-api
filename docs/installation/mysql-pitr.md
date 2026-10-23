@@ -20,7 +20,9 @@
 
 `--single-transaction --source-data=2` 在开始时短暂获取全局读锁，建立一致快照、输出坐标，然后解锁。元数据的 `source.binlog_anchor` 必须与该 dump 头部坐标一致；独立查询的 `SHOW MASTER STATUS` 不能替代这一锚点。
 
-容器内 watchdog 将初始化窗口限制为五秒，并给整轮转储设置时限。超时先按 mysqldump PID 与客户端连接属性精确 `KILL CONNECTION`，再取消客户端并确认服务器连接消失。仅终止宿主 docker exec 或客户端不能证明等待读锁已经取消。回执中的 `startup_lock_window_upper_bound_seconds` 是启动至确认解锁的保守上界，不是精确持锁时长。
+容器内 watchdog 使用单调时钟检查五秒启动期限，并给整轮转储设置时限。预检要求 MySQL 的 statement history、当前事务和元数据锁可观测；守卫按精确 mysqldump 会话核验已成功完成 UNLOCK，或已进入一致性事务且不再持有 GLOBAL/COMMIT 锁。不能仅凭“没有锁记录”认定已解锁。小型 dump 提前断开时，只有期限内的解锁后标记可作为回退证据；晚到标记不能解除超时取消。
+
+超时先按 mysqldump PID 与客户端连接属性精确 `KILL CONNECTION`，再取消客户端并确认服务器连接消失。仅终止宿主 docker exec 或客户端不能证明等待读锁已经取消；反过来，Docker 输出管道仍等待消费，也不能证明数据库会话仍存活。回执中的 `startup_lock_window_upper_bound_seconds` 是启动至确认解锁的保守上界，不是精确持锁时长，`startup_unlock_evidence` 记录采用的固定证据类型。
 
 独立连接持有 `LOCK INSTANCE FOR BACKUP` 防止转储期间结构变化，普通业务读写可继续。获得实例锁时短持发布锁，此后释放发布锁；`newapi-update`/`newapi-rollback`/`newapi-restart` 检测实例锁并快速报错，运维待快照结束后重试。重启入口在停止运行中容器之前检查，避免启动迁移等待 DDL 锁。完整转储读完后释放实例锁，远端读回不持锁。心跳失联的实例锁连接通过十秒空闲租约释放。网络背压仍可能延长数据库快照和 DDL 保护时间，不能将流式上传说成无影响。
 
@@ -28,7 +30,7 @@
 
 远端目录为 `r2-backup:pitr/<server_uuid>/<epoch>`，包含不可变 `root.json`、`segments/` 和递增 `receipts/000000000001.json`。回执包含文件、起止字节、SHA-256、前条回执摘要、解析状态、源采样位置及时间、最后完整事务位置。序号和字节区间必须连续；跨文件必须连续并验证 ROTATE。
 
-目标分段 16 MiB，按完整事件结束；单个较大事件有 64 MiB 上限。事务可以跨分段，恢复终点必须是完整事务或安全元数据边界，不能在半个事务中停止。只规范化 FDE 的 `BINLOG_IN_USE` 位，避免活跃文件关闭时改变首段摘要；其余内容不改写。每个事件验证长度、位置及 CRC32。XA、压缩事务载荷、未知事件、语句模式 DML 明确失败。
+目标分段 16 MiB，按完整事件结束；单个较大事件有 64 MiB 上限。worker 的 systemd 内存上限为 768 MiB；CI 在相同限制、禁用 swap 的隔离环境中执行最大事件的真实 crypt 上传、读回、中断恢复与幂等测试。事务可以跨分段，恢复终点必须是完整事务或安全元数据边界，不能在半个事务中停止。只规范化 FDE 的 `BINLOG_IN_USE` 位，避免活跃文件关闭时改变首段摘要；其余内容不改写。每个事件验证长度、位置及 CRC32。XA、压缩事务载荷、未知事件、语句模式 DML 明确失败。
 
 先原子记录 pending，再上传、解密读回、上传并读回回执，最后推进 checkpoint。中断后重放同一 pending，不能跳到新位置。UUID 改变、文件缩短/复用、FDE 改变、源文件已过期、范围不连续或远端已有对象不一致都停止归档。缺口不能靠重新命名 epoch 或跳过坏对象掩盖：需要先保留故障证据，恢复缺段，或建立一份新的验证全备及明确的新恢复链。
 
@@ -40,8 +42,8 @@
 2. 确认当前生产库、binlog 设置、文件和持久化来源；记录容器 ID、启动时间、重启次数、发布状态与磁盘。不能将 AI OS 主机当成 New API 主机。
 3. 备份原发布工具、原备份任务与待安装文件摘要。取得 `/run/newapi-release.lock` 后安装保护入口与新工具；新 timer 保持未启用。`systemctl daemon-reload` 不重启业务容器。
 4. 手动执行一份候选带锚点全备 A；从其锚点所在文件的 offset 0 启动归档，等待内容读回与连续链校验完成。首轮追赶可给较长 deadline，正常单轮保持 45 秒。失败保留 A、原任务和所有源文件。
-5. 取得独立全备 B，其锚点作为目标 T；归档必须覆盖 T。在工作站恢复 A 加真实增量至 T，再独立恢复 B，核对整库摘要与账务。恢复不在生产机运行。
-6. 配置并验证 SMTP 测试通知；通过恢复验收后启用归档与独立监控，以及每日北京时间 04:10 的新全备 timer。停用旧全备 timer，但保留 service 和原程序作回退。观察多个周期的远端已验证位置，不能只检查 timer 为 active。
+5. A 的锚点和连续链验证通过、SMTP 测试通知获接受后，可启用候选归档与独立监控，让隔离演练期间的增量继续异地保存；此时仍保留旧每日全备任务，不能宣称 PITR 已验收。取得独立全备 B，其锚点作为目标 T；归档必须覆盖 T。在工作站恢复 A 加真实增量至 T，再独立恢复 B，核对整库摘要与账务。恢复不在生产机运行。
+6. 完整恢复验收通过后启用每日北京时间 04:10 的新全备 timer。停用旧全备 timer，但保留 service 和原程序作回退。观察多个周期的远端已验证位置，不能只检查 timer 为 active。
 
 安装时将同版本的 `mysql-r2-backup.py`、`pitr_anchor.py`、`pitr_binlog.py`、`mysql-binlog-archive.py`、`pitr-monitor.py`、`pitr-alert-config.py` 一起部署；不要只复制入口漏掉相邻模块。systemd 文件在 `scripts/server-storage/`，使用已有 `/root/.config/rclone/r2.env`，不把 AWS 凭据写入 unit。
 
@@ -60,9 +62,12 @@ systemctl show newapi-pitr-backup.service -p ActiveState -p Result -p ExecMainSt
 python3 /usr/local/lib/newapi-storage/mysql-binlog-archive.py \
   --start-file binlog.XXXXXX --deadline 600
 
-# 验收通过后再启用。生产命令需要已有 AWS 环境，systemd 自动加载。
+# A 锚点、链及测试告警验证后，可在演练期间持续归档；仍未完成 PITR 验收。
+systemctl enable --now newapi-binlog-archive.timer newapi-pitr-monitor.timer
+
+# A/B 完整恢复验收通过后才切换每日任务。systemd 自动加载已有 AWS 环境。
 systemctl disable newapi-r2-backup.timer
-systemctl enable --now newapi-binlog-archive.timer newapi-pitr-monitor.timer newapi-pitr-backup.timer
+systemctl enable --now newapi-pitr-backup.timer
 ```
 
 不要直接将 `binlog.XXXXXX` 示例用于生产。手动运行 rclone 相关命令时，凭据必须由 root 私有环境文件加载；不要复制到 shell 历史或聊天。
@@ -96,6 +101,8 @@ Docker Desktop 虚拟磁盘或独立 Docker 数据分区的可用空间不能用
 
 `--timeout-seconds` 默认 21600（六小时），覆盖下载、gzip 校验、两次恢复及整库审计的全过程，可按独立环境的实测速率调大。恢复和行哈希均流式处理；整库行哈希、行数与财务分组仍需扫描大表，无主键表还可能需要磁盘排序，六小时不是恢复时间承诺。失败后保留私有工作材料，但当前不支持在原目录续跑；重试必须使用新的工作目录并重新校验，先把已有材料占用纳入容量预算。
 
+隔离 MySQL、恢复用 `mysql` 和导出用 `mysqldump` 显式使用 256 MiB 的 `max_allowed_packet`，避免客户端默认 16 MiB、服务端默认 64 MiB 对大行及 base64 binlog 回放 SQL 的限制；生产配置不因此改变。归档单事件仍限制为 64 MiB。包上限不是预分配内存，但全字段审计的 `HEX` 和 JSON 构造在服务端会放大单行的临时内存，不能把客户端流式读取等同于服务端恒定内存。真实集成测试覆盖 20 MiB 二进制行、约 40 MiB 的更新事件、完整恢复/回放和导出再导入。
+
 ```bash
 docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
 python3 scripts/server-storage/mysql-pitr-restore.py \
@@ -128,4 +135,4 @@ systemctl disable --now newapi-binlog-archive.timer
 
 停止 timer 不会取消已运行的全备。需要取消本轮时使用 `systemctl stop newapi-pitr-backup.service`，等待工具取消自身 SQL 连接并确认实例锁消失；不能停止 MySQL 或 New API。不要删锁文件、跳过失败回执、使用 `--force-if-open`/`--force-read`，或用自动 purge 追求磁盘目标。
 
-参考：[MySQL 一致性转储](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)、[备份实例锁](https://dev.mysql.com/doc/refman/8.0/en/lock-instance-for-backup.html)、[按事件位置恢复](https://dev.mysql.com/doc/refman/8.0/en/point-in-time-recovery-positions.html)。
+参考：[MySQL 一致性转储](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)、[备份实例锁](https://dev.mysql.com/doc/refman/8.0/en/lock-instance-for-backup.html)、[按事件位置恢复](https://dev.mysql.com/doc/refman/8.0/en/point-in-time-recovery-positions.html)、[包大小限制](https://dev.mysql.com/doc/refman/8.0/en/packet-too-large.html)。

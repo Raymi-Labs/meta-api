@@ -27,6 +27,7 @@ spec = importlib.util.spec_from_file_location("pitr_backup", HERE / "mysql-r2-ba
 backup = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(backup)
 BLOCK = 1024 * 1024
+PACKET_OPTION = "--max-allowed-packet=256M"
 LABEL = "org.newapi.pitr.run"
 FILE_RE = re.compile(r"[A-Za-z0-9_-]+\.[0-9]{6,}")
 
@@ -348,7 +349,7 @@ class IsolatedMySQL:
                 raise RestoreError("build the exact-version PITR tools image first")
             self.run(["docker", "volume", "create", "--label", LABEL + "=" + self.run_id, self.volume])
             self.volume_created = True
-            options = ["--skip-networking", "--event-scheduler=OFF", "--innodb-buffer-pool-size=512M"]
+            options = ["--skip-networking", "--event-scheduler=OFF", "--innodb-buffer-pool-size=512M", PACKET_OPTION]
             options += ["--server-id=901", "--log-bin=binlog", "--binlog-format=ROW", "--binlog-row-image=FULL", "--binlog-checksum=CRC32"] if self.binlog else ["--skip-log-bin"]
             self.container_id = self.run(["docker", "create", "--name", self.name, "--label", LABEL + "=" + self.run_id,
                 "--network", "none", "--no-healthcheck", "--env", "MYSQL_ROOT_PASSWORD=" + self.password,
@@ -356,7 +357,7 @@ class IsolatedMySQL:
             self.assert_owned()
             self.run(["docker", "start", self.container_id])
             for _ in range(180):
-                process = subprocess.run(["docker", "exec", "--env", "MYSQL_PWD=" + self.password, self.container_id, "mysql", "--user=root", "--batch", "--skip-column-names", "-e", "SELECT VERSION()"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                process = subprocess.run(["docker", "exec", "--env", "MYSQL_PWD=" + self.password, self.container_id, "mysql", "--user=root", PACKET_OPTION, "--batch", "--skip-column-names", "-e", "SELECT VERSION()"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 final_server = subprocess.run(["docker", "exec", self.container_id, "cat", "/proc/1/comm"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.strip()
                 if process.returncode == 0 and final_server == b"mysqld":
                     if process.stdout.strip() != b"8.0.46":
@@ -376,7 +377,7 @@ class IsolatedMySQL:
         return self.run(["docker", "exec", self.container_id, *args], **kwargs)
 
     def query(self, sql):
-        data = self.exec(["mysql", "--user=root", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql])
+        data = self.exec(["mysql", "--user=root", PACKET_OPTION, "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql])
         try:
             if sql.startswith("SHOW CREATE"):
                 # mysql --raw emits literal newlines in DDL. First tab separates
@@ -391,7 +392,7 @@ class IsolatedMySQL:
 
     def lines(self, sql):
         self.assert_owned()
-        child = subprocess.Popen(["docker", "exec", self.container_id, "mysql", "--user=root", "--quick", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        child = subprocess.Popen(["docker", "exec", self.container_id, "mysql", "--user=root", PACKET_OPTION, "--quick", "--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e", "SET SESSION time_zone='+00:00'; " + sql], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         try:
             yield from child.stdout
             if child.wait():
@@ -403,7 +404,7 @@ class IsolatedMySQL:
 
     def load(self, path):
         self.assert_owned()
-        child = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        child = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", PACKET_OPTION, "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
             with gzip.open(path, "rb") as stream:
                 shutil.copyfileobj(stream, child.stdin, BLOCK)
@@ -426,7 +427,7 @@ class IsolatedMySQL:
                 raise RestoreError("unsafe reconstructed binlog filename")
             self.run(["docker", "cp", str(path), self.container_id + ":/tmp/pitr/" + path.name])
         reader = subprocess.Popen(["docker", "exec", self.container_id, "mysqlbinlog", "--verify-binlog-checksum", "--skip-gtids", "--database=" + database, "--start-position=" + str(start["position"]), "--stop-position=" + str(stop["position"]), *["/tmp/pitr/" + p.name for p in files]], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        writer = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=reader.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        writer = subprocess.Popen(["docker", "exec", "-i", self.container_id, "mysql", "--user=root", PACKET_OPTION, "--binary-mode", "--local-infile=0", "--skip-reconnect"], stdin=reader.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         reader.stdout.close()
         try:
             write_status, read_status = writer.wait(), reader.wait()
@@ -444,7 +445,7 @@ class IsolatedMySQL:
         path, partial = directory / "recovered.sql.gz", directory / "recovered.sql.gz.partial"
         if path.exists() or partial.exists() or shutil.disk_usage(directory).free < 512 * BLOCK:
             raise RestoreError("insufficient space or conflicting restored export path")
-        child = subprocess.Popen(["docker", "exec", self.container_id, "mysqldump", "--user=root", "--single-transaction", "--no-tablespaces", "--set-gtid-purged=OFF", "--routines", "--events", "--triggers", "--hex-blob", "--databases", database], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        child = subprocess.Popen(["docker", "exec", self.container_id, "mysqldump", "--user=root", PACKET_OPTION, "--single-transaction", "--no-tablespaces", "--set-gtid-purged=OFF", "--routines", "--events", "--triggers", "--hex-blob", "--databases", database], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         digest, size = hashlib.sha256(), 0
         compressor = zlib.compressobj(6, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
         try:

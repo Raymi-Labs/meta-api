@@ -40,11 +40,14 @@ def follows(previous, current):
 
 
 def normalize(data, start):
+    if start != 0:
+        return bytes(data)
+    if len(data) < 23 or data[:4] != MAGIC or data[8] != 15:
+        raise ValueError("binlog must start with magic and format description")
+    if not data[21] & 1:
+        return bytes(data)
     value = bytearray(data)
-    if start == 0:
-        if len(value) < 23 or value[:4] != MAGIC or value[8] != 15:
-            raise ValueError("binlog must start with magic and format description")
-        value[21] &= ~1
+    value[21] &= ~1
     return bytes(value)
 
 
@@ -56,7 +59,7 @@ def query_text(payload):
     offset = 13 + status_length + db_length
     if offset >= len(payload) or payload[offset] != 0:
         raise ValueError("invalid QUERY event database header")
-    return payload[offset + 1:].strip().rstrip(b";").upper()
+    return bytes(payload[offset + 1:]).strip().rstrip(b";").upper()
 
 
 def parse_chunk(data, file, start, state=None):
@@ -78,6 +81,7 @@ def parse_chunk(data, file, start, state=None):
     elif not result and start != 0:
         raise ValueError("first binlog chunk must include file header")
     value = normalize(data, start)
+    view = memoryview(value)
     offset = 4 if start == 0 else 0
     result.update(file=file, in_transaction=result.get("in_transaction", False),
                   pending_gtid=result.get("pending_gtid", False))
@@ -93,7 +97,7 @@ def parse_chunk(data, file, start, state=None):
         position = start + offset
         if end != position + length:
             raise ValueError("event end_log_pos does not match its byte position")
-        event = value[offset:offset + length]
+        event = view[offset:offset + length]
         if zlib.crc32(event[:-4]) != struct.unpack_from("<I", event, length - 4)[0]:
             raise ValueError("event CRC32 mismatch")
         payload = event[HEADER.size:-4]
@@ -145,7 +149,7 @@ def parse_chunk(data, file, start, state=None):
                 raise ValueError("invalid ROTATE event")
             if struct.unpack_from("<Q", payload)[0] != 4:
                 raise ValueError("unsupported ROTATE position")
-            target = payload[8:].decode("ascii")
+            target = bytes(payload[8:]).decode("ascii")
             if not follows(file, target):
                 raise ValueError("ROTATE skips a binlog file")
             result["rotate_to"] = target

@@ -67,8 +67,8 @@ class HeaderTests(unittest.TestCase):
 
     def test_source_scope_and_durability_fail_closed(self):
         args = backup.parse_args(["--pitr-anchor", "--database", "new-api", "--disk-path", "/tmp", "--min-free-bytes", "2", "--stop-free-bytes", "1"])
-        valid = b"12345678-1234-1234-1234-123456789abc\t1\tROW\tFULL\tOFF\t1\t1\tCRC32\t604800\t1\t1\t512\t0\t0\n1\n1\nnew-api\n"
-        for metadata in (valid + b"other-db\n", valid.replace(b"ROW", b"STATEMENT"), valid.replace(b"\t512", b"\t0"), valid.replace(b"\tOFF\t1\t1", b"\tOFF\t0\t1"), valid.replace(b"\tOFF", b"\tON"), valid.replace(b"\t0\t0\n", b"\t1\t0\n"), valid.replace(b"\n1\n1\n", b"\n0\n1\n")):
+        valid = b"12345678-1234-1234-1234-123456789abc\t1\tROW\tFULL\tOFF\t1\t1\tCRC32\t604800\t1\t1\t512\t0\t0\n1\n1\n5\n2\n1\nnew-api\n"
+        for metadata in (valid + b"other-db\n", valid.replace(b"ROW", b"STATEMENT"), valid.replace(b"\t512", b"\t0"), valid.replace(b"\tOFF\t1\t1", b"\tOFF\t0\t1"), valid.replace(b"\tOFF", b"\tON"), valid.replace(b"\t0\t0\n", b"\t1\t0\n"), valid.replace(b"\n1\n1\n", b"\n0\n1\n"), valid.replace(b"\n5\n2\n", b"\n4\n2\n"), valid.replace(b"\n2\n1\n", b"\n1\n1\n"), valid.replace(b"\n1\nnew-api", b"\n0\nnew-api")):
             process = mock.Mock()
             process.capture.side_effect = [b"8.0.46\n2\t0\n", metadata]
             with self.assertRaises(backup.BackupError):
@@ -90,8 +90,11 @@ class RealMySQLTests(unittest.TestCase):
         deadline = time.monotonic() + 90
         while True:
             try:
-                anchor.query(cls.container, "SELECT 1")
-                break
+                if anchor.query(cls.container, "SELECT @@skip_networking") == "0":
+                    break
+                if time.monotonic() > deadline:
+                    raise anchor.AnchorError("final MySQL server did not start")
+                time.sleep(1)
             except anchor.AnchorError:
                 if time.monotonic() > deadline:
                     raise
@@ -124,10 +127,18 @@ class RealMySQLTests(unittest.TestCase):
             time.sleep(.05)
         self.fail("blocker did not start")
 
-    def dump(self):
+    def dump(self, transform=None):
         subprocess.run(["docker", "exec", self.container, "mkdir", "-m", "700", self.directory], check=True)
         options = ["--single-transaction", "--source-data=2", "--set-gtid-purged=OFF", "--no-tablespaces", "--databases", "pitr_anchor_test"]
-        return subprocess.Popen(backup.dump_command(self.args, self.run_id, options), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command = backup.dump_command(self.args, self.run_id, options)
+        if transform:
+            command[-1] = transform(command[-1])
+        return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def coordination_file(self, name):
+        result = subprocess.run(["docker", "exec", self.container, "cat", self.directory + "/" + name],
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        return result.stdout.strip() if result.returncode == 0 else None
 
     def assert_no_dump_connections(self):
         self.assertEqual(anchor.query(self.container, "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE ATTR_NAME='program_name' AND ATTR_VALUE='mysqldump'"), "0")
@@ -148,6 +159,7 @@ class RealMySQLTests(unittest.TestCase):
                 parser.feed(sql)
                 self.assertEqual(source["binlog_anchor"]["position"], parser.finish()["position"])
                 self.assertLess(source["binlog_anchor"]["startup_lock_window_upper_bound_seconds"], 5)
+                self.assertIn(source["binlog_anchor"]["startup_unlock_evidence"], ("completed-unlock", "active-snapshot", "post-unlock-marker"))
                 self.assertEqual(source["database_scope"], ["pitr_anchor_test"])
                 self.assertTrue(lock.closed)
             finally:
@@ -211,6 +223,117 @@ else: sys.stdout.buffer.write(path.read_bytes())
         child.communicate(timeout=8)
         self.assertNotEqual(child.returncode, 0)
         self.assert_no_dump_connections()
+
+    @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
+    def test_actual_ftwrl_wait_is_cancelled(self):
+        library = '/tmp/newapi-pitr-test-delay.so'
+        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True)
+        def inject(script):
+            return script.replace(' mysqldump --protocol=SOCKET',
+                ' LD_PRELOAD=' + library + ' NEWAPI_PITR_TEST_FTWRL_DELAY=1 NEWAPI_PITR_DELAY_MARKER=' + self.directory + '/before-ftwrl mysqldump --protocol=SOCKET')
+        child = self.dump(inject)
+        try:
+            for _ in range(50):
+                if self.coordination_file('before-ftwrl') is not None:
+                    break
+                time.sleep(.02)
+            self.assertEqual(self.coordination_file('before-ftwrl'), b'')
+            self.start_blocker()
+            for _ in range(60):
+                count = anchor.query(self.container, "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE INFO='FLUSH TABLES WITH READ LOCK'")
+                if count == '1':
+                    break
+                time.sleep(.03)
+            self.assertEqual(count, '1', 'observe actual FTWRL wait after the earlier FLUSH LOCAL completed')
+            child.communicate(timeout=8)
+            self.assertNotEqual(child.returncode, 0)
+            self.assertEqual(self.coordination_file('cancel-confirmed'), b'')
+            self.assert_no_dump_connections()
+        finally:
+            if child.poll() is None:
+                backup.cancel_dump(self.args, self.run_id)
+                child.communicate(timeout=8)
+
+    def test_suspended_guard_rejects_late_ready_before_dump_completes(self):
+        # Exceed Docker's output buffering so the client cannot finish while
+        # the test deliberately withholds reads after its startup marker.
+        for offset in (100, 200, 400, 800, 1600):
+            anchor.query(self.container, "INSERT INTO pitr_anchor_test.pad SELECT id+" + str(offset) + ",v FROM pitr_anchor_test.pad")
+        self.start_blocker()
+        child = self.dump()
+        guard = None
+        try:
+            for _ in range(50):
+                guard = self.coordination_file('guard-pid')
+                if guard:
+                    break
+                time.sleep(.02)
+            self.assertIsNotNone(guard)
+            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -STOP "$1"', "guard-test", guard.decode()], check=True)
+            # Let a real FLUSH wait cross the deadline while its guard cannot
+            # run, then release the blocker and allow a late savepoint marker.
+            time.sleep(5.3)
+            ids = anchor.query(self.container, "SELECT ID FROM information_schema.PROCESSLIST WHERE INFO='SELECT SLEEP(30) FROM pitr_anchor_test.pad'")
+            for identity in ids.splitlines():
+                anchor.query(self.container, "KILL CONNECTION " + identity)
+            for _ in range(50):
+                late = self.coordination_file('post-unlock-marker')
+                if late:
+                    break
+                time.sleep(.02)
+            self.assertGreater(int(late), 5000000000)
+            # Model the exact previous bug: a late producer has written ready
+            # before the suspended guard observes the deadline.
+            subprocess.run(["docker", "exec", self.container, "cp", self.directory + '/post-unlock-marker', self.directory + '/ready'], check=True)
+            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=True)
+            guard = None
+            limit = time.monotonic() + 4
+            while self.coordination_file('cancel-confirmed') is None and time.monotonic() < limit:
+                time.sleep(.05)
+            self.assertEqual(self.coordination_file('timed-out'), b'')
+            self.assertEqual(self.coordination_file('cancel-confirmed'), b'')
+            self.assert_no_dump_connections()
+            # Docker's output bridge can wait for the consumer even after the
+            # real server connection and container client are gone. Verify SQL
+            # cancellation under backpressure, then drain only buffered output.
+            child.communicate(timeout=4)
+            self.assertNotEqual(child.returncode, 0)
+        finally:
+            if guard:
+                subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=False)
+            if child.poll() is None:
+                backup.cancel_dump(self.args, self.run_id)
+            child.communicate(timeout=8)
+
+    @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
+    def test_post_unlock_show_create_delay_uses_server_evidence(self):
+        library = '/tmp/newapi-pitr-test-delay.so'
+        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True)
+        def inject(script):
+            return script.replace(' mysqldump --protocol=SOCKET',
+                ' LD_PRELOAD=' + library + ' NEWAPI_PITR_DELAY_MARKER=' + self.directory + '/show-create-delayed mysqldump --protocol=SOCKET')
+        child = self.dump(inject)
+        try:
+            for _ in range(100):
+                ready = self.coordination_file('ready')
+                if ready:
+                    break
+                time.sleep(.02)
+            self.assertEqual(self.coordination_file('show-create-delayed'), b'')
+            self.assertLessEqual(int(ready), 5000000000)
+            self.assertIn(self.coordination_file('ready-method'), (b'completed-unlock', b'active-snapshot'))
+            self.assertIsNone(self.coordination_file('post-unlock-marker'))
+            output, errors = child.communicate(timeout=12)
+            self.assertEqual(child.returncode, 0, errors.decode())
+            self.assertGreater(int(self.coordination_file('post-unlock-marker')), 5000000000)
+            self.assertIsNone(self.coordination_file('timed-out'))
+            parser = anchor.Header()
+            parser.feed(output)
+            parser.finish()
+        finally:
+            if child.poll() is None:
+                backup.cancel_dump(self.args, self.run_id)
+                child.communicate(timeout=8)
 
     def test_instance_lock_allows_dml_and_blocks_ddl(self):
         lock = anchor.InstanceLock(self.container).acquire()

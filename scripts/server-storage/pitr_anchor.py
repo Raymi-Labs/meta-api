@@ -160,7 +160,14 @@ class InstanceLock:
                 command = ("SET @newapi_kill=IF((" + identity_query + ")=1,'KILL CONNECTION " + identity + "','DO 0'); "
                            "PREPARE newapi_cancel FROM @newapi_kill; EXECUTE newapi_cancel; DEALLOCATE PREPARE newapi_cancel; "
                            + identity_query)
-                confirmed = query(self.container, command) == "0"
+                limit = time.monotonic() + 3
+                while time.monotonic() < limit:
+                    confirmed = query(self.container, command, timeout=max(.1, min(2, limit-time.monotonic()))) == "0"
+                    if confirmed:
+                        break
+                    # KILL marks the server thread; removal of its P_S row can
+                    # lag the KILL response briefly while the thread unwinds.
+                    time.sleep(.05)
             except AnchorError:
                 confirmed = False
         if self.child:
@@ -182,6 +189,15 @@ class InstanceLock:
 # This is executed inside the MySQL container. No credentials enter argv or
 # receipts. PID and program_name together identify only this dump connection.
 GUARD_FUNCTIONS = r'''
+# CLOCK_BOOTTIME from procfs is monotonic, unlike date during an NTP step.
+# procfs reports centiseconds; add one tick when reporting an upper bound.
+clock_now() {
+  local value rest whole fraction
+  read -r value rest < /proc/uptime || return 1
+  [[ "$value" =~ ^[0-9]+\.[0-9]{2}$ ]] || return 1
+  whole=${value%%.*}; fraction=${value#*.}
+  clock_ns=$(( (10#$whole*100 + 10#$fraction) * 10000000 ))
+}
 sql() { MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" timeout --signal=TERM --kill-after=1s 2s mysql --protocol=SOCKET --skip-reconnect --user=root --batch --skip-column-names --execute="$1" 2>/dev/null; }
 connections() {
   if [ -r "/proc/$dump_pid/stat" ] && [ -n "${dump_start:-}" ]; then
@@ -193,6 +209,18 @@ kill_connection() {
   # Revalidate in the same non-reconnecting control session as KILL. A server
   # restart after the earlier inventory must not turn a reused ID into a target.
   sql "SET @newapi_kill=IF(EXISTS(SELECT 1 FROM performance_schema.session_connect_attrs a JOIN performance_schema.session_connect_attrs b ON a.PROCESSLIST_ID=b.PROCESSLIST_ID JOIN performance_schema.threads t ON t.PROCESSLIST_ID=a.PROCESSLIST_ID WHERE a.PROCESSLIST_ID=$1 AND a.ATTR_NAME='_pid' AND a.ATTR_VALUE='$dump_pid' AND b.ATTR_NAME='program_name' AND b.ATTR_VALUE='mysqldump' AND t.PROCESSLIST_USER='root' AND t.PROCESSLIST_HOST='localhost'),'KILL CONNECTION $1','DO 0'); PREPARE newapi_cancel FROM @newapi_kill; EXECUTE newapi_cancel; DEALLOCATE PREPARE newapi_cancel" >/dev/null
+}
+unlock_evidence() {
+  local saw_transaction=0
+  [ ! -f "$run_dir/transaction-starting" ] || saw_transaction=1
+  if [ -r "/proc/$dump_pid/stat" ] && [ -n "${dump_start:-}" ]; then
+    [ "$(awk '{print $22}' "/proc/$dump_pid/stat")" = "$dump_start" ] || return 1
+  fi
+  # Absence of a metadata lock is never sufficient: an identified live dump
+  # must also have completed UNLOCK, or have an ACTIVE snapshot transaction
+  # after mysqldump's post-FTWRL Starting-transaction marker. History is small,
+  # so the transaction evidence remains usable after early statements age out.
+  sql "SELECT CASE WHEN EXISTS(SELECT 1 FROM performance_schema.events_statements_history h WHERE h.THREAD_ID=t.THREAD_ID AND h.SQL_TEXT='UNLOCK TABLES' AND h.MYSQL_ERRNO=0 AND h.END_EVENT_ID IS NOT NULL) THEN 'completed-unlock' WHEN $saw_transaction=1 AND EXISTS(SELECT 1 FROM performance_schema.events_transactions_current x WHERE x.THREAD_ID=t.THREAD_ID AND x.STATE='ACTIVE' AND x.END_EVENT_ID IS NULL AND x.ISOLATION_LEVEL='REPEATABLE READ' AND x.AUTOCOMMIT='NO') THEN 'active-snapshot' ELSE 'pending' END FROM performance_schema.session_connect_attrs a JOIN performance_schema.session_connect_attrs b ON a.PROCESSLIST_ID=b.PROCESSLIST_ID JOIN performance_schema.threads t ON t.PROCESSLIST_ID=a.PROCESSLIST_ID WHERE a.ATTR_NAME='_pid' AND a.ATTR_VALUE='$dump_pid' AND b.ATTR_NAME='program_name' AND b.ATTR_VALUE='mysqldump' AND t.PROCESSLIST_USER='root' AND t.PROCESSLIST_HOST='localhost' AND NOT EXISTS(SELECT 1 FROM performance_schema.metadata_locks m WHERE m.OWNER_THREAD_ID=t.THREAD_ID AND m.OBJECT_TYPE IN ('GLOBAL','COMMIT'))"
 }
 cancel_sql() {
   local ids id remaining
@@ -211,6 +239,19 @@ cancel_sql() {
     sleep 0.05
   done
   return 1
+}
+publish_ready() {
+  # The fast-dump completion path and watchdog may observe proof together.
+  # Claim one publisher so the timestamp and evidence method remain paired.
+  if mkdir "$run_dir/ready-publishing" 2>/dev/null; then
+    printf '%s\n' "$2" > "$run_dir/ready-method"
+    printf '%s\n' "$1" > "$run_dir/ready.tmp"
+    mv "$run_dir/ready.tmp" "$run_dir/ready"
+  fi
+}
+abort_dump() {
+  : > "$run_dir/timed-out"
+  if cancel_sql; then : > "$run_dir/cancel-confirmed"; else : > "$run_dir/cancel-failed"; fi
 }
 '''
 
@@ -236,14 +277,17 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 143' TERM INT
 mkfifo -m 600 "$run_dir/events" || exit 71
-started=$(date +%s%N)
-case "$started" in *[!0-9]*|'') exit 72;; esac
+clock_now || exit 72
+started=$clock_ns
 (
   while IFS= read -r line; do
-    if [ "$line" = '-- Setting savepoint...' ] && [ ! -f "$run_dir/ready" ]; then
-      now=$(date +%s%N)
-      printf '%s\n' "$((now-started))" > "$run_dir/ready.tmp"
-      mv "$run_dir/ready.tmp" "$run_dir/ready"
+    if [ "$line" = '-- Starting transaction...' ]; then
+      clock_now || exit 72
+      printf '%s\n' "$((clock_ns-started+10000000))" > "$run_dir/transaction-starting"
+    elif [ "$line" = '-- Setting savepoint...' ] && [ ! -f "$run_dir/post-unlock-marker" ]; then
+      clock_now || exit 72
+      printf '%s\n' "$((clock_ns-started+10000000))" > "$run_dir/post-unlock-marker.tmp"
+      mv "$run_dir/post-unlock-marker.tmp" "$run_dir/post-unlock-marker"
     fi
   done < "$run_dir/events"
 ) &
@@ -255,22 +299,44 @@ dump_start=$(awk '{print $22}' "/proc/$dump_pid/stat" 2>/dev/null || :)
 printf '%s %s %s\n' "$$" "$dump_pid" "$dump_start" > "$run_dir/pids"
 (
   while [ ! -f "$run_dir/done" ]; do
-    now=$(date +%s%N)
-    elapsed=$((now-started))
-    if { [ ! -f "$run_dir/ready" ] && [ "$elapsed" -ge ''' + str(startup_seconds * 1000000000) + r''' ]; } || [ "$elapsed" -ge ''' + str(maximum_seconds * 1000000000) + r''' ]; then
-      : > "$run_dir/timed-out"
-      if cancel_sql; then : > "$run_dir/cancel-confirmed"; else : > "$run_dir/cancel-failed"; fi
+    clock_now || { abort_dump; exit 72; }
+    elapsed=$((clock_ns-started+10000000))
+    [ -f "$run_dir/guard-first-poll" ] || printf '%s\n' "$elapsed" > "$run_dir/guard-first-poll"
+    if [ ! -f "$run_dir/ready" ] && [ "$elapsed" -lt ''' + str(startup_seconds * 1000000000) + r''' ]; then
+      evidence=pending
+      if [ -f "$run_dir/transaction-starting" ]; then
+        evidence=$(unlock_evidence) || evidence=unobservable
+      fi
+      clock_now || { abort_dump; exit 72; }
+      elapsed=$((clock_ns-started+10000000))
+      if { [ "$evidence" = completed-unlock ] || [ "$evidence" = active-snapshot ]; } && [ "$elapsed" -le ''' + str(startup_seconds * 1000000000) + r''' ]; then
+        publish_ready "$elapsed" "$evidence"
+      elif [ -f "$run_dir/post-unlock-marker" ] && [ "$(cat "$run_dir/post-unlock-marker")" -le ''' + str(startup_seconds * 1000000000) + r''' ]; then
+        # A tiny completed dump may disconnect before P_S can be sampled. Its
+        # post-UNLOCK marker is independently sufficient only if observed on time.
+        publish_ready "$(cat "$run_dir/post-unlock-marker")" post-unlock-marker
+      fi
+    fi
+    late_ready=0
+    if [ -f "$run_dir/ready" ] && [ "$(cat "$run_dir/ready")" -gt ''' + str(startup_seconds * 1000000000) + r''' ]; then late_ready=1; fi
+    if { [ ! -f "$run_dir/ready" ] && [ "$elapsed" -ge ''' + str(startup_seconds * 1000000000) + r''' ]; } || [ "$late_ready" -eq 1 ] || [ "$elapsed" -ge ''' + str(maximum_seconds * 1000000000) + r''' ]; then
+      printf '%s\n' "$elapsed" > "$run_dir/cancellation-started"
+      abort_dump
       exit
     fi
     sleep 0.05
   done
 ) &
 guard_pid=$!
+printf '%s\n' "$guard_pid" > "$run_dir/guard-pid"
 [ ! -e "$run_dir/cancelled" ] || exit 143
 wait "$dump_pid"
 result=$?
-if [ "$result" -eq 0 ]; then : > "$run_dir/done"; fi
 wait "$monitor_pid" || result=74
+if [ "$result" -eq 0 ] && [ ! -f "$run_dir/ready" ] && [ -f "$run_dir/post-unlock-marker" ] && [ "$(cat "$run_dir/post-unlock-marker")" -le ''' + str(startup_seconds * 1000000000) + r''' ]; then
+  publish_ready "$(cat "$run_dir/post-unlock-marker")" post-unlock-marker
+fi
+if [ "$result" -eq 0 ]; then : > "$run_dir/done"; fi
 if [ -f "$run_dir/timed-out" ] || [ ! -f "$run_dir/ready" ] || [ -f "$run_dir/cancel-failed" ]; then result=75; fi
 if [ -f "$run_dir/ready" ] && [ "$(cat "$run_dir/ready")" -gt ''' + str(startup_seconds * 1000000000) + r''' ]; then result=76; fi
 exit "$result"

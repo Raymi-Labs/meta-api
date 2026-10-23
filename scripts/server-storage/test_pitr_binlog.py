@@ -90,6 +90,16 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(parse_chunk(active, "binlog.000001", 0)["data"], closed)
         self.assertEqual(normalize(active, 0), closed)
 
+    def test_normalized_bytes_are_reused_but_mutable_input_is_copied(self):
+        closed = fixture()
+        self.assertIs(normalize(closed, 0), closed)
+        self.assertIs(normalize(closed, 100), closed)
+        mutable = bytearray(closed)
+        immutable = normalize(mutable, 100)
+        self.assertIsInstance(immutable, bytes)
+        mutable[-1] ^= 1
+        self.assertEqual(immutable, closed)
+
     def test_crc_corruption(self):
         data = bytearray(fixture())
         data[-8] ^= 1

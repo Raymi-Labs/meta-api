@@ -18,6 +18,7 @@ import tempfile
 from unittest import mock
 
 from integration_archive import archive_real
+import pitr_binlog
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("pitr_restore_integration", HERE / "mysql-pitr-restore.py")
@@ -48,6 +49,7 @@ def run(work):
     with restore.backup.Processes() as processes:
         remote = restore.backup.CryptRemote("crypt:fixture", config, processes)
         with restore.IsolatedMySQL(binlog=True) as source:
+            assert source.query("SELECT JSON_ARRAY(@@max_allowed_packet)")[0][0] == 256 * 1024 * 1024
             source.exec(["mysql", "--user=root", "-e", "RESET MASTER; CREATE DATABASE pitr_fixture CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"])
             schema = """
             USE pitr_fixture;
@@ -57,8 +59,10 @@ def run(work):
             CREATE TABLE logs(id BIGINT PRIMARY KEY,user_id BIGINT,type INT,quota BIGINT,prompt_tokens BIGINT,completion_tokens BIGINT,request_id VARCHAR(64),other LONGTEXT) ENGINE=InnoDB;
             CREATE TABLE pulse_wallet_reservations(id VARCHAR(64) PRIMARY KEY,request_id VARCHAR(64),user_id BIGINT,quota BIGINT,paid_quota BIGINT,status VARCHAR(20)) ENGINE=InnoDB;
             CREATE TABLE duplicate_rows(value VARBINARY(50)) ENGINE=InnoDB;
+            CREATE TABLE large_rows(id BIGINT PRIMARY KEY,payload LONGBLOB NOT NULL) ENGINE=InnoDB;
             INSERT INTO users VALUES(1,1000,1000,1000,0,0,0,0);
             INSERT INTO duplicate_rows VALUES(0x0061090aff),(0x0061090aff),(NULL);
+            INSERT INTO large_rows VALUES(1,REPEAT(CHAR(65),20*1024*1024));
             """
             source.exec(["mysql", "--user=root", "-e", schema])
             source_uuid = source.query("SELECT JSON_ARRAY(@@server_uuid)")[0][0]
@@ -82,7 +86,9 @@ def run(work):
             UPDATE users SET audit_note=0x0061090aff WHERE id=1;
             INSERT INTO subscription_orders VALUES(1,'synthetic-subscription',5,1,'success');
             INSERT INTO top_ups VALUES(2,1,'synthetic-subscription',0,5,5,5,'USD','USD','success','fixture','fixture');
+            UPDATE large_rows SET payload=CONCAT(REPEAT(CHAR(66),20*1024*1024-1),UNHEX('FF')) WHERE id=1;
             """])
+            assert source.query("SELECT JSON_ARRAY(OCTET_LENGTH(payload)) FROM pitr_fixture.large_rows")[0][0] == 20 * 1024 * 1024
             source.exec(["mysql", "--user=root", "-e", """
             CREATE DATABASE `newapi_preflight_20261023000000_12345` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER 'pitr_preflight_fixture'@'%' IDENTIFIED BY 'disposable-test-password';
@@ -105,9 +111,19 @@ def run(work):
         result = restore.execute(args)
         detail = json.loads((work / "restore/result.json").read_bytes())
         assert detail["differences"] == []
+        largest_event = 0
+        for path in (work / "restore/binlogs").glob("binlog.*"):
+            with path.open("rb") as stream:
+                assert stream.read(4) == pitr_binlog.MAGIC
+                while header := stream.read(pitr_binlog.HEADER.size):
+                    event_size = pitr_binlog.HEADER.unpack(header)[3]
+                    largest_event = max(largest_event, event_size)
+                    stream.seek(event_size - pitr_binlog.HEADER.size, 1)
+        assert largest_event > 40 * 1024 * 1024
         assert detail["replay_window"]["new_rows"]["logs"]["consume"] == 1
         assert detail["replay_window"]["new_rows"]["logs"]["refund"] == 1
         assert detail["incremental_audit"]["tables"]["logs"]["count"] == 3
+        assert detail["incremental_audit"]["tables"]["large_rows"]["count"] == 1
         assert detail["incremental_audit"]["tables"]["top_ups"]["financial"]["wallet_only_rows"][0][-2:] == ["2.000000000000", "2.000000000000"]
         # Same real chain must reject an event-interior target before Docker.
         try:
@@ -145,7 +161,9 @@ def run(work):
         assert subprocess.run(["docker", "inspect", interrupted_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0
         assert subprocess.run(["docker", "volume", "inspect", interrupted.volume], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0
         return {"status": "success", "segments": segments, "tables": result["tables"], "anchor_a": anchor_a, "target_b": anchor_b,
-                "coverage": ["real-mysql-8.0.46", "official-mysqlbinlog", "crypt-readback", "row-transactions", "topup", "consume", "refund", "ddl", "rotation", "split-transaction", "independent-full-comparison", "after-target-excluded", "binary-and-null", "duplicate-no-primary-key", "invalid-target-rejected", "explicit-position-cli", "SIGTERM-container-volume-cleanup", "production-backup-entry", "production-archive-entry", "archive-interruption-resume", "archive-idempotency", "release-preflight-scope", "restored-export-reimport"], "work_dir": str(work)}
+                "large_row_bytes": 20 * 1024 * 1024,
+                "largest_event_bytes": largest_event,
+                "coverage": ["real-mysql-8.0.46", "official-mysqlbinlog", "crypt-readback", "row-transactions", "topup", "consume", "refund", "ddl", "rotation", "split-transaction", "independent-full-comparison", "after-target-excluded", "binary-and-null", "duplicate-no-primary-key", "invalid-target-rejected", "explicit-position-cli", "SIGTERM-container-volume-cleanup", "production-backup-entry", "production-archive-entry", "archive-interruption-resume", "archive-idempotency", "release-preflight-scope", "restored-export-reimport", "20MiB-row-and-40MiB-update-event"], "work_dir": str(work)}
 
 
 if __name__ == "__main__":

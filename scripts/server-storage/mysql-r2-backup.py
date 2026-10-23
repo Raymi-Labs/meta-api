@@ -351,6 +351,13 @@ def preflight(args, processes):
                  "NAME='wait/lock/metadata/sql/mdl' AND ENABLED='YES'; "
                  "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE "
                  "PROCESSLIST_ID=CONNECTION_ID() AND ATTR_NAME='_pid' AND ATTR_VALUE REGEXP '^[1-9][0-9]*$'; "
+                 "SELECT COUNT(*) FROM performance_schema.setup_consumers WHERE NAME IN "
+                 "('global_instrumentation','thread_instrumentation','events_statements_current',"
+                 "'events_statements_history','events_transactions_current') AND ENABLED='YES'; "
+                 "SELECT COUNT(*) FROM performance_schema.setup_instruments WHERE NAME IN "
+                 "('statement/sql/unlock_tables','transaction') AND ENABLED='YES'; "
+                 "SELECT COUNT(*) FROM performance_schema.threads WHERE PROCESSLIST_ID=CONNECTION_ID() "
+                 "AND INSTRUMENTED='YES' AND HISTORY='YES'; "
                  "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN "
                  "('mysql','information_schema','performance_schema','sys') ORDER BY SCHEMA_NAME;")
         data = processes.capture(mysql_command(args, "mysql", ["--batch", "--skip-column-names", "--execute=" + query]))
@@ -360,7 +367,7 @@ def preflight(args, processes):
             keys = ("server_uuid", "log_bin", "binlog_format", "binlog_row_image", "gtid_mode",
                     "sync_binlog", "innodb_flush_log_at_trx_commit", "binlog_checksum", "binlog_expire_logs_seconds", "server_id",
                     "performance_schema", "performance_schema_session_connect_attrs_size", "binlog_transaction_compression", "binlog_encryption")
-            if len(fields) != len(keys) or rows[1:3] != ["1", "1"] or rows[3:] != [args.database]:
+            if len(fields) != len(keys) or rows[1:6] != ["1", "1", "5", "2", "1"] or rows[6:] != [args.database]:
                 raise ValueError()
             values = dict(zip(keys, fields))
             if not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", values["server_uuid"]):
@@ -380,7 +387,8 @@ def preflight(args, processes):
         if "Ver " + version.split("-")[0] + " " not in client:
             raise BackupError("PITR mysqldump version must match the source MySQL version")
         result.update(values, database_scope=[args.database], ddl_protection="LOCK INSTANCE FOR BACKUP",
-                      metadata_lock_instrument_enabled=True, session_connect_pid_visible=True)
+                      metadata_lock_instrument_enabled=True, session_connect_pid_visible=True,
+                      snapshot_statement_and_transaction_observability=True)
         result.pop("binlog_coordinates")
     return result
 
@@ -543,6 +551,10 @@ def stream_anchored_dump(args, remote, destination, processes, run_id, options, 
         value.update(server_uuid=source["server_uuid"],
                      method="mysqldump --single-transaction --source-data=2",
                      startup_lock_window_upper_bound_seconds=int(elapsed) / 1000000000)
+        method = processes.capture(["docker", "exec", args.container, "cat", directory + "/ready-method"]).strip()
+        if method not in (b"completed-unlock", b"active-snapshot", b"post-unlock-marker"):
+            raise BackupError("PITR unlock evidence is invalid")
+        value["startup_unlock_evidence"] = method.decode("ascii")
         source["binlog_anchor"] = value
         # The consistent read is now complete; release DDL protection before
         # waiting for the uploader's completion or starting remote readback.
