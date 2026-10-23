@@ -5,6 +5,7 @@ NEWAPI_PITR_TEST_MYSQL_IMAGE=mysql:8.0 python3 -m unittest discover \
   -s scripts/server-storage -p test_pitr_anchor.py -v
 """
 import gzip
+import faulthandler
 import importlib.util
 import io
 import os
@@ -81,12 +82,12 @@ class RealMySQLTests(unittest.TestCase):
     def setUpClass(cls):
         cls.container = "newapi-pitr-anchor-test-" + uuid.uuid4().hex[:12]
         image = os.environ["NEWAPI_PITR_TEST_MYSQL_IMAGE"]
+        cls.addClassCleanup(lambda: subprocess.run(["docker", "rm", "-fv", cls.container],
+                                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20))
         subprocess.run(["docker", "run", "-d", "--name", cls.container, "--network", "none",
                         "-e", "MYSQL_ROOT_PASSWORD=fixture-anchor-password", image,
                         "--server-id=40123", "--log-bin=mysql-bin", "--binlog-format=ROW",
-                        "--gtid-mode=OFF", "--log-error-verbosity=1"], check=True, stdout=subprocess.DEVNULL)
-        cls.addClassCleanup(lambda: subprocess.run(["docker", "rm", "-fv", cls.container],
-                                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+                        "--gtid-mode=OFF", "--log-error-verbosity=1"], check=True, stdout=subprocess.DEVNULL, timeout=120)
         deadline = time.monotonic() + 90
         while True:
             try:
@@ -102,20 +103,32 @@ class RealMySQLTests(unittest.TestCase):
         anchor.query(cls.container, "CREATE DATABASE pitr_anchor_test; CREATE TABLE pitr_anchor_test.balance(id INT PRIMARY KEY,amount BIGINT) ENGINE=InnoDB; INSERT INTO pitr_anchor_test.balance VALUES(1,100); CREATE TABLE pitr_anchor_test.pad(id INT PRIMARY KEY,v LONGTEXT) ENGINE=InnoDB; INSERT INTO pitr_anchor_test.pad VALUES(1,REPEAT('x',1000000));")
 
     def setUp(self):
+        faulthandler.dump_traceback_later(45, repeat=True)
+        self.addCleanup(faulthandler.cancel_dump_traceback_later)
         self.run_id = uuid.uuid4().hex
         self.directory = "/tmp/newapi-r2-backup-" + self.run_id
         self.args = backup.parse_args(["--pitr-anchor", "--container", self.container, "--database", "pitr_anchor_test",
-                                       "--disk-path", "/tmp", "--min-free-bytes", "2", "--stop-free-bytes", "1"])
+                                       "--disk-path", "/tmp", "--min-free-bytes", "2", "--stop-free-bytes", "1",
+                                       "--timeout-seconds", "60", "--dump-timeout-seconds", "30"])
 
     def tearDown(self):
+        # Cancel clients while their coordination files still exist. unittest
+        # otherwise runs addCleanup after tearDown has removed those files.
+        self.doCleanups()
         subprocess.run(["docker", "exec", self.container, "rm", "-rf", "--", self.directory],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
 
     def start_blocker(self):
         sql = "SELECT SLEEP(30) FROM pitr_anchor_test.pad"
         command = anchor.mysql_shell() + " --execute=" + __import__("shlex").quote(sql)
         blocker = subprocess.Popen(["docker", "exec", self.container, "sh", "-c", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        self.addCleanup(lambda: blocker.wait(timeout=5))
+        def reap():
+            try:
+                blocker.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                blocker.kill()
+                blocker.wait(timeout=3)
+        self.addCleanup(reap)
         def stop():
             ids = anchor.query(self.container, "SELECT ID FROM information_schema.PROCESSLIST WHERE INFO='" + sql + "'")
             for identity in ids.splitlines():
@@ -128,23 +141,35 @@ class RealMySQLTests(unittest.TestCase):
         self.fail("blocker did not start")
 
     def dump(self, transform=None):
-        subprocess.run(["docker", "exec", self.container, "mkdir", "-m", "700", self.directory], check=True)
+        subprocess.run(["docker", "exec", self.container, "mkdir", "-m", "700", self.directory], check=True, timeout=10)
         options = ["--single-transaction", "--source-data=2", "--set-gtid-purged=OFF", "--no-tablespaces", "--databases", "pitr_anchor_test"]
         command = backup.dump_command(self.args, self.run_id, options)
         if transform:
             command[-1] = transform(command[-1])
-        return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        def reap():
+            if child.poll() is None:
+                try:
+                    backup.cancel_dump(self.args, self.run_id)
+                finally:
+                    try:
+                        child.communicate(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.communicate(timeout=3)
+        self.addCleanup(reap)
+        return child
 
     def coordination_file(self, name):
         result = subprocess.run(["docker", "exec", self.container, "cat", self.directory + "/" + name],
-                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
         return result.stdout.strip() if result.returncode == 0 else None
 
     def assert_no_dump_connections(self):
         self.assertEqual(anchor.query(self.container, "SELECT COUNT(*) FROM performance_schema.session_connect_attrs WHERE ATTR_NAME='program_name' AND ATTR_VALUE='mysqldump'"), "0")
 
     def test_real_stream_anchor_and_gzip(self):
-        with tempfile.TemporaryDirectory() as directory, backup.Processes() as processes:
+        with backup.deadline(30), tempfile.TemporaryDirectory() as directory, backup.Processes() as processes:
             path = Path(directory) / "snapshot.gz"
             class Remote:
                 def writer(self, _destination):
@@ -227,7 +252,7 @@ else: sys.stdout.buffer.write(path.read_bytes())
     @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
     def test_actual_ftwrl_wait_is_cancelled(self):
         library = '/tmp/newapi-pitr-test-delay.so'
-        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True)
+        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True, timeout=10)
         def inject(script):
             return script.replace(' mysqldump --protocol=SOCKET',
                 ' LD_PRELOAD=' + library + ' NEWAPI_PITR_TEST_FTWRL_DELAY=1 NEWAPI_PITR_DELAY_MARKER=' + self.directory + '/before-ftwrl mysqldump --protocol=SOCKET')
@@ -269,7 +294,7 @@ else: sys.stdout.buffer.write(path.read_bytes())
                     break
                 time.sleep(.02)
             self.assertIsNotNone(guard)
-            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -STOP "$1"', "guard-test", guard.decode()], check=True)
+            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -STOP "$1"', "guard-test", guard.decode()], check=True, timeout=5)
             # Let a real FLUSH wait cross the deadline while its guard cannot
             # run, then release the blocker and allow a late savepoint marker.
             time.sleep(5.3)
@@ -284,8 +309,8 @@ else: sys.stdout.buffer.write(path.read_bytes())
             self.assertGreater(int(late), 5000000000)
             # Model the exact previous bug: a late producer has written ready
             # before the suspended guard observes the deadline.
-            subprocess.run(["docker", "exec", self.container, "cp", self.directory + '/post-unlock-marker', self.directory + '/ready'], check=True)
-            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=True)
+            subprocess.run(["docker", "exec", self.container, "cp", self.directory + '/post-unlock-marker', self.directory + '/ready'], check=True, timeout=5)
+            subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=True, timeout=5)
             guard = None
             limit = time.monotonic() + 4
             while self.coordination_file('cancel-confirmed') is None and time.monotonic() < limit:
@@ -300,7 +325,7 @@ else: sys.stdout.buffer.write(path.read_bytes())
             self.assertNotEqual(child.returncode, 0)
         finally:
             if guard:
-                subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=False)
+                subprocess.run(["docker", "exec", self.container, "bash", "-c", 'kill -CONT "$1"', "guard-test", guard.decode()], check=False, timeout=5)
             if child.poll() is None:
                 backup.cancel_dump(self.args, self.run_id)
             child.communicate(timeout=8)
@@ -308,7 +333,7 @@ else: sys.stdout.buffer.write(path.read_bytes())
     @unittest.skipUnless(os.environ.get('NEWAPI_PITR_TEST_DELAY_LIBRARY'), 'compile test_pitr_delay.c for the MySQL image architecture')
     def test_post_unlock_show_create_delay_uses_server_evidence(self):
         library = '/tmp/newapi-pitr-test-delay.so'
-        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True)
+        subprocess.run(['docker', 'cp', os.environ['NEWAPI_PITR_TEST_DELAY_LIBRARY'], self.container + ':' + library], check=True, timeout=10)
         def inject(script):
             return script.replace(' mysqldump --protocol=SOCKET',
                 ' LD_PRELOAD=' + library + ' NEWAPI_PITR_DELAY_MARKER=' + self.directory + '/show-create-delayed mysqldump --protocol=SOCKET')

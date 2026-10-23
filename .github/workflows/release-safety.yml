@@ -47,6 +47,7 @@ jobs:
       - name: Build exact MySQL PITR recovery tools
         run: docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
       - name: Exercise real MySQL snapshot locks and cancellation
+        timeout-minutes: 5
         env:
           NEWAPI_PITR_TEST_MYSQL_IMAGE: mysql:8.0.46
           NEWAPI_PITR_TEST_DELAY_LIBRARY: /tmp/newapi-pitr-delay.so
@@ -54,8 +55,10 @@ jobs:
           gcc -shared -fPIC -O2 scripts/server-storage/test_pitr_delay.c -o "$NEWAPI_PITR_TEST_DELAY_LIBRARY" -ldl
           python3 -B -m unittest discover -s scripts/server-storage -p 'test_pitr_anchor.py' -v
       - name: Exercise archive event boundary under the production memory limit
+        timeout-minutes: 20
         run: |
           docker build -t newapi-pitr-archive-test -f scripts/server-storage/Dockerfile.pitr-archive-test .
           docker run --rm --network none --memory=768m --memory-swap=768m --user "$(id -u):$(id -g)" -v "$PWD/scripts/server-storage:/workspace:ro" newapi-pitr-archive-test
       - name: Restore full snapshot and real binlogs against an independent target snapshot
+        timeout-minutes: 20
         run: python3 -B scripts/server-storage/integration_pitr.py
