@@ -4,16 +4,39 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/types"
 )
 
+// IsClaudeUsageSemantic describes upstream usage, independent of the client
+// endpoint. OpenRouter's native Messages-compatible response remains inclusive.
+func IsClaudeUsageSemantic(info *relaycommon.RelayInfo, usage *dto.Usage) bool {
+	if usage != nil && strings.EqualFold(usage.UsageSemantic, "anthropic") {
+		return true
+	}
+	return info != nil && info.GetFinalRequestRelayFormat() == types.RelayFormatClaude &&
+		(info.ChannelMeta == nil || info.ChannelType != constant.ChannelTypeOpenRouter)
+}
+
+// AppendUsageTokenSemantics records what the stored prompt_tokens means. This
+// explicit contract also distinguishes new inclusive logs from legacy Messages
+// logs that unconditionally carried the Claude flag.
+func AppendUsageTokenSemantics(other map[string]interface{}, isClaude bool) {
+	other["claude"] = isClaude
+	other["usage_semantic"] = "openai"
+	other["prompt_tokens_semantic"] = "inclusive"
+	if isClaude {
+		other["usage_semantic"] = "anthropic"
+		other["prompt_tokens_semantic"] = "non_cache"
+	}
+}
+
 // Adapters other than the native Claude parser may also return Anthropic
 // usage. Check the partition at the handler boundary before settling it.
 func ValidateClaudeCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage) *types.NewAPIError {
-	if info == nil || usage == nil ||
-		(info.GetFinalRequestRelayFormat() != types.RelayFormatClaude && !strings.EqualFold(usage.UsageSemantic, "anthropic")) {
+	if usage == nil || !IsClaudeUsageSemantic(info, usage) {
 		return nil
 	}
 	if _, err := usage.CacheCreationBreakdown(); err != nil {
@@ -43,8 +66,6 @@ func ClaudeTokenQuotaAmount(prompt, completion, read int, creation dto.CacheCrea
 }
 
 func AppendClaudeCacheCreationInfo(other map[string]interface{}, creation dto.CacheCreation, price types.PriceData) {
-	other["claude"] = true
-	other["usage_semantic"] = "anthropic"
 	other["cache_creation_tokens"] = creation.Total
 	other["cache_creation_ratio"] = price.CacheCreationRatio
 	other["cache_creation_tokens_5m"] = creation.FiveMinute

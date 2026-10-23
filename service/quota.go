@@ -280,7 +280,7 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.Usage) {
 	ObserveGroupHealthCacheUsage(relayInfo, usage)
 	if usage != nil {
-		ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, relayInfo.GetFinalRequestRelayFormat())
+		ObserveChannelAffinityUsageCacheByRelayInfo(ctx, usage, relayInfo)
 		ObserveSlowTTFT(ctx, relayInfo, usage)
 	}
 
@@ -291,9 +291,7 @@ func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 	var tieredResult *billingexpr.TieredResult
 	// Use the upstream usage format, not merely the client's Messages endpoint.
 	// OpenRouter reports an inclusive prompt total even on this entry path.
-	isClaudeUsageSemantic := relayInfo.ChannelType != constant.ChannelTypeOpenRouter &&
-		relayInfo.GetFinalRequestRelayFormat() == types.RelayFormatClaude
-	isClaudeUsageSemantic = isClaudeUsageSemantic || strings.EqualFold(usage.UsageSemantic, "anthropic")
+	isClaudeUsageSemantic := IsClaudeUsageSemantic(relayInfo, usage)
 	tieredParams := BuildTieredTokenParams(usage, isClaudeUsageSemantic, tieredUsedVars)
 	tieredOk, tieredQuota, tieredRes := TryTieredSettle(relayInfo, tieredParams)
 	if tieredOk {
@@ -321,22 +319,24 @@ func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 	cacheCreationTokens1h := usage.ClaudeCacheCreation1hTokens
 
 	if relayInfo.ChannelType == constant.ChannelTypeOpenRouter {
-		promptTokens -= cacheTokens
 		isUsingCustomSettings := relayInfo.PriceData.UsePrice || hasCustomModelRatio(modelName, relayInfo.PriceData.ModelRatio)
 		if cacheCreationTokens == 0 && relayInfo.PriceData.CacheCreationRatio != 1 && usage.Cost != 0 && !isUsingCustomSettings {
 			maybeCacheCreationTokens := CalcOpenRouterCacheCreateTokens(*usage, relayInfo.PriceData)
-			if maybeCacheCreationTokens >= 0 && promptTokens >= maybeCacheCreationTokens {
+			if maybeCacheCreationTokens >= 0 && promptTokens-cacheTokens >= maybeCacheCreationTokens {
 				cacheCreationTokens = maybeCacheCreationTokens
 			}
 		}
-		promptTokens -= cacheCreationTokens
 	}
 
 	// Native parser / relay handler validation rejects inconsistent partitions
 	// before this settlement path, including the channel-test entry.
 	creation, _ := dto.ResolveCacheCreation(cacheCreationTokens, cacheCreationTokens5m, cacheCreationTokens1h, usage.CacheCreationTotalReported)
 	cacheCreationTokens = creation.Total
-	calculateQuota := ClaudeTokenQuotaAmount(promptTokens, completionTokens, cacheTokens, creation, relayInfo.PriceData)
+	nonCachePromptTokens := promptTokens
+	if !isClaudeUsageSemantic {
+		nonCachePromptTokens = max(0, promptTokens-cacheTokens-cacheCreationTokens)
+	}
+	calculateQuota := ClaudeTokenQuotaAmount(nonCachePromptTokens, completionTokens, cacheTokens, creation, relayInfo.PriceData)
 
 	quota := int(calculateQuota)
 	if tieredOk {
@@ -345,7 +345,10 @@ func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 
 	// Claude input_tokens excludes cache reads/writes. A cache-only response
 	// still has billable usage even when input_tokens and output_tokens are zero.
-	totalTokens := promptTokens + completionTokens + cacheTokens + cacheCreationTokens
+	totalTokens := promptTokens + completionTokens
+	if isClaudeUsageSemantic {
+		totalTokens += cacheTokens + cacheCreationTokens
+	}
 
 	var logContent string
 	if timeRatioContent := FormatTimeRatioContent(relayInfo.PriceData); timeRatioContent != "" {
@@ -374,6 +377,7 @@ func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 		cacheCreationTokens1h, cacheCreationRatio1h,
 		modelPrice, relayInfo.PriceData.GroupRatioInfo.GroupSpecialRatio)
 	AppendClaudeCacheCreationInfo(other, creation, relayInfo.PriceData)
+	AppendUsageTokenSemantics(other, isClaudeUsageSemantic)
 	if tieredResult != nil {
 		InjectTieredBillingInfo(other, relayInfo, tieredResult, &tieredParams)
 	}

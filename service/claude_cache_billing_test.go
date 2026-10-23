@@ -3,6 +3,7 @@ package service
 import (
 	"testing"
 
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -52,4 +53,12 @@ func TestClaudeTieredCachePartitionAndBoundary(t *testing.T) {
 	require.Nil(t, ValidateClaudeCacheUsage(&relaycommon.RelayInfo{RelayFormat: types.RelayFormatOpenAI}, invalid), "do not reinterpret another provider's untagged usage")
 	invalid.UsageSemantic = "anthropic"
 	require.NotNil(t, ValidateClaudeCacheUsage(&relaycommon.RelayInfo{RelayFormat: types.RelayFormatOpenAI}, invalid))
+}
+
+func TestClaudeCacheValidationUsesActualUsageSemantics(t *testing.T) {
+	info := &relaycommon.RelayInfo{RelayFormat: types.RelayFormatClaude, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeOpenRouter}}
+	usage := &dto.Usage{PromptTokensDetails: dto.InputTokenDetails{CachedCreationTokens: 1}, ClaudeCacheCreation1hTokens: 2}
+	require.Nil(t, ValidateClaudeCacheUsage(info, usage), "untagged inclusive usage is not an Anthropic partition")
+	usage.UsageSemantic = "anthropic"
+	require.NotNil(t, ValidateClaudeCacheUsage(info, usage), "explicit parser semantic takes precedence")
 }

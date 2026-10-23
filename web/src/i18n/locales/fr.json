@@ -1,5 +1,7 @@
 {
   "translation": {
+    "对话历史缺少思考内容": "Le contenu de réflexion manque dans l’historique de la conversation",
+    "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。": "Renvoyez l’historique de réflexion complet, ou démarrez une nouvelle conversation ou désactivez la réflexion avant de réessayer. Si l’échec persiste, contactez l’administrateur avec l’identifiant de requête.",
     "按供应商、分组、类型、端点和标签筛选模型。": "Filtrez les modèles par fournisseur, groupe, type, point de terminaison et étiquettes.",
     "选择后立即生效，关闭后保留筛选条件。": "Les changements sont immédiats et conservés à la fermeture.",
     "版本从新到旧": "Version : la plus récente en premier",
@@ -1408,6 +1410,7 @@
     "各模型消耗金额占比": "",
     "给站点起一个好识别的名字": "",
     "根据 Anthropic 协定，/v1/messages 的输入 tokens 仅统计非缓存输入，不包含缓存读取与缓存写入 tokens。": "Selon la convention Anthropic, les tokens d'entrée de /v1/messages ne comptent que les entrées non mises en cache et excluent les tokens de lecture/écriture du cache.",
+    "输入 tokens 按日志中的实际用量口径展示：Anthropic 用量不含缓存，OpenAI 用量包含缓存；不能仅凭请求路径判断。": "Les tokens d’entrée suivent la définition de l’usage enregistrée dans le journal : l’usage Anthropic exclut le cache, tandis que l’usage OpenAI l’inclut. Le chemin de la requête ne suffit pas à le déterminer.",
     "根据模型名称和匹配规则查找模型元数据，优先级：精确 > 前缀 > 后缀 > 包含": "Rechercher les métadonnées du modèle en fonction du nom du modèle et des règles de correspondance, priorité : exact > préfixe > suffixe > contient",
     "跟随日志": "Follow Logs",
     "跟随系统主题设置": "Suivre le thème du système",

@@ -1,5 +1,7 @@
 {
   "translation": {
+    "对话历史缺少思考内容": "Lịch sử hội thoại thiếu nội dung suy luận",
+    "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。": "Gửi lại đầy đủ nội dung suy luận trước đó, hoặc bắt đầu hội thoại mới hay tắt chế độ suy luận rồi thử lại. Nếu vẫn lỗi, hãy liên hệ quản trị viên kèm ID yêu cầu.",
     "按供应商、分组、类型、端点和标签筛选模型。": "Lọc mô hình theo nhà cung cấp, nhóm, loại, endpoint và nhãn.",
     "选择后立即生效，关闭后保留筛选条件。": "Lựa chọn áp dụng ngay và được giữ lại khi đóng.",
     "版本从新到旧": "Phiên bản mới trước",
@@ -1436,6 +1438,7 @@
     "各模型消耗金额占比": "",
     "给站点起一个好识别的名字": "",
     "根据 Anthropic 协定，/v1/messages 的输入 tokens 仅统计非缓存输入，不包含缓存读取与缓存写入 tokens。": "Theo quy ước của Anthropic, input tokens của /v1/messages chỉ tính phần đầu vào không dùng cache và không bao gồm tokens đọc/ghi cache.",
+    "输入 tokens 按日志中的实际用量口径展示：Anthropic 用量不含缓存，OpenAI 用量包含缓存；不能仅凭请求路径判断。": "Token đầu vào được hiển thị theo cách tính sử dụng thực tế trong nhật ký: Anthropic không bao gồm bộ nhớ đệm, còn OpenAI có bao gồm. Không thể xác định chỉ dựa vào đường dẫn yêu cầu.",
     "根据模型名称和匹配规则查找模型元数据，优先级：精确 > 前缀 > 后缀 > 包含": "Tìm siêu dữ liệu mô hình dựa trên tên mô hình và quy tắc khớp, ưu tiên: chính xác > tiền tố > hậu tố > chứa",
     "跟随日志": "Follow Logs",
     "跟随系统主题设置": "Theo cài đặt chủ đề hệ thống",

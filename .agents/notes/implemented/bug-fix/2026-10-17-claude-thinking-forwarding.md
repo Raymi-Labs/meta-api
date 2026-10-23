@@ -22,3 +22,5 @@ dto、relay、Claude、AWS、model_setting 全包回归通过；相关定向竞�
 ## Consequences
 
 供应商可能拒绝未知字段，网关只保真不保证供应商支持。活跃 OpenCode 会话头笔记部分相邻但控制的头和目标不同；保留其覆盖规则，其他 Kimi/日志笔记不相关。
+
+[DeepSeek 历史思考兼容](2026-10-23-deepseek-messages-thinking-history.md)仅在官方明确拒绝缺失历史时改变本请求的思考开关，原有历史 thinking 块与扩展字段仍保真；正常原生请求维持本篇约定。

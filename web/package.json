@@ -60,6 +60,7 @@
     "test:image-playground-static": "node scripts/image-playground-static-guard.test.mjs",
     "test:model-pricing-currency": "node scripts/model-pricing-currency.test.mjs",
     "test:tiered-billing-display": "node scripts/tiered-billing-display.test.mjs",
+    "test:cache-semantics": "node --test scripts/cache-semantics.test.mjs",
     "test:upstream-optimizations": "node scripts/upstream-optimizations.test.mjs && node scripts/playground-account-storage.test.mjs",
     "test:playground-sse": "node scripts/playground-sse.test.mjs",
     "test:ccswitch-config": "node scripts/ccswitch-config.test.mjs",

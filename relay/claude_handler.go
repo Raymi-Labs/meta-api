@@ -229,6 +229,8 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		if httpResp.StatusCode != http.StatusOK {
 			if healedResp, healed := tryHealClaudeParamError(c, info, adaptor, healRequestJSON, httpResp); healed {
 				httpResp = healedResp
+			} else if healedResp, healed := tryHealDeepSeekThinkingError(c, info, adaptor, healRequestJSON, httpResp); healed {
+				httpResp = healedResp
 			}
 		}
 		info.IsStream = info.IsStream || strings.HasPrefix(httpResp.Header.Get("Content-Type"), "text/event-stream")

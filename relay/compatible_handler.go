@@ -209,13 +209,12 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage 
 	}
 
 	if originUsage != nil {
-		service.ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, relayInfo.GetFinalRequestRelayFormat())
+		service.ObserveChannelAffinityUsageCacheByRelayInfo(ctx, usage, relayInfo)
 		service.ObserveSlowTTFT(ctx, relayInfo, usage)
 	}
 
 	// Tiered billing: only determines quota, logging continues through normal path
-	isClaudeUsageSemantic := relayInfo.GetFinalRequestRelayFormat() == types.RelayFormatClaude
-	isClaudeUsageSemantic = isClaudeUsageSemantic || strings.EqualFold(usage.UsageSemantic, "anthropic")
+	isClaudeUsageSemantic := service.IsClaudeUsageSemantic(relayInfo, usage)
 	// Claude parsers and the handler boundary validate this before settlement.
 	claudeCreation, _ := usage.CacheCreationBreakdown()
 	var tieredUsedVars map[string]bool
@@ -441,11 +440,7 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage 
 	if adminRejectReason != "" {
 		other["reject_reason"] = adminRejectReason
 	}
-	// For chat-based calls to the Claude model, tagging is required. Using Claude's rendering logs, the two approaches handle input rendering differently.
-	if isClaudeUsageSemantic {
-		other["claude"] = true
-		other["usage_semantic"] = "anthropic"
-	}
+	service.AppendUsageTokenSemantics(other, isClaudeUsageSemantic)
 	if imageTokens != 0 {
 		other["image"] = true
 		other["image_ratio"] = imageRatio

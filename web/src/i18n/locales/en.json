@@ -1,5 +1,7 @@
 {
   "translation": {
+    "对话历史缺少思考内容": "Conversation history is missing thinking content",
+    "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。": "Return the complete thinking history, or start a new conversation or disable thinking before retrying. If it still fails, contact the administrator with the request ID.",
     "按供应商、分组、类型、端点和标签筛选模型。": "Filter models by provider, group, type, endpoint and tags.",
     "选择后立即生效，关闭后保留筛选条件。": "Changes apply immediately and are kept when you close this panel.",
     "版本从新到旧": "Version: newest first",
@@ -1400,6 +1402,7 @@
     "各模型消耗金额占比": "",
     "给站点起一个好识别的名字": "",
     "根据 Anthropic 协定，/v1/messages 的输入 tokens 仅统计非缓存输入，不包含缓存读取与缓存写入 tokens。": "Per Anthropic conventions, /v1/messages input tokens count only non-cached input and exclude cache read/write tokens.",
+    "输入 tokens 按日志中的实际用量口径展示：Anthropic 用量不含缓存，OpenAI 用量包含缓存；不能仅凭请求路径判断。": "Input tokens use the actual usage semantics recorded in the log: Anthropic usage excludes cache, while OpenAI usage includes it. The request path alone does not determine this.",
     "根据模型名称和匹配规则查找模型元数据，优先级：精确 > 前缀 > 后缀 > 包含": "Find model metadata based on model name and matching rules, priority: exact > prefix > suffix > contains",
     "跟随日志": "Follow Logs",
     "跟随系统主题设置": "Follow system theme",

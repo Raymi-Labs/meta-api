@@ -110,6 +110,7 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 	code := string(err.GetErrorCode())
 	message := strings.ToLower(err.Error())
 	rejectedSampling := RejectedSamplingParameter(err.Error())
+	upstreamError := err.ToOpenAIError()
 	switch {
 	case err.GetErrorCode() == types.ErrorCodeBadResponseBody && err.Error() == ResponsesStreamEmptyCompletedReason:
 		return "empty_response", "响应结束但未识别到有效输出", "请稍后重试；若持续出现，请携带请求 ID 联系管理员。"
@@ -123,6 +124,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "conversation_state", "对话上下文已失效", "请新建会话并重新发送完整上下文。"
 	case !upstream && code == string(types.ErrorCodeModelNotFound):
 		return "model_unavailable", "当前令牌可用范围内未找到该模型", "请使用同一令牌查询 /v1/models，核对模型名称、令牌分组及渠道限制。"
+	case upstream && err.StatusCode == http.StatusBadRequest && upstreamError.Type == "invalid_request_error" && IsDeepSeekMissingThinkingHistory(upstreamError.Message):
+		return "thinking_history", "对话历史缺少思考内容", "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。"
 	case upstream && err.StatusCode == http.StatusBadRequest && rejectedSampling != "":
 		return "sampling_parameter", "上游模型不支持当前采样参数", fmt.Sprintf("请关闭客户端自定义 %s 参数后重试；若仍失败，请携带请求 ID 联系管理员。", rejectedSampling)
 	case code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed):

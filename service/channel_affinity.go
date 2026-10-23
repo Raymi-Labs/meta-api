@@ -12,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/cachex"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
@@ -638,6 +639,16 @@ var channelAffinityUsageCacheStatsLocks [64]sync.Mutex
 // ObserveChannelAffinityUsageCacheByRelayFormat records usage cache stats with a stable rate mode derived from relay format.
 func ObserveChannelAffinityUsageCacheByRelayFormat(c *gin.Context, usage *dto.Usage, relayFormat types.RelayFormat) {
 	ObserveChannelAffinityUsageCacheFromContext(c, usage, cachedTokenRateModeByRelayFormat(relayFormat))
+}
+
+func ObserveChannelAffinityUsageCacheByRelayInfo(c *gin.Context, usage *dto.Usage, info *relaycommon.RelayInfo) {
+	format := info.GetFinalRequestRelayFormat()
+	if IsClaudeUsageSemantic(info, usage) {
+		format = types.RelayFormatClaude
+	} else if format == types.RelayFormatClaude {
+		format = types.RelayFormatOpenAI
+	}
+	ObserveChannelAffinityUsageCacheByRelayFormat(c, usage, format)
 }
 
 func ObserveChannelAffinityUsageCacheFromContext(c *gin.Context, usage *dto.Usage, cachedTokenRateMode string) {

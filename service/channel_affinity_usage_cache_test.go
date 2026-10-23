@@ -5,7 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -22,6 +24,28 @@ func buildChannelAffinityStatsContextForTest(ruleName, usingGroup, keyFP string)
 		KeyFingerprint: keyFP,
 	})
 	return ctx
+}
+
+func TestChannelAffinityCacheUsesActualUpstreamUsageSemantics(t *testing.T) {
+	for _, tc := range []struct {
+		name, semantic, wantMode string
+		format                   types.RelayFormat
+		channel                  int
+	}{
+		{"converted Chat", "", cacheTokenRateModeCachedOverPrompt, types.RelayFormatOpenAI, constant.ChannelTypeOpenAI},
+		{"OpenRouter Messages", "", cacheTokenRateModeCachedOverPrompt, types.RelayFormatClaude, constant.ChannelTypeOpenRouter},
+		{"explicit Anthropic", "anthropic", cacheTokenRateModeCachedOverPromptPlusCached, types.RelayFormatOpenAI, constant.ChannelTypeOpenAI},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rule, group, fp := setupChannelAffinityUsageCacheTest(t)
+			ctx := buildChannelAffinityStatsContextForTest(rule, group, fp)
+			info := &relaycommon.RelayInfo{RelayFormat: types.RelayFormatClaude, FinalRequestRelayFormat: tc.format,
+				ChannelMeta: &relaycommon.ChannelMeta{ChannelType: tc.channel}}
+			ObserveChannelAffinityUsageCacheByRelayInfo(ctx, &dto.Usage{PromptTokens: 100, UsageSemantic: tc.semantic,
+				PromptTokensDetails: dto.InputTokenDetails{CachedTokens: 80}}, info)
+			require.Equal(t, tc.wantMode, GetChannelAffinityUsageCacheStats(rule, group, fp).CachedTokenRateMode)
+		})
+	}
 }
 
 func setupChannelAffinityUsageCacheTest(t *testing.T) (string, string, string) {

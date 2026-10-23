@@ -39,7 +39,10 @@ import {
 import { IconHelpCircle } from '@douyinfe/semi-icons';
 import { CircleAlert, Route, Sparkles, BadgeCheck } from 'lucide-react';
 import { getResponseModelInfo } from '../../../helpers/responseModel';
-import { getCacheCreationBreakdown } from '../../../helpers/cacheCreation';
+import {
+  getCacheCreationBreakdown,
+  promptTokensExcludeCache,
+} from '../../../helpers/cacheCreation';
 
 const colors = [
   'amber',
@@ -492,7 +495,10 @@ function getUsageLogDetailSummary(record, text, billingDisplayMode, t) {
 
   return {
     segments: [
-      ...(other?.claude
+      ...(promptTokensExcludeCache({
+        ...other,
+        prompt_tokens: record.prompt_tokens,
+      })
         ? renderModelPriceSimple({ ...summaryOpts, provider: 'claude' })
         : renderModelPriceSimple({ ...summaryOpts, provider: 'openai' })),
       timeRatioSegment,
@@ -741,7 +747,7 @@ export const getLogsColumns = ({
           {t('输入')}
           <Tooltip
             content={t(
-              '根据 Anthropic 协定，/v1/messages 的输入 tokens 仅统计非缓存输入，不包含缓存读取与缓存写入 tokens。',
+              '输入 tokens 按日志中的实际用量口径展示：Anthropic 用量不含缓存，OpenAI 用量包含缓存；不能仅凭请求路径判断。',
             )}
           >
             <IconHelpCircle className='text-gray-400 cursor-help' />

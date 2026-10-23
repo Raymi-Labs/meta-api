@@ -2,12 +2,10 @@ package service
 
 import (
 	"math"
-	"strings"
 
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
-	"github.com/QuantumNous/new-api/types"
 )
 
 // ObserveGroupHealthCacheUsage captures upstream token counts before settlement.
@@ -42,7 +40,7 @@ func ObserveGroupHealthCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage)
 	if input < 0 || read < 0 {
 		return
 	}
-	if strings.EqualFold(usage.UsageSemantic, "anthropic") || info.GetFinalRequestRelayFormat() == types.RelayFormatClaude {
+	if IsClaudeUsageSemantic(info, usage) {
 		creation := int64(usage.PromptTokensDetails.CachedCreationTokens)
 		if creation == 0 {
 			five, hour := int64(usage.ClaudeCacheCreation5mTokens), int64(usage.ClaudeCacheCreation1hTokens)

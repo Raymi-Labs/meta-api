@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,10 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	"github.com/QuantumNous/new-api/relay/channel/claude"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service"
@@ -28,6 +32,77 @@ func (s *claudeUsageSettlement) Refund(*gin.Context)      {}
 func (s *claudeUsageSettlement) Settle(quota int) error {
 	s.quota, s.calls = quota, s.calls+1
 	return nil
+}
+
+func TestMessagesCrossProtocolUsageSettlementAndConsumeLog(t *testing.T) {
+	require.NoError(t, model.DB.Create(&model.User{Id: 9102, Username: "cross_protocol_cache_fixture", Quota: 1000000, Status: common.UserStatusEnabled}).Error)
+	t.Cleanup(func() {
+		model.DB.Where("user_id = ?", 9102).Delete(&model.Log{})
+		model.DB.Unscoped().Delete(&model.User{}, 9102)
+	})
+	for _, tiered := range []bool{false, true} {
+		for _, tc := range []struct {
+			name     string
+			format   types.RelayFormat
+			channel  int
+			semantic string
+			prompt   int
+			isClaude bool
+		}{
+			{"chat", types.RelayFormatOpenAI, constant.ChannelTypeOpenAI, "", 1000, false},
+			{"responses", types.RelayFormatOpenAIResponses, constant.ChannelTypeOpenAI, "", 1000, false},
+			{"openrouter chat", types.RelayFormatOpenAI, constant.ChannelTypeOpenRouter, "", 1000, false},
+			{"openrouter messages", types.RelayFormatClaude, constant.ChannelTypeOpenRouter, "", 1000, false},
+			{"native claude", types.RelayFormatClaude, constant.ChannelTypeAnthropic, "", 300, true},
+			{"explicit anthropic usage", types.RelayFormatOpenAI, constant.ChannelTypeOpenAI, "anthropic", 300, true},
+		} {
+			t.Run(fmt.Sprintf("%s/tiered=%t", tc.name, tiered), func(t *testing.T) {
+				ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+				ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+				requestID := "cross-protocol-cache/" + t.Name()
+				ctx.Set(common.RequestIdKey, requestID)
+				settlement := &claudeUsageSettlement{}
+				info := &relaycommon.RelayInfo{UserId: 9102, UserQuota: 1000000, OriginModelName: "cross-protocol-fixture", StartTime: time.Now(),
+					RelayFormat: types.RelayFormatClaude, FinalRequestRelayFormat: tc.format,
+					RequestConversionChain: []types.RelayFormat{types.RelayFormatClaude, tc.format},
+					ChannelMeta:            &relaycommon.ChannelMeta{ChannelType: tc.channel}, Billing: settlement,
+					PriceData: types.PriceData{ModelRatio: 1, CompletionRatio: 5, CacheRatio: 0.1, CacheCreationRatio: 1.25,
+						CacheCreation5mRatio: 1.25, CacheCreation1hRatio: 2, GroupRatioInfo: types.GroupRatioInfo{GroupRatio: 1}}}
+				if tiered {
+					const expr = `tier("default", p*2+c*10+cr*0.2+cc*2.5+cc1h*4)`
+					info.TieredBillingSnapshot = &billingexpr.BillingSnapshot{BillingMode: "tiered_expr", ExprString: expr,
+						ExprHash: billingexpr.ExprHashString(expr), GroupRatio: 1, QuotaPerUnit: 500000}
+				}
+				usage := &dto.Usage{PromptTokens: tc.prompt, CompletionTokens: 10, UsageSemantic: tc.semantic,
+					PromptTokensDetails: dto.InputTokenDetails{CachedTokens: 600, CachedCreationTokens: 100}}
+				service.PostClaudeConsumeQuota(ctx, info, usage)
+				require.Equal(t, 1, settlement.calls)
+				require.Equal(t, 535, settlement.quota, "300 uncached + 60 cache read + 125 creation + 50 output")
+				require.Equal(t, tc.prompt, usage.PromptTokens, "settlement must not mutate upstream usage")
+				require.Equal(t, &relaycommon.GroupHealthCacheUsage{ReadTokens: 600, InputTokens: 1000}, info.GroupHealthCacheUsage)
+				var logs []model.Log
+				require.NoError(t, model.LOG_DB.Where("request_id = ?", requestID).Find(&logs).Error)
+				require.Len(t, logs, 1)
+				require.Equal(t, 535, logs[0].Quota)
+				require.Equal(t, tc.prompt, logs[0].PromptTokens)
+				require.Equal(t, tc.isClaude, gjson.Get(logs[0].Other, "claude").Bool())
+				wantSemantic, wantPromptSemantic := "openai", "inclusive"
+				if tc.isClaude {
+					wantSemantic, wantPromptSemantic = "anthropic", "non_cache"
+				}
+				require.Equal(t, wantSemantic, gjson.Get(logs[0].Other, "usage_semantic").String())
+				require.Equal(t, wantPromptSemantic, gjson.Get(logs[0].Other, "prompt_tokens_semantic").String())
+				if tiered {
+					require.EqualValues(t, 300, gjson.Get(logs[0].Other, "tiered_params.p").Int())
+					require.EqualValues(t, 1000, gjson.Get(logs[0].Other, "tiered_params.len").Int())
+				}
+				stat, err := model.SumUsedQuota(model.LogTypeConsume, 0, 0, "", "", "", 0, "", requestID, false)
+				require.NoError(t, err)
+				require.InDelta(t, 0.6, stat.CacheGlobalRate, 1e-12)
+				require.Equal(t, 535, stat.Quota)
+			})
+		}
+	}
 }
 
 func TestClaudeUsageSettlementAndConsumeLog(t *testing.T) {

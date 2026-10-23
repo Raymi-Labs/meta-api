@@ -19,7 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { BILLING_PRICING_VARS } from '../constants/billing.constants.js';
 import { formatModelPricingUnitPrice } from './modelPricingCurrency.js';
-import { getCacheCreationBreakdown } from './cacheCreation.js';
+import {
+  getCacheCreationBreakdown,
+  promptTokensExcludeCache,
+} from './cacheCreation.js';
 
 const numberOrZero = (value) => {
   const numeric = Number(value || 0);
@@ -84,12 +87,11 @@ export const resolveTieredLogParams = (record, tier) => {
     record?.audio_input_token_count ?? record?.audio_input,
   );
   const audioOutputTokens = numberOrZero(record?.audio_output);
-  const isClaude =
-    record?.claude === true || record?.usage_semantic === 'anthropic';
+  const excludesCache = promptTokensExcludeCache(record);
 
   let promptPriceTokens = promptTokens;
   let completionPriceTokens = completionTokens;
-  if (!isClaude) {
+  if (!excludesCache) {
     if (hasTierPrice(tier, 'cr')) promptPriceTokens -= cacheReadTokens;
     if (hasTierPrice(tier, 'cc')) promptPriceTokens -= cacheCreation5m;
     if (hasTierPrice(tier, 'cc1h')) promptPriceTokens -= cacheCreation1h;
@@ -106,7 +108,7 @@ export const resolveTieredLogParams = (record, tier) => {
   return {
     p: Math.max(promptPriceTokens, 0),
     c: Math.max(completionPriceTokens, 0),
-    len: isClaude
+    len: excludesCache
       ? promptTokens + cacheReadTokens + cacheCreation5m + cacheCreation1h
       : promptTokens,
     cr: cacheReadTokens,

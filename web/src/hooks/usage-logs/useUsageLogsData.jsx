@@ -42,6 +42,11 @@ import {
 import { getRequestFailureDetails } from '../../helpers/requestFailure';
 import { getResponseModelInfo } from '../../helpers/responseModel';
 import {
+  getCacheCreationBreakdown,
+  getNonCachePromptTokens,
+  promptTokensExcludeCache,
+} from '../../helpers/cacheCreation';
+import {
   buildUsageLogQuery,
   readLogExportError,
 } from '../../helpers/usageLogExport';
@@ -653,6 +658,12 @@ export const useLogsData = () => {
       logs[i].timestamp2string = timestamp2string(logs[i].created_at);
       logs[i].key = logs[i].id;
       let other = getLogOther(logs[i].other);
+      const promptExcludesCache = promptTokensExcludeCache({
+        ...other,
+        prompt_tokens: logs[i].prompt_tokens,
+      });
+      const useCachePartitionBilling =
+        promptExcludesCache || getCacheCreationBreakdown(other || {}).total > 0;
       let expandDataLocal = [];
 
       if (logs[i].type === 4 && other?.pulse_reward && logs[i].content) {
@@ -733,7 +744,7 @@ export const useLogsData = () => {
         if (other?.billing_mode !== 'tiered_expr') {
           expandDataLocal.push({
             key: t('日志详情'),
-            value: other?.claude
+            value: useCachePartitionBilling
               ? renderClaudeLogContent({
                   ...other,
                   displayMode: billingDisplayMode,
@@ -828,8 +839,11 @@ export const useLogsData = () => {
           };
           if (other?.ws || other?.audio) {
             content = renderAudioModelPrice(logOpts);
-          } else if (other?.claude) {
-            content = renderClaudeModelPrice(logOpts);
+          } else if (useCachePartitionBilling) {
+            content = renderClaudeModelPrice({
+              ...logOpts,
+              prompt_tokens: getNonCachePromptTokens(logOpts),
+            });
           } else {
             content = renderModelPrice(logOpts);
           }

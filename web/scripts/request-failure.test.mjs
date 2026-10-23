@@ -44,8 +44,12 @@ test('legacy errors are readable and successful usage has no failure panel', () 
   assert.deepEqual(getRequestFailureDetails({ type: 2 }, t), []);
 });
 
-test('model and sampling diagnoses translate without exposing adjustment attempts', () => {
+test('model, sampling and thinking diagnoses translate without exposing adjustment attempts', () => {
   const diagnoses = [
+    [
+      '对话历史缺少思考内容',
+      '请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。',
+    ],
     [
       '当前令牌可用范围内未找到该模型',
       '请使用同一令牌查询 /v1/models，核对模型名称、令牌分组及渠道限制。',

@@ -524,7 +524,7 @@ func getDisplayedInputTokens(promptTokens, cacheReadTokens, cacheWriteTokens int
 	if promptTokens < 0 {
 		promptTokens = 0
 	}
-	if other.Claude || strings.EqualFold(other.UsageSemantic, "anthropic") {
+	if promptTokensExcludeCache(promptTokens, cacheReadTokens, cacheWriteTokens, other) {
 		return promptTokens + cacheReadTokens + cacheWriteTokens
 	}
 	return promptTokens
@@ -798,12 +798,40 @@ type tokenModelStatRow struct {
 }
 
 type tokenUsageOtherInfo struct {
-	CacheTokens           int    `json:"cache_tokens"`
-	CacheCreationTokens   int    `json:"cache_creation_tokens"`
-	CacheCreationTokens5m int    `json:"cache_creation_tokens_5m"`
-	CacheCreationTokens1h int    `json:"cache_creation_tokens_1h"`
-	Claude                bool   `json:"claude"`
-	UsageSemantic         string `json:"usage_semantic"`
+	CacheTokens           int      `json:"cache_tokens"`
+	CacheCreationTokens   int      `json:"cache_creation_tokens"`
+	CacheCreationTokens5m int      `json:"cache_creation_tokens_5m"`
+	CacheCreationTokens1h int      `json:"cache_creation_tokens_1h"`
+	Claude                bool     `json:"claude"`
+	UsageSemantic         string   `json:"usage_semantic"`
+	PromptTokensSemantic  string   `json:"prompt_tokens_semantic"`
+	BillingMode           string   `json:"billing_mode"`
+	RequestConversion     []string `json:"request_conversion"`
+	TieredParams          *struct {
+		Len *float64 `json:"len"`
+	} `json:"tiered_params"`
+}
+
+// promptTokensExcludeCache interprets the stored prompt, not the client route.
+// Legacy Messages logs marked every upstream as Anthropic, while OpenRouter
+// additionally removed caches before storing prompt. A conversion chain alone
+// cannot distinguish them. The saved tier input length can prove inclusivity.
+func promptTokensExcludeCache(promptTokens, cacheReadTokens, cacheWriteTokens int, other tokenUsageOtherInfo) bool {
+	switch other.PromptTokensSemantic {
+	case "inclusive":
+		return false
+	case "non_cache":
+		return true
+	}
+	legacyClaude := other.Claude || strings.EqualFold(other.UsageSemantic, "anthropic")
+	chain := other.RequestConversion
+	if legacyClaude && promptTokens >= 0 && (cacheReadTokens > 0 || cacheWriteTokens > 0) &&
+		other.BillingMode == "tiered_expr" && len(chain) >= 2 && chain[0] == "Claude Messages" &&
+		(chain[len(chain)-1] == "OpenAI Compatible" || chain[len(chain)-1] == "OpenAI Responses") &&
+		other.TieredParams != nil && other.TieredParams.Len != nil && *other.TieredParams.Len == float64(promptTokens) {
+		return false
+	}
+	return legacyClaude
 }
 
 func sumCacheCreationTokens(other tokenUsageOtherInfo) int {
@@ -849,7 +877,7 @@ func getPromptCacheSummaryFromOther(rawOther string) (cacheReadTokens int, cache
 }
 
 func normalizeInputTokens(promptTokens, cacheReadTokens, cacheCreationTokens int, other tokenUsageOtherInfo) int {
-	if other.Claude || strings.EqualFold(other.UsageSemantic, "anthropic") {
+	if promptTokensExcludeCache(promptTokens, cacheReadTokens, cacheCreationTokens, other) {
 		if promptTokens < 0 {
 			return 0
 		}

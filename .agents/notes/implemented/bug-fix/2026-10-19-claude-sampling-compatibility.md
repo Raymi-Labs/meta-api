@@ -32,3 +32,5 @@ Claude 渠道将 Chat 转为 Messages 后，上游明确返回 `does not support
 - 未向真实付费供应商发送复测请求，未部署生产；模拟通过不代表上游现场已经恢复。
 
 活跃笔记审计：Claude thinking/beta、审核身份头笔记部分相邻，保留其协议与身份边界；Kimi 请求保真、DeepSeek Responses 的参数覆盖约定不属于本次 Claude 修复。无现有采样自愈笔记归属。
+
+[DeepSeek 历史思考兼容](2026-10-23-deepseek-messages-thinking-history.md)复用错误体读取与调整记录，但使用独立的官方域名、错误文案和本次降级边界，不扩展采样参数删除范围。
