@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -103,8 +104,8 @@ func GetAndValidateEmbeddingRequest(c *gin.Context, relayMode int) (*dto.Embeddi
 		return nil, types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
 
-	if embeddingRequest.Input == nil {
-		return nil, fmt.Errorf("input is empty")
+	if embeddingRequest == nil || embeddingRequest.Input == nil {
+		return nil, types.NewErrorWithStatusCode(fmt.Errorf("input is empty"), types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 	}
 	if relayMode == relayconstant.RelayModeModerations && embeddingRequest.Model == "" {
 		embeddingRequest.Model = "omni-moderation-latest"

@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| Gemini 兼容向量输入校验 | [适配器校验](../relay/channel/gemini/embedding_input.go)、[通用空值保护](../relay/helper/valid_request.go)、[HTTP 与退款回归](../controller/relay_gemini_embedding_test.go) | `/v1/embeddings` 转 Gemini 接受完整非空文本批次；非法项整批 400、不重试、已有预扣退款 | 保留原始文本/顺序/维度，不改变共享 ParseInput 与 OpenAI token-ID 输入；原生 content.parts 不新增限制，不代表原生 batch 全链已验收 |
 | 使用日志模型名称复制 | [模型列及详情](../web/src/components/table/usage-logs/UsageLogsColumnDefs.jsx)、[浏览器回归](../web/scripts/usage-model-copy.browser.mjs) | 请求并计费模型、映射后模型和上游声明模型共用既有复制回调；普通用户及管理员沿用原日志可见性 | 只复制已展示的名称；上游声明仍仅供排查，不证明实际模型身份，不改变计费、接口和权限 |
 | Kling 单密钥与 AK/SK 鉴权 | [适配器](../relay/channel/task/kling/adaptor.go)、[回归](../relay/channel/task/kling/adaptor_test.go) | 原生任务提交与轮询共用密钥解析；单密钥作 Bearer，AK/SK 签发 HS256 JWT；sk- 网关保留 /kling 前缀 | 首尾空白规范化，空值及无效 AK/SK 本地失败；保留 Header Override、模型、计费和终态，不代表真实供应商已验收 |
 | 额度不足持续调用提醒 | [个人设置](../web/src/components/settings/personal/cards/NotificationSettings.jsx)、[通知记录](../web/src/components/common/QuotaNoticeHistory.jsx)、[最终观察及发送](../service/quota_notice.go)、[持久状态](../model/quota_notice.go) | 本人 `/api/user/quota-notices`、管理员 `/api/user/:id/quota-notices`；默认开启，复用原通知媒介；首次5分钟内3次且跨60秒，后续30分钟/6小时，用户合并滚动24小时最多4次 | 仅可信本地额度最终拒绝；回退成功不触发；恢复不重置日限额；SMTP提交与送达分开、未知保守占位；审计90天，用户可关闭；不修改API错误或计费。见[决策](../.agents/notes/implemented/feature/2026-10-24-quota-blocked-notifications.md) |

@@ -194,13 +194,9 @@ func (a *Adaptor) ConvertRerankRequest(c *gin.Context, relayMode int, request dt
 }
 
 func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.EmbeddingRequest) (any, error) {
-	if request.Input == nil {
-		return nil, errors.New("input is required")
-	}
-
-	inputs := request.ParseInput()
-	if len(inputs) == 0 {
-		return nil, errors.New("input is empty")
+	inputs, err := plainTextEmbeddingInputs(request.Input)
+	if err != nil {
+		return nil, err
 	}
 	// We always build a batch-style payload with `requests`, so ensure we call the
 	// batch endpoint upstream to avoid payload/endpoint mismatches.
