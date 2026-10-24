@@ -75,6 +75,30 @@ html.dark .home-enterprise {
   z-index: -1;
   pointer-events: none;
 }
+.yh-world-map-svg,
+.yh-world-map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.yh-world-map-svg {
+  z-index: 1;
+}
+
+.yh-world-map-canvas {
+  visibility: hidden;
+}
+
+.yh-world-map[data-animating] .yh-map-land {
+  visibility: hidden;
+}
+
+.yh-world-map[data-animating] .yh-world-map-canvas {
+  visibility: visible;
+}
+
 html.dark .yh-world-map {
   color: #5c7fb9;
   opacity: 0.65;
