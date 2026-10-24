@@ -69,7 +69,9 @@
     "test:auth-redirect": "node scripts/auth-redirect.test.mjs",
     "test:world-map-motion": "node --test scripts/world-map-motion.test.mjs",
     "test:request-failure": "node scripts/request-failure.test.mjs",
-    "test:pulse-settings": "node scripts/pulse-settings.test.mjs"
+    "test:pulse-settings": "node scripts/pulse-settings.test.mjs",
+    "test:invite-promotion": "bun scripts/invite-promotion.test.mjs",
+    "test:invite-promotion:browser": "bun scripts/invite-promotion.browser.mjs"
   },
   "eslintConfig": {
     "extends": [

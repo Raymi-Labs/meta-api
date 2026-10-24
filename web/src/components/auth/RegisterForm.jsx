@@ -64,6 +64,7 @@ import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 import Turnstile from '../common/ResilientTurnstile';
+import InviteBenefits from './InviteBenefits';
 import {
   buildAuthPathWithNext,
   getSafeLoginRedirectPath,
@@ -841,7 +842,9 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className='relative overflow-hidden bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8'>
+    <div
+      className={`relative overflow-hidden bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${affCode ? 'invite-register-page' : ''}`}
+    >
       {/* 背景模糊晕染球 */}
       <div
         className='blur-ball blur-ball-indigo'
@@ -851,28 +854,35 @@ const RegisterForm = () => {
         className='blur-ball blur-ball-teal'
         style={{ top: '50%', left: '-120px' }}
       />
-      <div className='w-full max-w-sm mt-[60px]'>
-        {turnstileEnabled && (
-          <div className='flex justify-center mb-4'>
-            <Turnstile
-              sitekey={turnstileSiteKey}
-              onLoad={(_, boundTurnstile) => {
-                turnstileWidgetRef.current = boundTurnstile;
-              }}
-              onVerify={(token, boundTurnstile) => {
-                turnstileWidgetRef.current = boundTurnstile;
-                setTurnstileToken(token);
-              }}
-              onExpire={() => setTurnstileToken('')}
-              onError={() => setTurnstileToken('')}
-              onTimeout={() => setTurnstileToken('')}
-            />
-          </div>
-        )}
-        {showEmailRegister || !hasOAuthRegisterOptions
-          ? renderEmailRegisterForm()
-          : renderOAuthOptions()}
-        {renderWeChatLoginModal()}
+      <div
+        className={
+          affCode ? 'invite-register-layout' : 'w-full max-w-sm mt-[60px]'
+        }
+      >
+        {affCode && <InviteBenefits />}
+        <div id='invite-register-form' className='w-full max-w-sm mx-auto'>
+          {turnstileEnabled && (
+            <div className='flex justify-center mb-4'>
+              <Turnstile
+                sitekey={turnstileSiteKey}
+                onLoad={(_, boundTurnstile) => {
+                  turnstileWidgetRef.current = boundTurnstile;
+                }}
+                onVerify={(token, boundTurnstile) => {
+                  turnstileWidgetRef.current = boundTurnstile;
+                  setTurnstileToken(token);
+                }}
+                onExpire={() => setTurnstileToken('')}
+                onError={() => setTurnstileToken('')}
+                onTimeout={() => setTurnstileToken('')}
+              />
+            </div>
+          )}
+          {showEmailRegister || !hasOAuthRegisterOptions
+            ? renderEmailRegisterForm()
+            : renderOAuthOptions()}
+          {renderWeChatLoginModal()}
+        </div>
       </div>
     </div>
   );

@@ -813,12 +813,6 @@ func SetAffCode(c *gin.Context) {
 	})
 }
 
-// InviteRedirect 短邀请链接 /i/:code → 302 跳转到 /register?aff=code
-func InviteRedirect(c *gin.Context) {
-	code := strings.TrimSpace(c.Param("code"))
-	c.Redirect(http.StatusFound, "/register?aff="+url.QueryEscape(code))
-}
-
 func GetSelf(c *gin.Context) {
 	id := c.GetInt("id")
 	userRole := c.GetInt("role")

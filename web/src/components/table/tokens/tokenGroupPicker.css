@@ -12,6 +12,40 @@
   max-height: calc(100dvh - 180px);
   overflow-y: auto;
 }
+.token-create-dialog .token-editor__name .semi-form-field {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(var(--semi-blue-5), 0.22);
+  border-radius: 10px;
+  background: rgba(var(--semi-blue-5), 0.05);
+}
+.token-create-dialog .token-editor__name .semi-form-field-label-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--semi-color-text-0);
+}
+.token-create-dialog .token-editor__name .semi-input-wrapper {
+  min-height: 40px;
+  background: var(--semi-color-bg-0);
+  border-color: rgba(var(--semi-blue-5), 0.4);
+}
+.token-create-dialog .token-editor__name .semi-input-wrapper:focus-within {
+  border-color: var(--semi-color-primary);
+  box-shadow: 0 0 0 2px var(--semi-color-primary-light-default);
+}
+.token-create-dialog
+  .token-editor__name
+  .semi-form-field:has(.semi-input-wrapper-error) {
+  border-color: var(--semi-color-danger);
+  background: var(--semi-color-danger-light-default);
+}
+.token-create-dialog .token-editor__name .semi-input-wrapper-error,
+.token-create-dialog
+  .token-editor__name
+  .semi-input-wrapper-error:focus-within {
+  border-color: var(--semi-color-danger);
+  box-shadow: 0 0 0 2px var(--semi-color-danger-light-default);
+}
 .token-editor__footer {
   display: flex;
   justify-content: flex-end;

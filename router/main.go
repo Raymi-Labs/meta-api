@@ -21,7 +21,7 @@ func SetRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 	SetRelayRouter(router)
 	SetVideoRouter(router)
 	// 短邀请链接 /i/<code> → 302 到 /register?aff=<code>（必须在 SetWebRouter 之前注册）
-	router.GET("/i/:code", controller.InviteRedirect)
+	router.GET("/i/:code", middleware.InvitePromotionRateLimit(), controller.InviteRedirect)
 	frontendBaseUrl := os.Getenv("FRONTEND_BASE_URL")
 	if common.IsMasterNode && frontendBaseUrl != "" {
 		frontendBaseUrl = ""

@@ -314,9 +314,35 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'Claude · 优质',
   ]);
   assert.equal(await page.locator('#auto_group_fallback').getAttribute('aria-checked'), 'true');
-  await name().fill('simple token');
   await choose('OpenAI · 独享账号');
   await enabled(create());
+  for (const value of ['', '   ']) {
+    await name().fill(value);
+    await create().click();
+    await page
+      .locator('.token-editor__name .semi-input-wrapper-error')
+      .waitFor();
+    assert(await page.getByText('请输入令牌名称', { exact: true }).isVisible());
+    assert(await name().evaluate((el) => el === document.activeElement));
+    assert.equal(writes.length, 0);
+    const colors = await page
+      .locator('.token-editor__name .semi-input-wrapper')
+      .evaluate((el) => ({
+        actual: getComputedStyle(el).borderTopColor,
+        error: getComputedStyle(document.body)
+          .getPropertyValue('--semi-color-danger')
+          .trim(),
+      }));
+    assert(colors.actual && colors.error);
+  }
+  await page.screenshot({
+    path: path.join(artifacts, 'name-required.png'),
+    fullPage: true,
+  });
+  await name().fill('simple token');
+  await page
+    .locator('.token-editor__name .semi-input-wrapper-error')
+    .waitFor({ state: 'hidden' });
   await row('OpenAI · 优质')
     .locator('.token-group-picker__description')
     .click();
