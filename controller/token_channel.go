@@ -82,8 +82,8 @@ func serializeChannelLimitIDs(ids []int) string {
 	return strings.Join(parts, ",")
 }
 
-func resolveRequestedTokenChannelModels(userID int, requestedGroup string, modelLimits string, modelLimitsEnabled bool) ([]string, error) {
-	models, err := resolveRequestedTokenModels(userID, requestedGroup)
+func resolveRequestedTokenChannelModels(userID int, requestedGroup string, modelLimits string, modelLimitsEnabled bool, fallback ...bool) ([]string, error) {
+	models, err := resolveRequestedTokenModels(userID, requestedGroup, fallback...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,12 +114,12 @@ func resolveRequestedTokenChannelModels(userID int, requestedGroup string, model
 	return filtered, nil
 }
 
-func buildTokenChannelOptions(userID int, requestedGroup string, modelLimits string, modelLimitsEnabled bool) ([]tokenChannelOption, error) {
-	groups, err := resolveRequestedTokenGroups(userID, requestedGroup)
+func buildTokenChannelOptions(userID int, requestedGroup string, modelLimits string, modelLimitsEnabled bool, fallback ...bool) ([]tokenChannelOption, error) {
+	groups, err := resolveRequestedTokenGroups(userID, requestedGroup, fallback...)
 	if err != nil {
 		return nil, err
 	}
-	models, err := resolveRequestedTokenChannelModels(userID, requestedGroup, modelLimits, modelLimitsEnabled)
+	models, err := resolveRequestedTokenChannelModels(userID, requestedGroup, modelLimits, modelLimitsEnabled, fallback...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func mergePersistedTokenChannelOptions(options []tokenChannelOption, channelLimi
 	return merged, nil
 }
 
-func normalizeTokenChannelLimitsForSave(userID int, role int, group string, modelLimits string, modelLimitsEnabled bool, channelLimits string, channelLimitsEnabled bool, existingChannelLimits string) (bool, string, error) {
+func normalizeTokenChannelLimitsForSave(userID int, role int, group string, modelLimits string, modelLimitsEnabled bool, channelLimits string, channelLimitsEnabled bool, existingChannelLimits string, fallback ...bool) (bool, string, error) {
 	normalizedIDs := normalizeChannelLimitIDs(channelLimits)
 	if role < common.RoleAdminUser {
 		if channelLimitsEnabled || len(normalizedIDs) > 0 || strings.TrimSpace(channelLimits) != "" {
@@ -275,7 +275,7 @@ func normalizeTokenChannelLimitsForSave(userID int, role int, group string, mode
 		return false, "", nil
 	}
 
-	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled)
+	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled, fallback...)
 	if err != nil {
 		return false, "", err
 	}
@@ -311,6 +311,8 @@ func GetTokenChannels(c *gin.Context) {
 	group := strings.TrimSpace(c.Query("group"))
 	modelLimits := strings.TrimSpace(c.Query("model_limits"))
 	modelLimitsEnabled := modelLimits != ""
+	fallbackRaw, fallbackSet := c.GetQuery("auto_group_fallback")
+	fallback, _ := strconv.ParseBool(fallbackRaw)
 
 	tokenIDRaw := strings.TrimSpace(c.Query("token_id"))
 	tokenChannelLimitIDs := []int{}
@@ -332,10 +334,16 @@ func GetTokenChannels(c *gin.Context) {
 			modelLimits = token.ModelLimits
 			modelLimitsEnabled = token.ModelLimitsEnabled
 		}
+		if !fallbackSet {
+			fallback = token.AllowsGroupFallback()
+		}
+		if token.SourceType == model.TokenSourceTypeSellableToken {
+			fallback = false
+		}
 		tokenChannelLimitIDs = token.GetChannelLimitIDs()
 	}
 
-	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled)
+	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled, fallback)
 	if err != nil {
 		common.ApiError(c, err)
 		return

@@ -194,11 +194,11 @@ export default function GroupRatioSettings(props) {
 
       <Form.Section text={t('自动分组')}>
         <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('令牌分组设为 auto 时，按以下顺序依次尝试选择可用分组，排在前面的优先级更高')}
+          {t('开启故障自动切组后，先使用首选分组，再按以下顺序尝试有权限的备用分组；旧 auto 令牌也沿用此顺序。')}
         </Text>
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-            <Form.Slot label={t('默认使用auto分组')}>
+            <Form.Slot label={t('新令牌默认开启故障自动切组')}>
               <div className='flex items-center gap-2'>
                 <Switch
                   checked={!!inputs.DefaultUseAutoGroup}
@@ -214,7 +214,7 @@ export default function GroupRatioSettings(props) {
                 />
               </div>
               <Text type='tertiary' size='small' style={{ marginTop: 4 }}>
-                {t('开启后创建令牌默认选择auto分组，初始令牌也将设为auto')}
+                {t('开启后，新建令牌默认启用自动切组；用户仍需选择首选分组，已有令牌保持原设置。')}
               </Text>
             </Form.Slot>
           </Col>
@@ -371,7 +371,7 @@ export default function GroupRatioSettings(props) {
         <Row gutter={16}>
           <Col xs={24} sm={16}>
             <Form.TextArea
-              label={t('自动分组auto，从第一个开始选择')}
+              label={t('自动切组顺序（也适用于旧 auto 令牌）')}
               placeholder={t('为一个 JSON 文本')}
               field={'AutoGroups'}
               autosize={{ minRows: 6, maxRows: 12 }}
@@ -404,7 +404,7 @@ export default function GroupRatioSettings(props) {
           <Col span={16}>
             <Form.Switch
               label={t(
-                '创建令牌默认选择auto分组，初始令牌也将设为auto（否则留空，为用户默认分组）',
+                '新建及初始令牌默认开启故障自动切组，初始令牌以用户默认组为首选；已有令牌保持原设置。',
               )}
               field={'DefaultUseAutoGroup'}
               onChange={(value) =>
@@ -510,7 +510,7 @@ export default function GroupRatioSettings(props) {
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
                 <Text strong>{t('自动分组')}</Text>{' — '}
-                {t('令牌分组设为 auto 时，系统按优先级顺序自动选择一个可用分组。')}
+                {t('开启故障自动切组后，首选分组不可用时按配置顺序选择备用分组。')}
               </Paragraph>
             </GuideSection>
           </div>
@@ -598,7 +598,7 @@ export default function GroupRatioSettings(props) {
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('自动分组选择')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
-              {t('当令牌分组设为 auto 时，系统按列表顺序依次选择可用分组。排在前面的优先级更高。')}
+              {t('首选分组不可用时，按列表顺序尝试用户有权限的备用分组。旧 auto 令牌从列表第一项开始选择。')}
             </Paragraph>
 
             <GuideSection title={t('查看示例')}>
@@ -609,7 +609,7 @@ export default function GroupRatioSettings(props) {
                 {`1. default    ${t('最高优先级')}\n2. vip`}
               </CodeBlock>
               <Paragraph size='small' style={{ marginTop: 6, lineHeight: 1.6 }}>
-                {t('开启「默认使用 auto 分组」后，新建令牌和初始令牌都会自动设为 auto。')}
+                {t('默认开关只影响新建及初始令牌，不改变已有令牌；切组后按实际使用分组计费。')}
               </Paragraph>
             </GuideSection>
 

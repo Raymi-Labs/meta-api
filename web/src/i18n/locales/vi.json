@@ -1,5 +1,17 @@
 {
   "translation": {
+    "故障时自动切换分组（Auto）": "Tự động chuyển nhóm khi lỗi (Auto)",
+    "优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。": "Ưu tiên nhóm đã chọn. Nếu không khả dụng, thử nhóm khác theo thứ tự cấu hình và tính phí theo nhóm thực tế sử dụng. Khi tắt, chỉ dùng nhóm đã chọn.",
+    "首选分组不可用时自动切组，按实际使用分组计费。": "Tự động chuyển khi nhóm ưu tiên không khả dụng; tính phí theo nhóm thực tế sử dụng.",
+    "此处为首选分组倍率；自动切组后按实际使用分组计费，请以使用日志为准。": "Đây là hệ số của nhóm ưu tiên. Sau khi chuyển, tính phí theo nhóm thực tế; xem nhật ký sử dụng.",
+    "开启故障自动切组后，先使用首选分组，再按以下顺序尝试有权限的备用分组；旧 auto 令牌也沿用此顺序。": "Khi bật tự động chuyển, dùng nhóm ưu tiên trước rồi thử các nhóm dự phòng được phép theo thứ tự bên dưới. Token auto cũ cũng dùng thứ tự này.",
+    "新令牌默认开启故障自动切组": "Mặc định bật tự động chuyển nhóm khi lỗi cho token mới",
+    "开启后，新建令牌默认启用自动切组；用户仍需选择首选分组，已有令牌保持原设置。": "Khi bật, token mới mặc định tự động chuyển nhóm. Người dùng vẫn chọn nhóm ưu tiên; token hiện có giữ nguyên cài đặt.",
+    "自动切组顺序（也适用于旧 auto 令牌）": "Thứ tự tự động chuyển nhóm (cũng áp dụng cho token auto cũ)",
+    "新建及初始令牌默认开启故障自动切组，初始令牌以用户默认组为首选；已有令牌保持原设置。": "Mặc định bật tự động chuyển cho token mới và token ban đầu. Token ban đầu ưu tiên nhóm mặc định của người dùng; token hiện có giữ nguyên cài đặt.",
+    "开启故障自动切组后，首选分组不可用时按配置顺序选择备用分组。": "Khi bật tự động chuyển, chọn nhóm dự phòng theo thứ tự cấu hình nếu nhóm ưu tiên không khả dụng.",
+    "首选分组不可用时，按列表顺序尝试用户有权限的备用分组。旧 auto 令牌从列表第一项开始选择。": "Nếu nhóm ưu tiên không khả dụng, thử nhóm dự phòng được phép theo thứ tự danh sách. Token auto cũ bắt đầu từ mục đầu tiên.",
+    "默认开关只影响新建及初始令牌，不改变已有令牌；切组后按实际使用分组计费。": "Mặc định chỉ ảnh hưởng token mới và ban đầu, không đổi token hiện có. Sau khi chuyển, tính phí theo nhóm thực tế sử dụng.",
     "对话历史缺少思考内容": "Lịch sử hội thoại thiếu nội dung suy luận",
     "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。": "Gửi lại đầy đủ nội dung suy luận trước đó, hoặc bắt đầu hội thoại mới hay tắt chế độ suy luận rồi thử lại. Nếu vẫn lỗi, hãy liên hệ quản trị viên kèm ID yêu cầu.",
     "按供应商、分组、类型、端点和标签筛选模型。": "Lọc mô hình theo nhà cung cấp, nhóm, loại, endpoint và nhãn.",

@@ -1,5 +1,17 @@
 {
   "translation": {
+    "故障时自动切换分组（Auto）": "Automatically switch groups on failure (Auto)",
+    "优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。": "Use the selected group first. If unavailable, try other available groups in the configured order and bill at the group actually used. When off, only use the selected group.",
+    "首选分组不可用时自动切组，按实际使用分组计费。": "Switch groups when the preferred group is unavailable; billing follows the group actually used.",
+    "此处为首选分组倍率；自动切组后按实际使用分组计费，请以使用日志为准。": "This is the preferred group’s multiplier. After switching, billing follows the group actually used; check usage logs.",
+    "开启故障自动切组后，先使用首选分组，再按以下顺序尝试有权限的备用分组；旧 auto 令牌也沿用此顺序。": "With automatic fallback on, use the preferred group first, then permitted backup groups in the order below. Legacy auto tokens use the same order.",
+    "新令牌默认开启故障自动切组": "Enable automatic fallback by default for new tokens",
+    "开启后，新建令牌默认启用自动切组；用户仍需选择首选分组，已有令牌保持原设置。": "When enabled, new tokens default to automatic fallback. Users still select a preferred group; existing tokens keep their settings.",
+    "自动切组顺序（也适用于旧 auto 令牌）": "Automatic fallback order (also used by legacy auto tokens)",
+    "新建及初始令牌默认开启故障自动切组，初始令牌以用户默认组为首选；已有令牌保持原设置。": "Enable automatic fallback for new and initial tokens. Initial tokens prefer the user’s default group; existing tokens keep their settings.",
+    "开启故障自动切组后，首选分组不可用时按配置顺序选择备用分组。": "With automatic fallback enabled, select backup groups in configured order when the preferred group is unavailable.",
+    "首选分组不可用时，按列表顺序尝试用户有权限的备用分组。旧 auto 令牌从列表第一项开始选择。": "When the preferred group is unavailable, try permitted backup groups in list order. Legacy auto tokens start at the first entry.",
+    "默认开关只影响新建及初始令牌，不改变已有令牌；切组后按实际使用分组计费。": "The default only affects new and initial tokens, not existing tokens. After switching, billing follows the group actually used.",
     "对话历史缺少思考内容": "Conversation history is missing thinking content",
     "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。": "Return the complete thinking history, or start a new conversation or disable thinking before retrying. If it still fails, contact the administrator with the request ID.",
     "按供应商、分组、类型、端点和标签筛选模型。": "Filter models by provider, group, type, endpoint and tags.",

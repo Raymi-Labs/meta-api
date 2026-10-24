@@ -164,6 +164,22 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 	if param == nil {
 		return nil, "", errors.New("retry param is nil")
 	}
+	if UsesPreferredGroupFallback(param.Ctx, param.TokenGroup) {
+		candidates, group, err := preferredGroupCandidates(param)
+		if err != nil || len(candidates) == 0 {
+			return nil, group, err
+		}
+		// Preserve the existing weighted selection within this priority tier.
+		ids := make([]int, 0, len(candidates))
+		for _, channel := range candidates {
+			ids = append(ids, channel.Id)
+		}
+		channel, err := model.GetRandomSatisfiedChannel(group, param.ModelName, 0, ids, param.ExcludeChannels, buildChannelSelectionFilters(param)...)
+		if err == nil && channel != nil {
+			commitPreferredGroupSelection(param, group)
+		}
+		return channel, group, err
+	}
 	return cacheGetRandomSatisfiedChannel(param)
 }
 
@@ -255,6 +271,9 @@ func CacheGetSatisfiedChannelCandidates(param *RetryParam) ([]*model.Channel, st
 	if param == nil {
 		return nil, "", errors.New("retry param is nil")
 	}
+	if UsesPreferredGroupFallback(param.Ctx, param.TokenGroup) {
+		return preferredGroupCandidates(param)
+	}
 
 	selectGroup := param.TokenGroup
 	userGroup := common.GetContextKeyString(param.Ctx, constant.ContextKeyUserGroup)
@@ -316,6 +335,10 @@ func CacheGetSatisfiedChannelCandidates(param *RetryParam) ([]*model.Channel, st
 // 提交 auto 分组的选择状态。候选读取阶段不提前修改这些状态，避免所有渠道满载等待时
 // 把 auto 分组索引推进到末尾，导致后续轮询无法重新探测容量。
 func CommitChannelCandidateSelection(param *RetryParam, selectGroup string) {
+	if param != nil && UsesPreferredGroupFallback(param.Ctx, param.TokenGroup) && selectGroup != "" {
+		commitPreferredGroupSelection(param, selectGroup)
+		return
+	}
 	if param == nil || param.TokenGroup != "auto" || selectGroup == "" {
 		return
 	}

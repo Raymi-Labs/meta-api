@@ -21,6 +21,7 @@ func GetTokenModels(c *gin.Context) {
 	tokenID := strings.TrimSpace(c.Query("token_id"))
 	requestedGroup := strings.TrimSpace(c.Query("group"))
 	detail, _ := strconv.ParseBool(c.Query("detail"))
+	fallback, _ := strconv.ParseBool(c.Query("auto_group_fallback"))
 
 	var (
 		models []string
@@ -42,7 +43,7 @@ func GetTokenModels(c *gin.Context) {
 		}
 		models, err = resolveTokenAllowedModels(userId, token)
 	} else {
-		models, err = resolveRequestedTokenModels(userId, requestedGroup)
+		models, err = resolveRequestedTokenModels(userId, requestedGroup, fallback)
 	}
 	if err != nil {
 		common.ApiError(c, err)
@@ -50,7 +51,7 @@ func GetTokenModels(c *gin.Context) {
 	}
 
 	if detail {
-		modelOptions, optionErr := buildTokenModelOptions(userId, token, requestedGroup)
+		modelOptions, optionErr := buildTokenModelOptions(userId, token, requestedGroup, fallback)
 		if optionErr != nil {
 			common.ApiError(c, optionErr)
 			return

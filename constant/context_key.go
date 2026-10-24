@@ -21,6 +21,7 @@ const (
 	ContextKeyTokenChannelLimitEnabled ContextKey = "token_channel_limit_enabled"
 	ContextKeyTokenChannelLimit        ContextKey = "token_channel_limit"
 	ContextKeyTokenCrossGroupRetry     ContextKey = "token_cross_group_retry"
+	ContextKeyTokenAutoGroupFallback   ContextKey = "token_auto_group_fallback"
 	ContextKeyTokenPackageEnabled      ContextKey = "token_package_enabled"
 	ContextKeyTokenBillingMode         ContextKey = "token_billing_mode"
 	ContextKeyTokenSourceType          ContextKey = "token_source_type"

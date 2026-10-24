@@ -37,7 +37,7 @@ import EditTokenModal from './src/components/table/tokens/modals/EditTokenModal'
 i18n.use(initReactI18next).init({lng:'zh',resources:{zh:{translation:{}}},interpolation:{escapeValue:false}});
 function App(){const [visible,setVisible]=useState(true),[id,setId]=useState(901),[edit,setEdit]=useState({});
 window.qa={switchUser:setId,close:()=>setVisible(false),open:()=>{setEdit({});setVisible(true)},edit:(sellable=false)=>{setEdit({id:99,source_type:sellable?'sellable_token':undefined,status:1});setVisible(true)}};
-return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]}><StatusContext.Provider value={[{status:{quota_per_unit:500000}},()=>{}]}><EditTokenModal visiable={visible} editingToken={edit} handleClose={()=>setVisible(false)} refresh={()=>{}}/></StatusContext.Provider></UserContext.Provider></BrowserRouter>};createRoot(document.getElementById('root')).render(<App/>);`,
+return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]}><StatusContext.Provider value={[{status:{quota_per_unit:500000,default_use_auto_group:true}},()=>{}]}><EditTokenModal visiable={visible} editingToken={edit} handleClose={()=>setVisible(false)} refresh={()=>{}}/></StatusContext.Provider></UserContext.Provider></BrowserRouter>};createRoot(document.getElementById('root')).render(<App/>);`,
   );
   const { config } = await loadConfigFromFile(
     { command: 'serve', mode: 'development' },
@@ -301,7 +301,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   assert.equal(await create().isEnabled(), false);
   assert.equal(await page.getByRole('radio', { checked: true }).count(), 0);
   assert.equal(await page.getByText('0×', { exact: true }).count(), 1);
-  assert.equal(await page.getByText('动态', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('动态', { exact: true }).count(), 0);
   const row = (group) =>
     page
       .locator('.token-group-picker__row')
@@ -312,8 +312,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'OpenAI · 独享账号',
     'OpenAI · 优质',
     'Claude · 优质',
-    'auto',
   ]);
+  assert.equal(await page.locator('#auto_group_fallback').getAttribute('aria-checked'), 'true');
   await name().fill('simple token');
   await choose('OpenAI · 独享账号');
   await enabled(create());
@@ -599,6 +599,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await create().click();
   await delay(200);
   assert.equal(writes.at(-1).group, 'OpenAI · 独享账号');
+  assert.equal(writes.at(-1).auto_group_fallback, true);
   assert.equal(writes.at(-1).expired_time, -1);
   assert.equal(writes.at(-1).unlimited_quota, true);
   console.log(
@@ -621,12 +622,22 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'window_request_limit',
   ])
     assert.equal(writes.at(-1)[key], savedToken[key], key);
+  assert.equal(writes.at(-1).auto_group_fallback, false);
   savedToken.group = '';
   await page.evaluate(() => window.qa.edit());
   await enabled(submit);
   await submit.click();
   await delay(200);
   assert.equal(writes.at(-1).group, '');
+  savedToken.group = 'auto';
+  savedToken.cross_group_retry = true;
+  await page.evaluate(() => window.qa.edit());
+  await enabled(submit);
+  assert.equal(await page.locator('#cross_group_retry').getAttribute('aria-checked'), 'true');
+  await submit.click();
+  await delay(200);
+  assert.equal(writes.at(-1).group, 'auto');
+  assert.equal(writes.at(-1).cross_group_retry, true);
   savedToken.group = 'removed';
   await page.evaluate(() => window.qa.edit(true));
   await enabled(submit);

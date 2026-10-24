@@ -649,10 +649,7 @@ func extractModelNameFromGeminiPath(path string) string {
 // and model/group permission checks. Invalid requests and unknown model names do
 // not manufacture failures or unbounded metric cardinality.
 func hasConfiguredRequestModel(c *gin.Context, modelName, usingGroup string) bool {
-	groups := []string{usingGroup}
-	if usingGroup == "auto" {
-		groups = service.GetUserAutoGroup(common.GetContextKeyString(c, constant.ContextKeyUserGroup))
-	}
+	groups := service.RequestRoutingGroups(c, usingGroup)
 	exists, err := model.HasConfiguredModelInGroups(groups, modelName, GetAllowedTokenChannelIDs(c))
 	// Database failures are service failures, not proof that a model is absent.
 	return err != nil || exists
@@ -669,7 +666,9 @@ func recordUnavailableGroupHealth(c *gin.Context, modelName, usingGroup, selecte
 
 func unavailableHealthGroups(c *gin.Context, modelName, usingGroup, selectedGroup string) []string {
 	candidates := []string{usingGroup}
-	if usingGroup == "auto" {
+	if service.UsesPreferredGroupFallback(c, usingGroup) {
+		candidates = service.RequestRoutingGroups(c, usingGroup)
+	} else if usingGroup == "auto" {
 		candidates = []string{selectedGroup}
 		if selectedGroup == "" || selectedGroup == "auto" {
 			// An exhausted auto chain has no selected group. Include only its

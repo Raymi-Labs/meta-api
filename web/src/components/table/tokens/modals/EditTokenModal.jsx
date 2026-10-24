@@ -126,6 +126,8 @@ const EditTokenModal = (props) => {
     group: '',
     group_vendor: '',
     cross_group_retry: false,
+    auto_group_fallback:
+      !isEdit && !!statusState?.status?.default_use_auto_group,
     max_concurrency: 0,
     window_request_limit: 0,
     window_seconds: 0,
@@ -435,6 +437,10 @@ const EditTokenModal = (props) => {
         disableDuplicate: true,
         params: {
           group: groupValue,
+          auto_group_fallback: !!(
+            formApiRef.current?.getValue('auto_group_fallback') ??
+            getInitValues().auto_group_fallback
+          ),
         },
       });
       if (requestId !== modelRequestRef.current) return;
@@ -478,6 +484,10 @@ const EditTokenModal = (props) => {
         disableDuplicate: true,
         params: {
           group: groupValue,
+          auto_group_fallback: !!(
+            formApiRef.current?.getValue('auto_group_fallback') ??
+            getInitValues().auto_group_fallback
+          ),
           model_limits: Array.isArray(modelLimits)
             ? modelLimits.join(',')
             : String(modelLimits || ''),
@@ -538,10 +548,11 @@ const EditTokenModal = (props) => {
         value: group,
         ratio: info.ratio,
       }));
-      if (statusState?.status?.default_use_auto_group) {
-        if (localGroupOptions.some((group) => group.value === 'auto')) {
-          localGroupOptions.sort((a, b) => (a.value === 'auto' ? -1 : 1));
-        }
+      // Existing auto tokens remain editable; new tokens choose a preferred group.
+      if (!isEdit) {
+        localGroupOptions = localGroupOptions.filter(
+          ({ value }) => value !== 'auto',
+        );
       }
       setAvailableGroups({
         userId: userState?.user?.id,
@@ -1182,7 +1193,13 @@ const EditTokenModal = (props) => {
           }}
           onValueChange={(values, changedValues) => {
             setSelectedGroup(values.group || '');
-            if (Object.prototype.hasOwnProperty.call(changedValues, 'group')) {
+            if (
+              Object.prototype.hasOwnProperty.call(changedValues, 'group') ||
+              Object.prototype.hasOwnProperty.call(
+                changedValues,
+                'auto_group_fallback',
+              )
+            ) {
               if (values.group) {
                 const nextVendor = resolveTokenGroupVendor(values.group);
                 if (
@@ -1195,14 +1212,18 @@ const EditTokenModal = (props) => {
                 values.group || '',
                 !isEdit ||
                   (tokenReady &&
-                    values.group !== loadedTokenValuesRef.current?.group),
+                    (values.group !== loadedTokenValuesRef.current?.group ||
+                      values.auto_group_fallback !==
+                        loadedTokenValuesRef.current?.auto_group_fallback)),
               );
               loadChannels(
                 values.group || '',
                 formApiRef.current?.getValue('model_limits') || [],
                 !isEdit ||
                   (tokenReady &&
-                    values.group !== loadedTokenValuesRef.current?.group),
+                    (values.group !== loadedTokenValuesRef.current?.group ||
+                      values.auto_group_fallback !==
+                        loadedTokenValuesRef.current?.auto_group_fallback)),
               );
             }
             if (
@@ -1270,7 +1291,13 @@ const EditTokenModal = (props) => {
                       userId={userState?.user?.id}
                       groups={
                         availableGroups.userId === userState?.user?.id
-                          ? availableGroups.groups
+                          ? availableGroups.groups.filter(
+                              ({ value }) =>
+                                value !== 'auto' ||
+                                (isEdit &&
+                                  loadedTokenValuesRef.current?.group ===
+                                    'auto'),
+                            )
                           : []
                       }
                       value={values.group}
@@ -1311,6 +1338,36 @@ const EditTokenModal = (props) => {
                         </>
                       }
                     />
+                    {!isSellableToken && (
+                      <>
+                        <div
+                          style={{
+                            display: values.group === 'auto' ? 'block' : 'none',
+                          }}
+                        >
+                          <Form.Switch
+                            field='cross_group_retry'
+                            label={t('跨分组重试')}
+                            extraText={t(
+                              '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
+                            )}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            display: values.group === 'auto' ? 'none' : 'block',
+                          }}
+                        >
+                          <Form.Switch
+                            field='auto_group_fallback'
+                            label={t('故障时自动切换分组（Auto）')}
+                            extraText={t(
+                              '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
+                            )}
+                          />
+                        </div>
+                      </>
+                    )}
                     {modelsError && (
                       <div role='alert'>
                         {t('模型加载失败')}{' '}
@@ -1409,22 +1466,6 @@ const EditTokenModal = (props) => {
                       <Row gutter={12}>
                         {!isSellableToken && (
                           <>
-                            <Col
-                              span={24}
-                              style={{
-                                display:
-                                  values.group === 'auto' ? 'block' : 'none',
-                              }}
-                            >
-                              <Form.Switch
-                                field='cross_group_retry'
-                                label={t('跨分组重试')}
-                                size='default'
-                                extraText={t(
-                                  '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
-                                )}
-                              />
-                            </Col>
                             <Col xs={24} sm={24} md={24} lg={10} xl={10}>
                               <Form.DatePicker
                                 field='expired_time'

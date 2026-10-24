@@ -258,7 +258,7 @@ func Register(c *gin.Context) {
 			ModelLimitsEnabled: false,
 		}
 		if setting.DefaultUseAutoGroup {
-			token.Group = "auto"
+			token.AutoGroupFallback = true
 		}
 		if err := token.Insert(); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)

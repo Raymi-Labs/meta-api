@@ -108,6 +108,18 @@ const renderGroupColumn = (text, record, t) => {
       </Tooltip>
     );
   }
+  if (record?.auto_group_fallback && record?.source_type !== 'sellable_token') {
+    return (
+      <Space wrap spacing={4}>
+        {renderGroup(text)}
+        <Tooltip content={t('首选分组不可用时自动切组，按实际使用分组计费。')}>
+          <Tag color='blue' size='small'>
+            Auto
+          </Tag>
+        </Tooltip>
+      </Space>
+    );
+  }
   return renderGroup(text);
 };
 
@@ -122,13 +134,20 @@ const renderGroupRatio = (record, t) => {
     ratio >= 0;
   const isAuto = record?.group_ratio_status === 'auto';
   const label = isFixed ? `${ratio}x` : isAuto ? t('自动') : '—';
-  const hint = isFixed
-    ? t(
-        '当前分组倍率，已包含适用的专属倍率，不含模型价格和时间倍率；实际扣费以使用日志为准。',
-      )
-    : isAuto
-      ? t('自动分组的倍率由实际使用的分组决定，请以使用日志为准。')
-      : t('当前无法确定分组倍率，请刷新或联系管理员；不会按 1x 估算。');
+  const hint =
+    isFixed &&
+    record?.auto_group_fallback &&
+    record?.source_type !== 'sellable_token'
+      ? t(
+          '此处为首选分组倍率；自动切组后按实际使用分组计费，请以使用日志为准。',
+        )
+      : isFixed
+        ? t(
+            '当前分组倍率，已包含适用的专属倍率，不含模型价格和时间倍率；实际扣费以使用日志为准。',
+          )
+        : isAuto
+          ? t('自动分组的倍率由实际使用的分组决定，请以使用日志为准。')
+          : t('当前无法确定分组倍率，请刷新或联系管理员；不会按 1x 估算。');
 
   return (
     <Tooltip content={hint} position='top'>

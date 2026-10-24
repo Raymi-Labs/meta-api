@@ -731,6 +731,7 @@ func AddToken(c *gin.Context) {
 		token.ChannelLimits,
 		token.ChannelLimitsEnabled,
 		"",
+		token.AutoGroupFallback,
 	)
 	if err != nil {
 		common.ApiError(c, err)
@@ -794,6 +795,7 @@ func AddToken(c *gin.Context) {
 		AllowIps:             token.AllowIps,
 		Group:                token.Group,
 		CrossGroupRetry:      token.CrossGroupRetry,
+		AutoGroupFallback:    token.AutoGroupFallback,
 		MaxConcurrency:       token.MaxConcurrency,
 		WindowRequestLimit:   token.WindowRequestLimit,
 		WindowSeconds:        token.WindowSeconds,
@@ -868,6 +870,7 @@ func UpdateToken(c *gin.Context) {
 			token.ChannelLimits,
 			token.ChannelLimitsEnabled,
 			cleanToken.ChannelLimits,
+			token.AutoGroupFallback && cleanToken.SourceType != model.TokenSourceTypeSellableToken,
 		)
 		if err != nil {
 			common.ApiError(c, err)
@@ -931,6 +934,7 @@ func UpdateToken(c *gin.Context) {
 			cleanToken.ChannelLimits = token.ChannelLimits
 			cleanToken.AllowIps = token.AllowIps
 			cleanToken.CrossGroupRetry = token.CrossGroupRetry
+			cleanToken.AutoGroupFallback = token.AutoGroupFallback
 			cleanToken.MaxConcurrency = token.MaxConcurrency
 			cleanToken.WindowRequestLimit = token.WindowRequestLimit
 			cleanToken.WindowSeconds = token.WindowSeconds

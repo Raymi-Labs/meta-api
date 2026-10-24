@@ -36,6 +36,8 @@ service 回归覆盖标准与混合格式、CRLF、真实上游状态、错误�
 
 `go test ./service ./controller ./relay/... ./middleware ./model ./types ./router`、相关 service/controller 竞态检查、Go 构建和 make verify-notes 通过。前端生产构建及五个公开页 Chromium 预渲染通过；无前端业务改动，构建用于更新发布版本和嵌入资源。发布附件、镜像与生产部署分别核验，不把本地协议桩当第三方稳定性证明。
 
+[首选分组与故障自动切组](../feature/2026-10-24-preferred-group-fallback.md)复用本次既有失败分类与输出保护，新增固定首选组的有序备用范围，不增加实际请求的重试预算。
+
 ## Consequences
 
 [HTTP 请求 ID 一致性](2026-10-20-response-request-id-integrity.md)约束重试共享的本站响应 ID，并按实际收到的上游响应分别记录渠道和 ID，不改变本篇的 failover 预算和输出保护。

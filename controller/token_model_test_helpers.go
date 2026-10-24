@@ -88,7 +88,7 @@ func collectGroupModels(groups []string, acceptUnsetRatioModel bool) []string {
 	return models
 }
 
-func resolveRequestedTokenGroups(userId int, requestedGroup string) ([]string, error) {
+func resolveRequestedTokenGroups(userId int, requestedGroup string, fallback ...bool) ([]string, error) {
 	userCache, err := model.GetUserCache(userId)
 	if err != nil {
 		return nil, err
@@ -111,11 +111,11 @@ func resolveRequestedTokenGroups(userId int, requestedGroup string) ([]string, e
 	if !ratio_setting.ContainsGroupRatio(group) && group != userGroup {
 		return nil, fmt.Errorf("分组 %s 已被弃用", group)
 	}
-	return []string{group}, nil
+	return service.TokenRoutingGroups(userGroup, group, len(fallback) > 0 && fallback[0]), nil
 }
 
-func resolveRequestedTokenModelsRaw(userId int, requestedGroup string) ([]string, error) {
-	groups, err := resolveRequestedTokenGroups(userId, requestedGroup)
+func resolveRequestedTokenModelsRaw(userId int, requestedGroup string, fallback ...bool) ([]string, error) {
+	groups, err := resolveRequestedTokenGroups(userId, requestedGroup, fallback...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,8 +130,8 @@ func filterModelsVisibleToUser(userId int, models []string) ([]string, error) {
 	return model.FilterModelsByVisibility(models, userCache.Role), nil
 }
 
-func resolveRequestedTokenModels(userId int, requestedGroup string) ([]string, error) {
-	models, err := resolveRequestedTokenModelsRaw(userId, requestedGroup)
+func resolveRequestedTokenModels(userId int, requestedGroup string, fallback ...bool) ([]string, error) {
+	models, err := resolveRequestedTokenModelsRaw(userId, requestedGroup, fallback...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func resolveTokenAllowedModelsRaw(userId int, token *model.Token) ([]string, err
 	if token == nil {
 		return nil, fmt.Errorf("token is nil")
 	}
-	models, err := resolveRequestedTokenModelsRaw(userId, token.Group)
+	models, err := resolveRequestedTokenModelsRaw(userId, token.Group, token.AllowsGroupFallback())
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func resolveTokenAllowedModels(userId int, token *model.Token) ([]string, error)
 	return filterModelsVisibleToUser(userId, models)
 }
 
-func buildTokenModelOptions(userId int, token *model.Token, requestedGroup string) ([]tokenModelOption, error) {
+func buildTokenModelOptions(userId int, token *model.Token, requestedGroup string, fallback ...bool) ([]tokenModelOption, error) {
 	var (
 		models []string
 		groups []string
@@ -179,16 +179,16 @@ func buildTokenModelOptions(userId int, token *model.Token, requestedGroup strin
 		if err != nil {
 			return nil, err
 		}
-		groups, err = resolveRequestedTokenGroups(userId, token.Group)
+		groups, err = resolveRequestedTokenGroups(userId, token.Group, token.AllowsGroupFallback())
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		models, err = resolveRequestedTokenModels(userId, requestedGroup)
+		models, err = resolveRequestedTokenModels(userId, requestedGroup, fallback...)
 		if err != nil {
 			return nil, err
 		}
-		groups, err = resolveRequestedTokenGroups(userId, requestedGroup)
+		groups, err = resolveRequestedTokenGroups(userId, requestedGroup, fallback...)
 		if err != nil {
 			return nil, err
 		}
@@ -395,10 +395,7 @@ func selectTokenTestChannelByAbility(c *gin.Context, modelName string) (*model.C
 		usingGroup = userGroup
 	}
 
-	groups := []string{usingGroup}
-	if usingGroup == "auto" {
-		groups = service.GetUserAutoGroup(userGroup)
-	}
+	groups := service.RequestRoutingGroups(c, usingGroup)
 
 	normalizedModel := ratio_setting.FormatMatchingModelName(modelName)
 	for _, group := range groups {
@@ -418,7 +415,7 @@ func selectTokenTestChannelByAbility(c *gin.Context, modelName string) (*model.C
 		if channel.Status != common.ChannelStatusEnabled {
 			continue
 		}
-		if usingGroup == "auto" {
+		if usingGroup == "auto" || service.UsesPreferredGroupFallback(c, usingGroup) {
 			common.SetContextKey(c, constant.ContextKeyAutoGroup, group)
 		}
 		common.SetContextKey(c, constant.ContextKeyUsingGroup, group)

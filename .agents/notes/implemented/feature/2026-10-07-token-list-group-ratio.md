@@ -35,6 +35,8 @@ Status: implemented
 - 浏览器测试排除会独立监听端口的开发 inspector 插件，在 finally 关闭浏览器、Vite、esbuild 并删除临时入口；正常结束退出码 0，不保留测试服务。
 - `make verify-notes`、相关 Prettier 与 `git diff --check` 通过；收尾进程/监听检查确认本轮测试服务与工作进程为零。
 
+[首选分组与故障自动切组](2026-10-24-preferred-group-fallback.md)扩展该入口：新建选择具体首选组并独立设置 Auto；列表倍率仍展示首选组，实际切组费用以日志为准。
+
 ## Consequences
 
 [创建窗口分组选择](2026-10-20-token-create-selector.md)复用既有用户分组接口的专属倍率，只调整表单展示，不修改本篇列表响应契约。
