@@ -17,11 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-// 语言归一化的唯一实现，供 i18n/i18n.js（控制台）与 helpers/publicLocale.js
-// （公开首页轻量词条）共用。两处此前各有一套规则且不一致：
-// 例如未知语言（如 de）首页归 en、控制台归 zh-CN，导致跨页面语言跳变。
-// 注意不要在此文件引入 i18next——publicLocale 位于首页入口 chunk，
-// 引入会把整个 i18n 库拖进首页关键路径。
+// 控制台支持的语言归一化；公开页面可提供更多语言，进入控制台时回退英文。
+// 保持轻量，不引入 i18next 或翻译资源。
+export const PUBLIC_LANGUAGE_CHANGE_EVENT = 'public-language-change';
 
 export const SUPPORTED_LOCALES = [
   'zh-CN',

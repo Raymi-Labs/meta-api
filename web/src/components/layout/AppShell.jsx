@@ -29,6 +29,9 @@ import { UserContext } from '../../context/User';
 
 const SemiLocaleWrapper = ({ children }) => {
   const { i18n } = useTranslation();
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
   const semiLocale = useMemo(
     () => ({ zh: zh_CN, en: en_GB })[i18n.language] || zh_CN,
     [i18n.language],

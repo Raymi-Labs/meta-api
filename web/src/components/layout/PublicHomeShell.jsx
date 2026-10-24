@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { Monitor, Moon, Sun, Languages, Menu, X } from 'lucide-react';
+import { Monitor, Moon, Sun, Menu, X } from 'lucide-react';
 import React, {
   lazy,
   Suspense,
@@ -41,6 +41,7 @@ import {
 import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import PublicFooter from './PublicFooter';
+import PublicLanguageSelector from './PublicLanguageSelector';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
 
@@ -93,7 +94,7 @@ const PublicHomeShell = () => {
   const isDownloadPage = /^\/download\/?$/.test(location.pathname);
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState, statusDispatch] = useContext(StatusContext);
-  const { t, language, setLanguage } = usePublicTranslation();
+  const { t } = usePublicTranslation();
   const theme = useTheme();
   const setTheme = useSetTheme();
   const status = statusState?.status || {};
@@ -190,10 +191,6 @@ const PublicHomeShell = () => {
     }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language.startsWith('zh') ? 'en' : 'zh-CN');
-  };
-
   const isCurrentNavLink = (to) => {
     if (!to) return false;
     if (to === '/') return location.pathname === '/';
@@ -287,14 +284,7 @@ const PublicHomeShell = () => {
                   <Monitor size={16} />
                 )}
               </button>
-              <button
-                type='button'
-                className='public-icon-button'
-                aria-label={t('切换语言')}
-                onClick={toggleLanguage}
-              >
-                <Languages size={16} />
-              </button>
+              <PublicLanguageSelector />
               {userState.user ? (
                 <Link
                   to='/console/personal'

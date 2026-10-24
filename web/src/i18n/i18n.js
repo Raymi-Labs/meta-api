@@ -20,7 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { normalizeLocale } from '../helpers/localeNormalize';
+import {
+  normalizeLocale,
+  PUBLIC_LANGUAGE_CHANGE_EVENT,
+} from '../helpers/localeNormalize';
 
 const localeLoaders = {
   'zh-CN': () => import('./locales/zh-CN.json'),
@@ -55,7 +58,9 @@ const loadLocale = async (lng) => {
 
 const loadLocaleWhenIdle = (lng) => {
   const load = () => {
-    i18n.changeLanguage(lng).catch((error) => {
+    if (normalizeLocale(i18n.language) !== lng) return;
+    // Background resource loading must never override a user's language choice.
+    loadLocale(lng).catch((error) => {
       console.error('Failed to load locale:', error);
     });
   };
@@ -81,10 +86,22 @@ const initPromise = i18n
   });
 
 const changeLanguage = i18n.changeLanguage.bind(i18n);
+let languageChangeRequest = 0;
 i18n.changeLanguage = async (lng, callback) => {
+  const request = ++languageChangeRequest;
   const normalizedLng = await loadLocale(lng);
+  if (request !== languageChangeRequest) return i18n.t.bind(i18n);
   return changeLanguage(normalizedLng, callback);
 };
+
+// The console may already be loaded when a visitor switches the public menu.
+if (typeof window !== 'undefined') {
+  window.addEventListener(PUBLIC_LANGUAGE_CHANGE_EVENT, (event) => {
+    i18n.changeLanguage(event.detail).catch((error) => {
+      console.error('Failed to load locale:', error);
+    });
+  });
+}
 
 // 初始语言就绪信号：AppShell 在此 promise 完成后才渲染（见 src/index.jsx）。
 // zh-CN 是翻译 key 的源语言，t() 直接返回 key 即为正确文案，

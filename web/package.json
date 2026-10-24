@@ -70,6 +70,7 @@
     "test:home-address": "node --test scripts/home-address.test.mjs",
     "test:world-map-motion": "node --test scripts/world-map-motion.test.mjs",
     "test:capability-motion": "node --test scripts/capability-motion.test.mjs",
+    "test:public-language": "bun test scripts/public-language.test.mjs",
     "test:request-failure": "node scripts/request-failure.test.mjs",
     "test:pulse-settings": "node scripts/pulse-settings.test.mjs"
   },
