@@ -1,6 +1,6 @@
 .home-enterprise {
   --yh-bg: #ffffff;
-  --yh-surface: #f8faff;
+  --yh-surface: var(--public-hero-surface, #f8faff);
   --yh-card: #ffffff;
   --yh-ink: #171c29;
   --yh-muted: #72798a;
@@ -22,7 +22,7 @@
 }
 html.dark .home-enterprise {
   --yh-bg: #0d111a;
-  --yh-surface: #111824;
+  --yh-surface: var(--public-hero-surface, #111824);
   --yh-card: #151c28;
   --yh-ink: #edf1fa;
   --yh-muted: #9ba7ba;

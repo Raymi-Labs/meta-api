@@ -1219,6 +1219,17 @@ html.dark .public-header--hero {
   background: rgba(13, 17, 26, 0.9);
   border-bottom-color: #263143;
 }
+.public-shell--landing {
+  --public-hero-surface: #f8faff;
+}
+html.dark .public-shell--landing {
+  --public-hero-surface: #111824;
+}
+.public-shell--landing .public-header--hero,
+html.dark .public-shell--landing .public-header--hero {
+  background: var(--public-hero-surface);
+  border-bottom-color: transparent;
+}
 html.dark .public-header--hero .public-brand {
   color: #edf1fa;
 }
