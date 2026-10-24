@@ -59,6 +59,8 @@ import UserBindingManagementModal from './UserBindingManagementModal';
 
 const { Text, Title } = Typography;
 
+import QuotaNoticeHistory from '../../../common/QuotaNoticeHistory';
+
 const EditUserModal = (props) => {
   const { t } = useTranslation();
   const userId = props.editingUser.id;
@@ -326,6 +328,8 @@ const EditUserModal = (props) => {
                     </Row>
                   </Card>
                 )}
+
+                {userId && <QuotaNoticeHistory key={userId} userID={userId} />}
 
                 {/* 绑定信息入口 */}
                 {userId && (

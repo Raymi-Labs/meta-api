@@ -1815,6 +1815,7 @@ func shouldCountAsRedeemFailure(err error) bool {
 }
 
 type UpdateUserSettingRequest struct {
+	QuotaBlockedNotifyEnabled        *bool   `json:"quota_blocked_notify_enabled"`
 	QuotaWarningType                 string  `json:"notify_type"`
 	QuotaWarningThreshold            float64 `json:"quota_warning_threshold"`
 	WebhookUrl                       string  `json:"webhook_url,omitempty"`
@@ -1923,6 +1924,9 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	settings := existingSettings
+	if req.QuotaBlockedNotifyEnabled != nil {
+		settings.QuotaBlockedNotifyEnabled = req.QuotaBlockedNotifyEnabled
+	}
 	settings.NotifyType = req.QuotaWarningType
 	settings.QuotaWarningThreshold = req.QuotaWarningThreshold
 	settings.UpstreamModelUpdateNotifyEnabled = upstreamModelUpdateNotifyEnabled

@@ -41,6 +41,7 @@ import {
   showError,
 } from '../../../../helpers';
 import CodeViewer from '../../../playground/CodeViewer';
+import QuotaNoticeHistory from '../../../common/QuotaNoticeHistory';
 import { StatusContext } from '../../../../context/Status';
 import { UserContext } from '../../../../context/User';
 import { useUserPermissions } from '../../../../hooks/common/useUserPermissions';
@@ -493,6 +494,20 @@ const NotificationSettings = ({
                   ]}
                 />
 
+                <Form.Switch
+                  field='quotaBlockedNotifyEnabled'
+                  label={t('额度不足导致调用失败时提醒')}
+                  checkedText={t('开')}
+                  uncheckedText={t('关')}
+                  onChange={(value) =>
+                    handleFormChange('quotaBlockedNotifyEnabled', value)
+                  }
+                  extraText={t(
+                    '持续失败后提醒一次；30分钟后仍失败再提醒，之后至少间隔6小时。按用户合并，滚动24小时最多4次。',
+                  )}
+                />
+                <QuotaNoticeHistory />
+
                 {isAdminOrRoot && (
                   <Form.Switch
                     field='upstreamModelUpdateNotifyEnabled'
@@ -500,7 +515,10 @@ const NotificationSettings = ({
                     checkedText={t('开')}
                     uncheckedText={t('关')}
                     onChange={(value) =>
-                      handleFormChange('upstreamModelUpdateNotifyEnabled', value)
+                      handleFormChange(
+                        'upstreamModelUpdateNotifyEnabled',
+                        value,
+                      )
                     }
                     extraText={t(
                       '仅管理员可用。开启后，当系统定时检测全部渠道发现上游模型变更或检测异常时，将按你选择的通知方式发送汇总通知；渠道或模型过多时会自动省略部分明细。',

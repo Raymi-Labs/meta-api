@@ -157,6 +157,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/aff-withdrawals", middleware.CriticalRateLimit(), controller.CreateAffWithdrawal)
 				selfRoute.GET("/aff-withdrawals/self", controller.GetUserAffWithdrawals)
 				selfRoute.PUT("/setting", controller.UpdateUserSetting)
+				selfRoute.GET("/quota-notices", controller.GetSelfQuotaNotices)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)
@@ -205,6 +206,7 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.POST("/ip-blacklist/:id/users/manage", controller.ManageIPBlacklistUsers)
 				adminRoute.DELETE("/ip-blacklist/:id", controller.DeleteIPBlacklist)
 				adminRoute.GET("/:id/invite-relations", controller.GetUserInviteRelations)
+				adminRoute.GET("/:id/quota-notices", controller.GetUserQuotaNotices)
 				adminRoute.GET("/:id/oauth/bindings", controller.GetUserOAuthBindingsByAdmin)
 				adminRoute.DELETE("/:id/oauth/bindings/:provider_id", controller.UnbindCustomOAuthByAdmin)
 				adminRoute.DELETE("/:id/bindings/:binding_type", controller.AdminClearUserBinding)

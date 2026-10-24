@@ -12,7 +12,7 @@ Status: implemented
 
 ## Existing notes audit
 
-[额度受阻通知](../../proposed/feature/2026-10-24-quota-blocked-notifications.md)部分重叠但仍持有新通知触发、独立发送预算与审计决定，本修复只处理已有频控函数；[DeepSeek 原生 Responses](../../implemented/bug-fix/2026-10-18-deepseek-native-responses.md)及检索命中的 Kimi 转换笔记与本窗口语义无关。
+[额度受阻通知](../feature/2026-10-24-quota-blocked-notifications.md)部分重叠但仍持有新通知触发、独立发送预算与审计决定，本修复只处理已有频控函数；[DeepSeek 原生 Responses](../../implemented/bug-fix/2026-10-18-deepseek-native-responses.md)及检索命中的 Kimi 转换笔记与本窗口语义无关。
 
 ## Alternatives considered
 

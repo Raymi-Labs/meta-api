@@ -9,6 +9,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/types"
 	"github.com/bytedance/gopkg/util/gopool"
 	"gorm.io/gorm"
 )
@@ -274,7 +275,7 @@ func ValidateUserToken(key string) (token *Token, err error) {
 		if token.Status == common.TokenStatusExhausted {
 			keyPrefix := key[:3]
 			keySuffix := key[len(key)-3:]
-			return token, errors.New("该令牌额度已用尽 TokenStatusExhausted[sk-" + keyPrefix + "***" + keySuffix + "]")
+			return token, &types.QuotaRejection{Source: "token", ResourceID: token.Id, Available: int64(token.RemainQuota), Known: true, Message: "该令牌额度已用尽 TokenStatusExhausted[sk-" + keyPrefix + "***" + keySuffix + "]"}
 		} else if token.Status == common.TokenStatusExpired {
 			return token, errors.New("该令牌已过期")
 		}
@@ -306,7 +307,7 @@ func ValidateUserToken(key string) (token *Token, err error) {
 			}
 			keyPrefix := key[:3]
 			keySuffix := key[len(key)-3:]
-			return token, errors.New(fmt.Sprintf("[sk-%s***%s] 该令牌额度已用尽 !token.UnlimitedQuota && token.RemainQuota = %d", keyPrefix, keySuffix, token.RemainQuota))
+			return token, &types.QuotaRejection{Source: "token", ResourceID: token.Id, Available: int64(token.RemainQuota), Known: true, Message: fmt.Sprintf("[sk-%s***%s] 该令牌额度已用尽 !token.UnlimitedQuota && token.RemainQuota = %d", keyPrefix, keySuffix, token.RemainQuota)}
 		}
 		return token, nil
 	}
@@ -343,7 +344,7 @@ func validateTokenPackageAccess(token *Token) (*Token, error) {
 			}
 		}
 		if updated.PackageUsedQuota >= updated.PackageLimitQuota {
-			return errors.New("该令牌套餐周期额度已用尽，请等待下个周期重置后再试")
+			return &types.QuotaRejection{Source: "token_package", ResourceID: updated.Id, Available: int64(updated.PackageLimitQuota - updated.PackageUsedQuota), Known: true, Message: "该令牌套餐周期额度已用尽，请等待下个周期重置后再试"}
 		}
 		return nil
 	})
@@ -688,6 +689,13 @@ func decreaseTokenQuota(id int, quota int) error {
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
+		var current Token
+		if err := DB.Select("id", "remain_quota").First(&current, id).Error; err != nil {
+			return err
+		}
+		if current.RemainQuota < quota {
+			return &types.QuotaRejection{Source: "token", ResourceID: id, Available: int64(current.RemainQuota), Required: int64(quota), Known: true, Message: "token quota insufficient or token not found"}
+		}
 		return errors.New("token quota insufficient or token not found")
 	}
 	return nil
@@ -806,10 +814,10 @@ func decreaseTokenQuotaWithPackage(token *Token, quota int) error {
 		}
 
 		if !updated.UnlimitedQuota && updated.RemainQuota < quota {
-			return fmt.Errorf("token quota is not enough, token remain quota: %d, need quota: %d", updated.RemainQuota, quota)
+			return &types.QuotaRejection{Source: "token", ResourceID: updated.Id, Available: int64(updated.RemainQuota), Required: int64(quota), Known: true, Message: fmt.Sprintf("token quota is not enough, token remain quota: %d, need quota: %d", updated.RemainQuota, quota)}
 		}
 		if updated.PackageLimitQuota > 0 && updated.PackageUsedQuota+quota > updated.PackageLimitQuota {
-			return fmt.Errorf("令牌套餐周期额度不足，当前周期已用 %d，需要 %d，上限 %d", updated.PackageUsedQuota, quota, updated.PackageLimitQuota)
+			return &types.QuotaRejection{Source: "token_package", ResourceID: updated.Id, Available: int64(updated.PackageLimitQuota - updated.PackageUsedQuota), Required: int64(quota), Known: true, Message: fmt.Sprintf("令牌套餐周期额度不足，当前周期已用 %d，需要 %d，上限 %d", updated.PackageUsedQuota, quota, updated.PackageLimitQuota)}
 		}
 
 		updates := map[string]interface{}{

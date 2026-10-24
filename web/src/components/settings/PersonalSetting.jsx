@@ -84,6 +84,7 @@ const PersonalSetting = () => {
   ] = useState(null);
   const [notificationSettings, setNotificationSettings] = useState({
     warningType: 'email',
+    quotaBlockedNotifyEnabled: true,
     warningThreshold: 100000,
     webhookUrl: '',
     webhookSecret: '',
@@ -184,6 +185,8 @@ const PersonalSetting = () => {
       const settings = JSON.parse(userState.user.setting);
       setNotificationSettings({
         warningType: settings.notify_type || 'email',
+        quotaBlockedNotifyEnabled:
+          settings.quota_blocked_notify_enabled !== false,
         warningThreshold: settings.quota_warning_threshold || 500000,
         webhookUrl: settings.webhook_url || '',
         webhookSecret: settings.webhook_secret || '',
@@ -458,7 +461,9 @@ const PersonalSetting = () => {
     );
     const { success, message } = res.data;
     if (success) {
-      showSuccess(t('验证码发送成功，请检查邮箱（未收到请翻垃圾箱或广告邮件）'));
+      showSuccess(
+        t('验证码发送成功，请检查邮箱（未收到请翻垃圾箱或广告邮件）'),
+      );
     } else {
       showError(message);
     }
@@ -510,6 +515,8 @@ const PersonalSetting = () => {
     try {
       const res = await API.put('/api/user/setting', {
         notify_type: notificationSettings.warningType,
+        quota_blocked_notify_enabled:
+          notificationSettings.quotaBlockedNotifyEnabled,
         quota_warning_threshold: parseFloat(
           notificationSettings.warningThreshold,
         ),

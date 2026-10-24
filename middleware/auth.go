@@ -309,6 +309,10 @@ func TokenAuth() func(c *gin.Context) {
 			}
 		}
 		if err != nil {
+			if len(parts) > 1 {
+				c.Set("quota_notice_specific_channel", parts[1])
+			}
+			service.MarkQuotaNoticeAuthRejection(c, token, err)
 			abortWithOpenAiMessage(c, http.StatusUnauthorized, err.Error())
 			return
 		}

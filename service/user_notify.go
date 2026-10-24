@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -63,6 +64,18 @@ func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data 
 		return fmt.Errorf("notification limit exceeded for user %d with type %s", userId, notifyType)
 	}
 
+	return dispatchUserNotification(userId, userEmail, userSetting, data)
+}
+
+func dispatchUserNotification(userId int, userEmail string, userSetting dto.UserSetting, data dto.Notify) error {
+	return dispatchUserNotificationContext(context.Background(), userId, userEmail, userSetting, data)
+}
+
+func dispatchUserNotificationContext(ctx context.Context, userId int, userEmail string, userSetting dto.UserSetting, data dto.Notify) error {
+	notifyType := userSetting.NotifyType
+	if notifyType == "" {
+		notifyType = dto.NotifyTypeEmail
+	}
 	switch notifyType {
 	case dto.NotifyTypeEmail:
 		// 优先使用设置中的通知邮箱，如果为空则使用用户的默认邮箱
@@ -84,14 +97,14 @@ func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data 
 
 		// 获取 webhook secret
 		webhookSecret := userSetting.WebhookSecret
-		return SendWebhookNotify(webhookURLStr, webhookSecret, data)
+		return sendWebhookNotifyContext(ctx, webhookURLStr, webhookSecret, data)
 	case dto.NotifyTypeBark:
 		barkURL := userSetting.BarkUrl
 		if barkURL == "" {
 			common.SysLog(fmt.Sprintf("user %d has no bark url, skip sending bark", userId))
 			return nil
 		}
-		return sendBarkNotify(barkURL, data)
+		return sendBarkNotifyContext(ctx, barkURL, data)
 	case dto.NotifyTypeGotify:
 		gotifyUrl := userSetting.GotifyUrl
 		gotifyToken := userSetting.GotifyToken
@@ -99,7 +112,7 @@ func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data 
 			common.SysLog(fmt.Sprintf("user %d has no gotify url or token, skip sending gotify", userId))
 			return nil
 		}
-		return sendGotifyNotify(gotifyUrl, gotifyToken, userSetting.GotifyPriority, data)
+		return sendGotifyNotifyContext(ctx, gotifyUrl, gotifyToken, userSetting.GotifyPriority, data)
 	}
 	return nil
 }
@@ -115,6 +128,10 @@ func sendEmailNotify(userEmail string, data dto.Notify) error {
 }
 
 func sendBarkNotify(barkURL string, data dto.Notify) error {
+	return sendBarkNotifyContext(context.Background(), barkURL, data)
+}
+
+func sendBarkNotifyContext(ctx context.Context, barkURL string, data dto.Notify) error {
 	// 处理占位符
 	content := data.Content
 	for _, value := range data.Values {
@@ -141,9 +158,9 @@ func sendBarkNotify(barkURL string, data dto.Notify) error {
 			},
 		}
 
-		resp, err = DoWorkerRequest(workerReq)
+		resp, err = doWorkerRequestContext(ctx, workerReq)
 		if err != nil {
-			return fmt.Errorf("failed to send bark request through worker: %v", err)
+			return fmt.Errorf("failed to send bark request through worker: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -159,7 +176,7 @@ func sendBarkNotify(barkURL string, data dto.Notify) error {
 		}
 
 		// 直接发送请求
-		req, err = http.NewRequest(http.MethodGet, finalURL, nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, finalURL, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create bark request: %v", err)
 		}
@@ -171,7 +188,7 @@ func sendBarkNotify(barkURL string, data dto.Notify) error {
 		client := GetHttpClient()
 		resp, err = client.Do(req)
 		if err != nil {
-			return fmt.Errorf("failed to send bark request: %v", err)
+			return fmt.Errorf("failed to send bark request: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -185,6 +202,10 @@ func sendBarkNotify(barkURL string, data dto.Notify) error {
 }
 
 func sendGotifyNotify(gotifyUrl string, gotifyToken string, priority int, data dto.Notify) error {
+	return sendGotifyNotifyContext(context.Background(), gotifyUrl, gotifyToken, priority, data)
+}
+
+func sendGotifyNotifyContext(ctx context.Context, gotifyUrl string, gotifyToken string, priority int, data dto.Notify) error {
 	// 处理占位符
 	content := data.Content
 	for _, value := range data.Values {
@@ -235,9 +256,9 @@ func sendGotifyNotify(gotifyUrl string, gotifyToken string, priority int, data d
 			Body: payloadBytes,
 		}
 
-		resp, err = DoWorkerRequest(workerReq)
+		resp, err = doWorkerRequestContext(ctx, workerReq)
 		if err != nil {
-			return fmt.Errorf("failed to send gotify request through worker: %v", err)
+			return fmt.Errorf("failed to send gotify request through worker: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -253,7 +274,7 @@ func sendGotifyNotify(gotifyUrl string, gotifyToken string, priority int, data d
 		}
 
 		// 直接发送请求
-		req, err = http.NewRequest(http.MethodPost, finalURL, bytes.NewBuffer(payloadBytes))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, finalURL, bytes.NewBuffer(payloadBytes))
 		if err != nil {
 			return fmt.Errorf("failed to create gotify request: %v", err)
 		}
@@ -266,7 +287,7 @@ func sendGotifyNotify(gotifyUrl string, gotifyToken string, priority int, data d
 		client := GetHttpClient()
 		resp, err = client.Do(req)
 		if err != nil {
-			return fmt.Errorf("failed to send gotify request: %v", err)
+			return fmt.Errorf("failed to send gotify request: %w", err)
 		}
 		defer resp.Body.Close()
 

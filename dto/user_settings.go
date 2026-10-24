@@ -1,6 +1,7 @@
 package dto
 
 type UserSetting struct {
+	QuotaBlockedNotifyEnabled        *bool   `json:"quota_blocked_notify_enabled,omitempty"`
 	NotifyType                       string  `json:"notify_type,omitempty"`                          // QuotaWarningType 额度预警类型
 	QuotaWarningThreshold            float64 `json:"quota_warning_threshold,omitempty"`              // QuotaWarningThreshold 额度预警阈值
 	WebhookUrl                       string  `json:"webhook_url,omitempty"`                          // WebhookUrl webhook地址
@@ -24,3 +25,7 @@ var (
 	NotifyTypeBark    = "bark"    // Bark 推送
 	NotifyTypeGotify  = "gotify"  // Gotify 推送
 )
+
+func (s UserSetting) QuotaBlockedNotificationsEnabled() bool {
+	return s.QuotaBlockedNotifyEnabled == nil || *s.QuotaBlockedNotifyEnabled
+}

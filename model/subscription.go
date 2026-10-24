@@ -10,6 +10,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/pkg/cachex"
+	"github.com/QuantumNous/new-api/types"
 	"github.com/samber/hot"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -1758,7 +1759,7 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			return errors.New("no active subscription")
 		}
 		if len(subs) == 0 {
-			return errors.New("no active subscription")
+			return &types.QuotaRejection{Source: "subscription", Required: amount, Message: "no active subscription"}
 		}
 		for _, candidate := range subs {
 			sub := candidate
@@ -1809,7 +1810,7 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			returnValue.AmountUsedAfter = sub.AmountUsed
 			return nil
 		}
-		return fmt.Errorf("subscription quota insufficient, need=%d", amount)
+		return &types.QuotaRejection{Source: "subscription", Required: amount, Message: fmt.Sprintf("subscription quota insufficient, need=%d", amount)}
 	})
 	if err != nil {
 		return nil, err
@@ -1949,7 +1950,7 @@ func postConsumeUserSubscriptionDeltaTx(tx *gorm.DB, userSubscriptionId int, del
 	}
 	newUsed := max(sub.AmountUsed+delta, 0)
 	if sub.AmountTotal > 0 && newUsed > sub.AmountTotal {
-		return fmt.Errorf("subscription used exceeds total, used=%d total=%d", newUsed, sub.AmountTotal)
+		return &types.QuotaRejection{Source: "subscription", ResourceID: sub.Id, Available: sub.AmountTotal - sub.AmountUsed, Required: delta, Known: true, Message: fmt.Sprintf("subscription used exceeds total, used=%d total=%d", newUsed, sub.AmountTotal)}
 	}
 	sub.AmountUsed = newUsed
 	return tx.Save(&sub).Error

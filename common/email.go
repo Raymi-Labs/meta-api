@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/mail"
 	"net/smtp"
+	"net/textproto"
 	"slices"
 	"strconv"
 	"strings"
@@ -198,6 +199,10 @@ func isRetryableSMTPError(err error) bool {
 }
 
 func sendSMTPMessageOnce(network string, receiver string, message []byte) error {
+	return sendSMTPMessageAttempt(network, receiver, message, false)
+}
+
+func sendSMTPMessageAttempt(network string, receiver string, message []byte, tracked bool) error {
 	auth := getSMTPAuth()
 	addr := net.JoinHostPort(SMTPServer, strconv.Itoa(SMTPPort))
 	dialer := &net.Dialer{Timeout: smtpDialTimeout}
@@ -212,6 +217,9 @@ func sendSMTPMessageOnce(network string, receiver string, message []byte) error 
 		if err != nil {
 			return err
 		}
+		if tracked {
+			_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
+		}
 		client, err = smtp.NewClient(conn, SMTPServer)
 		if err != nil {
 			conn.Close()
@@ -221,6 +229,9 @@ func sendSMTPMessageOnce(network string, receiver string, message []byte) error 
 		conn, err := dialer.Dial(network, addr)
 		if err != nil {
 			return err
+		}
+		if tracked {
+			_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 		}
 		client, err = smtp.NewClient(conn, SMTPServer)
 		if err != nil {
@@ -255,10 +266,36 @@ func sendSMTPMessageOnce(network string, receiver string, message []byte) error 
 		return err
 	}
 	if _, err = w.Write(message); err != nil {
+		if tracked {
+			return &SMTPOutcomeUnknown{Err: err}
+		}
 		return err
 	}
 	if err = w.Close(); err != nil {
+		var rejected *textproto.Error
+		if tracked && !errors.As(err, &rejected) {
+			return &SMTPOutcomeUnknown{Err: err}
+		}
 		return err
 	}
+	if tracked {
+		return nil
+	} // DATA accepted; QUIT is not a delivery acknowledgement.
 	return client.Quit()
+}
+
+// SMTPOutcomeUnknown prevents retrying mail whose final DATA reply was lost.
+type SMTPOutcomeUnknown struct{ Err error }
+
+func (e *SMTPOutcomeUnknown) Error() string { return e.Err.Error() }
+func (e *SMTPOutcomeUnknown) Unwrap() error { return e.Err }
+
+// SendEmailTracked performs exactly one SMTP attempt. Durable callers own retry
+// scheduling and distinguish SMTP acceptance from end-recipient delivery.
+func SendEmailTracked(subject, receiver, content string) error {
+	message, err := buildEmailMessage(subject, receiver, content, nil)
+	if err != nil {
+		return err
+	}
+	return sendSMTPMessageAttempt("tcp4", receiver, message, true)
 }
