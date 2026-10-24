@@ -14,6 +14,8 @@ Status: implemented
 
 v1.0.0-compat.62 的鼠标地图交互决定（“仅悬停运行、触控静态”及强度已由[持续轻波动](2026-10-24-world-map-ambient-motion.md)取代）：复用原 SVG 轮廓与静态底图，首次鼠标移动时采样点阵并以 Canvas 呈现局部形变、涟漪与亮度变化。坐标按 SVG 的视口矩阵转换，保留桌面和窄屏的等比留白；装饰层不接管点击。细鼠标悬停时最多 30 帧/秒、像素比上限 2，移开后回弹并停帧；滚动、失焦、后台、离屏或卸载立即停止。触控和减少动态效果设置保留静态 SVG，不新增依赖或持续空闲动画。
 
+v1.0.0-compat.64 的[卡片动态与页脚导航](2026-10-24-home-capability-motion.md)接续三卡片和公开页脚：滚动模型商标、SDK 地址删除线替换、同模型线路回退演示与配置驱动分栏。该决定按用户本轮明确要求移除公开页指定展示署名，部分替代本文当时的展示归属约定；源码许可证与其他归属不变。
+
 ## Related notes
 
 检索 EnterpriseHome、PublicHomeShell、首页、homepage：2026-09-29-kimi-retest-scope-correction 只涉及文档/页面验收范围；2026-10-11-qiyun-reverse-proxy-migration 和 2026-10-17-public-relay-monitor 属于部署及监控，均无本次设计归属，不改写。原首页没有对应活跃决策笔记。

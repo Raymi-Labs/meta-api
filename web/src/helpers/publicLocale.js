@@ -24,6 +24,22 @@ const LANGUAGE_STORAGE_KEY = 'i18nextLng';
 const LANGUAGE_CHANGE_EVENT = 'public-language-change';
 
 const en = {
+  产品: 'Products',
+  开发者: 'Developers',
+  关于我们: 'About us',
+  条款与政策: 'Terms and policies',
+  页脚导航: 'Footer navigation',
+  快速开始: 'Quick start',
+  常见问题: 'FAQ',
+  用户协议: 'User agreement',
+  隐私政策: 'Privacy policy',
+  用量查询: 'Usage lookup',
+  个人: 'Individual',
+  团队: 'Team',
+  智能体: 'Agent',
+  优先线路连接: 'Primary route connected',
+  模拟连接中断: 'Simulated interruption',
+  已切换备用线路: 'Backup route connected',
   '示例使用 Chat Completions，其他接口请参阅文档。':
     'This example uses Chat Completions. See the docs for other APIs.',
   主导航: 'Main navigation',

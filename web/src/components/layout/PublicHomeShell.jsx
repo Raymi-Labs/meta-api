@@ -40,6 +40,7 @@ import {
 } from '../../helpers/prefetchAppShell';
 import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
+import PublicFooter from './PublicFooter';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
 
@@ -345,24 +346,17 @@ const PublicHomeShell = () => {
       ) : (
         <Home onLandingChange={setCustomLanding} />
       )}
-      <footer className='public-footer'>
-        <div className='flex flex-col md:flex-row items-center justify-between w-full max-w-[1110px] gap-6 mx-auto'>
-          <span className='text-sm text-[var(--semi-color-text-1,#4b5563)]'>
-            © {new Date().getFullYear()} {systemName}. {t('版权所有')}
-          </span>
-          <span className='text-sm text-[var(--semi-color-text-1,#4b5563)]'>
-            {t('设计与开发由')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-[var(--semi-color-primary,#1677ff)] font-medium'
-            >
-              New API
-            </a>
-          </span>
-        </div>
-      </footer>
+      <PublicFooter
+        systemName={systemName}
+        logo={logo}
+        modules={modules}
+        docsLink={docsLink}
+        user={userState.user}
+        status={status}
+        customLanding={customLanding}
+        isDownloadPage={isDownloadPage}
+        t={t}
+      />
     </div>
   );
 };

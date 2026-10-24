@@ -68,6 +68,7 @@
     "test:desktop-download": "node scripts/desktop-download.test.mjs",
     "test:auth-redirect": "node scripts/auth-redirect.test.mjs",
     "test:world-map-motion": "node --test scripts/world-map-motion.test.mjs",
+    "test:capability-motion": "node --test scripts/capability-motion.test.mjs",
     "test:request-failure": "node scripts/request-failure.test.mjs",
     "test:pulse-settings": "node scripts/pulse-settings.test.mjs"
   },
