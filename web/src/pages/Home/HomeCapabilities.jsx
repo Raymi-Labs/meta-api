@@ -21,6 +21,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Bot,
   Code2,
+  Globe,
   Image,
   KeyRound,
   MessageSquare,
@@ -198,7 +199,10 @@ export default function HomeCapabilities({ baseUrl, t }) {
               {scene.suppliers.map((supplier, index) => (
                 <span key={supplier} className={routeClass(index)}>
                   <i>{supplier}</i>
-                  {routeClass(index) === 'is-unavailable' && <X size={10} />}
+                  <span className='yh-route-offline'>
+                    <Globe size={14} />
+                    <X className='yh-route-offline-mark' size={7} />
+                  </span>
                 </span>
               ))}
             </div>

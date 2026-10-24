@@ -419,8 +419,32 @@ html.dark .yh-world-map {
     background 300ms ease,
     border-color 300ms ease;
 }
+.yh-route-labels > span {
+  position: relative;
+}
 .yh-route-labels i {
   font-style: normal;
+  transition: opacity 450ms ease;
+}
+.yh-route-offline {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: auto;
+  width: 16px;
+  height: 16px;
+  color: var(--yh-muted);
+  opacity: 0;
+  transition: opacity 450ms ease;
+}
+.yh-route-offline-mark {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  border-radius: 2px;
+  background: var(--yh-card);
+  stroke-width: 2.5;
 }
 .yh-route-labels > .is-active {
   background: var(--yh-soft-blue);
@@ -428,12 +452,14 @@ html.dark .yh-world-map {
   color: var(--yh-blue);
 }
 .yh-route-labels > .is-unavailable {
-  color: #b06b70;
-  background: #d2686f08;
+  border-color: color-mix(in srgb, var(--yh-line) 65%, transparent);
   border-style: dashed;
 }
 .yh-route-labels > .is-unavailable i {
-  text-decoration: line-through;
+  opacity: 0.32;
+}
+.yh-route-labels > .is-unavailable .yh-route-offline {
+  opacity: 1;
 }
 .yh-route-visual > svg {
   width: 100%;
@@ -460,8 +486,7 @@ html.dark .yh-world-map {
   animation-play-state: running;
 }
 .yh-route-visual > svg .is-unavailable {
-  stroke: #b06b70;
-  opacity: 0.35;
+  opacity: 0.14;
 }
 .yh-route-hub {
   position: relative;
