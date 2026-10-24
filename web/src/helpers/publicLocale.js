@@ -24,6 +24,91 @@ const LANGUAGE_STORAGE_KEY = 'i18nextLng';
 const LANGUAGE_CHANGE_EVENT = 'public-language-change';
 
 const en = {
+  '示例使用 Chat Completions，其他接口请参阅文档。':
+    'This example uses Chat Completions. See the docs for other APIs.',
+  主导航: 'Main navigation',
+  导航菜单: 'Navigation menu',
+  // 默认首页：轻量公开页的中英文文案。
+  '让好模型，为你所用': 'Great models, ready for your ideas',
+  '一个 API，': 'One API. ',
+  '连接万千可能。': 'Endless possibilities.',
+  '用熟悉的工具，调用你需要的模型。':
+    'Your favorite tools. The models you need. ',
+  '从第一行代码，到下一个好产品。':
+    'From your first line of code to your next great product.',
+  开始构建: 'Start building',
+  浏览模型: 'Explore models',
+  多模型接入: 'Multiple models',
+  '兼容主流 SDK': 'Familiar SDKs',
+  按量计费: 'Pay as you go',
+  '一个密钥，多种可能': 'One key, more possibilities',
+  '从文本到图像，让创作自由切换。': 'Move freely between text and images.',
+  '熟悉的 SDK，更简单的接入': 'Your SDK, a simpler setup',
+  '配置地址与密钥，即可开始。': 'Set your endpoint and key. Start building.',
+  '多条线路，一个入口': 'Multiple routes. One endpoint.',
+  '统一调度，让应用专注业务。':
+    'Unified routing, so you can focus on your app.',
+  你的应用: 'Your app',
+  '不止于 API': 'BEYOND THE API',
+  '你的 AI 工具，': 'Your AI tools. ',
+  '在这里汇合。': 'Together at last.',
+  '在电脑上管理 AI 工具，在手机上随时对话。把接入的时间，留给真正想做的事。':
+    'Manage AI tools on your computer and chat on your phone. Spend less time on setup and more on what you want to create.',
+  '统一管理客户端、模型与分组':
+    'Manage clients, models and groups in one place',
+  沿用熟悉的开发方式: 'Keep the workflow you know',
+  接入示意: 'Illustration',
+  '我的 AI 工具': 'My AI tools',
+  终端编程: 'Terminal coding',
+  代码协作: 'Coding companion',
+  命令行助手: 'Command-line assistant',
+  '一个工作区，连接你的工作流': 'One workspace for your workflow',
+  '从灵感，到实现': 'From idea to reality',
+  '好模型，不必只选一个。': 'The right model for every idea.',
+  '为不同任务，找到合适的模型。具体可用模型与价格，以模型广场为准。':
+    'Choose a model for each task. Check the model marketplace for availability and pricing.',
+  查看模型与价格: 'Explore models and pricing',
+  通用对话与代码开发: 'Conversation and coding',
+  长文理解与编程协作: 'Long context and code collaboration',
+  多模态理解与创作: 'Multimodal understanding and creation',
+  推理与问题求解: 'Reasoning and problem solving',
+  语言理解与应用开发: 'Language and app development',
+  对话与内容探索: 'Conversation and exploration',
+  '少一点配置，': 'Less configuration. ',
+  '多一点创造。': 'More creation.',
+  '保留你的开发习惯，从一次简单的 API 调用开始。':
+    'Keep your workflow. Start with a simple API call.',
+  '创建 API Key': 'Create an API key',
+  '在控制台创建令牌，按需设置额度。':
+    'Create a key in the console and set a spending limit.',
+  配置接入地址: 'Set your endpoint',
+  '将示例中的 API_KEY 和 MODEL_ID 替换为你的配置。':
+    'Set API_KEY and replace MODEL_ID with your chosen model.',
+  发起第一次调用: 'Make your first call',
+  '在使用日志中查看请求和费用。':
+    'Review your requests and costs in usage logs.',
+  代码语言: 'Code language',
+  复制代码: 'Copy code',
+  接口地址: 'Endpoint',
+  已复制: 'Copied',
+  '复制失败，请手动选择': 'Copy failed. Please select manually.',
+  '开始之前，': 'Before you begin. ',
+  '你可能想了解。': 'A few useful answers.',
+  '已有的 SDK 和工具可以继续用吗？': 'Can I keep using my SDK and tools?',
+  '兼容 OpenAI、Claude、Gemini 等常见接口。按接入文档配置地址、密钥和模型即可；不同模型支持的参数可能有所不同。':
+    'Common OpenAI, Claude and Gemini API formats are supported. Follow the docs to set the endpoint, key and model. Supported parameters may vary by model.',
+  '在哪里查看模型和价格？': 'Where can I find models and pricing?',
+  '模型广场提供可用模型、接口类型和价格信息。登录后可查看账号可用分组，具体费用以模型、分组和实际用量为准。':
+    'The model marketplace lists models, API types and prices. Sign in to see groups available to your account. Costs depend on the model, group and actual usage.',
+  '如何管理 API Key 和用量？': 'How do I manage API keys and usage?',
+  '在控制台创建和管理令牌，按项目设置额度、模型限制与有效期，并通过使用日志查看调用和费用。':
+    'Manage keys in the console, set spending limits, model restrictions and expiration by project, and review requests and costs in usage logs.',
+  '可以在手机和电脑上使用吗？': 'Can I use it on my phone and computer?',
+  '下载页提供桌面客户端和安卓公开测试版，具体系统要求、可用版本与安装说明以下载页为准。':
+    'The download page provides desktop apps and an Android public alpha, along with current versions, system requirements and installation instructions.',
+  '下一个好想法，从这里开始。': 'Your next great idea starts here.',
+  '模型已经就位，只等你的创意。': 'The models are ready. Bring your ideas.',
+
   首页: 'Home',
   控制台: 'Console',
   模型广场: 'Model Marketplace',

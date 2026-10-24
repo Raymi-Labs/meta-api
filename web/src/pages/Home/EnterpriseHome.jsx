@@ -17,85 +17,157 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity,
+  ArrowDown,
   ArrowRight,
+  Check,
+  CheckCheck,
+  ChevronRight,
+  Code2,
   Copy,
   Download,
-  FileText,
-  Gauge,
   Globe2,
-  Headphones,
+  Image,
+  KeyRound,
   Layers3,
-  Link2,
+  MessageSquare,
+  Monitor,
   Network,
-  Play,
-  Server,
   ShieldCheck,
-  Sparkles,
-  Users,
+  Terminal,
   Wallet,
-  Zap,
 } from 'lucide-react';
 import {
   Claude,
   DeepSeek,
   Gemini,
-  Grok,
-  Midjourney,
-  Mistral,
   OpenAI,
   Qwen,
+  Grok,
 } from '../../helpers/providerIcons';
+import { copy } from '../../helpers/clipboard';
 import './EnterpriseHome.css';
 
-const providerCards = [
-  { name: 'OpenAI', Icon: OpenAI },
-  { name: 'Claude', Icon: Claude, color: true },
-  { name: 'Gemini', Icon: Gemini, color: true },
-  { name: 'Grok', Icon: Grok, color: true },
-  { name: 'DeepSeek', Icon: DeepSeek, color: true },
-  { name: 'Qwen', Icon: Qwen, color: true },
-  { name: 'Midjourney', Icon: Midjourney },
-  { name: 'Mistral', Icon: Mistral, color: true },
+const providers = [
+  { name: 'OpenAI', Icon: OpenAI, description: '通用对话与代码开发' },
+  { name: 'Claude', Icon: Claude.Color, description: '长文理解与编程协作' },
+  { name: 'Gemini', Icon: Gemini.Color, description: '多模态理解与创作' },
+  { name: 'DeepSeek', Icon: DeepSeek.Color, description: '推理与问题求解' },
+  { name: 'Qwen', Icon: Qwen.Color, description: '语言理解与应用开发' },
+  { name: 'Grok', Icon: Grok, description: '对话与内容探索' },
 ];
 
-const modelTags = [
-  'GPT-5 / GPT-4o',
-  'Claude Sonnet',
-  'Gemini Pro',
-  'DeepSeek',
-  'Qwen',
-  'Midjourney',
-  'Codex',
-  'Claude Code',
+const tools = [
+  { name: 'Claude Code', Icon: Claude.Color, type: '终端编程' },
+  { name: 'Codex', Icon: OpenAI, type: '代码协作' },
+  { name: 'Gemini CLI', Icon: Gemini.Color, type: '命令行助手' },
 ];
 
-const featureItems = [
-  ['企业级高速通道', '多供应商、多账号、多线路汇聚，优先保证请求稳定落地，适合高频调用场景。', Server],
-  ['协议完全兼容', '兼容 OpenAI、Claude、Gemini 常见接口形态，现有 SDK 和客户端低成本迁移。', Link2],
-  ['智能负载均衡', '按模型、分组、倍率、渠道健康度与失败状态动态调度，减少单点波动。', Network],
-  ['透明计费', 'Token、缓存、图片、按次任务统一折算，余额、日志与账单链路可追踪。', Wallet],
-  ['多节点容灾', '线路异常时自动切换与重试，结合渠道健康度降低超时、断流和上游波动影响。', Globe2],
-  ['7×24 服务保障', '面向团队、代理和商业用户提供持续支持，关键问题可快速定位到模型、渠道或用户。', Headphones],
-  ['多模态覆盖', '文本、视觉、图片生成、Claude Code、Codex、Gemini CLI 等场景一站接入。', Sparkles],
-  ['代理与团队运营', '支持分组、密钥、额度、倍率与用量视图，方便代理加盟和团队级成本管理。', Users],
+const questions = [
+  [
+    '已有的 SDK 和工具可以继续用吗？',
+    '兼容 OpenAI、Claude、Gemini 等常见接口。按接入文档配置地址、密钥和模型即可；不同模型支持的参数可能有所不同。',
+  ],
+  [
+    '在哪里查看模型和价格？',
+    '模型广场提供可用模型、接口类型和价格信息。登录后可查看账号可用分组，具体费用以模型、分组和实际用量为准。',
+  ],
+  [
+    '如何管理 API Key 和用量？',
+    '在控制台创建和管理令牌，按项目设置额度、模型限制与有效期，并通过使用日志查看调用和费用。',
+  ],
+  [
+    '可以在手机和电脑上使用吗？',
+    '下载页提供桌面客户端和安卓公开测试版，具体系统要求、可用版本与安装说明以下载页为准。',
+  ],
 ];
 
-const quickSteps = [
-  ['01', '注册并获取密钥', '登录控制台创建 API Key，按团队、用户或项目设置额度、可用模型和过期时间。'],
-  ['02', '替换模型基址', '把原客户端的 Base URL 改成元衡 API 地址，保留原有 SDK、参数和调用结构。'],
-  ['03', '稳定开始调用', '通过日志、账单、渠道状态和模型广场持续观测请求表现，按需切换策略。'],
-];
+function CopyButton({ value, onCopy, label, t, className = '' }) {
+  const [result, setResult] = useState('');
+  useEffect(() => {
+    setResult('');
+  }, [value]);
+  useEffect(() => {
+    if (!result) return;
+    const timer = window.setTimeout(() => setResult(''), 2500);
+    return () => window.clearTimeout(timer);
+  }, [result]);
+  const handleCopy = async () => {
+    try {
+      const success = onCopy ? await onCopy() : await copy(value);
+      setResult(success ? '已复制' : '复制失败，请手动选择');
+    } catch {
+      setResult('复制失败，请手动选择');
+    }
+  };
+  return (
+    <button
+      type='button'
+      className={`yh-copy ${className}`}
+      onClick={handleCopy}
+      aria-label={t(label)}
+    >
+      {result === '已复制' ? <Check size={16} /> : <Copy size={16} />}
+      <span aria-live='polite'>{t(result || label)}</span>
+    </button>
+  );
+}
 
-const ProviderLogo = ({ Icon, color = false }) => {
-  const Logo = color && Icon.Color ? Icon.Color : Icon;
-  return <Logo size={24} />;
-};
-
-const splitProviders = (items) => [items.slice(0, 4), items.slice(4)];
+function WorldMap() {
+  return (
+    <svg
+      className='yh-world-map'
+      viewBox='0 0 1440 520'
+      fill='none'
+      aria-hidden='true'
+    >
+      <defs>
+        <pattern
+          id='yh-map-dots'
+          width='7'
+          height='7'
+          patternUnits='userSpaceOnUse'
+        >
+          <circle cx='2' cy='2' r='1.25' fill='currentColor' />
+        </pattern>
+        <radialGradient id='yh-map-fade'>
+          <stop offset='0' stopColor='white' stopOpacity='.12' />
+          <stop offset='.65' stopColor='white' stopOpacity='.72' />
+          <stop offset='1' stopColor='white' stopOpacity='.15' />
+        </radialGradient>
+        <mask id='yh-map-mask'>
+          <rect width='1440' height='520' fill='url(#yh-map-fade)' />
+        </mask>
+      </defs>
+      <g fill='url(#yh-map-dots)' mask='url(#yh-map-mask)'>
+        <path d='M83 115 130 80 210 56 276 72 300 60 354 87 380 115 347 140 330 183 298 199 276 232 246 218 216 185 184 187 157 157 123 155 96 137ZM221 211 252 227 281 262 312 277 298 290 265 276 243 248ZM325 280 359 271 404 291 443 331 424 364 406 384 393 435 363 468 347 425 328 388 321 348 305 311Z' />
+        <path d='M394 42 430 28 495 41 480 77 447 111 412 99 402 70ZM661 108 696 87 730 87 739 118 771 137 755 157 714 151 687 174 653 160 635 136ZM651 184 693 165 746 181 788 216 790 259 764 305 738 356 701 359 686 314 657 285 642 243 622 216Z' />
+        <path d='M748 92 811 67 878 78 917 64 1006 80 1054 63 1127 92 1182 92 1256 125 1219 153 1180 150 1143 182 1105 183 1091 213 1050 231 1028 262 993 258 966 220 938 204 925 247 898 266 874 233 858 204 817 199 787 169 761 150ZM1013 274 1050 287 1082 322 1133 330 1164 354 1123 366 1083 349 1048 335ZM1208 197 1221 214 1210 242 1194 236ZM1174 378 1235 348 1271 361 1302 403 1283 438 1229 443 1188 428 1155 405ZM1321 449 1344 429 1348 456 1325 483Z' />
+      </g>
+      <g
+        className='yh-map-routes'
+        stroke='currentColor'
+        strokeWidth='1'
+        opacity='.16'
+      >
+        <path d='M278 168 Q690 -30 1080 190' strokeDasharray='4 7' />
+        <path d='M278 168 Q700 395 1080 190' strokeDasharray='4 7' />
+      </g>
+      {[
+        [278, 168],
+        [704, 138],
+        [1080, 190],
+      ].map(([cx, cy]) => (
+        <g key={cx}>
+          <circle cx={cx} cy={cy} r='12' fill='currentColor' opacity='.08' />
+          <circle cx={cx} cy={cy} r='3' fill='currentColor' opacity='.5' />
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 const EnterpriseHome = ({
   brandName,
@@ -108,49 +180,378 @@ const EnterpriseHome = ({
   setEndpointIndex,
   t,
 }) => {
-  const [leftProviders, rightProviders] = splitProviders(providerCards);
+  const [codeLanguage, setCodeLanguage] = useState('Python');
+  const baseUrl = `${serverAddress.replace(/\/+$/, '')}/v1`;
+  const code =
+    codeLanguage === 'Python'
+      ? `import os
+from openai import OpenAI
 
+client = OpenAI(
+    base_url=${JSON.stringify(baseUrl)},
+    api_key=os.environ["API_KEY"],
+)
+
+response = client.chat.completions.create(
+    model="MODEL_ID",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(response.choices[0].message.content)`
+      : `curl ${JSON.stringify(`${baseUrl}/chat/completions`)} \\
+  -H "Authorization: Bearer $API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "MODEL_ID",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'`;
   const docsAction = handleOpenDocs ? (
-    <button type='button' className='yh-btn yh-btn-secondary' onClick={handleOpenDocs}>
-      <FileText size={18} />
-      {t('阅读 API 文档')}
+    <button type='button' className='yh-text-link' onClick={handleOpenDocs}>
+      {t('阅读 API 文档')} <ArrowRight size={16} />
     </button>
   ) : (
-    <Link className='yh-btn yh-btn-secondary' to='/docs'>
-      <FileText size={18} />
-      {t('阅读 API 文档')}
+    <Link className='yh-text-link' to='/docs'>
+      {t('阅读 API 文档')} <ArrowRight size={16} />
     </Link>
   );
 
   return (
-    <div className='home-enterprise'>
-      <section className='yh-page-shell yh-hero' aria-labelledby='hero-title'>
-        <div className='yh-hero-copy'>
-          <div className='yh-eyebrow'>{t('元起万模，衡定全局')}</div>
+    <main className='home-enterprise'>
+      <section className='yh-hero' aria-labelledby='hero-title'>
+        <WorldMap />
+        <div className='yh-container yh-hero-inner'>
+          <div className='yh-eyebrow'>
+            <span />
+            {brandName} · {t('让好模型，为你所用')}
+          </div>
           <h1 id='hero-title'>
-            {t('元衡 API：一口接入多模型，')}
-            <span>{t('智能调度更稳定')}</span>
+            {t('一个 API，')}
+            <span>{t('连接万千可能。')}</span>
           </h1>
-          <p className='yh-slogan'>{t('更强模型，更低价格，更易落地。')}</p>
-          <p className='yh-lead'>
-            {t('统一接入 OpenAI、Claude、Gemini、DeepSeek、Qwen、Midjourney 等主流模型，通过智能路由与负载均衡，为企业提供高可用、低延迟、透明计费的全托管 AI API 网关服务，助力业务快速集成与规模化落地。')}
+          <p className='yh-hero-description'>
+            {t('用熟悉的工具，调用你需要的模型。')}
+            <br className='yh-mobile-break' />
+            {t('从第一行代码，到下一个好产品。')}
           </p>
+          <div className='yh-actions'>
+            <Link className='yh-btn yh-btn-primary' to='/console'>
+              {t('开始构建')} <ArrowRight size={17} />
+            </Link>
+            <Link className='yh-btn yh-btn-secondary' to='/pricing'>
+              {t('浏览模型')} <ChevronRight size={17} />
+            </Link>
+          </div>
+          <ul className='yh-hero-benefits'>
+            <li>
+              <Layers3 size={16} />
+              {t('多模型接入')}
+            </li>
+            <li>
+              <Code2 size={16} />
+              {t('兼容主流 SDK')}
+            </li>
+            <li>
+              <Wallet size={16} />
+              {t('按量计费')}
+            </li>
+          </ul>
+        </div>
+        <div className='yh-container yh-capabilities'>
+          <article className='yh-capability'>
+            <h2>{t('一个密钥，多种可能')}</h2>
+            <p>{t('从文本到图像，让创作自由切换。')}</p>
+            <div className='yh-key-visual' aria-hidden='true'>
+              <div className='yh-provider-pill'>
+                {providers.slice(0, 5).map(({ name, Icon }) => (
+                  <Icon key={name} size={25} />
+                ))}
+              </div>
+              <div className='yh-connector' />
+              <div className='yh-key-pill'>
+                <KeyRound size={15} />
+                <span>sk-••••••••••••</span>
+              </div>
+              <div className='yh-connector' />
+              <div className='yh-modality-pill'>
+                <MessageSquare size={18} />
+                <Code2 size={18} />
+                <Image size={18} />
+              </div>
+            </div>
+          </article>
+          <article className='yh-capability'>
+            <h2>{t('熟悉的 SDK，更简单的接入')}</h2>
+            <p>{t('配置地址与密钥，即可开始。')}</p>
+            <div className='yh-sdk-visual' aria-hidden='true'>
+              <div>
+                <span>01</span>
+                <code>client = OpenAI(</code>
+              </div>
+              <div className='yh-code-highlight'>
+                <span>02</span>
+                <code>
+                  {' '}
+                  base_url=<b>"{baseUrl}"</b>,
+                </code>
+              </div>
+              <div>
+                <span>03</span>
+                <code>
+                  {' '}
+                  api_key=<b>"YOUR_API_KEY"</b>,
+                </code>
+              </div>
+              <div>
+                <span>04</span>
+                <code>)</code>
+              </div>
+              <div className='yh-sdk-caption'>OpenAI · Anthropic · Gemini</div>
+            </div>
+          </article>
+          <article className='yh-capability'>
+            <h2>{t('多条线路，一个入口')}</h2>
+            <p>{t('统一调度，让应用专注业务。')}</p>
+            <div className='yh-route-visual' aria-hidden='true'>
+              <div className='yh-route-labels'>
+                <span>OpenAI</span>
+                <span>Claude</span>
+                <span>Gemini</span>
+              </div>
+              <svg viewBox='0 0 58 105'>
+                <path d='M0 14 Q30 14 58 52M0 52H58M0 90Q30 90 58 52' />
+              </svg>
+              <div className='yh-route-hub'>
+                <img src={brandLogo} alt='' />
+              </div>
+              <svg viewBox='0 0 35 105'>
+                <path d='M0 52H35' />
+              </svg>
+              <div className='yh-route-app'>
+                <Layers3 size={19} />
+                <span>{t('你的应用')}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
 
-          <div className='yh-endpoint' aria-label='API 接入地址'>
-            <span className='yh-endpoint-main'>
-              <Globe2 size={18} />
-              <code>{serverAddress}</code>
-            </span>
-            <span className='yh-endpoint-divider' aria-hidden='true' />
+      <section
+        className='yh-container yh-desktop-section'
+        aria-labelledby='desktop-title'
+      >
+        <div className='yh-section-copy'>
+          <span className='yh-section-kicker'>
+            <Monitor size={16} />
+            {t('不止于 API')}
+          </span>
+          <h2 id='desktop-title'>
+            {t('你的 AI 工具，')}
+            <br />
+            {t('在这里汇合。')}
+          </h2>
+          <p>
+            {t(
+              '在电脑上管理 AI 工具，在手机上随时对话。把接入的时间，留给真正想做的事。',
+            )}
+          </p>
+          <ul className='yh-check-list'>
+            <li>
+              <CheckCheck size={17} />
+              {t('统一管理客户端、模型与分组')}
+            </li>
+            <li>
+              <CheckCheck size={17} />
+              {t('沿用熟悉的开发方式')}
+            </li>
+          </ul>
+          <Link className='yh-btn yh-btn-primary' to='/download'>
+            <Download size={17} />
+            {t('下载客户端')}
+          </Link>
+          <span className='yh-platform-note'>macOS · Windows · Android</span>
+        </div>
+        <div className='yh-desktop-art'>
+          <div className='yh-app-window'>
+            <div className='yh-window-chrome'>
+              <div className='yh-window-dots'>
+                <i />
+                <i />
+                <i />
+              </div>
+              <span>{brandName} Desktop</span>
+              <span className='yh-demo-label'>{t('接入示意')}</span>
+            </div>
+            <div className='yh-app-body'>
+              <aside className='yh-app-sidebar' aria-hidden='true'>
+                <img src={brandLogo} alt='' />
+                <span className='active'>
+                  <Layers3 size={19} />
+                </span>
+                <Terminal size={19} />
+                <KeyRound size={19} />
+                <Wallet size={19} />
+              </aside>
+              <div className='yh-app-content'>
+                <div className='yh-app-heading'>
+                  <div>
+                    <small>WORKSPACE</small>
+                    <h3>{t('我的 AI 工具')}</h3>
+                  </div>
+                  <span className='yh-app-count'>03</span>
+                </div>
+                {tools.map(({ name, Icon, type }) => (
+                  <div className='yh-tool-row' key={name}>
+                    <span className='yh-tool-icon' aria-hidden='true'>
+                      <Icon size={26} />
+                    </span>
+                    <div>
+                      <strong>{name}</strong>
+                      <span>{t(type)}</span>
+                    </div>
+                    <ChevronRight size={16} />
+                  </div>
+                ))}
+                <div className='yh-workspace-footer'>
+                  <ShieldCheck size={15} />
+                  {t('一个工作区，连接你的工作流')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className='yh-floating-label'>
+            <Globe2 size={17} />
+            <span>{t('从灵感，到实现')}</span>
+            <ArrowRight size={16} />
+          </div>
+        </div>
+      </section>
+
+      <section className='yh-model-section' aria-labelledby='models-title'>
+        <div className='yh-container'>
+          <div className='yh-section-heading'>
+            <div>
+              <span className='yh-section-kicker'>MODEL ECOSYSTEM</span>
+              <h2 id='models-title'>{t('好模型，不必只选一个。')}</h2>
+              <p>
+                {t(
+                  '为不同任务，找到合适的模型。具体可用模型与价格，以模型广场为准。',
+                )}
+              </p>
+            </div>
+            <Link className='yh-text-link' to='/pricing'>
+              {t('查看模型与价格')} <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className='yh-model-grid'>
+            {providers.map(({ name, Icon, description }) => (
+              <Link className='yh-model-card' key={name} to='/pricing'>
+                <span className='yh-model-icon' aria-hidden='true'>
+                  <Icon size={30} />
+                </span>
+                <div>
+                  <h3>{name}</h3>
+                  <p>{t(description)}</p>
+                </div>
+                <ArrowRight className='yh-model-arrow' size={17} />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className='yh-container yh-developer-section'
+        id='quick-start'
+        aria-labelledby='developer-title'
+      >
+        <div className='yh-section-copy'>
+          <span className='yh-section-kicker'>
+            <Terminal size={16} />
+            BUILT FOR DEVELOPERS
+          </span>
+          <h2 id='developer-title'>
+            {t('少一点配置，')}
+            <br />
+            {t('多一点创造。')}
+          </h2>
+          <p>{t('保留你的开发习惯，从一次简单的 API 调用开始。')}</p>
+          <ol className='yh-steps'>
+            <li>
+              <span>01</span>
+              <div>
+                <Link to='/console/token'>
+                  {t('创建 API Key')} <ArrowRight size={14} />
+                </Link>
+                <p>{t('在控制台创建令牌，按需设置额度。')}</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>{t('配置接入地址')}</strong>
+                <p>{t('将示例中的 API_KEY 和 MODEL_ID 替换为你的配置。')}</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>{t('发起第一次调用')}</strong>
+                <p>{t('在使用日志中查看请求和费用。')}</p>
+              </div>
+            </li>
+          </ol>
+          {docsAction}
+        </div>
+        <div className='yh-code-panel'>
+          <div className='yh-code-toolbar'>
+            <div
+              className='yh-code-tabs'
+              role='group'
+              aria-label={t('代码语言')}
+            >
+              {['Python', 'cURL'].map((lang) => (
+                <button
+                  key={lang}
+                  type='button'
+                  aria-pressed={lang === codeLanguage}
+                  onClick={() => setCodeLanguage(lang)}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+            <CopyButton value={code} label='复制代码' t={t} />
+          </div>
+          <pre className='yh-code-block'>
+            <code>
+              {code.split('\n').map((line, index) => (
+                <span
+                  className={
+                    line.includes('base_url') || line.startsWith('curl ')
+                      ? 'yh-code-focus'
+                      : ''
+                  }
+                  key={`${codeLanguage}-${index}`}
+                >
+                  <i aria-hidden='true'>{String(index + 1).padStart(2, '0')}</i>
+                  {line || ' '}
+                </span>
+              ))}
+            </code>
+          </pre>
+          <p className='yh-code-note'>
+            {t('示例使用 Chat Completions，其他接口请参阅文档。')}
+          </p>
+          <div className='yh-endpoint-picker'>
+            <label htmlFor='yh-endpoint'>{t('接口地址')}</label>
             <select
+              id='yh-endpoint'
               value={currentEndpoint}
               onChange={(event) => {
-                const nextIndex = endpointItems.findIndex(
+                const index = endpointItems.findIndex(
                   (item) => item.value === event.target.value,
                 );
-                if (nextIndex >= 0) setEndpointIndex(nextIndex);
+                if (index >= 0) setEndpointIndex(index);
               }}
-              aria-label='选择 API endpoint'
             >
               {endpointItems.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -158,219 +559,55 @@ const EnterpriseHome = ({
                 </option>
               ))}
             </select>
-            <button
-              type='button'
-              className='yh-copy-btn'
-              onClick={handleCopyEndpoint}
-              aria-label={t('复制完整地址')}
-              title={t('复制完整地址')}
-            >
-              <Copy size={18} />
-            </button>
-          </div>
-
-          <div className='yh-hero-actions'>
-            <Link className='yh-btn yh-btn-primary' to='/console'>
-              {t('开启 AI 新体验')}
-              <ArrowRight size={18} />
-            </Link>
-            <Link className='yh-btn yh-btn-secondary' to='/download'>
-              <Download size={18} />
-              {t('下载客户端')}
-            </Link>
-          </div>
-
-          <div className='yh-proof' aria-label='平台能力指标'>
-            <div className='yh-proof-item'>
-              <span><Layers3 size={22} /></span>
-              <b>500+</b>
-              <small>{t('已接入模型')}</small>
-            </div>
-            <div className='yh-proof-item'>
-              <span><ShieldCheck size={22} /></span>
-              <b>99.9%</b>
-              <small>{t('稳定性保障')}</small>
-            </div>
-            <div className='yh-proof-item'>
-              <span><Headphones size={22} /></span>
-              <b>7×24</b>
-              <small>{t('服务支持')}</small>
-            </div>
+            <CopyButton
+              value={`${serverAddress}${currentEndpoint}`}
+              onCopy={handleCopyEndpoint}
+              label='复制完整地址'
+              t={t}
+            />
           </div>
         </div>
-
-        <aside className='yh-gateway-panel' aria-label='AI Gateway 调度面板示意'>
-          <div className='yh-panel-top'>
-            <div>
-              <strong>AI Gateway</strong>
-              <span className='yh-status'>{t('运行正常')}</span>
-            </div>
-            <span className='yh-period'>{t('近 24 小时')}</span>
-          </div>
-
-          <div className='yh-routing-board'>
-            <div className='yh-provider-col'>
-              {leftProviders.map(({ name, Icon, color }) => (
-                <div className='yh-provider-card' key={name}>
-                  <span className='yh-provider-logo'>
-                    <ProviderLogo Icon={Icon} color={color} />
-                  </span>
-                  <strong>{name}</strong>
-                  <i />
-                </div>
-              ))}
-            </div>
-
-            <div className='yh-orchestration'>
-              <svg className='yh-network-svg' viewBox='0 0 400 290' fill='none' aria-hidden='true'>
-                <defs>
-                  <linearGradient id='yhRouteLine' x1='54' y1='30' x2='336' y2='246' gradientUnits='userSpaceOnUse'>
-                    <stop stopColor='#125CFF' stopOpacity='0.92' />
-                    <stop offset='1' stopColor='#0ECDD7' stopOpacity='0.9' />
-                  </linearGradient>
-                  <linearGradient id='yhHexFill' x1='120' y1='70' x2='280' y2='220' gradientUnits='userSpaceOnUse'>
-                    <stop stopColor='#125CFF' stopOpacity='0.11' />
-                    <stop offset='1' stopColor='#0ECDD7' stopOpacity='0.08' />
-                  </linearGradient>
-                </defs>
-                <g className='yh-hex-spin'>
-                  <path d='M200 34 312 97v126L200 286 88 223V97L200 34Z' fill='url(#yhHexFill)' stroke='rgba(18,92,255,.2)' />
-                  <path d='M200 64 278 108v88l-78 44-78-44v-88l78-44Z' stroke='rgba(18,92,255,.18)' />
-                  <path d='M200 93 245 119v52l-45 26-45-26v-52l45-26Z' stroke='rgba(14,205,215,.22)' />
-                </g>
-                <path className='yh-flow' d='M22 82c56 0 74 60 142 60' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                <path className='yh-flow' d='M22 145h140' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                <path className='yh-flow' d='M22 208c56 0 74-60 142-60' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                <path className='yh-flow' d='M378 82c-56 0-74 60-142 60' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                <path className='yh-flow' d='M378 145H238' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                <path className='yh-flow' d='M378 208c-56 0-74-60-142-60' stroke='url(#yhRouteLine)' strokeWidth='2.2' strokeLinecap='round' strokeDasharray='4 7' />
-                {[82, 145, 208].map((cy) => <circle className='yh-pulse-node' key={`l-${cy}`} cx='22' cy={cy} r='5' fill='#125CFF' />)}
-                {[82, 145, 208].map((cy) => <circle className='yh-pulse-node' key={`r-${cy}`} cx='378' cy={cy} r='5' fill='#0ECDD7' />)}
-              </svg>
-              <span className='yh-hub-rings' />
-              <span className='yh-hub-core'>
-                <img src={brandLogo} alt='' />
-              </span>
-              <span className='yh-hub-label'>{brandName} 智能调度层</span>
-            </div>
-
-            <div className='yh-provider-col'>
-              {rightProviders.map(({ name, Icon, color }) => (
-                <div className='yh-provider-card' key={name}>
-                  <span className='yh-provider-logo'>
-                    <ProviderLogo Icon={Icon} color={color} />
-                  </span>
-                  <strong>{name}</strong>
-                  <i />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className='yh-metric-grid'>
-            <div className='yh-metric-card'>
-              <small>{t('稳定可用')}</small>
-              <b>99.9%</b>
-              <div className='yh-ring' />
-            </div>
-            <div className='yh-metric-card'>
-              <small>{t('智能路由')}</small>
-              <b>Live</b>
-              <div className='yh-bars' aria-hidden='true'><span /><span /><span /><span /><span /></div>
-            </div>
-            <div className='yh-metric-card'>
-              <small>{t('透明计费')}</small>
-              <b>Token</b>
-              <svg className='yh-sparkline' viewBox='0 0 160 42' aria-hidden='true'><path d='M3 32 C28 20, 40 26, 58 15 S92 14, 112 10 S138 13, 156 4' fill='none' stroke='#125cff' strokeWidth='3' strokeLinecap='round' /></svg>
-            </div>
-            <div className='yh-metric-card'>
-              <small>{t('策略状态')}</small>
-              <b>OK</b>
-              <div className='yh-strategy-flow'><Activity size={42} /></div>
-            </div>
-          </div>
-        </aside>
       </section>
 
-      <section className='yh-page-shell yh-section' id='features'>
-        <div className='yh-section-head'>
-          <div>
-            <span className='yh-section-label'>ADVANTAGES</span>
-            <h2>{t('我们的优势')}</h2>
-          </div>
-          <p>{t('把模型多、接入快、可部署、可观测放到同一套控制平面，首页表达更接近企业级 API 网关。')}</p>
+      <section
+        className='yh-container yh-faq-section'
+        aria-labelledby='faq-title'
+      >
+        <div>
+          <span className='yh-section-kicker'>GOOD TO KNOW</span>
+          <h2 id='faq-title'>
+            {t('开始之前，')}
+            <br />
+            {t('你可能想了解。')}
+          </h2>
+          {docsAction}
         </div>
-        <div className='yh-feature-grid'>
-          {featureItems.map(([title, desc, Icon]) => (
-            <article className='yh-feature-card' key={title}>
-              <span className='yh-card-icon'><Icon size={25} strokeWidth={1.9} /></span>
-              <h3>{t(title)}</h3>
-              <p>{t(desc)}</p>
-            </article>
+        <div className='yh-faq-list'>
+          {questions.map(([question, answer]) => (
+            <details key={question}>
+              <summary>
+                {t(question)}
+                <span>
+                  <ArrowDown size={17} />
+                </span>
+              </summary>
+              <p>{t(answer)}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      <section className='yh-page-shell yh-section' id='models'>
-        <div className='yh-section-head'>
-          <div>
-            <span className='yh-section-label'>MODEL HUB</span>
-            <h2>{t('一个入口，覆盖多种客户端')}</h2>
-          </div>
-          <p>{t('统一 Base URL 与 API Key，覆盖 OpenAI-compatible、Claude、Gemini、Codex、Claude Code 等接入方式。')}</p>
+      <section className='yh-container yh-final-cta'>
+        <div className='yh-cta-symbol' aria-hidden='true'>
+          <Network size={29} />
         </div>
-        <div className='yh-model-strip'>
-          <article className='yh-model-card'>
-            <h3>{t('500+ 模型能力池')}</h3>
-            <p>{t('从通用对话、代码编程、长文本、图像生成到多模态理解，都可以通过统一入口接入。')}</p>
-            <div className='yh-model-tags'>
-              {modelTags.map((tag) => <span key={tag}>{tag}</span>)}
-            </div>
-          </article>
-          <article className='yh-model-card yh-terminal-card'>
-            <div className='yh-terminal-line'><b>Base URL</b><span>{serverAddress}</span></div>
-            <div className='yh-terminal-line'><b>Endpoint</b><span>{currentEndpoint}</span></div>
-            <div className='yh-terminal-line'><b>Client</b><span>Codex / Claude Code / Gemini CLI</span></div>
-            <div className='yh-terminal-line'><b>Routing</b><span>healthy · balanced · observable</span></div>
-            <div className='yh-terminal-line'><b>Billing</b><span>token · cache · image · per-call</span></div>
-          </article>
-        </div>
+        <h2>{t('下一个好想法，从这里开始。')}</h2>
+        <p>{t('模型已经就位，只等你的创意。')}</p>
+        <Link className='yh-btn yh-btn-primary' to='/console'>
+          {t('开始构建')} <ArrowRight size={17} />
+        </Link>
       </section>
-
-      <section className='yh-page-shell yh-section' id='quick-start'>
-        <div className='yh-section-head'>
-          <div>
-            <span className='yh-section-label'>QUICK START</span>
-            <h2>{t('三步快速接入')}</h2>
-          </div>
-          <p>{t('不用改变你的 SDK 习惯，只替换 Base URL 和 Key，即可把多模型调用切到元衡 API。')}</p>
-        </div>
-        <div className='yh-quick-start'>
-          {quickSteps.map(([n, title, desc]) => (
-            <article className='yh-step-card' data-step={n} key={n}>
-              <span>{n}</span>
-              <h3>{t(title)}</h3>
-              <p>{t(desc)}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className='yh-page-shell yh-always-on' id='support'>
-        <div className='yh-support-banner'>
-          <h2><span>24/7/365</span> {t('全天候支持')}</h2>
-          <p className='yh-support-subtitle'>{t('我们时刻恭候您')}</p>
-          <p>{t('从模型选型、客户端接入、代理运营到异常排查，元衡 API 都提供更清晰的控制台和更稳定的调用链路。')}</p>
-          <div className='yh-support-actions'>
-            <Link className='yh-btn yh-btn-primary' to='/console'>
-              <Play size={18} />
-              {t('立即进入控制台')}
-            </Link>
-            {docsAction}
-          </div>
-        </div>
-      </section>
-    </div>
+    </main>
   );
 };
 

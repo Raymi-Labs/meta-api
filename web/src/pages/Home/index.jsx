@@ -117,7 +117,7 @@ const Home = ({ onLandingChange } = {}) => {
   };
 
   const handleCopyEndpoint = async () => {
-    await copy(`${publicHomeServerAddress}${currentEndpoint}`);
+    return copy(`${publicHomeServerAddress}${currentEndpoint}`);
   };
 
   const handleOpenDocs = () => {
@@ -166,13 +166,6 @@ const Home = ({ onLandingChange } = {}) => {
       onLandingChange(homePageContent !== '');
     }
   }, [homePageContent, onLandingChange]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setEndpointIndex((prev) => (prev + 1) % endpointItems.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [endpointItems.length]);
 
   if (!homePageResolved) {
     return (

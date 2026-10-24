@@ -17,7 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import { Monitor, Moon, Sun, Languages, Menu, X } from 'lucide-react';
+import React, {
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { StatusContext } from '../../context/Status';
 import { UserContext } from '../../context/User';
@@ -62,6 +70,25 @@ const parseHeaderModules = (rawConfig) => {
 
 const PublicHomeShell = () => {
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    setMobileNavOpen(false);
+    // Match PageLayout navigation, while leaving explicit anchors intact.
+    if (!location.hash) window.scrollTo(0, 0);
+  }, [location.pathname, location.hash]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMobileNavOpen(false);
+        document.getElementById('public-menu-toggle')?.focus();
+      }
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [mobileNavOpen]);
   const isDownloadPage = /^\/download\/?$/.test(location.pathname);
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState, statusDispatch] = useContext(StatusContext);
@@ -177,7 +204,7 @@ const PublicHomeShell = () => {
       <GlobalTopProgress />
       {(!customLanding || isDownloadPage) && (
         <header className='public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>
-          <div className='flex items-center justify-between h-16 px-2'>
+          <div className='public-header-inner flex items-center justify-between h-16'>
             <Link
               to='/'
               className='public-brand group flex items-center gap-2 min-w-0'
@@ -187,12 +214,18 @@ const PublicHomeShell = () => {
                 alt='logo'
                 className='w-8 h-8 rounded-full object-contain transition-transform duration-200 group-hover:scale-110'
               />
-              <span className='hidden md:inline text-lg font-semibold truncate'>
+              <span className='public-brand-name text-lg font-semibold truncate'>
                 {systemName}
               </span>
             </Link>
 
-            <nav className='public-primary-nav flex flex-1 items-center gap-1 lg:gap-2 mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'>
+            <nav
+              id='public-site-nav'
+              data-open={mobileNavOpen}
+              aria-label={t('主导航')}
+              className='public-primary-nav flex flex-1 items-center gap-1 lg:gap-2 mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'
+              onClick={() => setMobileNavOpen(false)}
+            >
               {navLinks.map((link) =>
                 link.external ? (
                   <a
@@ -227,12 +260,29 @@ const PublicHomeShell = () => {
 
             <div className='public-header-actions flex items-center gap-2 md:gap-3'>
               <button
+                id='public-menu-toggle'
+                type='button'
+                className='public-icon-button public-menu-toggle'
+                aria-label={t('导航菜单')}
+                aria-expanded={mobileNavOpen}
+                aria-controls='public-site-nav'
+                onClick={() => setMobileNavOpen((open) => !open)}
+              >
+                {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+              <button
                 type='button'
                 className='public-icon-button public-theme-button'
                 aria-label={t('切换主题')}
                 onClick={toggleTheme}
               >
-                {theme === 'dark' ? 'D' : theme === 'light' ? 'L' : 'A'}
+                {theme === 'dark' ? (
+                  <Moon size={16} />
+                ) : theme === 'light' ? (
+                  <Sun size={16} />
+                ) : (
+                  <Monitor size={16} />
+                )}
               </button>
               <button
                 type='button'
@@ -240,7 +290,7 @@ const PublicHomeShell = () => {
                 aria-label={t('切换语言')}
                 onClick={toggleLanguage}
               >
-                文
+                <Languages size={16} />
               </button>
               {userState.user ? (
                 <Link
