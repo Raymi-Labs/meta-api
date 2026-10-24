@@ -19,10 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 const WIDTH = 1440;
 const HEIGHT = 520;
-const RADIUS = 180;
+const RADIUS = 125;
 const FRAME_INTERVAL = 1000 / 30;
 
-// Keep the original SVG as the default, including on touch and reduced motion.
+// The SVG remains the fallback while motion is paused or reduced.
 export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   const context = canvas.getContext('2d');
   if (!context || !hero || typeof Path2D === 'undefined') return;
@@ -33,7 +33,10 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   let frame = 0;
   let previousTime = 0;
   let active = false;
-  let visible = true;
+  let visible = false;
+  let focused = document.hasFocus();
+  let disposed = false;
+  let animationTime = 0;
   let strength = 0;
   let pointer = { x: 0, y: 0 };
   let target = pointer;
@@ -41,10 +44,13 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   let transform;
 
   const permitted = () =>
+    !disposed &&
     !reducedMotion.matches &&
-    finePointer.matches &&
     !document.hidden &&
-    visible;
+    focused &&
+    visible &&
+    canvas.width > 0 &&
+    canvas.height > 0;
 
   const reset = () => {
     window.cancelAnimationFrame(frame);
@@ -58,6 +64,7 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   };
 
   const resize = () => {
+    if (disposed) return;
     reset();
     const { width, height } = root.getBoundingClientRect();
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -73,6 +80,7 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
       (ratio * (width - WIDTH * scale)) / 2,
       (ratio * (height - HEIGHT * scale)) / 2,
     ];
+    sync();
   };
 
   const samplePoints = () => {
@@ -100,6 +108,7 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   };
 
   const render = (time) => {
+    if (disposed) return;
     frame = 0;
     if (!permitted()) return reset();
     const elapsed = previousTime ? time - previousTime : FRAME_INTERVAL;
@@ -108,33 +117,43 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
       return;
     }
     previousTime = time;
-    const easing = 1 - Math.exp(-Math.min(elapsed, 64) / 100);
+    const delta = Math.min(elapsed, 64);
+    animationTime += delta;
+    const easing = 1 - Math.exp(-delta / 150);
     strength += ((active ? 1 : 0) - strength) * easing;
     pointer = {
       x: pointer.x + (target.x - pointer.x) * easing,
       y: pointer.y + (target.y - pointer.y) * easing,
     };
-    if (!active && strength < 0.005) return reset();
 
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.setTransform(...transform);
     context.fillStyle = color;
+    const phase = animationTime / 1000;
     for (const point of points) {
+      // Broad, slow waves keep the dots alive without moving the whole map.
+      const wave = Math.sin(point.x / 90 + point.y / 120 - phase * 0.85);
+      const crossWave = Math.cos(point.y / 80 - point.x / 160 + phase * 0.55);
+      const ambientX = crossWave * 0.65;
+      const ambientY = wave * 1.8 + crossWave * 0.55;
       const dx = point.x - pointer.x;
       const dy = point.y - pointer.y;
       const distance = Math.hypot(dx, dy);
       const falloff = Math.max(0, 1 - distance / RADIUS);
       const influence = falloff * falloff * strength;
-      const ripple = Math.sin(distance / 19 - time / 220);
+      const ripple = Math.sin(distance / 28 - phase * 1.8);
       const displacement =
-        influence * (20 + ripple * 10) * Math.min(1, distance / 45);
-      context.globalAlpha = Math.min(1, point.opacity + influence * 0.55);
+        influence * (2.4 + ripple * 0.6) * Math.min(1, distance / 40);
+      context.globalAlpha = Math.min(
+        1,
+        point.opacity * (0.94 + wave * 0.06) + influence * 0.065,
+      );
       context.beginPath();
       context.arc(
-        point.x + (dx / (distance || 1)) * displacement,
-        point.y + (dy / (distance || 1)) * displacement,
-        1.25 + influence * (1.7 + ripple * 0.25),
+        point.x + ambientX + (dx / (distance || 1)) * displacement,
+        point.y + ambientY + (dy / (distance || 1)) * displacement,
+        1.25 + wave * 0.16 + influence * 0.2,
         0,
         Math.PI * 2,
       );
@@ -145,8 +164,18 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
     frame = window.requestAnimationFrame(render);
   };
 
+  const sync = () => {
+    if (disposed) return;
+    if (!permitted()) return reset();
+    if (frame) return;
+    if (!points) points = samplePoints();
+    color = window.getComputedStyle(root).color;
+    frame = window.requestAnimationFrame(render);
+  };
+
   const move = (event) => {
-    if (event.pointerType !== 'mouse' || !permitted()) return;
+    if (event.pointerType !== 'mouse' || !finePointer.matches || !permitted())
+      return;
     const matrix = svg.getScreenCTM();
     if (!matrix) return;
     const position = new DOMPoint(event.clientX, event.clientY).matrixTransform(
@@ -162,40 +191,54 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
       return;
     }
     target = { x: position.x, y: position.y };
-    if (!frame) {
-      if (!points) points = samplePoints();
-      pointer = target;
-      color = window.getComputedStyle(root).color;
-      frame = window.requestAnimationFrame(render);
-    }
+    if (!active) pointer = target;
     active = true;
   };
   const leave = () => {
     active = false;
   };
+  const clearHover = () => {
+    active = false;
+    strength = 0;
+  };
+  const blur = () => {
+    focused = false;
+    sync();
+  };
+  const focus = () => {
+    focused = true;
+    sync();
+  };
   const visibility = () => {
-    if (document.hidden) reset();
+    focused = document.hasFocus();
+    sync();
   };
   const preference = () => {
-    if (!permitted()) reset();
+    if (!finePointer.matches) clearHover();
+    sync();
   };
   const theme = new MutationObserver(() => {
+    if (disposed) return;
     color = window.getComputedStyle(root).color;
   });
-  const observer = new IntersectionObserver(([entry]) => {
+  const observer = new IntersectionObserver((entries) => {
+    if (disposed) return;
+    const entry = entries[entries.length - 1];
+    if (!entry) return;
     visible = entry.isIntersecting;
-    if (!visible) reset();
+    sync();
   });
   const size = new ResizeObserver(resize);
 
   resize();
   hero.addEventListener('pointermove', move, { passive: true });
   hero.addEventListener('pointerleave', leave);
-  hero.addEventListener('pointercancel', reset);
-  window.addEventListener('blur', reset);
+  hero.addEventListener('pointercancel', clearHover);
+  window.addEventListener('blur', blur);
+  window.addEventListener('focus', focus);
   window.addEventListener('resize', resize);
   // Scrolling changes map coordinates beneath a stationary pointer.
-  window.addEventListener('scroll', reset, { passive: true });
+  window.addEventListener('scroll', clearHover, { passive: true });
   document.addEventListener('visibilitychange', visibility);
   reducedMotion.addEventListener('change', preference);
   finePointer.addEventListener('change', preference);
@@ -206,13 +249,15 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
   observer.observe(root);
   size.observe(root);
   return () => {
+    disposed = true;
     reset();
     hero.removeEventListener('pointermove', move);
     hero.removeEventListener('pointerleave', leave);
-    hero.removeEventListener('pointercancel', reset);
-    window.removeEventListener('blur', reset);
+    hero.removeEventListener('pointercancel', clearHover);
+    window.removeEventListener('blur', blur);
+    window.removeEventListener('focus', focus);
     window.removeEventListener('resize', resize);
-    window.removeEventListener('scroll', reset);
+    window.removeEventListener('scroll', clearHover);
     document.removeEventListener('visibilitychange', visibility);
     reducedMotion.removeEventListener('change', preference);
     finePointer.removeEventListener('change', preference);
