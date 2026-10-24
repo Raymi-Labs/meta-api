@@ -11,6 +11,26 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ffffff" />
+    <!-- Keep this small bootstrap in sync with context/Theme/theme.js. -->
+    <script id="theme-init">
+      (function () {
+        var theme = 'auto';
+        try {
+          theme = localStorage.getItem('theme-mode');
+        } catch (e) {}
+        if (theme !== 'dark' && theme !== 'light') {
+          try {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          } catch (e) {
+            theme = 'light';
+          }
+        }
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
 
     <!-- 基础 SEO：品牌词「元衡 API」打头 + 长尾场景词，避开头部大词 -->
     <title>
@@ -84,6 +104,13 @@
   </head>
 
   <body>
+    <script id="theme-body-init">
+      if (document.documentElement.classList.contains('dark')) {
+        document.body.setAttribute('theme-mode', 'dark');
+      } else {
+        document.body.removeAttribute('theme-mode');
+      }
+    </script>
     <!-- noscript 兜底内容：搜索引擎与无 JS 环境可读到核心信息 -->
     <noscript>
       <h1>元衡 API：一口接入多模型，智能调度更稳定</h1>
