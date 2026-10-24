@@ -591,6 +591,102 @@ test('resizing preserves one RAF chain with updated canvas dimensions', (t) => {
   assert.equal(env.maximumQueued, 1);
 });
 
+test('normal desktops keep DPR detail while 4K and ultrawide canvases obey the pixel budget', async (t) => {
+  for (const [name, width, height, capped] of [
+    ['desktop', 1920, (1920 * 520) / 1440, false],
+    ['4K', 3840, (3840 * 520) / 1440, true],
+    ['ultrawide', 5120, (5120 * 520) / 1440, true],
+  ]) {
+    await t.test(name, (t) => {
+      const env = fixture(t, {
+        rect: { width, height },
+        devicePixelRatio: 3,
+      });
+      const pixels = env.canvas.width * env.canvas.height;
+      assert.ok(pixels <= 6_000_000);
+      if (capped) {
+        assert.ok(
+          pixels > 5_980_000,
+          'use the budget without unnecessarily blurring the map',
+        );
+        assert.ok(env.canvas.width < width * 2);
+      } else {
+        assert.equal(env.canvas.width, Math.round(width * 2));
+        assert.equal(env.canvas.height, Math.round(height * 2));
+      }
+      env.tick();
+      assert.equal(env.animating, true);
+      assert.equal(env.maximumQueued, 1);
+    });
+  }
+});
+
+test('ultrawide-to-mobile resizing preserves SVG alignment and pointer response', (t) => {
+  const env = fixture(t, {
+    rect: { left: 27, top: 80, width: 5120, height: (5120 * 520) / 1440 },
+    devicePixelRatio: 3,
+  });
+  const sampled = env.context.sampleCount;
+  for (const [width, height] of [
+    [5120, (5120 * 520) / 1440],
+    [1000, 400],
+    [390, 400],
+    [3840, (3840 * 520) / 1440],
+  ]) {
+    env.rect.width = width;
+    env.rect.height = height;
+    env.observers.size.fire();
+    env.move();
+    env.tick();
+    const draw = env.context.draws.at(-1);
+    const [scaleX, , , scaleY, offsetX, offsetY] =
+      env.context.transforms.at(-1);
+    const svgScale = Math.min(width / 1440, height / 520);
+    const svgX = (width - 1440 * svgScale) / 2 + draw.x * svgScale;
+    const svgY = (height - 520 * svgScale) / 2 + draw.y * svgScale;
+    const canvasX = ((draw.x * scaleX + offsetX) * width) / env.canvas.width;
+    const canvasY = ((draw.y * scaleY + offsetY) * height) / env.canvas.height;
+    assert.ok(
+      Math.abs(canvasX - svgX) < 1e-8,
+      'canvas and SVG must agree on the screen x coordinate',
+    );
+    assert.ok(
+      Math.abs(canvasY - svgY) < 1e-8,
+      'canvas and SVG must agree on the screen y coordinate',
+    );
+    assert.ok(Math.abs((scaleX * width) / env.canvas.width - svgScale) < 1e-8);
+    assert.ok(
+      Math.abs((scaleY * height) / env.canvas.height - svgScale) < 1e-8,
+    );
+    assert.ok(env.canvas.width * env.canvas.height <= 6_000_000);
+    assert.equal(env.context.sampleCount, sampled);
+    assert.equal(env.queue.size, 1);
+  }
+  assert.equal(env.maximumQueued, 1);
+  env.restore();
+
+  // Resolution affects raster sharpness, not the logical hover location or
+  // its dot displacement, size, opacity and ambient animation phase.
+  const pointerFrames = (options) =>
+    capture(t, {
+      options,
+      frameCount: 20,
+      beforeFrame: (map) => map.move(750, 280),
+    });
+  const normal = pointerFrames({});
+  for (const rect of [
+    { left: 27, top: 80, width: 5120, height: (5120 * 520) / 1440 },
+    { left: -305, top: 80, width: 1000, height: 400 },
+  ]) {
+    const resized = pointerFrames({ rect, devicePixelRatio: 3 });
+    for (let index = 0; index < normal.length; index++) {
+      for (const key of ['x', 'y', 'radius', 'alpha']) {
+        assert.ok(Math.abs(resized[index][key] - normal[index][key]) < 1e-8);
+      }
+    }
+  }
+});
+
 test('batched intersection entries use the most recent visibility state', (t) => {
   const env = fixture(t);
   env.tick();

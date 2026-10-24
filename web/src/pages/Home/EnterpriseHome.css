@@ -55,12 +55,13 @@ html.dark .home-enterprise {
   outline-offset: 5px;
 }
 .yh-container {
-  width: min(1180px, calc(100% - 64px));
+  width: calc(100% - clamp(48px, 6vw, 128px));
   margin-inline: auto;
 }
 .yh-hero {
   position: relative;
   isolation: isolate;
+  overflow: clip;
   padding-top: 85px;
   background: linear-gradient(180deg, var(--yh-surface), var(--yh-bg));
 }
@@ -68,8 +69,9 @@ html.dark .home-enterprise {
   position: absolute;
   top: 3px;
   left: 50%;
-  width: min(1540px, 120vw);
-  height: 550px;
+  width: max(1540px, 100%);
+  height: auto;
+  aspect-ratio: 1440 / 520;
   transform: translateX(-50%);
   color: #6684bf;
   z-index: -1;

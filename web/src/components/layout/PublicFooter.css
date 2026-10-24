@@ -17,6 +17,16 @@
   margin-inline: auto;
 }
 
+@media (min-width: 768px) {
+  .public-shell--landing .public-footer--directory {
+    padding-inline: clamp(24px, 3vw, 64px);
+  }
+
+  .public-shell--landing .public-footer-inner {
+    width: 100%;
+  }
+}
+
 .public-footer-brand {
   display: inline-flex;
   align-items: center;

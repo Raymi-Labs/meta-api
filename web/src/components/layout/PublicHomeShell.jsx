@@ -201,7 +201,9 @@ const PublicHomeShell = () => {
   };
 
   return (
-    <div className='public-shell min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]'>
+    <div
+      className={`public-shell ${!isDownloadPage && !customLanding ? 'public-shell--landing' : ''} min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]`}
+    >
       <GlobalTopProgress />
       {(!customLanding || isDownloadPage) && (
         <header className='public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>

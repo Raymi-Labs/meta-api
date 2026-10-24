@@ -21,6 +21,7 @@ const WIDTH = 1440;
 const HEIGHT = 520;
 const RADIUS = 125;
 const FRAME_INTERVAL = 1000 / 30;
+const MAX_CANVAS_PIXELS = 6000000;
 
 // The SVG remains the fallback while motion is paused or reduced.
 export function attachWorldMapMotion({ root, svg, canvas, hero }) {
@@ -67,18 +68,30 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
     if (disposed) return;
     reset();
     const { width, height } = root.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
+    let ratio = Math.min(window.devicePixelRatio || 1, 2);
+    let pixelWidth = Math.round(width * ratio);
+    let pixelHeight = Math.round(height * ratio);
+    if (pixelWidth * pixelHeight > MAX_CANVAS_PIXELS) {
+      // Keep full-width maps affordable on high-density ultrawide displays.
+      ratio = Math.min(ratio, Math.sqrt(MAX_CANVAS_PIXELS / (width * height)));
+      pixelWidth = Math.floor(width * ratio);
+      pixelHeight = Math.floor(height * ratio);
+    }
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    // Account for integer backing dimensions so CSS scaling stays aligned
+    // with the SVG even when the pixel budget reduces the canvas resolution.
+    const ratioX = width > 0 ? pixelWidth / width : 0;
+    const ratioY = height > 0 ? pixelHeight / height : 0;
     // Match SVG's default xMidYMid meet, including its letterboxing.
     const scale = Math.min(width / WIDTH, height / HEIGHT);
     transform = [
-      ratio * scale,
+      ratioX * scale,
       0,
       0,
-      ratio * scale,
-      (ratio * (width - WIDTH * scale)) / 2,
-      (ratio * (height - HEIGHT * scale)) / 2,
+      ratioY * scale,
+      (ratioX * (width - WIDTH * scale)) / 2,
+      (ratioY * (height - HEIGHT * scale)) / 2,
     ];
     sync();
   };
