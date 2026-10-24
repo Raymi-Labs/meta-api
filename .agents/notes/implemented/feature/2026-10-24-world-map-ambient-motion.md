@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-复用 WorldMap 的 SVG 轮廓和 Canvas 点阵；页面聚焦、地图可见且没有开启减少动态效果时，自动播放缓慢、低幅度的基础波动。鼠标只叠加小幅扰动，离开后回归基础动画。触控设备允许基础波动，不接管触摸或滚动；减少动态效果保留静态 SVG。
+复用 WorldMap 的 SVG 轮廓和 Canvas 点阵；页面聚焦、地图可见且没有开启减少动态效果时，自动播放缓慢、低幅度的基础波动。基础波纹同步驱动局部明暗色阶，深浅区域缓慢流动，保留中心与边缘淡出和原有平均明度。鼠标只叠加小幅扰动，离开后回归基础动画。触控设备允许基础波动，不接管触摸或滚动；减少动态效果保留静态 SVG。
 
 地图离屏、页面隐藏或窗口失焦时暂停，重新可见/聚焦时自动恢复；滚动只清除悬停状态；保持单一 RAF、绘制上限 30 FPS 与 DPR 上限 2。卸载后不允许迟到的 observer 回调重启动画。
 
@@ -25,8 +25,9 @@ Status: implemented
 ## Testing
 
 - Chrome 鼠标移出地图连续观察基础波动，悬停保持轻微变化；明暗主题正常，390px 无横向溢出，滚出地图暂停、滚回自动恢复。
-- `bun run test:world-map-motion` 31 项通过：无鼠标持续、触控/coarse/pen 不叠加悬停、移出/滚动/cancel 回归基础、focus/hidden/offscreen/reduced 的暂停恢复、单 RAF、letterbox 坐标和 resize。
+- `bun run test:world-map-motion` 34 项通过：无鼠标持续、触控/coarse/pen 不叠加悬停、移出/滚动/cancel 回归基础、focus/hidden/offscreen/reduced 的暂停恢复、单 RAF、letterbox 坐标和 resize。
 - 相同动画相位逐帧对比验证鼠标增加的点半径不超过 0.2、位移不超过 3、透明度不超过 0.065；批量 IntersectionObserver 采用最后状态，卸载后迟到回调不清除画布或排帧。
+- 明暗回归直接检查绘制结果：无鼠标也持续加深/变浅，较深区域 30 秒内 alpha 跨度大于 0.4，相邻帧变化小于 0.025；多位置 alpha 保持 0～1，中心/边缘淡出，hover 增量仍不超过 0.065。Chrome 宽屏与 390px 亮暗模式、静置与悬停已验收。
 - 完整前端生产构建与五页预渲染、ESLint/Prettier、发布策略和决策笔记校验通过；构建后的预览从下载页返回首页时，无需移动鼠标即可运行基础动画。
 
 ## Consequences

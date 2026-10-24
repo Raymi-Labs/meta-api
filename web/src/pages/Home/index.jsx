@@ -29,6 +29,7 @@ import { isHttpsUrl } from '../../helpers/richContent';
 import { getLogo, getSystemName } from '../../helpers/storage';
 import RichContent from '../../components/common/RichContent';
 import EnterpriseHome from './EnterpriseHome';
+import { getPublicHomeServerAddress } from './homeAddress';
 
 const PublicNoticeModal = lazy(
   () => import('../../components/layout/PublicNoticeModal'),
@@ -42,13 +43,6 @@ const getCachedHomePageContent = () => {
   } catch (error) {
     return '';
   }
-};
-
-const getPublicHomeServerAddress = (serverAddress) => {
-  const normalizedServerAddress = serverAddress.replace(/\/$/, '');
-  return normalizedServerAddress === 'https://nan.meta-api.vip'
-    ? 'https://cn.meta-api.vip'
-    : normalizedServerAddress;
 };
 
 const Home = ({ onLandingChange } = {}) => {
@@ -65,9 +59,10 @@ const Home = ({ onLandingChange } = {}) => {
   const [noticeContent, setNoticeContent] = useState('');
   const [noticeVisible, setNoticeVisible] = useState(false);
   const docsLink = statusState?.status?.docs_link || '';
-  const serverAddress =
-    statusState?.status?.server_address || `${window.location.origin}`;
-  const publicHomeServerAddress = getPublicHomeServerAddress(serverAddress);
+  const publicHomeServerAddress = getPublicHomeServerAddress(
+    statusState?.status?.server_address,
+    window.location.origin,
+  );
   const endpointItems = API_ENDPOINTS.map((e) => ({ value: e }));
   const [endpointIndex, setEndpointIndex] = useState(0);
   const useDefaultHome = homePageContent === '';

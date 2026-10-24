@@ -29,6 +29,7 @@ class Events {
 }
 
 function fixture(t, options = {}) {
+  const [sampleX, sampleY] = options.samplePoint ?? [716, 261];
   const rect = {
     left: 0,
     top: 0,
@@ -94,11 +95,11 @@ function fixture(t, options = {}) {
     clearRect() {
       this.clearCount++;
     },
-    // A tiny island with one grid point keeps the renderer observable without
-    // making this test depend on the production map's coastline geometry.
+    // A tiny island with one chosen grid point keeps the renderer observable
+    // without depending on the production map's coastline geometry.
     isPointInPath(_path, x, y) {
       this.sampleCount++;
-      return x === 716 && y === 261;
+      return x === sampleX && y === sampleY;
     },
     beginPath() {},
     arc(...arc) {
@@ -293,6 +294,78 @@ test('a visible focused map keeps changing without any pointer events', (t) => {
   }
   assert.notDeepEqual(env.context.draws.at(-1), first);
   assert.equal(env.maximumQueued, 1);
+});
+
+test('ambient color visibly deepens and lightens without flashing between frames', (t) => {
+  const frames = capture(t, {
+    options: { samplePoint: [1185, 261] },
+    frameCount: 900,
+  });
+  const alphas = frames.map((frame) => frame.alpha);
+  const contrast = Math.max(...alphas) - Math.min(...alphas);
+  assert.ok(
+    contrast > 0.4,
+    'ambient color must change noticeably without hover',
+  );
+  let darkening = 0;
+  let lightening = 0;
+  for (let index = 1; index < alphas.length; index++) {
+    const change = alphas[index] - alphas[index - 1];
+    assert.ok(Math.abs(change) < 0.025, 'adjacent frames must not flash');
+    if (change > 0.0001) darkening++;
+    if (change < -0.0001) lightening++;
+  }
+  assert.ok(darkening > 100, 'the map must gradually deepen in color');
+  assert.ok(lightening > 100, 'the map must gradually lighten again');
+});
+
+test('ambient shading retains the soft center and edge around the darker map area', (t) => {
+  const alphasAt = (samplePoint) =>
+    capture(t, { options: { samplePoint }, frameCount: 900 }).map(
+      (frame) => frame.alpha,
+    );
+  const center = alphasAt([716, 261]);
+  const outer = alphasAt([1185, 261]);
+  const edge = alphasAt([1437, 261]);
+  const average = (values) =>
+    values.reduce((sum, value) => sum + value, 0) / values.length;
+  assert.ok(
+    Math.max(...center) < 0.25,
+    'the title area must retain its center fade',
+  );
+  assert.ok(average(outer) > average(center) * 3);
+  assert.ok(average(edge) < average(outer) * 0.4);
+  assert.ok(
+    Math.max(...center) - Math.min(...center) > 0.07,
+    'even faint center dots should still change shade',
+  );
+});
+
+test('ambient and hovered alpha remain finite and within canvas bounds across the map', (t) => {
+  for (const samplePoint of [
+    [716, 261],
+    [1185, 261],
+    [1437, 261],
+    [716, 93],
+    [716, 429],
+  ]) {
+    const baseline = capture(t, {
+      options: { samplePoint },
+      frameCount: 600,
+    });
+    const hovered = capture(t, {
+      options: { samplePoint },
+      frameCount: 600,
+      beforeFrame: (env) => env.move(...samplePoint),
+    });
+    for (let index = 0; index < baseline.length; index++) {
+      for (const alpha of [baseline[index].alpha, hovered[index].alpha]) {
+        assert.ok(Number.isFinite(alpha) && alpha >= 0 && alpha <= 1);
+      }
+      const added = hovered[index].alpha - baseline[index].alpha;
+      assert.ok(added >= -1e-10 && added <= 0.065 + 1e-10);
+    }
+  }
 });
 
 test('coarse pointers, touch and pen retain ambient motion without adding hover', async (t) => {

@@ -135,6 +135,9 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
       // Broad, slow waves keep the dots alive without moving the whole map.
       const wave = Math.sin(point.x / 90 + point.y / 120 - phase * 0.85);
       const crossWave = Math.cos(point.y / 80 - point.x / 160 + phase * 0.55);
+      // Move broad light/dark bands with the waves, preserving the center fade
+      // and average contrast instead of making the whole map darker at once.
+      const shade = (wave * 0.8 + crossWave * 0.2 + 1) / 2;
       const ambientX = crossWave * 0.65;
       const ambientY = wave * 1.8 + crossWave * 0.55;
       const dx = point.x - pointer.x;
@@ -147,7 +150,7 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
         influence * (2.4 + ripple * 0.6) * Math.min(1, distance / 40);
       context.globalAlpha = Math.min(
         1,
-        point.opacity * (0.94 + wave * 0.06) + influence * 0.065,
+        point.opacity * (0.4 + shade * 1.08) + influence * 0.065,
       );
       context.beginPath();
       context.arc(

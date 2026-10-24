@@ -67,6 +67,7 @@
     "test:runtime-docs": "node --test scripts/runtime-docs.test.mjs",
     "test:desktop-download": "node scripts/desktop-download.test.mjs",
     "test:auth-redirect": "node scripts/auth-redirect.test.mjs",
+    "test:home-address": "node --test scripts/home-address.test.mjs",
     "test:world-map-motion": "node --test scripts/world-map-motion.test.mjs",
     "test:capability-motion": "node --test scripts/capability-motion.test.mjs",
     "test:request-failure": "node scripts/request-failure.test.mjs",
