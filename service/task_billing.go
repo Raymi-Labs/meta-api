@@ -79,6 +79,11 @@ func taskIsSubscription(task *model.Task) bool {
 
 // taskAdjustFunding 调整任务的资金来源（钱包或订阅），delta > 0 表示扣费，delta < 0 表示退还。
 func taskAdjustFunding(task *model.Task, delta int) error {
+	if task.PrivateData.BillingSource == BillingSourceToken {
+		// Token-only tasks never charged the wallet; only the token ledger is
+		// adjusted by taskAdjustTokenQuota below.
+		return nil
+	}
 	if taskIsSubscription(task) {
 		return model.PostConsumeUserSubscriptionDelta(task.PrivateData.SubscriptionId, int64(delta))
 	}

@@ -750,6 +750,9 @@ const geminiFunctionSchemaMaxDepth = 64
 
 // cleanFunctionParameters recursively removes unsupported fields from Gemini function parameters.
 func cleanFunctionParameters(params interface{}) interface{} {
+	if raw, ok := params.(json.RawMessage); ok {
+		return cleanRawFunctionParameters(raw)
+	}
 	return cleanFunctionParametersWithDepth(params, 0)
 }
 
@@ -903,6 +906,9 @@ func normalizeGeminiSchemaTypeAndNullable(schema map[string]interface{}) {
 }
 
 func removeAdditionalPropertiesWithDepth(schema interface{}, depth int) interface{} {
+	if raw, ok := schema.(json.RawMessage); ok {
+		return cleanRawResponseSchema(raw, depth)
+	}
 	if depth >= 5 {
 		return schema
 	}

@@ -18,6 +18,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func openAIResponseFormatToOllama(responseFormat *dto.ResponseFormat) (any, error) {
+	if responseFormat == nil {
+		return nil, nil
+	}
+	if responseFormat.Type == "json" {
+		return "json", nil
+	}
+	if responseFormat.Type != "json_schema" || len(responseFormat.JsonSchema) == 0 {
+		return nil, nil
+	}
+	var schema struct {
+		Schema json.RawMessage `json:"schema"`
+	}
+	if err := common.Unmarshal(responseFormat.JsonSchema, &schema); err != nil {
+		return nil, fmt.Errorf("invalid ollama response format: %w", err)
+	}
+	if len(schema.Schema) == 0 || common.GetJsonType(schema.Schema) == "null" {
+		return nil, nil
+	}
+	return schema.Schema, nil
+}
+
 func openAIChatToOllamaChat(c *gin.Context, r *dto.GeneralOpenAIRequest) (*OllamaChatRequest, error) {
 	chatReq := &OllamaChatRequest{
 		Model:   r.Model,
@@ -25,17 +47,11 @@ func openAIChatToOllamaChat(c *gin.Context, r *dto.GeneralOpenAIRequest) (*Ollam
 		Options: map[string]any{},
 		Think:   r.Think,
 	}
-	if r.ResponseFormat != nil {
-		if r.ResponseFormat.Type == "json" {
-			chatReq.Format = "json"
-		} else if r.ResponseFormat.Type == "json_schema" {
-			if len(r.ResponseFormat.JsonSchema) > 0 {
-				var schema any
-				_ = json.Unmarshal(r.ResponseFormat.JsonSchema, &schema)
-				chatReq.Format = schema
-			}
-		}
+	format, err := openAIResponseFormatToOllama(r.ResponseFormat)
+	if err != nil {
+		return nil, err
 	}
+	chatReq.Format = format
 
 	// options mapping
 	if r.Temperature != nil {
@@ -181,15 +197,11 @@ func openAIToGenerate(c *gin.Context, r *dto.GeneralOpenAIRequest) (*OllamaGener
 			gen.Suffix = s
 		}
 	}
-	if r.ResponseFormat != nil {
-		if r.ResponseFormat.Type == "json" {
-			gen.Format = "json"
-		} else if r.ResponseFormat.Type == "json_schema" {
-			var schema any
-			_ = json.Unmarshal(r.ResponseFormat.JsonSchema, &schema)
-			gen.Format = schema
-		}
+	format, err := openAIResponseFormatToOllama(r.ResponseFormat)
+	if err != nil {
+		return nil, err
 	}
+	gen.Format = format
 	if r.Temperature != nil {
 		gen.Options["temperature"] = r.Temperature
 	}

@@ -107,7 +107,7 @@ func TestFunctionParametersToClaudeInputSchema(t *testing.T) {
 func TestFunctionParametersToClaudeInputSchemaDoesNotMutateSource(t *testing.T) {
 	parameters := map[string]any{"additionalProperties": false}
 
-	schema := functionParametersToClaudeInputSchema(parameters)
+	schema := functionParametersToClaudeInputSchema(parameters).(map[string]any)
 
 	assert.NotContains(t, parameters, "type")
 	assert.NotContains(t, parameters, "properties")

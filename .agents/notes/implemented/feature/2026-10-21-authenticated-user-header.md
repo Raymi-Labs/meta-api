@@ -12,6 +12,8 @@ Status: implemented
 
 通配与正则转发统一使用小写键，与已有显式覆盖规范保持一致；最终应用覆盖时删除请求中大小写等价的旧键，再设置唯一值。沿用现有会话头占位符和后台测试规则，不增加供应商专用路由、数据库字段、计费或自动生产配置。
 
+[原生异步任务扩展](../bug-fix/2026-10-24-task-submission-and-terminal-consistency.md)复用该占位符：提交仍读取认证上下文，后台轮询和既有鉴权内容查询只读取已持久化任务的用户归属，不使用当前下载者或客户端头作为身份。
+
 ## Existing notes audit
 
 [OpenCode 会话头](../bug-fix/2026-10-13-opencode-session-header.md)和[Claude 客户端上下文](../bug-fix/2026-10-17-claude-review-protocol-integrity.md)部分相邻，继续保持域名与协议边界；[发布入口安全](../process/2026-10-21-release-entrypoint-safety.md)管部署顺序，不改写其决定。没有现有认证用户占位符归属。[模型筛选抽屉](2026-10-21-pricing-filter-drawer.md)是独立前端工作，按用户要求共同交付，分别验证。

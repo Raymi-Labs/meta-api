@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -24,7 +24,7 @@ func getGeminiVideoURL(c *gin.Context, channel *model.Channel, task *model.Task,
 	}
 
 	if url := extractGeminiVideoURLFromTaskData(task); url != "" {
-		return ensureAPIKey(url, apiKey), nil
+		return url, nil
 	}
 
 	baseURL := constant.ChannelBaseURLs[channel.Type]
@@ -50,6 +50,7 @@ func getGeminiVideoURL(c *gin.Context, channel *model.Channel, task *model.Task,
 	}
 
 	proxy := channel.GetSetting().Proxy
+	adaptor.Init(service.TaskPollingRelayInfo(channel, task.UserId, apiKey))
 	resp, err := adaptor.FetchTask(baseURL, apiKey, map[string]any{
 		"task_id": task.GetUpstreamTaskID(),
 		"action":  task.Action,
@@ -80,11 +81,11 @@ func getGeminiVideoURL(c *gin.Context, channel *model.Channel, task *model.Task,
 
 	taskInfo, parseErr := adaptor.ParseTaskResult(body)
 	if parseErr == nil && taskInfo != nil && taskInfo.RemoteUrl != "" {
-		return ensureAPIKey(taskInfo.RemoteUrl, apiKey), nil
+		return taskInfo.RemoteUrl, nil
 	}
 
 	if url := extractGeminiVideoURLFromPayload(body); url != "" {
-		return ensureAPIKey(url, apiKey), nil
+		return url, nil
 	}
 
 	if parseErr != nil {
@@ -173,15 +174,19 @@ func extractGeminiVideoURLFromGeneratedSamples(gvr map[string]any) string {
 	return ""
 }
 
-func ensureAPIKey(uri, key string) string {
-	if key == "" || uri == "" {
-		return uri
+// Called only after the content origin is verified. Preserve signed query
+// bytes/order and any provider-supplied key; append only our missing credential.
+func addGeminiContentAPIKey(uri *url.URL, key string) error {
+	query, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		return fmt.Errorf("invalid Gemini content query")
 	}
-	if strings.Contains(uri, "key=") {
-		return uri
+	if key == "" || query.Has("key") {
+		return nil
 	}
-	if strings.Contains(uri, "?") {
-		return fmt.Sprintf("%s&key=%s", uri, key)
+	if uri.RawQuery != "" {
+		uri.RawQuery += "&"
 	}
-	return fmt.Sprintf("%s?key=%s", uri, key)
+	uri.RawQuery += "key=" + url.QueryEscape(key)
+	return nil
 }

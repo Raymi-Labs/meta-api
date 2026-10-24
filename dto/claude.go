@@ -162,9 +162,9 @@ func (c *ClaudeMessage) ParseContent() ([]ClaudeMediaMessage, error) {
 }
 
 type Tool struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description,omitempty"`
-	InputSchema map[string]interface{} `json:"input_schema"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	InputSchema any    `json:"input_schema"`
 }
 
 type InputSchema struct {
@@ -394,6 +394,8 @@ func (c *ClaudeRequest) AddTool(tool any) {
 	switch tools := c.Tools.(type) {
 	case []any:
 		c.Tools = append(tools, tool)
+	case json.RawMessage:
+		c.Tools = append(c.GetTools(), tool)
 	default:
 		// 如果Tools不是[]any类型，重新初始化为[]any
 		c.Tools = []any{tool}
@@ -409,6 +411,16 @@ func (c *ClaudeRequest) GetTools() []any {
 	switch tools := c.Tools.(type) {
 	case []any:
 		return tools
+	case json.RawMessage:
+		var rawTools []json.RawMessage
+		if err := common.Unmarshal(tools, &rawTools); err != nil {
+			return nil
+		}
+		decoded := make([]any, len(rawTools))
+		for i, raw := range rawTools {
+			decoded[i] = raw
+		}
+		return decoded
 	default:
 		return nil
 	}
@@ -429,6 +441,24 @@ func ProcessTools(tools []any) ([]*Tool, []*ClaudeWebSearchTool) {
 			normalTools = append(normalTools, &t)
 		case ClaudeWebSearchTool:
 			webSearchTools = append(webSearchTools, &t)
+		case json.RawMessage:
+			var fields map[string]json.RawMessage
+			if err := common.Unmarshal(t, &fields); err != nil {
+				continue
+			}
+			var toolType string
+			_ = common.Unmarshal(fields["type"], &toolType)
+			if IsClaudeWebSearchToolType(toolType) {
+				var webSearchTool ClaudeWebSearchTool
+				if common.Unmarshal(t, &webSearchTool) == nil {
+					webSearchTools = append(webSearchTools, &webSearchTool)
+				}
+			} else if _, present := fields["input_schema"]; present {
+				var normalTool Tool
+				if common.Unmarshal(t, &normalTool) == nil {
+					normalTools = append(normalTools, &normalTool)
+				}
+			}
 		case map[string]any:
 			toolType := common.Interface2String(t["type"])
 			if IsClaudeWebSearchToolType(toolType) {

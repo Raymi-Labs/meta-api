@@ -1,6 +1,7 @@
 package deepseek
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -128,16 +129,28 @@ func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	}
 	request.Model = baseModel
 	request.Thinking = &dto.Thinking{Type: thinkingType}
-	if effort == "" {
-		request.OutputConfig = nil
-	} else {
-		outputConfig, err := common.Marshal(map[string]string{
-			"effort": effort,
-		})
+	// Only change effort; preserve unrelated output settings and their raw values.
+	outputConfig := make(map[string]json.RawMessage)
+	if len(request.OutputConfig) > 0 && common.GetJsonType(request.OutputConfig) == "object" {
+		if err := common.Unmarshal(request.OutputConfig, &outputConfig); err != nil {
+			return fmt.Errorf("invalid output_config: %w", err)
+		}
+	}
+	delete(outputConfig, "effort")
+	if effort != "" {
+		encoded, err := common.Marshal(effort)
+		if err != nil {
+			return fmt.Errorf("error marshalling effort: %w", err)
+		}
+		outputConfig["effort"] = encoded
+	}
+	request.OutputConfig = nil
+	if len(outputConfig) > 0 {
+		encoded, err := common.Marshal(outputConfig)
 		if err != nil {
 			return fmt.Errorf("error marshalling output_config: %w", err)
 		}
-		request.OutputConfig = outputConfig
+		request.OutputConfig = encoded
 	}
 	if info != nil {
 		info.ReasoningEffort = effort

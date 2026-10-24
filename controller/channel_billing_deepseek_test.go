@@ -18,6 +18,30 @@ func TestGetDeepSeekBalanceUSD(t *testing.T) {
 		wantErrContains string
 	}{
 		{
+			name:            "zero USD falls back to funded CNY",
+			responseJSON:    `{"balance_infos":[{"currency":"USD","total_balance":"0.00"},{"currency":"CNY","total_balance":"73.00"}]}`,
+			usdExchangeRate: 7.3,
+			want:            10,
+		},
+		{
+			name:            "zero USD falls back when CNY appears first",
+			responseJSON:    `{"balance_infos":[{"currency":"CNY","total_balance":"73.00"},{"currency":"USD","total_balance":"0.00"}]}`,
+			usdExchangeRate: 7.3,
+			want:            10,
+		},
+		{
+			name:            "lone zero USD needs no exchange rate",
+			responseJSON:    `{"balance_infos":[{"currency":"USD","total_balance":"0.00"}]}`,
+			usdExchangeRate: 0,
+			want:            0,
+		},
+		{
+			name:            "zero USD does not mask invalid funded CNY exchange rate",
+			responseJSON:    `{"balance_infos":[{"currency":"USD","total_balance":"0.00"},{"currency":"CNY","total_balance":"73.00"}]}`,
+			usdExchangeRate: 0,
+			wantErrContains: "USD exchange rate must be greater than zero",
+		},
+		{
 			name:            "prefers USD when USD precedes CNY",
 			responseJSON:    `{"balance_infos":[{"currency":"USD","total_balance":"12.50"},{"currency":"CNY","total_balance":"73.00"}]}`,
 			usdExchangeRate: 7.3,

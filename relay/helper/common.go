@@ -3,7 +3,6 @@ package helper
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
@@ -29,12 +28,14 @@ func FlushWriter(c *gin.Context) (err error) {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
 
-	flusher, ok := c.Writer.(http.Flusher)
-	if !ok {
-		return errors.New("streaming error: flusher not found")
+	if err := flushStreamWriter(c.Writer); err != nil {
+		return err
 	}
-
-	flusher.Flush()
+	// Gin may hide a bottom-level flush error. If that flush canceled the
+	// request, do not claim delivery merely because its wrapper returned nil.
+	if c.Request != nil && c.Request.Context().Err() != nil {
+		return fmt.Errorf("request context done after flush: %w", c.Request.Context().Err())
+	}
 	return nil
 }
 
@@ -52,6 +53,7 @@ func SetEventStreamHeaders(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer = &streamResponseWriter{ResponseWriter: c.Writer}
 }
 
 func ClaudeData(c *gin.Context, resp dto.ClaudeResponse) error {
@@ -77,10 +79,20 @@ func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) {
 	_ = FlushWriter(c)
 }
 
-func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data string) {
-	c.Render(-1, common.CustomEvent{Data: fmt.Sprintf("event: %s\n", resp.Type)})
-	c.Render(-1, common.CustomEvent{Data: fmt.Sprintf("data: %s", data)})
-	_ = FlushWriter(c)
+func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data string) error {
+	if c == nil || c.Writer == nil {
+		return errors.New("context or writer is nil")
+	}
+	if c.Request != nil && c.Request.Context().Err() != nil {
+		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
+	}
+	if err := (common.CustomEvent{Data: fmt.Sprintf("event: %s\n", resp.Type)}).Render(c.Writer); err != nil {
+		return err
+	}
+	if err := (common.CustomEvent{Data: fmt.Sprintf("data: %s", data)}).Render(c.Writer); err != nil {
+		return err
+	}
+	return FlushWriter(c)
 }
 
 func StringData(c *gin.Context, str string) error {
@@ -92,7 +104,9 @@ func StringData(c *gin.Context, str string) error {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
 
-	c.Render(-1, common.CustomEvent{Data: "data: " + str})
+	if err := (common.CustomEvent{Data: "data: " + str}).Render(c.Writer); err != nil {
+		return err
+	}
 	return FlushWriter(c)
 }
 

@@ -358,7 +358,8 @@ func (c *GeminiChatGenerationConfig) UnmarshalJSON(data []byte) error {
 		CandidateCountSnake             int                   `json:"candidate_count,omitempty"`
 		StopSequencesSnake              []string              `json:"stop_sequences,omitempty"`
 		ResponseMimeTypeSnake           string                `json:"response_mime_type,omitempty"`
-		ResponseSchemaSnake             any                   `json:"response_schema,omitempty"`
+		ResponseSchema                  json.RawMessage       `json:"responseSchema,omitempty"`
+		ResponseSchemaSnake             json.RawMessage       `json:"response_schema,omitempty"`
 		ResponseJsonSchemaSnake         json.RawMessage       `json:"response_json_schema,omitempty"`
 		PresencePenaltySnake            *float32              `json:"presence_penalty,omitempty"`
 		FrequencyPenaltySnake           *float32              `json:"frequency_penalty,omitempty"`
@@ -376,6 +377,7 @@ func (c *GeminiChatGenerationConfig) UnmarshalJSON(data []byte) error {
 	}
 
 	*c = GeminiChatGenerationConfig(aux.Alias)
+	c.ResponseSchema = rawSchemaValue(aux.ResponseSchema)
 
 	// Prioritize snake_case if present
 	if aux.TopPSnake != 0 {
@@ -396,8 +398,8 @@ func (c *GeminiChatGenerationConfig) UnmarshalJSON(data []byte) error {
 	if aux.ResponseMimeTypeSnake != "" {
 		c.ResponseMimeType = aux.ResponseMimeTypeSnake
 	}
-	if aux.ResponseSchemaSnake != nil {
-		c.ResponseSchema = aux.ResponseSchemaSnake
+	if schema := rawSchemaValue(aux.ResponseSchemaSnake); schema != nil {
+		c.ResponseSchema = schema
 	}
 	if len(aux.ResponseJsonSchemaSnake) > 0 {
 		c.ResponseJsonSchema = aux.ResponseJsonSchemaSnake

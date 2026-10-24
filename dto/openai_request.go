@@ -219,7 +219,11 @@ func (r *GeneralOpenAIRequest) GetTokenCountMeta() *types.TokenCountMeta {
 				texts = append(texts, tool.Function.Description)
 			}
 			if tool.Function.Parameters != nil {
-				texts = append(texts, fmt.Sprintf("%v", tool.Function.Parameters))
+				if raw, ok := tool.Function.Parameters.(json.RawMessage); ok {
+					texts = append(texts, string(raw))
+				} else {
+					texts = append(texts, fmt.Sprintf("%v", tool.Function.Parameters))
+				}
 			}
 		}
 		//toolTokens := CountTokenInput(countStr, request.Model)

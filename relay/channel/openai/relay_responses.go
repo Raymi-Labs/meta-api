@@ -281,6 +281,19 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 	preludeCommitted := false
 	bufferedPreludeBytes := 0
 	bufferedPrelude := make([]bufferedResponsesStreamEvent, 0, 4)
+	var deliveryError error
+	sendEvent := func(event dto.ResponsesStreamResponse, data string) bool {
+		if deliveryError != nil {
+			return false
+		}
+		if err := sendResponsesStreamData(c, event, data); err != nil {
+			deliveryError = err
+			info.StreamStatus.RecordError("responses stream write failed: " + err.Error())
+			info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonHandlerStop, err)
+			return false
+		}
+		return true
+	}
 	interruptedUsage := func() *dto.Usage {
 		// No output means no partial-output snapshot, even if a failed prelude reported usage.
 		if !hasEffectiveOutput {
@@ -306,7 +319,9 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 		}
 		for _, event := range bufferedPrelude {
 			if shouldSendResponsesStreamData(event.response, opts) {
-				sendResponsesStreamData(c, event.response, event.data)
+				if !sendEvent(event.response, event.data) {
+					return
+				}
 				preludeCommitted = true
 			}
 		}
@@ -384,8 +399,13 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 					return false
 				}
 				flushBufferedPrelude()
+				if deliveryError != nil {
+					return false
+				}
 				if shouldSendResponsesStreamData(streamResponse, opts) {
-					sendResponsesStreamData(c, streamResponse, data)
+					if !sendEvent(streamResponse, data) {
+						return false
+					}
 					failureForwarded = true
 				}
 				terminalError = types.NewError(terminalError, terminalError.GetErrorCode(), types.ErrOptionWithSkipRetry())
@@ -398,8 +418,13 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 				shouldBuffer := !preludeCommitted && !hasEffectiveOutput && !hasNonTextOutput && !effectiveOutput && !nonTextOutput
 				if !shouldBuffer || !bufferPrelude(streamResponse, data) {
 					flushBufferedPrelude()
+					if deliveryError != nil {
+						return false
+					}
 					if shouldSendResponsesStreamData(streamResponse, opts) {
-						sendResponsesStreamData(c, streamResponse, data)
+						if !sendEvent(streamResponse, data) {
+							return false
+						}
 						preludeCommitted = true
 					}
 				}
@@ -412,7 +437,17 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 			}
 			switch streamResponse.Type {
 			case "response.completed":
-				completed = true
+				if streamResponse.Response == nil && hasEffectiveOutput {
+					terminalError = types.NewOpenAIError(errors.New("responses completion is missing its response object"), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
+					return false
+				}
+				if streamResponse.Response != nil {
+					status := strings.ToLower(strings.TrimSpace(streamResponse.Response.Status))
+					if status != "" && status != "completed" {
+						terminalError = types.NewOpenAIError(errors.New("responses completion has a non-terminal status"), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
+						return false
+					}
+				}
 				if streamResponse.Response != nil {
 					info.RecordResponsesCompletedSummary(streamResponse.Response)
 					if streamResponse.Response.Usage != nil {
@@ -453,9 +488,17 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 					return false
 				} else {
 					flushBufferedPrelude()
-					if shouldSendResponsesStreamData(streamResponse, opts) {
-						sendResponsesStreamData(c, streamResponse, data)
+					if deliveryError != nil {
+						return false
 					}
+					if shouldSendResponsesStreamData(streamResponse, opts) {
+						if !sendEvent(streamResponse, data) {
+							return false
+						}
+						info.StreamStatus.MarkDeliveredCompletion()
+					}
+					completed = true
+					return false
 				}
 			case "response.output_text.delta":
 				// 处理输出文本
@@ -483,6 +526,11 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 		}
 		return true
 	})
+
+	if deliveryError != nil {
+		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeFailed)
+		return interruptedUsage(), newResponsesDeliveryError(c, deliveryError)
+	}
 
 	if terminalError != nil {
 		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeFailed)
@@ -518,6 +566,10 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 
 	if !completed {
 		flushBufferedPrelude()
+		if deliveryError != nil {
+			info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeFailed)
+			return interruptedUsage(), newResponsesDeliveryError(c, deliveryError)
+		}
 		reason := service.ResponsesStreamMissingCompletedReason
 		if info != nil && info.StreamStatus != nil {
 			info.StreamStatus.RecordError(reason)
@@ -557,6 +609,13 @@ func OaiResponsesStreamHandlerWithOptions(c *gin.Context, info *relaycommon.Rela
 
 	info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeCompleted)
 	return usage, nil
+}
+
+func newResponsesDeliveryError(c *gin.Context, err error) *types.NewAPIError {
+	if errors.Is(err, context.Canceled) || (c.Request != nil && errors.Is(c.Request.Context().Err(), context.Canceled)) {
+		return types.NewError(context.Canceled, types.ErrorCodeDoRequestFailed, types.ErrOptionWithSkipRetry(), types.ErrOptionWithHideErrMsg("client canceled while receiving responses stream"))
+	}
+	return types.NewErrorWithStatusCode(err, helper.DownstreamWriteErrorCode, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
 }
 
 func decorateResponsesPolicyFailureData(streamResponse dto.ResponsesStreamResponse, data string) string {
@@ -815,7 +874,9 @@ func sendSyntheticResponsesFailed(c *gin.Context, info *relaycommon.RelayInfo, u
 		logger.LogError(c, "failed to marshal synthetic responses failed event: "+err.Error())
 		return
 	}
-	sendResponsesStreamData(c, streamResponse, string(jsonData))
+	if err := sendResponsesStreamData(c, streamResponse, string(jsonData)); err != nil && info != nil && info.StreamStatus != nil {
+		info.StreamStatus.RecordError("responses failure event write failed: " + err.Error())
+	}
 	common.SetContextKey(c, constant.ContextKeyResponsesStreamErrorWritten, true)
 }
 

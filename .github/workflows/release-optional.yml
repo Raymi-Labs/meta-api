@@ -77,7 +77,7 @@ jobs:
           DISABLE_ESLINT_PLUGIN=true VITE_REACT_APP_VERSION="$RELEASE_TAG" bun run build
       - uses: actions/setup-go@v7
         with:
-          go-version: '>=1.25.1'
+          go-version-file: 'go.mod'
       - name: Build server binary
         env:
           BUILD_REVISION: ${{ needs.prepare.outputs.revision }}

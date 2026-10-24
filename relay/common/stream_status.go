@@ -42,11 +42,36 @@ type StreamStatus struct {
 	EndError  error
 	endOnce   sync.Once
 
-	mu              sync.Mutex
-	Errors          []StreamErrorEntry
-	ErrorCount      int
-	response        ResponseOutcome
-	expectsTerminal bool
+	mu                  sync.Mutex
+	Errors              []StreamErrorEntry
+	ErrorCount          int
+	response            ResponseOutcome
+	expectsTerminal     bool
+	deliveredCompletion bool
+}
+
+// MarkDeliveredCompletion is only called after a valid protocol completion
+// has been written and flushed successfully. A later cancellation cannot undo
+// that delivery; receiving a completion object alone does not qualify.
+func (s *StreamStatus) MarkDeliveredCompletion() {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ErrorCount == 0 && s.EndError == nil && s.response != ResponseOutcomeFailed {
+		s.response = ResponseOutcomeCompleted
+		s.deliveredCompletion = true
+	}
+}
+
+func (s *StreamStatus) HasDeliveredCompletion() bool {
+	if s == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.deliveredCompletion && s.response == ResponseOutcomeCompleted && s.ErrorCount == 0 && s.EndError == nil
 }
 
 func NewStreamStatus() *StreamStatus {

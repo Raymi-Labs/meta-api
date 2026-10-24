@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1495,7 +1496,7 @@ func moveValue(jsonStr, fromPath, toPath string) (string, error) {
 	if !sourceValue.Exists() {
 		return jsonStr, fmt.Errorf("source path does not exist: %s", fromPath)
 	}
-	result, err := sjson.Set(jsonStr, toPath, sourceValue.Value())
+	result, err := sjson.SetRaw(jsonStr, toPath, sourceValue.Raw)
 	if err != nil {
 		return "", err
 	}
@@ -1507,7 +1508,7 @@ func copyValue(jsonStr, fromPath, toPath string) (string, error) {
 	if !sourceValue.Exists() {
 		return jsonStr, fmt.Errorf("source path does not exist: %s", fromPath)
 	}
-	return sjson.Set(jsonStr, toPath, sourceValue.Value())
+	return sjson.SetRaw(jsonStr, toPath, sourceValue.Raw)
 }
 
 func isPathBasedOperation(mode string) bool {
@@ -1623,7 +1624,7 @@ func modifyArray(jsonStr, path string, value interface{}, isPrepend bool) (strin
 	// 添加原值
 	addOriginal := func() {
 		current.ForEach(func(_, val gjson.Result) bool {
-			newArray = append(newArray, val.Value())
+			newArray = append(newArray, json.RawMessage(val.Raw))
 			return true
 		})
 	}

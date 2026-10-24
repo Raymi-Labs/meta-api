@@ -4,6 +4,13 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| 异步任务资金与终态一致性 | [提交预留](../service/task_submission_billing.go)、[终态处理](../service/task_polling.go)、[实时查询](../relay/relay_task.go) | 每次提交前按报价补足同一计费会话；视频实时/后台共用终态 CAS，获胜者结算或退款，token-only 不调整钱包 | 本地资金不足不发上游、不重试；保留容量槽和原资金来源；不声称 CAS 与资金调整具有崩溃原子性，无数据库迁移 |
+| 原生任务 Header Override | [请求头](../relay/channel/task_request_headers.go)、[任务提交](../relay/channel/api_request.go)、[内容代理](../controller/video_proxy.go) | 复用已有覆盖语法；轮询用任务持久化用户与保存密钥；Suno 按用户和密钥分批；Gemini 只对同源下载补凭据 | 后台不透传客户端头；外部签名地址不新增密钥/私有头；配置覆盖的任务及带凭据内容请求拒绝跨源跳转；不改生产配置 |
+| 流式交付与保活生命周期 | [保活](../relay/helper/stream_keepalive.go)、[读取](../relay/helper/stream_scanner.go)、[Responses](../relay/channel/openai/relay_responses.go) | Claude 准备/重试保活；关闭上游并回收读取协程；完成事件写入及刷新成功后确认交付 | 写失败不可重放；未完成/空输出/失败保护保持；缓慢写出按积压字节预算超时；不以心跳计首字、不承诺上游延迟 |
+| Schema 与跨协议参数保真 | [DTO](../dto/schema_json.go)、[最终过滤](../relay/common/relay_info.go)、[覆盖](../relay/common/override.go)、[转换](../service/openaicompat/chat_to_responses.go) | 工具/结构化输出保留原始 Schema 顺序与大整数；Gemini 清理仅变换既有受限字段；相邻工具调用和图片 detail 保留 | 保留现有 map 构造兼容，不引入全局有序 JSON；覆盖 move/copy/数组操作不重新解码原值，不保证任意管理员变换不改变 Schema |
+| 访问日志查询凭据脱敏 | [统一日志](../middleware/logger.go)、[回归](../middleware/logger_redaction_test.go) | Gin 访问日志隐藏 key/token/secret/签名等 query 值；OAuth 回调不记录 query，非法编码整段省略 | 只改变日志副本，不修改真实请求、鉴权或转发；保留模型和分页等非敏感查询，不自动处理历史日志 |
+| 可靠限流与通知窗口 | [Redis limiter](../common/limiter/limiter.go)、[通知频控](../service/notify-limit.go) | 总请求限流在 NOSCRIPT 后执行脚本恢复；通知按用户/类型从首次触发计算固定窗口，Redis 事务与内存锁保证计数原子 | 不因整点换 key 提前放行；非法时长回退10分钟；不改变通知发送成功口径，也不替代独立的额度不足提醒功能 |
+| DeepSeek 余额与推理后缀 | [余额归一](../controller/channel-billing.go)、[适配器](../relay/channel/deepseek/adaptor.go)、[后缀](../setting/reasoning/suffix.go) | USD为0时回退CNY换算；none/low/max沿用现有专用渠道协议；仅改output_config.effort并保留其他字段 | 不修改生产价格/渠道，不新增Search/Fetch计费；未知模型仍按原规则处理 |
 | 认证用户身份 Header | [出站占位符与覆盖](../relay/channel/api_request.go)、[对抗回归](../relay/channel/api_request_identity_test.go)、[配置与回退](channel/authenticated-user-header.md) | 复用渠道 header_override；`{authenticated_user_id}` 读取认证上下文正整数 id，通配/正则与显式头统一大小写，HTTP 出站清除同名旧值 | 缺失身份拒绝发送、不信任客户端 tenant、不合成会话；现有渠道默认不变，不改模型/密钥/计费；先部署支持再启用配置，回退顺序相反；缓存及 wait_arm 需上游实证 |
 | 模型广场：更多筛选抽屉 | [抽屉](../web/src/components/table/model-pricing/modal/PricingFilterModal.jsx)、[选项呈现](../web/src/components/common/ui/SelectableButtonGroup.jsx) | 复用 `/api/pricing` 与 usePricingFilterCounts，分组/厂商/标签/计费/端点及显示设置 | 右侧 640px、手机全宽；标签按内容换行，倍率/计数保留；区块可键盘折叠、固定底部重置/关闭；即时生效、关闭保留，选组/厂商联动与权限不变；仅显式 pills 启用新样式。见[笔记](../.agents/notes/implemented/feature/2026-10-21-pricing-filter-drawer.md) |
 | 模型广场：厂商横栏与分组侧栏 | [页面](../web/src/components/table/model-pricing/layout/PricingPage.jsx)、[分组](../web/src/components/table/model-pricing/filter/PricingGroups.jsx)、[价格列](../web/src/components/table/model-pricing/view/table/PricingTableColumns.jsx) | `/pricing` → `GET /api/pricing` → `controller.GetPricing` → 可见模型、usable_group、用户适用倍率与时间倍率；复用价格计算及详情 | 厂商完整换行；左侧分组按倍率稳定降序、搜索与说明；共享组按模型关联；主动切厂商时保留适用组，不适用则同步切回全部；选组无 toast，顶部固定厂商优先序；左右等高标题与搜索行，浅灰蓝分组侧栏及蓝色选中标记，适配暗色；手机共用筛选弹窗；普通/首档/按次/小时按原单位显示，不改后端计费。见[决策](../.agents/notes/implemented/feature/2026-10-21-pricing-wallet-layout.md) |
@@ -76,6 +83,7 @@
 | --- | --- | --- | --- |
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
 | Linux 优先发布与可选服务端包 | [发布说明](installation/release-artifacts.md)、[Linux 附件](../.github/workflows/release.yml)、[手动跨平台附件](../.github/workflows/release-optional.yml)、[镜像](../.github/workflows/docker-image-arm64.yml) | 标签自动构建 Linux 双架构程序/镜像；Mac、Windows 仅手动选择已有发布标签；准备任务锁定提交、跳过已有附件 | 构建机本机编译、Go 交叉输出目标架构；检查 ELF/版本后组清单；不改变 SHA 更新入口、不重写已有发布、不自动部署生产 |
+| Go 构建安全版本一致性 | [版本源](../go.mod)、[Docker](../Dockerfile)、[发布门禁](../scripts/release/check-policy.mjs) | 当前Go 1.26.10；Linux/可选附件/Electron从go.mod取版本，Docker使用一致补丁版；更改go.mod和构建流程触发检查 | 只约束新构建，不声称旧附件或生产已升级；保留Linux优先和独立生产授权 |
 
 入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
 

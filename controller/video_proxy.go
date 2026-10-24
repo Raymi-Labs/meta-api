@@ -17,6 +17,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/relay"
+	relaychannel "github.com/QuantumNous/new-api/relay/channel"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/types"
 
@@ -69,6 +70,11 @@ func VideoProxy(c *gin.Context) {
 	}
 
 	var videoURL string
+	credentialedContent := false
+	contentKey := channel.Key
+	if task.PrivateData.Key != "" {
+		contentKey = task.PrivateData.Key
+	}
 	proxy := channel.GetSetting().Proxy
 	client, err := service.GetHttpClientWithProxy(proxy)
 	if err != nil {
@@ -108,7 +114,6 @@ func VideoProxy(c *gin.Context) {
 			}
 			return
 		}
-		req.Header.Set("x-goog-api-key", apiKey)
 	case constant.ChannelTypeVertexAi:
 		adaptor := relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channel.Type)))
 		videoURL, err = getVertexVideoURL(c, channel, task, adaptor)
@@ -127,7 +132,8 @@ func VideoProxy(c *gin.Context) {
 		}
 	case constant.ChannelTypeOpenAI, constant.ChannelTypeSora:
 		videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, task.GetUpstreamTaskID())
-		req.Header.Set("Authorization", "Bearer "+channel.Key)
+		req.Header.Set("Authorization", "Bearer "+contentKey)
+		credentialedContent = true
 	default:
 		// Video URL is stored in PrivateData.ResultURL (fallback to FailReason for old data)
 		videoURL = task.GetResultURL()
@@ -152,9 +158,27 @@ func VideoProxy(c *gin.Context) {
 
 	req.URL, err = url.Parse(videoURL)
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to parse URL %s: %s", videoURL, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to parse video URL for task %s (%T)", taskID, err))
 		videoProxyError(c, http.StatusInternalServerError, "server_error", "Failed to create proxy request")
 		return
+	}
+	if channel.Type == constant.ChannelTypeGemini {
+		// Provider results may point at an external signed CDN URL. Only the
+		// configured origin receives our credentials or channel-private overrides.
+		origin := channel.GetBaseURL()
+		if origin == "" {
+			origin = constant.ChannelBaseURLs[channel.Type]
+		}
+		u, parseErr := url.Parse(origin)
+		credentialedContent = parseErr == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && u.Scheme == req.URL.Scheme && u.Host == req.URL.Host
+		if credentialedContent {
+			if err := addGeminiContentAPIKey(req.URL, contentKey); err != nil {
+				logger.LogError(c.Request.Context(), fmt.Sprintf("Invalid Gemini content query for task %s", taskID))
+				videoProxyError(c, http.StatusBadGateway, "server_error", "Invalid video content URL")
+				return
+			}
+			req.Header.Set("x-goog-api-key", contentKey)
+		}
 	}
 
 	var releaseSlot func()
@@ -170,16 +194,23 @@ func VideoProxy(c *gin.Context) {
 		}
 	}
 
-	resp, err := client.Do(req)
+	var resp *http.Response
+	if credentialedContent {
+		resp, err = relaychannel.DoTaskContentRequest(service.TaskPollingRelayInfo(channel, task.UserId, contentKey), contentKey, req, client)
+	} else {
+		resp, err = client.Do(req)
+	}
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to fetch video from %s: %s", videoURL, err.Error()))
+		// Transport errors can embed the full URL, including an injected key or
+		// upstream signature. Log the task and error class, never that URL.
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to fetch video content for task %s (%T)", taskID, err))
 		videoProxyError(c, http.StatusBadGateway, "server_error", "Failed to fetch video content")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("Upstream returned status %d for %s", resp.StatusCode, videoURL))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Video content upstream returned status %d for task %s", resp.StatusCode, taskID))
 		if resp.StatusCode == http.StatusTooManyRequests {
 			apiErr := types.NewOpenAIError(
 				fmt.Errorf("video content upstream rate limited"),

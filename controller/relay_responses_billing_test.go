@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
+	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -28,6 +30,7 @@ type responsesBillingTransport struct {
 	calls     int
 	onRequest func() error
 	cancel    context.CancelFunc
+	onClose   context.CancelFunc
 }
 
 func (t *responsesBillingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -38,6 +41,9 @@ func (t *responsesBillingTransport) RoundTrip(req *http.Request) (*http.Response
 	body := io.ReadCloser(io.NopCloser(strings.NewReader(t.body)))
 	if t.cancel != nil {
 		body = &responsesBillingCanceledBody{reader: strings.NewReader(t.body), cancel: t.cancel}
+	}
+	if t.onClose != nil {
+		body = &responsesBillingCloseCancelBody{ReadCloser: body, cancel: t.onClose}
 	}
 	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"text/event-stream"}}, Body: body, Request: req}, nil
 }
@@ -57,6 +63,47 @@ func (b *responsesBillingCanceledBody) Read(p []byte) (int, error) {
 
 func (b *responsesBillingCanceledBody) Close() error { return nil }
 
+type responsesBillingCloseCancelBody struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (b *responsesBillingCloseCancelBody) Close() error {
+	b.cancel()
+	return b.ReadCloser.Close()
+}
+
+type responsesBillingDeliveryWriter struct {
+	gin.ResponseWriter
+	failure  string
+	terminal bool
+	cancel   context.CancelFunc
+}
+
+func (w *responsesBillingDeliveryWriter) Write(data []byte) (int, error) {
+	if strings.Contains(string(data), `"type":"response.completed"`) {
+		w.terminal = true
+		if w.failure == "write" {
+			return 0, io.ErrClosedPipe
+		}
+	}
+	return w.ResponseWriter.Write(data)
+}
+func (w *responsesBillingDeliveryWriter) WriteString(data string) (int, error) {
+	return w.Write([]byte(data))
+}
+func (w *responsesBillingDeliveryWriter) Flush() { _ = w.FlushError() }
+func (w *responsesBillingDeliveryWriter) FlushError() error {
+	if w.terminal && w.failure == "flush" {
+		return errors.New("downstream flush failed")
+	}
+	w.ResponseWriter.Flush()
+	if w.terminal && w.failure == "hidden-flush-cancel" {
+		w.cancel()
+	}
+	return nil
+}
+
 func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 	service.InitTokenEncoders()
 	if service.GetHttpClient() == nil {
@@ -64,13 +111,17 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 	}
 	delta := "data: {\"type\":\"response.output_text.delta\",\"delta\":\"hello\"}\n\n"
 	withUsage := `"usage":{"input_tokens":41093,"output_tokens":1,"total_tokens":41094}`
+	complete := delta + `data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"hello"}]}],` + withUsage + "}}\n\n"
 	cases := []struct {
-		name           string
-		body           string
-		estimated      bool
-		canceled       bool
-		noOutput       bool
-		emptyCompleted bool
+		name                 string
+		body                 string
+		estimated            bool
+		canceled             bool
+		noOutput             bool
+		emptyCompleted       bool
+		deliveryFailure      string
+		success              bool
+		cancelAfterCompleted bool
 	}{
 		{name: "upstream_failure_with_usage", body: delta + `data: {"type":"response.failed","response":{"status":"failed","error":{"code":"upstream_error","message":"temporarily unavailable"},` + withUsage + "}}\n\n"},
 		{name: "upstream_failure_without_usage", body: delta + "data: {\"type\":\"error\",\"error\":{\"code\":\"upstream_error\",\"message\":\"temporarily unavailable\"}}\n\n", estimated: true},
@@ -79,6 +130,11 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 		{name: "client_canceled", body: delta, estimated: true, canceled: true},
 		{name: "no_output", body: `data: {"type":"response.failed","response":{"status":"failed","error":{"code":"upstream_error","message":"temporarily unavailable"},` + withUsage + "}}\n\n", noOutput: true},
 		{name: "empty_completed", body: "data: malformed-json\n\n" + `data: {"type":"response.completed","response":{"status":"completed","output":[],` + withUsage + "}}\n\n", noOutput: true, emptyCompleted: true},
+		{name: "completed_write_failure", body: complete, deliveryFailure: "write"},
+		{name: "completed_flush_failure", body: complete, deliveryFailure: "flush"},
+		{name: "completed_hidden_flush_cancel", body: complete, deliveryFailure: "hidden-flush-cancel"},
+		{name: "delivered_completed", body: complete, success: true},
+		{name: "delivered_then_canceled", body: complete, success: true, cancelAfterCompleted: true},
 	}
 	for _, funding := range []string{service.BillingSourceWallet, service.BillingSourceSubscription, service.BillingSourceToken} {
 		for _, tc := range cases {
@@ -88,7 +144,7 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				require.NoError(t, err)
 				sqlDB.SetMaxOpenConns(1)
 				t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
-				require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.Token{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.SubscriptionPlan{}, &model.UserSubscription{}, &model.SubscriptionPreConsumeRecord{}))
+				require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.Token{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.SubscriptionPlan{}, &model.UserSubscription{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}))
 				oldLog, oldRedis, oldCount, oldRetry, oldBatch, oldConsume, oldSQLite := constant.ErrorLogEnabled, common.RedisEnabled, constant.CountToken, common.RetryTimes, common.BatchUpdateEnabled, common.LogConsumeEnabled, common.UsingSQLite
 				constant.ErrorLogEnabled, common.RedisEnabled, constant.CountToken, common.RetryTimes, common.BatchUpdateEnabled, common.LogConsumeEnabled, common.UsingSQLite = true, false, false, 3, false, true, true
 				t.Cleanup(func() {
@@ -122,6 +178,9 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				if tc.canceled {
 					transport.cancel = cancel
 				}
+				if tc.cancelAfterCompleted {
+					transport.onClose = cancel
+				}
 				client := service.GetHttpClient()
 				oldTransport := client.Transport
 				client.Transport = transport
@@ -143,7 +202,7 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 					common.SetContextKey(c, constant.ContextKeyUserId, user.Id)
 					common.SetContextKey(c, constant.ContextKeyTokenId, token.Id)
 					common.SetContextKey(c, constant.ContextKeyTokenKey, token.Key)
-					common.SetContextKey(c, constant.ContextKeyUsingGroup, "default")
+					common.SetContextKey(c, constant.ContextKeyUsingGroup, requestID)
 					c.Set(common.RequestIdKey, requestID)
 					pref := "wallet_only"
 					if funding == service.BillingSourceSubscription {
@@ -154,8 +213,11 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 					}
 					common.SetContextKey(c, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: pref})
 					require.Nil(t, middleware.SetupContextForSelectedChannel(c, channel, "test-responses-refund"))
+					if tc.deliveryFailure != "" {
+						c.Writer = &responsesBillingDeliveryWriter{ResponseWriter: c.Writer, failure: tc.deliveryFailure, cancel: cancel}
+					}
 					Relay(c, types.RelayFormatOpenAIResponses)
-					require.False(t, service.RequestSucceeded(c))
+					require.Equal(t, tc.success, service.RequestSucceeded(c))
 				})
 				w := httptest.NewRecorder()
 				// A tool disables text auto-continuation; no replay is safe after output.
@@ -163,6 +225,39 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				req.Header.Set("Content-Type", "application/json")
 				r.ServeHTTP(w, req)
 				require.Equal(t, 1, transport.calls, w.Body.String())
+				require.NoError(t, grouphealth.Flush(context.Background()))
+				var health model.GroupHealthMetric
+				require.NoError(t, db.Where("group_name = ?", requestID).First(&health).Error)
+				require.EqualValues(t, 1, health.RequestCount)
+				if tc.success {
+					require.EqualValues(t, 1, health.SuccessCount)
+					require.Zero(t, health.ClientCanceledCount)
+					require.Eventually(t, func() bool {
+						var actualToken model.Token
+						return db.First(&actualToken, token.Id).Error == nil && actualToken.UsedQuota > 0 && actualToken.RemainQuota < initialQuota
+					}, time.Second, 10*time.Millisecond)
+					var consume []model.Log
+					require.NoError(t, db.Where("request_id = ?", requestID).Find(&consume).Error)
+					require.Len(t, consume, 1)
+					require.Equal(t, model.LogTypeConsume, consume[0].Type)
+					require.Positive(t, consume[0].Quota)
+					return
+				}
+				require.Zero(t, health.SuccessCount)
+				if tc.deliveryFailure != "" {
+					require.Zero(t, health.ServiceFailureCount, "downstream failures must not be blamed on the provider")
+					require.EqualValues(t, 1, health.RequestCount-health.SuccessCount-health.ServiceFailureCount, "delivery failure remains in the unknown-failure denominator")
+					require.Zero(t, health.ExcludedUserErrorCount)
+					if tc.deliveryFailure == "hidden-flush-cancel" {
+						require.EqualValues(t, 1, health.ClientCanceledCount)
+					} else {
+						require.Zero(t, health.ClientCanceledCount, "a write error alone does not prove a client cancellation")
+					}
+					var current model.Channel
+					require.NoError(t, db.First(&current, channel.Id).Error)
+					require.Equal(t, common.ChannelStatusEnabled, current.Status)
+					require.False(t, service.IsChannelUnavailableForRequest(&current))
+				}
 				require.Eventually(t, func() bool {
 					var actualUser model.User
 					var actualToken model.Token

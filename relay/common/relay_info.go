@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -18,6 +19,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 type ThinkingContentInfo struct {
@@ -888,7 +891,8 @@ func RemoveDisabledFields(jsonData []byte, channelOtherSettings dto.ChannelOther
 		return jsonData, nil
 	}
 
-	var data map[string]interface{}
+	// Decode only the fields we edit; nested schemas retain key order and numbers.
+	var data map[string]json.RawMessage
 	if err := common.Unmarshal(jsonData, &data); err != nil {
 		common.SysError("RemoveDisabledFields Unmarshal error :" + err.Error())
 		return jsonData, nil
@@ -931,15 +935,20 @@ func RemoveDisabledFields(jsonData []byte, channelOtherSettings dto.ChannelOther
 
 	// 默认移除 stream_options.include_obfuscation，除非明确允许（避免关闭响应流混淆保护）
 	if !channelOtherSettings.AllowIncludeObfuscation {
-		if streamOptionsAny, exists := data["stream_options"]; exists {
-			if streamOptions, ok := streamOptionsAny.(map[string]interface{}); ok {
+		if rawOptions, exists := data["stream_options"]; exists {
+			var streamOptions map[string]json.RawMessage
+			if err := common.Unmarshal(rawOptions, &streamOptions); err == nil && streamOptions != nil {
 				if _, includeExists := streamOptions["include_obfuscation"]; includeExists {
 					delete(streamOptions, "include_obfuscation")
 				}
 				if len(streamOptions) == 0 {
 					delete(data, "stream_options")
 				} else {
-					data["stream_options"] = streamOptions
+					encoded, err := common.Marshal(streamOptions)
+					if err != nil {
+						return jsonData, err
+					}
+					data["stream_options"] = encoded
 				}
 			}
 		}
@@ -960,39 +969,35 @@ func RemoveGeminiDisabledFields(jsonData []byte) ([]byte, error) {
 		return jsonData, nil
 	}
 
-	var data map[string]interface{}
-	if err := common.Unmarshal(jsonData, &data); err != nil {
-		common.SysError("RemoveGeminiDisabledFields Unmarshal error: " + err.Error())
+	if !gjson.ValidBytes(jsonData) {
 		return jsonData, nil
 	}
-
-	// Process contents array
-	// Handle both camelCase (functionResponse) and snake_case (function_response)
-	if contents, ok := data["contents"].([]interface{}); ok {
-		for _, content := range contents {
-			if contentMap, ok := content.(map[string]interface{}); ok {
-				if parts, ok := contentMap["parts"].([]interface{}); ok {
-					for _, part := range parts {
-						if partMap, ok := part.(map[string]interface{}); ok {
-							// Check functionResponse (camelCase)
-							if funcResp, ok := partMap["functionResponse"].(map[string]interface{}); ok {
-								delete(funcResp, "id")
-							}
-							// Check function_response (snake_case)
-							if funcResp, ok := partMap["function_response"].(map[string]interface{}); ok {
-								delete(funcResp, "id")
-							}
-						}
-					}
+	contents := gjson.GetBytes(jsonData, "contents")
+	if !contents.IsArray() {
+		return jsonData, nil
+	}
+	// Remove only the selected IDs. Re-encoding the entire Gemini request would
+	// reorder unrelated tool/response schemas and round large numeric values.
+	result := jsonData
+	for i, content := range contents.Array() {
+		parts := content.Get("parts")
+		if !parts.IsArray() {
+			continue
+		}
+		for j, part := range parts.Array() {
+			for _, name := range []string{"functionResponse", "function_response"} {
+				response := part.Get(name)
+				if !response.IsObject() || !response.Get("id").Exists() {
+					continue
+				}
+				path := "contents." + strconv.Itoa(i) + ".parts." + strconv.Itoa(j) + "." + name + ".id"
+				var err error
+				result, err = sjson.DeleteBytes(result, path)
+				if err != nil {
+					return jsonData, err
 				}
 			}
 		}
 	}
-
-	jsonDataAfter, err := common.Marshal(data)
-	if err != nil {
-		common.SysError("RemoveGeminiDisabledFields Marshal error: " + err.Error())
-		return jsonData, nil
-	}
-	return jsonDataAfter, nil
+	return result, nil
 }

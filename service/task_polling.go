@@ -40,6 +40,15 @@ var GetTaskAdaptorFunc func(platform constant.TaskPlatform) TaskPollingAdaptor
 // 避免 service -> middleware 的循环依赖。未注入时保持旧行为（直接放行）。
 var AcquireTaskPollingChannelCapacityFunc func(channel *model.Channel, requestID string) (release func(), acquired bool)
 
+// TaskPollingRelayInfo only accepts the persisted task owner, never query
+// parameters or client headers. A new value is used for each task/batch.
+func TaskPollingRelayInfo(ch *model.Channel, userID int, key string) *relaycommon.RelayInfo {
+	return &relaycommon.RelayInfo{UserId: userID, ChannelMeta: &relaycommon.ChannelMeta{
+		ChannelType: ch.Type, ChannelId: ch.Id, ChannelBaseUrl: ch.GetBaseURL(),
+		ApiKey: key, ChannelSetting: ch.GetSetting(), HeadersOverride: ch.GetHeaderOverride(),
+	}}
+}
+
 func acquireTaskPollingChannelCapacity(ctx context.Context, channel *model.Channel, requestKind string) (func(), bool) {
 	if channel == nil || IsChannelRateLimitCoolingDown(channel) {
 		return nil, false
@@ -224,10 +233,40 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 		}
 		return err
 	}
+	// One batch must not combine owners or credentials: both may be used by
+	// channel header overrides, and saved keys survive channel key rotation.
+	type batchIdentity struct {
+		userID int
+		key    string
+	}
+	batches := make(map[batchIdentity][]string)
+	for _, id := range taskIds {
+		task := taskM[id]
+		if task == nil {
+			continue
+		}
+		key := ch.Key
+		if task.PrivateData.Key != "" {
+			key = task.PrivateData.Key
+		}
+		identity := batchIdentity{task.UserId, key}
+		batches[identity] = append(batches[identity], id)
+	}
+	var batchErr error
+	for identity, ids := range batches {
+		if err := updateSunoBatch(ctx, ch, ids, taskM, identity.userID, identity.key); err != nil {
+			batchErr = err
+		}
+	}
+	return batchErr
+}
+
+func updateSunoBatch(ctx context.Context, ch *model.Channel, taskIds []string, taskM map[string]*model.Task, userID int, key string) error {
 	adaptor := GetTaskAdaptorFunc(constant.TaskPlatformSuno)
 	if adaptor == nil {
 		return errors.New("adaptor not found")
 	}
+	adaptor.Init(TaskPollingRelayInfo(ch, userID, key))
 	releaseSlot, acquired := acquireTaskPollingChannelCapacity(ctx, ch, "suno")
 	if !acquired {
 		return nil
@@ -237,7 +276,7 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 	}
 
 	proxy := ch.GetSetting().Proxy
-	resp, err := adaptor.FetchTask(*ch.BaseURL, ch.Key, map[string]any{
+	resp, err := adaptor.FetchTask(ch.GetBaseURL(), key, map[string]any{
 		"ids": taskIds,
 	}, proxy)
 	if err != nil {
@@ -262,13 +301,20 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 		return err
 	}
 	if !responseItems.IsSuccess() {
-		common.SysLog(fmt.Sprintf("渠道 #%d 未完成的任务有: %d, 成功获取到任务数: %s", channelId, len(taskIds), string(responseBody)))
+		common.SysLog(fmt.Sprintf("渠道 #%d 未完成的任务有: %d, 成功获取到任务数: %s", ch.Id, len(taskIds), string(responseBody)))
 		return err
 	}
 
+	batchTaskIDs := make(map[string]struct{}, len(taskIds))
+	for _, id := range taskIds {
+		batchTaskIDs[id] = struct{}{}
+	}
 	for _, responseItem := range responseItems.Data {
+		if _, requested := batchTaskIDs[responseItem.TaskID]; !requested {
+			continue
+		}
 		task := taskM[responseItem.TaskID]
-		if !taskNeedsUpdate(task, responseItem) {
+		if task == nil || !taskNeedsUpdate(task, responseItem) {
 			continue
 		}
 
@@ -371,12 +417,6 @@ func updateVideoTasks(ctx context.Context, platform constant.TaskPlatform, chann
 	if adaptor == nil {
 		return fmt.Errorf("video adaptor not found")
 	}
-	info := &relaycommon.RelayInfo{}
-	info.ChannelMeta = &relaycommon.ChannelMeta{
-		ChannelBaseUrl: cacheGetChannel.GetBaseURL(),
-	}
-	info.ApiKey = cacheGetChannel.Key
-	adaptor.Init(info)
 	for _, taskId := range taskIds {
 		if err := updateVideoSingleTask(ctx, adaptor, cacheGetChannel, taskId, taskM); err != nil {
 			logger.LogError(ctx, fmt.Sprintf("Failed to update video task %s: %s", taskId, err.Error()))
@@ -403,6 +443,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 	if privateData.Key != "" {
 		key = privateData.Key
 	}
+	adaptor.Init(TaskPollingRelayInfo(ch, task.UserId, key))
 	releaseSlot, acquired := acquireTaskPollingChannelCapacity(ctx, ch, "video")
 	if !acquired {
 		return nil
@@ -430,9 +471,8 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 
 	logger.LogDebug(ctx, fmt.Sprintf("updateVideoSingleTask response: %s", string(responseBody)))
 
-	snap := task.Snapshot()
-
 	taskResult := &relaycommon.TaskInfo{}
+	var taskData []byte
 	// try parse as New API response format
 	var responseItems dto.TaskResponse[model.Task]
 	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
@@ -443,14 +483,28 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 		taskResult.Url = t.GetResultURL()
 		taskResult.Progress = t.Progress
 		taskResult.Reason = t.FailReason
-		task.Data = t.Data
+		taskData = t.Data
 	} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
 		return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
 	} else {
-		task.Data = redactVideoResponseBody(responseBody)
+		taskData = redactVideoResponseBody(responseBody)
 	}
+	return ApplyVideoTaskResult(ctx, adaptor, task, taskResult, taskData)
+}
 
-	logger.LogDebug(ctx, fmt.Sprintf("updateVideoSingleTask taskResult: %+v", taskResult))
+// ApplyVideoTaskResult is shared by background polling and realtime fetch.
+// It consumes an already fetched result, so callers keep their existing capacity
+// lease and never need a second upstream request to settle a terminal status.
+func ApplyVideoTaskResult(ctx context.Context, adaptor TaskPollingAdaptor, task *model.Task, taskResult *relaycommon.TaskInfo, taskData []byte) error {
+	if task == nil || taskResult == nil {
+		return errors.New("missing task result")
+	}
+	if task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure {
+		return nil
+	}
+	original := *task
+	snap := task.Snapshot()
+	task.Data = taskData
 
 	now := time.Now().Unix()
 	if taskResult.Status == "" {
@@ -489,7 +543,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 		}
 		shouldSettle = true
 	case model.TaskStatusFailure:
-		logger.LogJson(ctx, fmt.Sprintf("Task %s failed", taskId), task)
+		logger.LogJson(ctx, fmt.Sprintf("Task %s failed", task.TaskID), task)
 		task.Status = model.TaskStatusFailure
 		task.Progress = taskcommon.ProgressComplete
 		if task.FinishTime == 0 {
@@ -502,6 +556,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 			shouldRefund = true
 		}
 	default:
+		*task = original
 		return fmt.Errorf("unknown task status %s for task %s", taskResult.Status, task.TaskID)
 	}
 	if taskResult.Progress != "" {
@@ -512,17 +567,19 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 	if isDone && snap.Status != task.Status {
 		won, err := task.UpdateWithStatus(snap.Status)
 		if err != nil {
-			logger.LogError(ctx, fmt.Sprintf("UpdateWithStatus failed for task %s: %s", task.TaskID, err.Error()))
-			shouldRefund = false
-			shouldSettle = false
+			*task = original
+			return fmt.Errorf("update task %s: %w", task.TaskID, err)
 		} else if !won {
 			logger.LogWarn(ctx, fmt.Sprintf("Task %s already transitioned by another process, skip billing", task.TaskID))
-			shouldRefund = false
-			shouldSettle = false
+			*task = original
+			return nil
 		}
 	} else if !snap.Equal(task.Snapshot()) {
-		if _, err := task.UpdateWithStatus(snap.Status); err != nil {
-			logger.LogError(ctx, fmt.Sprintf("Failed to update task %s: %s", task.TaskID, err.Error()))
+		if won, err := task.UpdateWithStatus(snap.Status); err != nil {
+			*task = original
+			return fmt.Errorf("update task %s: %w", task.TaskID, err)
+		} else if !won {
+			*task = original
 		}
 	} else {
 		// No changes, skip update
@@ -531,12 +588,24 @@ func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *
 
 	if shouldSettle {
 		settleTaskBillingOnComplete(ctx, adaptor, task, taskResult)
+		if task.Quota != quota {
+			// Settlement runs only for the terminal CAS winner. Persist only its
+			// amount, without replacing the status/result written by that CAS.
+			if err := model.DB.Model(&model.Task{}).Where("id = ? AND status = ?", task.ID, model.TaskStatusSuccess).Update("quota", task.Quota).Error; err != nil {
+				logger.LogError(ctx, fmt.Sprintf("Task %s funding settled but quota persistence failed; manual reconciliation required: %s", task.TaskID, err))
+				return fmt.Errorf("save settled quota for task %s: %w", task.TaskID, err)
+			}
+		}
 	}
 	if shouldRefund {
 		RefundTaskQuota(ctx, task, task.FailReason)
 	}
 
 	return nil
+}
+
+func RedactVideoTaskResponse(body []byte) []byte {
+	return redactVideoResponseBody(body)
 }
 
 func redactVideoResponseBody(body []byte) []byte {

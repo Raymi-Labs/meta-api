@@ -7,6 +7,17 @@ const linux = workflow('release');
 const optional = workflow('release-optional');
 const images = workflow('docker-image-arm64');
 const main = workflow('docker-publish');
+const goVersion = read('go.mod').match(/^go (\d+\.\d+\.\d+)$/m)?.[1];
+assert.ok(goVersion, 'Go builds must declare a patch version');
+for (const name of ['release', 'release-optional', 'electron-build']) {
+  const setups = Object.values(workflow(name).jobs).flatMap((job) => job.steps ?? [])
+    .filter((step) => step.uses?.startsWith('actions/setup-go@'));
+  assert.ok(setups.length, `${name} must set up Go explicitly`);
+  for (const step of setups) {
+    assert.equal(step.with['go-version-file'], 'go.mod');
+    assert.equal(step.with['go-version'], undefined, 'do not override the fixed module toolchain');
+  }
+}
 
 assert.deepEqual(Object.keys(linux.jobs), ['linux'], 'tags must not allocate optional platform runners');
 assert.ok(linux.on.push.tags.includes('*'));
@@ -29,6 +40,7 @@ const stages = dockerfile.split('\n').filter((line) => line.startsWith('FROM '))
 assert.equal(stages.length, 3);
 assert.match(stages[0], /--platform=\$BUILDPLATFORM/);
 assert.match(stages[1], /--platform=\$BUILDPLATFORM/);
+assert.ok(stages[1].includes(`golang:${goVersion}-alpine `), 'Docker and go.mod must use the same Go patch');
 assert.doesNotMatch(stages[2], /--platform=/, 'runtime must retain the requested target platform');
 assert.match(dockerfile, /CGO_ENABLED=0/);
 assert.match(dockerfile, /GOOS=\$\{TARGETOS:-linux\} GOARCH=\$\{TARGETARCH:-amd64\}/);

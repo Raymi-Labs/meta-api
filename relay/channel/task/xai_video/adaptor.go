@@ -27,8 +27,9 @@ import (
 // OpenAI-compatible request handling is unchanged.
 type TaskAdaptor struct {
 	taskcommon.BaseBilling
-	apiKey  string
-	baseURL string
+	pollingInfo *relaycommon.RelayInfo
+	apiKey      string
+	baseURL     string
 }
 
 type submitResponse struct {
@@ -50,6 +51,7 @@ type videoResponse struct {
 }
 
 func (a *TaskAdaptor) Init(info *relaycommon.RelayInfo) {
+	a.pollingInfo = info
 	if info == nil {
 		return
 	}
@@ -197,7 +199,7 @@ func (a *TaskAdaptor) FetchTask(baseURL, key string, body map[string]any, proxy 
 	if err != nil {
 		return nil, errors.Wrap(err, "new proxy http client failed")
 	}
-	return client.Do(req)
+	return channel.DoTaskPollingRequest(a.pollingInfo, key, req, client)
 }
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {

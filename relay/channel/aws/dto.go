@@ -23,7 +23,7 @@ type AwsClaudeRequest struct {
 	TopP              *float64            `json:"top_p,omitempty"`
 	TopK              *int                `json:"top_k,omitempty"`
 	StopSequences     []string            `json:"stop_sequences,omitempty"`
-	Tools             any                 `json:"tools,omitempty"`
+	Tools             json.RawMessage     `json:"tools,omitempty"`
 	ToolChoice        any                 `json:"tool_choice,omitempty"`
 	ContextManagement json.RawMessage     `json:"context_management,omitempty"`
 	Thinking          *dto.Thinking       `json:"thinking,omitempty"`
@@ -35,6 +35,9 @@ func formatRequest(requestBody io.Reader, requestHeader http.Header) (*AwsClaude
 	err := common.DecodeJson(requestBody, &awsClaudeRequest)
 	if err != nil {
 		return nil, err
+	}
+	if common.GetJsonType(awsClaudeRequest.Tools) == "null" {
+		awsClaudeRequest.Tools = nil
 	}
 	awsClaudeRequest.AnthropicVersion = "bedrock-2023-05-31"
 

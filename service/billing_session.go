@@ -431,7 +431,7 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 
 		session := &BillingSession{
 			relayInfo: relayInfo,
-			funding:   &WalletFunding{userId: relayInfo.UserId, requireAvailableQuota: relayInfo.ImageRequestCount > 0, requestID: synchronousFundingRequestID(relayInfo)},
+			funding:   &WalletFunding{userId: relayInfo.UserId, requireAvailableQuota: relayInfo.ImageRequestCount > 0 || relayInfo.TaskRelayInfo != nil, requestID: synchronousFundingRequestID(relayInfo)},
 		}
 		if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
 			return nil, apiErr

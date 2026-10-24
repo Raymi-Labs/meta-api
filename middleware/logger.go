@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/gin-gonic/gin"
@@ -34,7 +36,44 @@ func SetUpLogger(server *gin.Engine) {
 			param.Latency,
 			param.ClientIP,
 			param.Method,
-			param.Path,
+			sanitizeAccessLogPath(param.Path),
 		)
 	}))
+}
+
+// sanitizeAccessLogPath only changes the log value, never the request URL used
+// by authentication or the relay. Invalid queries are omitted, not logged raw.
+func sanitizeAccessLogPath(path string) string {
+	base, raw, hasQuery := strings.Cut(path, "?")
+	if !hasQuery {
+		return path
+	}
+	if strings.HasPrefix(base, "/api/oauth/") || strings.HasPrefix(base, "/oauth/") {
+		return base
+	}
+	query, err := url.ParseQuery(raw)
+	if err != nil {
+		return base + "?redacted=invalid-query"
+	}
+	for key := range query {
+		if sensitiveAccessQueryKey(key) {
+			query.Set(key, "[REDACTED]")
+		}
+	}
+	return base + "?" + query.Encode()
+}
+
+func sensitiveAccessQueryKey(key string) bool {
+	key = strings.ToLower(key)
+	if strings.Contains(key, "token") || strings.Contains(key, "secret") ||
+		strings.Contains(key, "signature") || strings.Contains(key, "password") ||
+		strings.Contains(key, "credential") {
+		return true
+	}
+	switch key {
+	case "key", "api_key", "api-key", "apikey", "x-api-key", "authorization", "auth", "passwd", "sig", "awsaccesskeyid":
+		return true
+	default:
+		return false
+	}
 }

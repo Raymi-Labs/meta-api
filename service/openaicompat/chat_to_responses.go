@@ -34,6 +34,54 @@ func normalizeChatImageURLToString(v any) any {
 	}
 }
 
+func responsesImageDetail(imageURL any) string {
+	var detail string
+	switch image := imageURL.(type) {
+	case map[string]any:
+		detail, _ = image["detail"].(string)
+	case dto.MessageImageUrl:
+		detail = image.Detail
+	case *dto.MessageImageUrl:
+		if image != nil {
+			detail = image.Detail
+		}
+	}
+	switch normalized := strings.ToLower(strings.TrimSpace(detail)); normalized {
+	case "low", "high", "auto", "original":
+		return normalized
+	}
+	return "auto"
+}
+
+// Read the source hints because ParseContent defaults absent image detail to
+// high for token estimation; Responses uses auto when the source omitted it.
+func responsesMessageImageDetails(msg dto.Message) []string {
+	var details []string
+	appendPart := func(part any) {
+		switch value := part.(type) {
+		case dto.MediaContent:
+			if value.Type == dto.ContentTypeImageURL {
+				details = append(details, responsesImageDetail(value.ImageUrl))
+			}
+		case map[string]any:
+			if value["type"] == dto.ContentTypeImageURL {
+				details = append(details, responsesImageDetail(value["image_url"]))
+			}
+		}
+	}
+	switch content := msg.Content.(type) {
+	case []any:
+		for _, part := range content {
+			appendPart(part)
+		}
+	case []dto.MediaContent:
+		for _, part := range content {
+			appendPart(part)
+		}
+	}
+	return details
+}
+
 func convertChatResponseFormatToResponsesText(reqFormat *dto.ResponseFormat) json.RawMessage {
 	if reqFormat == nil || strings.TrimSpace(reqFormat.Type) == "" {
 		return nil
@@ -44,7 +92,7 @@ func convertChatResponseFormatToResponsesText(reqFormat *dto.ResponseFormat) jso
 	}
 
 	if reqFormat.Type == "json_schema" && len(reqFormat.JsonSchema) > 0 {
-		var chatSchema map[string]any
+		var chatSchema map[string]json.RawMessage
 		if err := common.Unmarshal(reqFormat.JsonSchema, &chatSchema); err == nil {
 			for key, value := range chatSchema {
 				if key == "type" {
@@ -53,7 +101,8 @@ func convertChatResponseFormatToResponsesText(reqFormat *dto.ResponseFormat) jso
 				format[key] = value
 			}
 
-			if nested, ok := format["json_schema"].(map[string]any); ok {
+			var nested map[string]json.RawMessage
+			if raw := chatSchema["json_schema"]; len(raw) > 0 && common.Unmarshal(raw, &nested) == nil && nested != nil {
 				for key, value := range nested {
 					if _, exists := format[key]; !exists {
 						format[key] = value
@@ -242,6 +291,8 @@ func ChatCompletionsRequestToResponsesRequest(req *dto.GeneralOpenAIRequest) (*d
 		}
 
 		parts := msg.ParseContent()
+		imageDetails := responsesMessageImageDetails(msg)
+		imageIndex := 0
 		contentParts := make([]map[string]any, 0, len(parts))
 		for _, part := range parts {
 			switch part.Type {
@@ -255,9 +306,15 @@ func ChatCompletionsRequestToResponsesRequest(req *dto.GeneralOpenAIRequest) (*d
 					"text": part.Text,
 				})
 			case dto.ContentTypeImageURL:
+				detail := responsesImageDetail(part.ImageUrl)
+				if imageIndex < len(imageDetails) {
+					detail = imageDetails[imageIndex]
+				}
+				imageIndex++
 				contentParts = append(contentParts, map[string]any{
 					"type":      "input_image",
 					"image_url": normalizeChatImageURLToString(part.ImageUrl),
+					"detail":    detail,
 				})
 			case dto.ContentTypeInputAudio:
 				contentParts = append(contentParts, map[string]any{

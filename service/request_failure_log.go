@@ -20,18 +20,19 @@ const requestFailureAttemptsKey = "request_failure_attempts"
 const requestUnbilledUsageKey = "request_unbilled_usage"
 const RequestLogStreamKey = "request_log_stream"
 const RequestOutcomeKey = "relay_request_succeeded"
+const RequestDeliveredCompletionKey = "relay_completion_delivered"
 
 func RequestSucceeded(c *gin.Context) bool {
-	if c == nil || c.Writer.Status() >= 400 || (c.Request != nil && c.Request.Context().Err() != nil) {
+	if c == nil || c.Writer.Status() >= 400 {
 		return false
 	}
 	if _, failed := c.Get(requestFailureKey); failed {
 		return false
 	}
 	if outcome, exists := c.Get(RequestOutcomeKey); exists {
-		return outcome == true
+		return outcome == true && (c.Request == nil || c.Request.Context().Err() == nil || c.GetBool(RequestDeliveredCompletionKey))
 	}
-	return true
+	return c.Request == nil || c.Request.Context().Err() == nil
 }
 
 // MarkRequestFailure is only called for the final client-facing error. Channel

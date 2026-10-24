@@ -49,6 +49,7 @@ func getVertexVideoURL(c *gin.Context, channel *model.Channel, task *model.Task,
 		defer releaseSlot()
 	}
 
+	adaptor.Init(service.TaskPollingRelayInfo(channel, task.UserId, key))
 	resp, err := adaptor.FetchTask(baseURL, key, map[string]any{
 		"task_id": task.GetUpstreamTaskID(),
 		"action":  task.Action,

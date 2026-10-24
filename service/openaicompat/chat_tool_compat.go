@@ -101,7 +101,7 @@ func parseLegacyFunctions(raw json.RawMessage) ([]dto.FunctionRequest, bool, err
 		}
 		seen[functions[i].Name] = struct{}{}
 		if functions[i].Parameters != nil {
-			if _, ok := functions[i].Parameters.(map[string]any); !ok {
+			if !dto.IsSchemaObject(functions[i].Parameters) {
 				return nil, false, fmt.Errorf("functions[%d].parameters must be a JSON object", i)
 			}
 		}

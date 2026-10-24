@@ -1,8 +1,8 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -13,7 +13,8 @@ import (
 
 // notifyLimitStore is used for in-memory rate limiting when Redis is disabled
 var (
-	notifyLimitStore sync.Map
+	notifyLimitStore = make(map[string]limitCount)
+	notifyLimitMu    sync.Mutex
 	cleanupOnce      sync.Once
 )
 
@@ -24,6 +25,9 @@ type limitCount struct {
 
 func getDuration() time.Duration {
 	minute := constant.NotificationLimitDurationMinute
+	if minute <= 0 || int64(minute) > int64((1<<63-1)/time.Minute) {
+		minute = 10
+	}
 	return time.Duration(minute) * time.Minute
 }
 
@@ -32,17 +36,19 @@ func startCleanupTask() {
 	gopool.Go(func() {
 		for {
 			time.Sleep(time.Hour)
-			now := time.Now()
-			notifyLimitStore.Range(func(key, value interface{}) bool {
-				if limit, ok := value.(limitCount); ok {
-					if now.Sub(limit.Timestamp) >= getDuration() {
-						notifyLimitStore.Delete(key)
-					}
-				}
-				return true
-			})
+			cleanupNotificationLimits(time.Now())
 		}
 	})
+}
+
+func cleanupNotificationLimits(now time.Time) {
+	notifyLimitMu.Lock()
+	defer notifyLimitMu.Unlock()
+	for key, limit := range notifyLimitStore {
+		if now.Sub(limit.Timestamp) >= getDuration() {
+			delete(notifyLimitStore, key)
+		}
+	}
 }
 
 // CheckNotificationLimit checks if the user has exceeded their notification limit
@@ -55,64 +61,44 @@ func CheckNotificationLimit(userId int, notifyType string) (bool, error) {
 }
 
 func checkRedisLimit(userId int, notifyType string) (bool, error) {
-	key := fmt.Sprintf("notify_limit:%d:%s:%s", userId, notifyType, time.Now().Format("2006010215"))
-
-	// Get current count
-	count, err := common.RedisGet(key)
-	if err != nil && err.Error() != "redis: nil" {
-		return false, fmt.Errorf("failed to get notification count: %w", err)
-	}
-
-	// If key doesn't exist, initialize it
-	if count == "" {
-		err = common.RedisSet(key, "1", getDuration())
-		return true, err
-	}
-
-	currentCount, _ := strconv.Atoi(count)
-	limit := constant.NotifyLimitCount
-
-	// Check if limit is already reached
-	if currentCount >= limit {
+	if constant.NotifyLimitCount <= 0 {
 		return false, nil
 	}
-
-	// Only increment if under limit
-	err = common.RedisIncr(key, 1)
-	if err != nil {
+	if common.RDB == nil {
+		return false, fmt.Errorf("notification Redis client is unavailable")
+	}
+	ctx := context.Background()
+	key := fmt.Sprintf("notify_limit:%d:%s", userId, notifyType)
+	pipe := common.RDB.TxPipeline()
+	pipe.SetNX(ctx, key, 0, getDuration())
+	count := pipe.Incr(ctx, key)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return false, fmt.Errorf("failed to increment notification count: %w", err)
 	}
-
-	return true, nil
+	return count.Val() <= int64(constant.NotifyLimitCount), nil
 }
 
 func checkMemoryLimit(userId int, notifyType string) (bool, error) {
 	// Ensure cleanup task is started
 	cleanupOnce.Do(startCleanupTask)
+	return checkMemoryLimitAt(userId, notifyType, time.Now()), nil
+}
 
-	key := fmt.Sprintf("%d:%s:%s", userId, notifyType, time.Now().Format("2006010215"))
-	now := time.Now()
-
-	// Get current limit count or initialize new one
-	var currentLimit limitCount
-	if value, ok := notifyLimitStore.Load(key); ok {
-		currentLimit = value.(limitCount)
-		// Check if the entry has expired
-		if now.Sub(currentLimit.Timestamp) >= getDuration() {
-			currentLimit = limitCount{Count: 0, Timestamp: now}
-		}
-	} else {
+func checkMemoryLimitAt(userId int, notifyType string, now time.Time) bool {
+	if constant.NotifyLimitCount <= 0 {
+		return false
+	}
+	notifyLimitMu.Lock()
+	defer notifyLimitMu.Unlock()
+	key := fmt.Sprintf("%d:%s", userId, notifyType)
+	currentLimit, ok := notifyLimitStore[key]
+	if !ok || now.Sub(currentLimit.Timestamp) >= getDuration() {
 		currentLimit = limitCount{Count: 0, Timestamp: now}
 	}
-
-	// Increment count
+	if currentLimit.Count >= constant.NotifyLimitCount {
+		return false
+	}
 	currentLimit.Count++
-
-	// Check against limits
-	limit := constant.NotifyLimitCount
-
-	// Store updated count
-	notifyLimitStore.Store(key, currentLimit)
-
-	return currentLimit.Count <= limit, nil
+	notifyLimitStore[key] = currentLimit
+	return true
 }

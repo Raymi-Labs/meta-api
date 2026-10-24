@@ -63,12 +63,14 @@ type operationResponse struct {
 
 type TaskAdaptor struct {
 	taskcommon.BaseBilling
+	pollingInfo *relaycommon.RelayInfo
 	ChannelType int
 	apiKey      string
 	baseURL     string
 }
 
 func (a *TaskAdaptor) Init(info *relaycommon.RelayInfo) {
+	a.pollingInfo = info
 	a.ChannelType = info.ChannelType
 	a.baseURL = info.ChannelBaseUrl
 	a.apiKey = info.ApiKey
@@ -279,7 +281,7 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 	if err != nil {
 		return nil, fmt.Errorf("new proxy http client failed: %w", err)
 	}
-	return client.Do(req)
+	return channel.DoTaskPollingRequest(a.pollingInfo, key, req, client)
 }
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {

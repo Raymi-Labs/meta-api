@@ -5,12 +5,16 @@ on:
     branches: [main]
     paths:
       - 'Dockerfile'
+      - 'go.mod'
+      - '.github/workflows/electron-build.yml'
       - 'scripts/release/**'
       - '.github/workflows/release*.yml'
       - '.github/workflows/docker-*.yml'
   pull_request:
     paths:
       - 'Dockerfile'
+      - 'go.mod'
+      - '.github/workflows/electron-build.yml'
       - 'scripts/release/**'
       - '.github/workflows/release*.yml'
       - '.github/workflows/docker-*.yml'

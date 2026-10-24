@@ -91,6 +91,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	defer func() {
 		if newAPIError != nil {
+			helper.StopStreamKeepAlive(c)
 			newAPIError = service.NormalizeClientCancellation(c, newAPIError)
 			service.MarkRequestFailure(c, newAPIError)
 			if newAPIError.RetryAfter > 0 {
@@ -104,6 +105,14 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			newAPIError.SetMessage(common.MessageWithRequestId(newAPIError.Error(), requestId))
 			if !shouldWriteRelayErrorResponse(c) {
 				return
+			}
+			if relayFormat != types.RelayFormatOpenAIRealtime && c.Writer.Written() &&
+				strings.HasPrefix(c.Writer.Header().Get("Content-Type"), "text/event-stream") {
+				writeRelayStreamError(c, relayFormat, newAPIError)
+				return
+			}
+			if relayFormat != types.RelayFormatOpenAIRealtime {
+				c.Header("Content-Type", "application/json; charset=utf-8")
 			}
 			switch relayFormat {
 			case types.RelayFormatOpenAIRealtime:
@@ -153,12 +162,26 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	c.Set(service.RequestLogStreamKey, relayInfo.IsStream)
 	defer func() {
-		success := newAPIError == nil && c.Request.Context().Err() == nil && c.Writer.Status() < 400 && relayInfo.StreamStatus.IsSuccessful()
+		success := newAPIError == nil && (c.Request.Context().Err() == nil || relayInfo.StreamStatus.HasDeliveredCompletion()) && c.Writer.Status() < 400 && relayInfo.StreamStatus.IsSuccessful()
 		c.Set(service.RequestOutcomeKey, success)
+		if success && relayInfo.StreamStatus.HasDeliveredCompletion() {
+			c.Set(service.RequestDeliveredCompletionKey, true)
+		}
 		// Record synchronously so a retry/continuation cannot mutate the sampled
 		// relay state and partial billing cannot create a second success sample.
 		perfmetrics.RecordRelaySample(relayInfo, success, relayInfo.PerformanceOutputTokens)
 	}()
+
+	startRequestKeepAlive := func() {
+		if relayFormat != types.RelayFormatClaude || !relayInfo.IsStream {
+			return
+		}
+		if enabled, interval := helper.GetStreamPingConfig(relayInfo); enabled {
+			helper.StartStreamKeepAlive(c, interval, relayFormat)
+		}
+	}
+	startRequestKeepAlive()
+	defer helper.StopStreamKeepAlive(c)
 
 	// Enforce a user-scoped cooling-off period before token counting, billing,
 	// channel selection, or any upstream request. Local rejections never create
@@ -266,6 +289,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			newAPIError = service.NormalizeClientCancellation(c, types.NewError(c.Request.Context().Err(), types.ErrorCodeDoRequestFailed, types.ErrOptionWithSkipRetry()))
 			break
 		}
+		// Header access during preparation joins the previous heartbeat. Resume
+		// it for selection/retry gaps; business output still forbids replay.
+		startRequestKeepAlive()
 		channel, releaseSlot, channelErr, overloadControl := selectChannelWithConcurrency(c, relayInfo, retryParam)
 		if channelErr != nil {
 			healthRequest.ObserveFailure(relayInfo.UsingGroup, channelErr)
@@ -321,6 +347,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 				newAPIError = relayHandler(c, relayInfo)
 			}
 		}()
+		// Health sampling also inspects the underlying writer's status. Join
+		// before that observation; a subsequent attempt resumes keepalive.
+		helper.StopStreamKeepAlive(c)
 		if breakLoop {
 			break
 		}
@@ -331,7 +360,14 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			// not proof of an intentional user stop. Only health attribution changes.
 			healthErr = types.NewClientCanceledError()
 		}
-		healthRequest.ObserveResult(relayInfo, healthErr, healthWriter.delivered(), time.Now())
+		if helper.IsDownstreamWriteError(healthErr) {
+			// A proven local delivery failure is neither upstream unavailability
+			// nor proof of an intentional user stop. Keep it in the denominator
+			// as unknown without penalizing the upstream channel.
+			healthRequest.ObserveResult(relayInfo, nil, false, time.Now())
+		} else {
+			healthRequest.ObserveResult(relayInfo, healthErr, healthWriter.delivered(), time.Now())
+		}
 
 		if newAPIError == nil {
 			service.ClearUserScopedCircuit(c, channel)
@@ -352,6 +388,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if types.ClassifyFailure(newAPIError) == types.FailureClientCanceled {
 			service.AppendRequestFailureAttempt(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, "", channel.GetAutoBan()), newAPIError)
 			logger.LogInfo(c, "client request canceled; stopping relay without channel failover")
+			break
+		}
+		if helper.IsDownstreamWriteError(newAPIError) {
+			service.AppendRequestFailureAttempt(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, "", channel.GetAutoBan()), newAPIError)
+			logger.LogInfo(c, "downstream stream write failed; stopping relay without channel failover")
 			break
 		}
 
@@ -445,6 +486,17 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 func shouldWriteRelayErrorResponse(c *gin.Context) bool {
 	return !common.GetContextKeyBool(c, constant.ContextKeyResponsesStreamErrorWritten)
+}
+
+func writeRelayStreamError(c *gin.Context, format types.RelayFormat, apiError *types.NewAPIError) {
+	// HTTP headers may have been committed by a preparation heartbeat. The
+	// failure remains a failure; return it within the protocol already opened.
+	if format == types.RelayFormatClaude {
+		_ = helper.ClaudeData(c, dto.ClaudeResponse{Type: "error", Error: apiError.ToClaudeError()})
+		return
+	}
+	_ = helper.ObjectData(c, gin.H{"error": apiError.ToOpenAIError()})
+	helper.Done(c)
 }
 
 var upgrader = websocket.Upgrader{
@@ -1023,6 +1075,9 @@ func shouldRetryTaskRelay(c *gin.Context, channelId int, taskErr *dto.TaskError,
 	if taskErr == nil {
 		return false
 	}
+	if taskErr.LocalError {
+		return false
+	}
 	if service.ShouldSkipRetryAfterChannelAffinityFailure(c) {
 		return false
 	}
@@ -1050,9 +1105,6 @@ func shouldRetryTaskRelay(c *gin.Context, channelId int, taskErr *dto.TaskError,
 	}
 	if taskErr.StatusCode == 408 {
 		// azure处理超时不重试
-		return false
-	}
-	if taskErr.LocalError {
 		return false
 	}
 	if taskErr.StatusCode/100 == 2 {

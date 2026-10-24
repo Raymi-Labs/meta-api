@@ -58,7 +58,20 @@ func mergeStringMessageContents(left, right string) string {
 	return strings.Trim(fmt.Sprintf("%s %s", left, right), "\"")
 }
 
-func functionParametersToClaudeInputSchema(parameters any) map[string]any {
+func functionParametersToClaudeInputSchema(parameters any) any {
+	if raw, ok := parameters.(json.RawMessage); ok && common.GetJsonType(raw) == "object" {
+		var fields map[string]json.RawMessage
+		if common.Unmarshal(raw, &fields) == nil {
+			out := raw
+			if len(fields["type"]) == 0 || common.GetJsonType(fields["type"]) == "null" {
+				out, _ = sjson.SetRawBytes(out, "type", []byte(`"object"`))
+			}
+			if len(fields["properties"]) == 0 || common.GetJsonType(fields["properties"]) == "null" {
+				out, _ = sjson.SetRawBytes(out, "properties", []byte(`{}`))
+			}
+			return json.RawMessage(out)
+		}
+	}
 	params, _ := parameters.(map[string]any)
 	schema := make(map[string]any, len(params)+2)
 	for key, value := range params {
@@ -91,7 +104,7 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 	claudeTools := make([]any, 0, len(textRequest.Tools))
 
 	for _, tool := range textRequest.Tools {
-		if _, ok := tool.Function.Parameters.(map[string]any); !ok && tool.Type != "function" {
+		if !dto.IsSchemaObject(tool.Function.Parameters) && tool.Type != "function" {
 			continue
 		}
 		claudeTools = append(claudeTools, &dto.Tool{
@@ -260,6 +273,7 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 	lastMessage := dto.Message{
 		Role: "tool",
 	}
+	lastMessageHasPlaceholder := false
 	for i, message := range textRequest.Messages {
 		if message.Role == "" {
 			textRequest.Messages[i].Role = "user"
@@ -280,17 +294,33 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 			fmtMessage.ToolCalls = message.ToolCalls
 		}
 		if lastMessage.Role == message.Role && lastMessage.Role != "tool" {
-			if lastMessage.IsStringContent() && message.IsStringContent() {
-				fmtMessage.SetStringContent(mergeStringMessageContents(lastMessage.StringContent(), message.StringContent()))
+			if lastMessage.IsStringContent() && (message.IsStringContent() || message.Role == "assistant" && message.Content == nil) {
+				previousToolCalls := lastMessage.ParseToolCalls()
+				currentToolCalls := fmtMessage.ParseToolCalls()
+				if len(previousToolCalls) > 0 || len(currentToolCalls) > 0 {
+					texts := make([]string, 0, 2)
+					if previousText := lastMessage.StringContent(); previousText != "" && !(lastMessageHasPlaceholder && len(previousToolCalls) > 0) {
+						texts = append(texts, previousText)
+					}
+					if currentText := message.StringContent(); currentText != "" {
+						texts = append(texts, currentText)
+					}
+					fmtMessage.SetStringContent(strings.Join(texts, " "))
+					fmtMessage.SetToolCalls(append(previousToolCalls, currentToolCalls...))
+				} else {
+					fmtMessage.SetStringContent(mergeStringMessageContents(lastMessage.StringContent(), message.StringContent()))
+				}
 				// delete last message
 				formatMessages = formatMessages[:len(formatMessages)-1]
 			}
 		}
-		if fmtMessage.Content == nil || (fmtMessage.IsStringContent() && fmtMessage.StringContent() == "") {
+		hasPlaceholder := fmtMessage.Content == nil || (fmtMessage.IsStringContent() && fmtMessage.StringContent() == "")
+		if hasPlaceholder {
 			fmtMessage.SetStringContent("...")
 		}
 		formatMessages = append(formatMessages, fmtMessage)
 		lastMessage = fmtMessage
+		lastMessageHasPlaceholder = hasPlaceholder
 	}
 
 	claudeMessages := make([]dto.ClaudeMessage, 0)

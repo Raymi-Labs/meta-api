@@ -22,7 +22,7 @@ RUN BUILD_VERSION="${APP_VERSION:-$(cat VERSION 2>/dev/null)}"; \
     if [ -z "$BUILD_VERSION" ]; then BUILD_VERSION="dev"; fi; \
     DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$BUILD_VERSION" bun run build
 
-FROM --platform=$BUILDPLATFORM golang:alpine AS builder2
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine AS builder2
 ENV GO111MODULE=on CGO_ENABLED=0
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn
