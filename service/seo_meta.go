@@ -2,7 +2,7 @@ package service
 
 import (
 	"bytes"
-	"embed"
+	"io/fs"
 	"strings"
 	"sync"
 
@@ -200,7 +200,7 @@ var (
 // LoadPrerendered 从 embed.FS 加载 SEO 阶段 2 的预渲染产物到内存 map。
 // 由 main.go 启动时调用一次。读取路径与 web/scripts/prerender.mjs 输出位置约定一致。
 // 任何一个文件不存在都不视为错误（旁路为模板替换链路），但会记录日志便于排查。
-func LoadPrerendered(buildFS embed.FS) {
+func LoadPrerendered(buildFS fs.FS) {
 	// (URL path, embed.FS 相对路径) 对，需与 prerender.mjs 中 ROUTES 保持同步。
 	// 同一份 HTML 注册两个 path key（带/不带尾斜杠），便于 router 任意一种写法都命中。
 	entries := []struct {
@@ -215,7 +215,7 @@ func LoadPrerendered(buildFS embed.FS) {
 	}
 	loaded := map[string][]byte{}
 	for _, e := range entries {
-		data, err := buildFS.ReadFile(e.embedKey)
+		data, err := fs.ReadFile(buildFS, e.embedKey)
 		if err != nil {
 			common.SysLog("prerendered html not found, falling back to template injection: " + e.embedKey)
 			continue

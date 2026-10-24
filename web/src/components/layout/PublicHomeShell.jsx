@@ -42,8 +42,10 @@ import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import PublicFooter from './PublicFooter';
 import PublicLanguageSelector from './PublicLanguageSelector';
+import { isPublicLegalPath } from '../../helpers/publicRoutes';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
+const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
 
 const defaultModules = {
   home: true,
@@ -92,6 +94,8 @@ const PublicHomeShell = () => {
     return () => document.removeEventListener('keydown', onEscape);
   }, [mobileNavOpen]);
   const isDownloadPage = /^\/download\/?$/.test(location.pathname);
+  const isLegalPage = isPublicLegalPath(location.pathname);
+  const isPublicSubpage = isDownloadPage || isLegalPage;
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState, statusDispatch] = useContext(StatusContext);
   const { t } = usePublicTranslation();
@@ -199,10 +203,10 @@ const PublicHomeShell = () => {
 
   return (
     <div
-      className={`public-shell ${!isDownloadPage && !customLanding ? 'public-shell--landing' : ''} min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]`}
+      className={`public-shell ${!isPublicSubpage && !customLanding ? 'public-shell--landing' : ''} min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]`}
     >
       <GlobalTopProgress />
-      {(!customLanding || isDownloadPage) && (
+      {(!customLanding || isPublicSubpage) && (
         <header className='public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>
           <div className='public-header-inner flex items-center justify-between h-16'>
             <Link
@@ -325,7 +329,7 @@ const PublicHomeShell = () => {
           </div>
         </header>
       )}
-      {isDownloadPage ? (
+      {isPublicSubpage ? (
         <Suspense
           fallback={
             <main className='min-h-screen bg-[var(--semi-color-bg-0,#fff)]'>
@@ -333,7 +337,7 @@ const PublicHomeShell = () => {
             </main>
           }
         >
-          <DesktopDownload />
+          {isLegalPage ? <PublicLegal status={status} /> : <DesktopDownload />}
         </Suspense>
       ) : (
         <Home onLandingChange={setCustomLanding} />
@@ -347,6 +351,7 @@ const PublicHomeShell = () => {
         status={status}
         customLanding={customLanding}
         isDownloadPage={isDownloadPage}
+        isLegalPage={isLegalPage}
         t={t}
       />
     </div>

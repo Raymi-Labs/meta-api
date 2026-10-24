@@ -22,6 +22,8 @@ v1.0.0-compat.64 的[卡片动态与页脚导航](2026-10-24-home-capability-mot
 
 检索 EnterpriseHome、PublicHomeShell、首页、homepage：2026-09-29-kimi-retest-scope-correction 只涉及文档/页面验收范围；2026-10-11-qiyun-reverse-proxy-migration 和 2026-10-17-public-relay-monitor 属于部署及监控，均无本次设计归属，不改写。原首页没有对应活跃决策笔记。
 
+[公共政策与隐私选择](2026-10-25-public-policies.md)扩展四栏页脚、五份补充说明及真实统计控制；保留本文的自定义首页、权限和公开语言边界。
+
 ## Alternatives considered
 
 - 只改原样式：范围小，但保留密集内容和模拟指标，不能达到参考站清晰的阅读层次。

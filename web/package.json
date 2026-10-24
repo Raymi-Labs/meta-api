@@ -71,6 +71,7 @@
     "test:world-map-motion": "node --test scripts/world-map-motion.test.mjs",
     "test:capability-motion": "node --test scripts/capability-motion.test.mjs",
     "test:public-language": "bun test scripts/public-language.test.mjs",
+    "test:public-policies": "node --test scripts/public-legal.test.mjs scripts/analytics-consent.test.mjs && bun test scripts/public-footer.test.jsx",
     "test:request-failure": "node scripts/request-failure.test.mjs",
     "test:pulse-settings": "node scripts/pulse-settings.test.mjs"
   },

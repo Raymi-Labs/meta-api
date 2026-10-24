@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { buildAuthPathWithNext } from '../../helpers/authRedirect';
 import { prefetchAppShell } from '../../helpers/prefetchAppShell';
 import './PublicFooter.css';
 
@@ -31,6 +32,7 @@ const PublicFooter = ({
   status,
   customLanding,
   isDownloadPage,
+  isLegalPage,
   t,
 }) => {
   const copyright = (
@@ -40,7 +42,7 @@ const PublicFooter = ({
   );
 
   // Custom landing content owns its navigation and page sections.
-  if (customLanding && !isDownloadPage) {
+  if (customLanding && !isDownloadPage && !isLegalPage) {
     return (
       <footer className='public-footer public-footer--compact'>
         {copyright}
@@ -53,6 +55,9 @@ const PublicFooter = ({
       ? modules.pricing?.enabled
       : modules.pricing;
   const showHomeSections = !customLanding && modules.home;
+  const showDocs = modules.docs && Boolean(docsLink);
+  const protectedPath = (path) =>
+    user ? path : buildAuthPathWithNext('/login', path);
   const groups = [
     {
       id: 'products',
@@ -60,21 +65,38 @@ const PublicFooter = ({
       links: [
         pricingEnabled && {
           text: '模型广场',
-          to: modules.pricing?.requireAuth && !user ? '/login' : '/pricing',
+          to: modules.pricing?.requireAuth
+            ? protectedPath('/pricing')
+            : '/pricing',
+        },
+        modules.console && {
+          text: '智能路由',
+          to: protectedPath('/console/token'),
+        },
+        modules.console && {
+          text: '模型体验',
+          to: protectedPath('/console/playground'),
+        },
+        modules.console && {
+          text: 'AI 图像创作',
+          to: protectedPath('/console/image-playground'),
         },
         { text: '下载客户端', to: '/download', prefetchApp: false },
+        showDocs && { text: 'Skills', to: '/docs/image-generation' },
       ],
     },
     {
       id: 'developers',
       title: '开发者',
       links: [
-        modules.docs &&
-          docsLink && { text: '文档', href: docsLink, external: true },
+        showDocs && { text: '文档', href: docsLink, external: true },
+        showDocs && { text: 'API 参考', to: '/docs/api-examples' },
+        showDocs && { text: '接入指南', to: '/docs/clients' },
+        showDocs && { text: 'Agent 接入', to: '/docs/clients/openclaw' },
         showHomeSections && { text: '快速开始', href: '/#quick-start' },
         modules.console && {
           text: '控制台',
-          to: user ? '/console' : '/login',
+          to: protectedPath('/console'),
         },
         modules.usage && { text: '用量查询', to: '/usage' },
       ],
@@ -84,6 +106,7 @@ const PublicFooter = ({
       title: '关于我们',
       links: [
         modules.about && { text: '关于', to: '/about' },
+        showDocs && { text: '支持', to: '/docs/troubleshooting' },
         showHomeSections && { text: '常见问题', href: '/#faq-title' },
       ],
     },
@@ -92,12 +115,43 @@ const PublicFooter = ({
       title: '条款与政策',
       links: [
         status.user_agreement_enabled && {
-          text: '用户协议',
+          text: '服务条款',
           to: '/user-agreement',
         },
         status.privacy_policy_enabled && {
           text: '隐私政策',
           to: '/privacy-policy',
+        },
+        {
+          text: 'Cookie 政策',
+          to: '/legal/cookies',
+          prefetchApp: false,
+        },
+        {
+          text: '数据隐私',
+          to: '/legal/data-privacy',
+          prefetchApp: false,
+        },
+        {
+          text: '支付须知',
+          to: '/legal/payment',
+          prefetchApp: false,
+        },
+        {
+          text: 'ZDR 条款',
+          to: '/legal/zdr',
+          prefetchApp: false,
+        },
+        {
+          text: '异步生成条款',
+          to: '/legal/asynchronous-generation',
+          prefetchApp: false,
+        },
+        {
+          text: '你的隐私选择',
+          to: '/privacy-choices',
+          prefetchApp: false,
+          privacyChoice: true,
         },
       ],
     },
@@ -145,6 +199,11 @@ const PublicFooter = ({
                     ) : (
                       <Link
                         to={link.to}
+                        className={
+                          link.privacyChoice
+                            ? 'public-footer-privacy-choice'
+                            : undefined
+                        }
                         onMouseEnter={
                           link.prefetchApp === false
                             ? undefined
@@ -156,7 +215,31 @@ const PublicFooter = ({
                             : prefetchAppShell
                         }
                       >
-                        {t(link.text)}
+                        <span>{t(link.text)}</span>
+                        {link.privacyChoice && (
+                          <svg
+                            width='16'
+                            height='18'
+                            viewBox='0 0 16 18'
+                            fill='none'
+                            aria-hidden='true'
+                            focusable='false'
+                          >
+                            <path
+                              d='M8 1.5 14 4v5c0 3.2-3.8 6.1-6 7.5C5.8 15.1 2 12.2 2 9V4l6-2.5Z'
+                              stroke='currentColor'
+                              strokeWidth='1.5'
+                              strokeLinejoin='round'
+                            />
+                            <path
+                              d='m5.5 8.5 1.8 1.8 3.2-3.8'
+                              stroke='currentColor'
+                              strokeWidth='1.5'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                        )}
                       </Link>
                     )}
                   </li>

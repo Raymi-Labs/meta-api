@@ -93,6 +93,19 @@
   line-height: 1.7;
   text-decoration: none;
   transition: color 160ms ease;
+  overflow-wrap: anywhere;
+}
+
+.public-footer-group .public-footer-privacy-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.public-footer-privacy-choice svg {
+  flex: 0 0 auto;
 }
 
 .public-footer-group a:hover,

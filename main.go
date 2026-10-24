@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -211,8 +210,7 @@ func main() {
 	})
 	server.Use(sessions.Sessions("session", store))
 
-	InjectUmamiAnalytics()
-	InjectGoogleAnalytics()
+	indexPage = common.InjectAnalyticsConfig(indexPage)
 
 	// 加载 SEO 阶段 2 预渲染产物（来自 web/scripts/prerender.mjs 输出），未生成时自动旁路。
 	service.LoadPrerendered(buildFS)
@@ -276,47 +274,6 @@ func configureTrustedProxies(server *gin.Engine) {
 	if err := server.SetTrustedProxies(proxies); err != nil {
 		common.SysError("failed to configure TRUSTED_PROXIES: " + err.Error())
 	}
-}
-
-func InjectUmamiAnalytics() {
-	analyticsInjectBuilder := &strings.Builder{}
-	if os.Getenv("UMAMI_WEBSITE_ID") != "" {
-		umamiSiteID := os.Getenv("UMAMI_WEBSITE_ID")
-		umamiScriptURL := os.Getenv("UMAMI_SCRIPT_URL")
-		if umamiScriptURL == "" {
-			umamiScriptURL = "https://analytics.umami.is/script.js"
-		}
-		analyticsInjectBuilder.WriteString("<script defer src=\"")
-		analyticsInjectBuilder.WriteString(umamiScriptURL)
-		analyticsInjectBuilder.WriteString("\" data-website-id=\"")
-		analyticsInjectBuilder.WriteString(umamiSiteID)
-		analyticsInjectBuilder.WriteString("\"></script>")
-	}
-	analyticsInjectBuilder.WriteString("<!--Umami QuantumNous-->\n")
-	analyticsInject := analyticsInjectBuilder.String()
-	indexPage = bytes.ReplaceAll(indexPage, []byte("<!--umami-->\n"), []byte(analyticsInject))
-}
-
-func InjectGoogleAnalytics() {
-	analyticsInjectBuilder := &strings.Builder{}
-	if os.Getenv("GOOGLE_ANALYTICS_ID") != "" {
-		gaID := os.Getenv("GOOGLE_ANALYTICS_ID")
-		// Google Analytics 4 (gtag.js)
-		analyticsInjectBuilder.WriteString("<script async src=\"https://www.googletagmanager.com/gtag/js?id=")
-		analyticsInjectBuilder.WriteString(gaID)
-		analyticsInjectBuilder.WriteString("\"></script>")
-		analyticsInjectBuilder.WriteString("<script>")
-		analyticsInjectBuilder.WriteString("window.dataLayer = window.dataLayer || [];")
-		analyticsInjectBuilder.WriteString("function gtag(){dataLayer.push(arguments);}")
-		analyticsInjectBuilder.WriteString("gtag('js', new Date());")
-		analyticsInjectBuilder.WriteString("gtag('config', '")
-		analyticsInjectBuilder.WriteString(gaID)
-		analyticsInjectBuilder.WriteString("');")
-		analyticsInjectBuilder.WriteString("</script>")
-	}
-	analyticsInjectBuilder.WriteString("<!--Google Analytics QuantumNous-->\n")
-	analyticsInject := analyticsInjectBuilder.String()
-	indexPage = bytes.ReplaceAll(indexPage, []byte("<!--Google Analytics-->\n"), []byte(analyticsInject))
 }
 
 func InitResources() error {

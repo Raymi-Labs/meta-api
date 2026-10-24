@@ -9,6 +9,7 @@ import {
   normalizePublicLanguage,
 } from '../src/helpers/publicLanguage.js';
 import { SUPPORTED_LOCALES } from '../src/helpers/localeNormalize.js';
+import { PUBLIC_POLICIES } from '../src/pages/PublicLegal/content.js';
 
 const expectedLanguages = [
   'en',
@@ -125,11 +126,11 @@ test('browser and saved aliases resolve consistently without losing Chinese vari
   }
 });
 
-test('all 15 lazy dictionaries cover the 137 public keys and preserve API identifiers', () => {
+test('all 15 lazy dictionaries cover the 173 public keys and preserve API identifiers', () => {
   const keys = readLocale('keys');
   const english = readLocale('en');
-  assert.equal(keys.length, 137);
-  assert.equal(new Set(keys).size, 137);
+  assert.equal(keys.length, 173);
+  assert.equal(new Set(keys).size, 173);
   assert.ok(
     keys.every(
       (key) => typeof english[key] === 'string' && english[key].trim(),
@@ -180,6 +181,51 @@ test('all 15 lazy dictionaries cover the 137 public keys and preserve API identi
       for (const token of tokens)
         assert.ok(dictionary[key].includes(token), `${language}: ${token}`);
     }
+  }
+});
+
+test('public pages, navigation and translated data labels are covered by the key catalog', () => {
+  const keys = new Set(readLocale('keys'));
+  const files = [
+    'pages/Home/index.jsx',
+    'pages/Home/EnterpriseHome.jsx',
+    'pages/Home/HomeCapabilities.jsx',
+    'pages/DesktopDownload/index.jsx',
+    'pages/DesktopDownload/AndroidDownloadCard.jsx',
+    'components/layout/PublicHomeShell.jsx',
+    'components/layout/PublicFooter.jsx',
+    'components/layout/PublicLanguageSelector.jsx',
+    'components/layout/PublicNoticeModal.jsx',
+    'pages/PublicLegal/index.jsx',
+    'pages/PublicLegal/PrivacyChoices.jsx',
+  ];
+  for (const file of files) {
+    const source = readFileSync(
+      new URL(`../src/${file}`, import.meta.url),
+      'utf8',
+    )
+      // Diagnostic messages are not visible UI or translation keys.
+      .replace(
+        /\bconsole\.(?:debug|error|info|log|warn)\(\s*(['"])(?:\\.|(?!\1)[^\\])*\1/g,
+        '',
+      );
+    const used = new Set(
+      [...source.matchAll(/\bt\(\s*(['"])((?:\\.|(?!\1)[^\\])*)\1/g)].map(
+        (match) => match[2],
+      ),
+    );
+    // These UI modules also pass Chinese array labels, state messages and
+    // conditional titles to t(). Check their literals, including Skills.
+    for (const [, , value] of source.matchAll(
+      /(['"])((?:\\.|(?!\1)[^\\])*)\1/g,
+    )) {
+      if (/[\u3400-\u9fff]/u.test(value) || value === 'Skills') used.add(value);
+    }
+    for (const key of used) assert.ok(keys.has(key), `${file}: ${key}`);
+  }
+  // Policy bodies intentionally remain Chinese; only document titles are UI.
+  for (const policy of PUBLIC_POLICIES) {
+    assert.ok(keys.has(policy.title), `policy title: ${policy.title}`);
   }
 });
 
