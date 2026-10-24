@@ -185,13 +185,18 @@ code {
   width: 100%;
   background: var(--semi-color-bg-0);
   height: 100%;
-  overflow-x: hidden;
   border-right: none;
-  overflow-y: auto;
   min-height: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/* Semi 样式按需加载，滚动规则需高于其 navigation 的 overflow: hidden。 */
+.sidebar-nav.semi-navigation {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -257,6 +262,7 @@ code {
 
 /* 底部折叠按钮 */
 .sidebar-collapse-button {
+  flex: 0 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
