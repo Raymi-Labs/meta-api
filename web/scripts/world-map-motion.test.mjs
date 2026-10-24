@@ -57,6 +57,10 @@ function fixture(t, options = {}) {
   const hero = new Events();
   const document = Object.assign(new Events(), {
     hidden: options.hidden ?? false,
+    focused: options.focused ?? true,
+    hasFocus() {
+      return this.focused;
+    },
     documentElement: {},
   });
   const queue = new Map();
@@ -80,6 +84,7 @@ function fixture(t, options = {}) {
   });
   const context = {
     arcs: [],
+    draws: [],
     transforms: [],
     clearCount: 0,
     sampleCount: 0,
@@ -98,6 +103,12 @@ function fixture(t, options = {}) {
     beginPath() {},
     arc(...arc) {
       this.arcs.push(arc);
+      this.draws.push({
+        x: arc[0],
+        y: arc[1],
+        radius: arc[2],
+        alpha: this.globalAlpha,
+      });
     },
     fill() {},
   };
@@ -167,14 +178,23 @@ function fixture(t, options = {}) {
     cleanup?.();
     cleanup = undefined;
   };
-  t.after(() => {
+  let restored = false;
+  const restore = () => {
+    if (restored) return;
     unmount();
     for (const [name, descriptor] of previousGlobals) {
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);
       else delete globalThis[name];
     }
-  });
+    restored = true;
+  };
+  t.after(restore);
   cleanup = attachWorldMapMotion({ root, svg, canvas, hero });
+  if (!options.deferIntersection) {
+    observers.intersection?.fire([
+      { isIntersecting: options.intersecting ?? true },
+    ]);
+  }
 
   return {
     root,
@@ -188,6 +208,7 @@ function fixture(t, options = {}) {
     observers,
     queue,
     unmount,
+    restore,
     get maximumQueued() {
       return maximumQueued;
     },
@@ -202,6 +223,10 @@ function fixture(t, options = {}) {
         clientY: top + y * scale,
       });
     },
+    focus(focused) {
+      document.focused = focused;
+      window.emit(focused ? 'focus' : 'blur');
+    },
     tick(milliseconds = 34) {
       time += milliseconds;
       const callbacks = Array.from(queue.values());
@@ -211,19 +236,45 @@ function fixture(t, options = {}) {
   };
 }
 
-test('unsupported input and reduced motion keep the SVG static without sampling', async (t) => {
-  for (const [name, options, pointerType] of [
-    ['reduced motion', { reducedMotion: true }, 'mouse'],
-    ['coarse pointer', { finePointer: false }, 'mouse'],
-    ['hidden page', { hidden: true }, 'mouse'],
-    ['touch', {}, 'touch'],
-    ['pen', {}, 'pen'],
-    ['missing canvas', { noContext: true }, 'mouse'],
-    ['missing Path2D', { noPath2D: true }, 'mouse'],
+function capture(t, { options, frameCount = 90, beforeFrame } = {}) {
+  const env = fixture(t, options);
+  const frames = [];
+  for (let index = 0; index < frameCount; index++) {
+    beforeFrame?.(env, index);
+    env.tick();
+    frames.push({ ...env.context.draws.at(-1) });
+  }
+  env.restore();
+  return frames;
+}
+
+test('initial animation waits for intersection and focus before sampling', (t) => {
+  const env = fixture(t, { deferIntersection: true, focused: false });
+  env.move();
+  assert.equal(env.queue.size, 0);
+  assert.equal(env.context.sampleCount, 0);
+  env.observers.intersection.fire([{ isIntersecting: true }]);
+  assert.equal(env.queue.size, 0, 'visible but unfocused must remain static');
+  env.focus(true);
+  assert.equal(env.queue.size, 1);
+  env.tick();
+  assert.equal(env.animating, true);
+});
+
+test('motion-disabled or unsupported states keep the SVG static without sampling', async (t) => {
+  for (const [name, options] of [
+    ['reduced motion', { reducedMotion: true }],
+    ['hidden page', { hidden: true }],
+    ['unfocused page', { focused: false }],
+    ['offscreen map', { intersecting: false }],
+    ['zero width', { rect: { width: 0 } }],
+    ['zero height', { rect: { height: 0 } }],
+    ['missing canvas', { noContext: true }],
+    ['missing Path2D', { noPath2D: true }],
   ]) {
     await t.test(name, (t) => {
       const env = fixture(t, options);
-      env.move(716, 261, pointerType);
+      env.move();
       assert.equal(env.queue.size, 0);
       assert.equal(env.context.sampleCount, 0);
       assert.equal(env.animating, false);
@@ -231,95 +282,197 @@ test('unsupported input and reduced motion keep the SVG static without sampling'
   }
 });
 
-test('rapid pointer movement uses one animation chain and reuses sampled geometry', (t) => {
+test('a visible focused map keeps changing without any pointer events', (t) => {
   const env = fixture(t);
-  for (let index = 0; index < 1000; index++) env.move(700 + (index % 50), 261);
-  assert.equal(env.queue.size, 1);
+  env.tick();
+  const first = env.context.draws.at(-1);
+  for (let index = 0; index < 90; index++) {
+    env.tick();
+    assert.equal(env.queue.size, 1);
+    assert.equal(env.animating, true);
+  }
+  assert.notDeepEqual(env.context.draws.at(-1), first);
+  assert.equal(env.maximumQueued, 1);
+});
+
+test('coarse pointers, touch and pen retain ambient motion without adding hover', async (t) => {
+  const baseline = capture(t);
+  for (const [name, options, pointerType] of [
+    ['coarse pointer', { finePointer: false }, 'mouse'],
+    ['touch', {}, 'touch'],
+    ['pen', {}, 'pen'],
+  ]) {
+    await t.test(name, (t) => {
+      const frames = capture(t, {
+        options,
+        beforeFrame: (env) => env.move(716, 261, pointerType),
+      });
+      assert.deepEqual(frames, baseline);
+      assert.notDeepEqual(frames[0], frames.at(-1));
+    });
+  }
+});
+
+test('rapid pointer movement and repeated observer callbacks keep one RAF chain', (t) => {
+  const env = fixture(t);
   const sampled = env.context.sampleCount;
   assert.ok(sampled > 0);
-  for (let frame = 0; frame < 20; frame++) {
-    env.tick(8); // Includes frames skipped by the rendering rate limit.
+  for (let index = 0; index < 1000; index++) env.move(700 + (index % 50), 261);
+  assert.equal(env.queue.size, 1);
+  for (let frame = 0; frame < 40; frame++) {
+    env.tick(8); // Exercise frames skipped by the rendering rate limit.
     for (let move = 0; move < 10; move++) env.move(710 + move, 261);
+    env.observers.intersection.fire([{ isIntersecting: true }]);
+    env.window.emit('focus');
     assert.equal(env.queue.size, 1);
   }
   assert.equal(env.maximumQueued, 1);
   assert.equal(env.context.sampleCount, sampled);
-  assert.ok(env.context.arcs.length > 0);
+  assert.ok(env.context.draws.length > 0);
   assert.equal(env.animating, true);
 });
 
-test('pointer leave eases back, restores the static SVG and stops requesting frames', (t) => {
-  const env = fixture(t);
-  env.move();
-  for (let frame = 0; frame < 20; frame++) env.tick();
-  assert.equal(env.animating, true);
-  env.hero.emit('pointerleave');
-  env.tick();
-  assert.equal(env.animating, true, 'the return should not snap instantly');
-  for (let frame = 0; frame < 40 && env.queue.size; frame++) env.tick();
-  assert.equal(env.queue.size, 0);
-  assert.equal(env.animating, false);
-  const rendered = env.context.arcs.length;
-  env.tick(1000);
-  assert.equal(env.context.arcs.length, rendered);
-  env.move();
-  env.tick();
-  assert.equal(env.animating, true, 'hover can restart after settling');
+test('mouse effects stay subtle compared with the same ambient animation phase', (t) => {
+  const frameCount = 360;
+  const baseline = capture(t, { frameCount });
+  const offsets = [0, 1, 8, 20, 40, 70, 110, 124, 150, -40, -70, 0];
+  const hover = capture(t, {
+    frameCount,
+    beforeFrame: (env, index) =>
+      env.move(716 + offsets[Math.floor(index / 30)], 261),
+  });
+  const maxima = { radius: 0, displacement: 0, alpha: 0 };
+  for (let index = 0; index < frameCount; index++) {
+    const difference = {
+      radius: hover[index].radius - baseline[index].radius,
+      displacement: Math.hypot(
+        hover[index].x - baseline[index].x,
+        hover[index].y - baseline[index].y,
+      ),
+      alpha: hover[index].alpha - baseline[index].alpha,
+    };
+    assert.ok(difference.radius >= -1e-10 && difference.radius <= 0.2 + 1e-10);
+    assert.ok(difference.displacement <= 3 + 1e-10);
+    assert.ok(difference.alpha >= -1e-10 && difference.alpha <= 0.065 + 1e-10);
+    for (const key of Object.keys(maxima)) {
+      maxima[key] = Math.max(maxima[key], difference[key]);
+    }
+  }
+  assert.ok(maxima.radius > 0.1, 'hover must visibly affect dot size');
+  assert.ok(
+    maxima.displacement > 0.1,
+    'nearby dots must respond to the pointer',
+  );
+  assert.ok(maxima.alpha > 0.03, 'hover must softly brighten nearby dots');
 });
 
-test('visibility and pointer interruptions immediately clear the animation', async (t) => {
-  const interruptions = {
-    blur: (env) => env.window.emit('blur'),
-    scroll: (env) => env.window.emit('scroll'),
+test('pointer leave, cancel and scroll return to ambient motion without stopping RAF', async (t) => {
+  const baseline = capture(t, { frameCount: 130 });
+  const exits = {
+    pointerleave: (env) => env.hero.emit('pointerleave'),
     pointercancel: (env) => env.hero.emit('pointercancel'),
-    hidden: (env) => {
-      env.document.hidden = true;
-      env.document.emit('visibilitychange');
-    },
-    offscreen: (env) =>
-      env.observers.intersection.fire([{ isIntersecting: false }]),
+    scroll: (env) => env.window.emit('scroll'),
   };
-  for (const [name, interrupt] of Object.entries(interruptions)) {
+  for (const [name, exit] of Object.entries(exits)) {
     await t.test(name, (t) => {
       const env = fixture(t);
       env.move();
-      env.tick();
+      for (let index = 0; index < 30; index++) env.tick();
+      assert.ok(env.context.draws.at(-1).radius > baseline[29].radius);
+      exit(env);
+      assert.equal(env.queue.size, 1);
+      for (let index = 30; index < 130; index++) env.tick();
+      const settled = env.context.draws.at(-1);
+      for (const key of ['x', 'y', 'radius', 'alpha']) {
+        assert.ok(Math.abs(settled[key] - baseline[129][key]) < 1e-8);
+      }
       assert.equal(env.animating, true);
-      const cleared = env.context.clearCount;
-      interrupt(env);
-      assert.equal(env.queue.size, 0);
-      assert.equal(env.animating, false);
-      assert.ok(env.context.clearCount > cleared);
+      assert.equal(env.queue.size, 1);
+      env.tick();
+      assert.notDeepEqual(env.context.draws.at(-1), settled);
     });
   }
 });
 
-test('changing motion or input preferences cancels active work and permits later hover', async (t) => {
-  for (const name of ['reduced', 'fine']) {
+test('blur, hidden, offscreen and reduced motion pause and automatically resume', async (t) => {
+  const cases = {
+    focus: {
+      pause: (env) => env.focus(false),
+      resume: (env) => env.focus(true),
+    },
+    visibility: {
+      pause: (env) => {
+        env.document.hidden = true;
+        env.document.emit('visibilitychange');
+      },
+      resume: (env) => {
+        env.document.hidden = false;
+        env.document.emit('visibilitychange');
+      },
+    },
+    intersection: {
+      pause: (env) =>
+        env.observers.intersection.fire([{ isIntersecting: false }]),
+      resume: (env) =>
+        env.observers.intersection.fire([{ isIntersecting: true }]),
+    },
+    reducedMotion: {
+      pause: (env) => {
+        env.media.reduced.matches = true;
+        env.media.reduced.emit('change');
+      },
+      resume: (env) => {
+        env.media.reduced.matches = false;
+        env.media.reduced.emit('change');
+      },
+    },
+  };
+  for (const [name, { pause, resume }] of Object.entries(cases)) {
     await t.test(name, (t) => {
       const env = fixture(t);
-      env.move();
       env.tick();
-      env.media[name].matches = name === 'reduced';
-      env.media[name].emit('change');
+      assert.equal(env.animating, true);
+      pause(env);
       env.move();
-      assert.equal(env.animating, false);
       assert.equal(env.queue.size, 0);
-      env.media[name].matches = name !== 'reduced';
-      env.media[name].emit('change');
+      assert.equal(env.animating, false);
+      const rendered = env.context.draws.length;
+      env.tick(10000);
+      assert.equal(env.context.draws.length, rendered);
+      resume(env);
       assert.equal(
         env.queue.size,
-        0,
-        'preference change alone must not animate',
+        1,
+        'resume must not require a pointer event',
       );
-      env.move();
       env.tick();
       assert.equal(env.animating, true);
+      assert.equal(env.maximumQueued, 1);
     });
   }
 });
 
-test('letterboxed SVG coordinates keep the hover centered and cap canvas resolution', (t) => {
+test('losing fine-pointer capability removes hover while ambient motion continues', (t) => {
+  const baseline = capture(t, { frameCount: 32 });
+  const env = fixture(t);
+  env.move();
+  for (let index = 0; index < 30; index++) env.tick();
+  assert.ok(env.context.draws.at(-1).radius > baseline[29].radius);
+  env.media.fine.matches = false;
+  env.media.fine.emit('change');
+  env.move();
+  env.tick();
+  assert.deepEqual(env.context.draws.at(-1), baseline[30]);
+  assert.equal(env.queue.size, 1);
+  env.media.fine.matches = true;
+  env.media.fine.emit('change');
+  env.move();
+  env.tick();
+  assert.ok(env.context.draws.at(-1).radius > baseline[31].radius);
+});
+
+test('letterboxing aligns hover with the SVG and caps canvas resolution', (t) => {
+  const baseline = capture(t, { frameCount: 2 });
   const env = fixture(t, {
     rect: { left: 150, top: 100, width: 1000, height: 400 },
     devicePixelRatio: 3,
@@ -331,13 +484,17 @@ test('letterboxed SVG coordinates keep the hover centered and cap canvas resolut
     clientX: 650,
     clientY: 110, // Inside the root box, above the letterboxed map itself.
   });
-  assert.equal(env.queue.size, 0);
+  env.tick();
+  assert.deepEqual(env.context.draws.at(-1), baseline[0]);
   env.move();
   env.tick();
-  const [x, y, radius] = env.context.arcs.at(-1);
-  assert.ok(Math.abs(x - 716) < 1e-8);
-  assert.ok(Math.abs(y - 261) < 1e-8);
-  assert.ok(radius > 1.25, 'the dot under the pointer should respond');
+  const hovered = env.context.draws.at(-1);
+  assert.ok(Math.abs(hovered.x - baseline[1].x) < 1e-8);
+  assert.ok(Math.abs(hovered.y - baseline[1].y) < 1e-8);
+  assert.ok(
+    hovered.radius > baseline[1].radius,
+    'the centered dot should respond',
+  );
   const transform = env.context.transforms.at(-1);
   assert.ok(Math.abs(transform[0] - 2000 / 1440) < 1e-8);
   assert.equal(transform[0], transform[3]);
@@ -345,25 +502,43 @@ test('letterboxed SVG coordinates keep the hover centered and cap canvas resolut
   assert.ok(Math.abs(transform[5] - (800 - (520 * 2000) / 1440) / 2) < 1e-8);
 });
 
-test('resizing resets the active canvas and recalculates its backing dimensions', (t) => {
+test('resizing preserves one RAF chain with updated canvas dimensions', (t) => {
   const env = fixture(t);
-  env.move();
   env.tick();
+  const sampled = env.context.sampleCount;
   env.rect.width = 1000;
   env.rect.height = 400;
   env.observers.size.fire();
-  assert.equal(env.queue.size, 0);
-  assert.equal(env.animating, false);
+  assert.equal(env.queue.size, 1);
   assert.equal(env.canvas.width, 1000);
   assert.equal(env.canvas.height, 400);
-  env.move();
   env.tick();
   assert.equal(env.animating, true);
+  assert.equal(env.context.sampleCount, sampled);
+  assert.equal(env.maximumQueued, 1);
 });
 
-test('unmount cancels RAF, removes listeners and disconnects every observer', (t) => {
+test('batched intersection entries use the most recent visibility state', (t) => {
   const env = fixture(t);
-  env.move();
+  env.tick();
+  env.observers.intersection.fire([
+    { isIntersecting: true },
+    { isIntersecting: false },
+  ]);
+  assert.equal(env.queue.size, 0);
+  assert.equal(env.animating, false);
+  env.observers.intersection.fire([
+    { isIntersecting: false },
+    { isIntersecting: true },
+  ]);
+  assert.equal(env.queue.size, 1);
+  env.tick();
+  assert.equal(env.animating, true);
+  assert.equal(env.maximumQueued, 1);
+});
+
+test('unmount removes listeners and late observer callbacks cannot restart animation', (t) => {
+  const env = fixture(t);
   env.tick();
   env.unmount();
   assert.equal(env.queue.size, 0);
@@ -380,12 +555,19 @@ test('unmount cancels RAF, removes listeners and disconnects every observer', (t
   for (const observer of Object.values(env.observers)) {
     assert.equal(observer.disconnected, true);
   }
+  const rendered = env.context.draws.length;
   const cleared = env.context.clearCount;
   env.move();
+  env.focus(true);
   env.window.emit('resize');
   env.window.emit('scroll');
-  env.observers.size.fire();
+  // An already queued browser callback may run after disconnect().
+  env.observers.intersection.callback([{ isIntersecting: true }]);
+  env.observers.size.callback();
+  env.observers.theme.callback();
   env.tick(1000);
   assert.equal(env.queue.size, 0);
+  assert.equal(env.animating, false);
+  assert.equal(env.context.draws.length, rendered);
   assert.equal(env.context.clearCount, cleared);
 });
