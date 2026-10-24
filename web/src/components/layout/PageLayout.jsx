@@ -56,31 +56,14 @@ const PageLayout = () => {
   const { i18n } = useTranslation();
   const location = useLocation();
 
-  const cardProPages = [
-    '/console/channel',
-    '/console/log',
-    '/console/redemption',
-    '/console/user',
-    '/console/token',
-    '/console/midjourney',
-    '/console/task',
-    '/console/models',
-    '/pricing',
-  ];
-
-  const isFullHeightConsolePage =
-    location.pathname === '/console/playground' ||
-    location.pathname === '/console/chat' ||
-    location.pathname.startsWith('/console/chat/');
-  const shouldHideFooter =
-    cardProPages.includes(location.pathname) || isFullHeightConsolePage;
+  const isConsoleRoute = /^\/console(?:\/|$)/i.test(location.pathname);
+  const shouldHideFooter = isConsoleRoute || location.pathname === '/pricing';
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
     !location.pathname.startsWith('/console/chat') &&
     location.pathname !== '/console/playground';
 
-  const isConsoleRoute = location.pathname.startsWith('/console');
   const isStandalonePage = location.pathname === '/usage';
   const showSider = isConsoleRoute && (!isMobile || drawerOpen);
 
