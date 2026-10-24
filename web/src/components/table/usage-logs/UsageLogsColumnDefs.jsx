@@ -309,7 +309,11 @@ function renderModelName(record, copyText, t) {
                     <Typography.Text strong>
                       {t('上游声明模型')}:
                     </Typography.Text>
-                    {renderModelTag(observed.returned)}
+                    {renderModelTag(observed.returned, {
+                      onClick: (event) => {
+                        copyText(event, observed.returned).then(() => {});
+                      },
+                    })}
                   </div>
                   <Typography.Text
                     type={observed.mismatch ? 'warning' : 'tertiary'}
