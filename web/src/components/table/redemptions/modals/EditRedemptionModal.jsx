@@ -58,6 +58,14 @@ const EditRedemptionModal = (props) => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const isMobile = useIsMobile();
   const formApiRef = useRef(null);
+  const sessionRef = useRef(0);
+  const formValuesRef = useRef(null);
+  const submittingRef = useRef(false);
+  const refreshRef = useRef(props.refresh);
+  refreshRef.current = props.refresh;
+  const [readySession, setReadySession] = useState(null);
+  const formKey = `${props.visiable}:${props.editingRedemption.id ?? 'new'}`;
+  const canSubmit = props.visiable && readySession === sessionRef.current;
 
   const getInitValues = () => ({
     name: '',
@@ -71,32 +79,49 @@ const EditRedemptionModal = (props) => {
   });
 
   const handleCancel = () => {
+    sessionRef.current += 1;
+    setReadySession(null);
     props.handleClose();
   };
 
-  const loadRedemption = async () => {
-    setLoading(true);
-    let res = await API.get(`/api/redemption/${props.editingRedemption.id}`);
-    const { success, message, data } = res.data;
-    if (success) {
-      data.benefit_type = data.benefit_type || 'quota';
-      data.subscription_purchase_mode =
-        data.subscription_purchase_mode || 'stack';
-      if (data.subscription_purchase_mode === 'renew_extend') {
-        data.subscription_purchase_mode = 'renew';
-      }
-      data.subscription_purchase_quantity =
-        data.subscription_purchase_quantity || 1;
-      if (data.expired_time === 0) {
-        data.expired_time = null;
+  const loadRedemption = async (session) => {
+    try {
+      const res = await API.get(
+        `/api/redemption/${props.editingRedemption.id}`,
+        {
+          disableDuplicate: true,
+          skipErrorHandler: true,
+        },
+      );
+      if (session !== sessionRef.current) return;
+      const { success, message, data } = res.data;
+      if (success) {
+        const values = {
+          ...getInitValues(),
+          ...data,
+          benefit_type: data.benefit_type || 'quota',
+          subscription_purchase_mode:
+            data.subscription_purchase_mode === 'renew_extend'
+              ? 'renew'
+              : data.subscription_purchase_mode || 'stack',
+          subscription_purchase_quantity:
+            data.subscription_purchase_quantity || 1,
+          expired_time: data.expired_time
+            ? new Date(data.expired_time * 1000)
+            : null,
+        };
+        formValuesRef.current = { key: formKey, values };
+        setReadySession(session);
       } else {
-        data.expired_time = new Date(data.expired_time * 1000);
+        showError(message);
       }
-      formApiRef.current?.setValues({ ...getInitValues(), ...data });
-    } else {
-      showError(message);
+    } catch (error) {
+      if (session === sessionRef.current) {
+        showError(error.response ? error : error.message || t('操作失败'));
+      }
+    } finally {
+      if (session === sessionRef.current) setLoading(false);
     }
-    setLoading(false);
   };
 
   // 管理端创建套餐兑换码时需要展示可选套餐列表。
@@ -114,16 +139,33 @@ const EditRedemptionModal = (props) => {
   }, []);
 
   useEffect(() => {
-    if (formApiRef.current) {
+    const session = ++sessionRef.current;
+    submittingRef.current = false;
+    setReadySession(null);
+    const values = getInitValues();
+    formValuesRef.current = { key: formKey, values };
+    setLoading(Boolean(props.visiable && isEdit));
+    if (props.visiable) {
       if (isEdit) {
-        loadRedemption();
+        loadRedemption(session);
       } else {
-        formApiRef.current.setValues(getInitValues());
+        setReadySession(session);
       }
     }
-  }, [props.editingRedemption.id]);
+    return () => {
+      sessionRef.current += 1;
+    };
+  }, [props.visiable, props.editingRedemption.id]);
 
   const submit = async (values) => {
+    if (
+      !canSubmit ||
+      readySession !== sessionRef.current ||
+      submittingRef.current
+    )
+      return;
+    const session = sessionRef.current;
+    submittingRef.current = true;
     let name = values.name;
     if (!isEdit && (!name || name === '')) {
       name = renderQuota(values.quota);
@@ -153,51 +195,58 @@ const EditRedemptionModal = (props) => {
         localInputs.expired_time.getTime() / 1000,
       );
     }
-    let res;
-    if (isEdit) {
-      res = await API.put(`/api/redemption/`, {
-        ...localInputs,
-        id: parseInt(props.editingRedemption.id),
-      });
-    } else {
-      res = await API.post(`/api/redemption/`, {
-        ...localInputs,
-      });
-    }
-    const { success, message, data } = res.data;
-    if (success) {
+    try {
+      let res;
       if (isEdit) {
-        showSuccess(t('兑换码更新成功！'));
-        props.refresh();
-        props.handleClose();
+        res = await API.put(
+          `/api/redemption/`,
+          {
+            ...localInputs,
+            id: parseInt(props.editingRedemption.id),
+          },
+          { skipErrorHandler: true },
+        );
       } else {
-        showSuccess(t('兑换码创建成功！'));
-        props.refresh();
-        formApiRef.current?.setValues(getInitValues());
-        props.handleClose();
+        res = await API.post(
+          `/api/redemption/`,
+          { ...localInputs },
+          { skipErrorHandler: true },
+        );
       }
-    } else {
-      showError(message);
-    }
-    if (!isEdit && data) {
-      let text = '';
-      for (let i = 0; i < data.length; i++) {
-        text += data[i] + '\n';
+      const { success, message, data } = res.data;
+      if (success) refreshRef.current();
+      if (session !== sessionRef.current) return;
+      if (success) {
+        showSuccess(isEdit ? t('兑换码更新成功！') : t('兑换码创建成功！'));
+        handleCancel();
+      } else {
+        showError(message);
       }
-      Modal.confirm({
-        title: t('兑换码创建成功'),
-        content: (
-          <div>
-            <p>{t('兑换码创建成功，是否下载兑换码？')}</p>
-            <p>{t('兑换码将以文本文件的形式下载，文件名为兑换码的名称。')}</p>
-          </div>
-        ),
-        onOk: () => {
-          downloadTextAsFile(text, `${localInputs.name}.txt`);
-        },
-      });
+      if (success && !isEdit && data) {
+        const text = data.map((code) => code + '\n').join('');
+        Modal.confirm({
+          title: t('兑换码创建成功'),
+          content: (
+            <div>
+              <p>{t('兑换码创建成功，是否下载兑换码？')}</p>
+              <p>{t('兑换码将以文本文件的形式下载，文件名为兑换码的名称。')}</p>
+            </div>
+          ),
+          onOk: () => {
+            downloadTextAsFile(text, `${localInputs.name}.txt`);
+          },
+        });
+      }
+    } catch (error) {
+      if (session === sessionRef.current) {
+        showError(error.response ? error : error.message || t('操作失败'));
+      }
+    } finally {
+      if (session === sessionRef.current) {
+        submittingRef.current = false;
+        setLoading(false);
+      }
     }
-    setLoading(false);
   };
 
   return (
@@ -231,6 +280,7 @@ const EditRedemptionModal = (props) => {
                 onClick={() => formApiRef.current?.submitForm()}
                 icon={<IconSave />}
                 loading={loading}
+                disabled={!canSubmit}
               >
                 {t('提交')}
               </Button>
@@ -250,7 +300,12 @@ const EditRedemptionModal = (props) => {
       >
         <Spin spinning={loading}>
           <Form
-            initValues={getInitValues()}
+            key={`${formKey}:${readySession}`}
+            initValues={
+              formValuesRef.current?.key === formKey
+                ? formValuesRef.current.values
+                : getInitValues()
+            }
             getFormApi={(api) => (formApiRef.current = api)}
             onSubmit={submit}
           >
@@ -348,7 +403,9 @@ const EditRedemptionModal = (props) => {
                               label: `${plan.title} (#${plan.id})`,
                               value: plan.id,
                             }))}
-                            rules={[{ required: true, message: t('请选择套餐') }]}
+                            rules={[
+                              { required: true, message: t('请选择套餐') },
+                            ]}
                           />
                         </Col>
                         <Col span={12}>

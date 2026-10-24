@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| 管理员模型/兑换码编辑会话隔离 | [模型抽屉](../web/src/components/table/models/modals/EditModelModal.jsx)、[兑换码抽屉](../web/src/components/table/redemptions/modals/EditRedemptionModal.jsx)、[模型列表](../web/src/hooks/models/useModelsData.jsx)、[兑换码列表](../web/src/hooks/redemptions/useRedemptionsData.jsx) | 沿用管理员详情/写接口；每次打开独立请求，成功加载后才可保存，完整快照保留套餐等条件字段；保存成功刷新最新分页/厂商 | 旧详情/保存/关闭不干扰新会话，失败保留输入，当前 401 沿用登录过期处理；不改变后端权限或业务契约，不撤销已经落库的旧保存 |
 | 首帧主题与自动跟随 | [HTML 初始化](../web/index.html)、[主题状态](../web/src/context/Theme/index.jsx)、[共享语义](../web/src/context/Theme/theme.js) | HTML 同步应用 html.dark/color-scheme 与 Semi body 属性，React 接管原 theme-mode/auto 偏好；坏值回退自动，存储不可用仍可切换 | 保留布尔调用及公开页原样式；五页预渲染首帧有回归，不新增存储键或更改品牌元信息，严格 CSP 需允许相应脚本 |
 | Gemini 兼容向量输入校验 | [适配器校验](../relay/channel/gemini/embedding_input.go)、[通用空值保护](../relay/helper/valid_request.go)、[HTTP 与退款回归](../controller/relay_gemini_embedding_test.go) | `/v1/embeddings` 转 Gemini 接受完整非空文本批次；非法项整批 400、不重试、已有预扣退款 | 保留原始文本/顺序/维度，不改变共享 ParseInput 与 OpenAI token-ID 输入；原生 content.parts 不新增限制，不代表原生 batch 全链已验收 |
 | 使用日志模型名称复制 | [模型列及详情](../web/src/components/table/usage-logs/UsageLogsColumnDefs.jsx)、[浏览器回归](../web/scripts/usage-model-copy.browser.mjs) | 请求并计费模型、映射后模型和上游声明模型共用既有复制回调；普通用户及管理员沿用原日志可见性 | 只复制已展示的名称；上游声明仍仅供排查，不证明实际模型身份，不改变计费、接口和权限 |

@@ -64,7 +64,15 @@ const EditModelModal = (props) => {
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
   const formApiRef = useRef(null);
+  const sessionRef = useRef(0);
+  const formValuesRef = useRef(null);
+  const submittingRef = useRef(false);
+  const refreshRef = useRef(props.refresh);
+  refreshRef.current = props.refresh;
+  const [readySession, setReadySession] = useState(null);
   const isEdit = props.editingModel && props.editingModel.id !== undefined;
+  const formKey = `${props.visiable}:${props.editingModel?.id ?? 'new'}:${props.editingModel?.model_name || ''}`;
+  const canSubmit = props.visiable && readySession === sessionRef.current;
   const placement = useMemo(() => (isEdit ? 'right' : 'left'), [isEdit]);
 
   // 供应商列表
@@ -117,7 +125,7 @@ const EditModelModal = (props) => {
     description: '',
     icon: '',
     tags: [],
-    vendor_id: undefined,
+    vendor_id: null,
     vendor: '',
     vendor_icon: '',
     endpoints: '',
@@ -127,106 +135,120 @@ const EditModelModal = (props) => {
   });
 
   const handleCancel = () => {
+    sessionRef.current += 1;
+    setReadySession(null);
     props.handleClose();
   };
 
-  const loadModel = async () => {
-    if (!isEdit || !props.editingModel.id) return;
-
-    setLoading(true);
+  const loadModel = async (session) => {
     try {
-      const res = await API.get(`/api/models/${props.editingModel.id}`);
+      const res = await API.get(`/api/models/${props.editingModel.id}`, {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      if (session !== sessionRef.current) return;
       const { success, message, data } = res.data;
       if (success) {
-        // 处理tags
-        if (data.tags) {
-          data.tags = data.tags.split(',').filter(Boolean);
-        } else {
-          data.tags = [];
-        }
-        // endpoints 保持原始 JSON 字符串，若为空设为空串
-        if (!data.endpoints) {
-          data.endpoints = '';
-        }
-        // 处理status/sync_official，将数字转为布尔值
-        data.status = data.status === 1;
-        data.sync_official = (data.sync_official ?? 1) === 1;
-        if (formApiRef.current) {
-          formApiRef.current.setValues({ ...getInitValues(), ...data });
-        }
+        const values = {
+          ...getInitValues(),
+          ...data,
+          tags: data.tags ? data.tags.split(',').filter(Boolean) : [],
+          vendor_id: data.vendor_id || null,
+          endpoints: data.endpoints || '',
+          status: data.status === 1,
+          sync_official: (data.sync_official ?? 1) === 1,
+        };
+        formValuesRef.current = { key: formKey, values };
+        setReadySession(session);
       } else {
         showError(message);
       }
     } catch (error) {
-      showError(t('加载模型信息失败'));
+      if (session === sessionRef.current) {
+        showError(error.response ? error : t('加载模型信息失败'));
+      }
+    } finally {
+      if (session === sessionRef.current) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (formApiRef.current) {
-      if (!isEdit) {
-        formApiRef.current.setValues({
-          ...getInitValues(),
-          model_name: props.editingModel?.model_name || '',
-        });
-      }
-    }
-  }, [props.editingModel?.id, props.editingModel?.model_name]);
-
-  useEffect(() => {
+    const session = ++sessionRef.current;
+    submittingRef.current = false;
+    setReadySession(null);
+    const values = getInitValues();
+    formValuesRef.current = { key: formKey, values };
+    setLoading(Boolean(props.visiable && isEdit));
     if (props.visiable) {
       if (isEdit) {
-        loadModel();
+        loadModel(session);
       } else {
-        formApiRef.current?.setValues({
-          ...getInitValues(),
-          model_name: props.editingModel?.model_name || '',
-        });
+        setReadySession(session);
       }
-    } else {
-      formApiRef.current?.reset();
     }
+    return () => {
+      sessionRef.current += 1;
+    };
   }, [props.visiable, props.editingModel?.id, props.editingModel?.model_name]);
 
   const submit = async (values) => {
+    if (
+      !canSubmit ||
+      readySession !== sessionRef.current ||
+      submittingRef.current
+    )
+      return;
+    const session = sessionRef.current;
+    submittingRef.current = true;
     setLoading(true);
     try {
       const submitData = {
         ...values,
         tags: Array.isArray(values.tags) ? values.tags.join(',') : values.tags,
         endpoints: values.endpoints || '',
+        vendor_id: values.vendor_id || 0,
         status: values.status ? 1 : 0,
         sync_official: values.sync_official ? 1 : 0,
       };
 
       if (isEdit) {
         submitData.id = props.editingModel.id;
-        const res = await API.put('/api/models/', submitData);
+        const res = await API.put('/api/models/', submitData, {
+          skipErrorHandler: true,
+        });
         const { success, message } = res.data;
+        if (success) refreshRef.current();
+        if (session !== sessionRef.current) return;
         if (success) {
           showSuccess(t('模型更新成功！'));
-          props.refresh();
-          props.handleClose();
+          handleCancel();
         } else {
           showError(t(message));
         }
       } else {
-        const res = await API.post('/api/models/', submitData);
+        const res = await API.post('/api/models/', submitData, {
+          skipErrorHandler: true,
+        });
         const { success, message } = res.data;
+        if (success) refreshRef.current();
+        if (session !== sessionRef.current) return;
         if (success) {
           showSuccess(t('模型创建成功！'));
-          props.refresh();
-          props.handleClose();
+          handleCancel();
         } else {
           showError(t(message));
         }
       }
     } catch (error) {
-      showError(error.response?.data?.message || t('操作失败'));
+      if (session === sessionRef.current) {
+        showError(error.response ? error : error.message || t('操作失败'));
+      }
+    } finally {
+      if (session === sessionRef.current) {
+        submittingRef.current = false;
+        setLoading(false);
+      }
     }
-    setLoading(false);
-    formApiRef.current?.setValues(getInitValues());
   };
 
   return (
@@ -260,6 +282,7 @@ const EditModelModal = (props) => {
               onClick={() => formApiRef.current?.submitForm()}
               icon={<Save size={16} />}
               loading={loading}
+              disabled={!canSubmit}
             >
               {t('提交')}
             </Button>
@@ -280,8 +303,12 @@ const EditModelModal = (props) => {
     >
       <Spin spinning={loading}>
         <Form
-          key={isEdit ? 'edit' : 'new'}
-          initValues={getInitValues()}
+          key={`${formKey}:${readySession}`}
+          initValues={
+            formValuesRef.current?.key === formKey
+              ? formValuesRef.current.values
+              : getInitValues()
+          }
           getFormApi={(api) => (formApiRef.current = api)}
           onSubmit={submit}
         >

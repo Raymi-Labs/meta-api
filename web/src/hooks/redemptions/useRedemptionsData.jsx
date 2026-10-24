@@ -344,11 +344,6 @@ export const useRedemptionsData = () => {
   // 关闭编辑弹窗
   const closeEdit = () => {
     setShowEdit(false);
-    setTimeout(() => {
-      setEditingRedemption({
-        id: undefined,
-      });
-    }, 500);
   };
 
   // Remove record (for UI update after deletion)

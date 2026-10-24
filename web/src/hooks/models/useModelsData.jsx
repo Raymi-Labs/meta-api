@@ -75,9 +75,6 @@ export const useModelsData = () => {
   // 关闭编辑弹窗
   const closeEdit = () => {
     setShowEdit(false);
-    setTimeout(() => {
-      setEditingModel({ id: undefined });
-    }, 500);
   };
 
   // Set model format with key field
