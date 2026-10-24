@@ -171,5 +171,8 @@
   "无法保存偏好，请检查浏览器存储设置。": "Nie można zapisać ustawienia. Sprawdź ustawienia pamięci przeglądarki.",
   "偏好已保存": "Ustawienie zapisane",
   "更改已运行的统计脚本会刷新页面。": "Zmiany dotyczące już działających skryptów analitycznych spowodują ponowne załadowanie strony.",
-  "本站未配置可选统计服务。": "Dla tej witryny nie skonfigurowano opcjonalnej usługi statystyk."
+  "本站未配置可选统计服务。": "Dla tej witryny nie skonfigurowano opcjonalnej usługi statystyk.",
+  "暂无系统公告": "Brak komunikatów systemowych",
+  "公告加载失败，请稍后重试。": "Nie udało się wczytać komunikatów. Spróbuj ponownie później.",
+  "有未读公告": "Masz nieprzeczytane komunikaty"
 }

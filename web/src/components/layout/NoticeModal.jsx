@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useContext, useMemo } from 'react';
+import React, { useEffect, useState, useContext, useMemo, useRef } from 'react';
 import {
   Avatar,
   Button,
@@ -41,6 +41,11 @@ import {
 import { StatusContext } from '../../context/Status';
 import { Bell, FileText, Megaphone, Wallet } from 'lucide-react';
 import RichContent from '../common/RichContent';
+import {
+  getAnnouncementKey,
+  muteNoticeToday,
+  normalizeAnnouncements,
+} from '../../helpers/noticeReadState';
 
 const { Text } = Typography;
 
@@ -61,16 +66,26 @@ const NoticeModal = ({
   const navigate = useNavigate();
   const [noticeContent, setNoticeContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [noticeLoaded, setNoticeLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const viewed = useRef({ announcementKeys: new Set(), content: '' });
+  const closed = useRef(false);
 
   const [statusState] = useContext(StatusContext);
 
-  const announcements = statusState?.status?.announcements || [];
+  const announcements = useMemo(
+    () =>
+      statusState?.status?.announcements_enabled === false
+        ? []
+        : normalizeAnnouncements(statusState?.status?.announcements),
+    [
+      statusState?.status?.announcements,
+      statusState?.status?.announcements_enabled,
+    ],
+  );
 
   const unreadSet = useMemo(() => new Set(unreadKeys), [unreadKeys]);
 
-  const getKeyForItem = (item) =>
-    `${item?.publishDate || ''}-${(item?.content || '').slice(0, 30)}`;
   const formatBadgeCount = (count) => (count > 99 ? '99+' : count);
 
   const processedAnnouncements = useMemo(() => {
@@ -81,48 +96,58 @@ const NoticeModal = ({
           ? `${pubDate.getFullYear()}-${String(pubDate.getMonth() + 1).padStart(2, '0')}-${String(pubDate.getDate()).padStart(2, '0')} ${String(pubDate.getHours()).padStart(2, '0')}:${String(pubDate.getMinutes()).padStart(2, '0')}`
           : item?.publishDate || '';
       return {
-        key: getKeyForItem(item),
+        key: getAnnouncementKey(item),
         type: item.type || 'default',
         time: absoluteTime,
         content: item.content,
         extra: item.extra,
         relative: getRelativeTime(item.publishDate),
-        isUnread: unreadSet.has(getKeyForItem(item)),
+        isUnread: unreadSet.has(getAnnouncementKey(item)),
       };
     });
   }, [announcements, unreadSet]);
 
-  const handleCloseTodayNotice = () => {
-    const today = new Date().toDateString();
-    localStorage.setItem('notice_close_date', today);
-    onClose();
+  const closeNotice = () => {
+    closed.current = true;
+    onClose({
+      announcementKeys: [...viewed.current.announcementKeys],
+      content: viewed.current.content,
+    });
   };
-
-  const displayNotice = async () => {
-    setLoading(true);
-    try {
-      const res = await API.get('/api/notice');
-      const { success, message, data } = res.data;
-      if (success) {
-        if (data !== '') {
-          setNoticeContent(data);
-        } else {
-          setNoticeContent('');
-        }
-      } else {
-        showError(message);
-      }
-    } catch (error) {
-      showError(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleCloseTodayNotice = () => {
+    muteNoticeToday();
+    closeNotice();
   };
 
   useEffect(() => {
-    if (visible) {
-      displayNotice();
-    }
+    if (!visible) return;
+    let cancelled = false;
+    closed.current = false;
+    viewed.current = { announcementKeys: new Set(), content: '' };
+    setNoticeContent('');
+    setNoticeLoaded(false);
+    setLoading(true);
+    const displayNotice = async () => {
+      try {
+        const res = await API.get('/api/notice');
+        if (cancelled || closed.current) return;
+        const { success, message, data } = res.data;
+        if (success && typeof data === 'string') {
+          setNoticeContent(data);
+          setNoticeLoaded(true);
+        } else {
+          showError(message || t('加载失败'));
+        }
+      } catch (error) {
+        if (!cancelled && !closed.current) showError(error.message);
+      } finally {
+        if (!cancelled && !closed.current) setLoading(false);
+      }
+    };
+    displayNotice();
+    return () => {
+      cancelled = true;
+    };
   }, [visible]);
 
   useEffect(() => {
@@ -130,6 +155,23 @@ const NoticeModal = ({
       setActiveTab(defaultTab);
     }
   }, [defaultTab, visible]);
+
+  useEffect(() => {
+    if (!visible || closed.current) return;
+    if (activeTab === 'system') {
+      for (const item of processedAnnouncements)
+        viewed.current.announcementKeys.add(item.key);
+    } else if (activeTab === 'inApp' && noticeLoaded && !loading) {
+      viewed.current.content = noticeContent;
+    }
+  }, [
+    visible,
+    activeTab,
+    processedAnnouncements,
+    noticeLoaded,
+    loading,
+    noticeContent,
+  ]);
 
   const renderMarkdownNotice = () => {
     if (loading) {
@@ -245,7 +287,7 @@ const NoticeModal = ({
       );
     }
     const goToReview = () => {
-      onClose();
+      closeNotice();
       navigate('/console/topup?tab=withdrawals');
     };
     return (
@@ -327,7 +369,7 @@ const NoticeModal = ({
       );
     }
     const goToReview = () => {
-      onClose();
+      closeNotice();
       navigate('/console/topup?tab=invoices');
     };
     return (
@@ -455,13 +497,13 @@ const NoticeModal = ({
         </div>
       }
       visible={visible}
-      onCancel={onClose}
+      onCancel={closeNotice}
       footer={
         <div className='flex justify-end'>
           <Button type='secondary' onClick={handleCloseTodayNotice}>
             {t('今日关闭')}
           </Button>
-          <Button type='primary' onClick={onClose}>
+          <Button type='primary' onClick={closeNotice}>
             {t('关闭公告')}
           </Button>
         </div>

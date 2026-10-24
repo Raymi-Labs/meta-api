@@ -20,6 +20,8 @@ v1.0.0-compat.64 的[卡片动态与页脚导航](2026-10-24-home-capability-mot
 
 ## Related notes
 
+- [公开公告铃铛](2026-10-25-public-notification-bell.md)：持有公开导航公告入口、自动提示与跨页已读状态规则。
+
 检索 EnterpriseHome、PublicHomeShell、首页、homepage：2026-09-29-kimi-retest-scope-correction 只涉及文档/页面验收范围；2026-10-11-qiyun-reverse-proxy-migration 和 2026-10-17-public-relay-monitor 属于部署及监控，均无本次设计归属，不改写。原首页没有对应活跃决策笔记。
 
 [公共政策与隐私选择](2026-10-25-public-policies.md)扩展四栏页脚、五份补充说明及真实统计控制；保留本文的自定义首页、权限和公开语言边界。

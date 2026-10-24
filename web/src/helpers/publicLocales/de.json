@@ -171,5 +171,8 @@
   "无法保存偏好，请检查浏览器存储设置。": "Die Einstellung konnte nicht gespeichert werden. Prüfen Sie die Speichereinstellungen Ihres Browsers.",
   "偏好已保存": "Einstellung gespeichert",
   "更改已运行的统计脚本会刷新页面。": "Änderungen an bereits laufenden Analyseskripten laden die Seite neu.",
-  "本站未配置可选统计服务。": "Für diese Website ist kein optionaler Analysedienst eingerichtet."
+  "本站未配置可选统计服务。": "Für diese Website ist kein optionaler Analysedienst eingerichtet.",
+  "暂无系统公告": "Keine Systemmitteilungen",
+  "公告加载失败，请稍后重试。": "Mitteilungen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+  "有未读公告": "Sie haben ungelesene Mitteilungen"
 }

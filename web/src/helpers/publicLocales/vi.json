@@ -171,5 +171,8 @@
   "无法保存偏好，请检查浏览器存储设置。": "Không thể lưu tùy chọn. Vui lòng kiểm tra cài đặt lưu trữ của trình duyệt.",
   "偏好已保存": "Đã lưu tùy chọn",
   "更改已运行的统计脚本会刷新页面。": "Thay đổi thiết lập của các tập lệnh thống kê đang chạy sẽ tải lại trang.",
-  "本站未配置可选统计服务。": "Trang web này chưa cấu hình dịch vụ thống kê tùy chọn."
+  "本站未配置可选统计服务。": "Trang web này chưa cấu hình dịch vụ thống kê tùy chọn.",
+  "暂无系统公告": "Hiện chưa có thông báo hệ thống",
+  "公告加载失败，请稍后重试。": "Không thể tải thông báo. Vui lòng thử lại sau.",
+  "有未读公告": "Bạn có thông báo chưa đọc"
 }

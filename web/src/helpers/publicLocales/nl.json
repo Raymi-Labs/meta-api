@@ -171,5 +171,8 @@
   "无法保存偏好，请检查浏览器存储设置。": "Uw voorkeur kan niet worden opgeslagen. Controleer de opslaginstellingen van uw browser.",
   "偏好已保存": "Voorkeur opgeslagen",
   "更改已运行的统计脚本会刷新页面。": "Wijzigingen die invloed hebben op al actieve analysescripts laden de pagina opnieuw.",
-  "本站未配置可选统计服务。": "Voor deze website is geen optionele statistiekendienst ingesteld."
+  "本站未配置可选统计服务。": "Voor deze website is geen optionele statistiekendienst ingesteld.",
+  "暂无系统公告": "Geen systeemmeldingen",
+  "公告加载失败，请稍后重试。": "De meldingen konden niet worden geladen. Probeer het later opnieuw.",
+  "有未读公告": "Er zijn ongelezen meldingen"
 }

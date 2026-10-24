@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants/common.constant';
 import { StatusContext } from '../../context/Status';
@@ -30,10 +30,6 @@ import { getLogo, getSystemName } from '../../helpers/storage';
 import RichContent from '../../components/common/RichContent';
 import EnterpriseHome from './EnterpriseHome';
 import { getPublicHomeServerAddress } from './homeAddress';
-
-const PublicNoticeModal = lazy(
-  () => import('../../components/layout/PublicNoticeModal'),
-);
 
 const isRemoteHomePage = isHttpsUrl;
 
@@ -56,8 +52,6 @@ const Home = ({ onLandingChange } = {}) => {
   const [homePageResolved, setHomePageResolved] = useState(
     () => getCachedHomePageContent() !== '',
   );
-  const [noticeContent, setNoticeContent] = useState('');
-  const [noticeVisible, setNoticeVisible] = useState(false);
   const docsLink = statusState?.status?.docs_link || '';
   const publicHomeServerAddress = getPublicHomeServerAddress(
     statusState?.status?.server_address,
@@ -125,31 +119,6 @@ const Home = ({ onLandingChange } = {}) => {
   };
 
   useEffect(() => {
-    const checkNoticeAndShow = async () => {
-      const lastCloseDate = localStorage.getItem('notice_close_date');
-      const today = new Date().toDateString();
-      if (lastCloseDate !== today) {
-        try {
-          const res = await API.get('/api/notice', {
-            skipGlobalLoading: true,
-            skipErrorHandler: true,
-          });
-          const { success, data } = res.data;
-          if (success && data && data.trim() !== '') {
-            setNoticeContent(data.trim());
-            setNoticeVisible(true);
-          }
-        } catch (error) {
-          console.error('获取公告失败:', error);
-        }
-      }
-    };
-
-    const taskId = window.setTimeout(checkNoticeAndShow, 4500);
-    return () => window.clearTimeout(taskId);
-  }, []);
-
-  useEffect(() => {
     displayHomePageContent().then();
   }, []);
 
@@ -173,15 +142,6 @@ const Home = ({ onLandingChange } = {}) => {
 
   return (
     <div className='w-full overflow-x-hidden'>
-      {noticeVisible && (
-        <Suspense fallback={null}>
-          <PublicNoticeModal
-            visible={noticeVisible}
-            content={noticeContent}
-            onClose={() => setNoticeVisible(false)}
-          />
-        </Suspense>
-      )}
       {useDefaultHome ? (
         <EnterpriseHome
           brandName={brandName}

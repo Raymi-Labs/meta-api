@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { Monitor, Moon, Sun, Menu, X } from 'lucide-react';
+import { Monitor, Moon, Sun, Menu, X, Bell } from 'lucide-react';
 import React, {
   lazy,
   Suspense,
@@ -42,10 +42,12 @@ import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import PublicFooter from './PublicFooter';
 import PublicLanguageSelector from './PublicLanguageSelector';
+import { usePublicNotifications } from '../../hooks/common/usePublicNotifications';
 import { isPublicLegalPath } from '../../helpers/publicRoutes';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
 const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
+const PublicNoticeModal = lazy(() => import('./PublicNoticeModal'));
 
 const defaultModules = {
   home: true,
@@ -102,6 +104,10 @@ const PublicHomeShell = () => {
   const theme = useTheme();
   const setTheme = useSetTheme();
   const status = statusState?.status || {};
+  const notices = usePublicNotifications({
+    status,
+    autoShow: !isPublicSubpage,
+  });
   const systemName = getSystemName();
   const logo = getLogo();
   const modules = parseHeaderModules(status.HeaderNavModules);
@@ -289,6 +295,32 @@ const PublicHomeShell = () => {
                 )}
               </button>
               <PublicLanguageSelector />
+              <button
+                type='button'
+                className='public-icon-button public-notification-button'
+                aria-label={
+                  notices.hasUnread
+                    ? `${t('系统公告')} · ${t('有未读公告')}`
+                    : t('系统公告')
+                }
+                aria-haspopup='dialog'
+                aria-expanded={notices.visible}
+                aria-controls={
+                  notices.visible ? 'public-notice-dialog' : undefined
+                }
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  notices.open();
+                }}
+              >
+                <Bell size={18} aria-hidden='true' />
+                {notices.hasUnread && (
+                  <span
+                    className='public-notification-dot'
+                    aria-hidden='true'
+                  />
+                )}
+              </button>
               {userState.user ? (
                 <Link
                   to='/console/personal'
@@ -328,6 +360,19 @@ const PublicHomeShell = () => {
             </div>
           </div>
         </header>
+      )}
+      {notices.visible && (
+        <Suspense fallback={null}>
+          <PublicNoticeModal
+            visible={notices.visible}
+            content={notices.content}
+            announcements={notices.announcements}
+            loading={notices.loading}
+            error={notices.error}
+            onRetry={notices.reload}
+            onClose={notices.close}
+          />
+        </Suspense>
       )}
       {isPublicSubpage ? (
         <Suspense

@@ -126,11 +126,11 @@ test('browser and saved aliases resolve consistently without losing Chinese vari
   }
 });
 
-test('all 15 lazy dictionaries cover the 173 public keys and preserve API identifiers', () => {
+test('all 15 lazy dictionaries cover the 176 public keys and preserve API identifiers', () => {
   const keys = readLocale('keys');
   const english = readLocale('en');
-  assert.equal(keys.length, 173);
-  assert.equal(new Set(keys).size, 173);
+  assert.equal(keys.length, 176);
+  assert.equal(new Set(keys).size, 176);
   assert.ok(
     keys.every(
       (key) => typeof english[key] === 'string' && english[key].trim(),

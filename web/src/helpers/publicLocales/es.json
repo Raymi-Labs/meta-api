@@ -171,5 +171,8 @@
   "无法保存偏好，请检查浏览器存储设置。": "No se pudo guardar la preferencia. Revisa la configuración de almacenamiento del navegador.",
   "偏好已保存": "Preferencia guardada",
   "更改已运行的统计脚本会刷新页面。": "Los cambios que afecten a los scripts de estadísticas que ya se estén ejecutando recargarán la página.",
-  "本站未配置可选统计服务。": "Este sitio no tiene configurado ningún servicio opcional de estadísticas."
+  "本站未配置可选统计服务。": "Este sitio no tiene configurado ningún servicio opcional de estadísticas.",
+  "暂无系统公告": "No hay avisos del sistema",
+  "公告加载失败，请稍后重试。": "No se pudieron cargar los avisos. Inténtalo de nuevo más tarde.",
+  "有未读公告": "Tienes avisos sin leer"
 }
