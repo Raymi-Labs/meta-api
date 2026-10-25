@@ -1180,14 +1180,8 @@ html.dark .home-hero::before {
   border-bottom: 1px solid rgba(30, 54, 100, 0.06);
 }
 .public-header-inner {
-  width: min(1320px, calc(100% - 48px));
+  width: calc(100% - 48px);
   margin-inline: auto;
-}
-@media (min-width: 768px) {
-  .public-shell--landing .public-header-inner,
-  .site-header--full-width .public-header-inner {
-    width: calc(100% - 48px);
-  }
 }
 .public-header .public-primary-nav {
   justify-content: flex-end;

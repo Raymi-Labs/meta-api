@@ -73,7 +73,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
 
   return (
     <header
-      className='site-header site-header--full-width sticky top-0 z-50 transition-colors duration-300'
+      className='site-header sticky top-0 z-50 transition-colors duration-300'
       data-onboarding='app-header'
     >
       {noticeVisible && (
