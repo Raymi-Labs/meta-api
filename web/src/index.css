@@ -1172,8 +1172,9 @@ html.dark .home-hero::before {
     background-color 160ms ease;
 }
 
-/* 公开首页与下载页共用的轻量导航。 */
-.public-header--hero {
+/* 公开页、认证页与控制台共用导航外观，各自保留原有交互。 */
+.site-header {
+  line-height: 1.5;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(30, 54, 100, 0.06);
@@ -1183,45 +1184,48 @@ html.dark .home-hero::before {
   margin-inline: auto;
 }
 @media (min-width: 768px) {
-  .public-shell--landing .public-header-inner {
+  .public-shell--landing .public-header-inner,
+  .site-header--full-width .public-header-inner {
     width: calc(100% - 48px);
   }
 }
 .public-header .public-primary-nav {
   justify-content: flex-end;
 }
-.public-header--hero .public-brand {
+.site-header .public-brand {
   color: #171c29;
 }
-.public-header--hero .public-nav-link {
+.site-header .public-nav-link {
   color: #525b6b;
   font-size: 13px;
   font-weight: 500;
   padding: 8px 10px;
 }
-.public-header--hero .public-nav-link:hover,
-.public-header--hero .public-nav-link[aria-current='page'] {
+.site-header .public-nav-link:hover,
+.site-header .public-nav-link[aria-current='page'] {
   color: #3265e8;
   background: #edf3ff;
 }
-.public-header--hero .public-icon-button,
-.public-header--hero .public-login-link,
-.public-header--hero .public-user-link {
+.site-header .public-icon-button,
+.site-header .public-icon-button.semi-button,
+.site-header .public-login-link,
+.site-header .public-user-link {
   color: #525b6b;
   background: transparent;
 }
-.public-header--hero .public-icon-button:hover {
+.site-header .public-icon-button:hover,
+.site-header .public-icon-button.semi-button:hover {
   background: #edf3ff;
   color: #3265e8;
 }
-.public-header--hero .public-register-link {
+.site-header .public-register-link {
   background: #3265e8;
   color: #fff;
   border-radius: 5px;
   padding: 7px 14px;
   margin-left: 5px;
 }
-html.dark .public-header--hero {
+html.dark .site-header {
   background: rgba(13, 17, 26, 0.9);
   border-bottom-color: #263143;
 }
@@ -1236,23 +1240,25 @@ html.dark .public-shell--landing .public-header--hero {
   background: var(--public-hero-surface);
   border-bottom-color: transparent;
 }
-html.dark .public-header--hero .public-brand {
+html.dark .site-header .public-brand {
   color: #edf1fa;
 }
-html.dark .public-header--hero .public-nav-link,
-html.dark .public-header--hero .public-icon-button,
-html.dark .public-header--hero .public-login-link,
-html.dark .public-header--hero .public-user-link {
+html.dark .site-header .public-nav-link,
+html.dark .site-header .public-icon-button,
+html.dark .site-header .public-icon-button.semi-button,
+html.dark .site-header .public-login-link,
+html.dark .site-header .public-user-link {
   color: #b2bed1;
 }
-html.dark .public-header--hero .public-nav-link:hover,
-html.dark .public-header--hero .public-nav-link[aria-current='page'],
-html.dark .public-header--hero .public-icon-button:hover {
+html.dark .site-header .public-nav-link:hover,
+html.dark .site-header .public-nav-link[aria-current='page'],
+html.dark .site-header .public-icon-button:hover,
+html.dark .site-header .public-icon-button.semi-button:hover {
   color: #94b4ff;
   background: #1c2b49;
 }
-.public-header a:focus-visible,
-.public-header button:focus-visible {
+.site-header a:focus-visible,
+.site-header button:focus-visible {
   outline: 2px solid #3265e8;
   outline-offset: 2px;
 }
@@ -1263,7 +1269,7 @@ html.dark .public-header--hero .public-icon-button:hover {
   .public-header .public-primary-nav {
     justify-content: flex-start;
   }
-  .public-header--hero .public-nav-link {
+  .site-header .public-nav-link {
     padding-inline: 8px;
     font-size: 12px;
   }
@@ -1289,6 +1295,13 @@ html.dark .public-header--hero .public-icon-button:hover {
   font-size: 12px;
   text-decoration: none;
   white-space: nowrap;
+}
+
+.site-header .public-icon-button.semi-button {
+  font: inherit;
+  padding: 0;
+  height: 32px;
+  border-radius: 9999px !important;
 }
 
 .public-icon-button {

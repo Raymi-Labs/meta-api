@@ -195,7 +195,7 @@ const PublicHomeShell = () => {
     >
       <GlobalTopProgress />
       {(!customLanding || isPublicSubpage) && (
-        <header className='public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>
+        <header className='site-header public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>
           <div className='public-header-inner flex items-center justify-between h-16'>
             <Link
               to='/'

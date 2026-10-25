@@ -30,12 +30,7 @@ const Navigation = ({
   pricingRequireAuth,
 }) => {
   const renderNavLinks = () => {
-    const baseClasses =
-      'flex-shrink-0 flex items-center gap-1 font-semibold rounded-md transition-all duration-200 ease-in-out';
-    const hoverClasses = 'hover:text-semi-color-primary';
-    const spacingClasses = isMobile ? 'p-1' : 'p-2';
-
-    const commonLinkClasses = `${baseClasses} ${spacingClasses} ${hoverClasses}`;
+    const commonLinkClasses = 'public-nav-link';
 
     return mainNavLinks.map((link) => {
       const linkContent = <span>{link.text}</span>;

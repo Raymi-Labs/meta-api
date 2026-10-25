@@ -73,7 +73,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
 
   return (
     <header
-      className='text-semi-color-text-0 sticky top-0 z-50 transition-colors duration-300 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-lg'
+      className='site-header site-header--full-width sticky top-0 z-50 transition-colors duration-300'
       data-onboarding='app-header'
     >
       {noticeVisible && (
@@ -102,7 +102,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
         </Suspense>
       )}
 
-      <div className='w-full px-2'>
+      <div className='public-header-inner'>
         <div className='flex items-center justify-between h-16'>
           <div className='flex flex-shrink-0 items-center'>
             <MobileMenuButton

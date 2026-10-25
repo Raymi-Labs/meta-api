@@ -41,7 +41,7 @@ const ActionButtons = ({
   t,
 }) => {
   return (
-    <div className='flex flex-shrink-0 items-center gap-2 md:gap-3'>
+    <div className='public-header-actions flex flex-shrink-0 items-center gap-2 md:gap-3'>
       <NewYearButton isNewYear={isNewYear} />
 
       <ThemeToggle theme={theme} onThemeToggle={onThemeToggle} t={t} />
