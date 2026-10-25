@@ -28,6 +28,7 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/uptime/status", controller.GetUptimeKumaStatus)
 		apiRouter.GET("/monitor/channels", middleware.AdminAuth(), controller.GetChannelMonitor)
 		apiRouter.GET("/health/groups", middleware.UserAuth(), controller.GetGroupHealth)
+		apiRouter.GET("/health/models", middleware.UserAuth(), controller.GetModelHealthSummaries)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)
 		apiRouter.GET("/status/update", middleware.AdminAuth(), controller.CheckUpdate)

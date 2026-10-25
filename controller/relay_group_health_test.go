@@ -118,6 +118,14 @@ func TestRelayGroupHealthRecordsCancellationStagesAndDelivery(t *testing.T) {
 			require.NoError(t, grouphealth.Flush(context.Background()))
 			var row model.GroupHealthMetric
 			require.NoError(t, db.Where("group_name = ?", group).First(&row).Error)
+			if stage == "after-write" {
+				require.EqualValues(t, 1, row.UsageSampleCount)
+				require.EqualValues(t, 1, row.InputTokens)
+				require.EqualValues(t, 1, row.OutputTokens)
+				require.Zero(t, row.ThroughputSampleCount, "non-streaming output has no measured generation interval")
+			} else {
+				require.Zero(t, row.UsageSampleCount, "undelivered and excluded outcomes cannot contribute usage")
+			}
 			if stage == "upstream-rate-limit" {
 				require.EqualValues(t, 1, row.RequestCount)
 				require.EqualValues(t, 1, row.ServiceFailureCount)

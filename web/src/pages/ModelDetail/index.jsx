@@ -29,7 +29,13 @@ import {
   getModelNameFromDetailPath,
   sanitizeModelCatalogSnapshot,
 } from '../../helpers/modelDetailNavigation';
-import ModelGroupPerformance from '../../components/table/model-pricing/modal/components/ModelGroupPerformance';
+import ModelGroupRows from './ModelGroupRows';
+import ModelAnalytics from './ModelAnalytics';
+import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
+import {
+  MODEL_MODALITY_LABELS,
+  formatModelContext,
+} from '../../helpers/modelPresentation';
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelQuickStart from './ModelQuickStart.jsx';
@@ -44,6 +50,12 @@ export default function ModelDetail() {
   const { t } = data;
   const modelName = getModelNameFromDetailPath(location.pathname);
   const model = data.models.find((item) => item.model_name === modelName);
+  const [hours, setHours] = useState(24);
+  const health = useGroupHealth({
+    model: modelName,
+    hours,
+    enabled: !!model && !data.loading,
+  });
   const pageRef = useRef(null);
   const [priceGroup, setPriceGroup] = useState('all');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -132,6 +144,9 @@ export default function ModelDetail() {
       : [];
   const sections = [
     ['pricing', '价格详情'],
+    ['performance', '性能对比'],
+    ['usage', '分组用量'],
+    ['capabilities', '模型能力'],
     ['endpoints', 'API端点'],
     ['quick-start', '快速开始'],
     ...(related.length ? [['related', '同厂商模型']] : []),
@@ -152,7 +167,7 @@ export default function ModelDetail() {
         </div>
         <div className='model-detail-identity'>
           <div className='model-detail-title-row'>
-            <h1>{model.model_name}</h1>
+            <h1>{model.display_name || model.model_name}</h1>
             <Button
               theme='borderless'
               type='tertiary'
@@ -162,6 +177,9 @@ export default function ModelDetail() {
               onClick={() => data.copyText(model.model_name)}
             />
           </div>
+          {model.display_name && (
+            <code className='model-detail-model-id'>{model.model_name}</code>
+          )}
           <div className='model-detail-metadata'>
             <span>{model.vendor_name || t('未知供应商')}</span>
             <span aria-hidden='true'>·</span>
@@ -334,20 +352,50 @@ export default function ModelDetail() {
               </div>
             )}
             <div className='model-detail-group-prices'>
-              <ModelGroupPerformance
-                enabled
-                modelData={model}
-                groupRatio={data.groupRatio}
-                timeRatioMap={data.timeRatioMap}
-                currency={data.currency}
-                siteDisplayType={data.siteDisplayType}
-                tokenUnit={data.tokenUnit}
-                displayPrice={data.displayPrice}
-                showRatio={catalogState.showRatio}
-                usableGroup={data.usableGroup}
-                autoGroups={data.autoGroups}
-                t={t}
+              <ModelGroupRows
+                key={model.model_name}
+                model={model}
+                groups={groups}
+                selectedGroup={selectedGroup}
+                data={data}
+                health={health}
               />
+            </div>
+          </section>
+          <ModelAnalytics
+            key={model.model_name}
+            model={model}
+            data={data}
+            health={health}
+            hours={hours}
+            setHours={setHours}
+          />
+          <section id='capabilities' className='model-detail-section'>
+            <h2>{t('模型能力')}</h2>
+            <div className='model-capability-grid'>
+              <div>
+                <h3>{t('上下文长度')}</h3>
+                <p>{formatModelContext(model.context_length)}</p>
+              </div>
+              {[
+                ['input_modalities', '输入模态'],
+                ['output_modalities', '输出模态'],
+              ].map(([field, label]) => (
+                <div key={field}>
+                  <h3>{t(label)}</h3>
+                  {Array.isArray(model[field]) && model[field].length ? (
+                    <ul>
+                      {model[field]
+                        .filter((value) => MODEL_MODALITY_LABELS[value])
+                        .map((value) => (
+                          <li key={value}>{t(MODEL_MODALITY_LABELS[value])}</li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p>{t('未配置')}</p>
+                  )}
+                </div>
+              ))}
             </div>
           </section>
           <section id='endpoints' className='model-detail-section'>
@@ -379,7 +427,7 @@ export default function ModelDetail() {
                     to={buildModelDetailPath(item.model_name)}
                     state={{ catalogState }}
                   >
-                    <span>{item.model_name}</span>
+                    <span>{item.display_name || item.model_name}</span>
                     <ArrowUpRight size={16} aria-hidden='true' />
                   </Link>
                 ))}

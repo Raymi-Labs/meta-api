@@ -353,6 +353,8 @@ export const useModelPricingData = (initialState) => {
         (model) =>
           (model.model_name &&
             model.model_name.toLowerCase().includes(searchTerm)) ||
+          (model.display_name &&
+            model.display_name.toLowerCase().includes(searchTerm)) ||
           (model.description &&
             model.description.toLowerCase().includes(searchTerm)) ||
           (model.tags && model.tags.toLowerCase().includes(searchTerm)) ||

@@ -2,20 +2,24 @@ package service
 
 import (
 	"math"
+	"time"
 
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 )
 
-// ObserveGroupHealthCacheUsage captures upstream token counts before settlement.
+// ObserveGroupHealthCacheUsage captures cache and total upstream token counts
+// before settlement. The existing estimated flag also covers output fallbacks.
 // Request.Observe only collects this snapshot if the group's final attempt succeeds.
 func ObserveGroupHealthCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage) {
 	if info == nil {
 		return
 	}
 	info.GroupHealthCacheUsage = nil
-	if usage == nil || usage.InputTokensEstimated {
+	info.GroupHealthTokenUsage = nil
+	info.GroupHealthUsageObservedAt = time.Time{}
+	if usage == nil || usage.InputTokensEstimated || usage.InterruptedOutput {
 		return
 	}
 	// These endpoints may use image counts, characters or audio duration as input
@@ -58,5 +62,13 @@ func ObserveGroupHealthCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage)
 	}
 	if input > 0 && read <= input {
 		info.GroupHealthCacheUsage = &relaycommon.GroupHealthCacheUsage{ReadTokens: read, InputTokens: input}
+		output := int64(usage.CompletionTokens)
+		if output == 0 && usage.OutputTokens > 0 {
+			output = int64(usage.OutputTokens)
+		}
+		if output >= 0 && input <= math.MaxInt64-output {
+			info.GroupHealthTokenUsage = &relaycommon.GroupHealthTokenUsage{InputTokens: input, OutputTokens: output}
+			info.GroupHealthUsageObservedAt = time.Now()
+		}
 	}
 }

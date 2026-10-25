@@ -109,13 +109,13 @@ export function selectDocsModel(models, endpoint, pattern = /./) {
     .at(-1);
 }
 
-export function buildDocsRequest(model, endpoint, baseUrl, stream = false) {
+export function buildDocsRequestData(model, endpoint, baseUrl, stream = false) {
   if (
     !model ||
     !ENDPOINTS[endpoint] ||
     !model.supported_endpoint_types.includes(endpoint)
   )
-    return '';
+    return null;
   const name = model.model_name;
   let path = ENDPOINTS[endpoint].path;
   let headers = ['Authorization: Bearer $NAN_API_KEY'];
@@ -153,7 +153,14 @@ export function buildDocsRequest(model, endpoint, baseUrl, stream = false) {
   }
   if (stream && ['openai', 'openai-response', 'anthropic'].includes(endpoint))
     body.stream = true;
-  const url = shellQuote(`${baseUrl}${path}`);
+  return { url: `${baseUrl}${path}`, headers, body };
+}
+
+export function buildDocsRequest(model, endpoint, baseUrl, stream = false) {
+  const request = buildDocsRequestData(model, endpoint, baseUrl, stream);
+  if (!request) return '';
+  const { headers, body } = request;
+  const url = shellQuote(request.url);
   return fence(
     'bash',
     [

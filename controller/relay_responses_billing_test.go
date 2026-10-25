@@ -231,6 +231,9 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				require.EqualValues(t, 1, health.RequestCount)
 				if tc.success {
 					require.EqualValues(t, 1, health.SuccessCount)
+					require.EqualValues(t, 1, health.UsageSampleCount)
+					require.EqualValues(t, 41093, health.InputTokens)
+					require.EqualValues(t, 1, health.OutputTokens)
 					require.Zero(t, health.ClientCanceledCount)
 					require.Eventually(t, func() bool {
 						var actualToken model.Token
@@ -244,6 +247,8 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 					return
 				}
 				require.Zero(t, health.SuccessCount)
+				require.Zero(t, health.UsageSampleCount)
+				require.Zero(t, health.ThroughputSampleCount)
 				if tc.deliveryFailure != "" {
 					require.Zero(t, health.ServiceFailureCount, "downstream failures must not be blamed on the provider")
 					require.EqualValues(t, 1, health.RequestCount-health.SuccessCount-health.ServiceFailureCount, "delivery failure remains in the unknown-failure denominator")

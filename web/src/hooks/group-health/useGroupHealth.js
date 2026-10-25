@@ -87,13 +87,20 @@ function requestHealth(key, params, force = false) {
 }
 
 /** Authenticated, session-scoped health data shared across active surfaces. */
-export function useGroupHealth({ model, group, enabled = true } = {}) {
+export function useGroupHealth({
+  model,
+  group,
+  hours = 24,
+  enabled = true,
+} = {}) {
   const [userState] = useContext(UserContext);
   const identity = sessionKey(userState?.user);
   const active = enabled && Boolean(identity);
   const modelValue = model || '';
   const groupValue = group || '';
-  const key = active ? JSON.stringify([identity, modelValue, groupValue]) : '';
+  const key = active
+    ? JSON.stringify([identity, modelValue, groupValue, hours])
+    : '';
   const subscribe = useCallback(
     (notify) => {
       if (!key) return () => {};
@@ -114,13 +121,14 @@ export function useGroupHealth({ model, group, enabled = true } = {}) {
       return requestHealth(
         key,
         {
+          ...(hours !== 24 ? { hours } : {}),
           ...(modelValue ? { model: modelValue } : {}),
           ...(groupValue ? { group: groupValue } : {}),
         },
         force,
       );
     },
-    [key, modelValue, groupValue],
+    [key, modelValue, groupValue, hours],
   );
 
   useEffect(() => {

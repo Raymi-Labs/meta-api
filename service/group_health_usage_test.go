@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math"
 	"testing"
 
 	"github.com/QuantumNous/new-api/dto"
@@ -36,6 +37,33 @@ func TestGroupHealthCacheUsageNormalization(t *testing.T) {
 			info := &relaycommon.RelayInfo{RelayFormat: tc.format, RelayMode: tc.mode, GroupHealthCacheUsage: &relaycommon.GroupHealthCacheUsage{InputTokens: 999}}
 			ObserveGroupHealthCacheUsage(info, tc.usage)
 			require.Equal(t, tc.want, info.GroupHealthCacheUsage)
+		})
+	}
+}
+
+func TestGroupHealthMeasuredTokensExcludeEstimatesAndBillingUnits(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		usage *dto.Usage
+		mode  int
+		want  *relaycommon.GroupHealthTokenUsage
+	}{
+		{name: "openai", usage: &dto.Usage{PromptTokens: 100, CompletionTokens: 50}, want: &relaycommon.GroupHealthTokenUsage{InputTokens: 100, OutputTokens: 50}},
+		{name: "responses", usage: &dto.Usage{InputTokens: 90, OutputTokens: 20}, want: &relaycommon.GroupHealthTokenUsage{InputTokens: 90, OutputTokens: 20}},
+		{name: "cache counted once", usage: &dto.Usage{UsageSemantic: "anthropic", PromptTokens: 10, CompletionTokens: 20, PromptTokensDetails: dto.InputTokenDetails{CachedTokens: 30, CachedCreationTokens: 40}}, want: &relaycommon.GroupHealthTokenUsage{InputTokens: 80, OutputTokens: 20}},
+		{name: "zero output is measured usage", usage: &dto.Usage{PromptTokens: 100}, want: &relaycommon.GroupHealthTokenUsage{InputTokens: 100}},
+		{name: "missing"},
+		{name: "estimated", usage: &dto.Usage{PromptTokens: 100, CompletionTokens: 10, InputTokensEstimated: true}},
+		{name: "partial", usage: &dto.Usage{PromptTokens: 100, CompletionTokens: 10, InterruptedOutput: true}},
+		{name: "invalid output", usage: &dto.Usage{PromptTokens: 100, CompletionTokens: -1}},
+		{name: "overflow total", usage: &dto.Usage{PromptTokens: math.MaxInt, CompletionTokens: math.MaxInt}},
+		{name: "image units", mode: relayconstant.RelayModeImagesGenerations, usage: &dto.Usage{PromptTokens: 1, CompletionTokens: 1}},
+		{name: "audio units", mode: relayconstant.RelayModeAudioSpeech, usage: &dto.Usage{PromptTokens: 100, CompletionTokens: 10}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			info := &relaycommon.RelayInfo{RelayMode: tc.mode, GroupHealthTokenUsage: &relaycommon.GroupHealthTokenUsage{InputTokens: 999, OutputTokens: 999}}
+			ObserveGroupHealthCacheUsage(info, tc.usage)
+			require.Equal(t, tc.want, info.GroupHealthTokenUsage)
 		})
 	}
 }

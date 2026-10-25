@@ -59,6 +59,14 @@ const nameRuleOptions = [
   { label: '后缀名称匹配', value: 3 },
 ];
 
+const modalityOptions = [
+  { label: '文本', value: 'text' },
+  { label: '图像', value: 'image' },
+  { label: '音频', value: 'audio' },
+  { label: '视频', value: 'video' },
+  { label: '文件', value: 'file' },
+];
+
 const EditModelModal = (props) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -122,6 +130,10 @@ const EditModelModal = (props) => {
 
   const getInitValues = () => ({
     model_name: props.editingModel?.model_name || '',
+    display_name: '',
+    context_length: 0,
+    input_modalities: [],
+    output_modalities: [],
     description: '',
     icon: '',
     tags: [],
@@ -152,6 +164,14 @@ const EditModelModal = (props) => {
         const values = {
           ...getInitValues(),
           ...data,
+          display_name: data.display_name || '',
+          context_length: data.context_length || 0,
+          input_modalities: Array.isArray(data.input_modalities)
+            ? data.input_modalities
+            : [],
+          output_modalities: Array.isArray(data.output_modalities)
+            ? data.output_modalities
+            : [],
           tags: data.tags ? data.tags.split(',').filter(Boolean) : [],
           vendor_id: data.vendor_id || null,
           endpoints: data.endpoints || '',
@@ -204,6 +224,10 @@ const EditModelModal = (props) => {
     try {
       const submitData = {
         ...values,
+        display_name: (values.display_name || '').trim(),
+        context_length: values.context_length || 0,
+        input_modalities: values.input_modalities || [],
+        output_modalities: values.output_modalities || [],
         tags: Array.isArray(values.tags) ? values.tags.join(',') : values.tags,
         endpoints: values.endpoints || '',
         vendor_id: values.vendor_id || 0,
@@ -339,6 +363,16 @@ const EditModelModal = (props) => {
                   </Col>
 
                   <Col span={24}>
+                    <Form.Input
+                      field='display_name'
+                      label={t('显示名称')}
+                      placeholder={t('留空时使用模型 ID')}
+                      maxLength={128}
+                      showClear
+                    />
+                  </Col>
+
+                  <Col span={24}>
                     <Form.Select
                       field='name_rule'
                       label={t('名称匹配类型')}
@@ -390,6 +424,45 @@ const EditModelModal = (props) => {
                       placeholder={t('请输入模型描述')}
                       rows={3}
                       showClear
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <Form.InputNumber
+                      field='context_length'
+                      label={t('上下文长度')}
+                      extraText={t('单位为 Token，0 表示未知')}
+                      min={0}
+                      max={Number.MAX_SAFE_INTEGER}
+                      precision={0}
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col span={isMobile ? 24 : 12}>
+                    <Form.Select
+                      field='input_modalities'
+                      label={t('输入模态')}
+                      placeholder={t('未配置')}
+                      multiple
+                      showClear
+                      optionList={modalityOptions.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col span={isMobile ? 24 : 12}>
+                    <Form.Select
+                      field='output_modalities'
+                      label={t('输出模态')}
+                      placeholder={t('未配置')}
+                      multiple
+                      showClear
+                      optionList={modalityOptions.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
+                      style={{ width: '100%' }}
                     />
                   </Col>
                   <Col span={24}>

@@ -93,6 +93,10 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><LocaleProvide
               id: 1,
               model_name: 'model-A',
               description: 'description-A',
+              display_name: 'Display A',
+              context_length: 256000,
+              input_modalities: ['text', 'image'],
+              output_modalities: ['text'],
               icon: 'Claude.Color',
               tags: 'alpha,beta',
               vendor_id: 11,
@@ -397,6 +401,10 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><LocaleProvide
     assert.equal(writes.length, before + 1);
     const payload = writes.at(-1).body;
     if (kind === 'models') {
+      assert.equal(payload.display_name, 'Display A');
+      assert.equal(payload.context_length, 256000);
+      assert.deepEqual(payload.input_modalities, ['text', 'image']);
+      assert.deepEqual(payload.output_modalities, ['text']);
       assert.equal(payload.vendor_id, 11);
       assert.equal(payload.tags, 'alpha,beta');
       assert.equal(payload.sync_official, 0);
@@ -505,6 +513,10 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><LocaleProvide
     assert.equal(writes.at(-1).method, 'POST');
     assert.equal(writes.at(-1).body.id, undefined);
     if (kind === 'models') {
+      assert.equal(writes.at(-1).body.display_name, '');
+      assert.equal(writes.at(-1).body.context_length, 0);
+      assert.deepEqual(writes.at(-1).body.input_modalities, []);
+      assert.deepEqual(writes.at(-1).body.output_modalities, []);
       assert.equal(writes.at(-1).body.vendor_id, 0);
       assert.equal(writes.at(-1).body.tags, '');
       assert.equal(writes.at(-1).body.sync_official, 1);

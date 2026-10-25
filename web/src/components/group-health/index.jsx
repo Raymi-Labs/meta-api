@@ -298,7 +298,9 @@ export function GroupHealthPanel({
         <GroupHealthOutcomeDetails stats={stats} />
       </details>
       <div className='group-health-trend-heading'>
-        <span>{t('最近 24 个小时段成功率')}</span>
+        <span>
+          {t('最近 {{hours}} 个小时段成功率', { hours: series.length || 24 })}
+        </span>
         <span>{t('点击时段查看详情')}</span>
       </div>
       <div className='group-health-bars' aria-label={t('每格代表一小时')}>

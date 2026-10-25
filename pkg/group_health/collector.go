@@ -40,6 +40,8 @@ type Sample struct {
 	TTFTMs       *int64
 	CompletionMs *int64
 	CacheUsage   *relaycommon.GroupHealthCacheUsage
+	TokenUsage   *relaycommon.GroupHealthTokenUsage
+	GenerationMs *int64
 	At           time.Time
 }
 
@@ -110,6 +112,16 @@ func (c *collector) record(sample Sample) {
 	// success can contribute successful latency or cache measurements.
 	if sample.Outcome == OutcomeSuccess {
 		row.SuccessCount++
+		if usage := sample.TokenUsage; usage != nil && usage.InputTokens > 0 && usage.OutputTokens >= 0 {
+			row.InputTokens += usage.InputTokens
+			row.OutputTokens += usage.OutputTokens
+			row.UsageSampleCount++
+			if sample.GenerationMs != nil && *sample.GenerationMs > 0 && usage.OutputTokens > 0 {
+				row.ThroughputOutputTokens += usage.OutputTokens
+				row.GenerationSumMs += *sample.GenerationMs
+				row.ThroughputSampleCount++
+			}
+		}
 		if usage := sample.CacheUsage; usage != nil && usage.InputTokens > 0 && usage.ReadTokens >= 0 && usage.ReadTokens <= usage.InputTokens {
 			row.CacheReadTokens += usage.ReadTokens
 			row.CacheInputTokens += usage.InputTokens
@@ -182,8 +194,12 @@ func Flush(ctx context.Context) error {
 	return defaultCollector.flush(ctx, time.Now())
 }
 
-func CollectionIncomplete(now time.Time) bool {
-	return defaultCollector.persistFailed.Load() || defaultCollector.lastDrop.Load() > now.Add(-24*time.Hour).Unix()
+func CollectionIncomplete(now time.Time, windowHours ...int) bool {
+	hours := 24
+	if len(windowHours) > 0 && windowHours[0] == 72 {
+		hours = 72
+	}
+	return defaultCollector.persistFailed.Load() || defaultCollector.lastDrop.Load() > now.Add(-time.Duration(hours)*time.Hour).Unix()
 }
 
 func run() {

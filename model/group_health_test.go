@@ -26,8 +26,8 @@ func TestGroupHealthPersistenceAcrossProcessesAndExactFilters(t *testing.T) {
 	now := time.Now()
 	ts := now.Unix() / 3600 * 3600
 	rows := []GroupHealthMetric{
-		{ID: "process-a", GroupName: "public", ModelName: "model-a", BucketTs: ts, RequestCount: 10, SuccessCount: 8, TTFTSumMs: 800, TTFTCount: 8, CacheReadTokens: 80, CacheInputTokens: 100, CacheSampleCount: 1, UpdatedAt: now.Unix()},
-		{ID: "process-b", GroupName: "public", ModelName: "model-a", BucketTs: ts, RequestCount: 5, SuccessCount: 5, CacheReadTokens: 30, CacheInputTokens: 170, CacheSampleCount: 2},
+		{ID: "process-a", GroupName: "public", ModelName: "model-a", BucketTs: ts, RequestCount: 10, SuccessCount: 8, TTFTSumMs: 800, TTFTCount: 8, CacheReadTokens: 80, CacheInputTokens: 100, CacheSampleCount: 1, UpdatedAt: now.Unix(), InputTokens: 100, OutputTokens: 20, UsageSampleCount: 1, ThroughputOutputTokens: 20, GenerationSumMs: 1000, ThroughputSampleCount: 1},
+		{ID: "process-b", GroupName: "public", ModelName: "model-a", BucketTs: ts, RequestCount: 5, SuccessCount: 5, CacheReadTokens: 30, CacheInputTokens: 170, CacheSampleCount: 2, InputTokens: 200, OutputTokens: 30, UsageSampleCount: 1, ThroughputOutputTokens: 30, GenerationSumMs: 2000, ThroughputSampleCount: 1},
 		{ID: "other-model", GroupName: "public", ModelName: "model-b", BucketTs: ts, RequestCount: 100, SuccessCount: 100},
 		{ID: "private", GroupName: "private", ModelName: "model-a", BucketTs: ts, RequestCount: 999, SuccessCount: 999},
 		{ID: "expired", GroupName: "public", ModelName: "model-a", BucketTs: now.Add(-8 * 24 * time.Hour).Unix(), RequestCount: 1},
@@ -53,6 +53,18 @@ func TestGroupHealthPersistenceAcrossProcessesAndExactFilters(t *testing.T) {
 	require.EqualValues(t, 1, got[0].ServiceFailureCount)
 	require.EqualValues(t, 1, got[0].ClientCanceledCount)
 	require.EqualValues(t, 4, got[0].ExcludedUserErrorCount)
+	require.EqualValues(t, 300, got[0].InputTokens)
+	require.EqualValues(t, 50, got[0].OutputTokens)
+	require.EqualValues(t, 2, got[0].UsageSampleCount)
+	require.EqualValues(t, 50, got[0].ThroughputOutputTokens)
+	require.EqualValues(t, 3000, got[0].GenerationSumMs)
+	require.EqualValues(t, 2, got[0].ThroughputSampleCount)
+	batch, err := QueryGroupHealthMetricsForModels(ctx, []string{"public"}, []string{"model-a", "model-b"}, ts, now.Unix())
+	require.NoError(t, err)
+	require.Len(t, batch, 2)
+	denied, err := QueryGroupHealthMetricsForModels(ctx, []string{"public"}, []string{}, ts, now.Unix())
+	require.NoError(t, err)
+	require.Empty(t, denied)
 	got, err = QueryGroupHealthMetrics(ctx, nil, "", ts, now.Unix())
 	require.NoError(t, err)
 	require.Empty(t, got)
@@ -91,6 +103,33 @@ func TestGroupHealthCacheMigrationKeepsLegacyRowsUnknown(t *testing.T) {
 	require.EqualValues(t, 10, rows[0].RequestCount)
 	require.Zero(t, rows[0].CacheSampleCount)
 	require.Zero(t, rows[0].CacheInputTokens)
+}
+
+func TestGroupHealthUsageMigrationPreservesExistingAndOldWriterRows(t *testing.T) {
+	previous := DB
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	DB = db
+	t.Cleanup(func() { DB = previous })
+	require.NoError(t, db.AutoMigrate(&GroupHealthMetric{}))
+	for _, field := range []string{"InputTokens", "OutputTokens", "UsageSampleCount", "ThroughputOutputTokens", "GenerationSumMs", "ThroughputSampleCount"} {
+		require.NoError(t, db.Migrator().DropColumn(&GroupHealthMetric{}, field))
+	}
+	oldRow := map[string]interface{}{"id": "before-upgrade", "group_name": "g", "model_name": "m", "bucket_ts": 3600, "request_count": 10, "success_count": 9, "service_failure_count": 1}
+	require.NoError(t, db.Table("group_health_metrics").Create(oldRow).Error)
+	require.NoError(t, db.AutoMigrate(&GroupHealthMetric{}))
+	oldRow = map[string]interface{}{"id": "old-replica-after-upgrade", "group_name": "g", "model_name": "m", "bucket_ts": 3600, "request_count": 10, "success_count": 9, "service_failure_count": 1}
+	require.NoError(t, db.Table("group_health_metrics").Create(oldRow).Error)
+	require.NoError(t, SaveGroupHealthSnapshots(context.Background(), []GroupHealthMetric{{ID: "new-replica", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 1, SuccessCount: 1, InputTokens: 10, OutputTokens: 5, UsageSampleCount: 1, ThroughputOutputTokens: 5, GenerationSumMs: 1000, ThroughputSampleCount: 1}}))
+	rows, err := QueryGroupHealthMetrics(context.Background(), []string{"g"}, "m", 3600, 7200)
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.EqualValues(t, 21, rows[0].RequestCount)
+	require.EqualValues(t, 19, rows[0].SuccessCount)
+	require.EqualValues(t, 1, rows[0].UsageSampleCount, "old counts never become measured samples")
+	require.EqualValues(t, 10, rows[0].InputTokens)
+	require.EqualValues(t, 5, rows[0].OutputTokens)
+	require.EqualValues(t, 1, rows[0].ThroughputSampleCount)
 }
 
 // Keep the pre-attribution schema explicit: migration must add columns without
@@ -144,7 +183,7 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			recorder := &migrationSQLRecorder{}
 			require.NoError(t, tableDB.Session(&gorm.Session{Logger: recorder}).AutoMigrate(&GroupHealthMetric{}))
 			mutations := recorder.schemaMutations()
-			require.Len(t, mutations, 3, "attribution migration should only add its three counters")
+			require.Len(t, mutations, 9, "migration only adds attribution and measured usage counters")
 			for _, statement := range mutations {
 				require.Contains(t, strings.ToUpper(statement), "ADD")
 				require.NotContains(t, strings.ToUpper(statement), "DROP")
@@ -160,12 +199,22 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			require.Zero(t, legacy.ServiceFailureCount)
 			require.Zero(t, legacy.ExcludedUserErrorCount)
 			require.Zero(t, legacy.ClientCanceledCount)
+			require.Zero(t, legacy.UsageSampleCount)
+			require.Zero(t, legacy.ThroughputSampleCount)
+			require.Zero(t, legacy.InputTokens)
+			require.Zero(t, legacy.OutputTokens)
+			require.NoError(t, tableDB.Create(&groupHealthMetricLegacy{ID: "old-writer", GroupName: "g", ModelName: "old-after", BucketTs: 3600, RequestCount: 3, SuccessCount: 2}).Error)
+			var oldWriter GroupHealthMetric
+			require.NoError(t, tableDB.Where("id = ?", "old-writer").First(&oldWriter).Error)
+			require.Zero(t, oldWriter.UsageSampleCount)
+			require.Zero(t, oldWriter.ThroughputSampleCount)
+			require.Zero(t, oldWriter.InputTokens)
 
 			previous := DB
 			DB = tableDB
 			t.Cleanup(func() { DB = previous })
 			ctx := context.Background()
-			fresh := GroupHealthMetric{ID: "new", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 5, SuccessCount: 2, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 3}
+			fresh := GroupHealthMetric{ID: "new", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 5, SuccessCount: 2, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 3, InputTokens: 50, OutputTokens: 20, UsageSampleCount: 1, ThroughputOutputTokens: 20, GenerationSumMs: 1000, ThroughputSampleCount: 1}
 			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}))
 			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}), "ambiguous commit retries must be idempotent")
 			// Only the excluded count changes in this later absolute snapshot.
@@ -180,6 +229,12 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			require.EqualValues(t, 1, rows[0].ServiceFailureCount)
 			require.EqualValues(t, 1, rows[0].ClientCanceledCount)
 			require.EqualValues(t, 4, rows[0].ExcludedUserErrorCount)
+			require.EqualValues(t, 50, rows[0].InputTokens)
+			require.EqualValues(t, 20, rows[0].OutputTokens)
+			require.EqualValues(t, 1, rows[0].UsageSampleCount)
+			require.EqualValues(t, 20, rows[0].ThroughputOutputTokens)
+			require.EqualValues(t, 1000, rows[0].GenerationSumMs)
+			require.EqualValues(t, 1, rows[0].ThroughputSampleCount)
 			// Legacy residual 5 + newly unknown 2, without claiming a cause.
 			require.EqualValues(t, 7, rows[0].RequestCount-rows[0].SuccessCount-rows[0].ServiceFailureCount)
 		})

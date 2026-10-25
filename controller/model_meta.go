@@ -12,6 +12,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Keep added fields presence-aware so older full-update clients do not erase
+// curated display metadata. Explicit empty strings, zero, and [] clear values.
+type modelMetaRequest struct {
+	model.Model
+	DisplayName      *string                `json:"display_name"`
+	ContextLength    *int64                 `json:"context_length"`
+	InputModalities  *model.ModelModalities `json:"input_modalities"`
+	OutputModalities *model.ModelModalities `json:"output_modalities"`
+}
+
+func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
+	m := request.Model
+	if existing != nil {
+		m.DisplayName = existing.DisplayName
+		m.ContextLength = existing.ContextLength
+		m.InputModalities = existing.InputModalities
+		m.OutputModalities = existing.OutputModalities
+	}
+	if request.DisplayName != nil {
+		m.DisplayName = *request.DisplayName
+	}
+	if request.ContextLength != nil {
+		m.ContextLength = *request.ContextLength
+	}
+	if request.InputModalities != nil {
+		m.InputModalities = *request.InputModalities
+	}
+	if request.OutputModalities != nil {
+		m.OutputModalities = *request.OutputModalities
+	}
+	err := m.NormalizeDisplayMetadata()
+	return m, err
+}
+
 // GetAllModelsMeta 获取模型列表（分页）
 func GetAllModelsMeta(c *gin.Context) {
 
@@ -78,8 +112,13 @@ func GetModelMeta(c *gin.Context) {
 
 // CreateModelMeta 新建模型
 func CreateModelMeta(c *gin.Context) {
-	var m model.Model
-	if err := c.ShouldBindJSON(&m); err != nil {
+	var request modelMetaRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	m, err := request.withDisplayMetadata(nil)
+	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -108,11 +147,12 @@ func CreateModelMeta(c *gin.Context) {
 func UpdateModelMeta(c *gin.Context) {
 	statusOnly := c.Query("status_only") == "true"
 
-	var m model.Model
-	if err := c.ShouldBindJSON(&m); err != nil {
+	var request modelMetaRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		common.ApiError(c, err)
 		return
 	}
+	m := request.Model
 	if m.Id == 0 {
 		common.ApiErrorMsg(c, "缺少模型 ID")
 		return
@@ -125,6 +165,17 @@ func UpdateModelMeta(c *gin.Context) {
 			return
 		}
 	} else {
+		var existing model.Model
+		if err := model.DB.First(&existing, m.Id).Error; err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		var err error
+		m, err = request.withDisplayMetadata(&existing)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
 		// 名称冲突检查
 		if dup, err := model.IsModelNameDuplicated(m.Id, m.ModelName); err != nil {
 			common.ApiError(c, err)

@@ -118,12 +118,26 @@ func (r *Request) observe(info *relaycommon.RelayInfo, outcome Outcome, now time
 		usage := *info.GroupHealthCacheUsage
 		sample.CacheUsage = &usage
 	}
+	if success && info.GroupHealthTokenUsage != nil {
+		usage := *info.GroupHealthTokenUsage
+		sample.TokenUsage = &usage
+	}
 	isImage := info.RelayMode == relayconstant.RelayModeImagesGenerations || info.RelayMode == relayconstant.RelayModeImagesEdits
 	if success && !info.StartTime.IsZero() {
 		if r.clientStream && !isImage && !info.GroupHealthFirstOutputTime.IsZero() &&
 			!info.GroupHealthFirstOutputTime.Before(info.StartTime) && !info.GroupHealthFirstOutputTime.After(now) {
 			value := info.GroupHealthFirstOutputTime.Sub(info.StartTime).Milliseconds()
 			sample.TTFTMs = &value
+			if sample.TokenUsage != nil && sample.TokenUsage.OutputTokens > 0 {
+				// Usage is captured after the adapter has finished the response,
+				// before settlement. Do not count billing/database latency as
+				// generation time. Missing evidence remains unmeasured.
+				completedAt := info.GroupHealthUsageObservedAt
+				generationMs := completedAt.Sub(info.GroupHealthFirstOutputTime).Milliseconds()
+				if !completedAt.After(now) && generationMs > 0 {
+					sample.GenerationMs = &generationMs
+				}
+			}
 		}
 		if isImage && !info.IsStream && !now.Before(info.StartTime) {
 			value := now.Sub(info.StartTime).Milliseconds()
@@ -187,4 +201,6 @@ func ResetAttempt(info *relaycommon.RelayInfo) {
 	info.GroupHealthFirstOutputTime = time.Time{}
 	info.StreamStatus = nil
 	info.GroupHealthCacheUsage = nil
+	info.GroupHealthTokenUsage = nil
+	info.GroupHealthUsageObservedAt = time.Time{}
 }

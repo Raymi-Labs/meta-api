@@ -216,10 +216,12 @@ func ensureXAIUsage(c *gin.Context, usage *dto.Usage, responseText string, toolC
 	normalizeXAIUsage(usage)
 	if usage.PromptTokens == 0 {
 		usage.PromptTokens = estimatedPromptTokens
+		usage.InputTokensEstimated = true
 	}
 	if usage.CompletionTokens == 0 && (responseText != "" || toolCount > 0) {
 		estimated := service.ResponseText2Usage(c, responseText, model, usage.PromptTokens)
 		usage.CompletionTokens = estimated.CompletionTokens + toolCount*7
+		usage.InputTokensEstimated = true
 	}
 	if usage.TotalTokens == 0 || usage.TotalTokens < usage.PromptTokens+usage.CompletionTokens {
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens

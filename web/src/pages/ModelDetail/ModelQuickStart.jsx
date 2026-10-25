@@ -20,18 +20,23 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, KeyRound, ArrowUpRight } from 'lucide-react';
-import { getModelQuickStartExamples } from './modelQuickStartExamples';
+import {
+  getModelQuickStartExamples,
+  MODEL_EXAMPLE_LANGUAGES,
+} from './modelQuickStartExamples';
 
 const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
   const [endpoint, setEndpoint] = useState('');
+  const [language, setLanguage] = useState('Python');
   const examples = useMemo(
     () =>
       getModelQuickStartExamples(
         modelData,
         serverAddress,
         typeof window === 'undefined' ? '' : window.location.origin,
+        language,
       ),
-    [modelData, serverAddress],
+    [modelData, serverAddress, language],
   );
   const current =
     examples.find((example) => example.endpoint === endpoint) || examples[0];
@@ -71,13 +76,24 @@ const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
       {current ? (
         <div className='model-quickstart-code'>
           <div className='model-quickstart-code-heading'>
-            <span>cURL</span>
+            <select
+              className='model-quickstart-language'
+              aria-label={t('代码语言')}
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+            >
+              {MODEL_EXAMPLE_LANGUAGES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
             <button type='button' onClick={() => copyText(current.code)}>
               <Copy size={15} aria-hidden='true' />
               {t('复制代码')}
             </button>
           </div>
-          <pre tabIndex={0} aria-label={`cURL · ${current.label}`}>
+          <pre tabIndex={0} aria-label={`${language} · ${current.label}`}>
             <code>{current.code}</code>
           </pre>
         </div>

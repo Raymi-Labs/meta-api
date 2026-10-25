@@ -18,15 +18,23 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Checkbox, Pagination, Button } from '@douyinfe/semi-ui';
-import { ArrowUpRight, Copy } from 'lucide-react';
+import { Copy, ScanText, Timer, Gauge } from 'lucide-react';
 import { getLobeHubIcon, formatTimeRatioValue } from '../../../../../helpers';
 import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
 import PricingCardSkeleton from './PricingCardSkeleton';
 import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoadingTime';
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
+
+import { useModelHealthSummaries } from '../../../../../hooks/group-health/useModelHealthSummaries';
+import { formatHealthLatency } from '../../../../group-health/healthUtils';
+import {
+  formatModelContext,
+  formatModelThroughput,
+  shouldNavigateModelCard,
+} from '../../../../../helpers/modelPresentation';
 
 const PricingCardView = ({
   filteredModels = [],
@@ -52,12 +60,14 @@ const PricingCardView = ({
 }) => {
   const showSkeleton = useMinimumLoadingTime(loading);
   const isMobile = useIsMobile();
-  if (showSkeleton) return <PricingCardSkeleton skeletonCount={6} />;
+  const navigate = useNavigate();
   const paginatedModels = filteredModels.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
 
+  const health = useModelHealthSummaries(paginatedModels, !loading);
+  if (showSkeleton) return <PricingCardSkeleton skeletonCount={6} />;
   return (
     <div>
       <div className='pricing-catalog-grid'>
@@ -86,11 +96,25 @@ const PricingCardView = ({
             ),
           ];
           const icon = model.icon || model.vendor_icon;
+          const stats = health.get(model.model_name);
           return (
             <article
               key={key}
               className={`pricing-model-card${selected ? ' is-selected' : ''}`}
-              aria-label={model.model_name}
+              aria-label={model.display_name || model.model_name}
+              onClick={(event) => {
+                if (
+                  !shouldNavigateModelCard(
+                    event,
+                    window.getSelection()?.toString(),
+                  )
+                )
+                  return;
+                const path = buildModelDetailPath(model.model_name);
+                if (event.metaKey || event.ctrlKey || event.shiftKey)
+                  window.open(path, '_blank', 'noopener,noreferrer');
+                else navigate(path, { state: { catalogState } });
+              }}
             >
               <div className='pricing-model-card-header'>
                 <div className='pricing-model-icon' aria-hidden='true'>
@@ -104,7 +128,7 @@ const PricingCardView = ({
                       to={buildModelDetailPath(model.model_name)}
                       state={{ catalogState }}
                     >
-                      {model.model_name}
+                      {model.display_name || model.model_name}
                     </Link>
                   </h2>
                   <span>
@@ -141,20 +165,22 @@ const PricingCardView = ({
                   />
                 )}
               </div>
-              {model.description && (
-                <p className='pricing-model-description'>{model.description}</p>
-              )}
               <dl className='pricing-card-prices'>
                 {items.length ? (
-                  items.map((item) => (
-                    <div key={item.key}>
-                      <dt>{item.label}</dt>
-                      <dd>
-                        <strong>{item.value}</strong>
-                        <span>{item.suffix}</span>
-                      </dd>
-                    </div>
-                  ))
+                  items
+                    .filter(
+                      (item) =>
+                        !String(item.key).toLowerCase().includes('cache'),
+                    )
+                    .map((item) => (
+                      <div key={item.key}>
+                        <dt>{item.label}</dt>
+                        <dd>
+                          <strong>{item.value}</strong>
+                          <span>{item.suffix}</span>
+                        </dd>
+                      </div>
+                    ))
                 ) : (
                   <div>
                     <dt>{t('动态计费')}</dt>
@@ -162,6 +188,35 @@ const PricingCardView = ({
                   </div>
                 )}
               </dl>
+              <dl
+                className='pricing-card-performance'
+                title={`${t('全部分组')} · ${t('最近 {{hours}} 小时', { hours: 24 })} · ${t('平台分组统计，不限于个人请求。')}`}
+              >
+                <div>
+                  <dt>
+                    <ScanText size={13} />
+                    {t('上下文长度')}
+                  </dt>
+                  <dd>{formatModelContext(model.context_length)}</dd>
+                </div>
+                <div>
+                  <dt>
+                    <Timer size={13} />
+                    {t('首字均值')}
+                  </dt>
+                  <dd>{formatHealthLatency(stats?.avg_ttft_ms)}</dd>
+                </div>
+                <div>
+                  <dt>
+                    <Gauge size={13} />
+                    {t('输出速度')}
+                  </dt>
+                  <dd>{formatModelThroughput(stats?.avg_output_tps)}</dd>
+                </div>
+              </dl>
+              {model.description && (
+                <p className='pricing-model-description'>{model.description}</p>
+              )}
               {data.isDynamicPricing && (
                 <p className='pricing-card-tier-note'>
                   {t('阶梯计费：展示首档参考价，完整规则见详情')}
@@ -187,14 +242,6 @@ const PricingCardView = ({
                     <span key={tag}>{tag}</span>
                   ))}
                 </div>
-                <Link
-                  className='pricing-model-detail-link'
-                  to={buildModelDetailPath(model.model_name)}
-                  state={{ catalogState }}
-                >
-                  {t('模型详情')}
-                  <ArrowUpRight size={14} aria-hidden='true' />
-                </Link>
               </div>
             </article>
           );

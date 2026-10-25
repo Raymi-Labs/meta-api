@@ -2,6 +2,7 @@ package grouphealth
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -12,7 +13,23 @@ import (
 const MetricScope = "per_request_per_group_final_outcome"
 const WindowScope = "current_hour_and_previous_23_hours"
 
+// A normalized billing family must never erase a restriction on the exact
+// model ID exposed by pricing. Require both names when they differ.
+func IsModelAuthorized(name string, role int) bool {
+	if !model.IsModelVisibleToRole(name, role) || !model.IsModelCallableByRole(name, role) {
+		return false
+	}
+	matchingName := ratio_setting.FormatMatchingModelName(name)
+	return matchingName == name || (model.IsModelVisibleToRole(matchingName, role) && model.IsModelCallableByRole(matchingName, role))
+}
+
 type Metrics struct {
+	InputTokens            *int64   `json:"input_tokens"`
+	OutputTokens           *int64   `json:"output_tokens"`
+	TotalTokens            *int64   `json:"total_tokens"`
+	UsageSampleCount       int64    `json:"usage_sample_count"`
+	AvgOutputTPS           *float64 `json:"avg_output_tps"`
+	ThroughputSampleCount  int64    `json:"throughput_sample_count"`
 	CacheHitRate           *float64 `json:"cache_hit_rate"`
 	CacheSampleCount       int64    `json:"cache_sample_count"`
 	RequestCount           int64    `json:"request_count"`
@@ -50,13 +67,18 @@ type Result struct {
 	BucketSeconds        int64   `json:"bucket_seconds"`
 	MetricScope          string  `json:"metric_scope"`
 	WindowScope          string  `json:"window_scope"`
+	WindowHours          int     `json:"window_hours"`
 	CollectionIncomplete bool    `json:"collection_incomplete"`
 	Groups               []Group `json:"groups"`
 }
 
-func Query(ctx context.Context, groups []string, modelName string, role int, now time.Time) (Result, error) {
+func Query(ctx context.Context, groups []string, modelName string, role int, now time.Time, windowHours ...int) (Result, error) {
+	hours := 24
+	if len(windowHours) > 0 && windowHours[0] == 72 {
+		hours = 72
+	}
 	end := now.Unix()
-	start := end/BucketSeconds*BucketSeconds - 23*BucketSeconds
+	start := end/BucketSeconds*BucketSeconds - int64(hours-1)*BucketSeconds
 	rows, err := model.QueryGroupHealthMetrics(ctx, groups, modelName, start, end)
 	if err != nil {
 		return Result{}, err
@@ -64,18 +86,66 @@ func Query(ctx context.Context, groups []string, modelName string, role int, now
 	// Apply model permissions before aggregation, including the all-model view.
 	visible := rows[:0]
 	for _, row := range rows {
-		name := ratio_setting.FormatMatchingModelName(row.ModelName)
-		if model.IsModelVisibleToRole(name, role) && model.IsModelCallableByRole(name, role) {
+		if IsModelAuthorized(row.ModelName, role) {
 			visible = append(visible, row)
 		}
 	}
 	result := buildResult(groups, visible, start, end)
-	result.CollectionIncomplete = CollectionIncomplete(now)
+	result.CollectionIncomplete = CollectionIncomplete(now, hours)
+	return result, nil
+}
+
+type ModelSummary struct {
+	Model string `json:"model"`
+	Metrics
+}
+
+type ModelResult struct {
+	StartTime            int64          `json:"start_time"`
+	EndTime              int64          `json:"end_time"`
+	UpdatedAt            int64          `json:"updated_at"`
+	WindowHours          int            `json:"window_hours"`
+	CollectionIncomplete bool           `json:"collection_incomplete"`
+	Models               []ModelSummary `json:"models"`
+}
+
+// QueryModels performs one bounded aggregate-table query for a catalog page.
+// It never widens the caller's authorized groups or model list.
+func QueryModels(ctx context.Context, groups, modelNames []string, role, hours int, now time.Time) (ModelResult, error) {
+	if hours != 72 {
+		hours = 24
+	}
+	end := now.Unix()
+	start := end/BucketSeconds*BucketSeconds - int64(hours-1)*BucketSeconds
+	result := ModelResult{StartTime: start, EndTime: end, WindowHours: hours, CollectionIncomplete: CollectionIncomplete(now, hours), Models: make([]ModelSummary, 0, len(modelNames))}
+	allowed := make([]string, 0, len(modelNames))
+	for _, name := range modelNames {
+		if IsModelAuthorized(name, role) {
+			allowed = append(allowed, name)
+		}
+	}
+	rows, err := model.QueryGroupHealthMetricsForModels(ctx, groups, allowed, start, end)
+	if err != nil {
+		return ModelResult{}, err
+	}
+	totals := make(map[string]model.GroupHealthMetric, len(allowed))
+	for _, row := range rows {
+		total := totals[row.ModelName]
+		add(&total, row)
+		totals[row.ModelName] = total
+		if row.UpdatedAt > result.UpdatedAt {
+			result.UpdatedAt = row.UpdatedAt
+		}
+	}
+	for _, name := range allowed {
+		result.Models = append(result.Models, ModelSummary{Model: name, Metrics: summarize(totals[name])})
+	}
 	return result, nil
 }
 
 func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int64) Result {
-	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: BucketSeconds, MetricScope: MetricScope, WindowScope: WindowScope, Groups: make([]Group, 0, len(groups))}
+	hours := int((end/BucketSeconds*BucketSeconds-start)/BucketSeconds) + 1
+	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: BucketSeconds, MetricScope: MetricScope, WindowScope: fmt.Sprintf("current_hour_and_previous_%d_hours", hours-1), WindowHours: hours, Groups: make([]Group, 0, len(groups))}
 	byGroup := make(map[string]map[int64]model.GroupHealthMetric, len(groups))
 	for _, group := range groups {
 		byGroup[group] = make(map[int64]model.GroupHealthMetric)
@@ -95,9 +165,9 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	ordered := append([]string(nil), groups...)
 	sort.Strings(ordered)
 	for _, name := range ordered {
-		group := Group{Group: name, Series: make([]Bucket, 0, 24)}
+		group := Group{Group: name, Series: make([]Bucket, 0, hours)}
 		var total model.GroupHealthMetric
-		for i := int64(0); i < 24; i++ {
+		for i := int64(0); i < int64(hours); i++ {
 			ts := start + i*BucketSeconds
 			row := byGroup[name][ts]
 			add(&total, row)
@@ -110,6 +180,12 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 }
 
 func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
+	dst.InputTokens += src.InputTokens
+	dst.OutputTokens += src.OutputTokens
+	dst.UsageSampleCount += src.UsageSampleCount
+	dst.ThroughputOutputTokens += src.ThroughputOutputTokens
+	dst.GenerationSumMs += src.GenerationSumMs
+	dst.ThroughputSampleCount += src.ThroughputSampleCount
 	dst.CacheReadTokens += src.CacheReadTokens
 	dst.CacheInputTokens += src.CacheInputTokens
 	dst.CacheSampleCount += src.CacheSampleCount
@@ -126,6 +202,17 @@ func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
 
 func summarize(row model.GroupHealthMetric) Metrics {
 	result := Metrics{RequestCount: row.RequestCount, SuccessCount: row.SuccessCount, FailureCount: row.RequestCount - row.SuccessCount, TTFTCount: row.TTFTCount, CompletionCount: row.CompletionCount}
+	result.UsageSampleCount = row.UsageSampleCount
+	result.ThroughputSampleCount = row.ThroughputSampleCount
+	if row.UsageSampleCount > 0 {
+		input, output := row.InputTokens, row.OutputTokens
+		total := input + output
+		result.InputTokens, result.OutputTokens, result.TotalTokens = &input, &output, &total
+	}
+	if row.ThroughputSampleCount > 0 && row.GenerationSumMs > 0 {
+		value := float64(row.ThroughputOutputTokens) * 1000 / float64(row.GenerationSumMs)
+		result.AvgOutputTPS = &value
+	}
 	result.ServiceFailureCount = row.ServiceFailureCount
 	// The original schema cannot attribute historical failures. Residual failures
 	// remain unknown, including disconnected clients; no history is reclassified.

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,4 +103,89 @@ func TestGroupHealthUsesCurrentMembershipAndModelPermissions(t *testing.T) {
 	require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("status", common.UserStatusDisabled).Error)
 	w, _ = request("", 1)
 	require.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T) {
+	previousDB := model.DB
+	previousGroups := setting.UserUsableGroups2JSONString()
+	previousRatios := ratio_setting.GroupRatio2JSONString()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	model.DB = db
+	model.InvalidateModelPermissionCache()
+	t.Cleanup(func() {
+		model.DB = previousDB
+		model.InvalidateModelPermissionCache()
+		_ = setting.UpdateUserUsableGroupsByJSONString(previousGroups)
+		_ = ratio_setting.UpdateGroupRatioByJSONString(previousRatios)
+	})
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ModelPermission{}, &model.GroupHealthMetric{}))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"public":"Public"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"public":1,"own":1,"private":1}`))
+	require.NoError(t, db.Create(&model.User{Id: 1, Username: "metrics-reader", Group: "own", Role: common.RoleCommonUser, Status: common.UserStatusEnabled}).Error)
+	require.NoError(t, (&model.ModelPermission{ModelName: "hidden", NameRule: model.NameRuleExact, VisibilityScope: model.ModelPermissionScopeAdminOnly, CallScope: model.ModelPermissionScopeAll}).Insert())
+	now := time.Now().Unix() / 3600 * 3600
+	name := "org/model+edition"
+	require.NoError(t, model.SaveGroupHealthSnapshots(context.Background(), []model.GroupHealthMetric{
+		{ID: "public", GroupName: "public", ModelName: name, BucketTs: now, RequestCount: 1, SuccessCount: 1, TTFTCount: 1, TTFTSumMs: 500, InputTokens: 100, OutputTokens: 30, UsageSampleCount: 1, ThroughputOutputTokens: 30, GenerationSumMs: 1000, ThroughputSampleCount: 1},
+		{ID: "earlier", GroupName: "own", ModelName: name, BucketTs: now - 48*3600, RequestCount: 2, SuccessCount: 2, TTFTCount: 2, TTFTSumMs: 2500},
+		{ID: "private", GroupName: "private", ModelName: name, BucketTs: now, RequestCount: 999, SuccessCount: 999, TTFTCount: 999, TTFTSumMs: 999000, UsageSampleCount: 999, InputTokens: 999999},
+		{ID: "hidden", GroupName: "public", ModelName: "hidden", BucketTs: now, RequestCount: 100, SuccessCount: 100},
+	}))
+	request := func(query string, id int, handler gin.HandlerFunc) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/health/models?"+query, nil)
+		c.Set("id", id)
+		c.Set("role", common.RoleRootUser)
+		handler(c)
+		return w
+	}
+	decode := func(w *httptest.ResponseRecorder) grouphealth.ModelResult {
+		t.Helper()
+		require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+		require.Equal(t, "private, no-store", w.Header().Get("Cache-Control"))
+		var body struct {
+			Data grouphealth.ModelResult `json:"data"`
+		}
+		require.NoError(t, common.Unmarshal(w.Body.Bytes(), &body))
+		return body.Data
+	}
+	query := url.Values{"model": {name, "hidden", name, "missing"}, "hours": {"24"}, "group": {"private"}, "user_id": {"999"}}.Encode()
+	result := decode(request(query, 1, GetModelHealthSummaries))
+	require.Len(t, result.Models, 2)
+	require.Equal(t, name, result.Models[0].Model)
+	require.EqualValues(t, 1, result.Models[0].RequestCount)
+	require.Equal(t, 500.0, *result.Models[0].AvgTTFTMs)
+	require.Equal(t, 30.0, *result.Models[0].AvgOutputTPS)
+	require.EqualValues(t, 130, *result.Models[0].TotalTokens)
+	require.Equal(t, "missing", result.Models[1].Model)
+	require.Nil(t, result.Models[1].AvgTTFTMs)
+	require.Nil(t, result.Models[1].TotalTokens)
+	result = decode(request(strings.Replace(query, "hours=24", "hours=72", 1), 1, GetModelHealthSummaries))
+	require.Equal(t, 72, result.WindowHours)
+	require.EqualValues(t, 3, result.Models[0].RequestCount)
+	require.Equal(t, 1000.0, *result.Models[0].AvgTTFTMs)
+	for _, invalid := range []string{"", "model=", "model=" + strings.Repeat("x", 256), "model=m&hours=1", "model=m&hours=720", "model=m&hours=abc", strings.TrimSuffix(strings.Repeat("model=m&", 101), "&")} {
+		require.Equal(t, http.StatusBadRequest, request(invalid, 1, GetModelHealthSummaries).Code, invalid)
+	}
+	require.Equal(t, http.StatusUnauthorized, request(query, 0, GetModelHealthSummaries).Code)
+	require.Equal(t, http.StatusBadRequest, request("hours=48", 1, GetGroupHealth).Code)
+	group := request("model="+url.QueryEscape(name)+"&hours=72", 1, GetGroupHealth)
+	require.Equal(t, http.StatusOK, group.Code)
+	var groupBody struct {
+		Data grouphealth.Result `json:"data"`
+	}
+	require.NoError(t, common.Unmarshal(group.Body.Bytes(), &groupBody))
+	require.Equal(t, 72, groupBody.Data.WindowHours)
+	for _, g := range groupBody.Data.Groups {
+		require.Len(t, g.Series, 72)
+	}
+	require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("role", common.RoleAdminUser).Error)
+	admin := decode(request(query, 1, GetModelHealthSummaries))
+	require.Len(t, admin.Models, 3, "current admin can view the hidden model but not private groups")
+	require.EqualValues(t, 1, admin.Models[0].RequestCount)
+	require.Equal(t, "hidden", admin.Models[1].Model)
+	require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("status", common.UserStatusDisabled).Error)
+	require.Equal(t, http.StatusForbidden, request(query, 1, GetModelHealthSummaries).Code)
 }

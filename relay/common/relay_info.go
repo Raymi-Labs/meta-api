@@ -42,6 +42,13 @@ type GroupHealthCacheUsage struct {
 	InputTokens int64
 }
 
+// GroupHealthTokenUsage preserves upstream counts before settlement modifies
+// them. Missing or locally estimated usage must not become a measured sample.
+type GroupHealthTokenUsage struct {
+	InputTokens  int64
+	OutputTokens int64
+}
+
 type ClaudeConvertInfo struct {
 	LastMessagesType string
 	Index            int
@@ -198,6 +205,8 @@ type RelayInfo struct {
 	// Group health observes more providers without changing the existing slow
 	// TTFT routing guard's sampling coverage or first-channel attribution.
 	GroupHealthCacheUsage          *GroupHealthCacheUsage
+	GroupHealthTokenUsage          *GroupHealthTokenUsage
+	GroupHealthUsageObservedAt     time.Time
 	GroupHealthFirstOutputTime     time.Time
 	FirstEffectiveOutputChannelId  int
 	FirstEffectiveOutputChannelTag string

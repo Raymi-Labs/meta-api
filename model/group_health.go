@@ -28,6 +28,12 @@ type GroupHealthMetric struct {
 	CacheReadTokens        int64 `gorm:"default:0"`
 	CacheInputTokens       int64 `gorm:"default:0"`
 	CacheSampleCount       int64 `gorm:"default:0"`
+	InputTokens            int64 `gorm:"not null;default:0"`
+	OutputTokens           int64 `gorm:"not null;default:0"`
+	UsageSampleCount       int64 `gorm:"not null;default:0"`
+	ThroughputOutputTokens int64 `gorm:"not null;default:0"`
+	GenerationSumMs        int64 `gorm:"not null;default:0"`
+	ThroughputSampleCount  int64 `gorm:"not null;default:0"`
 	UpdatedAt              int64 `gorm:"autoUpdateTime:false"`
 }
 
@@ -40,20 +46,31 @@ func SaveGroupHealthSnapshots(ctx context.Context, rows []GroupHealthMetric) err
 		DoUpdates: clause.AssignmentColumns([]string{
 			"request_count", "success_count", "service_failure_count", "excluded_user_error_count", "client_canceled_count", "ttft_sum_ms", "ttft_count",
 			"completion_sum_ms", "completion_count", "cache_read_tokens", "cache_input_tokens", "cache_sample_count", "updated_at",
+			"input_tokens", "output_tokens", "usage_sample_count", "throughput_output_tokens", "generation_sum_ms", "throughput_sample_count",
 		}),
 	}).CreateInBatches(&rows, 100).Error
 }
 
 func QueryGroupHealthMetrics(ctx context.Context, groups []string, modelName string, start, end int64) ([]GroupHealthMetric, error) {
+	var models []string
+	if modelName != "" {
+		models = []string{modelName}
+	}
+	return QueryGroupHealthMetricsForModels(ctx, groups, models, start, end)
+}
+
+// nil modelNames means the authorized all-model view; an empty non-nil list
+// denies all. Batch callers must supply their permission-filtered model list.
+func QueryGroupHealthMetricsForModels(ctx context.Context, groups, modelNames []string, start, end int64) ([]GroupHealthMetric, error) {
 	rows := make([]GroupHealthMetric, 0)
-	if len(groups) == 0 {
+	if len(groups) == 0 || (modelNames != nil && len(modelNames) == 0) {
 		return rows, nil
 	}
 	query := DB.WithContext(ctx).Model(&GroupHealthMetric{}).
-		Select("group_name, model_name, bucket_ts, SUM(request_count) AS request_count, SUM(success_count) AS success_count, SUM(service_failure_count) AS service_failure_count, SUM(excluded_user_error_count) AS excluded_user_error_count, SUM(client_canceled_count) AS client_canceled_count, SUM(ttft_sum_ms) AS ttft_sum_ms, SUM(ttft_count) AS ttft_count, SUM(completion_sum_ms) AS completion_sum_ms, SUM(completion_count) AS completion_count, SUM(cache_read_tokens) AS cache_read_tokens, SUM(cache_input_tokens) AS cache_input_tokens, SUM(cache_sample_count) AS cache_sample_count, MAX(updated_at) AS updated_at").
+		Select("group_name, model_name, bucket_ts, SUM(request_count) AS request_count, SUM(success_count) AS success_count, SUM(service_failure_count) AS service_failure_count, SUM(excluded_user_error_count) AS excluded_user_error_count, SUM(client_canceled_count) AS client_canceled_count, SUM(ttft_sum_ms) AS ttft_sum_ms, SUM(ttft_count) AS ttft_count, SUM(completion_sum_ms) AS completion_sum_ms, SUM(completion_count) AS completion_count, SUM(cache_read_tokens) AS cache_read_tokens, SUM(cache_input_tokens) AS cache_input_tokens, SUM(cache_sample_count) AS cache_sample_count, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(usage_sample_count) AS usage_sample_count, SUM(throughput_output_tokens) AS throughput_output_tokens, SUM(generation_sum_ms) AS generation_sum_ms, SUM(throughput_sample_count) AS throughput_sample_count, MAX(updated_at) AS updated_at").
 		Where("group_name IN ? AND bucket_ts >= ? AND bucket_ts <= ?", groups, start, end)
-	if modelName != "" {
-		query = query.Where("model_name = ?", modelName)
+	if modelNames != nil {
+		query = query.Where("model_name IN ?", modelNames)
 	}
 	err := query.Group("group_name, model_name, bucket_ts").Scan(&rows).Error
 	return rows, err
