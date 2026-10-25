@@ -20,7 +20,17 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Select, Spin } from '@douyinfe/semi-ui';
-import { ArrowLeft, ArrowUpRight, Copy, SlidersHorizontal } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  AudioLines,
+  Copy,
+  FileText,
+  Image as ImageIcon,
+  SlidersHorizontal,
+  Type,
+  Video,
+} from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
@@ -40,6 +50,14 @@ import ModelEndpoints from '../../components/table/model-pricing/modal/component
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import './modelDetail.css';
+
+const MODEL_MODALITY_ICONS = {
+  text: Type,
+  image: ImageIcon,
+  audio: AudioLines,
+  video: Video,
+  file: FileText,
+};
 
 export default function ModelDetail() {
   const location = useLocation();
@@ -144,9 +162,9 @@ export default function ModelDetail() {
       : [];
   const sections = [
     ['pricing', '价格详情'],
+    ['capabilities', '模型能力'],
     ['performance', '性能对比'],
     ['usage', '分组用量'],
-    ['capabilities', '模型能力'],
     ['endpoints', 'API端点'],
     ['quick-start', '快速开始'],
     ...(related.length ? [['related', '同厂商模型']] : []),
@@ -193,6 +211,10 @@ export default function ModelDetail() {
                       ? '按次计费'
                       : '按量计费',
               )}
+            </span>
+            <span aria-hidden='true'>·</span>
+            <span>
+              {t('上下文长度')}: {formatModelContext(model.context_length)}
             </span>
           </div>
           <p>
@@ -351,6 +373,39 @@ export default function ModelDetail() {
                 />
               </div>
             )}
+            <section
+              id='capabilities'
+              className='model-detail-modalities'
+              aria-label={t('模型能力')}
+            >
+              <div className='model-capability-grid'>
+                {[
+                  ['input_modalities', '输入模态'],
+                  ['output_modalities', '输出模态'],
+                ].map(([field, label]) => (
+                  <div key={field}>
+                    <h2>{t(label)}</h2>
+                    {Array.isArray(model[field]) && model[field].length ? (
+                      <ul>
+                        {model[field]
+                          .filter((value) => MODEL_MODALITY_LABELS[value])
+                          .map((value) => {
+                            const ModalityIcon = MODEL_MODALITY_ICONS[value];
+                            return (
+                              <li key={value}>
+                                <ModalityIcon size={18} aria-hidden='true' />
+                                <span>{t(MODEL_MODALITY_LABELS[value])}</span>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                    ) : (
+                      <p>{t('未配置')}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className='model-detail-group-prices'>
               <ModelGroupRows
                 key={model.model_name}
@@ -370,34 +425,6 @@ export default function ModelDetail() {
             hours={hours}
             setHours={setHours}
           />
-          <section id='capabilities' className='model-detail-section'>
-            <h2>{t('模型能力')}</h2>
-            <div className='model-capability-grid'>
-              <div>
-                <h3>{t('上下文长度')}</h3>
-                <p>{formatModelContext(model.context_length)}</p>
-              </div>
-              {[
-                ['input_modalities', '输入模态'],
-                ['output_modalities', '输出模态'],
-              ].map(([field, label]) => (
-                <div key={field}>
-                  <h3>{t(label)}</h3>
-                  {Array.isArray(model[field]) && model[field].length ? (
-                    <ul>
-                      {model[field]
-                        .filter((value) => MODEL_MODALITY_LABELS[value])
-                        .map((value) => (
-                          <li key={value}>{t(MODEL_MODALITY_LABELS[value])}</li>
-                        ))}
-                    </ul>
-                  ) : (
-                    <p>{t('未配置')}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
           <section id='endpoints' className='model-detail-section'>
             <ModelEndpoints
               modelData={model}
