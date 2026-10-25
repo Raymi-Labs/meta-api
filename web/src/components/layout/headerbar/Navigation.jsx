@@ -90,17 +90,19 @@ const Navigation = ({
   };
 
   return (
-    <nav className='flex flex-1 items-center gap-1 lg:gap-2 mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'>
-      <SkeletonWrapper
-        loading={isLoading}
-        type='navigation'
-        count={mainNavLinks.length}
-        width={60}
-        height={16}
-        isMobile={isMobile}
-      >
-        {renderNavLinks()}
-      </SkeletonWrapper>
+    <nav className='flex min-w-0 flex-1 items-center mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'>
+      <div className='ml-auto flex w-max flex-shrink-0 items-center gap-1 lg:gap-2'>
+        <SkeletonWrapper
+          loading={isLoading}
+          type='navigation'
+          count={mainNavLinks.length}
+          width={60}
+          height={16}
+          isMobile={isMobile}
+        >
+          {renderNavLinks()}
+        </SkeletonWrapper>
+      </div>
     </nav>
   );
 };
