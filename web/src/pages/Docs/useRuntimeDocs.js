@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { API } from '../../helpers/apiCore';
 import { UserContext } from '../../context/User';
+import { publicDocsAPI } from './publicDocsAPI';
 
 const EMPTY = {
   loading: true,
@@ -29,9 +30,9 @@ const EMPTY = {
   failed: false,
 };
 
-export default function useRuntimeDocs() {
+export default function useRuntimeDocs({ publicOnly = false } = {}) {
   const [userState] = useContext(UserContext);
-  const user = userState?.user;
+  const user = publicOnly ? null : userState?.user;
   const owner = JSON.stringify([user?.id, user?.role, user?.group]);
   const [state, setState] = useState(EMPTY);
   const [revision, setRevision] = useState(0);
@@ -56,9 +57,10 @@ export default function useRuntimeDocs() {
         skipErrorHandler: true,
         disableDuplicate: true,
       };
+      const client = publicOnly ? publicDocsAPI : API;
       const [status, pricing] = await Promise.allSettled([
-        API.get('/api/status', options),
-        API.get('/api/pricing', options),
+        client.get('/api/status', options),
+        client.get('/api/pricing', options),
       ]);
       pending = false;
       if (disposed) return;
@@ -95,7 +97,7 @@ export default function useRuntimeDocs() {
       window.removeEventListener('focus', onVisible);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [owner, revision]);
+  }, [owner, revision, publicOnly]);
 
   // Do not render data from the previous identity, even for one render.
   return { ...(state.owner === owner ? state : EMPTY), refresh };

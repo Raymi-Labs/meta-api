@@ -1,381 +1,411 @@
-/* 文档页：与首页一致的深蓝科技风入口 + 清爽易读的内容区 */
+/* Shared documentation reader; independent of the console sidebar. */
 .nan-docs-page {
-  width: 100%;
-  max-width: 100%;
-  min-height: calc(100vh - 64px);
-  padding: 88px clamp(16px, 3vw, 48px) 56px;
-  overflow-x: clip;
-  box-sizing: border-box;
-  background: radial-gradient(
-      700px 360px at 12% 0%,
-      rgba(56, 189, 248, 0.1),
-      transparent 60%
-    ),
-    radial-gradient(
-      640px 360px at 88% 4%,
-      rgba(99, 102, 241, 0.1),
-      transparent 60%
-    ),
-    linear-gradient(180deg, var(--semi-color-bg-0), var(--semi-color-bg-1));
+  --docs-offset: 64px;
+  --docs-sticky-offset: 0px;
+  --docs-sidebar: 272px;
+  min-height: calc(100dvh - var(--docs-offset));
+  color: var(--semi-color-text-0);
+  background: var(--semi-color-bg-0);
+}
+.nan-docs-standalone {
+  --docs-offset: 0px;
 }
 .nan-docs-page *,
 .nan-docs-page *::before,
 .nan-docs-page *::after {
   box-sizing: border-box;
 }
-
-/* Hero：深蓝渐变 + 网格光纹 + 白字（呼应首页 Hero） */
-.nan-docs-hero {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  max-width: 1560px;
-  margin: 0 auto 24px;
-  padding: 32px 28px;
+.nan-docs-sidebar {
+  position: fixed;
+  z-index: 20;
+  top: var(--docs-offset);
+  bottom: 0;
+  left: 0;
+  width: var(--docs-sidebar);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-0);
+}
+.nan-docs-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border-radius: 22px;
-  color: #f8fafc;
-  background: radial-gradient(
-      600px 300px at 16% 10%,
-      rgba(56, 189, 248, 0.22),
-      transparent 60%
-    ),
-    linear-gradient(150deg, #0a1430 0%, #0d2348 55%, #081a36 100%);
-  box-shadow: 0 18px 48px rgba(13, 35, 72, 0.35);
+  gap: 10px;
+  min-height: 80px;
+  padding: 24px;
+  font-size: 18px;
 }
-.nan-docs-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(
-      rgba(125, 211, 252, 0.06) 1px,
-      transparent 1px
-    ),
-    linear-gradient(90deg, rgba(125, 211, 252, 0.06) 1px, transparent 1px);
-  background-size: 40px 40px;
-  -webkit-mask-image: radial-gradient(circle at 28% 30%, #000, transparent 75%);
-  mask-image: radial-gradient(circle at 28% 30%, #000, transparent 75%);
+.nan-docs-brand a,
+.nan-docs-mobile-bar a {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 650;
 }
-.nan-docs-hero > * {
-  position: relative;
-  z-index: 1;
+.nan-docs-brand img,
+.nan-docs-mobile-bar img {
+  width: 30px;
+  height: 30px;
 }
-
-.nan-docs-eyebrow {
-  display: inline-block;
-  margin-bottom: 12px;
-  padding: 3px 12px;
-  border-radius: 9999px;
-  color: #7dd3fc !important;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  background: rgba(125, 211, 252, 0.12);
-  border: 1px solid rgba(125, 211, 252, 0.3);
+.nan-docs-search {
+  padding: 0 20px 20px;
 }
-
-.nan-docs-title {
-  margin: 0 0 10px !important;
-  color: #f8fafc !important;
-}
-
-/* Hero 内副标题与按钮转为深底配色 */
-.nan-docs-hero .semi-typography-tertiary {
-  color: #9fb3d1 !important;
-}
-.nan-docs-hero .semi-button {
-  color: #e6eefc !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(125, 211, 252, 0.3) !important;
-  border-radius: 9999px !important;
-}
-.nan-docs-hero .semi-button:hover {
-  background: rgba(125, 211, 252, 0.18) !important;
-}
-
-/* 布局：左侧导航 + 右侧内容 */
-.nan-docs-layout {
-  width: 100%;
-  min-width: 0;
-  max-width: 1560px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr) 208px;
-  gap: 20px;
-  align-items: start;
-}
-
-/* 侧边栏 */
-.nan-docs-sidebar {
-  position: sticky;
-  top: 88px;
-  padding: 16px 12px;
-  border: 1px solid var(--semi-color-border);
-  border-radius: 18px;
+.nan-docs-search .semi-input-wrapper {
+  height: 38px;
   background: var(--semi-color-bg-0);
-  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 9px;
 }
-.nan-docs-mobile-nav {
-  display: none;
+.nan-docs-search kbd {
+  color: var(--semi-color-text-2);
+  padding-right: 8px;
+  font: 11px inherit;
+  white-space: nowrap;
+}
+.nan-docs-navigation {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 24px;
+  scrollbar-width: thin;
 }
 .nan-docs-nav-group + .nan-docs-nav-group {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--semi-color-border);
+  margin-top: 24px;
 }
 .nan-docs-nav-group-title {
   display: block;
-  margin: 0 0 10px 10px;
-  color: var(--semi-color-text-2) !important;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  margin: 0 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
 }
-.nan-docs-nav-button {
-  justify-content: flex-start !important;
-  text-align: left;
-  height: auto;
-  min-height: 32px;
-  white-space: normal;
-  border-radius: 10px !important;
-  transition:
-    transform 0.16s ease,
-    background-color 0.16s ease;
-}
-.nan-docs-nav-button .semi-button-content {
-  width: 100%;
-  min-width: 0;
-}
-.nan-docs-nav-button .semi-button-content-right {
-  min-width: 0;
+.nan-docs-nav-link {
+  display: block;
+  padding: 8px 12px;
+  margin-left: 6px;
+  border-left: 1px solid var(--semi-color-border);
+  color: var(--semi-color-text-2);
+  font-size: 13px;
+  line-height: 1.5;
+  text-decoration: none;
   overflow-wrap: anywhere;
 }
-/* 当前项：蓝青渐变高亮 */
-.nan-docs-nav-button.semi-button-primary {
-  background: linear-gradient(135deg, #3b82f6, #06b6d4) !important;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
+.nan-docs-nav-link:hover {
+  color: var(--semi-color-primary);
+  background: var(--semi-color-fill-0);
 }
-.nan-docs-nav-button:not(.semi-button-primary):hover {
-  background: var(--semi-color-fill-0) !important;
-  transform: translateX(2px);
+.nan-docs-nav-link[aria-current='page'] {
+  border-left: 2px solid var(--semi-color-primary);
+  color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+  font-weight: 600;
+  border-radius: 0 6px 6px 0;
 }
-
-/* 内容卡片 */
+.nan-docs-sidebar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--semi-color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.nan-docs-sidebar-footer a {
+  color: var(--semi-color-text-2);
+}
+.nan-docs-controls {
+  display: flex;
+  gap: 8px;
+}
+.nan-docs-workspace {
+  margin-left: var(--docs-sidebar);
+  min-width: 0;
+}
+.nan-docs-tabs {
+  height: 56px;
+  position: sticky;
+  top: var(--docs-sticky-offset);
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-0);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+.nan-docs-tabs a {
+  display: flex;
+  align-items: center;
+  color: var(--semi-color-text-1);
+  font-size: 13px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nan-docs-tabs a:hover {
+  color: var(--semi-color-primary);
+}
+.nan-docs-console {
+  margin-left: auto;
+}
+.nan-docs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 800px) 200px;
+  justify-content: center;
+  gap: clamp(28px, 4vw, 64px);
+  padding: 48px clamp(24px, 5vw, 80px) 48px;
+}
 .nan-docs-content {
   min-width: 0;
 }
+.nan-docs-eyebrow {
+  color: var(--semi-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.nan-docs-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.nan-docs-title-row h1 {
+  margin: 12px 0;
+  font-size: clamp(26px, 2.5vw, 34px);
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  font-weight: 650;
+}
+.nan-docs-title-row button {
+  flex-shrink: 0;
+}
+.nan-docs-card-header p {
+  margin: 0 0 28px;
+  font-size: 16px;
+  color: var(--semi-color-text-2);
+  line-height: 1.75;
+}
 .nan-docs-sync {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  background: var(--semi-color-fill-0);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 10px;
 }
 .nan-docs-sync .semi-typography {
   font-size: 12px;
+  line-height: 1.6;
 }
-.nan-docs-sync .semi-button {
+.nan-docs-sync button {
   flex-shrink: 0;
 }
-.nan-docs-card {
-  width: 100%;
-  max-width: 100%;
-  border: 1px solid var(--semi-color-border) !important;
-  border-radius: 18px !important;
-  overflow: hidden;
-  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06) !important;
-}
-.nan-docs-card .semi-card-body {
-  padding: 36px clamp(28px, 3vw, 48px) 48px;
-}
-.nan-docs-card-header {
-  margin: -36px clamp(-48px, -3vw, -28px) 28px;
-  padding: 26px clamp(28px, 3vw, 48px) 22px;
-  border-bottom: 1px solid var(--semi-color-border);
-  background: linear-gradient(180deg, var(--semi-color-fill-0), transparent);
-}
-.nan-docs-card-header .semi-typography-heading {
-  position: relative;
-  padding-left: 14px;
-}
-.nan-docs-card-header .semi-typography-heading::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 4px;
-  bottom: 4px;
-  width: 4px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #3b82f6, #06b6d4);
-}
-
-/* Markdown 正文排版增强 */
 .nan-docs-card .markdown-body {
+  color: var(--semi-color-text-1);
+  line-height: 1.8;
   min-width: 0;
-  max-width: 100%;
-  line-height: 1.78;
 }
-.nan-docs-card .markdown-body > :first-child {
-  margin-top: 0 !important;
+.nan-docs-card .markdown-body h2,
+.nan-docs-card .markdown-body h3 {
+  scroll-margin-top: calc(var(--docs-sticky-offset) + 80px);
+  color: var(--semi-color-text-0);
 }
 .nan-docs-card .markdown-body h2 {
-  margin-top: 34px;
-  padding-bottom: 8px;
+  font-size: 22px;
+  margin-top: 38px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--semi-color-border);
-  scroll-margin-top: 92px;
 }
 .nan-docs-card .markdown-body h3 {
-  margin-top: 24px;
-  scroll-margin-top: 92px;
+  font-size: 18px;
+  margin-top: 26px;
 }
-.nan-docs-card .markdown-body a {
-  color: #0ea5e9;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(14, 165, 233, 0.32);
-  transition: border-color 0.15s ease;
-}
-.nan-docs-card .markdown-body a:hover {
-  border-bottom-color: #0ea5e9;
+.nan-docs-card .markdown-body pre,
+.nan-docs-card .markdown-body table {
+  max-width: 100%;
+  overflow-x: auto;
 }
 .nan-docs-card .markdown-body table {
   display: block;
-  width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-}
-.nan-docs-card .markdown-body th {
-  background: var(--semi-color-fill-1);
-}
-.nan-docs-card .markdown-body th:first-child,
-.nan-docs-card .markdown-body td:first-child {
-  min-width: 88px;
-}
-.nan-docs-card .markdown-body tbody tr:nth-child(even) {
-  background: var(--semi-color-fill-0);
-}
-.nan-docs-card .markdown-body pre {
-  max-width: 100%;
-  overflow-x: auto;
-  border-radius: 12px;
+  font-size: 13px;
 }
 .nan-docs-card .markdown-body blockquote {
-  margin: 16px 0;
-  padding: 8px 16px;
-  border-left: 3px solid #06b6d4;
+  border-left: 3px solid var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
   border-radius: 0 8px 8px 0;
-  background: var(--semi-color-fill-0);
+  padding: 8px 16px;
+  margin: 20px 0;
 }
 .nan-docs-card .markdown-body blockquote::before {
   content: none;
 }
-.nan-docs-card .markdown-body :not(pre) > code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.92em;
-  background: var(--semi-color-fill-1);
-}
-
-/* 右侧页内目录：宽屏使用原先的留白，长文档不再反复滚回顶部找章节 */
 .nan-docs-toc {
   position: sticky;
-  top: 88px;
-  max-height: calc(100vh - 112px);
-  padding: 16px 0 16px 16px;
+  top: calc(var(--docs-sticky-offset) + 90px);
+  align-self: start;
+  max-height: calc(100dvh - var(--docs-offset) - 120px);
   overflow-y: auto;
-  border-left: 1px solid var(--semi-color-border);
+  scrollbar-width: thin;
+  font-size: 12px;
 }
-.nan-docs-toc-title {
+.nan-docs-toc strong {
   display: block;
-  margin-bottom: 10px;
-  color: var(--semi-color-text-0) !important;
-  font-size: 13px;
-  font-weight: 700;
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 .nan-docs-toc nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  border-left: 1px solid var(--semi-color-border);
 }
-.nan-docs-toc-link,
-.nan-docs-toc-back {
+.nan-docs-toc a {
   display: block;
-  padding: 6px 8px;
+  padding: 6px 12px;
+  color: var(--semi-color-text-2);
+  text-decoration: none;
+  line-height: 1.5;
+}
+.nan-docs-toc a:hover {
+  color: var(--semi-color-primary);
+}
+.nan-docs-toc .nan-docs-toc-link-sub {
+  padding-left: 24px;
+}
+.nan-docs-pagination {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 48px;
+}
+.nan-docs-pagination a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 12px;
+  color: var(--semi-color-text-1);
+  text-decoration: none;
+  font-size: 14px;
+}
+.nan-docs-pagination a:hover {
+  border-color: var(--semi-color-primary);
+  color: var(--semi-color-primary);
+}
+.nan-docs-pagination svg {
+  flex-shrink: 0;
+}
+.nan-docs-attribution {
+  margin-top: 36px;
   color: var(--semi-color-text-2);
   font-size: 12px;
-  line-height: 1.45;
-  text-decoration: none;
-  border-radius: 7px;
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
 }
-.nan-docs-toc-link-sub {
-  padding-left: 20px;
-  color: var(--semi-color-text-3);
+.nan-docs-attribution a {
+  color: inherit;
 }
-.nan-docs-toc-link:hover,
-.nan-docs-toc-back:hover {
-  color: var(--semi-color-primary);
+.nan-docs-results button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--semi-color-text-1);
+  cursor: pointer;
+}
+.nan-docs-results button:hover {
   background: var(--semi-color-fill-0);
 }
-.nan-docs-toc-back {
-  margin-top: 10px;
-  color: var(--semi-color-primary);
+.nan-docs-results strong,
+.nan-docs-results span {
+  display: block;
 }
-
+.nan-docs-results span {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.nan-docs-mobile-bar,
+.nan-docs-backdrop {
+  display: none;
+}
+.nan-docs-page a:focus-visible,
+.nan-docs-page button:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
 @media (max-width: 1180px) {
   .nan-docs-layout {
-    grid-template-columns: 232px minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 36px;
   }
   .nan-docs-toc {
     display: none;
   }
 }
-
-@media (max-width: 900px) {
+@media (max-width: 800px) {
   .nan-docs-page {
-    padding: 76px 12px 28px;
+    --docs-sticky-offset: var(--docs-offset);
   }
-  .nan-docs-hero {
-    padding: 22px 18px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .nan-docs-layout {
-    grid-template-columns: 1fr;
-  }
-  .nan-docs-mobile-nav {
+  .nan-docs-mobile-bar {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    border: 1px solid var(--semi-color-border);
-    border-radius: 14px;
+    position: sticky;
+    top: var(--docs-offset);
+    z-index: 25;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
     background: var(--semi-color-bg-0);
-  }
-  .nan-docs-mobile-nav-label {
-    color: var(--semi-color-text-2) !important;
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .nan-docs-mobile-nav .semi-select {
-    width: 100%;
+    padding: 12px 20px;
+    min-height: 60px;
+    border-bottom: 1px solid var(--semi-color-border);
   }
   .nan-docs-sidebar {
     display: none;
+    top: calc(var(--docs-offset) + 60px);
+    z-index: 24;
+    width: min(320px, 85vw);
   }
-  .nan-docs-card .semi-card-body {
-    padding: 20px;
+  .nan-docs-sidebar.is-open {
+    display: flex;
   }
-  .nan-docs-card-header {
-    margin: -20px -20px 18px;
-    padding: 18px 20px 16px;
+  .nan-docs-sidebar .nan-docs-brand {
+    display: none;
+  }
+  .nan-docs-search {
+    padding-top: 20px;
+  }
+  .nan-docs-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 23;
+    inset: calc(var(--docs-offset) + 60px) 0 0;
+    border: 0;
+    background: #0006;
+  }
+  .nan-docs-workspace {
+    margin-left: 0;
+  }
+  .nan-docs-tabs {
+    position: static;
+    padding: 0 20px;
+    gap: 22px;
+  }
+  .nan-docs-layout {
+    padding: 28px 20px;
+  }
+  .nan-docs-pagination {
+    grid-template-columns: 1fr;
+  }
+  .nan-docs-pagination > span {
+    display: none;
   }
 }

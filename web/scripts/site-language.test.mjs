@@ -813,3 +813,39 @@ test('identity guard distinguishes unavailable storage from explicit logout, cha
   assert.equal(unavailable('1'), true);
   assert.equal(unavailable('2'), false);
 });
+
+test('cross-origin entry consumes only a supported language and preserves later user choices', async () => {
+  const { store, storage } = fixture({ [SITE_LANGUAGE_KEY]: 'zh-CN' });
+  const win = windowFixture();
+  win.location = {
+    href: 'https://docs.meta-api.vip/clients?lang=ja&keep=1#heading',
+  };
+  let replaced;
+  win.history = {
+    state: {},
+    replaceState: (_state, _title, url) => {
+      replaced = String(url);
+    },
+  };
+  store.initialize(win);
+  await store.whenReady();
+  assert.equal(store.getSnapshot().language, 'ja');
+  assert.equal(replaced, 'https://docs.meta-api.vip/clients?keep=1#heading');
+  await store.change('de');
+  store.initialize(win);
+  assert.equal(storage.getItem(SITE_LANGUAGE_KEY), 'de');
+});
+
+test('unknown URL language does not replace the stored language', async () => {
+  const { store } = fixture({ [SITE_LANGUAGE_KEY]: 'fr' });
+  const win = windowFixture();
+  win.location = { href: 'https://docs.meta-api.vip/?lang=not-supported' };
+  win.history = {
+    replaceState: () => {
+      throw new Error('must not rewrite');
+    },
+  };
+  store.initialize(win);
+  await store.whenReady();
+  assert.equal(store.getSnapshot().language, 'fr');
+});

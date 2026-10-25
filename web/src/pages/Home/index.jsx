@@ -23,6 +23,7 @@ import { API_ENDPOINTS } from '../../constants/common.constant';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
 import { API } from '../../helpers/apiCore';
+import { withDocsLanguage } from '../../helpers/docsLink';
 import { copy } from '../../helpers/clipboard';
 import { usePublicTranslation } from '../../helpers/publicLocale';
 import { isHttpsUrl } from '../../helpers/richContent';
@@ -52,7 +53,10 @@ const Home = ({ onLandingChange } = {}) => {
   const [homePageResolved, setHomePageResolved] = useState(
     () => getCachedHomePageContent() !== '',
   );
-  const docsLink = statusState?.status?.docs_link || '';
+  const docsLink = withDocsLanguage(
+    statusState?.status?.docs_link || '',
+    language,
+  );
   const publicHomeServerAddress = getPublicHomeServerAddress(
     statusState?.status?.server_address,
     window.location.origin,

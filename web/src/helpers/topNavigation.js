@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { buildAuthPathWithNext } from './authRedirect';
+import { withDocsLanguage } from './docsLink';
 
 export const DEFAULT_HEADER_NAV_MODULES = {
   home: true,
@@ -29,6 +30,7 @@ export const DEFAULT_HEADER_NAV_MODULES = {
 };
 
 export const getTopNavigationLinks = (t, docsLink, headerNavModules) => {
+  docsLink = withDocsLanguage(docsLink);
   const modules = headerNavModules || DEFAULT_HEADER_NAV_MODULES;
   const pricingEnabled =
     typeof modules.pricing === 'object'

@@ -34,3 +34,6 @@ token_estimator_test.go
 skills-lock.json
 tmp/
 output/
+
+# Standalone documentation build
+web/docs-dist/

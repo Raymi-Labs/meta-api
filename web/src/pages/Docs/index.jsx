@@ -17,396 +17,362 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useMemo } from 'react';
-import { Button, Card, Select, Space, Typography } from '@douyinfe/semi-ui';
-import { IconBookOpenStroked, IconLink } from '@douyinfe/semi-icons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Input, Typography } from '@douyinfe/semi-ui';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Copy,
+  Search,
+  Menu,
+  X,
+} from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
-import usageMarkdown from '../../../../docs/NAN_USAGE.md?raw';
-import clientsMarkdown from '../../../../docs/NAN_CLIENTS.md?raw';
-import codexMarkdown from '../../../../docs/NAN_CLIENT_CODEX.md?raw';
-import claudeCodeMarkdown from '../../../../docs/NAN_CLIENT_CLAUDE_CODE.md?raw';
-import claudeCodeOpenAIMarkdown from '../../../../docs/NAN_CLIENT_CLAUDE_CODE_OPENAI.md?raw';
-import geminiMarkdown from '../../../../docs/NAN_CLIENT_GEMINI.md?raw';
-import opencodeMarkdown from '../../../../docs/NAN_CLIENT_OPENCODE.md?raw';
-import openclawMarkdown from '../../../../docs/NAN_CLIENT_OPENCLAW.md?raw';
-import ccSwitchMarkdown from '../../../../docs/NAN_CLIENT_CCSWITCH.md?raw';
-import imageGenerationMarkdown from '../../../../docs/NAN_IMAGE_GENERATION.md?raw';
-import apiExamplesMarkdown from '../../../../docs/NAN_API_EXAMPLES.md?raw';
-import troubleshootingMarkdown from '../../../../docs/NAN_TROUBLESHOOTING.md?raw';
-import mimoAudioMarkdown from '../../../../docs/NAN_MIMO_AUDIO.md?raw';
+import { useContentLanguage } from '../../helpers/contentLanguageReact';
+import { DOCS } from './catalog';
+import {
+  docPath,
+  extractHeadings,
+  getActiveDoc,
+  MAIN_ORIGIN,
+  NAV_GROUPS,
+  prepareMarkdown,
+  searchDocs,
+  standaloneMarkdown,
+} from './docsNavigation';
 import { renderRuntimeDocs } from './runtimeDocs';
 import useRuntimeDocs from './useRuntimeDocs';
-import { useContentLanguage } from '../../helpers/contentLanguageReact';
 import './index.css';
 
-const { Title, Text } = Typography;
-const DOCS_EYEBROW = 'NAN Docs';
-const CARD_SHADOWS = 'always';
+const { Text } = Typography;
 
-const DOCS = [
-  {
-    key: 'usage',
-    path: '/docs',
-    group: '基础',
-    title: '平台教程',
-    description: '注册、令牌、调用、充值、发票、扣费和安全提醒',
-    content: usageMarkdown,
-  },
-  {
-    key: 'clients',
-    path: '/docs/clients',
-    group: '客户端',
-    title: '客户端接入',
-    description: 'Codex、Claude Code、Gemini、OpenCode、OpenClaw、CC Switch',
-    content: clientsMarkdown,
-  },
-  {
-    key: 'client-codex',
-    path: '/docs/clients/codex',
-    group: '客户端',
-    title: 'Codex',
-    description: 'Codex 一键配置与手动配置',
-    content: codexMarkdown,
-  },
-  {
-    key: 'client-claude-code',
-    path: '/docs/clients/claude-code',
-    group: '客户端',
-    title: 'Claude Code',
-    description: 'Claude Code 使用 Claude 模型',
-    content: claudeCodeMarkdown,
-  },
-  {
-    key: 'client-claude-code-openai',
-    path: '/docs/clients/claude-code-openai',
-    group: '客户端',
-    title: 'Claude Code OpenAI',
-    description: 'Claude Code 使用 OpenAI / Codex 模型',
-    content: claudeCodeOpenAIMarkdown,
-  },
-  {
-    key: 'client-gemini',
-    path: '/docs/clients/gemini',
-    group: '客户端',
-    title: 'Gemini CLI',
-    description: 'Gemini CLI 配置与验证',
-    content: geminiMarkdown,
-  },
-  {
-    key: 'client-opencode',
-    path: '/docs/clients/opencode',
-    group: '客户端',
-    title: 'OpenCode',
-    description: 'OpenCode 环境变量与配置文件',
-    content: opencodeMarkdown,
-  },
-  {
-    key: 'client-openclaw',
-    path: '/docs/clients/openclaw',
-    group: '客户端',
-    title: 'OpenClaw',
-    description: 'OpenClaw 本地网关与多模型配置',
-    content: openclawMarkdown,
-  },
-  {
-    key: 'client-ccswitch',
-    path: '/docs/clients/ccswitch',
-    group: '客户端',
-    title: 'CC Switch',
-    description: '一键导入配置与聊天入口边界',
-    content: ccSwitchMarkdown,
-  },
-  {
-    key: 'image-generation',
-    path: '/docs/image-generation',
-    group: '能力',
-    title: '元衡生图',
-    description: '平台工作台、本地技能包与 API 请求三种使用方式',
-    content: imageGenerationMarkdown,
-  },
-  {
-    key: 'mimo-audio',
-    path: '/docs/mimo-audio',
-    group: '能力',
-    title: 'MiMo 语音',
-    description: 'TTS、音色设计、音色克隆和语音识别',
-    content: mimoAudioMarkdown,
-  },
-  {
-    key: 'api-examples',
-    path: '/docs/api-examples',
-    group: '开发',
-    title: '模型请求样例',
-    description: '各厂商模型、协议地址与可直接复制的调用样例',
-    content: apiExamplesMarkdown,
-  },
-  {
-    key: 'troubleshooting',
-    path: '/docs/troubleshooting',
-    group: '排查',
-    title: '常见报错排查',
-    description: '按错误文本排查注册、认证、模型、客户端、网络、支付问题',
-    content: troubleshootingMarkdown,
-  },
-];
-
-const DOC_LINK_REPLACEMENTS = [
-  [/\.\/NAN_USAGE\.md/g, '/docs'],
-  [/\.\/NAN_CLIENTS\.md/g, '/docs/clients'],
-  [/\.\/NAN_CLIENT_CODEX\.md/g, '/docs/clients/codex'],
-  [/\.\/NAN_CLIENT_CLAUDE_CODE\.md/g, '/docs/clients/claude-code'],
-  [
-    /\.\/NAN_CLIENT_CLAUDE_CODE_OPENAI\.md/g,
-    '/docs/clients/claude-code-openai',
-  ],
-  [/\.\/NAN_CLIENT_GEMINI\.md/g, '/docs/clients/gemini'],
-  [/\.\/NAN_CLIENT_OPENCODE\.md/g, '/docs/clients/opencode'],
-  [/\.\/NAN_CLIENT_OPENCLAW\.md/g, '/docs/clients/openclaw'],
-  [/\.\/NAN_CLIENT_CCSWITCH\.md/g, '/docs/clients/ccswitch'],
-  [/\.\/NAN_IMAGE_GENERATION\.md/g, '/docs/image-generation'],
-  [/\.\/NAN_API_EXAMPLES\.md/g, '/docs/api-examples'],
-  [/\.\/NAN_TROUBLESHOOTING\.md/g, '/docs/troubleshooting'],
-  [/\.\/NAN_MIMO_AUDIO\.md/g, '/docs/mimo-audio'],
-  // 图片放 /docs-images/（不能叫 /docs/images/：dist 里出现 docs 目录会让
-  // 静态文件服务把 /docs 当目录发 301，与 SPA 路由打架导致重定向死循环）
-  [/\.\/images\//g, '/docs-images/'],
-];
-
-const NAV_GROUPS = DOCS.reduce((groups, doc) => {
-  if (!groups.includes(doc.group)) {
-    groups.push(doc.group);
-  }
-  return groups;
-}, []);
-
-function normalizeMarkdownLinks(content) {
-  return DOC_LINK_REPLACEMENTS.reduce(
-    (current, [pattern, replacement]) => current.replace(pattern, replacement),
-    content,
-  );
-}
-
-function normalizeHeadingText(value) {
-  return value
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/[`*_~]/g, '')
-    .replace(/\s+#+\s*$/, '')
-    .trim();
-}
-
-function createHeadingId(value) {
-  return normalizeHeadingText(value)
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-function prepareMarkdown(content) {
-  return normalizeMarkdownLinks(content).replace(/^\uFEFF?#\s+[^\n]+\n+/, '');
-}
-
-function extractHeadings(content) {
-  let inCodeBlock = false;
-  return content.split('\n').reduce((headings, line) => {
-    if (/^\s*```/.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      return headings;
-    }
-    if (inCodeBlock) {
-      return headings;
-    }
-
-    const match = line.match(/^(##|###)\s+(.+)$/);
-    if (!match) {
-      return headings;
-    }
-
-    const title = normalizeHeadingText(match[2]);
-    const id = createHeadingId(title);
-    if (title && id) {
-      headings.push({
-        id,
-        title,
-        level: match[1].length,
-      });
-    }
-    return headings;
-  }, []);
-}
-
-function getActiveDoc(pathname) {
-  const normalizedPath = pathname.replace(/\/+$/, '') || '/docs';
-  const matched = [...DOCS]
-    .sort((a, b) => b.path.length - a.path.length)
-    .find(
-      (doc) =>
-        normalizedPath === doc.path ||
-        normalizedPath.startsWith(`${doc.path}/`),
-    );
-  return matched || DOCS[0];
-}
-
-export default function DocsPage() {
+export default function DocsPage({ standalone = false, brand, controls }) {
   const { t, i18n } = useTranslation();
   const bodyLanguage = useContentLanguage(
     i18n.resolvedLanguage || i18n.language,
   );
   const location = useLocation();
   const navigate = useNavigate();
-  const activeDoc = getActiveDoc(location.pathname);
-  const runtime = useRuntimeDocs();
-  const content = useMemo(
-    () =>
-      prepareMarkdown(
-        renderRuntimeDocs(bodyLanguage.markdown(activeDoc.content), {
-          ...runtime,
-          translate: bodyLanguage.markdown,
-          origin: window.location.origin,
-        }),
-      ),
-    [
-      activeDoc.content,
-      bodyLanguage.markdown,
-      runtime.serverAddress,
-      runtime.pricing,
-      runtime.loading,
-    ],
-  );
+  const activeDoc = getActiveDoc(location.pathname, standalone);
+  const runtime = useRuntimeDocs({ publicOnly: standalone });
+  const [query, setQuery] = useState('');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
+  const searchRef = useRef(null);
+  const language = bodyLanguage.language;
+  const content = useMemo(() => {
+    if (!activeDoc) return '';
+    const rendered = prepareMarkdown(
+      renderRuntimeDocs(bodyLanguage.markdown(activeDoc.content), {
+        ...runtime,
+        translate: bodyLanguage.markdown,
+        origin: standalone ? MAIN_ORIGIN : window.location.origin,
+      }),
+    );
+    return standalone ? standaloneMarkdown(rendered, language) : rendered;
+  }, [
+    activeDoc,
+    bodyLanguage.markdown,
+    runtime.serverAddress,
+    runtime.pricing,
+    runtime.loading,
+    standalone,
+    language,
+  ]);
   const headings = useMemo(() => extractHeadings(content), [content]);
+  const results = useMemo(
+    () =>
+      searchDocs(
+        query,
+        DOCS.map((doc) => ({
+          ...doc,
+          title: t(doc.title),
+          description: t(doc.description),
+          content: bodyLanguage.markdown(doc.content),
+        })),
+      ),
+    [query, t, bodyLanguage.markdown],
+  );
+  const index = DOCS.findIndex((doc) => doc.key === activeDoc?.key);
+  const go = (path) => {
+    navigate(docPath(path, standalone));
+    setQuery('');
+    setMobileOpen(false);
+  };
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setCopyStatus('');
+    if (!location.hash) window.scrollTo({ top: 0 });
+  }, [location.pathname]);
+  useEffect(() => {
+    if (!location.hash) return;
+    let id;
+    try {
+      id = decodeURIComponent(location.hash.slice(1));
+    } catch {
+      return;
+    }
+    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
+  }, [location.hash, content]);
+  useEffect(() => {
+    const onKey = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setMobileOpen(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
+      }
+      if (event.key === 'Escape') {
+        setQuery('');
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  const copyPage = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopyStatus('复制成功');
+    } catch {
+      setCopyStatus('复制失败');
+    }
+  };
 
   return (
-    <div className='nan-docs-page' id='docs-top'>
-      <section className='nan-docs-hero'>
-        <div>
-          <Text className='nan-docs-eyebrow'>{DOCS_EYEBROW}</Text>
-          <Title heading={2} className='nan-docs-title'>
-            {t('平台使用文档')}
-          </Title>
-          <Text type='tertiary'>
-            {t('新手先看平台教程和配置速查；遇到错误直接查常见报错排查。')}
-          </Text>
-        </div>
+    <div
+      className={`nan-docs-page${standalone ? ' nan-docs-standalone' : ''}`}
+      id='docs-top'
+    >
+      <div className='nan-docs-mobile-bar'>
+        {brand || <strong>{t('平台使用文档')}</strong>}
         <Button
-          icon={<IconLink />}
-          theme='borderless'
-          onClick={() =>
-            window.open('https://docs.newapi.pro/zh/docs', '_blank')
-          }
-        >
-          {t('上游文档')}
-        </Button>
-      </section>
-
-      <div className='nan-docs-layout'>
-        <div className='nan-docs-mobile-nav'>
-          <Text className='nan-docs-mobile-nav-label'>{t('选择文档')}</Text>
-          <Select
-            value={activeDoc.path}
-            optionList={DOCS.map((doc) => ({
-              value: doc.path,
-              label: `${t(doc.group)} · ${t(doc.title)}`,
-            }))}
-            onChange={(value) => navigate(value)}
+          aria-label={t(mobileOpen ? '关闭' : '选择文档')}
+          aria-expanded={mobileOpen}
+          aria-controls='docs-sidebar'
+          onClick={() => setMobileOpen(!mobileOpen)}
+          icon={mobileOpen ? <X size={18} /> : <Menu size={18} />}
+        />
+      </div>
+      <aside
+        className={`nan-docs-sidebar${mobileOpen ? ' is-open' : ''}`}
+        id='docs-sidebar'
+      >
+        <div className='nan-docs-brand'>
+          {brand || (
+            <>
+              <BookOpen size={22} />
+              <strong>{t('平台使用文档')}</strong>
+            </>
+          )}
+        </div>
+        <div className='nan-docs-search'>
+          <Input
+            ref={searchRef}
+            aria-label={t('搜索')}
+            placeholder={`${t('搜索')}…`}
+            prefix={<Search size={16} />}
+            suffix={<kbd>⌘ K</kbd>}
+            value={query}
+            onChange={setQuery}
+            showClear
           />
         </div>
-
-        <aside className='nan-docs-sidebar'>
-          {NAV_GROUPS.map((group) => (
-            <div className='nan-docs-nav-group' key={group}>
-              <Text className='nan-docs-nav-group-title'>{t(group)}</Text>
-              <Space vertical align='start' style={{ width: '100%' }}>
+        <nav className='nan-docs-navigation' aria-label={t('选择文档')}>
+          {query.trim() ? (
+            <div className='nan-docs-results' aria-live='polite'>
+              {results.length ? (
+                results.map((doc) => (
+                  <button key={doc.key} onClick={() => go(doc.path)}>
+                    <strong>{doc.title}</strong>
+                    <span>{doc.description}</span>
+                  </button>
+                ))
+              ) : (
+                <p>{t('暂无数据')}</p>
+              )}
+            </div>
+          ) : (
+            NAV_GROUPS.map((group) => (
+              <div className='nan-docs-nav-group' key={group}>
+                <span className='nan-docs-nav-group-title'>{t(group)}</span>
                 {DOCS.filter((doc) => doc.group === group).map((doc) => (
-                  <Button
+                  <Link
                     key={doc.key}
-                    block
-                    icon={<IconBookOpenStroked />}
-                    theme={doc.key === activeDoc.key ? 'solid' : 'borderless'}
-                    type={doc.key === activeDoc.key ? 'primary' : 'tertiary'}
-                    className='nan-docs-nav-button'
-                    onClick={() => navigate(doc.path)}
+                    to={docPath(doc.path, standalone)}
+                    aria-current={
+                      activeDoc?.key === doc.key ? 'page' : undefined
+                    }
+                    className='nan-docs-nav-link'
                   >
                     {t(doc.title)}
-                  </Button>
+                  </Link>
                 ))}
-              </Space>
-            </div>
-          ))}
-        </aside>
-
-        <main className='nan-docs-content'>
-          <Card className='nan-docs-card' shadows={CARD_SHADOWS}>
-            <div className='nan-docs-card-header'>
-              <div>
-                <Title heading={3}>{t(activeDoc.title)}</Title>
-                <Text type='tertiary'>{t(activeDoc.description)}</Text>
               </div>
-            </div>
-            <div className='nan-docs-sync' role='status'>
-              <Text type={runtime.failed ? 'warning' : 'tertiary'}>
-                {runtime.loading
-                  ? t('正在更新文档配置…')
-                  : runtime.failed
-                    ? t(
-                        '部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。',
-                      )
-                    : `${t('地址、分组和请求样例随站点配置自动更新')} · ${new Date(runtime.updatedAt).toLocaleTimeString(bodyLanguage.language)}`}
-              </Text>
-              <Button
-                size='small'
-                loading={runtime.loading}
-                onClick={runtime.refresh}
-              >
-                {t('刷新')}
-              </Button>
-            </div>
-            {(bodyLanguage.pending || bodyLanguage.failed) && (
-              <div className='nan-docs-sync' role='status'>
-                <Text type={bodyLanguage.failed ? 'warning' : 'tertiary'}>
-                  {t(
-                    bodyLanguage.failed
-                      ? '正文翻译加载失败，请重试。'
-                      : '正在加载正文翻译…',
-                  )}
-                </Text>
-                {bodyLanguage.failed && (
-                  <Button size='small' onClick={bodyLanguage.retry}>
-                    {t('重试')}
-                  </Button>
-                )}
-              </div>
-            )}
-            <div lang={bodyLanguage.ready ? bodyLanguage.language : 'zh-CN'}>
-              <MarkdownRenderer content={content} fontSize={15} />
-            </div>
-          </Card>
-        </main>
-
-        <aside className='nan-docs-toc'>
-          <Text className='nan-docs-toc-title'>{t('本页目录')}</Text>
-          <nav aria-label={t('本页目录')}>
-            {headings.map((heading, index) => (
-              <a
-                key={`${heading.id}-${index}`}
-                href={`#${heading.id}`}
-                className={
-                  heading.level === 3
-                    ? 'nan-docs-toc-link nan-docs-toc-link-sub'
-                    : 'nan-docs-toc-link'
-                }
-              >
-                {heading.title}
-              </a>
-            ))}
-          </nav>
-          <a className='nan-docs-toc-back' href='#docs-top'>
-            {t('返回顶部')}
+            ))
+          )}
+        </nav>
+        <div className='nan-docs-sidebar-footer'>
+          <a
+            href='https://docs.newapi.pro/zh/docs'
+            target='_blank'
+            rel='noreferrer'
+          >
+            {t('上游文档')} ↗
           </a>
-        </aside>
+          {controls}
+        </div>
+      </aside>
+      {mobileOpen && (
+        <button
+          className='nan-docs-backdrop'
+          aria-label={t('关闭')}
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+      <div className='nan-docs-workspace'>
+        <nav className='nan-docs-tabs' aria-label={t('文档')}>
+          <Link to={docPath('/docs', standalone)}>{t('文档')}</Link>
+          <Link to={docPath('/docs/api-examples', standalone)}>
+            {t('API 参考')}
+          </Link>
+          <Link to={docPath('/docs/clients', standalone)}>
+            {t('客户端接入')}
+          </Link>
+          <Link to={docPath('/docs/troubleshooting', standalone)}>
+            {t('常见报错排查')}
+          </Link>
+          <a
+            className='nan-docs-console'
+            href={
+              standalone
+                ? `${MAIN_ORIGIN}/console?lang=${language}`
+                : '/console'
+            }
+          >
+            {t('控制台')} ↗
+          </a>
+        </nav>
+        <div className='nan-docs-layout'>
+          <main className='nan-docs-content'>
+            {!activeDoc ? (
+              <>
+                <h1>{t('文档不存在')}</h1>
+                <Link to={docPath('/docs', standalone)}>
+                  {t('平台使用文档')}
+                </Link>
+              </>
+            ) : (
+              <>
+                <header className='nan-docs-card-header'>
+                  <span className='nan-docs-eyebrow'>{t(activeDoc.group)}</span>
+                  <div className='nan-docs-title-row'>
+                    <h1>{t(activeDoc.title)}</h1>
+                    <Button
+                      theme='borderless'
+                      icon={<Copy size={16} />}
+                      onClick={copyPage}
+                    >
+                      {t('复制')}
+                    </Button>
+                  </div>
+                  <p>{t(activeDoc.description)}</p>
+                  <span className='sr-only' role='status'>
+                    {copyStatus && t(copyStatus)}
+                  </span>
+                </header>
+                <div className='nan-docs-sync' role='status'>
+                  <Text type={runtime.failed ? 'warning' : 'tertiary'}>
+                    {runtime.loading
+                      ? t('正在更新文档配置…')
+                      : runtime.failed
+                        ? standalone
+                          ? `${t('加载失败')} · ${MAIN_ORIGIN}`
+                          : t(
+                              '部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。',
+                            )
+                        : t('地址、分组和请求样例随站点配置自动更新')}
+                  </Text>
+                  <Button
+                    theme='borderless'
+                    size='small'
+                    loading={runtime.loading}
+                    onClick={runtime.refresh}
+                  >
+                    {t('刷新')}
+                  </Button>
+                </div>
+                {(bodyLanguage.pending || bodyLanguage.failed) && (
+                  <div className='nan-docs-sync' role='status'>
+                    <Text>
+                      {t(
+                        bodyLanguage.failed
+                          ? '正文翻译加载失败，请重试。'
+                          : '正在加载正文翻译…',
+                      )}
+                    </Text>
+                    {bodyLanguage.failed && (
+                      <Button onClick={bodyLanguage.retry}>{t('重试')}</Button>
+                    )}
+                  </div>
+                )}
+                <article
+                  className='nan-docs-card'
+                  lang={bodyLanguage.ready ? language : 'zh-CN'}
+                >
+                  <MarkdownRenderer content={content} fontSize={15} />
+                </article>
+                <nav className='nan-docs-pagination' aria-label={t('选择文档')}>
+                  {index > 0 ? (
+                    <Link to={docPath(DOCS[index - 1].path, standalone)}>
+                      <ArrowLeft size={18} />
+                      {t(DOCS[index - 1].title)}
+                    </Link>
+                  ) : (
+                    <span />
+                  )}
+                  {index < DOCS.length - 1 && (
+                    <Link to={docPath(DOCS[index + 1].path, standalone)}>
+                      {t(DOCS[index + 1].title)}
+                      <ArrowRight size={18} />
+                    </Link>
+                  )}
+                </nav>
+              </>
+            )}
+            {standalone && (
+              <footer className='nan-docs-attribution'>
+                元衡 API ·{' '}
+                <a
+                  href='https://github.com/QuantumNous/new-api'
+                  target='_blank'
+                  rel='noreferrer'
+                >
+                  New API · QuantumNous
+                </a>
+              </footer>
+            )}
+          </main>
+          <aside className='nan-docs-toc'>
+            <strong>{t('本页目录')}</strong>
+            <nav aria-label={t('本页目录')}>
+              {headings.map((heading, i) => (
+                <a
+                  key={`${heading.id}-${i}`}
+                  href={`#${heading.id}`}
+                  className={heading.level === 3 ? 'nan-docs-toc-link-sub' : ''}
+                >
+                  {heading.title}
+                </a>
+              ))}
+            </nav>
+            <a href='#docs-top'>{t('返回顶部')}</a>
+          </aside>
+        </div>
       </div>
     </div>
   );

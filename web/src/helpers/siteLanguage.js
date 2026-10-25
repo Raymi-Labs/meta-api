@@ -203,6 +203,17 @@ export const createSiteLanguageStore = ({
   const initialize = (win = globalThis.window) => {
     if (initialized || !win) return;
     initialized = true;
+    // Public surfaces on separate origins exchange only an allowlisted locale.
+    // Consume it once so a later explicit choice survives a refresh.
+    if (win.location?.href) {
+      const url = new URL(win.location.href);
+      const requested = url.searchParams.get('lang');
+      if (SITE_LANGUAGES.some(([language]) => language === requested)) {
+        url.searchParams.delete('lang');
+        win.history.replaceState(win.history.state, '', url);
+        change(requested);
+      }
+    }
     if (!read(SITE_LANGUAGE_KEY) && legacyKeys.some((key) => read(key))) {
       publish({ storageError: persist(snapshot.language) });
     } else if (read(SITE_LANGUAGE_KEY)) {

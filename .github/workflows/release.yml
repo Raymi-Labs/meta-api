@@ -55,7 +55,10 @@ jobs:
           cd web
           bun install --frozen-lockfile
           DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build
+          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build:docs
           cd ..
+          tar -czf "new-api-docs-$VERSION.tar.gz" -C web/docs-dist .
+          sha256sum "new-api-docs-$VERSION.tar.gz" > "new-api-docs-$VERSION.sha256"
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
@@ -94,7 +97,7 @@ jobs:
           release = json.loads(subprocess.check_output([
               'gh', 'release', 'view', version, '--repo', repo, '--json', 'assets',
           ], text=True))
-          for filename in [f'new-api-{version}', f'new-api-arm64-{version}']:
+          for filename in [f'new-api-{version}', f'new-api-arm64-{version}', f'new-api-docs-{version}.tar.gz', f'new-api-docs-{version}.sha256']:
               existing = [a for a in release['assets'] if a['name'] == filename]
               if existing:
                   if len(existing) != 1 or existing[0]['state'] != 'uploaded' or existing[0]['size'] <= 0:

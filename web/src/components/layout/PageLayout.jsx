@@ -57,6 +57,7 @@ const PageLayout = () => {
   const location = useLocation();
 
   const isConsoleRoute = /^\/console(?:\/|$)/i.test(location.pathname);
+  const isDocsRoute = /^\/docs(?:\/|$)/i.test(location.pathname);
   const isAuthRoute = /^\/(?:login|register)\/?$/i.test(location.pathname);
   const shouldHideFooter =
     isConsoleRoute || isAuthRoute || location.pathname === '/pricing';
@@ -240,7 +241,7 @@ const PageLayout = () => {
           <Content
             style={{
               flex: '1 0 auto',
-              overflowY: isMobile ? 'visible' : 'hidden',
+              overflowY: isMobile || isDocsRoute ? 'visible' : 'hidden',
               WebkitOverflowScrolling: 'touch',
               padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
               position: 'relative',

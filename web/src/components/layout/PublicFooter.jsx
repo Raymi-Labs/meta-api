@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { buildAuthPathWithNext } from '../../helpers/authRedirect';
+import { withDocsLanguage } from '../../helpers/docsLink';
 import { prefetchAppShell } from '../../helpers/prefetchAppShell';
 import './PublicFooter.css';
 
@@ -91,7 +92,11 @@ const PublicFooter = ({
       id: 'developers',
       title: '开发者',
       links: [
-        showDocs && { text: '文档', href: docsLink, external: true },
+        showDocs && {
+          text: '文档',
+          href: withDocsLanguage(docsLink),
+          external: true,
+        },
         showDocs && { text: 'API 参考', to: '/docs/api-examples' },
         showDocs && { text: '接入指南', to: '/docs/clients' },
         showDocs && { text: 'Agent 接入', to: '/docs/clients/openclaw' },
