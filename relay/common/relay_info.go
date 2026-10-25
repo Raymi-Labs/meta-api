@@ -155,6 +155,7 @@ func isActionableResponsesOutputType(outputType string) bool {
 }
 
 type ChannelMeta struct {
+	ChannelVendor                  string
 	ChannelType                    int
 	ChannelId                      int
 	ChannelTag                     string
@@ -227,6 +228,7 @@ type RelayInfo struct {
 	IsFirstRequest                bool
 	AudioUsage                    bool
 	ReasoningEffort               string
+	ReasoningAdaptation           *ReasoningAdaptationTrace
 	UserSetting                   dto.UserSetting
 	UserEmail                     string
 	UserQuota                     int
@@ -306,12 +308,18 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	// Observations belong to this attempt, not an earlier failed channel.
 	info.ResponseModel = nil
 	info.KimiUsageEvidence = nil
+	if info.ReasoningAdaptation != nil {
+		info.ReasoningEffort = ""
+	}
+	info.ReasoningAdaptation = nil
+	common.SetContextKey(c, constant.ContextKeyReasoningAdaptation, nil)
 	channelType := common.GetContextKeyInt(c, constant.ContextKeyChannelType)
 	paramOverride := common.GetContextKeyStringMap(c, constant.ContextKeyChannelParamOverride)
 	headerOverride := common.GetContextKeyStringMap(c, constant.ContextKeyChannelHeaderOverride)
 	apiType, _ := common.ChannelType2APIType(channelType)
 	channelMeta := &ChannelMeta{
 		ChannelType:          channelType,
+		ChannelVendor:        common.GetContextKeyString(c, constant.ContextKeyChannelVendor),
 		ChannelId:            common.GetContextKeyInt(c, constant.ContextKeyChannelId),
 		ChannelTag:           common.GetContextKeyString(c, constant.ContextKeyChannelTag),
 		ChannelIsMultiKey:    common.GetContextKeyBool(c, constant.ContextKeyChannelIsMultiKey),

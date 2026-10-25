@@ -571,8 +571,14 @@ func SetupContextForSelectedChannelKey(c *gin.Context, channel *model.Channel, m
 	common.SetContextKey(c, constant.ContextKeyChannelName, channel.Name)
 	common.SetContextKey(c, constant.ContextKeyChannelTag, channel.GetTag())
 	common.SetContextKey(c, constant.ContextKeyChannelType, channel.Type)
+	channelSetting := channel.GetSetting()
+	channelVendor := ""
+	if channelSetting.ReasoningAdaptation.Mode == "auto" && (channel.Type == constant.ChannelTypeOpenAI || channel.Type == constant.ChannelTypeAzure) {
+		channelVendor = model.ResolveChannelVendor(channel)
+	}
+	common.SetContextKey(c, constant.ContextKeyChannelVendor, channelVendor)
 	common.SetContextKey(c, constant.ContextKeyChannelCreateTime, channel.CreatedTime)
-	common.SetContextKey(c, constant.ContextKeyChannelSetting, channel.GetSetting())
+	common.SetContextKey(c, constant.ContextKeyChannelSetting, channelSetting)
 	common.SetContextKey(c, constant.ContextKeyChannelOtherSetting, channel.GetOtherSettings())
 	common.SetContextKey(c, constant.ContextKeyChannelParamOverride, channel.GetParamOverride())
 	common.SetContextKey(c, constant.ContextKeyChannelHeaderOverride, channel.GetHeaderOverride())

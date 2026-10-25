@@ -6529,6 +6529,14 @@
     "你的应用": "La tua applicazione",
     "服务支持": "Assistenza",
     "卡片视图": "Vista a schede",
-    "加载失败，请重试": "Caricamento non riuscito. Riprova."
+    "加载失败，请重试": "Caricamento non riuscito. Riprova.",
+    "思考参数适配": "Adattamento dei parametri di ragionamento",
+    "继承全局映射": "Usa la mappatura globale",
+    "按厂商自动适配": "Adatta automaticamente per fornitore",
+    "智谱 GLM-5.3 Chat 模板": "Modello Zhipu GLM-5.3 Chat",
+    "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Si applica solo ai modelli registrati con inoltro OpenAI/Azure Chat; il passaggio diretto e gli altri protocolli mantengono il comportamento esistente.",
+    "渠道专属规则（可选）": "Regole del canale (facoltative)",
+    "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "La corrispondenza esatta del modello a monte prevale sul modello di configurazione; le sostituzioni dei parametri si applicano per ultime.",
+    "思考参数适配配置无效": "Configurazione di adattamento del ragionamento non valida"
   }
 }

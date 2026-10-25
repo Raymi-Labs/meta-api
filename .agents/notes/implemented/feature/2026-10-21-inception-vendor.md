@@ -14,6 +14,8 @@ Inception 的 Mercury 模型使用兼容 Chat Completions 的接口，但渠道�
 
 不新增渠道类型、定价、模型路由、密钥或可用模型。不把 Decide、Edit 或扩散过程可视化视为已适配的聊天接口。当前图标库无 Inception，沿用既有首字母图标回退，不冒用小米图标或升级整个依赖。
 
+[渠道思考适配](2026-10-25-channel-reasoning-profiles.md)在显式启用 auto 时复用厂商归属选择精确模型模板；单独更改展示分类仍不改变选渠与协议，旧渠道缺省保留原行为。
+
 ## Existing capability review
 
 - 渠道编辑/分类 → channel controller → channel_vendor.go，已有 category 与 vendor 筛选、计数和持久化。

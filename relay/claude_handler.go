@@ -160,7 +160,7 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		!info.ChannelSetting.PassThroughBodyEnabled &&
 		shouldUseResponsesBridgeForClaude(info) {
 		webSearchRequested := claudeRequestUsesWebSearch(request)
-		openAIRequest, convErr := service.ClaudeToOpenAIRequest(c, *request, info)
+		openAIRequest, convErr := service.ClaudeToOpenAIRequestForProtocol(c, *request, info, "responses")
 		if convErr != nil {
 			return types.NewError(convErr, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 		}
@@ -213,6 +213,7 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		if common.DebugEnabled {
 			println("requestBody: ", string(jsonData))
 		}
+		service.CaptureFinalReasoningAdaptation(c, info, jsonData)
 		healRequestJSON = jsonData
 		requestBody = bytes.NewBuffer(jsonData)
 	}

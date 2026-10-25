@@ -340,6 +340,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 		request.Messages[0].Role = "developer"
 	}
 
+	service.AdaptNativeChatReasoning(info, request)
 	return request, nil
 }
 

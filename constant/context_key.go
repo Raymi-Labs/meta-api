@@ -35,6 +35,8 @@ const (
 	ContextKeyChannelTag               ContextKey = "channel_tag"
 	ContextKeyChannelCreateTime        ContextKey = "channel_create_time"
 	ContextKeyChannelBaseUrl           ContextKey = "base_url"
+	ContextKeyChannelVendor            ContextKey = "channel_vendor"
+	ContextKeyReasoningAdaptation      ContextKey = "reasoning_adaptation_trace"
 	ContextKeyChannelType              ContextKey = "channel_type"
 	ContextKeyChannelSetting           ContextKey = "channel_setting"
 	ContextKeyChannelOtherSetting      ContextKey = "channel_other_setting"

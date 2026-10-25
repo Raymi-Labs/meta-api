@@ -6529,6 +6529,14 @@
     "你的应用": "Je app",
     "服务支持": "Ondersteuning",
     "卡片视图": "Kaartweergave",
-    "加载失败，请重试": "Laden mislukt. Probeer het opnieuw."
+    "加载失败，请重试": "Laden mislukt. Probeer het opnieuw.",
+    "思考参数适配": "Aanpassing van redeneerparameters",
+    "继承全局映射": "Globale toewijzing gebruiken",
+    "按厂商自动适配": "Automatisch aanpassen per leverancier",
+    "智谱 GLM-5.3 Chat 模板": "Zhipu GLM-5.3 Chat-sjabloon",
+    "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Geldt alleen voor geregistreerde modellen met OpenAI/Azure Chat-doorsturing; directe doorgifte en andere protocollen blijven ongewijzigd.",
+    "渠道专属规则（可选）": "Kanaalregels (optioneel)",
+    "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Een exacte match met het upstreammodel gaat voor het sjabloon; parameteroverschrijvingen worden als laatste toegepast.",
+    "思考参数适配配置无效": "Ongeldige configuratie voor redeneeraanpassing"
   }
 }

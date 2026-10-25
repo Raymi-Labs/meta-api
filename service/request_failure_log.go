@@ -86,6 +86,7 @@ func AppendRequestFailureAttempt(c *gin.Context, channel types.ChannelError, err
 		list = list[len(list)-4:]
 	}
 	attempt := map[string]interface{}{"channel_id": channel.ChannelId, "status_code": err.StatusCode, "error_code": err.GetErrorCode(), "message": requestLogMessage(err)}
+	AppendReasoningAdaptationAdminInfo(c, attempt)
 	if err.Upstream != nil {
 		attempt["upstream"] = *err.Upstream
 	}
@@ -127,6 +128,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "model_unavailable", "当前令牌可用范围内未找到该模型", "请使用同一令牌查询 /v1/models，核对模型名称、令牌分组及渠道限制。"
 	case upstream && err.StatusCode == http.StatusBadRequest && upstreamError.Type == "invalid_request_error" && IsDeepSeekMissingThinkingHistory(upstreamError.Message):
 		return "thinking_history", "对话历史缺少思考内容", "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。"
+	case upstream && isReasoningEffortRejection(err):
+		return "reasoning_parameter", "上游不支持当前思考强度", "请调整思考强度；若仍失败，请携带请求 ID 联系管理员核对渠道思考参数适配。"
 	case upstream && err.StatusCode == http.StatusBadRequest && rejectedSampling != "":
 		return "sampling_parameter", "上游模型不支持当前采样参数", fmt.Sprintf("请关闭客户端自定义 %s 参数后重试；若仍失败，请携带请求 ID 联系管理员。", rejectedSampling)
 	case code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed):
@@ -214,6 +217,7 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 	}
 	AppendChannelAffinityAdminInfo(c, adminInfo)
 	AppendRelayHTTPTimeout(c, adminInfo)
+	AppendReasoningAdaptationAdminInfo(c, adminInfo)
 	AppendUpstreamRequestIDs(c, adminInfo)
 	other["admin_info"] = adminInfo
 	group := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)

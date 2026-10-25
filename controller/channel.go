@@ -613,7 +613,10 @@ func clientRestrictionValidationMessage(err error) string {
 	if strings.Contains(err.Error(), "allowlist client_restriction_clients cannot be empty") {
 		return "白名单模式至少选择一个客户端"
 	}
-	return "无效的客户端限制模式"
+	if strings.Contains(err.Error(), "client_restriction") {
+		return "无效的客户端限制模式"
+	}
+	return ""
 }
 
 // validateChannel 通用的渠道校验函数

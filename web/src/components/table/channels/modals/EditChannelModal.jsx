@@ -67,6 +67,9 @@ import {
   renderGroupOption,
   selectFilter,
 } from '../../../../helpers';
+import ReasoningAdaptationEditor from './ReasoningAdaptationEditor';
+import { readReasoningAdaptation, buildReasoningAdaptation } from '../../../../helpers/channelReasoningAdaptation';
+
 import ModelSelectModal from './ModelSelectModal';
 import SingleModelSelectModal from './SingleModelSelectModal';
 import OllamaModelModal from './OllamaModelModal';
@@ -174,6 +177,8 @@ const EditChannelModal = (props) => {
     name: '',
     type: 1,
     channel_vendor: 'auto',
+    reasoning_adaptation_mode: 'auto',
+    reasoning_adaptation_rules: '[]',
     key: '',
     openai_organization: '',
     max_input_tokens: 0,
@@ -908,6 +913,8 @@ const EditChannelModal = (props) => {
         data.quota_policy_quota_limit = 0;
         data.quota_policy_count_limit = 0;
       }
+
+      Object.assign(data, readReasoningAdaptation(data.setting));
 
       if (data.settings) {
         try {
@@ -1916,9 +1923,20 @@ const EditChannelModal = (props) => {
       showError(t('非流式响应头超时必须为 0 到 600 的整数'));
       return;
     }
+    let reasoningAdaptation;
+    try {
+      reasoningAdaptation = buildReasoningAdaptation(
+        localInputs.reasoning_adaptation_mode || 'inherit',
+        localInputs.reasoning_adaptation_rules,
+      );
+    } catch (error) {
+      showError(t('思考参数适配配置无效') + ': ' + error.message);
+      return;
+    }
     // 生成渠道额外设置JSON
     const channelExtraSettings = {
       ...originalChannelExtraSettings,
+      reasoning_adaptation: reasoningAdaptation,
       force_format: localInputs.force_format || false,
       cpa_user_identity_enabled: localInputs.cpa_user_identity_enabled === true,
       cpa_instance_id: (localInputs.cpa_instance_id || '').trim(),
@@ -2037,6 +2055,8 @@ const EditChannelModal = (props) => {
     localInputs.settings = JSON.stringify(settings);
 
     // 清理不需要发送到后端的字段
+    delete localInputs.reasoning_adaptation_mode;
+    delete localInputs.reasoning_adaptation_rules;
     delete localInputs.force_format;
     delete localInputs.cpa_user_identity_enabled;
     delete localInputs.cpa_instance_id;
@@ -2577,6 +2597,13 @@ const EditChannelModal = (props) => {
                       extraText={t(
                         '仅当全部模型属于同一已知厂商时才会自动归类，混合模型渠道仍按渠道类型展示。',
                       )}
+                    />
+
+                    <ReasoningAdaptationEditor
+                      mode={inputs.reasoning_adaptation_mode || 'inherit'}
+                      rules={inputs.reasoning_adaptation_rules || '[]'}
+                      onModeChange={(value) => handleInputChange('reasoning_adaptation_mode', value)}
+                      onRulesChange={(value) => handleInputChange('reasoning_adaptation_rules', value)}
                     />
 
                     {inputs.type === 57 && (

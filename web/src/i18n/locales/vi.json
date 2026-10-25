@@ -7146,6 +7146,14 @@
     "你的应用": "Ứng dụng của bạn",
     "服务支持": "Hỗ trợ",
     "卡片视图": "Chế độ thẻ",
-    "加载失败，请重试": "Không tải được. Vui lòng thử lại."
+    "加载失败，请重试": "Không tải được. Vui lòng thử lại.",
+    "思考参数适配": "Điều chỉnh tham số suy luận",
+    "继承全局映射": "Dùng ánh xạ chung",
+    "按厂商自动适配": "Tự động điều chỉnh theo nhà cung cấp",
+    "智谱 GLM-5.3 Chat 模板": "Mẫu Zhipu GLM-5.3 Chat",
+    "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Chỉ áp dụng cho mô hình đã đăng ký chuyển tiếp qua OpenAI/Azure Chat; truyền nguyên trạng và giao thức khác giữ hành vi hiện tại.",
+    "渠道专属规则（可选）": "Quy tắc riêng của kênh (tùy chọn)",
+    "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Khớp chính xác mô hình phía nhà cung cấp được ưu tiên hơn mẫu; ghi đè tham số được áp dụng cuối cùng.",
+    "思考参数适配配置无效": "Cấu hình điều chỉnh suy luận không hợp lệ"
   }
 }

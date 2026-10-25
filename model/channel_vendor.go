@@ -19,7 +19,8 @@ const (
 	ChannelCategoryVendorPrefix = "vendor:"
 )
 
-// Display vendors only affect management classification, never relay routing.
+// Display vendors never change channel selection or protocol. Opt-in reasoning
+// adaptation may use the resolved vendor to select a bounded model template.
 var channelVendorSegments = map[string][]string{
 	"mimo":      {"mimo"},
 	"deepseek":  {"deepseek"},

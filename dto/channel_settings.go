@@ -110,6 +110,8 @@ func (p QuotaPolicy) Validate() error {
 }
 
 type ChannelSettings struct {
+	ReasoningAdaptation ReasoningAdaptation `json:"reasoning_adaptation,omitempty"`
+
 	// 0 inherits the default; only non-streaming text relay requests use this override.
 	NonStreamResponseHeaderTimeoutSec int `json:"nonstream_response_header_timeout_sec,omitempty"`
 
@@ -139,6 +141,9 @@ type ChannelSettings struct {
 }
 
 func (s ChannelSettings) Validate() error {
+	if err := s.ReasoningAdaptation.Validate(); err != nil {
+		return err
+	}
 	if s.NonStreamResponseHeaderTimeoutSec < 0 || s.NonStreamResponseHeaderTimeoutSec > 600 {
 		return fmt.Errorf("nonstream_response_header_timeout_sec must be an integer from 0 to 600")
 	}

@@ -6741,6 +6741,14 @@
     "你的应用": "Your app",
     "服务支持": "Support",
     "卡片视图": "Card view",
-    "加载失败，请重试": "Failed to load. Please try again."
+    "加载失败，请重试": "Failed to load. Please try again.",
+    "思考参数适配": "Reasoning parameter adaptation",
+    "继承全局映射": "Use global mapping",
+    "按厂商自动适配": "Adapt automatically by vendor",
+    "智谱 GLM-5.3 Chat 模板": "Zhipu GLM-5.3 Chat template",
+    "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Applies only to registered models using OpenAI/Azure Chat forwarding; passthrough and other protocols keep their existing behavior.",
+    "渠道专属规则（可选）": "Channel rules (optional)",
+    "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Exact upstream model match, before template defaults; parameter overrides run last.",
+    "思考参数适配配置无效": "Invalid reasoning adaptation configuration"
   }
 }

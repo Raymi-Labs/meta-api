@@ -34,6 +34,10 @@ var allowedOpenAIReasoningEfforts = map[string]struct{}{
 }
 
 func ClaudeToOpenAIRequest(c *gin.Context, claudeRequest dto.ClaudeRequest, info *relaycommon.RelayInfo) (*dto.GeneralOpenAIRequest, error) {
+	return ClaudeToOpenAIRequestForProtocol(c, claudeRequest, info, "chat")
+}
+
+func ClaudeToOpenAIRequestForProtocol(c *gin.Context, claudeRequest dto.ClaudeRequest, info *relaycommon.RelayInfo, protocol string) (*dto.GeneralOpenAIRequest, error) {
 	openAIRequest := dto.GeneralOpenAIRequest{
 		Model:       claudeRequest.Model,
 		MaxTokens:   claudeRequest.MaxTokens,
@@ -46,7 +50,7 @@ func ClaudeToOpenAIRequest(c *gin.Context, claudeRequest dto.ClaudeRequest, info
 
 	isOpenRouter := info.ChannelType == constant.ChannelTypeOpenRouter
 
-	reasoningEffort := inferClaudeReasoningEffort(claudeRequest)
+	reasoningEffort := claudeReasoningForProtocol(claudeRequest, info, protocol)
 	if info != nil && reasoningEffort != "" {
 		info.ReasoningEffort = reasoningEffort
 	}
@@ -393,7 +397,7 @@ func getClaudeToOpenAIReasoningMap() map[string]string {
 	return mapping
 }
 
-func mapClaudeOutputConfigToOpenAIReasoningEffort(outputConfig any) string {
+func claudeOutputConfigEffort(outputConfig any) string {
 	if outputConfig == nil {
 		return ""
 	}
@@ -426,7 +430,11 @@ func mapClaudeOutputConfigToOpenAIReasoningEffort(outputConfig any) string {
 		}
 	}
 
-	effort := strings.TrimSpace(strings.ToLower(payload.Effort))
+	return strings.TrimSpace(strings.ToLower(payload.Effort))
+}
+
+func mapClaudeOutputConfigToOpenAIReasoningEffort(outputConfig any) string {
+	effort := claudeOutputConfigEffort(outputConfig)
 	if effort == "" {
 		return ""
 	}
