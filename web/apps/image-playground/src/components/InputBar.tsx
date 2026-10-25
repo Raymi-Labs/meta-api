@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useRef, useEffect, useCallback, useState, useMemo, useLayoutEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore, submitTask, submitAgentMessage, stopAgentResponse, addImageFromFile, createInputImageFromFile, deleteImageIfUnreferenced, updateTaskInStore, removeMultipleTasks, getCachedImage, ensureImageCached, getActiveAgentRounds } from '../store'
@@ -592,12 +593,12 @@ export default function InputBar() {
   const hasSubmitApiConfig = Boolean(activeProfile.apiKey)
   const canSubmit = Boolean(prompt.trim() && hasSubmitApiConfig && !activeAgentIsRunning)
   const submitButtonAriaLabel = activeAgentIsRunning
-    ? '停止生成'
+    ? t("停止生成")
     : hasSubmitApiConfig
-    ? maskDraft ? '遮罩编辑' : '生成图像'
-    : '请先配置 API'
-  const submitTooltipText = activeAgentIsRunning ? '停止生成' : '尚未完成 API 配置，请在右上角设置中进行'
-  const promptPlaceholder = '描述你想生成的图片，可输入 @ 来指定参考图...'
+    ? maskDraft ? t("遮罩编辑") : t("生成图像")
+    : t("请先配置 API")
+  const submitTooltipText = activeAgentIsRunning ? t("停止生成") : t("尚未完成 API 配置，请在右上角设置中进行")
+  const promptPlaceholder = t("描述你想生成的图片，可输入 @ 来指定参考图...")
   const submitCurrentMode = useCallback(() => {
     if (appMode === 'agent') {
       void submitAgentMessage()
@@ -628,10 +629,10 @@ export default function InputBar() {
   const effectiveNValue = Number.isNaN(nDraftValue) ? params.n : nDraftValue
   const streamConcurrentByN = activeProfile.provider === 'openai' && activeProfile.streamImages === true && !agentAutoImageCount && effectiveNValue > 1
   const nLimitHintText = agentAutoImageCount
-    ? 'Agent 模式下数量由模型根据提示词自动决定'
+    ? t("Agent 模式下数量由模型根据提示词自动决定")
     : isFalProvider
-    ? `fal.ai 最大请求数量为 ${outputImageLimit}`
-    : `OpenAI 最大请求数量为 ${outputImageLimit}`
+    ? t("fal.ai 最大请求数量为 {{value0}}", { value0: (outputImageLimit) })
+    : t("OpenAI 最大请求数量为 {{value0}}", { value0: (outputImageLimit) })
   const displaySize = isFalTextToImage && params.size === 'auto'
     ? DEFAULT_FAL_IMAGE_SIZE
     : normalizeImageSize(params.size) || DEFAULT_PARAMS.size
@@ -649,7 +650,7 @@ export default function InputBar() {
         { label: 'high', value: 'high' },
       ]
   const atImageLimit = inputImages.length >= API_MAX_IMAGES
-  const uploadImageTooltipText = atImageLimit ? `参考图数量已达上限（${API_MAX_IMAGES} 张），无法继续添加` : '上传图片'
+  const uploadImageTooltipText = atImageLimit ? t("参考图数量已达上限（{{value0}} 张），无法继续添加", { value0: (API_MAX_IMAGES) }) : t("上传图片")
   const compressionHint = useHintTooltip({ enabled: () => compressionDisabled })
   const moderationHint = useHintTooltip({ enabled: () => moderationDisabled })
   const sizeHint = useHintTooltip({ enabled: () => isFalTextToImage })
@@ -1474,7 +1475,7 @@ export default function InputBar() {
   const renderImageThumb = (img: (typeof inputImages)[number], idx: number) => {
     const isMaskTarget = maskDraft?.targetImageId === img.id
     const canEdit = !maskTargetImage || isMaskTarget
-    const imageHintText = isMaskTarget ? '遮罩图必须为第一张图' : ''
+    const imageHintText = isMaskTarget ? t("遮罩图必须为第一张图") : ''
     const displaySrc = isMaskTarget && maskPreviewUrl ? maskPreviewUrl : img.dataUrl
     const isImageDragging = imageDragIndex === idx
     const isLast = idx === inputImages.length - 1
@@ -1671,7 +1672,7 @@ export default function InputBar() {
                 e.stopPropagation()
                 handleEditReferenceImage(img, idx, isMaskTarget)
               }}
-              title={isMaskTarget ? "编辑遮罩" : "编辑"}
+              title={isMaskTarget ? t("编辑遮罩") : t("编辑")}
             >
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -1708,12 +1709,12 @@ export default function InputBar() {
         })
       }
       className="w-[52px] h-[52px] rounded-xl border border-dashed border-gray-300 dark:border-white/[0.08] flex flex-col items-center justify-center gap-0.5 text-gray-400 dark:text-gray-500 hover:text-red-500 hover:border-red-300 hover:bg-red-50/50 dark:hover:bg-red-950/30 transition-all cursor-pointer flex-shrink-0"
-      title={maskTargetImage ? '清空遮罩主图、参考图和遮罩' : '清空全部参考图'}
+      title={maskTargetImage ? t("清空遮罩主图、参考图和遮罩") : t("清空全部参考图")}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
       </svg>
-      <span className="text-[8px] leading-none">{maskTargetImage ? '清空全部' : '清空'}</span>
+      <span className="text-[8px] leading-none">{maskTargetImage ? t("清空全部") : t("清空")}</span>
     </button>
   )
 
@@ -1748,18 +1749,18 @@ export default function InputBar() {
         onTouchCancel={sizeHint.hide}
         onClick={sizeHint.show}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">尺寸</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("尺寸")}</span>
         <button
           type="button"
           onClick={() => { dismissAllTooltips(); setShowSizePicker(true) }}
           className="px-3 py-1.5 rounded-xl border border-gray-200/60 dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06] focus:outline-none text-xs text-left transition-all duration-200 shadow-sm font-mono"
-          title="选择尺寸"
+          title={t("选择尺寸")}
         >
           {displaySize}
         </button>
         <ButtonTooltip
           visible={isFalTextToImage && sizeHint.visible}
-          text={<>fal.ai 的文生图模式不支持 <code className="rounded bg-white/10 px-1 py-0.5 font-mono">auto</code> 参数</>}
+          text={<>{t("fal.ai 的文生图模式不支持")} <code className="rounded bg-white/10 px-1 py-0.5 font-mono">auto</code>  {t("参数")}</>}
         />
       </label>
       <label
@@ -1771,7 +1772,7 @@ export default function InputBar() {
         onTouchCancel={qualityHint.hide}
         onClick={qualityHint.show}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">质量</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("质量")}</span>
         <Select
           value={settings.codexCli ? 'auto' : isFalProvider && params.quality === 'auto' ? 'high' : params.quality}
           onChange={(val) => {
@@ -1785,11 +1786,11 @@ export default function InputBar() {
         />
         <ButtonTooltip
           visible={(settings.codexCli || isFalProvider) && qualityHint.visible}
-          text={isFalProvider ? <>fal.ai 不支持 <code className="rounded bg-white/10 px-1 py-0.5 font-mono">auto</code> 质量参数</> : 'Codex CLI 不支持质量参数'}
+          text={isFalProvider ? <>{t("fal.ai 不支持")} <code className="rounded bg-white/10 px-1 py-0.5 font-mono">auto</code>  {t("质量参数")}</> : t("Codex CLI 不支持质量参数")}
         />
       </label>
       <label className="flex flex-col gap-0.5">
-        <span className="text-gray-400 dark:text-gray-500 ml-1">格式</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("格式")}</span>
         <Select
           value={params.output_format}
           onChange={(val) => setParams({ output_format: val as any })}
@@ -1810,7 +1811,7 @@ export default function InputBar() {
         onTouchCancel={compressionHint.hide}
         onClick={compressionHint.show}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">压缩率</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("压缩率")}</span>
         <input
           value={outputCompressionInput}
           onChange={(e) => setOutputCompressionInput(e.target.value)}
@@ -1828,7 +1829,7 @@ export default function InputBar() {
         />
         <ButtonTooltip
           visible={compressionHint.visible}
-          text={isFalProvider ? 'fal.ai 不支持压缩率参数' : '仅 JPEG 和 WebP 支持压缩率'}
+          text={isFalProvider ? t("fal.ai 不支持压缩率参数") : t("仅 JPEG 和 WebP 支持压缩率")}
         />
       </label>
       <label
@@ -1840,7 +1841,7 @@ export default function InputBar() {
         onTouchCancel={moderationHint.hide}
         onClick={moderationHint.show}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">审核</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("审核")}</span>
         <Select
           value={moderationDisabled ? 'auto' : params.moderation}
           onChange={(val) => {
@@ -1857,7 +1858,7 @@ export default function InputBar() {
         />
         <ButtonTooltip
           visible={moderationDisabled && moderationHint.visible}
-          text="fal.ai 不支持审核参数"
+          text={t("fal.ai 不支持审核参数")}
         />
       </label>
       <label
@@ -1872,7 +1873,7 @@ export default function InputBar() {
         }}
         onClick={showAgentNHint}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">数量</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">{t("数量")}</span>
         <input
           value={nInput}
           onChange={(e) => handleNInputChange(e.target.value)}
@@ -1902,7 +1903,7 @@ export default function InputBar() {
           }`}
         />
         <ButtonTooltip visible={nLimitHint.visible} text={nLimitHintText} />
-        <ButtonTooltip visible={streamConcurrentByN && !nLimitHint.visible} text="数量大于 1 时会将多图生成拆分为并发单图" />
+        <ButtonTooltip visible={streamConcurrentByN && !nLimitHint.visible} text={t("数量大于 1 时会将多图生成拆分为并发单图")} />
       </label>
     </div>
   )
@@ -1929,13 +1930,13 @@ export default function InputBar() {
             <div className="text-center">
               {atImageLimit ? (
                 <>
-                  <p className="text-lg font-semibold text-red-500">已达上限 {API_MAX_IMAGES} 张</p>
-                  <p className="text-sm text-gray-400 mt-1">请先移除部分参考图后再添加</p>
+                  <p className="text-lg font-semibold text-red-500">{t('已达上限 {{count}} 张', { count: API_MAX_IMAGES })}</p>
+                  <p className="text-sm text-gray-400 mt-1">{t("请先移除部分参考图后再添加")}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">释放以上传图片</p>
-                  <p className="text-sm text-gray-400 mt-1">支持 JPG、PNG、WebP 等格式</p>
+                  <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t("释放以上传图片")}</p>
+                  <p className="text-sm text-gray-400 mt-1">{t("支持 JPG、PNG、WebP 等格式")}</p>
                 </>
               )}
             </div>
@@ -1959,7 +1960,7 @@ export default function InputBar() {
               <button
                 onClick={clearSelection}
                 className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                title="取消选择"
+                title={t("取消选择")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1969,7 +1970,7 @@ export default function InputBar() {
               <button
                 onClick={handleSelectAllToggle}
                 className="p-2 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
-                title={selectedTaskIds.length === filteredTasks.length && filteredTasks.length > 0 ? "取消全选" : "全选当前可见"}
+                title={selectedTaskIds.length === filteredTasks.length && filteredTasks.length > 0 ? t("取消全选") : t("全选当前可见")}
               >
                 {selectedTaskIds.length === filteredTasks.length && filteredTasks.length > 0 ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -1986,7 +1987,7 @@ export default function InputBar() {
               <button
                 onClick={handleToggleFavorite}
                 className="p-2 text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition-colors"
-                title="收藏/取消收藏"
+                title={t("收藏/取消收藏")}
               >
                 {selectedTaskIds.length > 0 && selectedTaskIds.every((id) => tasks.find((t) => t.id === id)?.isFavorite) ? (
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -2002,7 +2003,7 @@ export default function InputBar() {
               <button
                 onClick={handleDownloadSelected}
                 className="p-2 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"
-                title="批量下载"
+                title={t("批量下载")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -2012,7 +2013,7 @@ export default function InputBar() {
               <button
                 onClick={handleDeleteSelected}
                 className="p-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
-                title="删除选中"
+                title={t("删除选中")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -2048,7 +2049,7 @@ export default function InputBar() {
                 </div>
                 {mobileCollapsed && (
                   <div className="text-xs text-gray-400 dark:text-gray-500 mb-2 ml-1">
-                    {maskDraft ? `1 张遮罩主图 · ${referenceImages.length} 张参考图` : `${inputImages.length} 张参考图`}
+                    {maskDraft ? t("1 张遮罩主图 · {{value0}} 张参考图", { value0: (referenceImages.length) }) : t("{{value0}} 张参考图", { value0: (inputImages.length) })}
                   </div>
                 )}
               </>
@@ -2061,7 +2062,7 @@ export default function InputBar() {
           <div className="relative grid">
             {showAtImageMenu && (
               <div style={{ left: `${menuLeft}px` }} className="absolute bottom-full z-50 mb-2 w-64 overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur-xl dark:border-white/[0.08] dark:bg-gray-900/95 dark:ring-white/10">
-                <div className="px-2 pb-1 pt-0.5 text-[11px] text-gray-400 dark:text-gray-500">选择图片引用</div>
+                <div className="px-2 pb-1 pt-0.5 text-[11px] text-gray-400 dark:text-gray-500">{t("选择图片引用")}</div>
                 <div className="max-h-56 overflow-y-auto custom-scrollbar">
                   {atImageOptions.map((option, optionIndex) => (
                     <button
@@ -2080,7 +2081,7 @@ export default function InputBar() {
                     >
                       <AtImageOptionThumb option={option} />
                       <span className="min-w-0 flex-1 truncate font-medium">{option.label}</span>
-                      {option.type === 'agent-output' && <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">历史</span>}
+                      {option.type === 'agent-output' && <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">{t("历史")}</span>}
                     </button>
                   ))}
                 </div>
@@ -2145,7 +2146,7 @@ export default function InputBar() {
                 className={`absolute right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.08] rounded-full p-1 transition-all duration-200 focus:outline-none z-10 flex items-center justify-center ${
                   isSingleLine ? 'top-1/2 -translate-y-1/2' : 'top-3'
                 }`}
-                title="清空文本"
+                title={t("清空文本")}
               >
                 <CloseIcon className="w-3.5 h-3.5" />
               </button>
@@ -2269,8 +2270,7 @@ export default function InputBar() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          拍照
-                        </button>
+                          {t("拍照")}</button>
                         <button
                           className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-2 transition-colors"
                           onClick={() => {
@@ -2281,8 +2281,7 @@ export default function InputBar() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                           </svg>
-                          上传图片
-                        </button>
+                          {t("上传图片")}</button>
                       </div>
                     </>
                   )}
@@ -2314,7 +2313,7 @@ export default function InputBar() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     )}
-                    {activeAgentIsRunning ? '停止生成' : maskDraft ? '遮罩编辑' : '生成图像'}
+                    {activeAgentIsRunning ? t("停止生成") : maskDraft ? t("遮罩编辑") : t("生成图像")}
                   </button>
                 </div>
               </div>

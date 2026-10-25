@@ -8,7 +8,10 @@ import {
   createPublicLanguageStore,
   normalizePublicLanguage,
 } from '../src/helpers/publicLanguage.js';
-import { SUPPORTED_LOCALES } from '../src/helpers/localeNormalize.js';
+import {
+  SUPPORTED_LOCALES,
+  SITE_LANGUAGE_KEY,
+} from '../src/helpers/localeNormalize.js';
 import { PUBLIC_POLICIES } from '../src/pages/PublicLegal/content.js';
 
 const expectedLanguages = [
@@ -126,11 +129,11 @@ test('browser and saved aliases resolve consistently without losing Chinese vari
   }
 });
 
-test('all 15 lazy dictionaries cover the 176 public keys and preserve API identifiers', () => {
+test('all lazy dictionaries cover the public catalog and preserve API identifiers', () => {
   const keys = readLocale('keys');
   const english = readLocale('en');
-  assert.equal(keys.length, 176);
-  assert.equal(new Set(keys).size, 176);
+  assert.ok(keys.length >= 176);
+  assert.equal(new Set(keys).size, keys.length);
   assert.ok(
     keys.every(
       (key) => typeof english[key] === 'string' && english[key].trim(),
@@ -223,7 +226,7 @@ test('public pages, navigation and translated data labels are covered by the key
     }
     for (const key of used) assert.ok(keys.has(key), `${file}: ${key}`);
   }
-  // Policy bodies intentionally remain Chinese; only document titles are UI.
+  // Policy bodies use the separate content dictionary; titles belong to UI.
   for (const policy of PUBLIC_POLICIES) {
     assert.ok(keys.has(policy.title), `policy title: ${policy.title}`);
   }
@@ -240,17 +243,14 @@ test('real lazy JSON imports can select and translate every public language', as
   }
 });
 
-test('the console keeps its seven supported languages while new public choices fall back to English there', async () => {
-  const consoleLanguages = ['zh-CN', 'zh-TW', 'en', 'fr', 'ru', 'ja', 'vi'];
-  assert.deepEqual(SUPPORTED_LOCALES, consoleLanguages);
+test('console and public choices share all 17 canonical languages and one storage key', async () => {
+  assert.deepEqual(SUPPORTED_LOCALES, expectedLanguages);
   const { store, storage } = fixture();
   for (const language of expectedLanguages) {
     await store.change(language);
-    assert.equal(storage.getItem(PUBLIC_LANGUAGE_KEY), language);
-    assert.equal(
-      storage.getItem(CONSOLE_LANGUAGE_KEY),
-      consoleLanguages.includes(language) ? language : 'en',
-    );
+    assert.equal(storage.getItem(SITE_LANGUAGE_KEY), language);
+    assert.equal(storage.getItem(PUBLIC_LANGUAGE_KEY), null);
+    assert.equal(storage.getItem(CONSOLE_LANGUAGE_KEY), null);
     assert.equal(store.getSnapshot().language, language);
   }
 });
@@ -277,7 +277,7 @@ test('a lazy selection changes visible language and storage only after loading s
     },
   );
   assert.equal(store.translate('首页'), 'Accueil');
-  assert.equal(storage.getItem(PUBLIC_LANGUAGE_KEY), 'fr');
+  assert.equal(storage.getItem(SITE_LANGUAGE_KEY), 'fr');
 });
 
 test('a failed import preserves the previous language and can be retried', async () => {
@@ -318,7 +318,7 @@ test('out-of-order loads and stale errors cannot replace the most recent choice'
     assert.equal(store.getSnapshot().language, 'de');
     assert.equal(store.getSnapshot().pending, null);
     assert.equal(store.getSnapshot().error, false);
-    assert.equal(storage.getItem(PUBLIC_LANGUAGE_KEY), 'de');
+    assert.equal(storage.getItem(SITE_LANGUAGE_KEY), 'de');
   }
 });
 
@@ -337,7 +337,7 @@ test('returning to the visible language cancels a pending choice without another
   assert.equal(await pending, false);
   assert.equal(store.getSnapshot().language, 'en');
   assert.equal(store.getSnapshot().pending, null);
-  assert.equal(storage.getItem(PUBLIC_LANGUAGE_KEY), 'en');
+  assert.equal(storage.getItem(SITE_LANGUAGE_KEY), 'en');
   assert.equal(loads, 1);
   assert.equal(await store.change('fr'), true);
   assert.equal(loads, 1, 'a superseded successful import can be reused');

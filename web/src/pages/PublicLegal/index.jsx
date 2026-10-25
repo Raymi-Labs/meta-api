@@ -20,12 +20,19 @@ import React from 'react';
 import { ArrowLeft, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePublicTranslation } from '../../helpers/publicLocale';
+import { PUBLIC_LANGUAGES } from '../../helpers/publicLanguage';
+import { useContentLanguage } from '../../helpers/contentLanguageReact';
 import { PUBLIC_POLICIES, POLICY_UPDATED_AT, getPublicPolicy } from './content';
 import PrivacyChoices from './PrivacyChoices';
 import './publicLegal.css';
 
 export default function PublicLegal({ status = {} }) {
-  const { t } = usePublicTranslation();
+  const { t, language } = usePublicTranslation();
+  const bodyLanguage = useContentLanguage(language);
+  const bodyLang = bodyLanguage.ready ? language : 'zh-CN';
+  const bodyLanguageName = PUBLIC_LANGUAGES.find(
+    ([code]) => code === bodyLang,
+  )?.[1];
   const { pathname } = useLocation();
   const privacyChoices = /^\/privacy-choices\/?$/.test(pathname);
   const slug = pathname.replace(/^\/legal\/?/, '').replace(/\/$/, '');
@@ -59,7 +66,9 @@ export default function PublicLegal({ status = {} }) {
         <h1>{t(title)}</h1>
         {policy && (
           <p className='public-legal-meta'>
-            <span>{t('正文语言：简体中文')}</span>
+            <span>
+              {t('正文语言')}：{bodyLanguageName}
+            </span>
             <span>
               {t('更新日期')}{' '}
               <time dateTime={POLICY_UPDATED_AT}>{POLICY_UPDATED_AT}</time>
@@ -86,13 +95,29 @@ export default function PublicLegal({ status = {} }) {
           {privacyChoices ? (
             <PrivacyChoices t={t} />
           ) : policy ? (
-            <article lang='zh-CN'>
-              <p className='public-legal-intro'>{policy.intro}</p>
+            <article lang={bodyLang}>
+              {(bodyLanguage.pending || bodyLanguage.failed) && (
+                <p className='public-legal-translation' role='status'>
+                  {t(
+                    bodyLanguage.failed
+                      ? '正文翻译加载失败，请重试。'
+                      : '正在加载正文翻译…',
+                  )}
+                  {bodyLanguage.failed && (
+                    <button type='button' onClick={bodyLanguage.retry}>
+                      {t('重试')}
+                    </button>
+                  )}
+                </p>
+              )}
+              <p className='public-legal-intro'>
+                {bodyLanguage.translate(policy.intro)}
+              </p>
               {policy.sections.map((section) => (
                 <section key={section.title}>
-                  <h2>{section.title}</h2>
+                  <h2>{bodyLanguage.translate(section.title)}</h2>
                   {section.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
+                    <p key={paragraph}>{bodyLanguage.translate(paragraph)}</p>
                   ))}
                 </section>
               ))}

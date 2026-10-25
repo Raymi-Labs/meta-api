@@ -19,27 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useEffect, useSyncExternalStore } from 'react';
 import { createPublicLanguageStore } from './publicLanguage';
-import {
-  normalizeLocale,
-  PUBLIC_LANGUAGE_CHANGE_EVENT,
-} from './localeNormalize';
+import { siteLanguageStore, changeSiteLanguage } from './siteLanguage';
 export { normalizePublicLanguage } from './publicLanguage';
-
-const store = createPublicLanguageStore();
-let mountedConsumers = 0;
+const store = createPublicLanguageStore({ siteStore: siteLanguageStore });
 export const getPublicLanguage = () => store.getSnapshot().language;
-export const setPublicLanguage = async (language) => {
-  const changed = await store.change(language);
-  if (changed && typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent(PUBLIC_LANGUAGE_CHANGE_EVENT, {
-        detail: normalizeLocale(store.getSnapshot().language),
-      }),
-    );
-  }
-  return changed;
-};
-
+export const setPublicLanguage = changeSiteLanguage;
 export const usePublicTranslation = () => {
   const state = useSyncExternalStore(
     store.subscribe,
@@ -47,18 +31,9 @@ export const usePublicTranslation = () => {
     store.getSnapshot,
   );
   useEffect(() => {
-    if (mountedConsumers++ === 0) {
-      store.restore();
-      window.addEventListener('storage', store.handleStorage);
-    }
-    return () => {
-      if (--mountedConsumers === 0)
-        window.removeEventListener('storage', store.handleStorage);
-    };
+    siteLanguageStore.initialize();
+    store.restore();
   }, []);
-  useEffect(() => {
-    document.documentElement.lang = state.language;
-  }, [state.language]);
   return {
     ...state,
     t: store.translate,

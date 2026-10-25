@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Dla tej witryny nie skonfigurowano opcjonalnej usługi statystyk.",
   "暂无系统公告": "Brak komunikatów systemowych",
   "公告加载失败，请稍后重试。": "Nie udało się wczytać komunikatów. Spróbuj ponownie później.",
-  "有未读公告": "Masz nieprzeczytane komunikaty"
+  "有未读公告": "Masz nieprzeczytane komunikaty",
+  "正文语言": "Język treści",
+  "正文翻译加载失败，请重试。": "Nie udało się załadować tłumaczenia tekstu. Spróbuj ponownie.",
+  "正在加载正文翻译…": "Ładowanie tłumaczenia tekstu...",
+  "重试": "Spróbuj ponownie",
+  "正在保存账户语言偏好…": "Zapisuję preferencje językowe konta...",
+  "语言已在本机切换，但账户偏好保存失败。": "Język został przełączony lokalnie, ale nie udało się zapisać preferencji konta.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "Język został zmieniony, ale przeglądarka nie może zapisać preferencji. Oryginalny język może zostać przywrócony po odświeżeniu.",
+  "重新选择当前语言可重试保存。": "Wybierz ponownie bieżący język, aby ponowić próbę zapisania."
 }

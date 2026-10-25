@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useState } from 'react';
 import { Button, Select } from '@douyinfe/semi-ui';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGroupHealth } from '../../../../hooks/group-health/useGroupHealth';
 import {
   GroupHealthLegend,
@@ -44,6 +45,7 @@ const GroupHealthOverview = ({
   loading: pricingLoading,
   t,
 }) => {
+  const { i18n } = useTranslation();
   const [selectedModel, setSelectedModel] = useState('');
   const currentModel = filteredModels.find(
     (model) => model.model_name === selectedModel,
@@ -76,7 +78,7 @@ const GroupHealthOverview = ({
           <div className='group-health-caption'>
             {t('最近 24 个小时段 · 每分钟更新')}
             {data?.updated_at
-              ? ` · ${t('最近采样')} ${new Date(data.updated_at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              ? ` · ${t('最近采样')} ${new Date(data.updated_at * 1000).toLocaleTimeString(i18n.resolvedLanguage || i18n.language, { hour: '2-digit', minute: '2-digit' })}`
               : ''}
           </div>
         </div>

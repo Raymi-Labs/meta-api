@@ -198,7 +198,8 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         if (data.length === 0) {
           data.push({
             count: 0,
-            model_name: '无数据',
+            model_name: '',
+            is_empty_placeholder: true,
             quota: 0,
             created_at: now.getTime() / 1000,
           });
@@ -300,46 +301,49 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     }
   }, [inputs.start_timestamp, inputs.end_timestamp, perfMetricsRequestGuard]);
 
-  const loadModelChannelTagStats = useCallback(async (daysOverride) => {
-    if (!isAdminUser) return null;
-    const requestId = modelChannelStatsRequestGuard.createRequestId();
-    setModelChannelStatsLoading(true);
-    try {
-      const days = Number(daysOverride || modelChannelStatsDays || 1);
-      const end = Math.floor(Date.now() / 1000);
-      const start = end - Math.min(Math.max(days, 1), 30) * 86400;
-      const res = await API.get('/api/data/model-channel-tags', {
-        params: {
-          start_timestamp: start,
-          end_timestamp: end,
-          username: inputs.username,
-          limit: 12,
-        },
-      });
-      if (!modelChannelStatsRequestGuard.isLatestRequest(requestId)) {
+  const loadModelChannelTagStats = useCallback(
+    async (daysOverride) => {
+      if (!isAdminUser) return null;
+      const requestId = modelChannelStatsRequestGuard.createRequestId();
+      setModelChannelStatsLoading(true);
+      try {
+        const days = Number(daysOverride || modelChannelStatsDays || 1);
+        const end = Math.floor(Date.now() / 1000);
+        const start = end - Math.min(Math.max(days, 1), 30) * 86400;
+        const res = await API.get('/api/data/model-channel-tags', {
+          params: {
+            start_timestamp: start,
+            end_timestamp: end,
+            username: inputs.username,
+            limit: 12,
+          },
+        });
+        if (!modelChannelStatsRequestGuard.isLatestRequest(requestId)) {
+          return null;
+        }
+        const { success, message, data } = res.data;
+        if (success) {
+          setModelChannelStats(data || null);
+          return data || null;
+        }
+        showError(message);
         return null;
+      } catch (err) {
+        console.error(err);
+        return null;
+      } finally {
+        if (modelChannelStatsRequestGuard.isLatestRequest(requestId)) {
+          setModelChannelStatsLoading(false);
+        }
       }
-      const { success, message, data } = res.data;
-      if (success) {
-        setModelChannelStats(data || null);
-        return data || null;
-      }
-      showError(message);
-      return null;
-    } catch (err) {
-      console.error(err);
-      return null;
-    } finally {
-      if (modelChannelStatsRequestGuard.isLatestRequest(requestId)) {
-        setModelChannelStatsLoading(false);
-      }
-    }
-  }, [
-    inputs.username,
-    isAdminUser,
-    modelChannelStatsDays,
-    modelChannelStatsRequestGuard,
-  ]);
+    },
+    [
+      inputs.username,
+      isAdminUser,
+      modelChannelStatsDays,
+      modelChannelStatsRequestGuard,
+    ],
+  );
 
   const handleModelChannelStatsDaysChange = useCallback(
     async (days) => {
@@ -349,40 +353,39 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     [loadModelChannelTagStats],
   );
 
-  const loadUserBalanceTrend = useCallback(async (daysOverride) => {
-    if (!isAdminUser) return null;
-    const requestId = userBalanceTrendRequestGuard.createRequestId();
-    setUserBalanceTrendLoading(true);
-    try {
-      const days = Number(daysOverride || userBalanceTrendDays || 7);
-      const res = await API.get('/api/data/user-balance-trend', {
-        params: {
-          days,
-        },
-      });
-      if (!userBalanceTrendRequestGuard.isLatestRequest(requestId)) {
+  const loadUserBalanceTrend = useCallback(
+    async (daysOverride) => {
+      if (!isAdminUser) return null;
+      const requestId = userBalanceTrendRequestGuard.createRequestId();
+      setUserBalanceTrendLoading(true);
+      try {
+        const days = Number(daysOverride || userBalanceTrendDays || 7);
+        const res = await API.get('/api/data/user-balance-trend', {
+          params: {
+            days,
+          },
+        });
+        if (!userBalanceTrendRequestGuard.isLatestRequest(requestId)) {
+          return null;
+        }
+        const { success, message, data } = res.data;
+        if (success) {
+          setUserBalanceTrend(data || null);
+          return data || null;
+        }
+        showError(message);
         return null;
+      } catch (err) {
+        console.error(err);
+        return null;
+      } finally {
+        if (userBalanceTrendRequestGuard.isLatestRequest(requestId)) {
+          setUserBalanceTrendLoading(false);
+        }
       }
-      const { success, message, data } = res.data;
-      if (success) {
-        setUserBalanceTrend(data || null);
-        return data || null;
-      }
-      showError(message);
-      return null;
-    } catch (err) {
-      console.error(err);
-      return null;
-    } finally {
-      if (userBalanceTrendRequestGuard.isLatestRequest(requestId)) {
-        setUserBalanceTrendLoading(false);
-      }
-    }
-  }, [
-    isAdminUser,
-    userBalanceTrendDays,
-    userBalanceTrendRequestGuard,
-  ]);
+    },
+    [isAdminUser, userBalanceTrendDays, userBalanceTrendRequestGuard],
+  );
 
   const handleUserBalanceTrendDaysChange = useCallback(
     async (days) => {

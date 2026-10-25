@@ -20,8 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 import axios from 'axios';
 import { getUserIdFromLocalStorage } from './storage';
 import { beginGlobalLoading, endGlobalLoading } from './globalLoading';
+import { getSiteLanguageSnapshot } from './siteLanguage';
 
 const GLOBAL_LOADING_TRACKED_KEY = '__globalLoadingTracked';
+const REQUEST_LANGUAGE_KEY = '__siteLanguage';
 
 const createAPIHeaders = () => ({
   'New-API-User': getUserIdFromLocalStorage(),
@@ -54,10 +56,14 @@ function patchAPIInstance(instance) {
 
   const genKey = (url, config = {}) => {
     const params = config.params ? JSON.stringify(config.params) : '{}';
-    return `${url}?${params}`;
+    return `${url}?${params}|${config[REQUEST_LANGUAGE_KEY]}`;
   };
 
   instance.get = (url, config = {}) => {
+    config = {
+      ...config,
+      [REQUEST_LANGUAGE_KEY]: getSiteLanguageSnapshot().language,
+    };
     if (config?.disableDuplicate) {
       return originalGet(url, config);
     }
@@ -78,7 +84,12 @@ function patchAPIInstance(instance) {
 
 function attachAPIInterceptors(instance) {
   instance.interceptors.request.use(
-    (config) => markGlobalLoadingStarted(config),
+    (config) => {
+      config.headers = config.headers || {};
+      config.headers['Accept-Language'] =
+        config[REQUEST_LANGUAGE_KEY] || getSiteLanguageSnapshot().language;
+      return markGlobalLoadingStarted(config);
+    },
     (error) => {
       markGlobalLoadingFinished(error?.config);
       return Promise.reject(error);

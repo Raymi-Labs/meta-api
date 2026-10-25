@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useEffect, useRef, useState } from 'react'
 
 interface SaveTemplateModalProps {
@@ -54,10 +55,9 @@ export default function SaveTemplateModal({ open, defaultName, onCancel, onConfi
         role="dialog"
         aria-modal="true"
       >
-        <h3 className="text-base font-bold text-gray-950 dark:text-white">保存为模板</h3>
+        <h3 className="text-base font-bold text-gray-950 dark:text-white">{t("保存为模板")}</h3>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          将当前 brief 与套图骨架保存为可复用模板（不包含素材与已生成的图片）。
-        </p>
+          {t("将当前 brief 与套图骨架保存为可复用模板（不包含素材与已生成的图片）。")}</p>
         <form
           className="mt-4 space-y-3"
           onSubmit={(event) => {
@@ -66,15 +66,14 @@ export default function SaveTemplateModal({ open, defaultName, onCancel, onConfi
           }}
         >
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400">
-            模板名称
-            <input
+            {t("模板名称")}<input
               ref={inputRef}
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={80}
               autoFocus
               className="mt-1 w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-950 dark:text-white outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10"
-              placeholder="例如：通用美妆主图模板"
+              placeholder={t("例如：通用美妆主图模板")}
             />
           </label>
           <div className="flex justify-end gap-2 pt-1">
@@ -83,15 +82,13 @@ export default function SaveTemplateModal({ open, defaultName, onCancel, onConfi
               onClick={onCancel}
               className="rounded-xl border border-gray-200 dark:border-white/[0.08] px-3 py-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white"
             >
-              取消
-            </button>
+              {t("取消")}</button>
             <button
               type="submit"
               disabled={!canConfirm}
               className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white dark:text-gray-950"
             >
-              保存
-            </button>
+              {t("保存")}</button>
           </div>
         </form>
       </div>

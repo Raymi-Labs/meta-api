@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Bu site için isteğe bağlı bir istatistik hizmeti yapılandırılmamış.",
   "暂无系统公告": "Henüz sistem duyurusu yok",
   "公告加载失败，请稍后重试。": "Duyurular yüklenemedi. Lütfen daha sonra tekrar deneyin.",
-  "有未读公告": "Okunmamış duyurularınız var"
+  "有未读公告": "Okunmamış duyurularınız var",
+  "正文语言": "İçerik dili",
+  "正文翻译加载失败，请重试。": "Metin çevirisi yüklenemedi, lütfen tekrar deneyin.",
+  "正在加载正文翻译…": "Metin çevirisi yükleniyor...",
+  "重试": "Yeniden dene",
+  "正在保存账户语言偏好…": "Hesabın dil tercihi kaydediliyor...",
+  "语言已在本机切换，但账户偏好保存失败。": "Dil yerel olarak değiştirildi ancak hesap tercihi kaydedilemedi.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "Dil değiştirildi ancak tarayıcı tercihi kaydedemiyor. Yenileme sonrasında orijinal dil geri yüklenebilir.",
+  "重新选择当前语言可重试保存。": "Kaydetmeyi yeniden denemek için geçerli dili yeniden seçin."
 }

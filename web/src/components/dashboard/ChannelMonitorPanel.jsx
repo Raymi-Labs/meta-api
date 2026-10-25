@@ -174,15 +174,10 @@ const ChannelMonitorPanel = ({ CARD_PROPS, ILLUSTRATION_SIZE }) => {
           <Select
             value={timeRange}
             onChange={setTimeRange}
+            optionList={timeRangeOptions}
             style={{ width: 140 }}
             size='small'
-          >
-            {timeRangeOptions.map((opt) => (
-              <Select.Option key={opt.value} value={opt.value}>
-                {opt.label}
-              </Select.Option>
-            ))}
-          </Select>
+          />
           <Button
             icon={<IconRefresh />}
             onClick={loadMonitorData}

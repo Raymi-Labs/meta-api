@@ -253,3 +253,16 @@
     flex-direction: column;
   }
 }
+
+.public-legal-translation {
+  color: var(--legal-muted);
+  font-size: 14px;
+}
+.public-legal-translation button {
+  margin-inline-start: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--legal-accent);
+  font: inherit;
+  cursor: pointer;
+}

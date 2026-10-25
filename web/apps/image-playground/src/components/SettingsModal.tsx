@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { normalizeBaseUrl } from '../lib/api'
@@ -355,16 +356,16 @@ export default function SettingsModal() {
   const providerOrder = draft.providerOrder || defaultProviderOrder
 
   const unorderedProviderOptions = [
-    { label: 'OpenAI 兼容接口', value: 'openai', draggable: true },
+    { label: t("OpenAI 兼容接口"), value: 'openai', draggable: true },
     { label: 'fal.ai', value: 'fal', draggable: true },
     ...draft.customProviders.map((provider) => ({
       label: provider.name,
       value: provider.id,
       draggable: true,
       actions: [
-        { label: '编辑', onClick: () => openEditCustomProvider(provider) },
+        { label: t("编辑"), onClick: () => openEditCustomProvider(provider) },
         {
-          label: '删除',
+          label: t("删除"),
           variant: 'danger' as const,
           onClick: () => confirmDeleteCustomProvider(provider),
         },
@@ -373,7 +374,7 @@ export default function SettingsModal() {
   ]
 
   const providerOptions = [
-    { label: '创建自定义服务商', value: ADD_CUSTOM_PROVIDER_VALUE, variant: 'action' as const },
+    { label: t("创建自定义服务商"), value: ADD_CUSTOM_PROVIDER_VALUE, variant: 'action' as const },
     ...unorderedProviderOptions.sort((a, b) => {
       const aIndex = providerOrder.indexOf(String(a.value))
       const bIndex = providerOrder.indexOf(String(b.value))
@@ -928,7 +929,7 @@ export default function SettingsModal() {
         : input,
       usedIds,
     )
-    if (!provider) throw new Error('自定义服务商配置无效')
+    if (!provider) throw new Error(t("自定义服务商配置无效"))
     return provider
   }
 
@@ -1007,7 +1008,7 @@ export default function SettingsModal() {
     try {
       const text = await navigator.clipboard.readText()
       if (!text.trim()) {
-        throw new Error('剪贴板为空')
+        throw new Error(t("剪贴板为空"))
       }
       const imported = importCustomProviderSettingsFromJson(text, draft.customProviders)
       if (imported.profiles.length > 0) {
@@ -1073,14 +1074,13 @@ export default function SettingsModal() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            设置
-          </h3>
+            {t("设置")}</h3>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400 dark:text-gray-500 font-mono select-none">v{__APP_VERSION__}</span>
             <button
               onClick={handleClose}
               className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-200"
-              aria-label="关闭"
+              aria-label={t("关闭")}
             >
               <CloseIcon className="h-5 w-5" />
             </button>
@@ -1098,8 +1098,7 @@ export default function SettingsModal() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
-                API 配置
-              </button>
+                {t("API 配置")}</button>
               <button
                 onClick={() => setActiveTab('general')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'general' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1107,8 +1106,7 @@ export default function SettingsModal() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
                 </svg>
-                习惯配置
-              </button>
+                {t("习惯配置")}</button>
               <button
                 onClick={() => setActiveTab('agent')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'agent' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1118,8 +1116,7 @@ export default function SettingsModal() {
                   <rect width="16" height="12" x="4" y="8" rx="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2M20 14h2M15 13v2M9 13v2" />
                 </svg>
-                Agent 配置
-              </button>
+                {t("Agent 配置")}</button>
               <button
                 onClick={() => setActiveTab('data')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'data' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1127,8 +1124,7 @@ export default function SettingsModal() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                 </svg>
-                数据管理
-              </button>
+                {t("数据管理")}</button>
               <button
                 onClick={() => setActiveTab('about')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'about' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1136,8 +1132,7 @@ export default function SettingsModal() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                关于
-              </button>
+                {t("关于")}</button>
             </nav>
           </div>
 
@@ -1148,7 +1143,7 @@ export default function SettingsModal() {
               <div className="space-y-4">
                 <div className="hidden sm:block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">任务提交方式</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("任务提交方式")}</span>
                     <div className="w-32">
                       <Select
                         value={draft.enterSubmit ? 'enter' : 'ctrl-enter'}
@@ -1162,118 +1157,111 @@ export default function SettingsModal() {
                     </div>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    选择 Enter 提交时，使用 Shift + Enter 换行；否则直接 Enter 换行。
-                  </div>
+                    {t("选择 Enter 提交时，使用 Shift + Enter 换行；否则直接 Enter 换行。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">提交任务后清空输入框</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("提交任务后清空输入框")}</span>
                     <button
                       type="button"
                       onClick={() => commitSettings({ ...draft, clearInputAfterSubmit: !draft.clearInputAfterSubmit })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${draft.clearInputAfterSubmit ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.clearInputAfterSubmit}
-                      aria-label="提交任务后清空输入框"
+                      aria-label={t("提交任务后清空输入框")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.clearInputAfterSubmit ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后，提交成功创建任务时会清空提示词和参考图。
-                  </div>
+                    {t("开启后，提交成功创建任务时会清空提示词和参考图。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between gap-3">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">参考图编辑按钮</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("参考图编辑按钮")}</span>
                     <div className="w-32">
                       <Select
                         value={draft.referenceImageEditAction}
                         onChange={(val) => commitSettings({ ...draft, referenceImageEditAction: val as AppSettings['referenceImageEditAction'] })}
                         options={[
-                          { label: '询问', value: 'ask' },
-                          { label: '替换参考图', value: 'replace-reference' },
-                          { label: '添加遮罩', value: 'add-mask' },
+                          { label: t("询问"), value: 'ask' },
+                          { label: t("替换参考图"), value: 'replace-reference' },
+                          { label: t("添加遮罩"), value: 'add-mask' },
                         ]}
                         className="w-full px-3 py-1.5 rounded-xl border border-gray-200/60 dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06] text-xs transition-all duration-200 shadow-sm text-gray-700 dark:text-gray-200 outline-none"
                       />
                     </div>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    控制未添加遮罩的参考图点击编辑按钮时，是每次询问、直接替换参考图，还是直接添加遮罩。
-                  </div>
+                    {t("控制未添加遮罩的参考图点击编辑按钮时，是每次询问、直接替换参考图，还是直接添加遮罩。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">重启后加载上次的输入框</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("重启后加载上次的输入框")}</span>
                     <button
                       type="button"
                       onClick={() => commitSettings({ ...draft, persistInputOnRestart: !draft.persistInputOnRestart })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${draft.persistInputOnRestart ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.persistInputOnRestart}
-                      aria-label="重启后加载上次的输入框"
+                      aria-label={t("重启后加载上次的输入框")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.persistInputOnRestart ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    关闭后，不再持久化提示词和参考图，下次启动会使用空输入框。
-                  </div>
+                    {t("关闭后，不再持久化提示词和参考图，下次启动会使用空输入框。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">复用配置时临时复用该任务的 API 配置</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("复用配置时临时复用该任务的 API 配置")}</span>
                     <button
                       type="button"
                       onClick={() => commitSettings({ ...draft, reuseTaskApiProfileTemporarily: !draft.reuseTaskApiProfileTemporarily })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${draft.reuseTaskApiProfileTemporarily ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.reuseTaskApiProfileTemporarily}
-                      aria-label="复用配置时临时复用该任务的 API 配置"
+                      aria-label={t("复用配置时临时复用该任务的 API 配置")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.reuseTaskApiProfileTemporarily ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后，复用历史任务时会临时使用该任务的 API 配置，找不到该配置时提交会提示；关闭后，会继续使用当前的 API 配置。
-                  </div>
+                    {t("开启后，复用历史任务时会临时使用该任务的 API 配置，找不到该配置时提交会提示；关闭后，会继续使用当前的 API 配置。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">成功任务仍然展示重试按钮</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("成功任务仍然展示重试按钮")}</span>
                     <button
                       type="button"
                       onClick={() => commitSettings({ ...draft, alwaysShowRetryButton: !draft.alwaysShowRetryButton })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${draft.alwaysShowRetryButton ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.alwaysShowRetryButton}
-                      aria-label="成功任务仍然展示重试按钮"
+                      aria-label={t("成功任务仍然展示重试按钮")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.alwaysShowRetryButton ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后，即使任务成功生成，也会在任务卡片和详情页显示重试按钮。
-                  </div>
+                    {t("开启后，即使任务成功生成，也会在任务卡片和详情页显示重试按钮。")}</div>
                 </div>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">发送消息后自动滚动到底部</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("发送消息后自动滚动到底部")}</span>
                     <button
                       type="button"
                       onClick={() => commitSettings({ ...draft, agentScrollToBottomAfterSubmit: !draft.agentScrollToBottomAfterSubmit })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${draft.agentScrollToBottomAfterSubmit ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.agentScrollToBottomAfterSubmit}
-                      aria-label="发送消息后自动滚动到底部"
+                      aria-label={t("发送消息后自动滚动到底部")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.agentScrollToBottomAfterSubmit ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后，在 Agent 模式发送消息成功后会自动滚动到对话底部。
-                  </div>
+                    {t("开启后，在 Agent 模式发送消息成功后会自动滚动到对话底部。")}</div>
                 </div>
               </div>
             )}
@@ -1281,7 +1269,7 @@ export default function SettingsModal() {
             {activeTab === 'agent' && (
               <div className="space-y-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">最大工具调用轮数</span>
+                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("最大工具调用轮数")}</span>
                   <input
                     value={agentMaxToolRoundsInput}
                     onChange={(e) => setAgentMaxToolRoundsInput(e.target.value)}
@@ -1292,12 +1280,11 @@ export default function SettingsModal() {
                     className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                   />
                   <div data-selectable-text className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-500">
-                    默认 15。用于限制 Agent 连续调用工具时的最大轮数，防止无限循环。
-                  </div>
+                    {t("默认 15。用于限制 Agent 连续调用工具时的最大轮数，防止无限循环。")}</div>
                 </label>
                 <div className="block">
                   <div className="mb-1 flex items-center justify-between gap-3">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">网络搜索</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("网络搜索")}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1310,14 +1297,13 @@ export default function SettingsModal() {
                       className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${draft.agentWebSearch ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={draft.agentWebSearch}
-                      aria-label="网络搜索"
+                      aria-label={t("网络搜索")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${draft.agentWebSearch ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    启用 Responses API 的 <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-white/[0.06]">web_search</code> 工具。模型每次调用此工具会产生少量固定价格的额外计费。
-                  </div>
+                    {t("启用 Responses API 的")}<code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[10px] dark:bg-white/[0.06]">web_search</code> {t("工具。模型每次调用此工具会产生少量固定价格的额外计费。")}</div>
                 </div>
               </div>
             )}
@@ -1326,7 +1312,7 @@ export default function SettingsModal() {
               <div className="space-y-4">
                 <div>
                   <div className="mb-1.5 flex items-center gap-1.5">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">当前配置</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("当前配置")}</span>
                     <span className="relative inline-flex">
                       <button
                         type="button"
@@ -1345,13 +1331,12 @@ export default function SettingsModal() {
                         onTouchEnd={clearProfileImportUrlTooltipTimer}
                         onTouchCancel={clearProfileImportUrlTooltipTimer}
                         className="flex h-5 w-5 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.08] dark:hover:text-gray-200"
-                        aria-label={`复制导入配置「${activeProfile.name}」的 URL`}
+                        aria-label={t("复制导入配置「{{value0}}」的 URL", { value0: (activeProfile.name) })}
                       >
                         <LinkIcon className="h-3.5 w-3.5" />
                       </button>
                       <ViewportTooltip visible={profileImportUrlTooltipVisible} className="whitespace-nowrap">
-                        复制导入 URL
-                      </ViewportTooltip>
+                        {t("复制导入 URL")}</ViewportTooltip>
                     </span>
                     <span className="relative inline-flex">
                       <button
@@ -1371,13 +1356,12 @@ export default function SettingsModal() {
                         onTouchEnd={clearDuplicateProfileTooltipTimer}
                         onTouchCancel={clearDuplicateProfileTooltipTimer}
                         className="flex h-5 w-5 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.08] dark:hover:text-gray-200"
-                        aria-label={`复制一份配置「${activeProfile.name}」`}
+                        aria-label={t("复制一份配置「{{value0}}」", { value0: (activeProfile.name) })}
                       >
                         <CopyIcon className="h-3.5 w-3.5" />
                       </button>
                       <ViewportTooltip visible={duplicateProfileTooltipVisible} className="whitespace-nowrap">
-                        复制当前配置
-                      </ViewportTooltip>
+                        {t("复制当前配置")}</ViewportTooltip>
                     </span>
                   </div>
                   <div ref={profileMenuRef} className="relative">
@@ -1414,7 +1398,7 @@ export default function SettingsModal() {
                             }}
                             className="flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
                           >
-                            <span className="truncate font-semibold">创建新配置</span>
+                            <span className="truncate font-semibold">{t("创建新配置")}</span>
                             <span className="flex h-5 w-5 shrink-0 items-center justify-center">
                               <PlusIcon className="h-4 w-4" />
                             </span>
@@ -1453,7 +1437,7 @@ export default function SettingsModal() {
                                     data-drag-handle
                                     className="flex cursor-grab active:cursor-grabbing items-center justify-center text-gray-400 opacity-60 transition-opacity hover:opacity-100 dark:text-gray-500"
                                     style={{ touchAction: 'none' }}
-                                    title="拖拽排序"
+                                    title={t("拖拽排序")}
                                   >
                                     <DragHandleIcon className="h-3.5 w-3.5" />
                                   </div>
@@ -1472,8 +1456,8 @@ export default function SettingsModal() {
                                       confirmCopyProfileImportUrl(profile)
                                     }}
                                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 opacity-60 transition-all hover:bg-gray-100 hover:text-gray-600 hover:opacity-100 dark:hover:bg-white/[0.08] dark:hover:text-gray-200"
-                                    aria-label={`复制导入配置「${profile.name}」的 URL`}
-                                    title="复制导入 URL"
+                                    aria-label={t("复制导入配置「{{value0}}」的 URL", { value0: (profile.name) })}
+                                    title={t("复制导入 URL")}
                                   >
                                     <LinkIcon className="h-3.5 w-3.5" />
                                   </button>
@@ -1490,7 +1474,7 @@ export default function SettingsModal() {
                                         })
                                       }}
                                       className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 opacity-60 transition-all hover:bg-red-50 hover:text-red-500 hover:opacity-100 dark:hover:bg-red-500/10"
-                                      aria-label="删除配置"
+                                      aria-label={t("删除配置")}
                                     >
                                       <TrashIcon className="h-3.5 w-3.5" />
                                     </button>
@@ -1507,7 +1491,7 @@ export default function SettingsModal() {
 
               {/* 1. 配置名称 */}
               <label className="block">
-                <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">配置名称</span>
+                <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("配置名称")}</span>
                 <input
                   value={activeProfile.name}
                   onChange={(e) => updateActiveProfile({ name: e.target.value })}
@@ -1519,7 +1503,7 @@ export default function SettingsModal() {
 
               {/* 2. 服务商类型 */}
               <div className="block">
-                <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">服务商类型</span>
+                <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("服务商类型")}</span>
                 <Select
                   value={activeProfile.provider}
                   onChange={handleProviderTypeChange}
@@ -1546,11 +1530,11 @@ export default function SettingsModal() {
                   />
                   <div data-selectable-text className="mt-1.5 min-h-[22px] flex items-center text-xs text-gray-500 dark:text-gray-500">
                     {apiProxyEnabled ? (
-                      <span className="text-yellow-600 dark:text-yellow-500">已开启代理，实际请求目标由部署端决定，此处设置被忽略。</span>
+                      <span className="text-yellow-600 dark:text-yellow-500">{t("已开启代理，实际请求目标由部署端决定，此处设置被忽略。")}</span>
                     ) : activeProfile.provider === 'fal' ? (
-                      <span>默认使用 <code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">{DEFAULT_FAL_BASE_URL}</code>；填写自定义地址时将作为 fal.ai 代理 URL。</span>
+                      <span>{t("默认使用")} <code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">{DEFAULT_FAL_BASE_URL}</code>{t("；填写自定义地址时将作为 fal.ai 代理 URL。")}</span>
                     ) : (
-                      <span>支持通过查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiUrl=</code></span>
+                      <span>{t("支持通过查询参数覆盖：")}<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiUrl=</code></span>
                     )}
                   </div>
                 </label>
@@ -1560,7 +1544,7 @@ export default function SettingsModal() {
               {apiProxyAvailable && activeProviderIsOpenAICompatible && !activeCustomProviderAsync && (
                 <div className="block">
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">API 代理</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("API 代理")}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1570,13 +1554,13 @@ export default function SettingsModal() {
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${apiProxyChecked ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'} ${apiProxyLocked ? 'cursor-not-allowed opacity-70' : ''}`}
                       role="switch"
                       aria-checked={apiProxyChecked}
-                      aria-label="API 代理"
+                      aria-label={t("API 代理")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${apiProxyChecked ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    {apiProxyLocked ? '部署端已锁定代理开启，请求经服务器转发到上游 API，上方 URL 设置将失效。' : '开启后请求经服务器转发到上游 API，可绕过浏览器跨域限制，上方 URL 设置将失效。'}
+                    {apiProxyLocked ? t("部署端已锁定代理开启，请求经服务器转发到上游 API，上方 URL 设置将失效。") : t("开启后请求经服务器转发到上游 API，可绕过浏览器跨域限制，上方 URL 设置将失效。")}
                   </div>
                 </div>
               )}
@@ -1615,14 +1599,14 @@ export default function SettingsModal() {
                   </button>
                 </div>
                 <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                  支持通过查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiKey=</code>
+                  {t("支持通过查询参数覆盖：")}<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiKey=</code>
                 </div>
               </div>
 
               {/* 6. API 接口（Images/Responses） */}
               {activeProfile.provider === 'openai' && (
                 <div className="block">
-                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">API 接口</span>
+                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("API 接口")}</span>
                   <Select
                     value={activeProfile.apiMode ?? DEFAULT_SETTINGS.apiMode}
                     onChange={(value) => {
@@ -1640,7 +1624,7 @@ export default function SettingsModal() {
                     className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                   />
                   <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                    支持通过查询参数覆盖：<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=images</code> 或 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=responses</code>。
+                    {t("支持通过查询参数覆盖：")}<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=images</code>  {t("或")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=responses</code>。
                   </div>
                 </div>
               )}
@@ -1648,8 +1632,7 @@ export default function SettingsModal() {
               {/* 7. 模型 ID（紧跟接口选择） */}
               <label className="block">
                 <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">
-                  模型 ID
-                </span>
+                  {t("模型 ID")}</span>
                 <input
                   value={activeProfile.model}
                   onChange={(e) => updateActiveProfile({ model: e.target.value })}
@@ -1660,16 +1643,16 @@ export default function SettingsModal() {
                 />
                 <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
                   {activeProfile.provider === 'fal' ? (
-                    <>当前适配 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_FAL_MODEL}</code>。</>
+                    <>{t("当前适配")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_FAL_MODEL}</code>。</>
                   ) : activeCustomProvider ? (
-                    <>当前使用 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{activeCustomProvider.name}</code>。</>
+                    <>{t("当前使用")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{activeCustomProvider.name}</code>。</>
                   ) : (activeProfile.apiMode ?? DEFAULT_SETTINGS.apiMode) === 'responses' ? (
-                    <>Responses API 需要使用支持 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">image_generation</code> 工具的文本模型，例如 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_RESPONSES_MODEL}</code>。</>
+                    <>{t("Responses API 需要使用支持")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">image_generation</code>  {t("工具的文本模型，例如")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_RESPONSES_MODEL}</code>。</>
                   ) : (
-                    <>Images API 需要使用 GPT Image 模型，例如 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_IMAGES_MODEL}</code>。</>
+                    <>{t("Images API 需要使用 GPT Image 模型，例如")} <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_IMAGES_MODEL}</code>。</>
                   )}
                   {activeProfile.provider === 'openai' && (
-                    <>支持通过查询参数覆盖：<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">?model=</code>。</>
+                    <>{t("支持通过查询参数覆盖：")}<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">?model=</code>。</>
                   )}
                 </div>
               </label>
@@ -1679,39 +1662,37 @@ export default function SettingsModal() {
                 <div className="block space-y-3">
                   <div>
                     <div className="mb-1.5 flex items-center justify-between gap-3">
-                      <span className="block text-sm text-gray-600 dark:text-gray-300">流式传输</span>
+                      <span className="block text-sm text-gray-600 dark:text-gray-300">{t("流式传输")}</span>
                       <button
                         type="button"
                         onClick={() => updateActiveProfile({ streamImages: !activeProfile.streamImages }, true)}
                         className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${activeProfile.streamImages ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                         role="switch"
                         aria-checked={!!activeProfile.streamImages}
-                        aria-label="流式传输"
+                        aria-label={t("流式传输")}
                       >
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${activeProfile.streamImages ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                       </button>
                     </div>
                     <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                      开启后请求以流式传输，并非所有服务商和网关都支持此功能。官方接口在流式模式下不发送心跳，需要配合请求中间步骤图像来维持连接，避免超时断开。官方接口仅支持单图流式传输，因此数量大于 1 时会将多图生成拆分为并发单图。
-                    </div>
+                      {t("开启后请求以流式传输，并非所有服务商和网关都支持此功能。官方接口在流式模式下不发送心跳，需要配合请求中间步骤图像来维持连接，避免超时断开。官方接口仅支持单图流式传输，因此数量大于 1 时会将多图生成拆分为并发单图。")}</div>
                   </div>
                   <label className={`block ${activeProfile.streamImages ? '' : 'opacity-60'}`}>
-                    <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">请求中间步骤图像数</span>
+                    <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("请求中间步骤图像数")}</span>
                     <Select
                       value={normalizeStreamPartialImages(activeProfile.streamPartialImages)}
                       onChange={(value) => updateActiveProfile({ streamPartialImages: normalizeStreamPartialImages(value) }, true)}
                       disabled={!activeProfile.streamImages}
                       options={[
-                        { label: '0，不请求', value: 0 },
-                        { label: '1 张', value: 1 },
-                        { label: '2 张', value: 2 },
-                        { label: '3 张', value: 3 },
+                        { label: t("0，不请求"), value: 0 },
+                        { label: t("1 张"), value: 1 },
+                        { label: t("2 张"), value: 2 },
+                        { label: t("3 张"), value: 3 },
                       ]}
                       className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                     />
                     <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                      对应 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">partial_images</code> 参数（0-3）。建议设为 2 或 3 以避免长时间生成时连接超时断开。实际返回的每张中间图像会产生少量额外计费。设为 0 时不请求中间步骤图像，连接可能因无数据传输而被断开。
-                    </div>
+                      {t("对应")}<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">partial_images</code> {t("参数（0-3）。建议设为 2 或 3 以避免长时间生成时连接超时断开。实际返回的每张中间图像会产生少量额外计费。设为 0 时不请求中间步骤图像，连接可能因无数据传输而被断开。")}</div>
                   </label>
                 </div>
               )}
@@ -1720,21 +1701,20 @@ export default function SettingsModal() {
               {activeProviderIsOpenAICompatible && (
                 <div className="block">
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">返回 Base64 图片数据</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("返回 Base64 图片数据")}</span>
                     <button
                       type="button"
                       onClick={() => updateActiveProfile({ responseFormatB64Json: !activeProfile.responseFormatB64Json }, true)}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${activeProfile.responseFormatB64Json ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={!!activeProfile.responseFormatB64Json}
-                      aria-label="返回 Base64 图片数据"
+                      aria-label={t("返回 Base64 图片数据")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${activeProfile.responseFormatB64Json ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后在请求体中追加 <code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">response_format: b64_json</code>，使接口直接返回 Base64 编码的图片数据而非 URL。并非所有服务商和网关都支持此功能。
-                  </div>
+                    {t("开启后在请求体中追加")}<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">response_format: b64_json</code>{t("，使接口直接返回 Base64 编码的图片数据而非 URL。并非所有服务商和网关都支持此功能。")}</div>
                 </div>
               )}
 
@@ -1742,20 +1722,20 @@ export default function SettingsModal() {
               {activeProfile.provider === 'openai' && (
                 <div className="block">
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="block text-sm text-gray-600 dark:text-gray-300">Codex CLI 兼容模式</span>
+                    <span className="block text-sm text-gray-600 dark:text-gray-300">{t("Codex CLI 兼容模式")}</span>
                     <button
                       type="button"
                       onClick={() => updateActiveProfile({ codexCli: !activeProfile.codexCli }, true)}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${activeProfile.codexCli ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                       role="switch"
                       aria-checked={activeProfile.codexCli}
-                      aria-label="Codex CLI 兼容模式"
+                      aria-label={t("Codex CLI 兼容模式")}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${activeProfile.codexCli ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
                     </button>
                   </div>
                   <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-                    开启后应用 Codex CLI 实际支持的参数。支持查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">codexCli=true</code>。
+                    {t("开启后应用 Codex CLI 实际支持的参数。支持查询参数覆盖：")}<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">codexCli=true</code>。
                   </div>
                 </div>
               )}
@@ -1763,7 +1743,7 @@ export default function SettingsModal() {
               {/* 11. 请求超时 */}
               {activeProviderIsOpenAICompatible && (
                 <label className="block">
-                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">请求超时 (秒)</span>
+                  <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">{t("请求超时 (秒)")}</span>
                   <input
                     value={timeoutInput}
                     onChange={(e) => setTimeoutInput(e.target.value)}
@@ -1785,25 +1765,24 @@ export default function SettingsModal() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   <div className="text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">
-                    所有的配置、任务记录和生成的图片均仅保存在您的浏览器本地（除非您使用的服务商存储了它们）。如果您需要清理浏览器站点数据、重置浏览器或使用其他设备，请先导出备份。
-                  </div>
+                    {t("所有的配置、任务记录和生成的图片均仅保存在您的浏览器本地（除非您使用的服务商存储了它们）。如果您需要清理浏览器站点数据、重置浏览器或使用其他设备，请先导出备份。")}</div>
                 </div>
 
                 <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-white/[0.06] dark:bg-white/[0.02] space-y-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <ExportIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">导出数据</h4>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("导出数据")}</h4>
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Checkbox
                       checked={exportConfig}
                       onChange={setExportConfig}
-                      label="包含配置"
+                      label={t("包含配置")}
                     />
                     <Checkbox
                       checked={exportTasks}
                       onChange={setExportTasks}
-                      label="包含任务和图片"
+                      label={t("包含任务和图片")}
                     />
                   </div>
                   <button
@@ -1811,25 +1790,24 @@ export default function SettingsModal() {
                     disabled={!exportConfig && !exportTasks}
                     className="w-full rounded-xl bg-gray-100/80 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:hover:bg-gray-100/80 disabled:hover:text-gray-700 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.1] dark:hover:text-white dark:disabled:hover:bg-white/[0.06] dark:disabled:hover:text-gray-300 flex items-center justify-center gap-2"
                   >
-                    导出所选数据
-                  </button>
+                    {t("导出所选数据")}</button>
                 </div>
 
                 <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-white/[0.06] dark:bg-white/[0.02] space-y-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <ImportIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">导入数据</h4>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("导入数据")}</h4>
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Checkbox
                       checked={importConfig}
                       onChange={setImportConfig}
-                      label="包含配置"
+                      label={t("包含配置")}
                     />
                     <Checkbox
                       checked={importTasks}
                       onChange={setImportTasks}
-                      label="包含任务和图片"
+                      label={t("包含任务和图片")}
                     />
                   </div>
                   <button
@@ -1843,10 +1821,9 @@ export default function SettingsModal() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        导入中...
-                      </>
+                        {t("导入中...")}</>
                     ) : (
-                      '从 ZIP 导入所选数据'
+                      t("从 ZIP 导入所选数据")
                     )}
                   </button>
                   <input
@@ -1861,19 +1838,19 @@ export default function SettingsModal() {
                 <div className="rounded-2xl border border-red-100/50 bg-red-50/30 p-4 dark:border-red-500/10 dark:bg-red-500/5 space-y-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <TrashIcon className="w-4 h-4 text-red-500/90 dark:text-red-400" />
-                    <h4 className="text-sm font-bold text-red-500/90 dark:text-red-400">清除数据</h4>
+                    <h4 className="text-sm font-bold text-red-500/90 dark:text-red-400">{t("清除数据")}</h4>
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Checkbox
                       checked={clearConfig}
                       onChange={setClearConfig}
-                      label="包含配置"
+                      label={t("包含配置")}
                       tone="danger"
                     />
                     <Checkbox
                       checked={clearTasks}
                       onChange={setClearTasks}
-                      label="包含任务和图片"
+                      label={t("包含任务和图片")}
                       tone="danger"
                     />
                   </div>
@@ -1888,8 +1865,7 @@ export default function SettingsModal() {
                     disabled={!clearConfig && !clearTasks}
                     className="w-full rounded-xl border border-red-200/60 bg-red-50/50 px-4 py-2.5 text-sm font-medium text-red-500 transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 disabled:opacity-50 disabled:hover:bg-red-50/50 disabled:hover:border-red-200/60 disabled:hover:text-red-500 dark:border-red-500/15 dark:bg-red-500/5 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:border-red-500/30 dark:hover:text-red-300 dark:disabled:hover:bg-red-500/5 dark:disabled:hover:border-red-500/15 dark:disabled:hover:text-red-400"
                   >
-                    清空所选数据
-                  </button>
+                    {t("清空所选数据")}</button>
                 </div>
               </div>
             )}
@@ -1940,8 +1916,7 @@ export default function SettingsModal() {
                 </a>
                 
                 <p className="mt-8 mb-6 max-w-[360px] text-center text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">
-                  本项目的成长离不开每一位用户的使用、反馈、贡献与支持，感谢一路有你。
-                </p>
+                  {t("本项目的成长离不开每一位用户的使用、反馈、贡献与支持，感谢一路有你。")}</p>
 
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <a
@@ -1953,8 +1928,7 @@ export default function SettingsModal() {
                     <svg className="h-4 w-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
-                    反馈问题
-                  </a>
+                    {t("反馈问题")}</a>
                   <a
                     href="https://www.ifdian.net/a/cooksleep"
                     target="_blank"
@@ -1964,8 +1938,7 @@ export default function SettingsModal() {
                     <svg className="h-4 w-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    赞助作者
-                  </a>
+                    {t("赞助作者")}</a>
                 </div>
               </div>
             )}
@@ -1983,7 +1956,7 @@ export default function SettingsModal() {
             <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/50 bg-white/95 p-5 shadow-2xl ring-1 ring-black/5 animate-modal-in dark:border-white/[0.08] dark:bg-gray-900/95 dark:ring-white/10 flex flex-col h-[85vh] sm:h-[680px] max-h-[90vh] overflow-hidden">
               <div className="mb-5 flex items-center justify-between gap-4 shrink-0">
                 <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">
-                  {editingCustomProviderId ? '编辑自定义服务商' : '创建自定义服务商'}
+                  {editingCustomProviderId ? t("编辑自定义服务商") : t("创建自定义服务商")}
                 </h3>
                 <div className="flex items-center gap-3">
                   <button
@@ -1993,7 +1966,7 @@ export default function SettingsModal() {
                       setEditingCustomProviderId(null)
                     }}
                     className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-200"
-                    aria-label="关闭"
+                    aria-label={t("关闭")}
                   >
                     <CloseIcon className="h-5 w-5" />
                   </button>
@@ -2006,17 +1979,15 @@ export default function SettingsModal() {
                     <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    AI 一键生成与导入
-                  </div>
+                    {t("AI 一键生成与导入")}</div>
                   <div data-selectable-text className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    复制提示词发给 LLM，可根据 API 文档自动生成完整的配置（包含服务商、模型、URL 等）。复制 LLM 输出的 JSON 后，点击“从剪贴板粘贴并导入”即可一键生效。
-                  </div>
+                    {t("复制提示词发给 LLM，可根据 API 文档自动生成完整的配置（包含服务商、模型、URL 等）。复制 LLM 输出的 JSON 后，点击“从剪贴板粘贴并导入”即可一键生效。")}</div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="relative inline-flex">
                       <button
                         type="button"
                         onClick={copyCustomProviderLlmPrompt}
-                        aria-label="复制用于生成完整导入 JSON 的 LLM 提示词"
+                        aria-label={t("复制用于生成完整导入 JSON 的 LLM 提示词")}
                         onMouseEnter={() => setLlmPromptTooltipVisible(true)}
                         onMouseLeave={() => setLlmPromptTooltipVisible(false)}
                         onFocus={() => setLlmPromptTooltipVisible(true)}
@@ -2033,11 +2004,9 @@ export default function SettingsModal() {
                         className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm border border-gray-200/80 transition hover:bg-gray-50 hover:text-gray-900 dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-gray-300 dark:hover:bg-white/[0.08] dark:hover:text-white"
                       >
                         <LinkIcon className="h-3.5 w-3.5" />
-                        复制生成提示词
-                      </button>
+                        {t("复制生成提示词")}</button>
                       <ViewportTooltip visible={llmPromptTooltipVisible} className="w-56 whitespace-normal text-center">
-                        生成完整的服务商和配置信息，包含模型和接口地址，导入后只需填入 API Key。
-                      </ViewportTooltip>
+                        {t("生成完整的服务商和配置信息，包含模型和接口地址，导入后只需填入 API Key。")}</ViewportTooltip>
                     </span>
                     <button
                       type="button"
@@ -2051,10 +2020,9 @@ export default function SettingsModal() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        导入中...
-                      </>
+                        {t("导入中...")}</>
                     ) : (
-                      '从剪贴板粘贴并导入'
+                      t("从剪贴板粘贴并导入")
                     )}
                   </button>
                 </div>
@@ -2062,7 +2030,7 @@ export default function SettingsModal() {
 
               <div className="flex-1 flex flex-col min-h-0">
                 <label className="flex-1 flex flex-col min-h-0">
-                  <span className="mb-1 shrink-0 block text-xs text-gray-500 dark:text-gray-400">手动编辑 (仅接口映射 Manifest)</span>
+                  <span className="mb-1 shrink-0 block text-xs text-gray-500 dark:text-gray-400">{t("手动编辑 (仅接口映射 Manifest)")}</span>
                   <textarea
                     value={customProviderForm.json}
                     onChange={(e) => updateCustomProviderForm({ json: e.target.value })}
@@ -2087,14 +2055,13 @@ export default function SettingsModal() {
                   }}
                   className="rounded-xl bg-gray-100 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-200 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.1]"
                 >
-                  取消
-                </button>
+                  {t("取消")}</button>
                 <button
                   type="button"
                   onClick={saveCustomProvider}
                   className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
                 >
-                  {editingCustomProviderId ? '保存修改' : '创建并使用'}
+                  {editingCustomProviderId ? t("保存修改") : t("创建并使用")}
                 </button>
               </div>
             </div>
@@ -2135,37 +2102,36 @@ export default function SettingsModal() {
                 type="button"
                 onClick={() => setCopyImportUrlProfile(null)}
                 className="absolute right-4 top-4 shrink-0 rounded-full p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-200"
-                aria-label="关闭"
+                aria-label={t("关闭")}
               >
                 <CloseIcon className="h-5 w-5" />
               </button>
 
               <h3 className="mb-3 pr-8 flex items-start gap-2.5 text-base font-bold text-gray-800 dark:text-gray-100 leading-snug">
                 <CopyIcon className="h-5 w-5 shrink-0 text-blue-500 mt-0.5" />
-                <span>复制导入配置「{copyImportUrlProfile.name}」的 URL</span>
+                <span>{t("复制导入配置「{{value0}}」的 URL", { value0: copyImportUrlProfile.name })}</span>
               </h3>
               <div className="text-[13px] text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
-                是否包含 API Key？如果选择「不包含」，可额外配置是否使用 New API 变量。
-              </div>
+                {t("是否包含 API Key？如果选择「不包含」，可额外配置是否使用 New API 变量。")}</div>
 
               {!copyImportUrlOptions.includeApiKey && (
                 <div className="mb-6 rounded-2xl bg-gray-50/80 p-4 dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/5">
-                  <div className="text-[13px] font-bold text-gray-700 dark:text-gray-300 mb-3.5">New API 变量配置</div>
+                  <div className="text-[13px] font-bold text-gray-700 dark:text-gray-300 mb-3.5">{t("New API 变量配置")}</div>
                   <div className="space-y-3">
                     <Checkbox
                       checked={copyImportUrlOptions.useNewApiAddress}
                       onChange={(checked) => updateCopyImportUrlOptions({ useNewApiAddress: checked })}
-                      label={<>使用 <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{address}"}</code> (不含 /v1)</>}
+                      label={<>{t("使用")} <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{address}"}</code>  {t("(不含 /v1)")}</>}
                     />
                     <Checkbox
                       checked={copyImportUrlOptions.useNewApiKey}
                       onChange={(checked) => updateCopyImportUrlOptions({ useNewApiKey: checked })}
-                      label={<>使用 <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{key}"}</code></>}
+                      label={<>{t("使用")} <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{key}"}</code></>}
                     />
                     <Checkbox
                       checked={copyImportUrlOptions.useNewApiModel}
                       onChange={(checked) => updateCopyImportUrlOptions({ useNewApiModel: checked })}
-                      label={<>使用 <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{model}"}</code></>}
+                      label={<>{t("使用")} <code className="mx-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[0.85em] font-mono text-gray-700 dark:bg-white/[0.08] dark:text-gray-200">{"{model}"}</code></>}
                     />
                   </div>
                 </div>
@@ -2179,8 +2145,7 @@ export default function SettingsModal() {
                   }}
                   className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition"
                 >
-                  不包含
-                </button>
+                  {t("不包含")}</button>
                 <button
                   onClick={() => {
                     const options = { ...copyImportUrlOptions, includeApiKey: true }
@@ -2188,8 +2153,7 @@ export default function SettingsModal() {
                   }}
                   className="flex-1 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm shadow-blue-500/20"
                 >
-                  包含 API Key
-                </button>
+                  {t("包含 API Key")}</button>
               </div>
             </div>
           </div>,

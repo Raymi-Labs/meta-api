@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import type { TaskRecord } from '../types'
 import { useStore, ensureImageThumbnailCached, subscribeImageThumbnail, updateTaskInStore, retryTask } from '../store'
@@ -406,8 +407,7 @@ export default function TaskCard({
               />
               {streamPreviewLoaded && (
                 <span className="absolute top-1.5 right-1.5 flex items-center gap-1 rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm sm:text-xs">
-                  预览
-                </span>
+                  {t("预览")}</span>
               )}
             </>
           )}
@@ -432,7 +432,7 @@ export default function TaskCard({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
               </svg>
-              <span className="text-xs text-gray-400 dark:text-gray-500">生成中...</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{t("生成中...")}</span>
             </div>
           )}
           {task.status === 'error' && isFalReconnecting && (
@@ -451,8 +451,7 @@ export default function TaskCard({
                 />
               </svg>
               <span className="text-xs text-yellow-500 text-center leading-tight">
-                重连中
-              </span>
+                {t("重连中")}</span>
             </div>
           )}
           {task.status === 'error' && !isFalReconnecting && (
@@ -471,7 +470,7 @@ export default function TaskCard({
                 />
               </svg>
               <span className={`text-xs text-center leading-tight ${isInterrupted ? 'text-yellow-500' : 'text-red-400'}`}>
-                {isInterrupted ? '已停止' : '失败'}
+                {isInterrupted ? t("已停止") : t("失败")}
               </span>
             </div>
           )}
@@ -534,12 +533,12 @@ export default function TaskCard({
           <div className="flex-1 min-h-0 mb-2 overflow-hidden">
             {showPendingPrompt ? (
               <div className="leading-relaxed">
-                <p className="text-sm text-gray-700 dark:text-gray-300">正在生成……</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">输入内容将在响应完成时接收</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{t("正在生成……")}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t("输入内容将在响应完成时接收")}</p>
               </div>
             ) : (
               <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
-                {task.prompt || '(无提示词)'}
+                {task.prompt || t("(无提示词)")}
               </p>
             )}
           </div>
@@ -585,31 +584,30 @@ export default function TaskCard({
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                  局部重绘
-                </span>
+                  {t("局部重绘")}</span>
               )}
               {/* Params: only show if not default or mismatch */}
               {showQuality && (
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/[0.04] text-xs flex-shrink-0">
-                  <span className="text-gray-400 dark:text-gray-500">质量</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t("质量")}</span>
                   {qualityDisplay.isMismatch ? <ActualValueBadge value={qualityDisplay.displayValue} className="px-1 rounded-sm" /> : <span className="text-gray-600 dark:text-gray-300">{qualityDisplay.displayValue}</span>}
                 </span>
               )}
               {showSize && (
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/[0.04] text-xs flex-shrink-0">
-                  <span className="text-gray-400 dark:text-gray-500">尺寸</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t("尺寸")}</span>
                   {sizeDisplay.isMismatch ? <ActualValueBadge value={sizeDisplay.displayValue} className="px-1 rounded-sm" /> : <span className="text-gray-600 dark:text-gray-300">{sizeDisplay.displayValue}</span>}
                 </span>
               )}
               {showFormat && (
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/[0.04] text-xs flex-shrink-0">
-                  <span className="text-gray-400 dark:text-gray-500">格式</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t("格式")}</span>
                   {formatDisplay.isMismatch ? <ActualValueBadge value={formatDisplay.displayValue} className="px-1 rounded-sm" /> : <span className="text-gray-600 dark:text-gray-300">{formatDisplay.displayValue}</span>}
                 </span>
               )}
               {showN && (
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/[0.04] text-xs flex-shrink-0">
-                  <span className="text-gray-400 dark:text-gray-500">数量</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t("数量")}</span>
                   {nDisplay.isMismatch ? <ActualValueBadge value={nDisplay.displayValue} className="px-1 rounded-sm" /> : <span className="text-gray-600 dark:text-gray-300">{nDisplay.displayValue}</span>}
                 </span>
               )}
@@ -626,7 +624,7 @@ export default function TaskCard({
             >
               {((task.status === 'error' && !isFalReconnecting) || settings.alwaysShowRetryButton) && (
                 <TaskActionButton
-                  tooltip="重试任务"
+                  tooltip={t("重试任务")}
                   onClick={() => retryTask(task)}
                   className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 text-gray-400 hover:text-blue-500 transition"
                 >
@@ -636,7 +634,7 @@ export default function TaskCard({
                 </TaskActionButton>
               )}
               <TaskActionButton
-                tooltip={task.isFavorite ? '取消收藏' : '收藏记录'}
+                tooltip={task.isFavorite ? t("取消收藏") : t("收藏记录")}
                 onClick={() =>
                   updateTaskInStore(task.id, { isFavorite: !task.isFavorite })
                 }
@@ -661,7 +659,7 @@ export default function TaskCard({
                 </svg>
               </TaskActionButton>
               <TaskActionButton
-                tooltip="复用配置"
+                tooltip={t("复用配置")}
                 onClick={onReuse}
                 className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 text-gray-400 hover:text-blue-500 transition"
               >
@@ -680,7 +678,7 @@ export default function TaskCard({
                 </svg>
               </TaskActionButton>
               <TaskActionButton
-                tooltip="编辑输出"
+                tooltip={t("编辑输出")}
                 onClick={onEditOutputs}
                 className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-950/30 text-gray-400 hover:text-green-500 transition disabled:opacity-30"
                 disabled={!task.outputImages?.length}
@@ -700,7 +698,7 @@ export default function TaskCard({
                 </svg>
               </TaskActionButton>
               <TaskActionButton
-                tooltip="删除记录"
+                tooltip={t("删除记录")}
                 onClick={onDelete}
                 className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 hover:text-red-500 transition"
               >

@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Trang web này chưa cấu hình dịch vụ thống kê tùy chọn.",
   "暂无系统公告": "Hiện chưa có thông báo hệ thống",
   "公告加载失败，请稍后重试。": "Không thể tải thông báo. Vui lòng thử lại sau.",
-  "有未读公告": "Bạn có thông báo chưa đọc"
+  "有未读公告": "Bạn có thông báo chưa đọc",
+  "正文语言": "Ngôn ngữ nội dung",
+  "正文翻译加载失败，请重试。": "Bản dịch văn bản không tải được, vui lòng thử lại.",
+  "正在加载正文翻译…": "Đang tải bản dịch văn bản...",
+  "重试": "Thử lại",
+  "正在保存账户语言偏好…": "Đang lưu tùy chọn ngôn ngữ của tài khoản...",
+  "语言已在本机切换，但账户偏好保存失败。": "Ngôn ngữ đã được chuyển cục bộ nhưng không lưu được tùy chọn tài khoản.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "Ngôn ngữ đã được chuyển đổi nhưng trình duyệt không thể lưu tùy chọn. Ngôn ngữ gốc có thể được khôi phục sau khi làm mới.",
+  "重新选择当前语言可重试保存。": "Chọn lại ngôn ngữ hiện tại để thử lưu lại."
 }

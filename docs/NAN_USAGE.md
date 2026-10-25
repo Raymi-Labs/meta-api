@@ -117,7 +117,7 @@
 
 给用户排查问题时，建议一次性让对方提供：
 
-```text
+```text i18n-template
 账号邮箱/用户ID：
 问题发生时间：
 使用客户端：Codex / Claude Code / Gemini / OpenCode / OpenClaw / API

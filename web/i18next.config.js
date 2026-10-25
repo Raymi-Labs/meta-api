@@ -21,7 +21,25 @@ import { defineConfig } from 'i18next-cli';
 
 /** @type {import('i18next-cli').I18nextToolkitConfig} */
 export default defineConfig({
-  locales: ['zh-CN', 'en', 'fr', 'ru', 'ja', 'vi', 'zh-TW'],
+  locales: [
+    'zh-CN',
+    'en',
+    'zh-TW',
+    'ja',
+    'ko',
+    'de',
+    'es',
+    'fr',
+    'pt',
+    'ru',
+    'tr',
+    'pl',
+    'nl',
+    'it',
+    'vi',
+    'uk',
+    'bg',
+  ],
   extract: {
     input: ['src/**/*.{js,jsx,ts,tsx}'],
     ignore: ['src/i18n/**/*'],

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   modelColorMap,
   renderNumber,
@@ -57,6 +57,8 @@ export const useDashboardCharts = (
   setModelColors,
   t,
 ) => {
+  const lastChartData = useRef(null);
+  const lastUserData = useRef(null);
   // ========== 图表规格状态 ==========
   const [spec_line, setSpecLine] = useState({
     type: 'bar',
@@ -234,7 +236,11 @@ export const useDashboardCharts = (
   }, []);
 
   const updateChartData = useCallback(
-    (data) => {
+    (source) => {
+      lastChartData.current = source;
+      const data = source.map((row) =>
+        row.is_empty_placeholder ? { ...row, model_name: t('无数据') } : row,
+      );
       const processedData = processRawData(
         data,
         dataExportDefaultTime,
@@ -347,6 +353,7 @@ export const useDashboardCharts = (
 
   const updateUserChartData = useCallback(
     (data) => {
+      lastUserData.current = data;
       const userQuotaTotal = new Map();
       data.forEach((item) => {
         const previousQuota = userQuotaTotal.get(item.username) || 0;
@@ -384,6 +391,33 @@ export const useDashboardCharts = (
     },
     [t],
   );
+
+  // Rebuild presentation from cached data when the language changes. Model and
+  // account names stay untouched; the synthetic empty state alone is translated.
+  useEffect(() => {
+    setSpecLine((previous) => ({
+      ...previous,
+      title: {
+        ...previous.title,
+        text: t('模型消耗分布'),
+        subtext: `${t('总计')}：${renderQuota(0, 2)}`,
+      },
+    }));
+    setSpecRankBar((previous) => ({
+      ...previous,
+      title: {
+        ...previous.title,
+        text: t('模型调用次数排行'),
+        subtext: `${t('总计')}：${renderNumber(0)}`,
+      },
+    }));
+    setSpecUserRank((previous) => ({
+      ...previous,
+      title: { ...previous.title, text: t('用户消耗排行') },
+    }));
+    if (lastChartData.current) updateChartData(lastChartData.current);
+    if (lastUserData.current) updateUserChartData(lastUserData.current);
+  }, [t, updateChartData, updateUserChartData]);
 
   // ========== 初始化图表主题 ==========
   useEffect(() => {

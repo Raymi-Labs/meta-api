@@ -1,3 +1,4 @@
+import { imageLanguageStore } from './language'
 import 'core-js/actual/array/at'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -7,6 +8,8 @@ import './index.css'
 import { installMobileViewportGuards } from './lib/viewport'
 
 installMobileViewportGuards()
+const stopLanguageSync = imageLanguageStore.initialize(window)
+if (import.meta.hot) import.meta.hot.dispose(stopLanguageSync)
 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {

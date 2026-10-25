@@ -44,7 +44,7 @@
   "scripts": {
     "dev": "vite",
     "build:image-playground": "cd apps/image-playground && bun install --frozen-lockfile && bun run build",
-    "build": "bun run build:image-playground && vite build && bun run prerender",
+    "build": "bun run check:language-resources && bun run build:image-playground && vite build && bun run prerender",
     "prerender": "node scripts/prerender.mjs",
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
@@ -73,7 +73,9 @@
     "test:public-language": "bun test scripts/public-language.test.mjs",
     "test:public-policies": "node --test scripts/public-legal.test.mjs scripts/analytics-consent.test.mjs && bun test scripts/public-footer.test.jsx",
     "test:request-failure": "node scripts/request-failure.test.mjs",
-    "test:pulse-settings": "node scripts/pulse-settings.test.mjs"
+    "test:pulse-settings": "node scripts/pulse-settings.test.mjs",
+    "test:site-language": "bun test scripts/site-language.test.mjs scripts/site-language-i18n.test.mjs scripts/api-language.test.mjs scripts/semi-locale.test.mjs scripts/public-language.test.mjs && node --test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun test scripts/channel-monitor-language.test.jsx",
+    "check:language-resources": "node --test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && node apps/image-playground/scripts/check-language.mjs"
   },
   "eslintConfig": {
     "extends": [

@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { DEFAULT_DROPDOWN_MAX_HEIGHT, getDropdownMaxHeight } from '../lib/dropdown'
@@ -352,7 +353,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                     data-drag-handle
                     className="flex cursor-grab active:cursor-grabbing items-center justify-center text-gray-400 opacity-60 transition-opacity hover:opacity-100 dark:text-gray-500"
                     style={{ touchAction: 'none' }}
-                    title="拖拽排序"
+                    title={t("拖拽排序")}
                   >
                     <DragHandleIcon className="h-3.5 w-3.5" />
                   </div>
@@ -365,7 +366,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                     <button
                       key={action.label}
                       type="button"
-                      title={action.label}
+                      title={t(action.label)}
                       onPointerDown={(event) => {
                         event.stopPropagation()
                       }}
@@ -379,12 +380,12 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                         ? 'text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10'
                         : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.08] dark:hover:text-gray-200'}`}
                     >
-                      {action.label === '编辑' ? (
+                      {(action.label === '编辑' || action.label === t('编辑')) ? (
                         <EditIcon className="w-3.5 h-3.5" />
-                      ) : action.label === '删除' ? (
+                      ) : (action.label === '删除' || action.label === t('删除')) ? (
                         <TrashIcon className="w-3.5 h-3.5" />
                       ) : (
-                        action.label
+                        t(action.label)
                       )}
                     </button>
                   ))}

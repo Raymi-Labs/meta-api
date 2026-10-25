@@ -57,6 +57,10 @@ import { UserContext } from '../../../context/User';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import PaymentRiskCaseDetailModal from './PaymentRiskCaseDetailModal';
 import { EPAY_CRYPTO_METHODS } from '../../../helpers/epayMethods';
+import i18n from '../../../i18n/i18n';
+import { createInvoiceTemplateTranslator } from '../../../helpers/invoiceTemplateLanguage';
+
+const invoiceText = createInvoiceTemplateTranslator((source) => i18n.t(source));
 
 const { Text } = Typography;
 
@@ -74,7 +78,9 @@ const PAYMENT_METHOD_MAP = {
   wxpay: '微信',
   wallet: '钱包',
   bank_transfer: '银行转账',
-  ...Object.fromEntries(EPAY_CRYPTO_METHODS.map(({ type, name }) => [type, name])),
+  ...Object.fromEntries(
+    EPAY_CRYPTO_METHODS.map(({ type, name }) => [type, name]),
+  ),
 };
 
 const RISK_STATUS_CONFIG = {
@@ -133,7 +139,10 @@ const PAYMENT_OPTIONS = [
   { label: '钱包', value: 'wallet' },
   { label: '微信', value: 'wxpay' },
   { label: '支付宝', value: 'alipay' },
-  ...EPAY_CRYPTO_METHODS.map(({ name, type }) => ({ label: name, value: type })),
+  ...EPAY_CRYPTO_METHODS.map(({ name, type }) => ({
+    label: name,
+    value: type,
+  })),
   { label: 'Stripe', value: 'stripe' },
   { label: 'Creem', value: 'creem' },
 ];
@@ -331,24 +340,28 @@ function getInvoiceItemKey(item) {
 }
 
 function getInvoiceOrderTypeLabel(orderType) {
-  return RECORD_TYPE_MAP[orderType] || orderType || '-';
+  return RECORD_TYPE_MAP[orderType]
+    ? i18n.t(RECORD_TYPE_MAP[orderType])
+    : orderType || '-';
 }
 
 function getInvoiceTypeLabel(invoiceType) {
-  return invoiceType === 'special' ? '专票' : '普票';
+  return invoiceType === 'special' ? invoiceText`专票` : invoiceText`普票`;
 }
 
 function buildInvoiceTitleCopyText(record) {
   return [
-    `发票类型：${getInvoiceTypeLabel(record?.invoice_type)}`,
-    `单位名称：${record?.title || '-'}`,
-    `税号：${record?.tax_number || '-'}`,
-    `申请金额：${formatMoney(record?.total_money)}`,
+    invoiceText`发票类型：${getInvoiceTypeLabel(record?.invoice_type)}`,
+    invoiceText`单位名称：${record?.title || '-'}`,
+    invoiceText`税号：${record?.tax_number || '-'}`,
+    invoiceText`申请金额：${formatMoney(record?.total_money)}`,
   ].join('\n');
 }
 
 function getInvoicePaymentLabel(paymentMethod) {
-  return PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod || '-';
+  return PAYMENT_METHOD_MAP[paymentMethod]
+    ? i18n.t(PAYMENT_METHOD_MAP[paymentMethod])
+    : paymentMethod || '-';
 }
 
 function getInvoicePaymentLabelForItem(item) {
@@ -373,7 +386,18 @@ function displayValue(value) {
 }
 
 function formatInvoiceTime(value) {
-  return value ? timestamp2string(value) : '-';
+  return value
+    ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date(value * 1000))
+    : '-';
 }
 
 function formatInvoiceCode(item) {
@@ -431,9 +455,9 @@ function formatInvoiceUser(invoice) {
       invoice.display_name && invoice.display_name !== invoice.username
         ? ` / ${invoice.display_name}`
         : '';
-    return `${invoice.username}${displayName}（用户 ID：${invoice.user_id || '-'}）`;
+    return invoiceText`${invoice.username}${displayName}（用户 ID：${invoice.user_id || '-'}）`;
   }
-  return invoice?.user_id ? `用户 ID：${invoice.user_id}` : '-';
+  return invoice?.user_id ? invoiceText`用户 ID：${invoice.user_id}` : '-';
 }
 
 function formatInvoiceReviewer(invoice) {
@@ -453,7 +477,12 @@ function formatInvoicePrintDate(timestamp) {
   if (Number.isNaN(date.getTime())) {
     return '-';
   }
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
 }
 
 function formatInvoiceDateCompact(timestamp) {
@@ -461,9 +490,17 @@ function formatInvoiceDateCompact(timestamp) {
   if (Number.isNaN(date.getTime())) {
     return '00000000';
   }
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${date.getFullYear()}${month}${day}`;
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .formatToParts(date)
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}${parts.month}${parts.day}`;
 }
 
 function formatInvoicePrintMoney(value) {
@@ -471,7 +508,7 @@ function formatInvoicePrintMoney(value) {
   if (!Number.isFinite(amount)) {
     return '-';
   }
-  return `¥${amount.toLocaleString('zh-CN', {
+  return `¥${amount.toLocaleString(i18n.resolvedLanguage || i18n.language, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -480,17 +517,17 @@ function formatInvoicePrintMoney(value) {
 function formatInvoiceServiceAmount(invoice) {
   const totalMoney = Number(invoice?.total_money || 0);
   if (Number.isFinite(totalMoney) && totalMoney > 0) {
-    return `人民币 ${formatInvoicePrintMoney(totalMoney)}`;
+    return invoiceText`人民币 ${formatInvoicePrintMoney(totalMoney)}`;
   }
-  return '以账户实际订单金额及发票开具金额为准';
+  return invoiceText`以账户实际订单金额及发票开具金额为准`;
 }
 
 function formatInvoiceServiceQuota(invoice) {
   const totalQuota = Number(invoice?.total_quota || 0);
   if (Number.isFinite(totalQuota) && totalQuota > 0) {
-    return `${totalQuota.toLocaleString('zh-CN')} 额度单位`;
+    return invoiceText`${totalQuota.toLocaleString('zh-CN')} 额度单位`;
   }
-  return '以账户实际可用额度及调用扣减记录为准';
+  return invoiceText`以账户实际可用额度及调用扣减记录为准`;
 }
 
 function formatInvoiceProductQuantity(item) {
@@ -510,7 +547,7 @@ function formatInvoiceProductServicePeriod(item) {
   if (!start || !end) {
     return '-';
   }
-  return `${formatInvoicePrintDate(start)} 至 ${formatInvoicePrintDate(end)}`;
+  return invoiceText`${formatInvoicePrintDate(start)} 至 ${formatInvoicePrintDate(end)}`;
 }
 
 function formatInvoicePaymentAmount(item) {
@@ -555,9 +592,13 @@ function formatInvoiceTypeSummary(summary) {
   return Object.entries(summary.byType)
     .filter(([, stats]) => stats.count > 0)
     .map(([type, stats]) => {
-      const parts = [`${getInvoiceOrderTypeLabel(type)} ${stats.count} 笔`];
+      const parts = [
+        invoiceText`${getInvoiceOrderTypeLabel(type)} ${stats.count} 笔`,
+      ];
       if (Number(stats.money || 0) > 0) {
-        parts.push(`金额合计 ${formatInvoicePrintMoney(stats.money)}`);
+        parts.push(
+          invoiceText`金额合计 ${formatInvoicePrintMoney(stats.money)}`,
+        );
       }
       return parts.join('，');
     })
@@ -571,26 +612,26 @@ function buildInvoicePrintHtml(invoice, stampUrl = '', options = {}) {
   const manual = isManualInvoice(invoice);
   const official = Boolean(options.official ?? invoice?.status === 'invoiced');
   const documentTitle = official
-    ? '曜算平台交易明细证明'
-    : '曜算平台交易明细账单（待审核）';
+    ? invoiceText`曜算平台交易明细证明`
+    : invoiceText`曜算平台交易明细账单（待审核）`;
   const intro = manual
     ? official
-      ? `兹证明：用户 ${cell(formatInvoiceUser(invoice))} 提交的转账资料已经平台审核，相关交易明细如下：`
-      : `用户 ${cell(formatInvoiceUser(invoice))} 提交了转账资料，以下内容仅为待审核申请信息预览：`
-    : `用户 ${cell(formatInvoiceUser(invoice))} 于曜算平台存在相关交易记录，申请范围内的交易明细如下：`;
+      ? invoiceText`兹证明：用户 ${cell(formatInvoiceUser(invoice))} 提交的转账资料已经平台审核，相关交易明细如下：`
+      : invoiceText`用户 ${cell(formatInvoiceUser(invoice))} 提交了转账资料，以下内容仅为待审核申请信息预览：`
+    : invoiceText`用户 ${cell(formatInvoiceUser(invoice))} 于曜算平台存在相关交易记录，申请范围内的交易明细如下：`;
   const sourceNotes = manual
     ? official
-      ? `<p>本文件所列人工转账信息依据申请人提交的银行转账资料及平台审核记录生成。</p>
+      ? invoiceText`<p>本文件所列人工转账信息依据申请人提交的银行转账资料及平台审核记录生成。</p>
       <p>人工转账记录不属于平台支付渠道自动回传订单，不会据此自动增加或扣减用户钱包余额。</p>`
-      : `<p>本文件中的银行转账信息由申请人自行填报，当前尚未完成平台核验，不构成到账、开票或服务交付证明。</p>
+      : invoiceText`<p>本文件中的银行转账信息由申请人自行填报，当前尚未完成平台核验，不构成到账、开票或服务交付证明。</p>
       <p>人工转账记录不会据此自动增加或扣减用户钱包余额。</p>`
-    : `<p>本文件所列订单明细依据用户申请时选择的订单及平台系统快照生成。</p>`;
+    : invoiceText`<p>本文件所列订单明细依据用户申请时选择的订单及平台系统快照生成。</p>`;
   const totalParts = [
-    `支付金额合计人民币 ${formatInvoicePrintMoney(summary.money)}`,
+    invoiceText`支付金额合计人民币 ${formatInvoicePrintMoney(summary.money)}`,
   ];
   const typeSummary = formatInvoiceTypeSummary(summary);
   const timeRange = summary.startTime
-    ? `${formatInvoiceTime(summary.startTime)} 至 ${formatInvoiceTime(summary.endTime)}`
+    ? invoiceText`${formatInvoiceTime(summary.startTime)} 至 ${formatInvoiceTime(summary.endTime)}`
     : '-';
   const orderRows =
     items.length > 0
@@ -619,21 +660,21 @@ function buildInvoicePrintHtml(invoice, stampUrl = '', options = {}) {
             `;
           })
           .join('')
-      : '<tr><td colspan="9" class="empty">暂无交易明细</td></tr>';
+      : invoiceText`<tr><td colspan="9" class="empty">暂无交易明细</td></tr>`;
   const watermark = official
     ? ''
-    : '<div class="draft-watermark">待审核 · 非正式文件</div>';
+    : invoiceText`<div class="draft-watermark">待审核 · 非正式文件</div>`;
   const signSection = official
-    ? `<section class="sign">
+    ? invoiceText`<section class="sign">
       <div class="sign-box">
         <p>上海曜算智能科技有限公司</p>
         <p>盖章：<span class="stamp-hint">见右下角公章</span></p>
         <p>出具日期：${cell(formatInvoicePrintDate(invoice?.reviewed_at || Math.floor(Date.now() / 1000)))}</p>
-        ${stampUrl ? `<img class="sign-seal-image" src="${cell(stampUrl)}" alt="公司公章" />` : ''}
+        ${stampUrl ? invoiceText`<img class="sign-seal-image" src="${cell(stampUrl)}" alt="公司公章" />` : ''}
       </div>
     </section>`
-    : '<section class="pending-note">当前状态：待审核。审核通过前不得作为正式交易证明使用。</section>';
-  return `<!doctype html>
+    : invoiceText`<section class="pending-note">当前状态：待审核。审核通过前不得作为正式交易证明使用。</section>`;
+  return invoiceText`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -702,9 +743,9 @@ function buildInvoicePrintHtml(invoice, stampUrl = '', options = {}) {
     <section class="notes">
       <h2>说明</h2>
       ${sourceNotes}
-      <p>${official ? '本证明' : '本预览'}不得擅自修改、涂改、拆分或用于与申请目的不一致的其他用途。</p>
+      <p>${official ? invoiceText`本证明` : invoiceText`本预览`}不得擅自修改、涂改、拆分或用于与申请目的不一致的其他用途。</p>
       <p>本文件中所列时间均为北京时间（UTC+08:00）。</p>
-      ${official ? '<p>本证明经上海曜算智能科技有限公司加盖公章后生效。</p>' : ''}
+      ${official ? invoiceText`<p>本证明经上海曜算智能科技有限公司加盖公章后生效。</p>` : ''}
     </section>
 
     ${signSection}
@@ -734,9 +775,9 @@ function buildInvoiceServiceConfirmationHtml(
       ? invoice.product_items
       : [
           {
-            product_name: 'AI API 调用额度',
-            specification: '以对应交易及账户实际记录为准',
-            unit: '项',
+            product_name: invoiceText`AI API 调用额度`,
+            specification: invoiceText`以对应交易及账户实际记录为准`,
+            unit: invoiceText`项`,
             quantity: 1,
             unit_price: Number(invoice?.total_money || 0),
             money: Number(invoice?.total_money || 0),
@@ -748,12 +789,12 @@ function buildInvoiceServiceConfirmationHtml(
     .map((item, index) => {
       const details = [
         Number(item?.quota || 0) > 0
-          ? `额度：${formatInvoiceServiceQuota({ total_quota: item.quota })}`
+          ? invoiceText`额度：${formatInvoiceServiceQuota({ total_quota: item.quota })}`
           : '',
         formatInvoiceProductServicePeriod(item) !== '-'
-          ? `服务周期：${formatInvoiceProductServicePeriod(item)}`
+          ? invoiceText`服务周期：${formatInvoiceProductServicePeriod(item)}`
           : '',
-        item?.remark ? `备注：${item.remark}` : '',
+        item?.remark ? invoiceText`备注：${item.remark}` : '',
       ].filter(Boolean);
       return `<tr>
         <td class="center">${index + 1}</td>
@@ -767,22 +808,22 @@ function buildInvoiceServiceConfirmationHtml(
     })
     .join('');
   const documentTitle = official
-    ? 'AI API 技术服务产品明细清单'
-    : 'AI API 技术服务产品明细清单（待审核）';
+    ? invoiceText`AI API 技术服务产品明细清单`
+    : invoiceText`AI API 技术服务产品明细清单（待审核）`;
   const watermark = official
     ? ''
-    : '<div class="draft-watermark">待审核 · 非正式文件</div>';
+    : invoiceText`<div class="draft-watermark">待审核 · 非正式文件</div>`;
   const signSection = official
-    ? `<section class="sign">
+    ? invoiceText`<section class="sign">
       <div class="sign-box">
         <p class="provider-name">上海曜算智能科技有限公司</p>
         <p>盖章：<span class="stamp-hint">见右下角公章</span></p>
         <p>出具日期：${cell(issueDate)}</p>
-        ${stampUrl ? `<img class="provider-seal" src="${cell(stampUrl)}" alt="公司公章" />` : ''}
+        ${stampUrl ? invoiceText`<img class="provider-seal" src="${cell(stampUrl)}" alt="公司公章" />` : ''}
       </div>
     </section>`
-    : '<section class="pending-note">当前状态：待审核。产品内容及金额须经管理员核验后方可作为正式文件使用。</section>';
-  return `<!doctype html>
+    : invoiceText`<section class="pending-note">当前状态：待审核。产品内容及金额须经管理员核验后方可作为正式文件使用。</section>`;
+  return invoiceText`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -825,12 +866,12 @@ function buildInvoiceServiceConfirmationHtml(
       <span>文件编号：${cell(documentNo)}</span>
     </div>
     <h1>${cell(documentTitle)}</h1>
-    <p class="lead">${official ? '本文件依据对应交易及产品快照生成，盖章后作为服务交付与费用确认依据。' : '本文件依据用户提交内容自动生成，当前仅供核对，尚未完成平台审核。'}</p>
+    <p class="lead">${official ? invoiceText`本文件依据对应交易及产品快照生成，盖章后作为服务交付与费用确认依据。` : invoiceText`本文件依据用户提交内容自动生成，当前仅供核对，尚未完成平台审核。`}</p>
     <table class="meta-table">
       <tbody>
-        <tr><th>文件编号</th><td>${cell(documentNo)}</td><th>${official ? '签发日期' : '申请日期'}</th><td>${cell(issueDate)}</td></tr>
+        <tr><th>文件编号</th><td>${cell(documentNo)}</td><th>${official ? invoiceText`签发日期` : invoiceText`申请日期`}</th><td>${cell(issueDate)}</td></tr>
         <tr><th>服务提供方</th><td>上海曜算智能科技有限公司</td><th>客户名称</th><td>${cell(clientName)}</td></tr>
-        <tr><th>凭证来源</th><td>${cell(isManualInvoice(invoice) ? '申请人填报的转账资料' : '平台订单快照')}</td><th>申请金额</th><td>${cell(formatInvoicePrintMoney(invoice?.total_money))}</td></tr>
+        <tr><th>凭证来源</th><td>${cell(isManualInvoice(invoice) ? invoiceText`申请人填报的转账资料` : invoiceText`平台订单快照`)}</td><th>申请金额</th><td>${cell(formatInvoicePrintMoney(invoice?.total_money))}</td></tr>
       </tbody>
     </table>
 
@@ -2423,7 +2464,7 @@ const TopupHistoryModal = ({
     targetWindow.opener = null;
     targetWindow.document.open();
     targetWindow.document.write(
-      '<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;">正在加载明细账单...</body>',
+      invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;">正在加载明细账单...</body>`,
     );
     targetWindow.document.close();
     try {
@@ -2432,8 +2473,8 @@ const TopupHistoryModal = ({
     } catch (error) {
       targetWindow.document.open();
       targetWindow.document.write(
-        `<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || '加载明细账单失败',
+        invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
+          error?.message || invoiceText`加载明细账单失败`,
         )}</body>`,
       );
       targetWindow.document.close();
@@ -2449,7 +2490,7 @@ const TopupHistoryModal = ({
     targetWindow.opener = null;
     targetWindow.document.open();
     targetWindow.document.write(
-      '<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;">正在加载明细账单...</body>',
+      invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;">正在加载明细账单...</body>`,
     );
     targetWindow.document.close();
     try {
@@ -2461,8 +2502,8 @@ const TopupHistoryModal = ({
     } catch (error) {
       targetWindow.document.open();
       targetWindow.document.write(
-        `<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || '加载明细账单失败',
+        invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
+          error?.message || invoiceText`加载明细账单失败`,
         )}</body>`,
       );
       targetWindow.document.close();
@@ -2478,7 +2519,7 @@ const TopupHistoryModal = ({
     targetWindow.opener = null;
     targetWindow.document.open();
     targetWindow.document.write(
-      '<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;">正在加载产品明细清单...</body>',
+      invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;">正在加载产品明细清单...</body>`,
     );
     targetWindow.document.close();
     try {
@@ -2487,8 +2528,8 @@ const TopupHistoryModal = ({
     } catch (error) {
       targetWindow.document.open();
       targetWindow.document.write(
-        `<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || '加载产品明细清单失败',
+        invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
+          error?.message || invoiceText`加载产品明细清单失败`,
         )}</body>`,
       );
       targetWindow.document.close();
@@ -2504,7 +2545,7 @@ const TopupHistoryModal = ({
     targetWindow.opener = null;
     targetWindow.document.open();
     targetWindow.document.write(
-      '<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;">正在加载产品明细清单...</body>',
+      invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;">正在加载产品明细清单...</body>`,
     );
     targetWindow.document.close();
     try {
@@ -2516,8 +2557,8 @@ const TopupHistoryModal = ({
     } catch (error) {
       targetWindow.document.open();
       targetWindow.document.write(
-        `<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || '加载产品明细清单失败',
+        invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
+          error?.message || invoiceText`加载产品明细清单失败`,
         )}</body>`,
       );
       targetWindow.document.close();
@@ -3896,7 +3937,7 @@ const TopupHistoryModal = ({
                 className='text-xs mb-1'
                 style={{ color: 'var(--semi-color-text-2)' }}
               >
-                ID/用户名
+                {t('ID/用户名')}
               </div>
               <Input
                 placeholder={t('ID/用户名')}
@@ -3980,7 +4021,7 @@ const TopupHistoryModal = ({
             className='text-xs mb-1'
             style={{ color: 'var(--semi-color-text-2)' }}
           >
-            ID/用户名
+            {t('ID/用户名')}
           </div>
           <Input
             placeholder={t('ID/用户名')}
@@ -4072,7 +4113,7 @@ const TopupHistoryModal = ({
               className='text-xs mb-1'
               style={{ color: 'var(--semi-color-text-2)' }}
             >
-              ID/用户名
+              {t('ID/用户名')}
             </div>
             <Input
               placeholder={t('ID/用户名')}
@@ -4128,7 +4169,7 @@ const TopupHistoryModal = ({
             className='text-xs mb-1'
             style={{ color: 'var(--semi-color-text-2)' }}
           >
-            ID/用户名
+            {t('ID/用户名')}
           </div>
           <Input
             placeholder={t('ID/用户名')}
@@ -4531,11 +4572,15 @@ const TopupHistoryModal = ({
             )}
             {renderInvoiceDetailValue(
               '明细账单',
-              detail?.need_detail_bill !== false ? '需要随发票发送' : '不需要',
+              detail?.need_detail_bill !== false
+                ? t('需要随发票发送')
+                : t('不需要'),
             )}
             {renderInvoiceDetailValue(
               '产品明细清单',
-              detail?.need_service_confirmation ? '需要随发票发送' : '不需要',
+              detail?.need_service_confirmation
+                ? t('需要随发票发送')
+                : t('不需要'),
             )}
           </div>
           {isManualInvoice(detail) ? (

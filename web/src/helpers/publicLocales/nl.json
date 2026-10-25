@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Voor deze website is geen optionele statistiekendienst ingesteld.",
   "暂无系统公告": "Geen systeemmeldingen",
   "公告加载失败，请稍后重试。": "De meldingen konden niet worden geladen. Probeer het later opnieuw.",
-  "有未读公告": "Er zijn ongelezen meldingen"
+  "有未读公告": "Er zijn ongelezen meldingen",
+  "正文语言": "Inhoudelijke taal",
+  "正文翻译加载失败，请重试。": "De tekstvertaling kan niet worden geladen. Probeer het opnieuw.",
+  "正在加载正文翻译…": "Tekstvertaling laden...",
+  "重试": "Opnieuw proberen",
+  "正在保存账户语言偏好…": "Accounttaalvoorkeur opslaan...",
+  "语言已在本机切换，但账户偏好保存失败。": "De taal is lokaal gewijzigd, maar de accountvoorkeur kan niet worden opgeslagen.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "De taal is gewijzigd, maar de browser kan de voorkeur niet opslaan. De oorspronkelijke taal kan na het vernieuwen worden hersteld.",
+  "重新选择当前语言可重试保存。": "Selecteer de huidige taal opnieuw om opnieuw te proberen op te slaan."
 }

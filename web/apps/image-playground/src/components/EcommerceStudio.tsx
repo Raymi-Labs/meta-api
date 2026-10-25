@@ -1,3 +1,4 @@
+import { t, getImageLanguage, translateMessage } from '../language'
 import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import type { EcommerceBrief, ProductAsset, ProductAssetKind, SuitePlanGroup, SuitePlanItem, TaskRecord } from '../types'
 import {
@@ -29,11 +30,11 @@ function parseTags(value: string) {
 }
 
 function statusLabel(item: SuitePlanItem) {
-  if (item.status === 'generating') return '生成中'
-  if (item.status === 'done') return '已完成'
-  if (item.status === 'partial_success') return '部分成功'
-  if (item.status === 'error') return '失败'
-  return '草稿'
+  if (item.status === 'generating') return t("生成中")
+  if (item.status === 'done') return t("已完成")
+  if (item.status === 'partial_success') return t("部分成功")
+  if (item.status === 'error') return t("失败")
+  return t("草稿")
 }
 
 function statusClass(item: SuitePlanItem) {
@@ -140,20 +141,19 @@ function BucketCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-gray-900 dark:text-white">
-            {bucket.label}{bucket.required && <span className="text-red-500 ml-1">*</span>}
+            {t(bucket.label)}{bucket.required && <span className="text-red-500 ml-1">*</span>}
           </div>
-          <div className="text-xs text-gray-500 mt-1">{bucket.hint}</div>
+          <div className="text-xs text-gray-500 mt-1">{t(bucket.hint)}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => onShowGuide(kind)}
-            title="查看拍摄 / 选图指引"
+            title={t("查看拍摄 / 选图指引")}
             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-white/[0.08] px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white"
           >
             <HelpCircleIcon className="w-3.5 h-3.5" />
-            指引
-          </button>
+            {t("指引")}</button>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -161,8 +161,7 @@ function BucketCard({
             className="inline-flex items-center gap-1 rounded-lg bg-gray-900 text-white dark:bg-white dark:text-gray-950 px-2 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <PlusIcon className="w-3.5 h-3.5" />
-            上传
-          </button>
+            {t("上传")}</button>
         </div>
       </div>
       <input
@@ -184,7 +183,7 @@ function BucketCard({
               type="button"
               onClick={() => onRemove(asset.id)}
               className="absolute right-1 top-1 rounded-md bg-black/55 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-              aria-label="删除素材"
+              aria-label={t("删除素材")}
             >
               <TrashIcon className="w-3.5 h-3.5" />
             </button>
@@ -192,8 +191,7 @@ function BucketCard({
         ))}
         {assets.length === 0 && (
           <div className="col-span-3 rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] py-5 text-center text-xs text-gray-400">
-            未上传
-          </div>
+            {t("未上传")}</div>
         )}
       </div>
       <div className="mt-2 text-[11px] text-gray-400">{assets.length}/{bucket.max}</div>
@@ -240,14 +238,12 @@ function PlanCard({
         </button>
         <label className="inline-flex items-center gap-1 text-xs text-gray-500">
           <input type="checkbox" checked={item.enabled} onChange={(event) => onPatch({ enabled: event.target.checked })} />
-          启用
-        </label>
+          {t("启用")}</label>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-        <span className="rounded-full bg-gray-100 dark:bg-white/[0.06] px-2 py-1">比例 {item.ratio}</span>
+        <span className="rounded-full bg-gray-100 dark:bg-white/[0.06] px-2 py-1">{t("比例")} {item.ratio}</span>
         <label className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-white/[0.06] px-2 py-1">
-          数量
-          <input
+          {t("数量")}<input
             type="number"
             min={1}
             max={6}
@@ -257,7 +253,7 @@ function PlanCard({
           />
         </label>
       </div>
-      {item.error && <div className="mt-3 rounded-xl bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">{item.error}</div>}
+      {item.error && <div className="mt-3 rounded-xl bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">{translateMessage(item.error)}</div>}
       {outputImageIds.length > 0 ? (
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
           {outputImageIds.map((imageId) => (
@@ -266,27 +262,26 @@ function PlanCard({
                 <ImageThumb imageId={imageId} className="aspect-square w-full" />
               </button>
               <div className="absolute inset-x-1 bottom-1 flex justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <IconButton label="风格参考" onClick={() => onSetStyle(imageId)}><PhotoIcon className="w-3.5 h-3.5" /></IconButton>
-                <IconButton label="下载" onClick={() => onDownload(imageId)}><DownloadIcon className="w-3.5 h-3.5" /></IconButton>
-                <IconButton label="遮罩编辑" onClick={() => onEdit(imageId)}><EditIcon className="w-3.5 h-3.5" /></IconButton>
+                <IconButton label={t("风格参考")} onClick={() => onSetStyle(imageId)}><PhotoIcon className="w-3.5 h-3.5" /></IconButton>
+                <IconButton label={t("下载")} onClick={() => onDownload(imageId)}><DownloadIcon className="w-3.5 h-3.5" /></IconButton>
+                <IconButton label={t("遮罩编辑")} onClick={() => onEdit(imageId)}><EditIcon className="w-3.5 h-3.5" /></IconButton>
               </div>
             </div>
           ))}
         </div>
       ) : (
         <div className="mt-3 rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] px-3 py-5 text-center text-xs text-gray-400">
-          生成后图片会显示在这里
-        </div>
+          {t("生成后图片会显示在这里")}</div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <SmallButton onClick={onRetry} disabled={!item.enabled || item.status === 'generating'} icon={<RefreshIcon className="w-3.5 h-3.5" />}>同类型重生成</SmallButton>
-        <SmallButton onClick={onCopyPrompt} icon={<CopyIcon className="w-3.5 h-3.5" />}>复制提示词</SmallButton>
-        <SmallButton disabled title="即将支持">设为主图</SmallButton>
-        <SmallButton disabled title="即将支持">替换文案</SmallButton>
+        <SmallButton onClick={onRetry} disabled={!item.enabled || item.status === 'generating'} icon={<RefreshIcon className="w-3.5 h-3.5" />}>{t("同类型重生成")}</SmallButton>
+        <SmallButton onClick={onCopyPrompt} icon={<CopyIcon className="w-3.5 h-3.5" />}>{t("复制提示词")}</SmallButton>
+        <SmallButton disabled title={t("即将支持")}>{t("设为主图")}</SmallButton>
+        <SmallButton disabled title={t("即将支持")}>{t("替换文案")}</SmallButton>
       </div>
       {selected && (
         <details className="mt-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] p-3 text-xs text-gray-600 dark:text-gray-300">
-          <summary className="cursor-pointer font-medium">查看最终 prompt 草案</summary>
+          <summary className="cursor-pointer font-medium">{t("查看最终 prompt 草案")}</summary>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed">{item.prompt || item.finalPromptDraft}</pre>
         </details>
       )}
@@ -370,7 +365,7 @@ export default function EcommerceStudio() {
   }, [tasks, suite?.id])
 
   if (!suite) {
-    return <main className="safe-area-x max-w-7xl mx-auto py-10 text-sm text-gray-500">正在创建电商套图工程...</main>
+    return <main className="safe-area-x max-w-7xl mx-auto py-10 text-sm text-gray-500">{t("正在创建电商套图工程...")}</main>
   }
 
   const brief = suite.brief
@@ -390,19 +385,19 @@ export default function EcommerceStudio() {
   // 接受一个 reason 文案区分"行业起步包"和"用户模板"两种触发源。
   const confirmOverwriteIfNeeded = (reason: string): boolean => {
     if (briefIsDefault) return true
-    return window.confirm(`${reason}将完全覆盖当前 brief（不影响已上传素材）。继续？`)
+    return window.confirm(t("{{value0}}将完全覆盖当前 brief（不影响已上传素材）。继续？", { value0: (reason) }))
   }
 
   const handleSelectIndustryPreset = (presetId: string) => {
     if (!presetId) return
-    if (!confirmOverwriteIfNeeded('选择行业起步包')) return
+    if (!confirmOverwriteIfNeeded(t("选择行业起步包"))) return
     if (!applyIndustryPreset(presetId)) {
       showToast('未找到该行业起步包', 'error')
     }
   }
 
   const handleApplyUserTemplate = (templateId: string, templateName: string) => {
-    if (!confirmOverwriteIfNeeded(`套用模板「${templateName}」`)) return
+    if (!confirmOverwriteIfNeeded(t("套用模板「{{value0}}」", { value0: (templateName) }))) return
     if (!applyUserTemplate(templateId)) {
       showToast('模板已不存在', 'error')
     }
@@ -414,7 +409,7 @@ export default function EcommerceStudio() {
   }
 
   const handleRenameUserTemplate = (templateId: string, currentName: string) => {
-    const next = window.prompt('重命名模板', currentName)
+    const next = window.prompt(t("重命名模板"), currentName)
     if (next === null) return
     const trimmed = next.trim()
     if (!trimmed) {
@@ -425,11 +420,11 @@ export default function EcommerceStudio() {
   }
 
   const handleDeleteUserTemplate = (templateId: string, name: string) => {
-    if (!window.confirm(`确定删除模板「${name}」？`)) return
+    if (!window.confirm(t("确定删除模板「{{value0}}」？", { value0: (name) }))) return
     deleteUserTemplate(templateId)
   }
 
-  const defaultTemplateName = `${brief.productName.trim() || '未命名套图'} · ${new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}`
+  const defaultTemplateName = `${brief.productName.trim() || '未命名套图'} · ${new Date().toLocaleString(getImageLanguage(), { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}`
 
   const uploadAssets = async (kind: ProductAssetKind, files: FileList | null) => {
     if (!files?.length) return
@@ -467,13 +462,13 @@ export default function EcommerceStudio() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500">Ecommerce Suite Studio</p>
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-gray-950 dark:text-white">电商套图工作台</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">商品素材 → 套图方案 → 批量生成 → 回流画廊</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-gray-950 dark:text-white">{t("电商套图工作台")}</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t("商品素材 → 套图方案 → 批量生成 → 回流画廊")}</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">规划模型 {capabilities.defaultPlanModel}</span>
-            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">出图模型 {capabilities.defaultImageModel}</span>
-            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">并发 2</span>
+            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">{t("规划模型")} {capabilities.defaultPlanModel}</span>
+            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">{t("出图模型")} {capabilities.defaultImageModel}</span>
+            <span className="rounded-full bg-white/80 dark:bg-white/[0.06] px-3 py-1.5">{t("并发 2")}</span>
           </div>
         </div>
       </div>
@@ -491,10 +486,10 @@ export default function EcommerceStudio() {
             />
           ))}
           <section className="space-y-2 rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-gray-950 p-3">
-            <SwitchRow label="锁定商品主体" checked={brief.lockProduct} onChange={(lockProduct) => updateBrief({ lockProduct })} />
-            <SwitchRow label="锁定品牌风格" checked={brief.lockBrandStyle} onChange={(lockBrandStyle) => updateBrief({ lockBrandStyle })} />
-            <SwitchRow label="允许轻微美化" checked={brief.allowBeautify} onChange={(allowBeautify) => updateBrief({ allowBeautify })} />
-            <SwitchRow label="严格结构一致" checked={brief.strictStructure} onChange={(strictStructure) => updateBrief({ strictStructure })} />
+            <SwitchRow label={t("锁定商品主体")} checked={brief.lockProduct} onChange={(lockProduct) => updateBrief({ lockProduct })} />
+            <SwitchRow label={t("锁定品牌风格")} checked={brief.lockBrandStyle} onChange={(lockBrandStyle) => updateBrief({ lockBrandStyle })} />
+            <SwitchRow label={t("允许轻微美化")} checked={brief.allowBeautify} onChange={(allowBeautify) => updateBrief({ allowBeautify })} />
+            <SwitchRow label={t("严格结构一致")} checked={brief.strictStructure} onChange={(strictStructure) => updateBrief({ strictStructure })} />
           </section>
         </aside>
 
@@ -505,10 +500,10 @@ export default function EcommerceStudio() {
               <section key={group.id} className="rounded-3xl border border-gray-200 dark:border-white/[0.08] bg-gray-50/80 dark:bg-white/[0.02] p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-gray-950 dark:text-white">{group.label}</h3>
-                    <p className="text-xs text-gray-500">{group.description}</p>
+                    <h3 className="font-bold text-gray-950 dark:text-white">{t(group.label)}</h3>
+                    <p className="text-xs text-gray-500">{t(group.description)}</p>
                   </div>
-                  <span className="rounded-full bg-white dark:bg-gray-950 px-2.5 py-1 text-xs text-gray-500">{items.length} 项</span>
+                  <span className="rounded-full bg-white dark:bg-gray-950 px-2.5 py-1 text-xs text-gray-500">{t('共 {{count}} 项', { count: items.length })}</span>
                 </div>
                 {items.length > 0 ? (
                   <div className="grid gap-3 2xl:grid-cols-2">
@@ -531,8 +526,7 @@ export default function EcommerceStudio() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white/60 dark:bg-gray-950/50 px-4 py-10 text-center text-sm text-gray-500">
-                    生成套图方案后，这里会按用途展示计划和结果。
-                  </div>
+                    {t("生成套图方案后，这里会按用途展示计划和结果。")}</div>
                 )}
               </section>
             )
@@ -542,12 +536,12 @@ export default function EcommerceStudio() {
         <aside className="space-y-3">
           <section className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-gray-950 p-4">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-bold text-gray-950 dark:text-white">快速起步</h3>
-              <span className="text-xs text-gray-400">一键填充配置</span>
+              <h3 className="font-bold text-gray-950 dark:text-white">{t("快速起步")}</h3>
+              <span className="text-xs text-gray-400">{t("一键填充配置")}</span>
             </div>
             <div className="mt-3 space-y-3">
               <div>
-                <FieldLabel>行业起步包</FieldLabel>
+                <FieldLabel>{t("行业起步包")}</FieldLabel>
                 <SelectInput
                   value=""
                   onChange={(event) => {
@@ -555,26 +549,25 @@ export default function EcommerceStudio() {
                     event.target.value = ''
                   }}
                 >
-                  <option value="">选择一个行业…</option>
+                  <option value="">{t("选择一个行业…")}</option>
                   {INDUSTRY_PRESETS.map((preset) => (
-                    <option key={preset.id} value={preset.id}>{preset.name}</option>
+                    <option key={preset.id} value={preset.id}>{t(preset.name)}</option>
                   ))}
                 </SelectInput>
-                <p className="mt-1 text-xs text-gray-500">选中后会完全覆盖当前 brief，但不会动已上传的素材。</p>
+                <p className="mt-1 text-xs text-gray-500">{t("选中后会完全覆盖当前 brief，但不会动已上传的素材。")}</p>
               </div>
               <div>
                 <div className="flex items-center justify-between">
-                  <FieldLabel>我的模板（{sortedUserTemplates.length}）</FieldLabel>
+                  <FieldLabel>{t('我的模板（{{count}}）', { count: sortedUserTemplates.length })}</FieldLabel>
                   <button
                     type="button"
                     onClick={() => setSaveTemplateModalOpen(true)}
                     className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   >
-                    保存当前为模板
-                  </button>
+                    {t("保存当前为模板")}</button>
                 </div>
                 {sortedUserTemplates.length === 0 ? (
-                  <p className="mt-2 text-xs text-gray-400">还没有保存的模板。配置好 brief 与套图骨架后，点上方按钮保存。</p>
+                  <p className="mt-2 text-xs text-gray-400">{t("还没有保存的模板。配置好 brief 与套图骨架后，点上方按钮保存。")}</p>
                 ) : (
                   <ul className="mt-2 space-y-1.5 max-h-44 overflow-y-auto pr-1">
                     {sortedUserTemplates.map((tpl) => (
@@ -586,19 +579,18 @@ export default function EcommerceStudio() {
                           type="button"
                           onClick={() => handleApplyUserTemplate(tpl.id, tpl.name)}
                           className="flex-1 min-w-0 text-left text-xs text-gray-700 dark:text-gray-200 hover:text-gray-950 dark:hover:text-white"
-                          title={`套用模板：${tpl.name}`}
+                          title={t("套用模板：{{value0}}", { value0: (tpl.name) })}
                         >
                           <span className="truncate block">{tpl.name}</span>
                           <span className="block text-[10px] text-gray-400 mt-0.5">
-                            {new Date(tpl.updatedAt).toLocaleString('zh-CN', { hour12: false })} · 骨架 {tpl.plan.length} 项
-                          </span>
+                            {new Date(tpl.updatedAt).toLocaleString(getImageLanguage(), { hour12: false })}  · {t('套图骨架：{{count}} 项', { count: tpl.plan.length })}</span>
                         </button>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
                             onClick={() => handleRenameUserTemplate(tpl.id, tpl.name)}
                             className="rounded-md p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                            title="重命名"
+                            title={t("重命名")}
                           >
                             <EditIcon className="w-3.5 h-3.5" />
                           </button>
@@ -606,7 +598,7 @@ export default function EcommerceStudio() {
                             type="button"
                             onClick={() => handleDeleteUserTemplate(tpl.id, tpl.name)}
                             className="rounded-md p-1 text-gray-400 hover:text-red-500"
-                            title="删除"
+                            title={t("删除")}
                           >
                             <TrashIcon className="w-3.5 h-3.5" />
                           </button>
@@ -621,28 +613,28 @@ export default function EcommerceStudio() {
 
           <section className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-gray-950 p-4">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-bold text-gray-950 dark:text-white">套图配置</h3>
-              <button type="button" onClick={createSuite} className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white">新建</button>
+              <h3 className="font-bold text-gray-950 dark:text-white">{t("套图配置")}</h3>
+              <button type="button" onClick={createSuite} className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white">{t("新建")}</button>
             </div>
             <div className="mt-4 space-y-3">
               <div>
-                <FieldLabel>商品名称 *</FieldLabel>
-                <TextInput value={brief.productName} onChange={(event) => updateBrief({ productName: event.target.value })} placeholder="例如：便携榨汁杯" />
+                <FieldLabel>{t("商品名称 *")}</FieldLabel>
+                <TextInput value={brief.productName} onChange={(event) => updateBrief({ productName: event.target.value })} placeholder={t("例如：便携榨汁杯")} />
               </div>
               <div>
-                <FieldLabel>商品类目 *</FieldLabel>
-                <TextInput value={brief.category} onChange={(event) => updateBrief({ category: event.target.value })} placeholder="例如：小家电 / 数码 / 美妆" />
+                <FieldLabel>{t("商品类目 *")}</FieldLabel>
+                <TextInput value={brief.category} onChange={(event) => updateBrief({ category: event.target.value })} placeholder={t("例如：小家电 / 数码 / 美妆")} />
               </div>
               <div>
-                <FieldLabel>核心卖点 *</FieldLabel>
-                <TextInput value={brief.sellingPoints.join('、')} onChange={(event) => updateBrief({ sellingPoints: parseTags(event.target.value) })} placeholder="便携、低噪音、易清洗" />
+                <FieldLabel>{t("核心卖点 *")}</FieldLabel>
+                <TextInput value={brief.sellingPoints.join('、')} onChange={(event) => updateBrief({ sellingPoints: parseTags(event.target.value) })} placeholder={t("便携、低噪音、易清洗")} />
               </div>
               <div>
-                <FieldLabel>目标人群</FieldLabel>
-                <TextInput value={brief.targetAudience} onChange={(event) => updateBrief({ targetAudience: event.target.value })} placeholder="例如：通勤白领、宝妈、户外人群" />
+                <FieldLabel>{t("目标人群")}</FieldLabel>
+                <TextInput value={brief.targetAudience} onChange={(event) => updateBrief({ targetAudience: event.target.value })} placeholder={t("例如：通勤白领、宝妈、户外人群")} />
               </div>
               <div>
-                <FieldLabel>目标平台</FieldLabel>
+                <FieldLabel>{t("目标平台")}</FieldLabel>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {ECOMMERCE_PLATFORMS.map((platform) => {
                     const checked = brief.targetPlatforms.includes(platform)
@@ -657,39 +649,39 @@ export default function EcommerceStudio() {
                         })}
                         className={`rounded-full border px-2.5 py-1 text-xs ${checked ? 'border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-950' : 'border-gray-200 dark:border-white/[0.08] text-gray-500'}`}
                       >
-                        {platform}
+                        {t(platform)}
                       </button>
                     )
                   })}
                 </div>
               </div>
               <div>
-                <FieldLabel>风格模板</FieldLabel>
+                <FieldLabel>{t("风格模板")}</FieldLabel>
                 <SelectInput value={brief.stylePresetId} onChange={(event) => updateBrief({ stylePresetId: event.target.value })}>
-                  {STYLE_PRESETS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  {STYLE_PRESETS.map((item) => <option key={item.id} value={item.id}>{t(item.name)}</option>)}
                 </SelectInput>
-                <p className="mt-1 text-xs text-gray-500">{style.description}</p>
+                <p className="mt-1 text-xs text-gray-500">{t(style.description)}</p>
               </div>
               <div>
-                <FieldLabel>套图模板</FieldLabel>
+                <FieldLabel>{t("套图模板")}</FieldLabel>
                 <SelectInput value={brief.suiteTemplateId} onChange={(event) => updateBrief({ suiteTemplateId: event.target.value })}>
-                  {SUITE_TEMPLATES.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  {SUITE_TEMPLATES.map((item) => <option key={item.id} value={item.id}>{t(item.name)}</option>)}
                 </SelectInput>
-                <p className="mt-1 text-xs text-gray-500">{template.description}</p>
+                <p className="mt-1 text-xs text-gray-500">{t(template.description)}</p>
               </div>
               <div>
-                <FieldLabel>尺寸预设</FieldLabel>
+                <FieldLabel>{t("尺寸预设")}</FieldLabel>
                 <SelectInput value={brief.sizePreset} onChange={(event) => updateBrief({ sizePreset: event.target.value })}>
-                  {SIZE_PRESETS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  {SIZE_PRESETS.map((item) => <option key={item.id} value={item.id}>{t(item.label)}</option>)}
                 </SelectInput>
                 <p className="mt-1 text-xs text-gray-500">{sizePreset.ratio} · {sizePreset.size}</p>
               </div>
               <div>
-                <FieldLabel>每组生成项数量</FieldLabel>
+                <FieldLabel>{t("每组生成项数量")}</FieldLabel>
                 <div className="mt-1 grid grid-cols-2 gap-2">
                   {ECOMMERCE_GROUPS.map((group) => (
                     <label key={group.id} className="rounded-xl border border-gray-200 dark:border-white/[0.08] px-3 py-2 text-xs text-gray-500">
-                      {group.label}
+                      {t(group.label)}
                       <input
                         type="number"
                         min={0}
@@ -703,15 +695,15 @@ export default function EcommerceStudio() {
                 </div>
               </div>
               <div>
-                <FieldLabel>禁忌内容</FieldLabel>
-                <TextArea rows={2} value={brief.negativePrompt ?? ''} onChange={(event) => updateBrief({ negativePrompt: event.target.value })} placeholder="不要生成竞品品牌，不夸张功效..." />
+                <FieldLabel>{t("禁忌内容")}</FieldLabel>
+                <TextArea rows={2} value={brief.negativePrompt ?? ''} onChange={(event) => updateBrief({ negativePrompt: event.target.value })} placeholder={t("不要生成竞品品牌，不夸张功效...")} />
               </div>
             </div>
           </section>
 
           <section className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-gray-950 p-4">
-            <FieldLabel>补充宣传需求</FieldLabel>
-            <TextArea rows={4} value={brief.extraPrompt} onChange={(event) => updateBrief({ extraPrompt: event.target.value })} placeholder="例如：更适合小红书封面、减少文字、突出夏季清爽感..." />
+            <FieldLabel>{t("补充宣传需求")}</FieldLabel>
+            <TextArea rows={4} value={brief.extraPrompt} onChange={(event) => updateBrief({ extraPrompt: event.target.value })} placeholder={t("例如：更适合小红书封面、减少文字、突出夏季清爽感...")} />
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -719,7 +711,7 @@ export default function EcommerceStudio() {
                 disabled={planStatus === 'planning' || isGenerating}
                 className="rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white dark:text-gray-950"
               >
-                {planStatus === 'planning' ? '规划中...' : '生成套图方案'}
+                {planStatus === 'planning' ? t("规划中...") : t("生成套图方案")}
               </button>
               <button
                 type="button"
@@ -727,18 +719,17 @@ export default function EcommerceStudio() {
                 disabled={suite.plan.length === 0 || isGenerating}
                 className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {isGenerating ? `生成中 ${generationQueue.length}` : '开始生成'}
+                {isGenerating ? t("生成中 {{value0}}", { value0: (generationQueue.length) }) : t("开始生成")}
               </button>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <button type="button" disabled className="rounded-xl border border-gray-200 dark:border-white/[0.08] px-3 py-2 text-xs text-gray-400 disabled:cursor-not-allowed" title="即将支持">全部下载 ZIP</button>
+              <button type="button" disabled className="rounded-xl border border-gray-200 dark:border-white/[0.08] px-3 py-2 text-xs text-gray-400 disabled:cursor-not-allowed" title={t("即将支持")}>{t("全部下载 ZIP")}</button>
               <button
                 type="button"
                 onClick={() => setSaveTemplateModalOpen(true)}
                 className="rounded-xl border border-gray-200 dark:border-white/[0.08] px-3 py-2 text-xs text-gray-600 dark:text-gray-300 hover:border-gray-900 hover:text-gray-900 dark:hover:border-white dark:hover:text-white"
               >
-                保存为模板
-              </button>
+                {t("保存为模板")}</button>
             </div>
           </section>
         </aside>

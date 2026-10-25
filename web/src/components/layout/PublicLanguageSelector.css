@@ -2,12 +2,38 @@
   position: relative;
   flex-shrink: 0;
 }
+.public-language-trigger {
+  position: relative;
+}
+.public-language-trigger[data-language-error]::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b33f45;
+}
+.public-language-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .public-language-trigger:focus-visible {
   outline: 2px solid #316bff;
   outline-offset: 3px;
 }
 .public-language-popover {
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 88px);
   top: calc(100% + 12px);
   right: 0;
   width: 218px;
@@ -19,6 +45,7 @@
   box-shadow: 0 14px 38px #202f491f;
 }
 .public-language-menu {
+  min-height: 0;
   max-height: min(780px, calc(100dvh - 128px));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -53,10 +80,28 @@
 .public-language-option svg {
   flex-shrink: 0;
 }
-.public-language-error {
+.public-language-error,
+.public-language-status {
+  flex-shrink: 0;
+  max-height: 35dvh;
+  overflow-y: auto;
   margin: 8px;
   font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.public-language-error p,
+.public-language-status p {
+  margin: 0;
+}
+.public-language-error p + p {
+  margin-top: 6px;
+}
+.public-language-error {
   color: #b33f45;
+}
+.public-language-status {
+  color: #626c7f;
 }
 .public-language-loading {
   animation: public-language-spin 1s linear infinite;
@@ -82,6 +127,12 @@ html.dark .public-language-option[aria-checked='true'] {
 }
 html.dark .public-language-error {
   color: #ffaaaa;
+}
+html.dark .public-language-status {
+  color: #b3bed2;
+}
+html.dark .public-language-trigger[data-language-error]::after {
+  background: #ffaaaa;
 }
 @media (max-width: 767px) {
   .public-language-popover {

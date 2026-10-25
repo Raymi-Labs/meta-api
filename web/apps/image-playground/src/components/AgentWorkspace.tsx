@@ -1,3 +1,4 @@
+import { t, translateMessage, getImageLanguage } from '../language'
 import { useEffect, useMemo, useState, useRef, useCallback, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import type { AgentConversation, AgentMessage, AgentRound, ResponsesOutputItem, TaskRecord } from '../types'
 import { deleteAgentRoundFromConversation, editOutputs, getActiveAgentRounds, getAgentBranchLeafId, getAgentSiblingRounds, getCachedImage, ensureImageCached, regenerateAgentAssistantMessage, remapAgentRoundMentionsForPathChange, removeMultipleTasks, removeTask, reuseConfig, updateTaskInStore, useStore } from '../store'
@@ -109,7 +110,7 @@ function ChatImageThumb({ imageId, imageIndex, maskImageId }: { imageId: string;
 function AgentStreamingCursor() {
   return (
     <span
-      aria-label="正在生成"
+      aria-label={t("正在生成")}
       className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500 align-baseline dark:bg-blue-400"
     />
   )
@@ -118,13 +119,13 @@ function AgentStreamingCursor() {
 const AGENT_STOPPED_MESSAGE = '已停止生成。'
 
 function formatTime(value: number) {
-  return new Date(value).toLocaleString()
+  return new Date(value).toLocaleString(getImageLanguage())
 }
 
 function AgentWebSearchInlineStatus({ status }: { status: AgentWebSearchStatus }) {
   return (
     <span className="inline-flex text-sm font-medium text-gray-500 dark:text-gray-400">
-      <span className={status.completed ? undefined : 'agent-web-search-running-text'}>{status.text}</span>
+      <span className={status.completed ? undefined : 'agent-web-search-running-text'}>{translateMessage(status.text)}</span>
     </span>
   )
 }
@@ -237,8 +238,8 @@ function getAgentAssistantBlocks(round: AgentRound | null, taskSlots: AgentRound
       blocks.push({
         type: 'batch-params',
         status: roundInterrupted
-          ? markToolStatusStopped({ text: '正在填写并发图像生成参数', completed: false })
-          : { text: '正在填写并发图像生成参数', completed: false },
+          ? markToolStatusStopped({ text: t("正在填写并发图像生成参数"), completed: false })
+          : { text: t("正在填写并发图像生成参数"), completed: false },
         key: `batch-params:${item.call_id ?? item.id ?? blocks.length}`,
       })
       continue
@@ -815,7 +816,7 @@ export default function AgentWorkspace() {
       if ((selection.anchorNode && target.contains(selection.anchorNode)) || (selection.focusNode && target.contains(selection.focusNode))) return
     }
 
-    void handleCopyMessage(content, '完整报错已复制', '复制完整报错失败')
+    void handleCopyMessage(content, t("完整报错已复制"), t("复制完整报错失败"))
   }
 
   return (
@@ -845,10 +846,10 @@ export default function AgentWorkspace() {
         <div className="pl-[max(1rem,env(safe-area-inset-left))] flex h-full min-h-0 w-full flex-col">
           <div className="safe-area-top shrink-0">
             <div className="flex h-14 items-center justify-between gap-2 px-4">
-              <button type="button" onClick={() => setSidebarCollapsed(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded-lg transition-colors" title="折叠左侧边栏">
+              <button type="button" onClick={() => setSidebarCollapsed(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded-lg transition-colors" title={t("折叠左侧边栏")}>
                 <SidebarLeftIcon className="w-5 h-5" />
               </button>
-              <button type="button" onClick={createConversation} className="p-2 -mr-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 lg:hover:bg-gray-100 lg:dark:hover:bg-white/[0.04] rounded-lg transition-colors" title="新对话">
+              <button type="button" onClick={createConversation} className="p-2 -mr-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 lg:hover:bg-gray-100 lg:dark:hover:bg-white/[0.04] rounded-lg transition-colors" title={t("新对话")}>
                 <EditIcon className="w-5 h-5" />
               </button>
             </div>
@@ -858,13 +859,13 @@ export default function AgentWorkspace() {
               type="text"
               value={conversationSearchQuery}
               onChange={(e) => setConversationSearchQuery(e.target.value)}
-              placeholder="搜索聊天..."
+              placeholder={t("搜索聊天...")}
               className="w-full rounded-xl border border-gray-200 bg-gray-100/80 px-3 py-2 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-400 focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:focus:border-blue-400 dark:focus:bg-white/[0.07]"
             />
           </div>
           <div className="space-y-1 overflow-y-auto flex-1 px-4 pb-4">
           {filteredConversations.length === 0 && (
-            <div className="px-2 py-8 text-center text-sm text-gray-400">没有找到匹配的聊天</div>
+            <div className="px-2 py-8 text-center text-sm text-gray-400">{t("没有找到匹配的聊天")}</div>
           )}
           {filteredConversations.map((item) => {
             const isGeneratingTitle = Boolean(agentGeneratingTitleIds[item.id])
@@ -903,7 +904,7 @@ export default function AgentWorkspace() {
                 <div className={`flex shrink-0 items-center gap-1 overflow-hidden transition-all duration-150 ${agentEditingConversationId === item.id ? 'w-6 opacity-100' : `group-hover:w-[4.5rem] group-hover:opacity-100 group-focus-within:w-[4.5rem] group-focus-within:opacity-100 ${conversationActionsId === item.id ? 'w-[4.5rem] opacity-100' : 'w-0 opacity-0'}`}`}>
                   {agentEditingConversationId === item.id ? (
                     <AgentActionButton
-                      tooltip="确认"
+                      tooltip={t("确认")}
                       onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); confirmRenameConversation() }}
                       className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-md text-green-500 hover:text-green-600 transition-colors"
                     >
@@ -913,10 +914,10 @@ export default function AgentWorkspace() {
                     </AgentActionButton>
                   ) : (
                     <>
-                      <AgentActionButton tooltip="编辑标题" className="p-1.5 text-gray-400 hover:text-gray-700 disabled:text-gray-300 disabled:hover:text-gray-300 disabled:cursor-not-allowed dark:hover:text-gray-200 dark:disabled:text-gray-600 dark:disabled:hover:text-gray-600" onClick={(e) => startRenameConversation(e, item.id, item.title)} disabled={isGeneratingTitle}>
+                      <AgentActionButton tooltip={t("编辑标题")} className="p-1.5 text-gray-400 hover:text-gray-700 disabled:text-gray-300 disabled:hover:text-gray-300 disabled:cursor-not-allowed dark:hover:text-gray-200 dark:disabled:text-gray-600 dark:disabled:hover:text-gray-600" onClick={(e) => startRenameConversation(e, item.id, item.title)} disabled={isGeneratingTitle}>
                         <EditIcon className="w-4 h-4" />
                       </AgentActionButton>
-                      <AgentActionButton tooltip="删除" className="p-1.5 text-gray-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteConversation(item.id) }}>
+                      <AgentActionButton tooltip={t("删除")} className="p-1.5 text-gray-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteConversation(item.id) }}>
                         <TrashIcon className="w-4 h-4" />
                       </AgentActionButton>
                     </>
@@ -939,7 +940,7 @@ export default function AgentWorkspace() {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <button type="button" onClick={() => setSidebarCollapsed(false)} className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors" title="展开对话列表">
+            <button type="button" onClick={() => setSidebarCollapsed(false)} className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors" title={t("展开对话列表")}>
               <SidebarLeftIcon className="w-5 h-5" />
             </button>
             <button
@@ -954,7 +955,7 @@ export default function AgentWorkspace() {
             >
               {conversation?.title || 'Agent'}
             </button>
-            <button type="button" onClick={createConversation} className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors" title="新对话">
+            <button type="button" onClick={createConversation} className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors" title={t("新对话")}>
               <EditIcon className="w-5 h-5" />
             </button>
           </div>
@@ -969,16 +970,16 @@ export default function AgentWorkspace() {
         >
           {!conversation ? (
             <div className="py-20 text-center text-gray-400">
-              <p className="mb-3">还没有 Agent 对话</p>
-              <button type="button" onClick={createConversation} className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition-colors">创建对话</button>
+              <p className="mb-3">{t("还没有 Agent 对话")}</p>
+              <button type="button" onClick={createConversation} className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition-colors">{t("创建对话")}</button>
             </div>
           ) : (
             (() => {
               if (activeMessages.length === 0) {
                 return (
                   <div className="py-20 text-center text-gray-400">
-                    <p className="mb-2">开始新的 Agent 对话</p>
-                    <p className="text-xs">在底部输入框发送消息即可创建第一轮对话。</p>
+                    <p className="mb-2">{t("开始新的 Agent 对话")}</p>
+                    <p className="text-xs">{t("在底部输入框发送消息即可创建第一轮对话。")}</p>
                   </div>
                 )
               }
@@ -1017,7 +1018,7 @@ export default function AgentWorkspace() {
                       >
                     <div className="mb-2 flex items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
                       <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedRoundId(message.roundId); }} className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors font-medium">
-                         <span className={isAssistant ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200 font-semibold'}>{isAssistant ? 'Agent' : '用户'}</span> <span className="opacity-60 font-normal ml-1">· 第 {round?.index ?? '?'} 轮</span>
+                         <span className={isAssistant ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200 font-semibold'}>{isAssistant ? 'Agent' : t("用户")}</span> <span className="opacity-60 font-normal ml-1">· {t('第 {{count}} 轮', { count: round?.index ?? '?' })}</span>
                       </button>
                     </div>
                     
@@ -1038,7 +1039,7 @@ export default function AgentWorkspace() {
                       <div
                         data-selectable-text
                         className="-m-2 flex cursor-copy select-text flex-col rounded-xl p-2 transition-colors hover:bg-red-50/60 dark:hover:bg-red-500/5"
-                        title="点击复制完整报错"
+                        title={t("点击复制完整报错")}
                         onPointerDown={handleErrorCopyPointerDown}
                         onClick={(e) => handleErrorCopyClick(e, message.content)}
                       >
@@ -1052,12 +1053,12 @@ export default function AgentWorkspace() {
                                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                                 </svg>
                                 <div className="whitespace-pre-wrap text-[14px] leading-relaxed break-words font-medium">
-                                  {mainErr}
+                                  {translateMessage(mainErr)}
                                 </div>
                               </div>
                               {hints.length > 0 && (
                                 <div className="pl-[26px] mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-gray-500 dark:text-gray-400 break-words opacity-90">
-                                  <span className="font-medium">提示：</span>{hints.join('\n提示：')}
+                                  <span className="font-medium">{t("提示：")}</span>{hints.map((hint) => translateMessage('提示：' + hint).replace(new RegExp('^' + t('提示：')), '')).join('\n' + t('提示：'))}
                                 </div>
                               )}
                             </>
@@ -1118,9 +1119,9 @@ export default function AgentWorkspace() {
                       <div className="flex min-w-0 items-center gap-2">
                         {isEditing && (
                           <div className="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
-                            <span className="truncate">正在编辑</span>
+                            <span className="truncate">{t("正在编辑")}</span>
                             <AgentActionButton
-                              tooltip="取消编辑"
+                              tooltip={t("取消编辑")}
                               className="ml-1 -mr-1 p-0.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-500/40 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1138,28 +1139,28 @@ export default function AgentWorkspace() {
                       <div className="flex items-center gap-2 ml-auto text-gray-400">
                         {!isAssistant && round && hasBranches && siblingIndex >= 0 && (
                           <div className="inline-flex items-center text-sm font-bold text-gray-400 dark:text-gray-500 mr-1">
-                            <AgentActionButton tooltip="上一分支" className="p-1 rounded-md hover:bg-gray-200/50 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" onClick={() => handleSwitchBranch(round, -1)}>
+                            <AgentActionButton tooltip={t("上一分支")} className="p-1 rounded-md hover:bg-gray-200/50 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" onClick={() => handleSwitchBranch(round, -1)}>
                               <ChevronLeftIcon className="w-4 h-4" />
                             </AgentActionButton>
                             <span className="px-1 tabular-nums tracking-widest">{siblingIndex + 1}/{siblingRounds.length}</span>
-                            <AgentActionButton tooltip="下一分支" className="p-1 rounded-md hover:bg-gray-200/50 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" onClick={() => handleSwitchBranch(round, 1)}>
+                            <AgentActionButton tooltip={t("下一分支")} className="p-1 rounded-md hover:bg-gray-200/50 dark:hover:bg-white/10 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" onClick={() => handleSwitchBranch(round, 1)}>
                               <ChevronRightIcon className="w-4 h-4" />
                             </AgentActionButton>
                           </div>
                         )}
                         {isAssistant ? (
                           <>
-                            <AgentActionButton tooltip="复制输出文本" className={`p-1.5 rounded-md transition-colors ${message.content.trim() ? 'text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-white/[0.06]' : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={!message.content.trim()} onClick={() => {
-                              void handleCopyMessage(getAgentAssistantCopyContent(message.content, assistantBlocks), '输出文本已复制', '复制输出文本失败');
+                            <AgentActionButton tooltip={t("复制输出文本")} className={`p-1.5 rounded-md transition-colors ${message.content.trim() ? 'text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-white/[0.06]' : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={!message.content.trim()} onClick={() => {
+                              void handleCopyMessage(getAgentAssistantCopyContent(message.content, assistantBlocks), t("输出文本已复制"), t("复制输出文本失败"));
                             }}>
                               <CopyIcon className="w-4 h-4" />
                             </AgentActionButton>
-                            <AgentActionButton tooltip="重新生成" className="p-1.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors" onClick={() => {
+                            <AgentActionButton tooltip={t("重新生成")} className="p-1.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors" onClick={() => {
                               if (conversation && round) void regenerateAgentAssistantMessage(conversation.id, round.id);
                             }}>
                               <RefreshIcon className="w-4 h-4" />
                             </AgentActionButton>
-                            <AgentActionButton tooltip={allRoundTasksFavorited ? '取消收藏所有图片' : '收藏所有图片'} className={`p-1.5 rounded-md transition-colors ${hasRoundFavoriteTasks ? (allRoundTasksFavorited ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10' : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10') : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={!hasRoundFavoriteTasks} onClick={() => {
+                            <AgentActionButton tooltip={allRoundTasksFavorited ? t("取消收藏所有图片") : t("收藏所有图片")} className={`p-1.5 rounded-md transition-colors ${hasRoundFavoriteTasks ? (allRoundTasksFavorited ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10' : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10') : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={!hasRoundFavoriteTasks} onClick={() => {
                               if (!hasRoundFavoriteTasks) return;
                               const nextFavorite = !allRoundTasksFavorited;
                               favoriteTasksForRound.forEach(t => updateTaskInStore(t.id, { isFavorite: nextFavorite }));
@@ -1167,7 +1168,7 @@ export default function AgentWorkspace() {
                             }}>
                               <FavoriteIcon className="w-4 h-4" filled={allRoundTasksFavorited} />
                             </AgentActionButton>
-                                                        <AgentActionButton tooltip="下载所有图片" className={`p-1.5 rounded-md transition-colors ${getRoundTasks(round ?? null, tasks).filter(Boolean).length > 0 ? 'text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10' : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={getRoundTasks(round ?? null, tasks).filter(Boolean).length === 0} onClick={async () => {
+                                                        <AgentActionButton tooltip={t("下载所有图片")} className={`p-1.5 rounded-md transition-colors ${getRoundTasks(round ?? null, tasks).filter(Boolean).length > 0 ? 'text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10' : 'text-gray-300 dark:text-gray-600 opacity-50 cursor-not-allowed'}`} disabled={getRoundTasks(round ?? null, tasks).filter(Boolean).length === 0} onClick={async () => {
                                const imageIds = tasksForRound.flatMap(t => t.outputImages || []);
                                if (imageIds.length === 0) return;
                                try {
@@ -1187,7 +1188,7 @@ export default function AgentWorkspace() {
                              }}>
                                <DownloadIcon className="w-4 h-4" />
                              </AgentActionButton>
-                            <AgentActionButton tooltip="删除消息" className="p-1.5 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors" onClick={() => {
+                            <AgentActionButton tooltip={t("删除消息")} className="p-1.5 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors" onClick={() => {
                               if (round) handleDeleteMessage(message, round);
                             }}>
                               <TrashIcon className="w-4 h-4" />
@@ -1195,17 +1196,17 @@ export default function AgentWorkspace() {
                           </>
                         ) : (
                           <>
-                            <AgentActionButton tooltip="复制提示词" className="p-1.5 rounded-md hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-white/[0.04] transition-colors" onClick={() => {
+                            <AgentActionButton tooltip={t("复制提示词")} className="p-1.5 rounded-md hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-white/[0.04] transition-colors" onClick={() => {
                               void handleCopyMessage(message.content);
                             }}>
                               <CopyIcon className="w-4 h-4" />
                             </AgentActionButton>
-                            <AgentActionButton tooltip="编辑" className="p-1.5 rounded-md hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-white/[0.04] transition-colors" onClick={() => {
+                            <AgentActionButton tooltip={t("编辑")} className="p-1.5 rounded-md hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-white/[0.04] transition-colors" onClick={() => {
                                if (round) void handleEditRoundMessage(round, message.content);
                             }}>
                               <EditIcon className="w-4 h-4" />
                             </AgentActionButton>
-                            <AgentActionButton tooltip="删除" className="p-1.5 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors" onClick={() => {
+                            <AgentActionButton tooltip={t("删除")} className="p-1.5 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors" onClick={() => {
                               if (round) handleDeleteMessage(message, round);
                             }}>
                               <TrashIcon className="w-4 h-4" />
@@ -1231,11 +1232,11 @@ export default function AgentWorkspace() {
                     <div key={`running-${round.id}`} className="flex w-full justify-start mb-6">
                       <article className="flex min-w-[16rem] max-w-[95%] flex-col rounded-2xl rounded-tl-sm border border-gray-200 bg-white/70 p-4 dark:border-white/[0.08] dark:bg-white/[0.03] md:max-w-[85%] lg:max-w-[75%]">
                         <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="text-blue-600 dark:text-blue-400 font-semibold">Agent</span> <span className="ml-1 font-normal opacity-60">· 第 {round.index} 轮</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold">Agent</span> <span className="ml-1 font-normal opacity-60">· {t('第 {{count}} 轮', { count: round.index })}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                           <span className="inline-flex items-center gap-1.5">
-                            <span>正在生成回复</span>
+                            <span>{t("正在生成回复")}</span>
                             <span className="flex gap-1">
                               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
                               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
@@ -1258,7 +1259,7 @@ export default function AgentWorkspace() {
           className={`fixed bottom-[calc(var(--input-bar-clearance,12rem)+1.5rem)] left-1/2 -translate-x-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-[0_2px_12px_rgba(0,0,0,0.1)] border border-gray-200/50 text-gray-500 transition-all duration-300 hover:bg-gray-50 hover:text-gray-800 dark:border-white/[0.08] dark:bg-gray-800/90 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 ${
             !isScrolledToBottom && activeMessages.length > 0 ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
           }`}
-          aria-label="滚动到底部"
+          aria-label={t("滚动到底部")}
         >
           <ArrowDownIcon className="h-5 w-5" />
         </button>

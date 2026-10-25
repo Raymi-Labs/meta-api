@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Für diese Website ist kein optionaler Analysedienst eingerichtet.",
   "暂无系统公告": "Keine Systemmitteilungen",
   "公告加载失败，请稍后重试。": "Mitteilungen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
-  "有未读公告": "Sie haben ungelesene Mitteilungen"
+  "有未读公告": "Sie haben ungelesene Mitteilungen",
+  "正文语言": "Inhaltssprache",
+  "正文翻译加载失败，请重试。": "Die Textübersetzung konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+  "正在加载正文翻译…": "Textübersetzung wird geladen...",
+  "重试": "Versuchen Sie es noch einmal",
+  "正在保存账户语言偏好…": "Spracheinstellung des Kontos wird gespeichert...",
+  "语言已在本机切换，但账户偏好保存失败。": "Die Sprache wurde lokal umgestellt, aber die Kontoeinstellung konnte nicht gespeichert werden.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "Die Sprache wurde umgestellt, aber der Browser kann die Einstellung nicht speichern. Die Originalsprache kann nach der Aktualisierung wiederhergestellt werden.",
+  "重新选择当前语言可重试保存。": "Wählen Sie die aktuelle Sprache erneut aus, um den Speichervorgang erneut zu versuchen."
 }

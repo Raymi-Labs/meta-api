@@ -38,6 +38,7 @@ import troubleshootingMarkdown from '../../../../docs/NAN_TROUBLESHOOTING.md?raw
 import mimoAudioMarkdown from '../../../../docs/NAN_MIMO_AUDIO.md?raw';
 import { renderRuntimeDocs } from './runtimeDocs';
 import useRuntimeDocs from './useRuntimeDocs';
+import { useContentLanguage } from '../../helpers/contentLanguageReact';
 import './index.css';
 
 const { Title, Text } = Typography;
@@ -251,7 +252,10 @@ function getActiveDoc(pathname) {
 }
 
 export default function DocsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const bodyLanguage = useContentLanguage(
+    i18n.resolvedLanguage || i18n.language,
+  );
   const location = useLocation();
   const navigate = useNavigate();
   const activeDoc = getActiveDoc(location.pathname);
@@ -259,13 +263,15 @@ export default function DocsPage() {
   const content = useMemo(
     () =>
       prepareMarkdown(
-        renderRuntimeDocs(activeDoc.content, {
+        renderRuntimeDocs(bodyLanguage.markdown(activeDoc.content), {
           ...runtime,
+          translate: bodyLanguage.markdown,
           origin: window.location.origin,
         }),
       ),
     [
       activeDoc.content,
+      bodyLanguage.markdown,
       runtime.serverAddress,
       runtime.pricing,
       runtime.loading,
@@ -348,7 +354,7 @@ export default function DocsPage() {
                     ? t(
                         '部分配置加载失败，请重试；地址暂用当前站点，模型以模型广场为准。',
                       )
-                    : `${t('地址、分组和请求样例随站点配置自动更新')} · ${new Date(runtime.updatedAt).toLocaleTimeString()}`}
+                    : `${t('地址、分组和请求样例随站点配置自动更新')} · ${new Date(runtime.updatedAt).toLocaleTimeString(bodyLanguage.language)}`}
               </Text>
               <Button
                 size='small'
@@ -358,7 +364,25 @@ export default function DocsPage() {
                 {t('刷新')}
               </Button>
             </div>
-            <MarkdownRenderer content={content} fontSize={15} />
+            {(bodyLanguage.pending || bodyLanguage.failed) && (
+              <div className='nan-docs-sync' role='status'>
+                <Text type={bodyLanguage.failed ? 'warning' : 'tertiary'}>
+                  {t(
+                    bodyLanguage.failed
+                      ? '正文翻译加载失败，请重试。'
+                      : '正在加载正文翻译…',
+                  )}
+                </Text>
+                {bodyLanguage.failed && (
+                  <Button size='small' onClick={bodyLanguage.retry}>
+                    {t('重试')}
+                  </Button>
+                )}
+              </div>
+            )}
+            <div lang={bodyLanguage.ready ? bodyLanguage.language : 'zh-CN'}>
+              <MarkdownRenderer content={content} fontSize={15} />
+            </div>
           </Card>
         </main>
 

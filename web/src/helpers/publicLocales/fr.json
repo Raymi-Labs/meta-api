@@ -174,5 +174,13 @@
   "本站未配置可选统计服务。": "Aucun service de statistiques facultatif n’est configuré pour ce site.",
   "暂无系统公告": "Aucune annonce système",
   "公告加载失败，请稍后重试。": "Impossible de charger les annonces. Veuillez réessayer plus tard.",
-  "有未读公告": "Vous avez des annonces non lues"
+  "有未读公告": "Vous avez des annonces non lues",
+  "正文语言": "Langue du contenu",
+  "正文翻译加载失败，请重试。": "La traduction du texte n'a pas pu être chargée, veuillez réessayer.",
+  "正在加载正文翻译…": "Chargement de la traduction du texte...",
+  "重试": "Réessayer",
+  "正在保存账户语言偏好…": "Enregistrement des préférences linguistiques du compte...",
+  "语言已在本机切换，但账户偏好保存失败。": "La langue a été changée localement, mais la préférence du compte n'a pas pu être enregistrée.",
+  "语言已切换，但浏览器无法保存偏好，刷新后可能恢复原语言。": "La langue a été changée, mais le navigateur ne peut pas enregistrer la préférence. La langue originale peut être restaurée après actualisation.",
+  "重新选择当前语言可重试保存。": "Resélectionnez la langue actuelle pour réessayer d’enregistrer."
 }
