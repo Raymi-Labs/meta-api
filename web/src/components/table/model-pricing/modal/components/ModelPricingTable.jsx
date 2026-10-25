@@ -21,13 +21,11 @@ import React from 'react';
 import { Avatar, Typography, Table, Tag } from '@douyinfe/semi-ui';
 import { IconCoinMoneyStroked } from '@douyinfe/semi-icons';
 import {
-  calculateModelPrice,
   formatTimeRatioValue,
-  getModelPriceItems,
   parseTiersFromExpr,
   shouldShowPricingTimeRatio,
 } from '../../../../../helpers';
-import { buildFirstTierGroupPriceItems } from '../../../../../helpers/tieredBillingDisplay';
+import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
 import { splitBillingExprAndRequestRules } from '../../../../../pages/Setting/Ratio/components/requestRuleExpr';
 
 const { Text } = Typography;
@@ -48,7 +46,9 @@ const ModelPricingTable = ({
   const modelEnableGroups = Array.isArray(modelData?.enable_groups)
     ? modelData.enable_groups
     : [];
-  const autoChain = autoGroups.filter((g) => modelEnableGroups.includes(g));
+  const autoChain = autoGroups.filter(
+    (g) => modelEnableGroups.includes(g) && Object.hasOwn(usableGroup || {}, g),
+  );
   const isDynamic = modelData?.billing_mode === 'tiered_expr';
   const { billingExpr: baseBillingExpr } = splitBillingExprAndRequestRules(
     modelData?.billing_expr || '',
@@ -65,35 +65,20 @@ const ModelPricingTable = ({
 
     // 准备表格数据
     const tableData = availableGroups.map((group) => {
-      const priceData = modelData
-        ? calculateModelPrice({
-            record: modelData,
-            selectedGroup: group,
-            groupRatio,
-            timeRatioMap,
-            tokenUnit,
-            displayPrice,
-            currency,
-            quotaDisplayType: siteDisplayType,
-          })
-        : { inputPrice: '-', outputPrice: '-', price: '-' };
-
-      // 获取分组倍率
-      const groupRatioValue =
-        groupRatio && groupRatio[group] !== undefined ? groupRatio[group] : 1;
-      const defaultPriceItems = getModelPriceItems(
-        priceData,
+      const { data: priceData, items: priceItems } = getModelCatalogPricing(
+        {
+          record: modelData,
+          selectedGroup: group,
+          groupRatio,
+          timeRatioMap,
+          tokenUnit,
+          displayPrice,
+          currency,
+          quotaDisplayType: siteDisplayType,
+        },
         t,
-        siteDisplayType,
       );
-      const firstTierPricing = isDynamic
-        ? buildFirstTierGroupPriceItems({
-            tiers: dynamicTiers,
-            effectiveBillingRatio: priceData.effectiveBillingRatio,
-            displayPrice,
-            t,
-          })
-        : null;
+      const groupRatioValue = groupRatio?.[group] ?? 1;
 
       return {
         key: group,
@@ -110,10 +95,7 @@ const ModelPricingTable = ({
                 : modelData?.quota_type === 2
                   ? `${t('按量计费')} / ${t('小时')}`
                   : '-',
-        priceItems:
-          firstTierPricing?.items.length > 0
-            ? firstTierPricing.items
-            : defaultPriceItems,
+        priceItems,
       };
     });
 
@@ -125,7 +107,6 @@ const ModelPricingTable = ({
         render: (text) => (
           <Tag color='white' size='small' shape='circle'>
             {text}
-            {t('分组')}
           </Tag>
         ),
       },
@@ -257,7 +238,6 @@ const ModelPricingTable = ({
             <React.Fragment key={g}>
               <Tag color='white' size='small' shape='circle'>
                 {g}
-                {t('分组')}
               </Tag>
               {idx < autoChain.length - 1 && <span className='text-sm'>→</span>}
             </React.Fragment>

@@ -6537,6 +6537,12 @@
     "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Solo se aplica a modelos registrados con reenvío OpenAI/Azure Chat; el paso directo y los demás protocolos conservan su comportamiento.",
     "渠道专属规则（可选）": "Reglas del canal (opcional)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "La coincidencia exacta del modelo de origen tiene prioridad sobre la plantilla; las sobrescrituras se aplican al final.",
-    "思考参数适配配置无效": "Configuración de adaptación de razonamiento no válida"
+    "思考参数适配配置无效": "Configuración de adaptación de razonamiento no válida",
+    "模型详情": "Detalles del modelo",
+    "返回模型广场": "Volver a los modelos",
+    "该模型不存在或当前不可见": "Este modelo no existe o no está visible actualmente",
+    "同厂商模型": "Modelos del mismo proveedor",
+    "按供应商、类型、端点和标签发现模型，查看详情与价格。": "Encuentra modelos por proveedor, tipo, endpoint y etiquetas, y consulta sus detalles y precios.",
+    "此模型的调用示例请参阅 API 文档。": "Consulta la documentación de la API para ver ejemplos de llamadas a este modelo."
   }
 }

@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Checkbox, Pagination, Button } from '@douyinfe/semi-ui';
 import { ArrowUpRight, Copy } from 'lucide-react';
 import { getLobeHubIcon, formatTimeRatioValue } from '../../../../../helpers';
@@ -46,7 +48,7 @@ const PricingCardView = ({
   t,
   selectedRowKeys = [],
   setSelectedRowKeys,
-  openModelDetail,
+  catalogState,
 }) => {
   const showSkeleton = useMinimumLoadingTime(loading);
   const isMobile = useIsMobile();
@@ -98,12 +100,12 @@ const PricingCardView = ({
                 </div>
                 <div className='pricing-model-identity'>
                   <h2>
-                    <button
-                      type='button'
-                      onClick={() => openModelDetail(model)}
+                    <Link
+                      to={buildModelDetailPath(model.model_name)}
+                      state={{ catalogState }}
                     >
                       {model.model_name}
-                    </button>
+                    </Link>
                   </h2>
                   <span>
                     {model.vendor_name || t('未知供应商')} ·{' '}
@@ -185,15 +187,14 @@ const PricingCardView = ({
                     <span key={tag}>{tag}</span>
                   ))}
                 </div>
-                <Button
-                  size='small'
-                  theme='borderless'
-                  type='primary'
-                  icon={<ArrowUpRight size={14} />}
-                  onClick={() => openModelDetail(model)}
+                <Link
+                  className='pricing-model-detail-link'
+                  to={buildModelDetailPath(model.model_name)}
+                  state={{ catalogState }}
                 >
-                  {t('价格详情')}
-                </Button>
+                  {t('模型详情')}
+                  <ArrowUpRight size={14} aria-hidden='true' />
+                </Link>
               </div>
             </article>
           );

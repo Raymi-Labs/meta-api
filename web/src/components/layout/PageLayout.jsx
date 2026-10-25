@@ -41,6 +41,7 @@ import { showError } from '../../helpers/toast';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useLocation } from 'react-router-dom';
+import { isModelDetailPath } from '../../helpers/modelDetailNavigation';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import UserOnboarding from '../onboarding/UserOnboarding';
 import ContentSafetyNotice from '../content-safety/ContentSafetyNotice';
@@ -60,7 +61,10 @@ const PageLayout = () => {
   const isDocsRoute = /^\/docs(?:\/|$)/i.test(location.pathname);
   const isAuthRoute = /^\/(?:login|register)\/?$/i.test(location.pathname);
   const shouldHideFooter =
-    isConsoleRoute || isAuthRoute || location.pathname === '/pricing';
+    isConsoleRoute ||
+    isAuthRoute ||
+    location.pathname === '/pricing' ||
+    isModelDetailPath(location.pathname);
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
@@ -241,7 +245,10 @@ const PageLayout = () => {
           <Content
             style={{
               flex: '1 0 auto',
-              overflowY: isMobile || isDocsRoute ? 'visible' : 'hidden',
+              overflowY:
+                isMobile || isDocsRoute || isModelDetailPath(location.pathname)
+                  ? 'visible'
+                  : 'hidden',
               WebkitOverflowScrolling: 'touch',
               padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
               position: 'relative',

@@ -6749,6 +6749,12 @@
     "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Applies only to registered models using OpenAI/Azure Chat forwarding; passthrough and other protocols keep their existing behavior.",
     "渠道专属规则（可选）": "Channel rules (optional)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Exact upstream model match, before template defaults; parameter overrides run last.",
-    "思考参数适配配置无效": "Invalid reasoning adaptation configuration"
+    "思考参数适配配置无效": "Invalid reasoning adaptation configuration",
+    "模型详情": "Model details",
+    "返回模型广场": "Back to models",
+    "该模型不存在或当前不可见": "This model does not exist or is not currently visible",
+    "同厂商模型": "Models from the same provider",
+    "按供应商、类型、端点和标签发现模型，查看详情与价格。": "Discover models by provider, type, endpoint and tags. Explore details and pricing.",
+    "此模型的调用示例请参阅 API 文档。": "See the API documentation for examples of calling this model."
   }
 }

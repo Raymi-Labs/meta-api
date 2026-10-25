@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Button } from '@douyinfe/semi-ui';
 import { IconCopy } from '@douyinfe/semi-icons';
 import { formatTimeRatioValue } from '../../../../../helpers';
@@ -34,7 +36,7 @@ export const getPricingTableColumns = ({
   displayPrice,
   showRatio,
   siteDisplayType,
-  openModelDetail,
+  catalogState,
 }) => {
   const cache = new WeakMap();
   const pricing = (record) => {
@@ -80,7 +82,14 @@ export const getPricingTableColumns = ({
       render: (name, record) => (
         <div>
           <div className='flex items-center gap-1'>
-            <span className='font-medium'>{name}</span>
+            <Link
+              className='font-medium'
+              to={buildModelDetailPath(name)}
+              state={{ catalogState }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {name}
+            </Link>
             <Button
               theme='borderless'
               size='small'
@@ -156,16 +165,13 @@ export const getPricingTableColumns = ({
     title: t('详情'),
     dataIndex: 'details',
     render: (_, record) => (
-      <Button
-        theme='borderless'
-        type='primary'
-        onClick={(event) => {
-          event.stopPropagation();
-          openModelDetail?.(record);
-        }}
+      <Link
+        to={buildModelDetailPath(record.model_name)}
+        state={{ catalogState }}
+        onClick={(event) => event.stopPropagation()}
       >
-        {t('价格详情')}
-      </Button>
+        {t('模型详情')}
+      </Link>
     ),
   });
   return columns;

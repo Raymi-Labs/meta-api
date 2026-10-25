@@ -37,3 +37,7 @@ Status: implemented
 [筛选可见性](../../implemented/feature/2026-10-11-pricing-filter-visibility.md)继续负责保留已选零匹配项；[价格排序](../../implemented/feature/2026-10-17-model-price-sorting.md)和[健康筛选](../../implemented/bug-fix/2026-10-17-group-health-filters.md)保持原规则。检索命中的协议及缓存计费笔记与本次布局无关。
 
 [目录卡片优化](2026-10-25-model-catalog.md)部分替代默认表格与固定视口布局：桌面和手机默认卡片，保留表格切换；厂商/类型/标签集中顶部，分组侧栏独立滚动，列表跟随页面滚动。价格、钱包和权限规则继续有效。
+
+## Related decision
+
+[独立模型详情](../../implemented/feature/2026-10-25-model-detail-page.md)依据用户新选择取代目录中的分组展示与侧栏详情入口；其余价格、筛选和钱包决定保持原有范围。

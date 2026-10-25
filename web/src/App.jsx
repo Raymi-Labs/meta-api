@@ -30,6 +30,7 @@ import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers/auth';
 import NotFound from './pages/NotFound';
 import Forbidden from './pages/Forbidden';
 import { StatusContext } from './context/Status';
+import { MODEL_DETAIL_ROUTE } from './helpers/modelDetailNavigation';
 
 import SetupCheck from './components/layout/SetupCheck';
 
@@ -59,6 +60,7 @@ const Chat = lazy(() => import('./pages/Chat'));
 const Chat2Link = lazy(() => import('./pages/Chat2Link'));
 const Midjourney = lazy(() => import('./pages/Midjourney'));
 const Pricing = lazy(() => import('./pages/Pricing'));
+const ModelDetail = lazy(() => import('./pages/ModelDetail'));
 const Task = lazy(() => import('./pages/Task'));
 const ModelPage = lazy(() => import('./pages/Model'));
 const ModelDeploymentPage = lazy(() => import('./pages/ModelDeployment'));
@@ -435,25 +437,34 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route
-          path='/pricing'
-          element={
-            pricingRequireAuth ? (
-              <PrivateRoute>
+        {[
+          { path: '/pricing', Component: Pricing },
+          { path: MODEL_DETAIL_ROUTE, Component: ModelDetail },
+        ].map(({ path, Component }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              pricingRequireAuth ? (
+                <PrivateRoute>
+                  <Suspense
+                    fallback={<Loading></Loading>}
+                    key={location.pathname}
+                  >
+                    <Component />
+                  </Suspense>
+                </PrivateRoute>
+              ) : (
                 <Suspense
                   fallback={<Loading></Loading>}
                   key={location.pathname}
                 >
-                  <Pricing />
+                  <Component />
                 </Suspense>
-              </PrivateRoute>
-            ) : (
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <Pricing />
-              </Suspense>
-            )
-          }
-        />
+              )
+            }
+          />
+        ))}
         <Route
           path='/usage'
           element={

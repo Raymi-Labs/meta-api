@@ -46,6 +46,7 @@ const PricingTable = ({
   showRatio,
   compactMode = false,
   openModelDetail,
+  catalogState,
   t,
 }) => {
   const columns = useMemo(() => {
@@ -63,6 +64,7 @@ const PricingTable = ({
       showRatio,
       siteDisplayType,
       openModelDetail,
+      catalogState,
     });
   }, [
     t,
@@ -78,6 +80,7 @@ const PricingTable = ({
     showRatio,
     siteDisplayType,
     openModelDetail,
+    catalogState,
   ]);
 
   // Search is already applied by the shared hook, including descriptions/tags.
@@ -89,13 +92,24 @@ const PricingTable = ({
     return columns;
   }, [columns, compactMode]);
 
+  // Semi treats controlled pagination as server pagination and leaves the
+  // supplied rows untouched. Slice the filtered catalog before passing it in.
+  const pageModels = useMemo(
+    () =>
+      filteredModels.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      ),
+    [filteredModels, currentPage, pageSize],
+  );
+
   const ModelTable = useMemo(
     () => (
       <Card className='!rounded-xl overflow-hidden' bordered={false}>
         <Table
           className='pricing-model-table'
           columns={processedColumns}
-          dataSource={filteredModels}
+          dataSource={pageModels}
           loading={loading}
           rowSelection={rowSelection}
           scroll={compactMode ? undefined : { x: 'max-content' }}
@@ -119,16 +133,21 @@ const PricingTable = ({
             defaultPageSize: 20,
             pageSize: pageSize,
             currentPage,
+            total: filteredModels.length,
             onPageChange: setCurrentPage,
             showSizeChanger: true,
             pageSizeOptions: [10, 20, 50, 100],
-            onPageSizeChange: (size) => setPageSize(size),
+            onPageSizeChange: (size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            },
           }}
         />
       </Card>
     ),
     [
       filteredModels,
+      pageModels,
       loading,
       processedColumns,
       rowSelection,

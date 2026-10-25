@@ -6537,6 +6537,12 @@
     "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Gilt nur für registrierte Modelle mit OpenAI/Azure Chat-Weiterleitung; Durchleitung und andere Protokolle behalten ihr bisheriges Verhalten.",
     "渠道专属规则（可选）": "Kanalspezifische Regeln (optional)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Exakte Übereinstimmung des Upstream-Modells hat Vorrang vor Vorlagen; Parameterüberschreibungen erfolgen zuletzt.",
-    "思考参数适配配置无效": "Ungültige Konfiguration der Denkparameter"
+    "思考参数适配配置无效": "Ungültige Konfiguration der Denkparameter",
+    "模型详情": "Modelldetails",
+    "返回模型广场": "Zurück zu den Modellen",
+    "该模型不存在或当前不可见": "Dieses Modell existiert nicht oder ist derzeit nicht sichtbar",
+    "同厂商模型": "Modelle desselben Anbieters",
+    "按供应商、类型、端点和标签发现模型，查看详情与价格。": "Entdecken Sie Modelle nach Anbieter, Typ, Endpunkt und Tags und sehen Sie sich Details und Preise an.",
+    "此模型的调用示例请参阅 API 文档。": "Beispiele für den Aufruf dieses Modells finden Sie in der API-Dokumentation."
   }
 }

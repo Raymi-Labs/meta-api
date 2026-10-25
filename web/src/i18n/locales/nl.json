@@ -6537,6 +6537,12 @@
     "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Geldt alleen voor geregistreerde modellen met OpenAI/Azure Chat-doorsturing; directe doorgifte en andere protocollen blijven ongewijzigd.",
     "渠道专属规则（可选）": "Kanaalregels (optioneel)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Een exacte match met het upstreammodel gaat voor het sjabloon; parameteroverschrijvingen worden als laatste toegepast.",
-    "思考参数适配配置无效": "Ongeldige configuratie voor redeneeraanpassing"
+    "思考参数适配配置无效": "Ongeldige configuratie voor redeneeraanpassing",
+    "模型详情": "Modeldetails",
+    "返回模型广场": "Terug naar de modellen",
+    "该模型不存在或当前不可见": "Dit model bestaat niet of is momenteel niet zichtbaar",
+    "同厂商模型": "Modellen van dezelfde aanbieder",
+    "按供应商、类型、端点和标签发现模型，查看详情与价格。": "Ontdek modellen op aanbieder, type, endpoint en tags en bekijk details en prijzen.",
+    "此模型的调用示例请参阅 API 文档。": "Raadpleeg de API-documentatie voor voorbeelden van aanroepen van dit model."
   }
 }

@@ -7154,6 +7154,11 @@
     "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Chỉ áp dụng cho mô hình đã đăng ký chuyển tiếp qua OpenAI/Azure Chat; truyền nguyên trạng và giao thức khác giữ hành vi hiện tại.",
     "渠道专属规则（可选）": "Quy tắc riêng của kênh (tùy chọn)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "Khớp chính xác mô hình phía nhà cung cấp được ưu tiên hơn mẫu; ghi đè tham số được áp dụng cuối cùng.",
-    "思考参数适配配置无效": "Cấu hình điều chỉnh suy luận không hợp lệ"
+    "思考参数适配配置无效": "Cấu hình điều chỉnh suy luận không hợp lệ",
+    "返回模型广场": "Quay lại danh sách mô hình",
+    "该模型不存在或当前不可见": "Mô hình này không tồn tại hoặc hiện không hiển thị",
+    "同厂商模型": "Mô hình cùng nhà cung cấp",
+    "按供应商、类型、端点和标签发现模型，查看详情与价格。": "Tìm mô hình theo nhà cung cấp, loại, điểm cuối và thẻ, rồi xem thông tin chi tiết và giá.",
+    "此模型的调用示例请参阅 API 文档。": "Xem tài liệu API để biết ví dụ gọi mô hình này."
   }
 }

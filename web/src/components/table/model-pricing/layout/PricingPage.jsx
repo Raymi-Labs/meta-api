@@ -19,21 +19,52 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Layout, ImagePreview } from '@douyinfe/semi-ui';
-import PricingSidebar from './PricingSidebar';
 import PricingCatalogFilters from './header/PricingCatalogFilters';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './pricingCatalog.css';
 import PricingContent from './content/PricingContent';
-import ModelDetailSideSheet from '../modal/ModelDetailSideSheet';
 import { useModelPricingData } from '../../../../hooks/model-pricing/useModelPricingData';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
+import {
+  buildModelDetailPath,
+  sanitizeModelCatalogSnapshot,
+} from '../../../../helpers/modelDetailNavigation';
 
 const PricingPage = () => {
-  const pricingData = useModelPricingData();
-  const { Sider, Content } = Layout;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [initialState] = React.useState(() =>
+    sanitizeModelCatalogSnapshot(location.state?.modelCatalogSnapshot),
+  );
+  const pricingData = useModelPricingData(initialState);
+  const { Content } = Layout;
   const isMobile = useIsMobile();
-  const [showRatio, setShowRatio] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState('card');
+  const [showRatio, setShowRatio] = React.useState(initialState.showRatio);
+  const [viewMode, setViewMode] = React.useState(initialState.viewMode);
+  const catalogState = sanitizeModelCatalogSnapshot({
+    ...pricingData,
+    showRatio,
+    viewMode,
+  });
+  const snapshotKey = JSON.stringify(catalogState);
+  React.useEffect(() => {
+    if (JSON.stringify(location.state?.modelCatalogSnapshot) === snapshotKey)
+      return;
+    navigate(location.pathname + location.search + location.hash, {
+      replace: true,
+      state: {
+        ...location.state,
+        modelCatalogSnapshot: JSON.parse(snapshotKey),
+      },
+    });
+  }, [
+    snapshotKey,
+    location.pathname,
+    location.search,
+    location.hash,
+    location.state,
+    navigate,
+  ]);
   const resultsRef = React.useRef(null);
   const changePage = (page) => {
     pricingData.setCurrentPage(page);
@@ -41,6 +72,11 @@ const PricingPage = () => {
   };
   const allProps = {
     ...pricingData,
+    catalogState,
+    openModelDetail: (model) =>
+      navigate(buildModelDetailPath(model.model_name), {
+        state: { catalogState },
+      }),
     setCurrentPage: changePage,
     showRatio,
     setShowRatio,
@@ -61,7 +97,11 @@ const PricingPage = () => {
               })}
             </span>
           </div>
-          <p>{pricingData.t('按供应商、分组、类型、端点和标签筛选模型。')}</p>
+          <p>
+            {pricingData.t(
+              '按供应商、类型、端点和标签发现模型，查看详情与价格。',
+            )}
+          </p>
         </div>
         <Link to='/docs/api-examples'>
           {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
@@ -69,12 +109,6 @@ const PricingPage = () => {
       </header>
       <PricingCatalogFilters {...allProps} />
       <Layout className='pricing-layout'>
-        {!isMobile && (
-          <Sider className='pricing-scroll-hide pricing-sidebar'>
-            <PricingSidebar {...allProps} />
-          </Sider>
-        )}
-
         <Content className='pricing-scroll-hide pricing-content'>
           <PricingContent
             {...allProps}
@@ -89,23 +123,6 @@ const PricingPage = () => {
         src={pricingData.modalImageUrl}
         visible={pricingData.isModalOpenurl}
         onVisibleChange={(visible) => pricingData.setIsModalOpenurl(visible)}
-      />
-
-      <ModelDetailSideSheet
-        visible={pricingData.showModelDetail}
-        onClose={pricingData.closeModelDetail}
-        modelData={pricingData.selectedModel}
-        groupRatio={pricingData.groupRatio}
-        timeRatioMap={pricingData.timeRatioMap}
-        usableGroup={pricingData.usableGroup}
-        currency={pricingData.currency}
-        tokenUnit={pricingData.tokenUnit}
-        displayPrice={pricingData.displayPrice}
-        showRatio={allProps.showRatio}
-        vendorsMap={pricingData.vendorsMap}
-        endpointMap={pricingData.endpointMap}
-        autoGroups={pricingData.autoGroups}
-        t={pricingData.t}
       />
     </div>
   );

@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { sortPricingModels } from '../../helpers/modelPriceSorting';
 import { groupForPricingVendor } from '../../helpers/pricingVendorSelection';
 import { calculateModelPrice } from '../../helpers/utils';
+import { sanitizeModelCatalogSnapshot } from '../../helpers/modelDetailNavigation';
 
 import { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -127,15 +128,20 @@ const computePackageEffectiveRate = (plan, quotaPerUnit, usdExchangeRate) => {
   return planPriceCNY / totalQuotaUSD;
 };
 
-export const useModelPricingData = () => {
+export const useModelPricingData = (initialState) => {
   const { t } = useTranslation();
-  const [searchValue, setSearchValue] = useState('');
+  const [initialCatalogState] = useState(() =>
+    sanitizeModelCatalogSnapshot(initialState),
+  );
+  const [searchValue, setSearchValue] = useState(
+    initialCatalogState.searchValue,
+  );
   const compositionRef = useRef({ isComposition: false });
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [isModalOpenurl, setIsModalOpenurl] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState('all');
-  const [sortOrder, setSortOrder] = useState('version-desc');
+  const [sortOrder, setSortOrder] = useState(initialCatalogState.sortOrder);
   const changeSortOrder = (value) => {
     setSortOrder(value);
     setCurrentPage(1);
@@ -143,15 +149,25 @@ export const useModelPricingData = () => {
   const [showModelDetail, setShowModelDetail] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
   const [filterGroup, setFilterGroup] = useState('all'); // 用于 Table 的可用分组筛选，"all" 表示不过滤
-  const [filterQuotaType, setFilterQuotaType] = useState('all'); // 计费类型筛选: 'all' | 0 | 1
-  const [filterEndpointType, setFilterEndpointType] = useState('all'); // 端点类型筛选: 'all' | string
-  const [filterVendor, setFilterVendor] = useState('all'); // 供应商筛选: 'all' | 'unknown' | string
-  const [filterTag, setFilterTag] = useState('all'); // 模型标签筛选: 'all' | string
-  const [pageSize, setPageSize] = useState(20);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currency, setCurrency] = useState('USD');
-  const [showWithRecharge, setShowWithRecharge] = useState(true);
-  const [tokenUnit, setTokenUnit] = useState('M');
+  const [filterQuotaType, setFilterQuotaType] = useState(
+    initialCatalogState.filterQuotaType,
+  );
+  const [filterEndpointType, setFilterEndpointType] = useState(
+    initialCatalogState.filterEndpointType,
+  );
+  const [filterVendor, setFilterVendor] = useState(
+    initialCatalogState.filterVendor,
+  );
+  const [filterTag, setFilterTag] = useState(initialCatalogState.filterTag);
+  const [pageSize, setPageSize] = useState(initialCatalogState.pageSize);
+  const [currentPage, setCurrentPage] = useState(
+    initialCatalogState.currentPage,
+  );
+  const [currency, setCurrency] = useState(initialCatalogState.currency);
+  const [showWithRecharge, setShowWithRecharge] = useState(
+    initialCatalogState.showWithRecharge,
+  );
+  const [tokenUnit, setTokenUnit] = useState(initialCatalogState.tokenUnit);
   const [models, setModels] = useState([]);
   const [vendorsMap, setVendorsMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -164,13 +180,29 @@ export const useModelPricingData = () => {
   const [autoGroups, setAutoGroups] = useState([]);
 
   // 价格转换模式：'recharge'=充值汇率, 'package'=套餐汇率
-  const [priceConvertMode, setPriceConvertMode] = useState('package');
+  const [priceConvertMode, setPriceConvertMode] = useState(
+    initialCatalogState.priceConvertMode,
+  );
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [subscriptionPlansLoaded, setSubscriptionPlansLoaded] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState(
+    initialCatalogState.selectedPlanId,
+  );
 
   const [statusState] = useContext(StatusContext);
   const [userState] = useContext(UserContext);
+  const identity = JSON.stringify([
+    userState?.user?.id ?? null,
+    userState?.user?.group ?? '',
+    userState?.user?.role ?? null,
+  ]);
+  const currentIdentity = useRef(identity);
+  currentIdentity.current = identity;
+  const mounted = useRef(false);
+  const pricingRequest = useRef(0);
+  const plansRequest = useRef(0);
+  const [pricingIdentity, setPricingIdentity] = useState(identity);
+  const hasCurrentIdentity = pricingIdentity === identity;
 
   // 充值汇率（price）与美元兑人民币汇率（usd_exchange_rate）
   const priceRate = useMemo(
@@ -359,12 +391,12 @@ export const useModelPricingData = () => {
 
   const rowSelection = useMemo(
     () => ({
-      selectedRowKeys,
+      selectedRowKeys: hasCurrentIdentity ? selectedRowKeys : [],
       onChange: (keys) => {
         setSelectedRowKeys(keys);
       },
     }),
-    [selectedRowKeys],
+    [selectedRowKeys, hasCurrentIdentity],
   );
 
   const convertDisplayPriceAmount = (usdPrice) => {
@@ -428,11 +460,21 @@ export const useModelPricingData = () => {
   };
 
   const loadPricing = async () => {
+    const requestIdentity = identity;
+    const requestId = ++pricingRequest.current;
+    const isCurrent = () =>
+      mounted.current &&
+      currentIdentity.current === requestIdentity &&
+      pricingRequest.current === requestId;
     setLoading(true);
     setLoadError(false);
     try {
       let url = '/api/pricing';
-      const res = await API.get(url);
+      const res = await API.get(url, {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      if (!isCurrent()) return;
       const {
         success,
         data,
@@ -444,11 +486,11 @@ export const useModelPricingData = () => {
         time_ratio,
         time_ratio_at,
       } = res.data;
-      if (success) {
-        setGroupRatio(group_ratio);
+      if (success && Array.isArray(data)) {
+        setGroupRatio(group_ratio || {});
         setTimeRatioMap(time_ratio || {});
         setTimeRatioAt(time_ratio_at || '');
-        setUsableGroup(usable_group);
+        setUsableGroup(usable_group || {});
         // Keep the selected price group when retrying a failed refresh.
         // 构建供应商 Map 方便查找
         const vendorMap = {};
@@ -460,35 +502,46 @@ export const useModelPricingData = () => {
         setVendorsMap(vendorMap);
         setEndpointMap(supported_endpoint || {});
         setAutoGroups(auto_groups || []);
-        setModelsFormat(data, group_ratio, vendorMap);
+        setModelsFormat(data, group_ratio || {}, vendorMap);
       } else {
         setLoadError(true);
       }
     } catch {
-      setLoadError(true);
+      if (isCurrent()) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   };
 
   // 获取订阅套餐列表（需登录，静默失败）
   const loadSubscriptionPlans = async () => {
+    const requestIdentity = identity;
+    const requestId = ++plansRequest.current;
+    const isCurrent = () =>
+      mounted.current &&
+      currentIdentity.current === requestIdentity &&
+      plansRequest.current === requestId;
     try {
-      const res = await API.get('/api/subscription/plans');
-      if (res.data?.success) {
+      if (!userState?.user?.id) return;
+      const res = await API.get('/api/subscription/plans', {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      if (isCurrent() && res.data?.success) {
         setSubscriptionPlans(normalizeSubscriptionPlans(res.data.data));
       }
     } catch {
       // 未登录或接口不可用，静默忽略
     } finally {
-      setSubscriptionPlansLoaded(true);
+      if (isCurrent()) setSubscriptionPlansLoaded(true);
     }
   };
 
   const refresh = async () => {
     await loadPricing();
     // 套餐数据加载不阻塞主流程
-    loadSubscriptionPlans();
+    if (mounted.current && currentIdentity.current === identity)
+      loadSubscriptionPlans();
   };
 
   const copyText = async (text) => {
@@ -559,13 +612,33 @@ export const useModelPricingData = () => {
   };
 
   useEffect(() => {
+    mounted.current = true;
+    // Account changes invalidate all pricing-derived data, including the
+    // permitted groups and subscription conversions. History stores UI only.
+    setPricingIdentity(identity);
+    setModels([]);
+    setVendorsMap({});
+    setGroupRatio({});
+    setTimeRatioMap({});
+    setTimeRatioAt('');
+    setUsableGroup({});
+    setEndpointMap({});
+    setAutoGroups([]);
+    setSubscriptionPlans([]);
+    setSubscriptionPlansLoaded(false);
+    setSelectedModel(null);
+    setShowModelDetail(false);
+    setSelectedRowKeys([]);
     refresh().then();
-  }, []);
+    return () => {
+      mounted.current = false;
+      pricingRequest.current += 1;
+      plansRequest.current += 1;
+    };
+  }, [identity]);
 
   // 当筛选条件变化时重置到第一页
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
+  const filtersKey = JSON.stringify([
     filterGroup,
     filterQuotaType,
     filterEndpointType,
@@ -573,6 +646,18 @@ export const useModelPricingData = () => {
     filterTag,
     searchValue,
   ]);
+  const previousFilters = useRef(filtersKey);
+  useEffect(() => {
+    if (previousFilters.current === filtersKey) return;
+    previousFilters.current = filtersKey;
+    setCurrentPage(1);
+  }, [filtersKey]);
+
+  useEffect(() => {
+    if (loading || loadError || !hasCurrentIdentity) return;
+    const lastPage = Math.max(1, Math.ceil(filteredModels.length / pageSize));
+    setCurrentPage((page) => Math.min(page, lastPage));
+  }, [loading, loadError, hasCurrentIdentity, filteredModels.length, pageSize]);
 
   return {
     // 状态
@@ -580,7 +665,7 @@ export const useModelPricingData = () => {
     setSortOrder: changeSortOrder,
     searchValue,
     setSearchValue,
-    selectedRowKeys,
+    selectedRowKeys: hasCurrentIdentity ? selectedRowKeys : [],
     setSelectedRowKeys,
     modalImageUrl,
     setModalImageUrl,
@@ -590,7 +675,7 @@ export const useModelPricingData = () => {
     setSelectedGroup,
     showModelDetail,
     setShowModelDetail,
-    selectedModel,
+    selectedModel: hasCurrentIdentity ? selectedModel : null,
     setSelectedModel,
     filterGroup,
     setFilterGroup,
@@ -612,32 +697,32 @@ export const useModelPricingData = () => {
     setShowWithRecharge,
     priceConvertMode,
     setPriceConvertMode,
-    subscriptionPlans,
-    availablePlans,
+    subscriptionPlans: hasCurrentIdentity ? subscriptionPlans : [],
+    availablePlans: hasCurrentIdentity ? availablePlans : [],
     selectedPlanId,
     setSelectedPlanId,
     tokenUnit,
     setTokenUnit,
-    models,
-    loading,
-    loadError,
+    models: hasCurrentIdentity ? models : [],
+    loading: !hasCurrentIdentity || loading,
+    loadError: hasCurrentIdentity && loadError,
     resetCatalogFilters,
     siteDisplayType: quotaDisplayType,
-    groupRatio,
-    timeRatioMap,
-    timeRatioAt,
-    usableGroup,
-    endpointMap,
-    autoGroups,
+    groupRatio: hasCurrentIdentity ? groupRatio : {},
+    timeRatioMap: hasCurrentIdentity ? timeRatioMap : {},
+    timeRatioAt: hasCurrentIdentity ? timeRatioAt : '',
+    usableGroup: hasCurrentIdentity ? usableGroup : {},
+    endpointMap: hasCurrentIdentity ? endpointMap : {},
+    autoGroups: hasCurrentIdentity ? autoGroups : [],
 
     // 计算属性
     priceRate,
     usdExchangeRate,
-    filteredModels,
+    filteredModels: hasCurrentIdentity ? filteredModels : [],
     rowSelection,
 
     // 供应商
-    vendorsMap,
+    vendorsMap: hasCurrentIdentity ? vendorsMap : {},
 
     // 用户和状态
     userState,

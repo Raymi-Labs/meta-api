@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import PricingDisplaySettings from '../../filter/PricingDisplaySettings';
-import PricingGroups from '../../filter/PricingGroups';
 import PricingQuotaTypes from '../../filter/PricingQuotaTypes';
 import PricingEndpointTypes from '../../filter/PricingEndpointTypes';
 import PricingVendors from '../../filter/PricingVendors';
@@ -57,36 +56,19 @@ const FilterModalContent = ({ sidebarProps, t }) => {
     ...categoryProps
   } = sidebarProps;
 
-  const {
-    quotaTypeModels,
-    endpointTypeModels,
-    vendorModels,
-    tagModels,
-    groupCountModels,
-  } = usePricingFilterCounts({
-    models: categoryProps.models,
-    filterGroup,
-    filterQuotaType,
-    filterEndpointType,
-    filterVendor,
-    filterTag,
-    searchValue: sidebarProps.searchValue,
-  });
+  const { quotaTypeModels, endpointTypeModels, vendorModels, tagModels } =
+    usePricingFilterCounts({
+      models: categoryProps.models,
+      filterGroup,
+      filterQuotaType,
+      filterEndpointType,
+      filterVendor,
+      filterTag,
+      searchValue: sidebarProps.searchValue,
+    });
 
   return (
     <>
-      <PricingGroups
-        pills
-        hideUnavailable={filterVendor !== 'all'}
-        filterGroup={filterGroup}
-        setFilterGroup={sidebarProps.handleGroupClick}
-        usableGroup={categoryProps.usableGroup}
-        groupRatio={categoryProps.groupRatio}
-        models={groupCountModels}
-        loading={loading}
-        t={t}
-      />
-
       <PricingVendors
         pills
         filterVendor={filterVendor}

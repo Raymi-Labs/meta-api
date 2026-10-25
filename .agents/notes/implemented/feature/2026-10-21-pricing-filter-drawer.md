@@ -26,3 +26,7 @@ Status: implemented
 ## Related notes
 
 [筛选可见性](../../implemented/feature/2026-10-11-pricing-filter-visibility.md)、[厂商切换](../../implemented/bug-fix/2026-10-21-pricing-vendor-transition.md)继续管理选项与状态规则，本文仅扩展呈现；[布局](../../implemented/feature/2026-10-21-pricing-wallet-layout.md)其余页面保持不变。检索命中的支付/令牌笔记与本次无关。
+
+## Related decision
+
+[独立模型详情](../../implemented/feature/2026-10-25-model-detail-page.md)依据用户新选择取代目录中的分组展示与侧栏详情入口；其余价格、筛选和钱包决定保持原有范围。
