@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { history } from './history';
 import {
   getSafeLoginRedirectPath,
@@ -39,10 +39,13 @@ export function authHeader() {
 }
 
 export const AuthRedirect = ({ children }) => {
+  const { search } = useLocation();
   const user = localStorage.getItem('user');
 
   if (user) {
-    const path = getSafeLoginRedirectPath();
+    // Browser history updates before a concurrent router transition commits.
+    // Keep this guard on the same location snapshot as the rendered login page.
+    const path = getSafeLoginRedirectPath(search);
     // A stale browser-side user record does not prove the server session used
     // by the SSO bridge is alive. Keep the login form visible after the bridge
     // redirects here instead of looping between /login and the backend route.

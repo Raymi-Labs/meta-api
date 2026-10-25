@@ -57,7 +57,9 @@ const PageLayout = () => {
   const location = useLocation();
 
   const isConsoleRoute = /^\/console(?:\/|$)/i.test(location.pathname);
-  const shouldHideFooter = isConsoleRoute || location.pathname === '/pricing';
+  const isAuthRoute = /^\/(?:login|register)\/?$/i.test(location.pathname);
+  const shouldHideFooter =
+    isConsoleRoute || isAuthRoute || location.pathname === '/pricing';
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&

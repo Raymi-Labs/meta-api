@@ -1,5 +1,7 @@
 /* Invitation-only campaign scene. Ordinary registration retains its theme. */
-.invite-register-page {
+.auth-page.invite-register-page {
+  position: relative;
+  overflow: hidden;
   min-height: calc(100svh - 64px);
   background: radial-gradient(ellipse at 47% 55%, #143869 0, transparent 43%),
     radial-gradient(ellipse at 4% 0%, #16366b 0, transparent 48%), #060e22;
@@ -355,7 +357,7 @@
   --semi-color-primary-hover: #a1d0ff;
   color: #eaf3ff;
 }
-.invite-register-page #invite-register-form > .flex > .w-full > .semi-card {
+.invite-register-page #invite-register-form .auth-card {
   background: linear-gradient(150deg, #172b48ed, #0c192ded);
   border: 1px solid #6890c24a !important;
   border-radius: 24px !important;
@@ -447,7 +449,7 @@
   }
 }
 @media (max-width: 600px) {
-  .invite-register-page {
+  .auth-page.invite-register-page {
     padding-top: 20px;
   }
   .invite-benefits {
