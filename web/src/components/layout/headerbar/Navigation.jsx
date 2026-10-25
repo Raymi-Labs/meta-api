@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SkeletonWrapper from '../components/SkeletonWrapper';
+import { getTopNavigationTarget } from '../../../helpers/topNavigation';
 
 const Navigation = ({
   mainNavLinks,
@@ -69,13 +70,11 @@ const Navigation = ({
         );
       }
 
-      let targetPath = link.to;
-      if (link.itemKey === 'console' && !userState.user) {
-        targetPath = '/login';
-      }
-      if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user) {
-        targetPath = '/login';
-      }
+      const targetPath = getTopNavigationTarget(
+        link,
+        userState.user,
+        pricingRequireAuth,
+      );
 
       return (
         <Link
@@ -95,7 +94,7 @@ const Navigation = ({
       <SkeletonWrapper
         loading={isLoading}
         type='navigation'
-        count={4}
+        count={mainNavLinks.length}
         width={60}
         height={16}
         isMobile={isMobile}

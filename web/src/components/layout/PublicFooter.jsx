@@ -33,6 +33,7 @@ const PublicFooter = ({
   customLanding,
   isDownloadPage,
   isLegalPage,
+  isEnterprisePage,
   t,
 }) => {
   const copyright = (
@@ -42,7 +43,7 @@ const PublicFooter = ({
   );
 
   // Custom landing content owns its navigation and page sections.
-  if (customLanding && !isDownloadPage && !isLegalPage) {
+  if (customLanding && !isDownloadPage && !isLegalPage && !isEnterprisePage) {
     return (
       <footer className='public-footer public-footer--compact'>
         {copyright}
@@ -82,6 +83,7 @@ const PublicFooter = ({
           to: protectedPath('/console/image-playground'),
         },
         { text: '下载客户端', to: '/download', prefetchApp: false },
+        { text: '企业定制', to: '/enterprise', prefetchApp: false },
         showDocs && { text: 'Skills', to: '/docs/image-generation' },
       ],
     },

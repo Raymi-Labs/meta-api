@@ -43,23 +43,20 @@ import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import PublicFooter from './PublicFooter';
 import PublicLanguageSelector from './PublicLanguageSelector';
 import { usePublicNotifications } from '../../hooks/common/usePublicNotifications';
-import { isPublicLegalPath } from '../../helpers/publicRoutes';
+import { getPublicShellPage } from '../../helpers/publicRoutes';
+import {
+  DEFAULT_HEADER_NAV_MODULES,
+  getTopNavigationLinks,
+  getTopNavigationTarget,
+} from '../../helpers/topNavigation';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
+const Enterprise = lazy(() => import('../../pages/Enterprise'));
 const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
 const PublicNoticeModal = lazy(() => import('./PublicNoticeModal'));
 
-const defaultModules = {
-  home: true,
-  console: true,
-  pricing: true,
-  docs: true,
-  about: true,
-  usage: false,
-};
-
 const parseHeaderModules = (rawConfig) => {
-  if (!rawConfig) return defaultModules;
+  if (!rawConfig) return DEFAULT_HEADER_NAV_MODULES;
   try {
     const modules = JSON.parse(rawConfig);
     if (typeof modules.pricing === 'boolean') {
@@ -70,7 +67,7 @@ const parseHeaderModules = (rawConfig) => {
     }
     return modules;
   } catch (error) {
-    return defaultModules;
+    return DEFAULT_HEADER_NAV_MODULES;
   }
 };
 
@@ -95,9 +92,11 @@ const PublicHomeShell = () => {
     document.addEventListener('keydown', onEscape);
     return () => document.removeEventListener('keydown', onEscape);
   }, [mobileNavOpen]);
-  const isDownloadPage = /^\/download\/?$/.test(location.pathname);
-  const isLegalPage = isPublicLegalPath(location.pathname);
-  const isPublicSubpage = isDownloadPage || isLegalPage;
+  const publicPage = getPublicShellPage(location.pathname);
+  const isDownloadPage = publicPage === 'download';
+  const isLegalPage = publicPage === 'legal';
+  const isEnterprisePage = publicPage === 'enterprise';
+  const isPublicSubpage = isDownloadPage || isLegalPage || isEnterprisePage;
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState, statusDispatch] = useContext(StatusContext);
   const { t } = usePublicTranslation();
@@ -124,24 +123,7 @@ const PublicHomeShell = () => {
     }
   });
 
-  const navLinks = [
-    modules.home && { text: t('首页'), to: '/' },
-    { text: t('下载客户端'), to: '/download', prefetchApp: false },
-    modules.console && {
-      text: t('控制台'),
-      to: userState.user ? '/console' : '/login',
-    },
-    (typeof modules.pricing === 'object'
-      ? modules.pricing.enabled
-      : modules.pricing) && {
-      text: t('模型广场'),
-      to:
-        modules.pricing?.requireAuth && !userState.user ? '/login' : '/pricing',
-    },
-    modules.docs &&
-      docsLink && { text: t('文档'), href: docsLink, external: true },
-    modules.about && { text: t('关于'), to: '/about' },
-  ].filter(Boolean);
+  const navLinks = getTopNavigationLinks(t, docsLink, modules);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -217,6 +199,7 @@ const PublicHomeShell = () => {
           <div className='public-header-inner flex items-center justify-between h-16'>
             <Link
               to='/'
+              aria-label={t('首页')}
               className='public-brand group flex items-center gap-2 min-w-0'
             >
               <img
@@ -237,10 +220,10 @@ const PublicHomeShell = () => {
               onClick={() => setMobileNavOpen(false)}
             >
               {navLinks.map((link) =>
-                link.external ? (
+                link.isExternal ? (
                   <a
-                    key={link.text}
-                    href={link.href}
+                    key={link.itemKey}
+                    href={link.externalLink}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='public-nav-link'
@@ -249,8 +232,8 @@ const PublicHomeShell = () => {
                   </a>
                 ) : (
                   <Link
-                    key={link.text}
-                    to={link.to}
+                    key={link.itemKey}
+                    to={getTopNavigationTarget(link, userState.user)}
                     className='public-nav-link'
                     aria-current={
                       isCurrentNavLink(link.to) ? 'page' : undefined
@@ -382,7 +365,13 @@ const PublicHomeShell = () => {
             </main>
           }
         >
-          {isLegalPage ? <PublicLegal status={status} /> : <DesktopDownload />}
+          {isLegalPage ? (
+            <PublicLegal status={status} />
+          ) : isEnterprisePage ? (
+            <Enterprise />
+          ) : (
+            <DesktopDownload />
+          )}
         </Suspense>
       ) : (
         <Home onLandingChange={setCustomLanding} />
@@ -397,6 +386,7 @@ const PublicHomeShell = () => {
         customLanding={customLanding}
         isDownloadPage={isDownloadPage}
         isLegalPage={isLegalPage}
+        isEnterprisePage={isEnterprisePage}
         t={t}
       />
     </div>

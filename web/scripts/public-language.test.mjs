@@ -193,6 +193,8 @@ test('public pages, navigation and translated data labels are covered by the key
     'pages/Home/index.jsx',
     'pages/Home/EnterpriseHome.jsx',
     'pages/Home/HomeCapabilities.jsx',
+    'pages/Enterprise/index.jsx',
+    'helpers/topNavigation.js',
     'pages/DesktopDownload/index.jsx',
     'pages/DesktopDownload/AndroidDownloadCard.jsx',
     'components/layout/PublicHomeShell.jsx',

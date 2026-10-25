@@ -42,6 +42,7 @@ const defaultProps = {
   customLanding: false,
   isDownloadPage: false,
   isLegalPage: false,
+  isEnterprisePage: false,
   t: (key) => key,
 };
 const render = (props = {}) =>
@@ -87,6 +88,7 @@ test('renders four footer columns with real product, developer, support and poli
     模型体验: loginPath('/console/playground'),
     'AI 图像创作': loginPath('/console/image-playground'),
     下载客户端: '/download',
+    企业定制: '/enterprise',
     Skills: '/docs/image-generation',
     文档: '/docs',
     'API 参考': '/docs/api-examples',
@@ -141,6 +143,7 @@ test('disabled navigation modules hide their corresponding footer entries', () =
   assert.deepEqual(Object.fromEntries(entries), {
     元衡测试: '/',
     下载客户端: '/download',
+    企业定制: '/enterprise',
     服务条款: '/user-agreement',
     隐私政策: '/privacy-policy',
     ...policyLinks,
@@ -203,13 +206,18 @@ test('a custom homepage keeps the compact copyright footer', () => {
   assert.equal(linksFrom(html).size, 0);
 });
 
-test('download and legal pages retain the directory even when the homepage is customized', () => {
-  for (const page of [{ isDownloadPage: true }, { isLegalPage: true }]) {
+test('download, legal and enterprise pages retain the directory even when the homepage is customized', () => {
+  for (const page of [
+    { isDownloadPage: true },
+    { isLegalPage: true },
+    { isEnterprisePage: true },
+  ]) {
     const html = render({ customLanding: true, ...page });
     const entries = linksFrom(html);
     assert.match(html, /public-footer--directory/);
     assert.equal(entries.get('你的隐私选择'), '/privacy-choices');
     assert.equal(entries.get('下载客户端'), '/download');
+    assert.equal(entries.get('企业定制'), '/enterprise');
     assert.equal(entries.has('快速开始'), false);
     assert.equal(entries.has('常见问题'), false);
   }

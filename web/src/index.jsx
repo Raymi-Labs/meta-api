@@ -27,7 +27,7 @@ import './index.css';
 import PublicHomeShell from './components/layout/PublicHomeShell';
 import GlobalTopProgress from './components/common/ui/GlobalTopProgress';
 import { beginGlobalLoading, endGlobalLoading } from './helpers/globalLoading';
-import { isPublicLegalPath } from './helpers/publicRoutes';
+import { getPublicShellPage } from './helpers/publicRoutes';
 import { initializeAnalyticsConsent } from './helpers/analyticsConsent';
 import SiteLanguageBridge from './components/layout/SiteLanguageBridge';
 
@@ -65,11 +65,7 @@ if (typeof window !== 'undefined') {
 
 const ShellRouter = () => {
   const location = useLocation();
-  if (
-    location.pathname === '/' ||
-    /^\/download\/?$/.test(location.pathname) ||
-    isPublicLegalPath(location.pathname)
-  ) {
+  if (getPublicShellPage(location.pathname)) {
     return <PublicHomeShell />;
   }
   return (

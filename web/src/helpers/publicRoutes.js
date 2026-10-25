@@ -18,3 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const isPublicLegalPath = (pathname) =>
   /^\/legal(?:\/|$)/.test(pathname) || /^\/privacy-choices\/?$/.test(pathname);
+
+export const getPublicShellPage = (pathname) => {
+  if (pathname === '/') return 'home';
+  if (/^\/download\/?$/.test(pathname)) return 'download';
+  if (/^\/enterprise\/?$/.test(pathname)) return 'enterprise';
+  if (isPublicLegalPath(pathname)) return 'legal';
+  return null;
+};
