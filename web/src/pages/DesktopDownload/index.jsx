@@ -68,7 +68,7 @@ const formatReleaseDate = (value, language) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(language.startsWith('zh') ? 'zh-CN' : 'en', {
+  return new Intl.DateTimeFormat(language, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

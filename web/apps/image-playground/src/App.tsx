@@ -1,3 +1,4 @@
+import { useImageLanguage } from './language'
 import { useEffect } from 'react'
 import { initStore } from './store'
 import { useStore } from './store'
@@ -38,6 +39,8 @@ function readLaunchSettings(searchParams: URLSearchParams) {
 }
 
 export default function App() {
+  const { language } = useImageLanguage()
+  useEffect(() => { document.documentElement.lang = language }, [language])
   const setSettings = useStore((s) => s.setSettings)
   const appMode = useStore((s) => s.appMode)
   useDockerApiUrlMigrationNotice()

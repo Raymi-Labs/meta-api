@@ -1,3 +1,4 @@
+import { t, translateMessage } from '../language'
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { useCloseOnEscape } from '../hooks/useCloseOnEscape'
@@ -83,8 +84,8 @@ export default function ConfirmDialog() {
   const isDestructive = confirmDialog.title.includes('删除') || confirmDialog.title.includes('清空')
   const confirmTone = confirmDialog.tone ?? (isDestructive ? 'danger' : undefined)
   const confirmClassName = getActionButtonClass(confirmTone === 'danger' || confirmTone === 'warning' ? confirmTone : 'primary')
-  const confirmText = confirmDialog.confirmText ?? (isDestructive ? '确认删除' : '确认')
-  const cancelText = confirmDialog.cancelText ?? '取消'
+  const confirmText = confirmDialog.confirmText ?? (isDestructive ? t("确认删除") : t("确认"))
+  const cancelText = confirmDialog.cancelText ?? t("取消")
   const customButtons = confirmDialog.buttons?.filter((button) => button.label.trim()) ?? []
 
   return (
@@ -109,16 +110,16 @@ export default function ConfirmDialog() {
           {confirmDialog.icon === 'copy' && (
             <CopyIcon className="h-5 w-5 shrink-0 text-blue-500" />
           )}
-          {confirmDialog.title}
+          {translateMessage(confirmDialog.title)}
         </h3>
         <p className={`text-sm text-gray-500 dark:text-gray-400 ${confirmDialog.checkbox ? 'mb-4' : 'mb-6'} leading-relaxed whitespace-pre-line ${confirmDialog.messageAlign === 'center' ? 'text-center' : ''}`}>
-          {renderMessage(confirmDialog.message)}
+          {renderMessage(translateMessage(confirmDialog.message))}
         </p>
         {confirmDialog.checkbox && (
           <Checkbox
             checked={checkboxChecked}
             onChange={setCheckboxChecked}
-            label={confirmDialog.checkbox.label}
+            label={translateMessage(confirmDialog.checkbox.label)}
             tone={confirmDialog.checkbox.tone}
             disabled={confirmDialog.checkbox.disabled}
             className="mb-6"
@@ -137,7 +138,7 @@ export default function ConfirmDialog() {
                 disabled={!canConfirm}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${getActionButtonClass(button.tone)}`}
               >
-                {button.label}
+                {translateMessage(button.label)}
               </button>
             ))}
           </div>
@@ -148,7 +149,7 @@ export default function ConfirmDialog() {
                 onClick={handleCancel}
                 className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-white/[0.08] text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition"
               >
-                {cancelText}
+                {translateMessage(cancelText)}
               </button>
             )}
             <button
@@ -160,7 +161,7 @@ export default function ConfirmDialog() {
               disabled={!canConfirm}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${confirmClassName}`}
             >
-              {confirmText}
+              {translateMessage(confirmText)}
             </button>
           </div>
         )}

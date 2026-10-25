@@ -1,3 +1,4 @@
+import { t, useImageLanguage } from '../language'
 import { memo, useEffect, useState } from 'react'
 import type { Components, StreamdownTranslations } from 'streamdown'
 import type { Components as ReactMarkdownComponents } from 'react-markdown'
@@ -131,6 +132,7 @@ function loadMarkdownRenderer() {
 }
 
 function PlainTextMarkdown({ content, className = '' }: MarkdownRendererProps) {
+  useImageLanguage()
   return (
     <div
       className={`markdown-renderer ${className}`.trim()}
@@ -147,6 +149,7 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
   streaming = false,
   className = '',
 }: MarkdownRendererProps) {
+  useImageLanguage()
   const [renderer, setRenderer] = useState<MarkdownRendererState>({ type: 'loading' })
 
   useEffect(() => {
@@ -197,7 +200,7 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
       mode={streaming ? 'streaming' : 'static'}
       parseIncompleteMarkdown={streaming}
       skipHtml
-      translations={translations}
+      translations={Object.fromEntries(Object.entries(translations).map(([key, value]) => [key, t(value)]))}
       urlTransform={safeUrl}
     >
       {content}

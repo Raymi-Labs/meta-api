@@ -1,0 +1,149 @@
+.public-language {
+  position: relative;
+  flex-shrink: 0;
+}
+.public-language-trigger {
+  position: relative;
+}
+.public-language-trigger[data-language-error]::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b33f45;
+}
+.public-language-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.public-language-trigger:focus-visible {
+  outline: 2px solid #316bff;
+  outline-offset: 3px;
+}
+.public-language-popover {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 88px);
+  top: calc(100% + 12px);
+  right: 0;
+  width: 218px;
+  padding: 7px;
+  border: 1px solid #eef0f4;
+  border-radius: 16px;
+  background: #fff;
+  color: #252a34;
+  box-shadow: 0 14px 38px #202f491f;
+}
+.public-language-menu {
+  min-height: 0;
+  max-height: min(780px, calc(100dvh - 128px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.public-language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.public-language-option:hover,
+.public-language-option:focus-visible {
+  background: #f3f5f8;
+  outline: none;
+}
+.public-language-option[aria-checked='true'] {
+  color: #2c65f5;
+  background: #eff5ff;
+}
+.public-language-option svg {
+  flex-shrink: 0;
+}
+.public-language-error,
+.public-language-status {
+  flex-shrink: 0;
+  max-height: 35dvh;
+  overflow-y: auto;
+  margin: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.public-language-error p,
+.public-language-status p {
+  margin: 0;
+}
+.public-language-error p + p {
+  margin-top: 6px;
+}
+.public-language-error {
+  color: #b33f45;
+}
+.public-language-status {
+  color: #626c7f;
+}
+.public-language-loading {
+  animation: public-language-spin 1s linear infinite;
+}
+@keyframes public-language-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+html.dark .public-language-popover {
+  background: #171d29;
+  color: #e4e9f3;
+  border-color: #30394b;
+  box-shadow: 0 14px 38px #0005;
+}
+html.dark .public-language-option:hover,
+html.dark .public-language-option:focus-visible {
+  background: #252e40;
+}
+html.dark .public-language-option[aria-checked='true'] {
+  color: #97b6ff;
+  background: #263757;
+}
+html.dark .public-language-error {
+  color: #ffaaaa;
+}
+html.dark .public-language-status {
+  color: #b3bed2;
+}
+html.dark .public-language-trigger[data-language-error]::after {
+  background: #ffaaaa;
+}
+@media (max-width: 767px) {
+  .public-language-popover {
+    position: fixed;
+    top: 64px;
+    right: 12px;
+    width: min(218px, calc(100vw - 24px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-language-loading {
+    animation: none;
+  }
+}

@@ -104,7 +104,7 @@ echo $env:CRS_OAI_KEY
 
 ## 9. 联系管理员时提供
 
-```text
+```text i18n-template
 账号邮箱/用户ID：
 发生时间：
 客户端：

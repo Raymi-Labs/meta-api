@@ -27,6 +27,9 @@ import './index.css';
 import PublicHomeShell from './components/layout/PublicHomeShell';
 import GlobalTopProgress from './components/common/ui/GlobalTopProgress';
 import { beginGlobalLoading, endGlobalLoading } from './helpers/globalLoading';
+import { isPublicLegalPath } from './helpers/publicRoutes';
+import { initializeAnalyticsConsent } from './helpers/analyticsConsent';
+import SiteLanguageBridge from './components/layout/SiteLanguageBridge';
 
 // AppShell chunk 与初始语言包一起等待就绪后再渲染：
 // 非中文用户若不等语言包，t() 会先返回中文 key 再切换目标语言，造成语言闪变。
@@ -62,7 +65,11 @@ if (typeof window !== 'undefined') {
 
 const ShellRouter = () => {
   const location = useLocation();
-  if (location.pathname === '/' || /^\/download\/?$/.test(location.pathname)) {
+  if (
+    location.pathname === '/' ||
+    /^\/download\/?$/.test(location.pathname) ||
+    isPublicLegalPath(location.pathname)
+  ) {
     return <PublicHomeShell />;
   }
   return (
@@ -73,12 +80,14 @@ const ShellRouter = () => {
 };
 
 // initialization
+initializeAnalyticsConsent();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <StatusProvider>
       <UserProvider>
+        <SiteLanguageBridge />
         <BrowserRouter
           future={{
             v7_startTransition: true,

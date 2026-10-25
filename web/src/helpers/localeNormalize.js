@@ -17,29 +17,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-// 语言归一化的唯一实现，供 i18n/i18n.js（控制台）与 helpers/publicLocale.js
-// （公开首页轻量词条）共用。两处此前各有一套规则且不一致：
-// 例如未知语言（如 de）首页归 en、控制台归 zh-CN，导致跨页面语言跳变。
-// 注意不要在此文件引入 i18next——publicLocale 位于首页入口 chunk，
-// 引入会把整个 i18n 库拖进首页关键路径。
-
-export const SUPPORTED_LOCALES = [
-  'zh-CN',
-  'zh-TW',
-  'en',
-  'fr',
-  'ru',
-  'ja',
-  'vi',
+// Shared by the lightweight public shell, console and browser integrations.
+export const SITE_LANGUAGES = [
+  ['en', 'English'],
+  ['zh-CN', '简体中文'],
+  ['zh-TW', '繁體中文'],
+  ['ja', '日本語'],
+  ['ko', '한국어'],
+  ['de', 'Deutsch'],
+  ['es', 'Español'],
+  ['fr', 'Français'],
+  ['pt', 'Português'],
+  ['ru', 'Русский'],
+  ['tr', 'Türkçe'],
+  ['pl', 'Polski'],
+  ['nl', 'Nederlands'],
+  ['it', 'Italiano'],
+  ['vi', 'Tiếng Việt'],
+  ['uk', 'Українська'],
+  ['bg', 'Български'],
 ];
-
-export const normalizeLocale = (lng) => {
-  if (!lng) return 'zh-CN';
-  if (lng.startsWith('zh-TW') || lng.startsWith('zh-HK')) return 'zh-TW';
-  if (lng.startsWith('zh')) return 'zh-CN';
-  if (SUPPORTED_LOCALES.includes(lng)) return lng;
-  const shortLng = lng.split('-')[0];
-  if (SUPPORTED_LOCALES.includes(shortLng)) return shortLng;
-  // 未知的非中文语言统一回退英文（而非 zh-CN），与公开首页行为一致
-  return 'en';
+export const SUPPORTED_LOCALES = SITE_LANGUAGES.map(([code]) => code);
+export const SITE_LANGUAGE_KEY = 'site-language';
+export const PUBLIC_LANGUAGE_CHANGE_EVENT = 'public-language-change';
+export const normalizeLocale = (value) => {
+  if (!value || typeof value !== 'string') return 'zh-CN';
+  const tag = value.trim().replaceAll('_', '-').toLowerCase();
+  if (/^zh(?:-|$)/.test(tag)) {
+    return /(?:^|-)(hant|tw|hk|mo)(?:-|$)/.test(tag) ? 'zh-TW' : 'zh-CN';
+  }
+  const base = tag.split('-')[0];
+  return SUPPORTED_LOCALES.includes(base) ? base : 'en';
 };

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants/common.constant';
 import { StatusContext } from '../../context/Status';
@@ -29,10 +29,7 @@ import { isHttpsUrl } from '../../helpers/richContent';
 import { getLogo, getSystemName } from '../../helpers/storage';
 import RichContent from '../../components/common/RichContent';
 import EnterpriseHome from './EnterpriseHome';
-
-const PublicNoticeModal = lazy(
-  () => import('../../components/layout/PublicNoticeModal'),
-);
+import { getPublicHomeServerAddress } from './homeAddress';
 
 const isRemoteHomePage = isHttpsUrl;
 
@@ -42,13 +39,6 @@ const getCachedHomePageContent = () => {
   } catch (error) {
     return '';
   }
-};
-
-const getPublicHomeServerAddress = (serverAddress) => {
-  const normalizedServerAddress = serverAddress.replace(/\/$/, '');
-  return normalizedServerAddress === 'https://nan.meta-api.vip'
-    ? 'https://cn.meta-api.vip'
-    : normalizedServerAddress;
 };
 
 const Home = ({ onLandingChange } = {}) => {
@@ -62,12 +52,11 @@ const Home = ({ onLandingChange } = {}) => {
   const [homePageResolved, setHomePageResolved] = useState(
     () => getCachedHomePageContent() !== '',
   );
-  const [noticeContent, setNoticeContent] = useState('');
-  const [noticeVisible, setNoticeVisible] = useState(false);
   const docsLink = statusState?.status?.docs_link || '';
-  const serverAddress =
-    statusState?.status?.server_address || `${window.location.origin}`;
-  const publicHomeServerAddress = getPublicHomeServerAddress(serverAddress);
+  const publicHomeServerAddress = getPublicHomeServerAddress(
+    statusState?.status?.server_address,
+    window.location.origin,
+  );
   const endpointItems = API_ENDPOINTS.map((e) => ({ value: e }));
   const [endpointIndex, setEndpointIndex] = useState(0);
   const useDefaultHome = homePageContent === '';
@@ -130,31 +119,6 @@ const Home = ({ onLandingChange } = {}) => {
   };
 
   useEffect(() => {
-    const checkNoticeAndShow = async () => {
-      const lastCloseDate = localStorage.getItem('notice_close_date');
-      const today = new Date().toDateString();
-      if (lastCloseDate !== today) {
-        try {
-          const res = await API.get('/api/notice', {
-            skipGlobalLoading: true,
-            skipErrorHandler: true,
-          });
-          const { success, data } = res.data;
-          if (success && data && data.trim() !== '') {
-            setNoticeContent(data.trim());
-            setNoticeVisible(true);
-          }
-        } catch (error) {
-          console.error('获取公告失败:', error);
-        }
-      }
-    };
-
-    const taskId = window.setTimeout(checkNoticeAndShow, 4500);
-    return () => window.clearTimeout(taskId);
-  }, []);
-
-  useEffect(() => {
     displayHomePageContent().then();
   }, []);
 
@@ -178,15 +142,6 @@ const Home = ({ onLandingChange } = {}) => {
 
   return (
     <div className='w-full overflow-x-hidden'>
-      {noticeVisible && (
-        <Suspense fallback={null}>
-          <PublicNoticeModal
-            visible={noticeVisible}
-            content={noticeContent}
-            onClose={() => setNoticeVisible(false)}
-          />
-        </Suspense>
-      )}
       {useDefaultHome ? (
         <EnterpriseHome
           brandName={brandName}

@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useEffect, useRef, useState } from 'react'
 import type { TaskParams, TaskRecord } from '../types'
 import ViewportTooltip from '../components/ViewportTooltip'
@@ -57,8 +58,7 @@ export function ActualValueBadge({ value, className = '', variant = 'highlight' 
     >
       {value}
       <ViewportTooltip visible={tooltipVisible} className="whitespace-nowrap">
-        API 实际响应值
-      </ViewportTooltip>
+        {t("API 实际响应值")}</ViewportTooltip>
     </span>
   )
 }

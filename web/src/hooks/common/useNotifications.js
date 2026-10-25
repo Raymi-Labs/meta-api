@@ -17,9 +17,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { API } from '../../helpers/apiCore';
 import { isAdmin } from '../../helpers/storage';
+import {
+  getAnnouncementKey,
+  getReadAnnouncementKeys,
+  markAnnouncementKeysRead,
+  markNoticeContentRead,
+  normalizeAnnouncements,
+  subscribeNoticeReadState,
+} from '../../helpers/noticeReadState';
 
 export const useNotifications = (statusState) => {
   const [noticeVisible, setNoticeVisible] = useState(false);
@@ -30,7 +38,16 @@ export const useNotifications = (statusState) => {
   const [pendingInvoiceCount, setPendingInvoiceCount] = useState(0);
   const admin = isAdmin();
 
-  const announcements = statusState?.status?.announcements || [];
+  const announcements = useMemo(
+    () =>
+      statusState?.status?.announcements_enabled === false
+        ? []
+        : normalizeAnnouncements(statusState?.status?.announcements),
+    [
+      statusState?.status?.announcements,
+      statusState?.status?.announcements_enabled,
+    ],
+  );
 
   const fetchPendingWithdrawals = async () => {
     if (!admin) return;
@@ -64,41 +81,20 @@ export const useNotifications = (statusState) => {
     }
   };
 
-  // Helper functions
-  const getAnnouncementKey = (a) =>
-    `${a?.publishDate || ''}-${(a?.content || '').slice(0, 30)}`;
-
-  const calculateUnreadCount = () => {
-    if (!announcements.length) return 0;
-    let readKeys = [];
-    try {
-      readKeys = JSON.parse(localStorage.getItem('notice_read_keys')) || [];
-    } catch (_) {
-      readKeys = [];
-    }
-    const readSet = new Set(readKeys);
-    return announcements.filter((a) => !readSet.has(getAnnouncementKey(a)))
-      .length;
-  };
-
-  const getUnreadKeys = () => {
-    if (!announcements.length) return [];
-    let readKeys = [];
-    try {
-      readKeys = JSON.parse(localStorage.getItem('notice_read_keys')) || [];
-    } catch (_) {
-      readKeys = [];
-    }
-    const readSet = new Set(readKeys);
+  const getUnreadKeys = useCallback(() => {
+    const readSet = new Set(getReadAnnouncementKeys());
     return announcements
       .filter((a) => !readSet.has(getAnnouncementKey(a)))
       .map(getAnnouncementKey);
-  };
+  }, [announcements]);
 
   // Effects
   useEffect(() => {
-    setAnnouncementUnread(calculateUnreadCount());
-  }, [announcements]);
+    const update = () => setAnnouncementUnread(getUnreadKeys().length);
+    const unsubscribe = subscribeNoticeReadState(update);
+    update();
+    return unsubscribe;
+  }, [getUnreadKeys]);
 
   useEffect(() => {
     fetchPendingWithdrawals();
@@ -112,21 +108,10 @@ export const useNotifications = (statusState) => {
     setNoticeVisible(true);
   };
 
-  const handleNoticeClose = () => {
+  const handleNoticeClose = (viewed) => {
     setNoticeVisible(false);
-    if (announcements.length) {
-      let readKeys = [];
-      try {
-        readKeys = JSON.parse(localStorage.getItem('notice_read_keys')) || [];
-      } catch (_) {
-        readKeys = [];
-      }
-      const mergedKeys = Array.from(
-        new Set([...readKeys, ...announcements.map(getAnnouncementKey)]),
-      );
-      localStorage.setItem('notice_read_keys', JSON.stringify(mergedKeys));
-    }
-    setAnnouncementUnread(0);
+    markAnnouncementKeysRead(viewed?.announcementKeys);
+    markNoticeContentRead(viewed?.content);
   };
 
   return {

@@ -26,6 +26,8 @@ Status: implemented
 
 ## Verification
 
+2026-10-25 同步主线十七种语言支持后，保留主线既有译文并补齐邀请推广的十种新增语言；17种语言资源与占位符校验、完整前端构建（含生图子应用）及5个公开路由Chrome预渲染通过。邀请浏览器测试同步使用site-language键，多语言/注册/素材/统计回归、令牌浏览器回归、Go相关测试与构建通过。上一次GitHub合并因网络中断未成功，本次以实际PR合并状态为发布依据。
+
 2026-10-24 同步伙伴 compat.62 后重新验证：Go 相关 model/controller/router/middleware 测试、邀请 HTML 单测、邀请浏览器完整流程、令牌创建/编辑回归及伙伴地图动效22项测试通过；主站 Vite 构建、修改源码 ESLint、make verify-notes 通过。MySQL/PostgreSQL仍为SQL生成验证，未宣称生产实机验收。浏览器测试分别运行，避免两个 Vite 服务共享优化缓存造成的过期模块504。
 
 Go model/controller/router/middleware 的相关测试通过：40次并发不丢计数、UTC窗口边界、用户隔离、未知来源归一、无效/禁用与改码后的旧邀请码不计数、计数表故障仍跳转、未登录与非管理员拒绝、每IP限流。原有注册/OAuth邀请绑定回归通过。邀请码解析复用 model 的原有校验逻辑并扩展请求上下文，避免注册与统计各自定义有效用户。

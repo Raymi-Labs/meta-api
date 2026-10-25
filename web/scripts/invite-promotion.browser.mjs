@@ -58,6 +58,7 @@ async function setup(page, loggedIn = false, dark = false) {
         },
       });
       localStorage.setItem('i18nextLng', 'zh-CN');
+      localStorage.setItem('site-language', 'zh-CN');
       localStorage.setItem('status', JSON.stringify(status));
       localStorage.setItem('system_name', '元衡');
       localStorage.setItem('theme-mode', dark ? 'dark' : 'light');
@@ -239,7 +240,10 @@ try {
     await page.setViewport({ width, height: 900 });
     await setup(page);
     await page.evaluateOnNewDocument((language) => {
-      if (window === window.top) localStorage.setItem('i18nextLng', language);
+      if (window === window.top) {
+        localStorage.setItem('i18nextLng', language);
+        localStorage.setItem('site-language', language);
+      }
     }, language);
     await page.goto(base + '/register?aff=fixture7', {
       waitUntil: 'networkidle0',

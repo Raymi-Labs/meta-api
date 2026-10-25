@@ -3,10 +3,53 @@ package router
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"testing/fstest"
 
+	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 )
+
+func TestAnalyticsConfigIsSharedByFallbackAndPrerenderedPages(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	t.Setenv("UMAMI_WEBSITE_ID", "test-site")
+	t.Setenv("UMAMI_SCRIPT_URL", "https://analytics.example/script.js")
+	t.Setenv("GOOGLE_ANALYTICS_ID", "G-TEST")
+	service.LoadPrerendered(fstest.MapFS{
+		"web/dist/download/index.html": &fstest.MapFile{
+			Data: []byte("<html><head><!--umami-->\n<!--Google Analytics-->\n</head><body>Prerendered download</body></html>"),
+		},
+	})
+	t.Cleanup(func() { service.LoadPrerendered(fstest.MapFS{}) })
+
+	r := gin.New()
+	r.NoRoute(func(c *gin.Context) {
+		serveWebIndex(c, []byte("<html><head></head><body>SPA fallback</body></html>"))
+	})
+	for _, path := range []string{"/", "/console", "/download", "/download/"} {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		body := w.Body.String()
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s: expected status 200, got %d", path, w.Code)
+		}
+		for _, id := range []string{"newapi-analytics-umami", "newapi-analytics-google"} {
+			if strings.Count(body, `id="`+id+`"`) != 1 {
+				t.Fatalf("%s: expected exactly one %s configuration: %s", path, id, body)
+			}
+		}
+		if strings.Count(body, `<script type="application/json"`) != 2 || strings.Contains(body, "src=") || strings.Contains(body, "gtag(") {
+			t.Fatalf("%s: HTML must only publish inert analytics configuration: %s", path, body)
+		}
+		if strings.HasPrefix(path, "/download") && !strings.Contains(body, "Prerendered download") {
+			t.Fatalf("%s: test did not exercise prerendered HTML: %s", path, body)
+		}
+		if w.Header().Get("Cache-Control") != "no-cache" {
+			t.Fatalf("%s: expected no-cache HTML", path)
+		}
+	}
+}
 
 func TestImagePlaygroundIndexRoutesDoNotRedirect(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowDown,
   ArrowRight,
@@ -29,10 +29,8 @@ import {
   Copy,
   Download,
   Globe2,
-  Image,
   KeyRound,
   Layers3,
-  MessageSquare,
   Monitor,
   Network,
   ShieldCheck,
@@ -49,6 +47,7 @@ import {
 } from '../../helpers/providerIcons';
 import { copy } from '../../helpers/clipboard';
 import WorldMap from './WorldMap';
+import HomeCapabilities from './HomeCapabilities';
 import './EnterpriseHome.css';
 
 const providers = [
@@ -128,6 +127,20 @@ const EnterpriseHome = ({
   t,
 }) => {
   const [codeLanguage, setCodeLanguage] = useState('Python');
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash !== '#quick-start' && hash !== '#faq-title') return;
+    // Native fragment navigation may finish before the home content resolves.
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({
+        block: 'start',
+        behavior: 'auto',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [hash]);
+
   const baseUrl = `${serverAddress.replace(/\/+$/, '')}/v1`;
   const code =
     codeLanguage === 'Python'
@@ -202,83 +215,7 @@ print(response.choices[0].message.content)`
             </li>
           </ul>
         </div>
-        <div className='yh-container yh-capabilities'>
-          <article className='yh-capability'>
-            <h2>{t('一个密钥，多种可能')}</h2>
-            <p>{t('从文本到图像，让创作自由切换。')}</p>
-            <div className='yh-key-visual' aria-hidden='true'>
-              <div className='yh-provider-pill'>
-                {providers.slice(0, 5).map(({ name, Icon }) => (
-                  <Icon key={name} size={25} />
-                ))}
-              </div>
-              <div className='yh-connector' />
-              <div className='yh-key-pill'>
-                <KeyRound size={15} />
-                <span>sk-••••••••••••</span>
-              </div>
-              <div className='yh-connector' />
-              <div className='yh-modality-pill'>
-                <MessageSquare size={18} />
-                <Code2 size={18} />
-                <Image size={18} />
-              </div>
-            </div>
-          </article>
-          <article className='yh-capability'>
-            <h2>{t('熟悉的 SDK，更简单的接入')}</h2>
-            <p>{t('配置地址与密钥，即可开始。')}</p>
-            <div className='yh-sdk-visual' aria-hidden='true'>
-              <div>
-                <span>01</span>
-                <code>client = OpenAI(</code>
-              </div>
-              <div className='yh-code-highlight'>
-                <span>02</span>
-                <code>
-                  {' '}
-                  base_url=<b>"{baseUrl}"</b>,
-                </code>
-              </div>
-              <div>
-                <span>03</span>
-                <code>
-                  {' '}
-                  api_key=<b>"YOUR_API_KEY"</b>,
-                </code>
-              </div>
-              <div>
-                <span>04</span>
-                <code>)</code>
-              </div>
-              <div className='yh-sdk-caption'>OpenAI · Anthropic · Gemini</div>
-            </div>
-          </article>
-          <article className='yh-capability'>
-            <h2>{t('多条线路，一个入口')}</h2>
-            <p>{t('统一调度，让应用专注业务。')}</p>
-            <div className='yh-route-visual' aria-hidden='true'>
-              <div className='yh-route-labels'>
-                <span>OpenAI</span>
-                <span>Claude</span>
-                <span>Gemini</span>
-              </div>
-              <svg viewBox='0 0 58 105'>
-                <path d='M0 14 Q30 14 58 52M0 52H58M0 90Q30 90 58 52' />
-              </svg>
-              <div className='yh-route-hub'>
-                <img src={brandLogo} alt='' />
-              </div>
-              <svg viewBox='0 0 35 105'>
-                <path d='M0 52H35' />
-              </svg>
-              <div className='yh-route-app'>
-                <Layers3 size={19} />
-                <span>{t('你的应用')}</span>
-              </div>
-            </div>
-          </article>
-        </div>
+        <HomeCapabilities baseUrl={baseUrl} t={t} />
       </section>
 
       <section

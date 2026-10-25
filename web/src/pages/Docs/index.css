@@ -140,10 +140,21 @@
 .nan-docs-nav-button {
   justify-content: flex-start !important;
   text-align: left;
+  height: auto;
+  min-height: 32px;
+  white-space: normal;
   border-radius: 10px !important;
   transition:
     transform 0.16s ease,
     background-color 0.16s ease;
+}
+.nan-docs-nav-button .semi-button-content {
+  width: 100%;
+  min-width: 0;
+}
+.nan-docs-nav-button .semi-button-content-right {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 /* 当前项：蓝青渐变高亮 */
 .nan-docs-nav-button.semi-button-primary {
@@ -259,6 +270,9 @@
   border-left: 3px solid #06b6d4;
   border-radius: 0 8px 8px 0;
   background: var(--semi-color-fill-0);
+}
+.nan-docs-card .markdown-body blockquote::before {
+  content: none;
 }
 .nan-docs-card .markdown-body :not(pre) > code {
   padding: 2px 6px;

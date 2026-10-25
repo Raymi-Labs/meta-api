@@ -1,4 +1,30 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+/*
+Copyright (C) 2025 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Banner,
   Button,
@@ -29,9 +55,13 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API, renderQuota, showError, showWarning } from '../../helpers';
-import { formatConcurrencyLabel, formatWindowLimitShort } from '../../helpers/render';
+import {
+  formatConcurrencyLabel,
+  formatWindowLimitShort,
+} from '../../helpers/render';
 import { StatusContext } from '../../context/Status';
-import { UserContext } from '../../context/User';
+import { useSiteLanguage } from '../../hooks/common/useSiteLanguage';
+import { getSiteLanguageSnapshot } from '../../helpers/siteLanguage';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import ThemeToggle from '../../components/layout/headerbar/ThemeToggle';
 import LanguageSelector from '../../components/layout/headerbar/LanguageSelector';
@@ -95,13 +125,13 @@ function formatNumber(value) {
 
 function formatTimestamp(ts) {
   if (!ts || ts === 0) return null;
-  return new Date(ts * 1000).toLocaleString();
+  return new Date(ts * 1000).toLocaleString(getSiteLanguageSnapshot().language);
 }
 
 function formatExactNumber(value) {
   const num = Number(value || 0);
   if (!Number.isFinite(num)) return '0';
-  return num.toLocaleString();
+  return num.toLocaleString(getSiteLanguageSnapshot().language);
 }
 
 function getCacheSummaryText(record, t) {
@@ -253,18 +283,6 @@ function RuntimeLimitPanel({ data, t }) {
   );
 }
 
-function normalizeLanguage(i18n) {
-  const raw = (i18n.resolvedLanguage || i18n.language || 'zh-CN').toLowerCase();
-  if (raw.startsWith('zh-tw') || raw.startsWith('zh-hk')) return 'zh-TW';
-  if (raw.startsWith('zh')) return 'zh-CN';
-  if (raw.startsWith('en')) return 'en';
-  if (raw.startsWith('fr')) return 'fr';
-  if (raw.startsWith('ru')) return 'ru';
-  if (raw.startsWith('ja')) return 'ja';
-  if (raw.startsWith('vi')) return 'vi';
-  return i18n.resolvedLanguage || i18n.language || 'zh-CN';
-}
-
 function parseKeys(raw) {
   return [
     ...new Set(
@@ -302,8 +320,8 @@ function getDistribution(source) {
   );
   const cacheCreationSupported = Boolean(
     distribution.cache_creation_supported ??
-    source?.cache_creation_supported ??
-    cacheCreation > 0,
+      source?.cache_creation_supported ??
+      cacheCreation > 0,
   );
   return {
     input,
@@ -445,9 +463,10 @@ function MetaItem({ label, value }) {
 }
 
 export default function Usage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
-  const [userState, userDispatch] = useContext(UserContext);
+  const { language: currentLang, changeLanguage: handleLanguageChange } =
+    useSiteLanguage();
   const theme = useTheme();
   const setTheme = useSetTheme();
   const [queryMode, setQueryMode] = useState('single');
@@ -476,7 +495,6 @@ export default function Usage() {
     }
   }, [statusState?.status?.HeaderNavModules]);
 
-  const currentLang = useMemo(() => normalizeLanguage(i18n), [i18n]);
   const systemName = getSystemName();
   const logo = getLogo();
   const queryModeConfig = useMemo(
@@ -513,24 +531,6 @@ export default function Usage() {
       if (['light', 'dark', 'auto'].includes(nextTheme)) setTheme(nextTheme);
     },
     [setTheme],
-  );
-
-  const handleLanguageChange = useCallback(
-    async (language) => {
-      i18n.changeLanguage(language);
-      if (!userState?.user?.id) return;
-      try {
-        const res = await API.put('/api/user/self', { language });
-        if (!res.data.success || !userState.user.setting) return;
-        const settings = JSON.parse(userState.user.setting);
-        settings.language = language;
-        userDispatch({
-          type: 'login',
-          payload: { ...userState.user, setting: JSON.stringify(settings) },
-        });
-      } catch {}
-    },
-    [i18n, userDispatch, userState],
   );
 
   const fetchStats = useCallback(async (mode, keys, nextPeriod) => {

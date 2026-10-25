@@ -29,6 +29,7 @@ class Events {
 }
 
 function fixture(t, options = {}) {
+  const [sampleX, sampleY] = options.samplePoint ?? [716, 261];
   const rect = {
     left: 0,
     top: 0,
@@ -94,11 +95,11 @@ function fixture(t, options = {}) {
     clearRect() {
       this.clearCount++;
     },
-    // A tiny island with one grid point keeps the renderer observable without
-    // making this test depend on the production map's coastline geometry.
+    // A tiny island with one chosen grid point keeps the renderer observable
+    // without depending on the production map's coastline geometry.
     isPointInPath(_path, x, y) {
       this.sampleCount++;
-      return x === 716 && y === 261;
+      return x === sampleX && y === sampleY;
     },
     beginPath() {},
     arc(...arc) {
@@ -293,6 +294,78 @@ test('a visible focused map keeps changing without any pointer events', (t) => {
   }
   assert.notDeepEqual(env.context.draws.at(-1), first);
   assert.equal(env.maximumQueued, 1);
+});
+
+test('ambient color visibly deepens and lightens without flashing between frames', (t) => {
+  const frames = capture(t, {
+    options: { samplePoint: [1185, 261] },
+    frameCount: 900,
+  });
+  const alphas = frames.map((frame) => frame.alpha);
+  const contrast = Math.max(...alphas) - Math.min(...alphas);
+  assert.ok(
+    contrast > 0.4,
+    'ambient color must change noticeably without hover',
+  );
+  let darkening = 0;
+  let lightening = 0;
+  for (let index = 1; index < alphas.length; index++) {
+    const change = alphas[index] - alphas[index - 1];
+    assert.ok(Math.abs(change) < 0.025, 'adjacent frames must not flash');
+    if (change > 0.0001) darkening++;
+    if (change < -0.0001) lightening++;
+  }
+  assert.ok(darkening > 100, 'the map must gradually deepen in color');
+  assert.ok(lightening > 100, 'the map must gradually lighten again');
+});
+
+test('ambient shading retains the soft center and edge around the darker map area', (t) => {
+  const alphasAt = (samplePoint) =>
+    capture(t, { options: { samplePoint }, frameCount: 900 }).map(
+      (frame) => frame.alpha,
+    );
+  const center = alphasAt([716, 261]);
+  const outer = alphasAt([1185, 261]);
+  const edge = alphasAt([1437, 261]);
+  const average = (values) =>
+    values.reduce((sum, value) => sum + value, 0) / values.length;
+  assert.ok(
+    Math.max(...center) < 0.25,
+    'the title area must retain its center fade',
+  );
+  assert.ok(average(outer) > average(center) * 3);
+  assert.ok(average(edge) < average(outer) * 0.4);
+  assert.ok(
+    Math.max(...center) - Math.min(...center) > 0.07,
+    'even faint center dots should still change shade',
+  );
+});
+
+test('ambient and hovered alpha remain finite and within canvas bounds across the map', (t) => {
+  for (const samplePoint of [
+    [716, 261],
+    [1185, 261],
+    [1437, 261],
+    [716, 93],
+    [716, 429],
+  ]) {
+    const baseline = capture(t, {
+      options: { samplePoint },
+      frameCount: 600,
+    });
+    const hovered = capture(t, {
+      options: { samplePoint },
+      frameCount: 600,
+      beforeFrame: (env) => env.move(...samplePoint),
+    });
+    for (let index = 0; index < baseline.length; index++) {
+      for (const alpha of [baseline[index].alpha, hovered[index].alpha]) {
+        assert.ok(Number.isFinite(alpha) && alpha >= 0 && alpha <= 1);
+      }
+      const added = hovered[index].alpha - baseline[index].alpha;
+      assert.ok(added >= -1e-10 && added <= 0.065 + 1e-10);
+    }
+  }
 });
 
 test('coarse pointers, touch and pen retain ambient motion without adding hover', async (t) => {
@@ -516,6 +589,102 @@ test('resizing preserves one RAF chain with updated canvas dimensions', (t) => {
   assert.equal(env.animating, true);
   assert.equal(env.context.sampleCount, sampled);
   assert.equal(env.maximumQueued, 1);
+});
+
+test('normal desktops keep DPR detail while 4K and ultrawide canvases obey the pixel budget', async (t) => {
+  for (const [name, width, height, capped] of [
+    ['desktop', 1920, (1920 * 520) / 1440, false],
+    ['4K', 3840, (3840 * 520) / 1440, true],
+    ['ultrawide', 5120, (5120 * 520) / 1440, true],
+  ]) {
+    await t.test(name, (t) => {
+      const env = fixture(t, {
+        rect: { width, height },
+        devicePixelRatio: 3,
+      });
+      const pixels = env.canvas.width * env.canvas.height;
+      assert.ok(pixels <= 6_000_000);
+      if (capped) {
+        assert.ok(
+          pixels > 5_980_000,
+          'use the budget without unnecessarily blurring the map',
+        );
+        assert.ok(env.canvas.width < width * 2);
+      } else {
+        assert.equal(env.canvas.width, Math.round(width * 2));
+        assert.equal(env.canvas.height, Math.round(height * 2));
+      }
+      env.tick();
+      assert.equal(env.animating, true);
+      assert.equal(env.maximumQueued, 1);
+    });
+  }
+});
+
+test('ultrawide-to-mobile resizing preserves SVG alignment and pointer response', (t) => {
+  const env = fixture(t, {
+    rect: { left: 27, top: 80, width: 5120, height: (5120 * 520) / 1440 },
+    devicePixelRatio: 3,
+  });
+  const sampled = env.context.sampleCount;
+  for (const [width, height] of [
+    [5120, (5120 * 520) / 1440],
+    [1000, 400],
+    [390, 400],
+    [3840, (3840 * 520) / 1440],
+  ]) {
+    env.rect.width = width;
+    env.rect.height = height;
+    env.observers.size.fire();
+    env.move();
+    env.tick();
+    const draw = env.context.draws.at(-1);
+    const [scaleX, , , scaleY, offsetX, offsetY] =
+      env.context.transforms.at(-1);
+    const svgScale = Math.min(width / 1440, height / 520);
+    const svgX = (width - 1440 * svgScale) / 2 + draw.x * svgScale;
+    const svgY = (height - 520 * svgScale) / 2 + draw.y * svgScale;
+    const canvasX = ((draw.x * scaleX + offsetX) * width) / env.canvas.width;
+    const canvasY = ((draw.y * scaleY + offsetY) * height) / env.canvas.height;
+    assert.ok(
+      Math.abs(canvasX - svgX) < 1e-8,
+      'canvas and SVG must agree on the screen x coordinate',
+    );
+    assert.ok(
+      Math.abs(canvasY - svgY) < 1e-8,
+      'canvas and SVG must agree on the screen y coordinate',
+    );
+    assert.ok(Math.abs((scaleX * width) / env.canvas.width - svgScale) < 1e-8);
+    assert.ok(
+      Math.abs((scaleY * height) / env.canvas.height - svgScale) < 1e-8,
+    );
+    assert.ok(env.canvas.width * env.canvas.height <= 6_000_000);
+    assert.equal(env.context.sampleCount, sampled);
+    assert.equal(env.queue.size, 1);
+  }
+  assert.equal(env.maximumQueued, 1);
+  env.restore();
+
+  // Resolution affects raster sharpness, not the logical hover location or
+  // its dot displacement, size, opacity and ambient animation phase.
+  const pointerFrames = (options) =>
+    capture(t, {
+      options,
+      frameCount: 20,
+      beforeFrame: (map) => map.move(750, 280),
+    });
+  const normal = pointerFrames({});
+  for (const rect of [
+    { left: 27, top: 80, width: 5120, height: (5120 * 520) / 1440 },
+    { left: -305, top: 80, width: 1000, height: 400 },
+  ]) {
+    const resized = pointerFrames({ rect, devicePixelRatio: 3 });
+    for (let index = 0; index < normal.length; index++) {
+      for (const key of ['x', 'y', 'radius', 'alpha']) {
+        assert.ok(Math.abs(resized[index][key] - normal[index][key]) < 1e-8);
+      }
+    }
+  }
 });
 
 test('batched intersection entries use the most recent visibility state', (t) => {

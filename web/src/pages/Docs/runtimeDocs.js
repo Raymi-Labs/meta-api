@@ -19,6 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 // Documentation uses the same visibility and group data as the model plaza.
 import { normalizeBaseUrl } from '../../utils/ccSwitch.js';
+import { translateContentText } from '../../helpers/contentLanguage.js';
+
+const originalText = (source, values) =>
+  translateContentText(source, null, values);
 
 const ENDPOINTS = {
   openai: { label: 'OpenAI Chat Completions', path: '/v1/chat/completions' },
@@ -161,13 +165,13 @@ export function buildDocsRequest(model, endpoint, baseUrl, stream = false) {
   );
 }
 
-function groupTable(models) {
+function groupTable(models, t) {
   const families = unique(models.map((m) => familyOf(m.model_name)));
   return (
     table(
-      ['用途', '当前可选分组'],
+      [t('用途'), t('当前可选分组')],
       families.map((family) => [
-        cell(family),
+        cell(t(family)),
         unique(
           models
             .filter((m) => familyOf(m.model_name) === family)
@@ -177,24 +181,27 @@ function groupTable(models) {
           .join('、'),
       ]),
     ) +
-    '\n\n同一行的分组不一定支持该厂商的每个模型。请在[模型广场](/pricing)确认目标模型的分组、协议和价格，再创建令牌。这里不按分组名称评价质量或稳定性。'
+    '\n\n' +
+    t(
+      '同一行的分组不一定支持该厂商的每个模型。请在[模型广场](/pricing)确认目标模型的分组、协议和价格，再创建令牌。这里不按分组名称评价质量或稳定性。',
+    )
   );
 }
 
-function catalogTable(models) {
+function catalogTable(models, t) {
   return table(
-    ['模型名称', '当前可选分组', '支持协议'],
+    [t('模型名称'), t('当前可选分组'), t('支持协议')],
     models.map((m) => [
       cell(m.model_name),
       m.enable_groups.map(cell).join('、'),
       m.supported_endpoint_types
         .map((e) => cell(ENDPOINTS[e]?.label || e))
-        .join('、') || '未声明',
+        .join('、') || t('未声明'),
     ]),
   );
 }
 
-function requestExamples(models, baseUrl) {
+function requestExamples(models, baseUrl, t) {
   const examples = [];
   // One Chat sample per available family, plus protocol-specific samples.
   for (const [family, pattern] of FAMILIES) {
@@ -214,10 +221,10 @@ function requestExamples(models, baseUrl) {
     examples
       .map(
         ([label, model, endpoint]) =>
-          `### ${label}\n\n模型：${cell(model.model_name)}。可选分组：${model.enable_groups.map(cell).join('、')}。\n\n${buildDocsRequest(model, endpoint, baseUrl)}`,
+          `### ${label}\n\n${t('模型：{{model}}。可选分组：{{groups}}。', { model: cell(model.model_name), groups: model.enable_groups.map(cell).join('、') })}\n\n${buildDocsRequest(model, endpoint, baseUrl)}`,
       )
       .join('\n\n') ||
-    '当前没有可自动生成样例的模型，请到[模型广场](/pricing)查看协议说明。'
+    t('当前没有可自动生成样例的模型，请到[模型广场](/pricing)查看协议说明。')
   );
 }
 
@@ -231,16 +238,25 @@ const MODEL_SLOTS = {
 
 export function renderRuntimeDocs(
   markdown,
-  { serverAddress, origin, pricing, loading = false } = {},
+  {
+    serverAddress,
+    origin,
+    pricing,
+    loading = false,
+    translate: t = originalText,
+  } = {},
 ) {
   const baseUrl = getDocsBaseUrl(serverAddress, origin);
   const models = getDocsModels(pricing);
   const available = pricing?.success && Array.isArray(pricing.data);
   const missing = loading
-    ? '正在读取当前模型和分组…'
-    : '暂时无法读取当前模型和分组，请点击刷新重试，或到[模型广场](/pricing)查看。';
-  const empty =
-    '当前身份没有可用的模型和分组，请登录后查看[模型广场](/pricing)，或联系管理员。';
+    ? t('正在读取当前模型和分组…')
+    : t(
+        '暂时无法读取当前模型和分组，请点击刷新重试，或到[模型广场](/pricing)查看。',
+      );
+  const empty = t(
+    '当前身份没有可用的模型和分组，请登录后查看[模型广场](/pricing)，或联系管理员。',
+  );
   const firstModel =
     selectDocsModel(models, 'openai', /^gpt-/) ||
     selectDocsModel(models, 'openai');
@@ -248,11 +264,11 @@ export function renderRuntimeDocs(
   const sections =
     available && models.length
       ? {
-          groups: groupTable(models),
-          catalog: catalogTable(models),
-          examples: requestExamples(models, baseUrl),
+          groups: groupTable(models, t),
+          catalog: catalogTable(models, t),
+          examples: requestExamples(models, baseUrl, t),
           'quick-start': firstRequest
-            ? `本例模型：${cell(firstModel.model_name)}。请为令牌选择以下分组之一：${firstModel.enable_groups.map(cell).join('、')}。\n\n${firstRequest.replace('```bash\n', '```bash\nexport NAN_API_KEY="sk-替换为你的API密钥"\n\n')}`
+            ? `${t('本例模型：{{model}}。请为令牌选择以下分组之一：{{groups}}。', { model: cell(firstModel.model_name), groups: firstModel.enable_groups.map(cell).join('、') })}\n\n${firstRequest.replace('```bash\n', '```bash\nexport NAN_API_KEY="sk-替换为你的API密钥"\n\n')}`
             : empty,
           stream:
             buildDocsRequest(
@@ -282,8 +298,11 @@ export function renderRuntimeDocs(
   }
   if (unresolved.length) {
     const notice = available
-      ? `当前模型目录未提供与此配置匹配的模型：${unresolved.join('、')}。这些占位符不能直接调用；请在模型广场确认该协议，或联系管理员补齐模型信息后刷新。`
-      : `${missing} 配置中的 MODEL_* 是待替换占位符，不能直接调用。`;
+      ? t(
+          '当前模型目录未提供与此配置匹配的模型：{{models}}。这些占位符不能直接调用；请在模型广场确认该协议，或联系管理员补齐模型信息后刷新。',
+          { models: unresolved.join('、') },
+        )
+      : `${missing} ${t('配置中的 MODEL_* 是待替换占位符，不能直接调用。')}`;
     result = result.replace(/^(# [^\n]+\n)/, `$1\n> ${notice}\n`);
   }
   return result;

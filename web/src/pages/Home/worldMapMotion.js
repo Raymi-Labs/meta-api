@@ -21,6 +21,7 @@ const WIDTH = 1440;
 const HEIGHT = 520;
 const RADIUS = 125;
 const FRAME_INTERVAL = 1000 / 30;
+const MAX_CANVAS_PIXELS = 6000000;
 
 // The SVG remains the fallback while motion is paused or reduced.
 export function attachWorldMapMotion({ root, svg, canvas, hero }) {
@@ -67,18 +68,30 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
     if (disposed) return;
     reset();
     const { width, height } = root.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
+    let ratio = Math.min(window.devicePixelRatio || 1, 2);
+    let pixelWidth = Math.round(width * ratio);
+    let pixelHeight = Math.round(height * ratio);
+    if (pixelWidth * pixelHeight > MAX_CANVAS_PIXELS) {
+      // Keep full-width maps affordable on high-density ultrawide displays.
+      ratio = Math.min(ratio, Math.sqrt(MAX_CANVAS_PIXELS / (width * height)));
+      pixelWidth = Math.floor(width * ratio);
+      pixelHeight = Math.floor(height * ratio);
+    }
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    // Account for integer backing dimensions so CSS scaling stays aligned
+    // with the SVG even when the pixel budget reduces the canvas resolution.
+    const ratioX = width > 0 ? pixelWidth / width : 0;
+    const ratioY = height > 0 ? pixelHeight / height : 0;
     // Match SVG's default xMidYMid meet, including its letterboxing.
     const scale = Math.min(width / WIDTH, height / HEIGHT);
     transform = [
-      ratio * scale,
+      ratioX * scale,
       0,
       0,
-      ratio * scale,
-      (ratio * (width - WIDTH * scale)) / 2,
-      (ratio * (height - HEIGHT * scale)) / 2,
+      ratioY * scale,
+      (ratioX * (width - WIDTH * scale)) / 2,
+      (ratioY * (height - HEIGHT * scale)) / 2,
     ];
     sync();
   };
@@ -135,6 +148,9 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
       // Broad, slow waves keep the dots alive without moving the whole map.
       const wave = Math.sin(point.x / 90 + point.y / 120 - phase * 0.85);
       const crossWave = Math.cos(point.y / 80 - point.x / 160 + phase * 0.55);
+      // Move broad light/dark bands with the waves, preserving the center fade
+      // and average contrast instead of making the whole map darker at once.
+      const shade = (wave * 0.8 + crossWave * 0.2 + 1) / 2;
       const ambientX = crossWave * 0.65;
       const ambientY = wave * 1.8 + crossWave * 0.55;
       const dx = point.x - pointer.x;
@@ -147,7 +163,7 @@ export function attachWorldMapMotion({ root, svg, canvas, hero }) {
         influence * (2.4 + ripple * 0.6) * Math.min(1, distance / 40);
       context.globalAlpha = Math.min(
         1,
-        point.opacity * (0.94 + wave * 0.06) + influence * 0.065,
+        point.opacity * (0.4 + shade * 1.08) + influence * 0.065,
       );
       context.beginPath();
       context.arc(

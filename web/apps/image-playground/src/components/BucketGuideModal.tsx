@@ -1,3 +1,4 @@
+import { t } from '../language'
 import { useEffect } from 'react'
 import type { ProductAssetKind } from '../types'
 import { getBucketGuide } from '../lib/bucketGuides'
@@ -50,9 +51,9 @@ export default function BucketGuideModal({ kind, onClose }: BucketGuideModalProp
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
       >
-        <h3 className="text-base font-bold text-gray-950 dark:text-white">{guide.title}</h3>
+        <h3 className="text-base font-bold text-gray-950 dark:text-white">{t(guide.title)}</h3>
         <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-          {guide.intro}
+          {t(guide.intro)}
         </p>
 
         {!isStyle && guide.tips && (
@@ -66,10 +67,10 @@ export default function BucketGuideModal({ kind, onClose }: BucketGuideModalProp
                   <span className="text-xl leading-none" aria-hidden="true">{tip.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {tip.title}
+                      {t(tip.title)}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      {tip.description}
+                      {t(tip.description)}
                     </p>
                   </div>
                 </div>
@@ -89,27 +90,24 @@ export default function BucketGuideModal({ kind, onClose }: BucketGuideModalProp
                   <div className={`h-24 w-full ${sample.gradient}`} aria-hidden="true" />
                   <div className="px-3 py-2.5">
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {sample.name}
+                      {t(sample.name)}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      {sample.description}
+                      {t(sample.description)}
                     </p>
                     <button
                       type="button"
                       disabled
-                      title="待真实样图准备后启用"
+                      title={t("待真实样图准备后启用")}
                       className="mt-2 inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-white/[0.08] px-2 py-1 text-[11px] text-gray-400 disabled:cursor-not-allowed"
                     >
-                      使用此风格示范（即将支持）
-                    </button>
+                      {t("使用此风格示范（即将支持）")}</button>
                   </div>
                 </div>
               ))}
             </div>
             <p className="mt-3 text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
-              当前为风格意境示意，方便你理解每种风格的视觉差异；右侧「风格模板」下拉同样按这 7 个预设命名。
-              如果你想用具体图作为参考，请上传真实参考图到本槽位。
-            </p>
+              {t("当前为风格意境示意，方便你理解每种风格的视觉差异；右侧「风格模板」下拉同样按这 7 个预设命名。 如果你想用具体图作为参考，请上传真实参考图到本槽位。")}</p>
           </>
         )}
 
@@ -119,8 +117,7 @@ export default function BucketGuideModal({ kind, onClose }: BucketGuideModalProp
             onClick={onClose}
             className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-gray-950"
           >
-            知道了
-          </button>
+            {t("知道了")}</button>
         </div>
       </div>
     </div>

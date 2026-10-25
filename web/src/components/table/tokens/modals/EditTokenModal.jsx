@@ -1916,7 +1916,17 @@ const EditTokenModal = (props) => {
                                             {tagGroup.selectedCount ===
                                             tagGroup.channelIds.length
                                               ? tagGroup.tag
-                                              : `${tagGroup.tag}（已选 ${tagGroup.selectedCount}/${tagGroup.channelIds.length}）`}
+                                              : t(
+                                                  '{{tag}}（已选 {{selected}}/{{total}}）',
+                                                  {
+                                                    tag: tagGroup.tag,
+                                                    selected:
+                                                      tagGroup.selectedCount,
+                                                    total:
+                                                      tagGroup.channelIds
+                                                        .length,
+                                                  },
+                                                )}
                                           </Tag>
                                         ))}
                                         {selectedUntaggedChannels.map(

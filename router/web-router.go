@@ -63,7 +63,7 @@ func serveWebIndex(c *gin.Context, indexPage []byte) {
 	if template == nil {
 		template = indexPage
 	}
-	html := service.RenderIndexWithMeta(template, c.Request.URL.Path)
+	html := service.RenderIndexWithMeta(common.InjectAnalyticsConfig(template), c.Request.URL.Path)
 	c.Header("Cache-Control", "no-cache")
 	c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 }

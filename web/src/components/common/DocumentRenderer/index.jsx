@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useState } from 'react';
 import { API, showError } from '../../../helpers';
-import { Empty, Card, Spin, Typography } from '@douyinfe/semi-ui';
+import { Empty, Card, Spin, Typography, Button } from '@douyinfe/semi-ui';
 const { Title } = Typography;
 import {
   IllustrationConstruction,
@@ -28,6 +28,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../markdown/MarkdownRenderer';
 import RichContent from '../RichContent';
+import { useContentLanguage } from '../../../helpers/contentLanguageReact';
+import {
+  translateConfiguredDocument,
+  canonicalContent,
+} from '../../../helpers/contentLanguage';
+import contentOriginals from '../../../helpers/contentLanguageSources.json';
 import {
   isHttpUrl,
   isLikelyStandaloneHtml,
@@ -72,28 +78,95 @@ const sanitizeHtml = (html) => {
  * @param {string} emptyMessage - 空内容时的提示消息
  */
 const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const bodyLanguage = useContentLanguage(
+    i18n.resolvedLanguage || i18n.language,
+  );
+  const [showOriginal, setShowOriginal] = useState(false);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [htmlStyles, setHtmlStyles] = useState('');
   const [processedHtmlContent, setProcessedHtmlContent] = useState('');
 
+  const translation = translateConfiguredDocument(
+    content,
+    cacheKey,
+    bodyLanguage.dictionary,
+    contentOriginals,
+    bodyLanguage.language,
+  );
+  const renderedContent = showOriginal ? content : translation.content;
+  const knownOriginal =
+    canonicalContent(contentOriginals[cacheKey]) === canonicalContent(content);
+  const contentLang =
+    translation.translated && !showOriginal
+      ? bodyLanguage.language
+      : knownOriginal
+        ? 'zh-CN'
+        : undefined;
+
+  useEffect(() => {
+    setShowOriginal(false);
+  }, [content, bodyLanguage.language]);
+  useEffect(() => {
+    processContent(renderedContent);
+  }, [renderedContent]);
+
+  const languageNotice = bodyLanguage.language !== 'zh-CN' && (
+    <div
+      className='mb-6 text-sm text-gray-500 dark:text-gray-400'
+      role='status'
+    >
+      {bodyLanguage.pending ? (
+        t('正在加载正文翻译…')
+      ) : bodyLanguage.failed ? (
+        <>
+          {t('正文翻译加载失败，请重试。')}{' '}
+          <Button size='small' onClick={bodyLanguage.retry}>
+            {t('重试')}
+          </Button>
+        </>
+      ) : translation.original ? (
+        t('当前内容暂无此语言译文，显示原文。')
+      ) : (
+        <>
+          <p>{t('译文供阅读参考，解释以原文为准。')}</p>
+          <Button
+            size='small'
+            theme='borderless'
+            onClick={() => setShowOriginal((current) => !current)}
+          >
+            {t(showOriginal ? '查看译文' : '查看原文')}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   const loadContent = async () => {
     // 先从缓存中获取
-    const cachedContent = localStorage.getItem(cacheKey) || '';
+    let cachedContent = '';
+    try {
+      cachedContent = localStorage.getItem(cacheKey) || '';
+    } catch {
+      /* Continue without storage. */
+    }
     if (cachedContent) {
       setContent(cachedContent);
-      processContent(cachedContent);
       setLoading(false);
     }
 
     try {
       const res = await API.get(apiEndpoint);
       const { success, message, data } = res.data;
-      if (success && data) {
-        setContent(data);
-        processContent(data);
-        localStorage.setItem(cacheKey, data);
+      if (success) {
+        const current = typeof data === 'string' ? data : '';
+        setContent(current);
+        try {
+          localStorage.setItem(cacheKey, current);
+        } catch {
+          /* The current server response still wins. */
+        }
       } else {
         if (!cachedContent) {
           showError(message || emptyMessage);
@@ -163,7 +236,7 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
     return (
       <div className='flex justify-center items-center min-h-screen bg-gray-50'>
         <Empty
-          title={t('管理员未设置' + title + '内容')}
+          title={t('管理员尚未设置此文档内容')}
           image={
             <IllustrationConstruction style={{ width: 150, height: 150 }} />
           }
@@ -193,10 +266,10 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
               target='_blank'
               rel='noopener noreferrer'
               title={content.trim()}
-              aria-label={`${t('访问' + title)}: ${content.trim()}`}
+              aria-label={`${t('访问文档')}: ${content.trim()}`}
               className='inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
             >
-              {t('访问' + title)}
+              {t('访问文档')}
             </a>
           </div>
         </Card>
@@ -213,11 +286,14 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
             <Title heading={2} className='text-center mb-8'>
               {title}
             </Title>
-            <RichContent
-              className='prose prose-lg max-w-none'
-              content={processedHtmlContent}
-              mode='html'
-            />
+            {languageNotice}
+            <div lang={contentLang}>
+              <RichContent
+                className='prose prose-lg max-w-none'
+                content={processedHtmlContent}
+                mode='html'
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -232,8 +308,9 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
           <Title heading={2} className='text-center mb-8'>
             {title}
           </Title>
-          <div className='prose prose-lg max-w-none'>
-            <MarkdownRenderer content={content} />
+          {languageNotice}
+          <div className='prose prose-lg max-w-none' lang={contentLang}>
+            <MarkdownRenderer content={renderedContent} />
           </div>
         </div>
       </div>

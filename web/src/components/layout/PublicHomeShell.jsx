@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { Monitor, Moon, Sun, Languages, Menu, X } from 'lucide-react';
+import { Monitor, Moon, Sun, Menu, X, Bell } from 'lucide-react';
 import React, {
   lazy,
   Suspense,
@@ -40,8 +40,14 @@ import {
 } from '../../helpers/prefetchAppShell';
 import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
+import PublicFooter from './PublicFooter';
+import PublicLanguageSelector from './PublicLanguageSelector';
+import { usePublicNotifications } from '../../hooks/common/usePublicNotifications';
+import { isPublicLegalPath } from '../../helpers/publicRoutes';
 
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
+const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
+const PublicNoticeModal = lazy(() => import('./PublicNoticeModal'));
 
 const defaultModules = {
   home: true,
@@ -90,12 +96,18 @@ const PublicHomeShell = () => {
     return () => document.removeEventListener('keydown', onEscape);
   }, [mobileNavOpen]);
   const isDownloadPage = /^\/download\/?$/.test(location.pathname);
+  const isLegalPage = isPublicLegalPath(location.pathname);
+  const isPublicSubpage = isDownloadPage || isLegalPage;
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState, statusDispatch] = useContext(StatusContext);
-  const { t, language, setLanguage } = usePublicTranslation();
+  const { t } = usePublicTranslation();
   const theme = useTheme();
   const setTheme = useSetTheme();
   const status = statusState?.status || {};
+  const notices = usePublicNotifications({
+    status,
+    autoShow: !isPublicSubpage,
+  });
   const systemName = getSystemName();
   const logo = getLogo();
   const modules = parseHeaderModules(status.HeaderNavModules);
@@ -189,10 +201,6 @@ const PublicHomeShell = () => {
     }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language.startsWith('zh') ? 'en' : 'zh-CN');
-  };
-
   const isCurrentNavLink = (to) => {
     if (!to) return false;
     if (to === '/') return location.pathname === '/';
@@ -200,9 +208,11 @@ const PublicHomeShell = () => {
   };
 
   return (
-    <div className='public-shell min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]'>
+    <div
+      className={`public-shell ${!isPublicSubpage && !customLanding ? 'public-shell--landing' : ''} min-h-screen bg-[var(--semi-color-bg-0,#fff)] text-[var(--semi-color-text-0,#111827)]`}
+    >
       <GlobalTopProgress />
-      {(!customLanding || isDownloadPage) && (
+      {(!customLanding || isPublicSubpage) && (
         <header className='public-header public-header--hero fixed top-0 left-0 right-0 z-50 backdrop-blur-lg'>
           <div className='public-header-inner flex items-center justify-between h-16'>
             <Link
@@ -284,13 +294,32 @@ const PublicHomeShell = () => {
                   <Monitor size={16} />
                 )}
               </button>
+              <PublicLanguageSelector />
               <button
                 type='button'
-                className='public-icon-button'
-                aria-label={t('切换语言')}
-                onClick={toggleLanguage}
+                className='public-icon-button public-notification-button'
+                aria-label={
+                  notices.hasUnread
+                    ? `${t('系统公告')} · ${t('有未读公告')}`
+                    : t('系统公告')
+                }
+                aria-haspopup='dialog'
+                aria-expanded={notices.visible}
+                aria-controls={
+                  notices.visible ? 'public-notice-dialog' : undefined
+                }
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  notices.open();
+                }}
               >
-                <Languages size={16} />
+                <Bell size={18} aria-hidden='true' />
+                {notices.hasUnread && (
+                  <span
+                    className='public-notification-dot'
+                    aria-hidden='true'
+                  />
+                )}
               </button>
               {userState.user ? (
                 <Link
@@ -332,7 +361,20 @@ const PublicHomeShell = () => {
           </div>
         </header>
       )}
-      {isDownloadPage ? (
+      {notices.visible && (
+        <Suspense fallback={null}>
+          <PublicNoticeModal
+            visible={notices.visible}
+            content={notices.content}
+            announcements={notices.announcements}
+            loading={notices.loading}
+            error={notices.error}
+            onRetry={notices.reload}
+            onClose={notices.close}
+          />
+        </Suspense>
+      )}
+      {isPublicSubpage ? (
         <Suspense
           fallback={
             <main className='min-h-screen bg-[var(--semi-color-bg-0,#fff)]'>
@@ -340,29 +382,23 @@ const PublicHomeShell = () => {
             </main>
           }
         >
-          <DesktopDownload />
+          {isLegalPage ? <PublicLegal status={status} /> : <DesktopDownload />}
         </Suspense>
       ) : (
         <Home onLandingChange={setCustomLanding} />
       )}
-      <footer className='public-footer'>
-        <div className='flex flex-col md:flex-row items-center justify-between w-full max-w-[1110px] gap-6 mx-auto'>
-          <span className='text-sm text-[var(--semi-color-text-1,#4b5563)]'>
-            © {new Date().getFullYear()} {systemName}. {t('版权所有')}
-          </span>
-          <span className='text-sm text-[var(--semi-color-text-1,#4b5563)]'>
-            {t('设计与开发由')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-[var(--semi-color-primary,#1677ff)] font-medium'
-            >
-              New API
-            </a>
-          </span>
-        </div>
-      </footer>
+      <PublicFooter
+        systemName={systemName}
+        logo={logo}
+        modules={modules}
+        docsLink={docsLink}
+        user={userState.user}
+        status={status}
+        customLanding={customLanding}
+        isDownloadPage={isDownloadPage}
+        isLegalPage={isLegalPage}
+        t={t}
+      />
     </div>
   );
 };
