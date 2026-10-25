@@ -10,8 +10,10 @@ import {
 } from '../src/pages/Docs/docsNavigation.js';
 import { createPublicDocsAPI } from '../src/pages/Docs/publicDocsAPI.js';
 
-test('all thirteen guides resolve legacy and standalone deep links', () => {
-  expect(DOCS.length).toBe(13);
+test('all guides resolve legacy and standalone deep links', () => {
+  expect(DOCS.length).toBeGreaterThanOrEqual(64);
+  expect(new Set(DOCS.map((doc) => doc.path)).size).toBe(DOCS.length);
+  expect(new Set(DOCS.map((doc) => doc.key)).size).toBe(DOCS.length);
   for (const doc of DOCS) {
     expect(getActiveDoc(doc.path)).toBe(doc);
     expect(getActiveDoc(`${docPath(doc.path, true)}/`, true)).toBe(doc);

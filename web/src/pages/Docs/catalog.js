@@ -31,7 +31,9 @@ import apiExamplesMarkdown from '../../../../docs/NAN_API_EXAMPLES.md?raw';
 import troubleshootingMarkdown from '../../../../docs/NAN_TROUBLESHOOTING.md?raw';
 import mimoAudioMarkdown from '../../../../docs/NAN_MIMO_AUDIO.md?raw';
 
-export const DOCS = [
+import { HANDBOOK_DOCS } from './handbook.generated';
+
+const LEGACY_DOCS = [
   {
     key: 'usage',
     path: '/docs',
@@ -137,3 +139,24 @@ export const DOCS = [
     content: troubleshootingMarkdown,
   },
 ];
+
+// Keep the original deep links while grouping the expanded handbook by workflow.
+const GROUP_ORDER = [
+  '开始使用',
+  '基础',
+  '控制台使用',
+  'API 基础',
+  '协议参考',
+  '模型能力',
+  '网关能力',
+  '集成指南',
+  '客户端',
+  '能力',
+  '开发',
+  '企业与安全',
+  '排查与运维',
+  '排查',
+];
+export const DOCS = [...LEGACY_DOCS, ...HANDBOOK_DOCS].sort(
+  (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group),
+);

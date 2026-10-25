@@ -118,23 +118,56 @@
 }
 .nan-docs-controls {
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
   gap: 8px;
+}
+.nan-docs-controls .public-language-trigger--label {
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 8px;
+  background: var(--semi-color-bg-0);
+  color: var(--semi-color-text-1);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nan-docs-controls .public-language-trigger--label:hover {
+  background: var(--semi-color-fill-0);
+}
+.nan-docs-controls .public-language-trigger--label svg {
+  flex-shrink: 0;
 }
 .nan-docs-workspace {
   margin-left: var(--docs-sidebar);
   min-width: 0;
 }
-.nan-docs-tabs {
+.nan-docs-header {
   height: 56px;
   position: sticky;
   top: var(--docs-sticky-offset);
-  z-index: 10;
+  z-index: 30;
   display: flex;
-  align-items: stretch;
-  gap: 26px;
+  align-items: center;
+  gap: 24px;
   padding: 0 36px;
   border-bottom: 1px solid var(--semi-color-border);
   background: var(--semi-color-bg-0);
+}
+.nan-docs-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  gap: 26px;
   overflow-x: auto;
   white-space: nowrap;
   scrollbar-width: thin;
@@ -361,12 +394,33 @@
     top: var(--docs-offset);
     z-index: 25;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
     background: var(--semi-color-bg-0);
-    padding: 12px 20px;
+    padding: 12px;
     min-height: 60px;
     border-bottom: 1px solid var(--semi-color-border);
+  }
+  .nan-docs-mobile-bar > a {
+    min-width: 0;
+    gap: 7px;
+    font-size: 15px;
+  }
+  .nan-docs-mobile-bar img {
+    width: 24px;
+    height: 24px;
+  }
+  .nan-docs-mobile-bar > .nan-docs-controls {
+    margin-left: auto;
+    gap: 4px;
+  }
+  .nan-docs-mobile-bar > .nan-docs-controls .public-language-trigger--label {
+    gap: 5px;
+    padding-inline: 7px;
+  }
+  .nan-docs-mobile-bar .public-language-popover {
+    top: calc(var(--docs-offset) + 60px);
+    z-index: 31;
   }
   .nan-docs-sidebar {
     display: none;
@@ -394,9 +448,14 @@
   .nan-docs-workspace {
     margin-left: 0;
   }
-  .nan-docs-tabs {
+  .nan-docs-header {
     position: static;
     padding: 0 20px;
+  }
+  .nan-docs-header > .nan-docs-controls {
+    display: none;
+  }
+  .nan-docs-tabs {
     gap: 22px;
   }
   .nan-docs-layout {
@@ -406,6 +465,11 @@
     grid-template-columns: 1fr;
   }
   .nan-docs-pagination > span {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .nan-docs-mobile-bar > a span {
     display: none;
   }
 }

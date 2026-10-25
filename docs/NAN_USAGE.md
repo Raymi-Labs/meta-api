@@ -2,6 +2,20 @@
 
 > 面向普通用户的最短教程。底层开源项目仍基于 New API，项目归属、许可证、官方文档与上游链接保持不变。
 
+## 完整使用手册
+
+从这里选择适合你的阅读路径。API 参考会说明认证、字段、返回结果和不支持的边界；控制台手册解释实际操作与费用核对；集成指南帮助把本站接到已有工具中。
+
+| 阅读路径 | 推荐内容 |
+| --- | --- |
+| [认识平台](/docs/guides/introduction) | 地址、模型、分组和令牌的关系 |
+| [第一次 API 调用](/docs/guides/quick-start) | 创建密钥、选模型、运行示例、检查日志 |
+| [控制台手册](/docs/account/overview) | 密钥、用量、日志、支付、通知与账户安全 |
+| [完整 API 参考](/docs/reference/overview) | 四种文本协议、图像、音频、视频、向量和工具 |
+| [应用与工作流集成](/docs/integrations/overview) | SDK、聊天应用、IDE、自动化、Agent 和 MCP |
+| [兼容范围](/docs/guides/compatibility) | 迁移时需要确认的能力与替代方案 |
+| [企业与数据安全](/docs/guides/enterprise) | 容量、权限、预算和隐私要求 |
+
 ## 快速导航
 
 | 模块                                  | 看什么                                         |

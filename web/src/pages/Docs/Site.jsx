@@ -30,27 +30,29 @@ import {
   docPath,
 } from './docsNavigation';
 import { getSemiLocale } from '../../helpers/semiLocale';
+import { useContentLanguage } from '../../helpers/contentLanguageReact';
 import { useSiteLanguage } from '../../hooks/common/useSiteLanguage';
 import { useSetTheme, useTheme } from '../../context/Theme';
-import LanguageSelector from '../../components/layout/headerbar/LanguageSelector';
+import PublicLanguageSelector from '../../components/layout/PublicLanguageSelector';
 import ThemeToggle from '../../components/layout/headerbar/ThemeToggle';
 
 export default function DocsSite() {
   const { t } = useTranslation();
-  const { language, changeLanguage } = useSiteLanguage();
+  const { language } = useSiteLanguage();
+  const bodyLanguage = useContentLanguage(language);
   const theme = useTheme();
   const setTheme = useSetTheme();
   const location = useLocation();
   useEffect(() => {
     const doc = getActiveDoc(location.pathname, true);
-    document.title = `${doc ? t(doc.title) : t('文档不存在')} · 元衡 API`;
+    document.title = `${doc ? t(bodyLanguage.translate(doc.title)) : t('文档不存在')} · 元衡 API`;
     document
       .querySelector('link[rel="canonical"]')
       ?.setAttribute(
         'href',
         `${DOCS_ORIGIN}${doc ? docPath(doc.path, true) : location.pathname}`,
       );
-  }, [location.pathname, t]);
+  }, [location.pathname, t, bodyLanguage.translate]);
   return (
     <LocaleProvider locale={getSemiLocale(language)}>
       <DocsPage
@@ -64,11 +66,7 @@ export default function DocsSite() {
         controls={
           <div className='nan-docs-controls'>
             <ThemeToggle theme={theme} onThemeToggle={setTheme} t={t} />
-            <LanguageSelector
-              currentLang={language}
-              onLanguageChange={changeLanguage}
-              t={t}
-            />
+            <PublicLanguageSelector variant='label' />
           </div>
         }
       />

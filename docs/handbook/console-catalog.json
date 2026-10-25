@@ -1,0 +1,66 @@
+[
+  {
+    "key": "console-overview",
+    "path": "/docs/account/overview",
+    "group": "控制台使用",
+    "title": "控制台入门",
+    "description": "认识控制台入口、账户权限与第一次调用流程",
+    "file": "console/overview.md"
+  },
+  {
+    "key": "console-api-keys",
+    "path": "/docs/account/api-keys",
+    "group": "控制台使用",
+    "title": "创建与管理 API Key",
+    "description": "创建、限制、测试、轮换与停用模型调用令牌",
+    "file": "console/api-keys.md"
+  },
+  {
+    "key": "console-usage",
+    "path": "/docs/account/usage",
+    "group": "控制台使用",
+    "title": "查看用量统计",
+    "description": "区分累计与区间指标，核对模型消耗和性能均值",
+    "file": "console/usage.md"
+  },
+  {
+    "key": "console-request-logs",
+    "path": "/docs/account/request-logs",
+    "group": "控制台使用",
+    "title": "查询与导出请求日志",
+    "description": "按 Request ID 定位请求、筛选明细与导出 CSV",
+    "file": "console/request-logs.md"
+  },
+  {
+    "key": "console-billing",
+    "path": "/docs/account/billing",
+    "group": "控制台使用",
+    "title": "消费、账单与发票",
+    "description": "核对调用计费、支付记录与发票申请",
+    "file": "console/billing.md"
+  },
+  {
+    "key": "console-payments",
+    "path": "/docs/account/payments",
+    "group": "控制台使用",
+    "title": "充值、兑换码与支付状态",
+    "description": "完成充值、核对订单、使用兑换码与排查未到账",
+    "file": "console/payments.md"
+  },
+  {
+    "key": "console-notifications",
+    "path": "/docs/account/notifications",
+    "group": "控制台使用",
+    "title": "配置账户通知",
+    "description": "配置邮件、Webhook、Bark、Gotify 与额度提醒",
+    "file": "console/notifications.md"
+  },
+  {
+    "key": "console-account-security",
+    "path": "/docs/account/account-security",
+    "group": "控制台使用",
+    "title": "账户登录与安全设置",
+    "description": "管理登录绑定、两步验证、Passkey 和系统访问令牌",
+    "file": "console/account-security.md"
+  }
+]

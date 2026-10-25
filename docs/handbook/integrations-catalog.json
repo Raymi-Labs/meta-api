@@ -1,0 +1,66 @@
+[
+  {
+    "key": "integrations-overview",
+    "path": "/docs/integrations/overview",
+    "group": "集成指南",
+    "title": "应用与开发集成总览",
+    "description": "按客户端、IDE、工作流与应用场景选择接入方式",
+    "file": "integrations/overview.md"
+  },
+  {
+    "key": "integrations-sdks",
+    "path": "/docs/integrations/sdks",
+    "group": "集成指南",
+    "title": "SDK、HTTP 与应用框架",
+    "description": "Python、JavaScript、HTTP 与框架的完整接入示例",
+    "file": "integrations/sdks.md"
+  },
+  {
+    "key": "integrations-chat-clients",
+    "path": "/docs/integrations/chat-clients",
+    "group": "集成指南",
+    "title": "桌面与 Web 聊天客户端",
+    "description": "聊天软件、Web 客户端与知识库应用的连接设置",
+    "file": "integrations/chat-clients.md"
+  },
+  {
+    "key": "integrations-ide-assistants",
+    "path": "/docs/integrations/ide-assistants",
+    "group": "集成指南",
+    "title": "IDE 与编程助手接入",
+    "description": "配置编辑器模型连接并排查工具与协议差异",
+    "file": "integrations/ide-assistants.md"
+  },
+  {
+    "key": "integrations-workflows",
+    "path": "/docs/integrations/workflows",
+    "group": "集成指南",
+    "title": "Dify、n8n 与工作流平台",
+    "description": "模型节点、HTTP 请求、凭据、重试与业务去重",
+    "file": "integrations/workflows.md"
+  },
+  {
+    "key": "integrations-agents-tools",
+    "path": "/docs/integrations/agents-tools",
+    "group": "集成指南",
+    "title": "Agent、工具调用与 Skills",
+    "description": "受限工具循环、客户端职责与 Skills 使用边界",
+    "file": "integrations/agents-tools.md"
+  },
+  {
+    "key": "integrations-applications",
+    "path": "/docs/integrations/applications",
+    "group": "集成指南",
+    "title": "翻译、写作、学术与业务应用",
+    "description": "应用配置、长文处理、数据范围与批量任务排查",
+    "file": "integrations/applications.md"
+  },
+  {
+    "key": "integrations-mcp",
+    "path": "/docs/integrations/mcp",
+    "group": "集成指南",
+    "title": "模型 API 与 MCP 工具连接",
+    "description": "分别配置模型和工具服务并按连接层次排错",
+    "file": "integrations/mcp.md"
+  }
+]

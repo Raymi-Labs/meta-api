@@ -18,14 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Check, Globe, LoaderCircle } from 'lucide-react';
+import { Check, ChevronDown, Globe, LoaderCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { PUBLIC_LANGUAGES } from '../../helpers/publicLanguage';
 import { usePublicTranslation } from '../../helpers/publicLocale';
 import { useSiteLanguage } from '../../hooks/common/useSiteLanguage';
 import './PublicLanguageSelector.css';
 
-export default function PublicLanguageSelector() {
+export default function PublicLanguageSelector({ variant = 'icon' }) {
   const { t, language, pending, error, setLanguage } = usePublicTranslation();
   const { accountSaving, accountError, storageError } = useSiteLanguage();
   const [open, setOpen] = useState(false);
@@ -34,6 +34,9 @@ export default function PublicLanguageSelector() {
   const items = useRef([]);
   const menuId = useId();
   const statusId = useId();
+  const languageLabel =
+    PUBLIC_LANGUAGES.find(([code]) => code === language)?.[1] || language;
+  const showLabel = variant === 'label';
   const status = pending
     ? t('正在加载')
     : error
@@ -91,8 +94,10 @@ export default function PublicLanguageSelector() {
       <button
         type='button'
         ref={trigger}
-        className='public-icon-button public-language-trigger'
-        aria-label={t('切换语言')}
+        className={`public-icon-button public-language-trigger${showLabel ? ' public-language-trigger--label' : ''}`}
+        aria-label={
+          showLabel ? `${t('切换语言')}：${languageLabel}` : t('切换语言')
+        }
         aria-haspopup='menu'
         aria-expanded={open}
         aria-controls={menuId}
@@ -118,6 +123,12 @@ export default function PublicLanguageSelector() {
           />
         ) : (
           <Globe size={18} aria-hidden='true' />
+        )}
+        {showLabel && (
+          <>
+            <span lang={language}>{languageLabel}</span>
+            <ChevronDown size={14} aria-hidden='true' />
+          </>
         )}
       </button>
       <span

@@ -426,3 +426,50 @@ test('every supported language covers shipped documents without lost placeholder
     );
   }
 });
+
+// New manual pages must keep real request examples and link destinations intact,
+// not just contain the right number of opaque translation tokens.
+test('every translated handbook preserves code and valid link labels', () => {
+  const root = new URL('../../docs/handbook/', import.meta.url);
+  const articles = ['guide', 'console', 'api', 'integrations'].flatMap((name) =>
+    JSON.parse(readFileSync(new URL(`${name}-catalog.json`, root), 'utf8')).map(
+      ({ file }) => ({
+        file,
+        source: readFileSync(new URL(file, root), 'utf8'),
+      }),
+    ),
+  );
+  const structure = (markdown) => {
+    const result = { code: [], links: [] };
+    marked.walkTokens(marked.lexer(markdown), (token) => {
+      if (token.type === 'code') result.code.push(token.text);
+      if (token.type === 'link') {
+        assert.ok(
+          /[\p{L}\p{N}]/u.test(token.text),
+          `Empty link label: ${token.raw}`,
+        );
+        result.links.push(token.href);
+      }
+    });
+    result.links.sort();
+    return result;
+  };
+  for (const language of contentLanguages) {
+    const dictionary = JSON.parse(
+      readFileSync(
+        new URL(
+          `../src/helpers/contentLocales/${language}.json`,
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    );
+    for (const { file, source } of articles) {
+      assert.deepEqual(
+        structure(translateMarkdown(source, dictionary)),
+        structure(source),
+        `${language}: examples and links in ${file}`,
+      );
+    }
+  }
+});

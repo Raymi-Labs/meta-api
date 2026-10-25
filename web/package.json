@@ -43,8 +43,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build:docs": "vite build --config vite.docs.config.js",
-    "test:docs-site": "bun test scripts/docs-site.test.mjs",
+    "build:docs": "node scripts/sync-handbook.mjs --check && bun test scripts/content-language.test.mjs && vite build --config vite.docs.config.js",
+    "test:docs-site": "node scripts/sync-handbook.mjs --check && bun test scripts/docs-site.test.mjs scripts/handbook.test.mjs",
     "build:image-playground": "cd apps/image-playground && bun install --frozen-lockfile && bun run build",
     "build": "bun run check:language-resources && bun run build:image-playground && vite build && bun run prerender",
     "prerender": "node scripts/prerender.mjs",
@@ -81,7 +81,8 @@
     "test:invite-promotion": "bun scripts/invite-promotion.test.mjs",
     "test:invite-promotion:browser": "bun scripts/invite-promotion.browser.mjs",
     "test:site-language": "bun test scripts/site-language.test.mjs scripts/site-language-i18n.test.mjs scripts/api-language.test.mjs scripts/semi-locale.test.mjs scripts/public-language.test.mjs && node --test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun test scripts/channel-monitor-language.test.jsx",
-    "check:language-resources": "bun test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun apps/image-playground/scripts/check-language.mjs"
+    "check:language-resources": "bun test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun apps/image-playground/scripts/check-language.mjs",
+    "sync:handbook": "node scripts/sync-handbook.mjs"
   },
   "eslintConfig": {
     "extends": [

@@ -1,0 +1,2425 @@
+{
+  "sourceIndex": "https://docs.aihubmix.com/llms.txt",
+  "referenceRoot": "https://docs.aihubmix.com/cn",
+  "retrievedAt": "2026-10-25T10:40:10.569347+00:00",
+  "indexSHA256": "7f5d6fe3f52517408ebf7421dc74b0b962de58c6a7e3d393d9a1310e8ab58552",
+  "count": 181,
+  "statusDefinitions": {
+    "adapted": "主题已依据本站路由、权限与实际功能重新编写；不表示与参考站逐字段兼容。",
+    "combined": "相关主题合并到本站一个或多个指南，保留实际能力与条件限制；不承诺每个参考产品或客户端版本均已实测。",
+    "unsupported": "参考站具体接口或产品契约未在本站确认或不存在，映射到兼容边界及可用替代说明。",
+    "reference-only": "仅借鉴主题组织与核对方法，不搬运参考站新闻、活动、价格、性能数据或发布历史。"
+  },
+  "notes": [
+    "逐项覆盖参考索引的 181 个标题，来源只作主题索引，不表示复制或授权使用文章正文。",
+    "目标路径是本站标准 /docs 路由；独立文档子域名由页面路由层转换。",
+    "生产模型、参数、价格与渠道健康状态以本站模型广场、公告和实际权限为准。"
+  ],
+  "entries": [
+    {
+      "title": "产品介绍",
+      "sourceUrl": "https://docs.aihubmix.com/cn",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/introduction",
+        "/docs/reference/overview"
+      ],
+      "status": "adapted",
+      "reason": "按元衡模型网关、控制台和文档职责重写产品介绍，不沿用参考站规模及运营承诺。"
+    },
+    {
+      "title": "快速开始",
+      "sourceUrl": "https://docs.aihubmix.com/cn/quick-start",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/quick-start",
+        "/docs/reference/authentication"
+      ],
+      "status": "adapted",
+      "reason": "采用本站注册、令牌、模型选择和最小请求流程，地址与凭据均改为本站真实入口。"
+    },
+    {
+      "title": "选择模型",
+      "sourceUrl": "https://docs.aihubmix.com/cn/guides/choose-models",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/choose-models",
+        "/docs/reference/models"
+      ],
+      "status": "adapted",
+      "reason": "使用本站模型广场、令牌可用模型和分组信息解释选择方法，不搬运固定推荐榜。"
+    },
+    {
+      "title": "智能搜索",
+      "sourceUrl": "https://docs.aihubmix.com/cn/guides/smart-search",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/choose-models",
+        "/docs/reference/models"
+      ],
+      "status": "combined",
+      "reason": "将检索模型的需求合并到模型选择与目录查询，不声称具有参考站同名智能搜索服务。"
+    },
+    {
+      "title": "模型详情与比较",
+      "sourceUrl": "https://docs.aihubmix.com/cn/guides/model-details",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/choose-models",
+        "/docs/reference/models",
+        "/docs/account/billing"
+      ],
+      "status": "combined",
+      "reason": "合并模型协议、能力、计价单位与分组比较，具体可用性以本站目录为准。"
+    },
+    {
+      "title": "Skills",
+      "sourceUrl": "https://docs.aihubmix.com/cn/skills",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/image-generation"
+      ],
+      "status": "combined",
+      "reason": "说明本地 Skill 的职责与本站生图使用方式，不把参考站技能目录当作元衡官方资产。"
+    },
+    {
+      "title": "Agent 接入",
+      "sourceUrl": "https://docs.aihubmix.com/cn/agents",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/clients"
+      ],
+      "status": "combined",
+      "reason": "结合本站已有客户端教程说明 Agent 模型连接、工具执行和权限边界。"
+    },
+    {
+      "title": "零数据存储说明",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Data-Pravicy",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/privacy",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "改为本站数据处理与协议边界说明，不继承参考站全模型零数据存储承诺。"
+    },
+    {
+      "title": "常见问题",
+      "sourceUrl": "https://docs.aihubmix.com/cn/FAQs/Faq",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/troubleshooting",
+        "/docs/guides/http-errors",
+        "/docs/account/overview"
+      ],
+      "status": "combined",
+      "reason": "将常见问题按接口、控制台和实际错误分流，不复用他站账户政策。"
+    },
+    {
+      "title": "HTTP 状态码",
+      "sourceUrl": "https://docs.aihubmix.com/cn/FAQs/HTTP-Codes",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/http-errors",
+        "/docs/account/request-logs"
+      ],
+      "status": "adapted",
+      "reason": "按本站状态码、错误正文及请求 ID 排查流程重写。"
+    },
+    {
+      "title": "Status",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Status",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/status-support",
+        "/docs/account/notifications"
+      ],
+      "status": "adapted",
+      "reason": "使用本站公告、调用日志和支持流程核实状态，不把参考站状态页作为本站证据。"
+    },
+    {
+      "title": "提交反馈",
+      "sourceUrl": "https://docs.aihubmix.com/cn/FAQs/Feedback",
+      "section": "文档",
+      "category": "开始使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/status-support",
+        "/docs/account/request-logs"
+      ],
+      "status": "adapted",
+      "reason": "说明提交脱敏请求 ID、时间、模型和错误证据的本站反馈方式。"
+    },
+    {
+      "title": "控制台概览",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/overview",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/overview"
+      ],
+      "status": "adapted",
+      "reason": "对应本站数据看板、令牌、日志、钱包与个人设置实际入口。"
+    },
+    {
+      "title": "API Key 管理",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/api-keys",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/api-keys",
+        "/docs/reference/authentication"
+      ],
+      "status": "adapted",
+      "reason": "按本站令牌额度、分组、模型限制、有效期和认证方式编写。"
+    },
+    {
+      "title": "用量看板",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/usage",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/usage",
+        "/docs/account/billing"
+      ],
+      "status": "adapted",
+      "reason": "说明本站看板时间范围、请求与消耗口径，避免套用参考站指标定义。"
+    },
+    {
+      "title": "请求日志与排查",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/request-logs",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/request-logs",
+        "/docs/guides/http-errors"
+      ],
+      "status": "adapted",
+      "reason": "采用本站使用日志及 X-Oneapi-Request-Id 排查，不保证参考站日志字段全部存在。"
+    },
+    {
+      "title": "余额与账单",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/billing",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/billing",
+        "/docs/account/payments"
+      ],
+      "status": "adapted",
+      "reason": "按本站钱包、用量、支付记录和发票入口重写余额与账单说明。"
+    },
+    {
+      "title": "保存与管理付款方式",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/payment-methods",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/account/payments"
+      ],
+      "status": "unsupported",
+      "reason": "未确认本站提供银行卡托管及保存付款方式管理；仅说明实际开放的充值收银台流程。"
+    },
+    {
+      "title": "自动充值",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/auto-top-up",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/account/payments",
+        "/docs/account/notifications"
+      ],
+      "status": "unsupported",
+      "reason": "本站未确认具备余额不足自动扣款充值契约，替代方式是主动充值与额度提醒。"
+    },
+    {
+      "title": "消息中心",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/inbox",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/notifications",
+        "/docs/account/overview"
+      ],
+      "status": "combined",
+      "reason": "对应本站公告铃铛和调用受阻通知记录，不宣称有参考站完整收件箱产品。"
+    },
+    {
+      "title": "通知设置",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/notifications",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/notifications"
+      ],
+      "status": "adapted",
+      "reason": "按本站邮件、Webhook、Bark、Gotify 和额度预警设置改写。"
+    },
+    {
+      "title": "Webhook 通知接收设置",
+      "sourceUrl": "https://docs.aihubmix.com/cn/console/notification-webhooks",
+      "section": "文档",
+      "category": "控制台使用",
+      "subgroup": null,
+      "targets": [
+        "/docs/account/notifications",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "combined",
+      "reason": "本站账户通知可配置 Webhook，但不是任意模型生成任务的完成回调。"
+    },
+    {
+      "title": "企业账户入门",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/overview",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/enterprise",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "按本站企业需求沟通与可用账号、令牌能力说明，不照搬团队工作区产品。"
+    },
+    {
+      "title": "工作区管理",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/workspaces",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/enterprise"
+      ],
+      "status": "unsupported",
+      "reason": "没有已核实的同等企业工作区生命周期，不把普通账号或分组伪装为组织工作区。"
+    },
+    {
+      "title": "成员与权限",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/members",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/enterprise",
+        "/docs/account/account-security"
+      ],
+      "status": "unsupported",
+      "reason": "普通用户与管理员权限不能等同于参考站工作区成员角色，文档明确企业权限需求需另行核对。"
+    },
+    {
+      "title": "成员 Key 与系统 Key",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/keys",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/enterprise",
+        "/docs/account/api-keys"
+      ],
+      "status": "unsupported",
+      "reason": "本站令牌不是参考站成员 Key 与系统 Key 的双层产品，改用实际令牌权限说明。"
+    },
+    {
+      "title": "预算与限额",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/budgets",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/enterprise",
+        "/docs/account/api-keys",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "说明已存在的账号余额、令牌额度和并发限制，不声称支持团队共享预算策略。"
+    },
+    {
+      "title": "审计记录",
+      "sourceUrl": "https://docs.aihubmix.com/cn/enterprise/audit",
+      "section": "文档",
+      "category": "企业与团队",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/enterprise",
+        "/docs/account/request-logs"
+      ],
+      "status": "unsupported",
+      "reason": "模型请求日志不能替代企业工作区操作审计，文档明确二者差异。"
+    },
+    {
+      "title": "统一推理参数",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/unified-inference",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/reasoning",
+        "/docs/guides/compatibility",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "按本站协议与模型参数支持范围解释推理配置，不保证参考站统一参数转换语义。"
+    },
+    {
+      "title": "模型映射与回退",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Model-Mapping-Fallback",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/routing",
+        "/docs/reference/models"
+      ],
+      "status": "adapted",
+      "reason": "复用本站公开模型名、渠道映射、分组与允许范围内回退的实际机制。"
+    },
+    {
+      "title": "模型智能路由",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/llm-router",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/routing",
+        "/docs/guides/choose-models"
+      ],
+      "status": "unsupported",
+      "reason": "本站渠道分配和回退不等于参考站自动选模或排行榜策略，不承诺 auto 模型。"
+    },
+    {
+      "title": "结构化输出修复",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/structured-output-repair",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/structured-output"
+      ],
+      "status": "unsupported",
+      "reason": "未确认网关自动修复任意 JSON 的功能，采用模型支持的 schema 和应用侧校验。"
+    },
+    {
+      "title": "异步任务",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/async-tasks",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/async-tasks",
+        "/docs/reference/video",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "按本站视频等特定任务生命周期编写，不迁入参考站通用异步恢复与回调契约。"
+    },
+    {
+      "title": "Broadcast",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Broadcast",
+      "section": "文档",
+      "category": "网关能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/account/notifications",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "unsupported",
+      "reason": "本站公告和账户通知不等于参考站 Broadcast 模型请求广播功能。"
+    },
+    {
+      "title": "图像理解",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/vision",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/vision",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "adapted",
+      "reason": "按支持视觉的模型与内容块格式提供本地图片请求示例。"
+    },
+    {
+      "title": "视频理解",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/video-understanding",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/vision",
+        "/docs/reference/gemini",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "视频理解仅按模型和渠道实际多模态能力说明，不承诺通用视频抽帧或任意视频输入。"
+    },
+    {
+      "title": "Gemini 新「智绘」",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Multimodal-Interaction-with-Gemini",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/gemini",
+        "/docs/reference/images",
+        "/docs/reference/vision"
+      ],
+      "status": "combined",
+      "reason": "拆为 Gemini 原生协议及图片输入输出能力，专属智绘型号和参数需本站模型目录确认。"
+    },
+    {
+      "title": "LLM 联网搜索",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/LLM-Search",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/web-search",
+        "/docs/reference/tools",
+        "/docs/guides/compatibility"
+      ],
+      "status": "adapted",
+      "reason": "区分模型内置搜索与应用执行搜索工具，不声称全站托管搜索服务。"
+    },
+    {
+      "title": "3D 生成接口",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/3D-Gen",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "unsupported",
+      "reason": "未确认本站开放参考站统一 3D 生成任务接口，不提供伪造的端点和模型步骤。"
+    },
+    {
+      "title": "TTS 文本转语音",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/TTS",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/audio",
+        "/docs/mimo-audio"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 speech 路由与已存在的 MiMo 音频教程，音色和格式按模型确认。"
+    },
+    {
+      "title": "STT 语音转文本",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/STT",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/audio",
+        "/docs/mimo-audio"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 transcriptions 上传与文字响应，文件限制以模型实际要求为准。"
+    },
+    {
+      "title": "实时语音转录",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/realtime-transcription",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/realtime",
+        "/docs/reference/audio",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "说明已存在的实时连接与普通音频转写，不能据此承诺参考站专用转录会话接口。"
+    },
+    {
+      "title": "实时对话",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/realtime-conversation",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/realtime",
+        "/docs/reference/tools"
+      ],
+      "status": "adapted",
+      "reason": "按本站 WebSocket 实时入口及事件职责重写，不假定所有实时模型协议相同。"
+    },
+    {
+      "title": "向量嵌入",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/EBD",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/embeddings"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 embeddings 输入、向量响应与应用自建索引流程。"
+    },
+    {
+      "title": "重排序",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Rerank",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/rerank"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 rerank 路由、候选文档与相关性结果，不附加搜索引擎能力。"
+    },
+    {
+      "title": "FIM 补全",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/FIM",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/completions",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "基于本站旧式补全入口解释 FIM 需具体模型支持，不能把通用 Chat 当作填空协议。"
+    },
+    {
+      "title": "结构化输出",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Structured-Output",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/structured-output",
+        "/docs/reference/tools"
+      ],
+      "status": "adapted",
+      "reason": "按模型支持的 JSON Schema、输出解析与函数工具差异重新编写。"
+    },
+    {
+      "title": "内容审查接口",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/moderation",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/moderation",
+        "/docs/guides/compatibility"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 moderations 路由与模型条件，不承诺覆盖所有安全风险。"
+    },
+    {
+      "title": "提示词缓存",
+      "sourceUrl": "https://docs.aihubmix.com/cn/practices/prompt-caching",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/caching",
+        "/docs/account/billing"
+      ],
+      "status": "adapted",
+      "reason": "解释模型缓存条件与本站日志用量，缓存命中和折扣不作固定承诺。"
+    },
+    {
+      "title": "图片生成",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/aihubmix-image-generation",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "图片生成接口",
+      "targets": [
+        "/docs/reference/images",
+        "/docs/image-generation",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "用本站图片生成和编辑入口替代参考站专有图片任务协议，不迁入其任务端点。"
+    },
+    {
+      "title": "图片生成 OpenAI 兼容（遗留）",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Image-Gen",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "图片生成接口",
+      "targets": [
+        "/docs/reference/images"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 OpenAI 兼容 images/generations 与 images/edits 路径。"
+    },
+    {
+      "title": "GPT Image",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/GPT-Image-1",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "图片生成接口",
+      "targets": [
+        "/docs/reference/images",
+        "/docs/image-generation"
+      ],
+      "status": "combined",
+      "reason": "将 GPT Image 主题并入本站生图指南，使用实际模型 ID，避免把历史型号当成当前保证。"
+    },
+    {
+      "title": "Ideogram AI 绘图支持",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/IdeogramAI",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "图片生成接口",
+      "targets": [
+        "/docs/reference/images",
+        "/docs/guides/choose-models",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "保留绘图模型选择与参数核对方法，未验证 Ideogram 专属协议在本站可直接调用。"
+    },
+    {
+      "title": "视频生成",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/aihubmix-video-generation",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "视频生成接口",
+      "targets": [
+        "/docs/reference/video",
+        "/docs/guides/async-tasks",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "以本站视频任务提交、查询和鉴权下载重写，舍弃参考站专有统一协议。"
+    },
+    {
+      "title": "豆包真人素材使用指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/doubao-real-person-assets",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "视频生成接口",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video",
+        "/docs/guides/privacy"
+      ],
+      "status": "unsupported",
+      "reason": "没有已确认的真人素材授权与资产管理接口，视频入口不等于素材登记服务。"
+    },
+    {
+      "title": "豆包私域虚拟人像素材使用指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/doubao-virtual-portrait-assets",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "视频生成接口",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video",
+        "/docs/guides/privacy"
+      ],
+      "status": "unsupported",
+      "reason": "没有已确认的私域虚拟人像资产创建与授权接口，不复制参考站素材 ID 流程。"
+    },
+    {
+      "title": "视频生成 OpenAI 兼容（遗留）",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Video-Gen",
+      "section": "文档",
+      "category": "模型能力",
+      "subgroup": "视频生成接口",
+      "targets": [
+        "/docs/reference/video"
+      ],
+      "status": "adapted",
+      "reason": "采用本站实际 /v1/videos 及 /v1/video/generations 路由，并解释两者字段差异。"
+    },
+    {
+      "title": "AIhubMix 一站式集成",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Aihubmix-Integration",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/overview",
+        "/docs/integrations/overview",
+        "/docs/integrations/sdks"
+      ],
+      "status": "combined",
+      "reason": "改为元衡统一入口、协议选择与 SDK 接入，不继承参考站专属产品标识。"
+    },
+    {
+      "title": "Anthropic API 兼容（Beta）",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Anthropic-Compatible",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/messages",
+        "/docs/reference/chat-completions",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "解释本站 Messages 与 Chat 两种接入及转换边界，不保证所有 Claude 字段无损互通。"
+    },
+    {
+      "title": "Claude 原生接口调用",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Claude-Native",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/messages",
+        "/docs/reference/authentication"
+      ],
+      "status": "adapted",
+      "reason": "按本站 /v1/messages、x-api-key 和内容块格式提供原生协议示例。"
+    },
+    {
+      "title": "Claude 提示词缓存",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Claude-Cache",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/caching",
+        "/docs/reference/messages",
+        "/docs/account/billing"
+      ],
+      "status": "combined",
+      "reason": "将 Claude 缓存条件和计费观察并入缓存指南，不照搬参考站缓存命中承诺。"
+    },
+    {
+      "title": "GPT 提示词缓存",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/GPT-Cache",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/caching",
+        "/docs/reference/responses",
+        "/docs/account/billing"
+      ],
+      "status": "combined",
+      "reason": "将 GPT 缓存参数、渠道条件与实际用量合并，不复制特定历史价格。"
+    },
+    {
+      "title": "Gemini 指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Gemini-Guides",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/gemini",
+        "/docs/guides/reasoning"
+      ],
+      "status": "adapted",
+      "reason": "按本站 Gemini 生成路由和模型条件介绍请求与推理配置。"
+    },
+    {
+      "title": "Gemini 原生 SDK 接入",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Gemini-SDK",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/gemini",
+        "/docs/integrations/sdks",
+        "/docs/clients/gemini"
+      ],
+      "status": "combined",
+      "reason": "合并 Gemini 原生 API、SDK 基础和已有 CLI 配置，明确 Base URL 与协议差异。"
+    },
+    {
+      "title": "模型后缀能力说明",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Capability-Suffix",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/models",
+        "/docs/guides/reasoning"
+      ],
+      "status": "unsupported",
+      "reason": "参考站能力后缀不是本站通用契约，本站模型名必须来自目录，不能自行拼接后缀。"
+    },
+    {
+      "title": "Openai Responses API 支持",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Responses-API",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/responses",
+        "/docs/reference/streaming"
+      ],
+      "status": "adapted",
+      "reason": "依据本站 Responses 路由说明输入输出与流式事件，同时列出后台模式缺口。"
+    },
+    {
+      "title": "阿里通义系列",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Qwen",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/choose-models",
+        "/docs/reference/chat-completions",
+        "/docs/reference/vision"
+      ],
+      "status": "combined",
+      "reason": "按通用模型目录、Chat 和多模态方法覆盖 Qwen 主题，不搬运专有型号清单或上线声明。"
+    },
+    {
+      "title": "Jina AI 集成",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Jina-AI",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/embeddings",
+        "/docs/reference/rerank",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "将 Jina 的向量与重排主题映射到本站相应接口，不承诺其全部专属服务开放。"
+    },
+    {
+      "title": "Dify 插件",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Dify-plugin",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/integrations/workflows"
+      ],
+      "status": "unsupported",
+      "reason": "参考站专属 Dify 插件不是元衡官方插件，改用经核对的通用提供商连接方式。"
+    },
+    {
+      "title": "概述",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/responses/overview",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": "Responses API",
+      "targets": [
+        "/docs/reference/responses",
+        "/docs/reference/overview"
+      ],
+      "status": "combined",
+      "reason": "Responses 概述并入本站协议页，避免重复维护同一套基础说明。"
+    },
+    {
+      "title": "快速使用",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/responses/Basic-Usage",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": "Responses API",
+      "targets": [
+        "/docs/reference/responses",
+        "/docs/guides/quick-start"
+      ],
+      "status": "combined",
+      "reason": "使用本站 Responses 最小请求和认证流程替换参考站快速示例。"
+    },
+    {
+      "title": "推理",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/responses/Reasoning",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": "Responses API",
+      "targets": [
+        "/docs/guides/reasoning",
+        "/docs/reference/responses"
+      ],
+      "status": "combined",
+      "reason": "按模型条件解释 Responses reasoning 配置及输出预算，不固定推理等级支持范围。"
+    },
+    {
+      "title": "工具调用",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/responses/Tool-Calling",
+      "section": "文档",
+      "category": "协议参考",
+      "subgroup": "Responses API",
+      "targets": [
+        "/docs/reference/tools",
+        "/docs/reference/responses",
+        "/docs/integrations/agents-tools"
+      ],
+      "status": "combined",
+      "reason": "结合 Responses 工具项和应用执行循环说明，不把工具声明当作网关自动执行。"
+    },
+    {
+      "title": "管理密钥",
+      "sourceUrl": "https://docs.aihubmix.com/cn/platform/management-keys",
+      "section": "文档",
+      "category": "平台管理",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/account-security",
+        "/docs/reference/authentication"
+      ],
+      "status": "combined",
+      "reason": "说明本站管理身份与模型令牌区别，不复用参考站管理密钥的权限或端点。"
+    },
+    {
+      "title": "AIHubMix CLI（命令行工具）",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/aihubmix-cli",
+      "section": "文档",
+      "category": "平台管理",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/clients",
+        "/docs/integrations/overview"
+      ],
+      "status": "unsupported",
+      "reason": "参考站 CLI 的包名、登录和管理命令不是本站能力，提供本站客户端与通用接入替代。"
+    },
+    {
+      "title": "构建 AI 共赢生态",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/App-code",
+      "section": "文档",
+      "category": "平台管理",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/enterprise",
+        "/docs/integrations/applications"
+      ],
+      "status": "unsupported",
+      "reason": "参考站 APP-Code 生态、分成或优惠协议未在本站确认，不能换品牌后照搬。"
+    },
+    {
+      "title": "OpenAI 与 Grok 模型请求封号说明",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/ban-notice",
+      "section": "文档",
+      "category": "平台管理",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/privacy",
+        "/docs/guides/http-errors",
+        "/docs/guides/status-support"
+      ],
+      "status": "combined",
+      "reason": "转为本站使用规范与上游拒绝排查，不宣称参考站封号事件或政策属于元衡。"
+    },
+    {
+      "title": "Create a Chat Completion",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-a-chat-completion",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/chat-completions",
+        "/docs/reference/streaming"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 Chat Completions 路由、消息结构及流式读取方式。"
+    },
+    {
+      "title": "Create a Model Response",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-a-model-response",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/responses"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 POST Responses 请求与输出结构，并明确没有通用后台查询生命周期。"
+    },
+    {
+      "title": "Create a Completion",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-a-completion",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/guides/completions",
+        "/docs/guides/compatibility"
+      ],
+      "status": "adapted",
+      "reason": "对应已有 completions 路由，限定为支持旧式补全协议的模型。"
+    },
+    {
+      "title": "Create an Embedding",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-an-embedding",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/embeddings"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 embeddings 请求、输入索引与向量结果。"
+    },
+    {
+      "title": "Generate Images",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/generate-images",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/images",
+        "/docs/image-generation"
+      ],
+      "status": "adapted",
+      "reason": "对应本站图片生成与结果保存方式，尺寸和格式由模型决定。"
+    },
+    {
+      "title": "Create a Video",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-a-video",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/video",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "adapted",
+      "reason": "对应本站视频提交入口，保存任务 ID 后进入查询流程。"
+    },
+    {
+      "title": "Retrieve a Video",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/retrieve-a-video",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/video"
+      ],
+      "status": "adapted",
+      "reason": "对应本站视频任务 GET 查询，依据实际返回状态判断完成或失败。"
+    },
+    {
+      "title": "Delete a Video",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/delete-a-video",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "unsupported",
+      "reason": "本站未提供对应 DELETE 视频任务路由，不编写不可执行的删除请求。"
+    },
+    {
+      "title": "Download Video Content",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/download-video-content",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/video",
+        "/docs/reference/authentication"
+      ],
+      "status": "adapted",
+      "reason": "对应本站需要鉴权的视频内容下载入口，不声称已验证任务所有者隔离。"
+    },
+    {
+      "title": "Remix a Video",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/remix-a-video",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/video",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "本站有视频 remix 路由，但需模型及渠道支持，不能作为全部视频模型的通用能力。"
+    },
+    {
+      "title": "Create Speech",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-speech",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/audio"
+      ],
+      "status": "adapted",
+      "reason": "对应本站语音合成入口，响应按实际音频格式保存。"
+    },
+    {
+      "title": "Create Transcription",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-transcription",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/audio"
+      ],
+      "status": "adapted",
+      "reason": "对应本站 multipart 音频转写入口和 text 响应。"
+    },
+    {
+      "title": "Create Translation",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-translation",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/reference/audio"
+      ],
+      "status": "adapted",
+      "reason": "对应本站音频翻译路由，目标语言和参数范围以模型为准。"
+    },
+    {
+      "title": "Create Moderation",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/openai-compatible/create-moderation",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "OpenAI Compatible",
+      "targets": [
+        "/docs/guides/moderation"
+      ],
+      "status": "adapted",
+      "reason": "对应本站内容审查入口，说明分类结果与应用自身政策的职责。"
+    },
+    {
+      "title": "Create a Message",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/anthropic-compatible/create-a-message",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "Anthropic Compatible",
+      "targets": [
+        "/docs/reference/messages",
+        "/docs/reference/authentication"
+      ],
+      "status": "adapted",
+      "reason": "采用本站 Messages 请求头和内容块结构重写请求说明。"
+    },
+    {
+      "title": "Generate Content",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/google-vertex-ai-compatible/generate-content",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "Google Vertex AI Compatible",
+      "targets": [
+        "/docs/reference/gemini",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "采用本站 /v1beta/models 生成路径，不声称直接代理 Vertex 项目和区域资源路径。"
+    },
+    {
+      "title": "Create an AIHubMix image generation",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/create-an-aihubmix-image-generation",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/images"
+      ],
+      "status": "unsupported",
+      "reason": "参考站 Unified API 图片创建端点未在本站实现，替代为本站已开放的图片协议。"
+    },
+    {
+      "title": "List AIHubMix image tasks",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/list-aihubmix-image-tasks",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/images"
+      ],
+      "status": "unsupported",
+      "reason": "没有参考站专用图片任务列表契约，不把图片生成响应当成统一任务列表。"
+    },
+    {
+      "title": "Get an AIHubMix image task",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-an-aihubmix-image-task",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/images"
+      ],
+      "status": "unsupported",
+      "reason": "没有参考站专用图片任务查询端点，应按实际图片模型响应与本站工作台处理。"
+    },
+    {
+      "title": "Download an AIHubMix image result",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/download-an-aihubmix-image-result",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/images",
+        "/docs/image-generation"
+      ],
+      "status": "unsupported",
+      "reason": "没有参考站图片结果下载协议，本站按返回 URL 或编码数据保存结果。"
+    },
+    {
+      "title": "List AIHubMix video tasks",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/list-aihubmix-video-tasks",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/video"
+      ],
+      "status": "unsupported",
+      "reason": "参考站视频列表 API 未实现；说明本站已有任务记录与特定视频查询的边界。"
+    },
+    {
+      "title": "Create an AIHubMix video task",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/create-an-aihubmix-video-task",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video"
+      ],
+      "status": "unsupported",
+      "reason": "参考站统一视频创建路径不能直接调用本站，改用实际视频路由与模型字段。"
+    },
+    {
+      "title": "Get an AIHubMix video task",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-an-aihubmix-video-task",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video"
+      ],
+      "status": "unsupported",
+      "reason": "没有同名统一视频任务查询契约，使用本站真实任务 ID 和对应协议查询。"
+    },
+    {
+      "title": "Download an AIHubMix video",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/download-an-aihubmix-video",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/video",
+        "/docs/reference/authentication"
+      ],
+      "status": "unsupported",
+      "reason": "不支持参考站专用下载路径；替代为本站需要鉴权的视频内容接口。"
+    },
+    {
+      "title": "List unified AIHubMix tasks",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/list-unified-aihubmix-tasks",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks"
+      ],
+      "status": "unsupported",
+      "reason": "不存在覆盖所有模型类型的参考站统一任务列表服务，不能据历史任务页推断。"
+    },
+    {
+      "title": "Get a unified AIHubMix task",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-a-unified-aihubmix-task",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/video"
+      ],
+      "status": "unsupported",
+      "reason": "通用统一任务详情未实现；只有对应类型和路由下的任务可按其协议查询。"
+    },
+    {
+      "title": "Get the primary unified task result",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-the-primary-unified-task-result",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/video"
+      ],
+      "status": "unsupported",
+      "reason": "未提供参考站统一任务主结果接口，结果获取按本站具体能力处理。"
+    },
+    {
+      "title": "Get a specific unified task result",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-a-specific-unified-task-result",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/async-tasks",
+        "/docs/reference/images"
+      ],
+      "status": "unsupported",
+      "reason": "未提供统一任务按结果序号下载契约，图片与视频结果应分别解析。"
+    },
+    {
+      "title": "List models with media request Schemas",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/list-models-with-media-request-schemas",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/models",
+        "/docs/guides/choose-models"
+      ],
+      "status": "unsupported",
+      "reason": "本站模型目录不等于参考站媒体请求 JSON Schema 服务，不保证可自动生成全部媒体请求表单。"
+    },
+    {
+      "title": "Get a model's supported endpoints and request Schemas",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api-reference/aihubmix-unified-api/get-a-models-supported-endpoints-and-request-schemas",
+      "section": "API 参考",
+      "category": "模型端点",
+      "subgroup": "AIHubMix Unified API",
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/models"
+      ],
+      "status": "unsupported",
+      "reason": "本站可展示支持端点信息，但未确认同等请求 schema 查询 API，二者明确区分。"
+    },
+    {
+      "title": "模型管理API",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Models-API",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/reference/models"
+      ],
+      "status": "combined",
+      "reason": "分开普通模型目录和管理端模型操作，按本站鉴权与权限说明，不照搬参考平台 API。"
+    },
+    {
+      "title": "获取当前用户信息与余额",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/get-self",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/billing",
+        "/docs/account/account-security"
+      ],
+      "status": "combined",
+      "reason": "说明本站用户身份下账户及余额查询边界，模型 API Key 不自动拥有管理权限。"
+    },
+    {
+      "title": "获取 KEY 列表",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/list-keys",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "将本站令牌列表与管理身份要求合并说明，不复用参考站 CLI 路径。"
+    },
+    {
+      "title": "创建新 KEY",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/create-key",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "按本站创建令牌字段和控制台流程说明，不能以普通生成凭据绕过用户鉴权。"
+    },
+    {
+      "title": "更新 KEY",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/update-key",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "映射本站令牌编辑、额度及权限管理，实际请求契约以本站管理接口为准。"
+    },
+    {
+      "title": "获取单个 KEY 详情",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/get-key",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "说明本站令牌详情与敏感凭据边界，不承诺参考站详情字段逐一存在。"
+    },
+    {
+      "title": "删除 KEY",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/delete-key",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "按本站停用或删除令牌的实际行为说明，并提示更新调用应用的凭据。"
+    },
+    {
+      "title": "搜索 KEY",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/search-keys",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "结合本站令牌管理搜索用途与管理权限，不复制参考站查询参数。"
+    },
+    {
+      "title": "获取用户 KEY",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/get-user-token",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/account-security",
+        "/docs/reference/authentication"
+      ],
+      "status": "combined",
+      "reason": "区分本站用户管理身份与模型 Key，避免把参考站 user-token 概念直接套用。"
+    },
+    {
+      "title": "获取当前用户可用模型列表",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CliEndpoints/available-models",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/reference/models",
+        "/docs/guides/management-api"
+      ],
+      "status": "adapted",
+      "reason": "通过本站带 Key 的模型目录及用户权限说明可用范围，明确与公开价格目录不同。"
+    },
+    {
+      "title": "获取自动路由策略对应模型范围",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/RouterEndpoints/leaderboard",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/guides/routing",
+        "/docs/reference/models"
+      ],
+      "status": "unsupported",
+      "reason": "没有参考站排行榜自动路由策略范围 API，本站按分组和渠道模型范围路由。"
+    },
+    {
+      "title": "获取模型厂商图标",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/RouterEndpoints/vendors",
+      "section": "API 参考",
+      "category": "平台 API",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/reference/models",
+        "/docs/guides/management-api"
+      ],
+      "status": "unsupported",
+      "reason": "未确认提供参考站厂商图标查询契约，页面品牌展示不等于公开同名 API。"
+    },
+    {
+      "title": "三方接入技术指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Third-PartyIntegrationTechnicalGuide",
+      "section": "集成指南",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/overview",
+        "/docs/reference/authentication",
+        "/docs/guides/compatibility"
+      ],
+      "status": "adapted",
+      "reason": "重写第三方集成的地址、凭据、协议核对和最小验收流程。"
+    },
+    {
+      "title": "Claude Code",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Claude-Code",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/claude-code",
+        "/docs/reference/messages"
+      ],
+      "status": "adapted",
+      "reason": "使用本站现有 Claude Code 教程及 Messages 接口，不搬用参考站套餐配置。"
+    },
+    {
+      "title": "Claude Code，模型自由",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/CC-any",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/claude-code-openai",
+        "/docs/guides/compatibility"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 Claude Code 接入 OpenAI 模型的专门说明，明确转换与功能边界。"
+    },
+    {
+      "title": "Codex CLI 与桌面端接入 AIHubMix 教程",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Codex-CLI",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/codex",
+        "/docs/reference/responses"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 Codex CLI 与桌面配置，Base URL 和模型均按本站要求填写。"
+    },
+    {
+      "title": "CodeBuddy",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/CodeBuddy",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/ide-assistants"
+      ],
+      "status": "combined",
+      "reason": "CodeBuddy 合并至客户端自定义提供商与工具能力核对，不声称其所有登录模式支持本站。"
+    },
+    {
+      "title": "WorkBuddy",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/WorkBuddy",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/ide-assistants"
+      ],
+      "status": "combined",
+      "reason": "WorkBuddy 按当前客户端是否允许自定义协议验证，不套用参考站专用连接流程。"
+    },
+    {
+      "title": "Gemini CLI",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Gemini-Cli",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/gemini",
+        "/docs/reference/gemini"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 Gemini CLI 配置与原生 API 验证步骤。"
+    },
+    {
+      "title": "OpenCode",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Opencode",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/opencode",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 OpenCode 环境变量、提供商设置及错误排查。"
+    },
+    {
+      "title": "DeepSeek Harness",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/DeepSeek-Harness",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/overview"
+      ],
+      "status": "combined",
+      "reason": "DeepSeek Harness 采用通用模型地址、协议与工具循环检查，不编造本站专用安装包。"
+    },
+    {
+      "title": "Crush",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Crush",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/overview"
+      ],
+      "status": "combined",
+      "reason": "Crush 按自定义模型提供商能力核对，统一说明权限和模型协议条件。"
+    },
+    {
+      "title": "Gptme",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Gptme",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/reference/tools"
+      ],
+      "status": "combined",
+      "reason": "Gptme 主题合并为 Agent 接入与工具执行职责，不替客户端承诺本地权限安全。"
+    },
+    {
+      "title": "OpenClaw",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/OpenClaw",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/openclaw",
+        "/docs/integrations/agents-tools"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 OpenClaw 本地网关与多模型配置，按实际协议排查。"
+    },
+    {
+      "title": "Hermes Agent",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/hermes-agent-ai-hubmix",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/overview",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "Hermes Agent 使用通用接入条件，不把参考站 Hermes 插件视为元衡插件。"
+    },
+    {
+      "title": "Qwen Code",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Qwen-code",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/agents-tools",
+        "/docs/integrations/ide-assistants"
+      ],
+      "status": "combined",
+      "reason": "Qwen Code 需核对自定义提供商、模型协议和工具支持，合并到 Agent 与 IDE 指南。"
+    },
+    {
+      "title": "Kilo Code",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Kilo-Code",
+      "section": "集成指南",
+      "category": "编程助手",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/ide-assistants",
+        "/docs/integrations/agents-tools"
+      ],
+      "status": "combined",
+      "reason": "Kilo Code 按 IDE 提供商与工具执行流程说明，不固定未验证的界面选项。"
+    },
+    {
+      "title": "Cursor",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Cursor",
+      "section": "集成指南",
+      "category": "IDE 集成",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/ide-assistants",
+        "/docs/reference/models"
+      ],
+      "status": "combined",
+      "reason": "Cursor 接入合并到 IDE 配置指南，具体自定义端点与模型权限按当前版本核对。"
+    },
+    {
+      "title": "Cline",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Cline",
+      "section": "集成指南",
+      "category": "IDE 集成",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/ide-assistants",
+        "/docs/reference/tools"
+      ],
+      "status": "combined",
+      "reason": "Cline 接入合并到 IDE 与工具调用指南，检查支持协议及工具结果回传。"
+    },
+    {
+      "title": "CC Switch 配置指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/cc-switch",
+      "section": "集成指南",
+      "category": "IDE 集成",
+      "subgroup": null,
+      "targets": [
+        "/docs/clients/ccswitch",
+        "/docs/clients"
+      ],
+      "status": "adapted",
+      "reason": "复用本站 CC Switch 一键导入与手动配置，明确配置切换不等于模型会话本身。"
+    },
+    {
+      "title": "Avante.nvim",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Avante.nvim",
+      "section": "集成指南",
+      "category": "IDE 集成",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/ide-assistants",
+        "/docs/integrations/overview"
+      ],
+      "status": "combined",
+      "reason": "Avante.nvim 采用通用 IDE 插件提供商核对方法，不声称所有版本字段一致。"
+    },
+    {
+      "title": "Dify",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Dify",
+      "section": "集成指南",
+      "category": "Agent / Workflow 平台",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/workflows",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "Dify 使用通用自定义提供商与工作流验证，避开参考站专属插件依赖。"
+    },
+    {
+      "title": "n8n",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/N8N",
+      "section": "集成指南",
+      "category": "Agent / Workflow 平台",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/workflows",
+        "/docs/reference/authentication"
+      ],
+      "status": "combined",
+      "reason": "n8n 采用工作流节点或 HTTP 请求连接，凭据与实际完整 API 路径分开管理。"
+    },
+    {
+      "title": "LiteLLM",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/LiteLLM",
+      "section": "集成指南",
+      "category": "Agent / Workflow 平台",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/workflows",
+        "/docs/integrations/sdks",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "LiteLLM 合并至多层代理配置、协议与重试预算检查，避免叠加无界重试。"
+    },
+    {
+      "title": "AI SDK",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/AISDK",
+      "section": "集成指南",
+      "category": "SDK 与框架",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/sdks",
+        "/docs/reference/chat-completions",
+        "/docs/reference/responses"
+      ],
+      "status": "combined",
+      "reason": "AI SDK 按对应适配器和协议配置本站地址，不把 SDK 支持列表当本站能力清单。"
+    },
+    {
+      "title": "LangChain",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/LangChain",
+      "section": "集成指南",
+      "category": "SDK 与框架",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/sdks",
+        "/docs/reference/embeddings",
+        "/docs/reference/tools"
+      ],
+      "status": "combined",
+      "reason": "LangChain 合并到 SDK 与应用编排，区分文本、向量、工具能力及凭据。"
+    },
+    {
+      "title": "通过接口获取账户信息",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/Cli",
+      "section": "集成指南",
+      "category": "SDK 与框架",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/management-api",
+        "/docs/account/account-security",
+        "/docs/account/billing"
+      ],
+      "status": "combined",
+      "reason": "按本站用户管理接口解释账户信息查询，不把模型调用令牌当通用管理凭据。"
+    },
+    {
+      "title": "Cherry Studio",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Cherry-Studio",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/models"
+      ],
+      "status": "combined",
+      "reason": "Cherry Studio 合并至聊天客户端配置，核对自定义端点、模型列表和首个请求。"
+    },
+    {
+      "title": "Open Design",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Open-Design",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/images",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "Open Design 以客户端连接和实际图片协议为适配主题，不保证参考站专属功能可用。"
+    },
+    {
+      "title": "Chatbox",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/ChatBox",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "Chatbox 使用本站通用聊天配置与最小请求验证，界面字段以当前版本为准。"
+    },
+    {
+      "title": "RikkaHub",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/RikkaHub",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "RikkaHub 按自定义服务和独立用途 Key 说明，不预置或公开长期凭据。"
+    },
+    {
+      "title": "LobeChat",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Lobe-Chat",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/integrations/sdks"
+      ],
+      "status": "combined",
+      "reason": "LobeChat 的部署配置与聊天端点需求合并处理，不声称当前所有版本均经实测。"
+    },
+    {
+      "title": "Open WebUI",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Open-WebUI",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/models"
+      ],
+      "status": "combined",
+      "reason": "Open WebUI 以模型服务地址、模型权限及前后端网络可达性为核对重点。"
+    },
+    {
+      "title": "Claude Desktop",
+      "sourceUrl": "https://docs.aihubmix.com/cn/api/claude-desktop",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/integrations/mcp",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "Claude Desktop 的模型连接与 MCP 工具连接分开说明，不暗示配置 MCP 即可替换原生模型服务。"
+    },
+    {
+      "title": "NextChat",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/ChatGPT-Next-Web",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "NextChat 按自定义 OpenAI 兼容配置说明，完整路径与 Base URL 需按字段语义填写。"
+    },
+    {
+      "title": "AnythingLLM",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/AnythingLLM",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/reference/embeddings",
+        "/docs/reference/rerank"
+      ],
+      "status": "combined",
+      "reason": "AnythingLLM 同时核对对话与检索组件，本站不会自动托管客户端知识库。"
+    },
+    {
+      "title": "LobeHub",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/lobe-hub",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/integrations/sdks"
+      ],
+      "status": "combined",
+      "reason": "LobeHub 并入通用聊天客户端与部署配置，不把云账号权限视为本站权限。"
+    },
+    {
+      "title": "Chatx",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Chatx",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "Chatx 以自定义端点、模型名及用途隔离 Key 为接入条件，不承诺未验证版本行为。"
+    },
+    {
+      "title": "ChatAll",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/ChatAll",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "ChatAll 多模型并发场景纳入聊天客户端与限流说明，各请求仍独立计量。"
+    },
+    {
+      "title": "ChatHub",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/ChatHub",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "ChatHub 多路对话需核对各模型权限和并发，不能由一个成功请求推断全部连接可用。"
+    },
+    {
+      "title": "LibreChat",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/LibreChat",
+      "section": "应用集成",
+      "category": "通用 Chat 客户端",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/chat-clients",
+        "/docs/integrations/agents-tools"
+      ],
+      "status": "combined",
+      "reason": "LibreChat 以对话连接及可选 Agent 工具能力分层验证，不混用工具服务凭据。"
+    },
+    {
+      "title": "Obsidian",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Obsidian",
+      "section": "应用集成",
+      "category": "笔记 / 写作 / 学术",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/privacy"
+      ],
+      "status": "combined",
+      "reason": "Obsidian 插件接入合并到笔记应用，重点说明发送选区、整篇或知识库的范围。"
+    },
+    {
+      "title": "NoteGen",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/NoteGen",
+      "section": "应用集成",
+      "category": "笔记 / 写作 / 学术",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/privacy"
+      ],
+      "status": "combined",
+      "reason": "NoteGen 以写作与笔记工具的自定义端点和数据范围核对，不宣称官方深度集成。"
+    },
+    {
+      "title": "Zotero",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Zotero",
+      "section": "应用集成",
+      "category": "笔记 / 写作 / 学术",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/reference/vision"
+      ],
+      "status": "combined",
+      "reason": "Zotero 插件合并到学术应用，PDF 提取和图像识别仍由具体插件及模型能力决定。"
+    },
+    {
+      "title": "GPT-Academic",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/GPT-Academic",
+      "section": "应用集成",
+      "category": "笔记 / 写作 / 学术",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "GPT-Academic 长文任务按切块、上下文与并发条件说明，不保证生成引用正确。"
+    },
+    {
+      "title": "FeelFish",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/FeelFish",
+      "section": "应用集成",
+      "category": "笔记 / 写作 / 学术",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "FeelFish 写作主题以通用模型配置和短文本验证覆盖，不复制参考站专用模板。"
+    },
+    {
+      "title": "沉浸式翻译",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Immersive-Translate",
+      "section": "应用集成",
+      "category": "翻译工具",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/reference/chat-completions"
+      ],
+      "status": "combined",
+      "reason": "沉浸式翻译使用自定义翻译服务设置，先用短文本核对语言、路径和结果格式。"
+    },
+    {
+      "title": "NextAI Translator",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/NextAITranslator",
+      "section": "应用集成",
+      "category": "翻译工具",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/limits-retries"
+      ],
+      "status": "combined",
+      "reason": "NextAI Translator 合并为翻译应用配置，批量与长度限制按模型和客户端核对。"
+    },
+    {
+      "title": "Pot",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Pot-App",
+      "section": "应用集成",
+      "category": "翻译工具",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/reference/authentication"
+      ],
+      "status": "combined",
+      "reason": "Pot 接入使用自定义服务和独立用途 Key，避免把密钥写进共享翻译模板。"
+    },
+    {
+      "title": "欧路翻译",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Oulu",
+      "section": "应用集成",
+      "category": "翻译工具",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/privacy"
+      ],
+      "status": "combined",
+      "reason": "欧路翻译按当前版本自定义接口能力核对，文档只承诺通用配置检查方法。"
+    },
+    {
+      "title": "AIHubMix 图片生成 MCP",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/AHM-mcp",
+      "section": "应用集成",
+      "category": "MCP / 模型路由",
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/compatibility",
+        "/docs/integrations/mcp",
+        "/docs/image-generation"
+      ],
+      "status": "unsupported",
+      "reason": "参考站图片 MCP 包不是本站官方服务，说明 MCP 与模型 API 的区别并提供本站生图入口。"
+    },
+    {
+      "title": "GCMP",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/GCMP",
+      "section": "应用集成",
+      "category": "MCP / 模型路由",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/mcp",
+        "/docs/guides/routing",
+        "/docs/guides/compatibility"
+      ],
+      "status": "combined",
+      "reason": "GCMP 作为第三方工具或路由扩展按独立传输与模型连接核对，不保证本站托管它。"
+    },
+    {
+      "title": "cc-connect",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/ai-agent-tool-cc-connect",
+      "section": "应用集成",
+      "category": "业务场景",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/integrations/agents-tools"
+      ],
+      "status": "combined",
+      "reason": "cc-connect 采用消息桥接和 Agent 的分层权限说明，模型生成与外发消息单独验证。"
+    },
+    {
+      "title": "懒人客服",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/On-CS",
+      "section": "应用集成",
+      "category": "业务场景",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/integrations/workflows"
+      ],
+      "status": "combined",
+      "reason": "懒人客服接入以通用模型配置与人工审核流程覆盖，不预设客服平台自动发送权限。"
+    },
+    {
+      "title": "ChatGPT 好友 (uTools)",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/Utools-ChatGPT",
+      "section": "应用集成",
+      "category": "启动器 / 划词",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/account/api-keys"
+      ],
+      "status": "combined",
+      "reason": "uTools 扩展按插件来源、自定义端点和凭据存储核对，不照搬参考站预设连接。"
+    },
+    {
+      "title": "All API Hub x AIHubMix 配置指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/clients/all-api-hub",
+      "section": "应用集成",
+      "category": "其他",
+      "subgroup": null,
+      "targets": [
+        "/docs/integrations/applications",
+        "/docs/guides/management-api"
+      ],
+      "status": "combined",
+      "reason": "All API Hub 配置管理须区分模型调用与管理接口，不能将参考站导入字段视为本站契约。"
+    },
+    {
+      "title": "Kimi K3 实测调用指南：新参数与三接口支持矩阵",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/kimi-k3-guide",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/choose-models",
+        "/docs/guides/reasoning"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考新模型迁移和参数核对主题，不搬运参考站 Kimi 实测结论、型号可用性或发布数据。"
+    },
+    {
+      "title": "GPT-5.6 系列上线：提示缓存计费变化解读",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/aihubmix-gpt-5-6-prompt-caching",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/caching",
+        "/docs/account/billing"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考缓存计费变更的核对方法，不把参考站 GPT 发布消息和历史价格写成本站政策。"
+    },
+    {
+      "title": "2026 年 6 月发布聚焦：近 20 款新模型上线",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/aihubmix-2026-06-recap",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/account/notifications"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考版本变更与公告主题，不搬运参考站 2026 年 6 月上架数量和发布时间。"
+    },
+    {
+      "title": "OpenAI 兼容接口深度适配 Claude",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/aihubmix-openai-upgrade-claude",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/compatibility",
+        "/docs/reference/messages"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考跨协议迁移主题，不宣称本站完成参考站同一批 Claude 适配更新。"
+    },
+    {
+      "title": "全球加速网络：延迟降 75%、可用性 99.99%",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/global-acceleration",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/status-support",
+        "/docs/guides/compatibility"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考网络变更与可用性核验主题，不挪用延迟降低 75% 或 99.99% SLA 宣传数据。"
+    },
+    {
+      "title": "AIHubMix 上的免费 AI 模型",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/free-ai-models",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/choose-models",
+        "/docs/account/billing"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考模型价格变化主题，免费范围、优惠和活动以本站实时目录与公告为准。"
+    },
+    {
+      "title": "Claude Opus 4.7 新参数指南",
+      "sourceUrl": "https://docs.aihubmix.com/cn/blogs/Claude-Opus4.7",
+      "section": "博客",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/guides/reasoning",
+        "/docs/reference/messages"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考模型参数迁移主题，不搬用特定 Claude 版本上线状态、支持矩阵或测试结论。"
+    },
+    {
+      "title": "更新日志",
+      "sourceUrl": "https://docs.aihubmix.com/cn/update/News",
+      "section": "更新日志",
+      "category": null,
+      "subgroup": null,
+      "targets": [
+        "/docs/guides/migrations",
+        "/docs/account/notifications",
+        "/docs/guides/status-support"
+      ],
+      "status": "reference-only",
+      "reason": "仅参考更新日志组织方式，本站历史由本站公告与版本记录提供，不搬运他站活动数据。"
+    }
+  ]
+}

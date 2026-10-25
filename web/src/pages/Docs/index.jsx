@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button, Input, Typography } from '@douyinfe/semi-ui';
 import {
   ArrowLeft,
@@ -62,7 +68,12 @@ export default function DocsPage({ standalone = false, brand, controls }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const searchRef = useRef(null);
+  const navigationRef = useRef(null);
   const language = bodyLanguage.language;
+  const translateMetadata = useCallback(
+    (text) => t(bodyLanguage.translate(text)),
+    [bodyLanguage.translate, t],
+  );
   const content = useMemo(() => {
     if (!activeDoc) return '';
     const rendered = prepareMarkdown(
@@ -83,18 +94,19 @@ export default function DocsPage({ standalone = false, brand, controls }) {
     language,
   ]);
   const headings = useMemo(() => extractHeadings(content), [content]);
-  const results = useMemo(
+  const searchableDocs = useMemo(
     () =>
-      searchDocs(
-        query,
-        DOCS.map((doc) => ({
-          ...doc,
-          title: t(doc.title),
-          description: t(doc.description),
-          content: bodyLanguage.markdown(doc.content),
-        })),
-      ),
-    [query, t, bodyLanguage.markdown],
+      DOCS.map((doc) => ({
+        ...doc,
+        title: translateMetadata(doc.title),
+        description: translateMetadata(doc.description),
+        content: bodyLanguage.markdown(doc.content),
+      })),
+    [translateMetadata, bodyLanguage.markdown],
+  );
+  const results = useMemo(
+    () => searchDocs(query, searchableDocs),
+    [query, searchableDocs],
   );
   const index = DOCS.findIndex((doc) => doc.key === activeDoc?.key);
   const go = (path) => {
@@ -134,6 +146,10 @@ export default function DocsPage({ standalone = false, brand, controls }) {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    navigationRef.current?.scrollTo({ top: 0 });
+  }, [query]);
+
   const copyPage = async () => {
     try {
       await navigator.clipboard.writeText(content);
@@ -150,6 +166,7 @@ export default function DocsPage({ standalone = false, brand, controls }) {
     >
       <div className='nan-docs-mobile-bar'>
         {brand || <strong>{t('平台使用文档')}</strong>}
+        {controls}
         <Button
           aria-label={t(mobileOpen ? '关闭' : '选择文档')}
           aria-expanded={mobileOpen}
@@ -182,7 +199,11 @@ export default function DocsPage({ standalone = false, brand, controls }) {
             showClear
           />
         </div>
-        <nav className='nan-docs-navigation' aria-label={t('选择文档')}>
+        <nav
+          ref={navigationRef}
+          className='nan-docs-navigation'
+          aria-label={t('选择文档')}
+        >
           {query.trim() ? (
             <div className='nan-docs-results' aria-live='polite'>
               {results.length ? (
@@ -199,7 +220,9 @@ export default function DocsPage({ standalone = false, brand, controls }) {
           ) : (
             NAV_GROUPS.map((group) => (
               <div className='nan-docs-nav-group' key={group}>
-                <span className='nan-docs-nav-group-title'>{t(group)}</span>
+                <span className='nan-docs-nav-group-title'>
+                  {translateMetadata(group)}
+                </span>
                 {DOCS.filter((doc) => doc.group === group).map((doc) => (
                   <Link
                     key={doc.key}
@@ -209,7 +232,7 @@ export default function DocsPage({ standalone = false, brand, controls }) {
                     }
                     className='nan-docs-nav-link'
                   >
-                    {t(doc.title)}
+                    {translateMetadata(doc.title)}
                   </Link>
                 ))}
               </div>
@@ -224,7 +247,6 @@ export default function DocsPage({ standalone = false, brand, controls }) {
           >
             {t('上游文档')} ↗
           </a>
-          {controls}
         </div>
       </aside>
       {mobileOpen && (
@@ -235,28 +257,31 @@ export default function DocsPage({ standalone = false, brand, controls }) {
         />
       )}
       <div className='nan-docs-workspace'>
-        <nav className='nan-docs-tabs' aria-label={t('文档')}>
-          <Link to={docPath('/docs', standalone)}>{t('文档')}</Link>
-          <Link to={docPath('/docs/api-examples', standalone)}>
-            {t('API 参考')}
-          </Link>
-          <Link to={docPath('/docs/clients', standalone)}>
-            {t('客户端接入')}
-          </Link>
-          <Link to={docPath('/docs/troubleshooting', standalone)}>
-            {t('常见报错排查')}
-          </Link>
-          <a
-            className='nan-docs-console'
-            href={
-              standalone
-                ? `${MAIN_ORIGIN}/console?lang=${language}`
-                : '/console'
-            }
-          >
-            {t('控制台')} ↗
-          </a>
-        </nav>
+        <header className='nan-docs-header'>
+          <nav className='nan-docs-tabs' aria-label={t('文档')}>
+            <Link to={docPath('/docs', standalone)}>{t('文档')}</Link>
+            <Link to={docPath('/docs/reference/overview', standalone)}>
+              {t('API 参考')}
+            </Link>
+            <Link to={docPath('/docs/integrations/overview', standalone)}>
+              {translateMetadata('集成指南')}
+            </Link>
+            <Link to={docPath('/docs/troubleshooting', standalone)}>
+              {t('常见报错排查')}
+            </Link>
+            <a
+              className='nan-docs-console'
+              href={
+                standalone
+                  ? `${MAIN_ORIGIN}/console?lang=${language}`
+                  : '/console'
+              }
+            >
+              {t('控制台')} ↗
+            </a>
+          </nav>
+          {controls}
+        </header>
         <div className='nan-docs-layout'>
           <main className='nan-docs-content'>
             {!activeDoc ? (
@@ -269,9 +294,11 @@ export default function DocsPage({ standalone = false, brand, controls }) {
             ) : (
               <>
                 <header className='nan-docs-card-header'>
-                  <span className='nan-docs-eyebrow'>{t(activeDoc.group)}</span>
+                  <span className='nan-docs-eyebrow'>
+                    {translateMetadata(activeDoc.group)}
+                  </span>
                   <div className='nan-docs-title-row'>
-                    <h1>{t(activeDoc.title)}</h1>
+                    <h1>{translateMetadata(activeDoc.title)}</h1>
                     <Button
                       theme='borderless'
                       icon={<Copy size={16} />}
@@ -280,7 +307,7 @@ export default function DocsPage({ standalone = false, brand, controls }) {
                       {t('复制')}
                     </Button>
                   </div>
-                  <p>{t(activeDoc.description)}</p>
+                  <p>{translateMetadata(activeDoc.description)}</p>
                   <span className='sr-only' role='status'>
                     {copyStatus && t(copyStatus)}
                   </span>
@@ -330,14 +357,14 @@ export default function DocsPage({ standalone = false, brand, controls }) {
                   {index > 0 ? (
                     <Link to={docPath(DOCS[index - 1].path, standalone)}>
                       <ArrowLeft size={18} />
-                      {t(DOCS[index - 1].title)}
+                      {translateMetadata(DOCS[index - 1].title)}
                     </Link>
                   ) : (
                     <span />
                   )}
                   {index < DOCS.length - 1 && (
                     <Link to={docPath(DOCS[index + 1].path, standalone)}>
-                      {t(DOCS[index + 1].title)}
+                      {translateMetadata(DOCS[index + 1].title)}
                       <ArrowRight size={18} />
                     </Link>
                   )}

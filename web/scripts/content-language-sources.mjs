@@ -18,6 +18,26 @@ export function collectContentSources() {
   )) {
     markdown(readFileSync(new URL(name, docs), 'utf8'));
   }
+  const handbook = new URL('handbook/', docs);
+  for (const name of ['guide', 'console', 'api', 'integrations']) {
+    const catalog = JSON.parse(
+      readFileSync(new URL(`${name}-catalog.json`, handbook), 'utf8'),
+    );
+    for (const entry of catalog) {
+      [entry.title, entry.description, entry.group].forEach(add);
+      markdown(readFileSync(new URL(entry.file, handbook), 'utf8'));
+    }
+  }
+  // Legacy metadata is also prose: the directory and search must switch with bodies.
+  const legacyCatalog = readFileSync(
+    new URL('../src/pages/Docs/catalog.js', import.meta.url),
+    'utf8',
+  );
+  for (const match of legacyCatalog.matchAll(
+    /(?:title|description|group): '([^']+)'/g,
+  )) {
+    add(match[1]);
+  }
   for (const policy of PUBLIC_POLICIES) {
     add(policy.intro);
     for (const section of policy.sections) {

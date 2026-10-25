@@ -1,0 +1,146 @@
+[
+  {
+    "key": "guide-introduction",
+    "path": "/docs/guides/introduction",
+    "group": "开始使用",
+    "title": "认识元衡 API",
+    "description": "理解网关、模型、分组、令牌与计费的关系",
+    "file": "guides/introduction.md"
+  },
+  {
+    "key": "guide-quick-start",
+    "path": "/docs/guides/quick-start",
+    "group": "开始使用",
+    "title": "快速开始",
+    "description": "从创建令牌到完成一次可追踪的模型调用",
+    "file": "guides/quick-start.md"
+  },
+  {
+    "key": "guide-choose-models",
+    "path": "/docs/guides/choose-models",
+    "group": "开始使用",
+    "title": "选择模型与阅读价格",
+    "description": "根据端点、任务、分组和实际计费选择模型",
+    "file": "guides/choose-models.md"
+  },
+  {
+    "key": "guide-compatibility",
+    "path": "/docs/guides/compatibility",
+    "group": "开始使用",
+    "title": "兼容范围与功能边界",
+    "description": "区分已实现协议、条件能力与未提供服务",
+    "file": "guides/compatibility.md"
+  },
+  {
+    "key": "guide-http-errors",
+    "path": "/docs/guides/http-errors",
+    "group": "排查与运维",
+    "title": "HTTP 错误与请求诊断",
+    "description": "用状态码、错误正文和请求 ID 定位故障",
+    "file": "guides/http-errors.md"
+  },
+  {
+    "key": "guide-limits-retries",
+    "path": "/docs/guides/limits-retries",
+    "group": "排查与运维",
+    "title": "限流、超时与重试",
+    "description": "设置并发、退避与流式中断处理",
+    "file": "guides/limits-retries.md"
+  },
+  {
+    "key": "guide-caching",
+    "path": "/docs/guides/caching",
+    "group": "网关能力",
+    "title": "提示词缓存与费用核对",
+    "description": "理解缓存命中、写入与跨渠道差异",
+    "file": "guides/caching.md"
+  },
+  {
+    "key": "guide-reasoning",
+    "path": "/docs/guides/reasoning",
+    "group": "网关能力",
+    "title": "推理参数与模型能力",
+    "description": "按协议配置思考强度、输出限制和扩展参数",
+    "file": "guides/reasoning.md"
+  },
+  {
+    "key": "guide-routing",
+    "path": "/docs/guides/routing",
+    "group": "网关能力",
+    "title": "模型映射与渠道回退",
+    "description": "理解分组、别名、渠道选择与回退限制",
+    "file": "guides/routing.md"
+  },
+  {
+    "key": "guide-async-tasks",
+    "path": "/docs/guides/async-tasks",
+    "group": "网关能力",
+    "title": "异步任务与结果查询",
+    "description": "保存任务 ID、轮询状态和处理结果过期",
+    "file": "guides/async-tasks.md"
+  },
+  {
+    "key": "guide-web-search",
+    "path": "/docs/guides/web-search",
+    "group": "模型能力",
+    "title": "联网搜索与外部工具",
+    "description": "区分模型自带检索与应用自行执行搜索",
+    "file": "guides/web-search.md"
+  },
+  {
+    "key": "guide-completions",
+    "path": "/docs/guides/completions",
+    "group": "协议参考",
+    "title": "文本补全与 FIM",
+    "description": "旧式 Completions 与中间填充的适用边界",
+    "file": "guides/completions.md"
+  },
+  {
+    "key": "guide-moderation",
+    "path": "/docs/guides/moderation",
+    "group": "模型能力",
+    "title": "内容审核接口",
+    "description": "调用审核模型并理解应用侧责任",
+    "file": "guides/moderation.md"
+  },
+  {
+    "key": "guide-enterprise",
+    "path": "/docs/guides/enterprise",
+    "group": "企业与安全",
+    "title": "企业接入与定制",
+    "description": "整理吞吐、网络、预算和数据处理需求",
+    "file": "guides/enterprise.md"
+  },
+  {
+    "key": "guide-management-api",
+    "path": "/docs/guides/management-api",
+    "group": "API 基础",
+    "title": "账户与令牌管理 API",
+    "description": "区分模型调用密钥与账户管理访问令牌",
+    "file": "guides/management-api.md"
+  },
+  {
+    "key": "guide-privacy",
+    "path": "/docs/guides/privacy",
+    "group": "企业与安全",
+    "title": "数据、隐私与密钥保护",
+    "description": "梳理网关、上游和应用各自的数据处理边界",
+    "file": "guides/privacy.md"
+  },
+  {
+    "key": "guide-status-support",
+    "path": "/docs/guides/status-support",
+    "group": "排查与运维",
+    "title": "服务状态与支持反馈",
+    "description": "提交可定位的问题，避免泄露密钥",
+    "file": "guides/status-support.md"
+  },
+  {
+    "key": "guide-migrations",
+    "path": "/docs/guides/migrations",
+    "group": "排查与运维",
+    "title": "版本更新与迁移检查",
+    "description": "以本站发布记录验证新模型、参数与客户端变化",
+    "file": "guides/migrations.md"
+  }
+]

@@ -1,0 +1,138 @@
+[
+  {
+    "key": "api-overview",
+    "path": "/docs/reference/overview",
+    "group": "API 基础",
+    "title": "API 接入总览",
+    "description": "选择适合的协议，了解本站接口、模型条件和未开放能力。",
+    "file": "api/overview.md"
+  },
+  {
+    "key": "api-authentication",
+    "path": "/docs/reference/authentication",
+    "group": "API 基础",
+    "title": "认证与 API Key",
+    "description": "配置请求鉴权、令牌权限、分组与安全的凭据使用方式。",
+    "file": "api/authentication.md"
+  },
+  {
+    "key": "api-models",
+    "path": "/docs/reference/models",
+    "group": "API 基础",
+    "title": "模型、分组与协议",
+    "description": "查询可用模型，核对模型 ID、接口协议及账号分组权限。",
+    "file": "api/models.md"
+  },
+  {
+    "key": "api-chat-completions",
+    "path": "/docs/reference/chat-completions",
+    "group": "协议参考",
+    "title": "Chat Completions",
+    "description": "使用消息列表完成对话，处理返回文本、用量与结束原因。",
+    "file": "api/chat-completions.md"
+  },
+  {
+    "key": "api-responses",
+    "path": "/docs/reference/responses",
+    "group": "协议参考",
+    "title": "Responses API",
+    "description": "使用 Responses 输入与输出结构，理解会话衔接和能力边界。",
+    "file": "api/responses.md"
+  },
+  {
+    "key": "api-messages",
+    "path": "/docs/reference/messages",
+    "group": "协议参考",
+    "title": "Claude Messages",
+    "description": "通过 Messages 协议发送内容块，处理工具调用和流式事件。",
+    "file": "api/messages.md"
+  },
+  {
+    "key": "api-gemini",
+    "path": "/docs/reference/gemini",
+    "group": "协议参考",
+    "title": "Gemini 原生 API",
+    "description": "配置 Gemini 原生鉴权、内容结构和生成接口。",
+    "file": "api/gemini.md"
+  },
+  {
+    "key": "api-streaming",
+    "path": "/docs/reference/streaming",
+    "group": "协议参考",
+    "title": "流式输出",
+    "description": "逐步读取 SSE 输出，正确处理分块、用量和中断。",
+    "file": "api/streaming.md"
+  },
+  {
+    "key": "api-tools",
+    "path": "/docs/reference/tools",
+    "group": "协议参考",
+    "title": "工具调用",
+    "description": "声明函数工具，由应用校验执行并回传真实结果。",
+    "file": "api/tools.md"
+  },
+  {
+    "key": "api-structured-output",
+    "path": "/docs/reference/structured-output",
+    "group": "协议参考",
+    "title": "结构化输出",
+    "description": "按模型支持范围使用 JSON Schema，并验证结构和业务内容。",
+    "file": "api/structured-output.md"
+  },
+  {
+    "key": "api-vision",
+    "path": "/docs/reference/vision",
+    "group": "模型能力",
+    "title": "图片与视频理解",
+    "description": "发送图片内容块，了解视觉输入及视频理解的模型限制。",
+    "file": "api/vision.md"
+  },
+  {
+    "key": "api-images",
+    "path": "/docs/reference/images",
+    "group": "模型能力",
+    "title": "图片生成与编辑",
+    "description": "发起图片生成或编辑，处理结果地址、编码数据和上传文件。",
+    "file": "api/images.md"
+  },
+  {
+    "key": "api-audio",
+    "path": "/docs/reference/audio",
+    "group": "模型能力",
+    "title": "语音合成与识别",
+    "description": "使用语音合成、转写与翻译接口，处理音频文件和返回格式。",
+    "file": "api/audio.md"
+  },
+  {
+    "key": "api-video",
+    "path": "/docs/reference/video",
+    "group": "模型能力",
+    "title": "视频生成与异步任务",
+    "description": "提交视频任务、查询状态并通过鉴权接口获取成品。",
+    "file": "api/video.md"
+  },
+  {
+    "key": "api-embeddings",
+    "path": "/docs/reference/embeddings",
+    "group": "模型能力",
+    "title": "文本向量 Embeddings",
+    "description": "生成文本向量，规划批量输入、维度与应用检索流程。",
+    "file": "api/embeddings.md"
+  },
+  {
+    "key": "api-rerank",
+    "path": "/docs/reference/rerank",
+    "group": "模型能力",
+    "title": "文档重排 Rerank",
+    "description": "对候选文档精排，并将相关性评分关联到原始文档。",
+    "file": "api/rerank.md"
+  },
+  {
+    "key": "api-realtime",
+    "path": "/docs/reference/realtime",
+    "group": "模型能力",
+    "title": "Realtime 实时接口",
+    "description": "建立 WebSocket 连接，处理实时会话事件及凭据边界。",
+    "file": "api/realtime.md"
+  }
+]
