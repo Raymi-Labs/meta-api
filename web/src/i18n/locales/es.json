@@ -6567,6 +6567,7 @@
     "用量类型": "Tipo de uso",
     "管理员暂未开启分组健康展示": "El administrador no ha activado la visualización del estado de los grupos",
     "请先加载分组调用表现": "Carga primero el rendimiento de los grupos",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "La velocidad de salida es el total de tokens de salida de solicitudes de streaming correctas dividido por su duración total desde la primera salida válida hasta la finalización. Se muestra — si no hay muestras válidas."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "La velocidad de salida es el total de tokens de salida de solicitudes de streaming correctas dividido por su duración total desde la primera salida válida hasta la finalización. Se muestra — si no hay muestras válidas.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Aún no se ha indicado si este modelo admite este protocolo. Comprueba primero la configuración de la API del grupo que utilizas."
   }
 }

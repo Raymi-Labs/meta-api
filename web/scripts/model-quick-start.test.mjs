@@ -228,6 +228,68 @@ test('unknown or absent endpoint metadata does not invent Chat support', () => {
   }
 });
 
+test('detail protocol templates expose Responses without changing declared capabilities', () => {
+  const input = model('claude-fable-5-1', ['anthropic', 'openai']);
+  const before = structuredClone(input);
+  for (const language of MODEL_EXAMPLE_LANGUAGES) {
+    const examples = getModelQuickStartExamples(
+      input,
+      'https://example.com',
+      '',
+      language,
+      { includeTextProtocolTemplates: true },
+    );
+    assert.deepEqual(
+      examples.map(({ endpoint, declared }) => [endpoint, declared]),
+      [
+        ['openai', true],
+        ['openai-response', false],
+        ['anthropic', true],
+      ],
+    );
+    assert.match(examples[1].code, /\/v1\/responses/);
+    assert.match(examples[1].code, /input/);
+    assert.deepEqual(input, before);
+  }
+  const declaredResponses = getModelQuickStartExamples(
+    model('responses-model', ['openai-response']),
+    'https://example.com',
+    '',
+    'Python',
+    { includeTextProtocolTemplates: true },
+  );
+  assert.equal(
+    declaredResponses.find((entry) => entry.endpoint === 'openai-response')
+      .declared,
+    true,
+  );
+  assert.equal(
+    declaredResponses.find((entry) => entry.endpoint === 'openai').declared,
+    false,
+  );
+});
+
+test('text template opt-in does not infer protocols for non-text or absent declarations', () => {
+  for (const endpoints of [
+    [],
+    ['image-generation'],
+    ['image-generation', 'openai'],
+    ['video-generation'],
+    ['embedding'],
+  ]) {
+    const input = model('model-without-chat-evidence', endpoints);
+    const strict = getModelQuickStartExamples(input, 'https://example.com', '');
+    const withTemplates = getModelQuickStartExamples(
+      input,
+      'https://example.com',
+      '',
+      'cURL',
+      { includeTextProtocolTemplates: true },
+    );
+    assert.deepEqual(withTemplates, strict);
+  }
+});
+
 test('server address wins, invalid addresses fall back, and credentials are never copied', () => {
   const input = model('gpt-test', ['openai-response']);
   const [configured] = getModelQuickStartExamples(

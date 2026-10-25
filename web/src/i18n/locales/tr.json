@@ -6567,6 +6567,7 @@
     "用量类型": "Kullanım türü",
     "管理员暂未开启分组健康展示": "Yönetici grup sağlığı görünümünü etkinleştirmedi",
     "请先加载分组调用表现": "Önce grupların çağrı performansını yükleyin",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Çıktı hızı, başarılı akış isteklerinin toplam çıktı tokenlarının ilk geçerli çıktıdan tamamlanmaya kadar geçen toplam süreye bölünmesiyle hesaplanır. Geçerli örnek yoksa — gösterilir."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Çıktı hızı, başarılı akış isteklerinin toplam çıktı tokenlarının ilk geçerli çıktıdan tamamlanmaya kadar geçen toplam süreye bölünmesiyle hesaplanır. Geçerli örnek yoksa — gösterilir.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Bu model için bu protokolün desteklendiği henüz belirtilmemiş. Önce kullandığınız grubun API yapılandırmasını kontrol edin."
   }
 }

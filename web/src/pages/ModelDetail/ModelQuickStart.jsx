@@ -19,14 +19,16 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, KeyRound, ArrowUpRight } from 'lucide-react';
+import { Copy, KeyRound, ArrowUpRight, ChevronDown } from 'lucide-react';
 import {
   getModelQuickStartExamples,
   MODEL_EXAMPLE_LANGUAGES,
 } from './modelQuickStartExamples';
 
 const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
-  const [endpoint, setEndpoint] = useState('');
+  const [selection, setSelection] = useState(null);
+  const endpoint =
+    selection?.modelName === modelData.model_name ? selection.endpoint : '';
   const [language, setLanguage] = useState('Python');
   const examples = useMemo(
     () =>
@@ -35,31 +37,38 @@ const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
         serverAddress,
         typeof window === 'undefined' ? '' : window.location.origin,
         language,
+        { includeTextProtocolTemplates: true },
       ),
     [modelData, serverAddress, language],
   );
   const current =
-    examples.find((example) => example.endpoint === endpoint) || examples[0];
+    examples.find((example) => example.endpoint === endpoint) ||
+    examples.find((example) => example.declared) ||
+    examples[0];
 
   return (
     <div className='model-quickstart'>
       <div className='model-quickstart-toolbar'>
         {examples.length > 0 && (
-          <div
-            className='model-quickstart-protocols'
-            role='group'
-            aria-label={t('支持协议')}
-          >
-            {examples.map((example) => (
-              <button
-                type='button'
-                key={example.endpoint}
-                aria-pressed={current?.endpoint === example.endpoint}
-                onClick={() => setEndpoint(example.endpoint)}
-              >
-                {example.label}
-              </button>
-            ))}
+          <div className='model-quickstart-select'>
+            <select
+              aria-label={t('接口协议')}
+              value={current.endpoint}
+              onChange={(event) =>
+                setSelection({
+                  modelName: modelData.model_name,
+                  endpoint: event.target.value,
+                })
+              }
+            >
+              {examples.map((example) => (
+                <option key={example.endpoint} value={example.endpoint}>
+                  {example.label}
+                  {!example.declared && ` · ${t('未声明')}`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} aria-hidden='true' />
           </div>
         )}
         <div className='model-quickstart-actions'>
@@ -73,21 +82,28 @@ const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
           </Link>
         </div>
       </div>
+      {current && !current.declared && (
+        <p className='model-quickstart-note' role='status'>
+          {t('该模型尚未声明支持此协议，请先确认所用分组的接口配置。')}
+        </p>
+      )}
       {current ? (
         <div className='model-quickstart-code'>
           <div className='model-quickstart-code-heading'>
-            <select
-              className='model-quickstart-language'
-              aria-label={t('代码语言')}
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-            >
-              {MODEL_EXAMPLE_LANGUAGES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+            <div className='model-quickstart-select'>
+              <select
+                aria-label={t('代码语言')}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+              >
+                {MODEL_EXAMPLE_LANGUAGES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden='true' />
+            </div>
             <button type='button' onClick={() => copyText(current.code)}>
               <Copy size={15} aria-hidden='true' />
               {t('复制代码')}

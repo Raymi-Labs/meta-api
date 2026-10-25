@@ -6567,6 +6567,7 @@
     "用量类型": "Gebruikstype",
     "管理员暂未开启分组健康展示": "De beheerder heeft de weergave van de groepsstatus niet ingeschakeld",
     "请先加载分组调用表现": "Laad eerst de prestaties van de groepen",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "De uitvoersnelheid is het totale aantal uitvoertokens van geslaagde streamingverzoeken gedeeld door hun totale tijd van de eerste geldige uitvoer tot voltooiing. Zonder geldige steekproeven wordt — weergegeven."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "De uitvoersnelheid is het totale aantal uitvoertokens van geslaagde streamingverzoeken gedeeld door hun totale tijd van de eerste geldige uitvoer tot voltooiing. Zonder geldige steekproeven wordt — weergegeven.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Voor dit model is nog niet aangegeven of het dit protocol ondersteunt. Controleer eerst de API-configuratie van de groep die je gebruikt."
   }
 }

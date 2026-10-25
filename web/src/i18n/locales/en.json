@@ -6779,6 +6779,7 @@
     "用量类型": "Usage type",
     "管理员暂未开启分组健康展示": "The administrator has not enabled group health display",
     "请先加载分组调用表现": "Load group performance first",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Output speed is the total output tokens from successful streaming requests divided by their total duration from first valid output to completion. Shown as — when no valid samples are available."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Output speed is the total output tokens from successful streaming requests divided by their total duration from first valid output to completion. Shown as — when no valid samples are available.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Support for this protocol has not been specified for this model. Check the API configuration of the group you are using first."
   }
 }

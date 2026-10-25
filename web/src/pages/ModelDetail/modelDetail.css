@@ -321,25 +321,11 @@
   gap: 16px;
   margin-bottom: 16px;
 }
-.model-quickstart-protocols,
 .model-quickstart-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-.model-quickstart-protocols button {
-  border: 1px solid var(--semi-color-border);
-  padding: 7px 12px;
-  border-radius: 7px;
-  font-size: 12px;
-  background: var(--semi-color-bg-1);
-  color: var(--semi-color-text-1);
-}
-.model-quickstart-protocols button[aria-pressed='true'] {
-  border-color: var(--semi-color-primary);
-  color: var(--semi-color-primary);
-  background: var(--semi-color-primary-light-default);
 }
 .model-quickstart-actions a {
   display: inline-flex;
@@ -759,14 +745,34 @@
 .model-capability-grid li {
   margin: 8px 0;
 }
-.model-quickstart-language {
+.model-quickstart-select {
+  position: relative;
+  display: inline-flex;
   max-width: 100%;
-  padding: 9px 36px 9px 12px;
+}
+.model-quickstart-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 100%;
+  padding: 9px 44px 9px 14px;
   border: 1px solid var(--semi-color-border);
   border-radius: 8px;
   color: var(--semi-color-text-0);
   background: var(--semi-color-bg-1);
   font: inherit;
+  cursor: pointer;
+}
+.model-quickstart-select > svg {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--semi-color-text-2);
+  pointer-events: none;
+}
+.model-quickstart-select select:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
 }
 @media (max-width: 1100px) {
   .model-performance-grid {

@@ -7183,6 +7183,7 @@
     "用量类型": "Loại sử dụng",
     "管理员暂未开启分组健康展示": "Quản trị viên chưa bật hiển thị trạng thái nhóm",
     "请先加载分组调用表现": "Hãy tải hiệu năng gọi của nhóm trước",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Tốc độ đầu ra là tổng token đầu ra của các yêu cầu truyền dòng thành công chia cho tổng thời gian từ đầu ra hợp lệ đầu tiên đến khi hoàn tất. Hiển thị — khi không có mẫu hợp lệ."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Tốc độ đầu ra là tổng token đầu ra của các yêu cầu truyền dòng thành công chia cho tổng thời gian từ đầu ra hợp lệ đầu tiên đến khi hoàn tất. Hiển thị — khi không có mẫu hợp lệ.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Mô hình này chưa công bố hỗ trợ giao thức này. Trước tiên, hãy kiểm tra cấu hình API của nhóm bạn đang sử dụng."
   }
 }

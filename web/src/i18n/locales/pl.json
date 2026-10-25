@@ -6567,6 +6567,7 @@
     "用量类型": "Typ użycia",
     "管理员暂未开启分组健康展示": "Administrator nie włączył wyświetlania stanu grup",
     "请先加载分组调用表现": "Najpierw wczytaj dane wydajności grup",
-    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Szybkość generowania to łączna liczba tokenów wyjściowych z udanych żądań strumieniowych podzielona przez łączny czas od pierwszego prawidłowego wyniku do zakończenia. Gdy brak prawidłowych próbek, wyświetlane jest —."
+    "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Szybkość generowania to łączna liczba tokenów wyjściowych z udanych żądań strumieniowych podzielona przez łączny czas od pierwszego prawidłowego wyniku do zakończenia. Gdy brak prawidłowych próbek, wyświetlane jest —.",
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Dla tego modelu nie zadeklarowano jeszcze obsługi tego protokołu. Najpierw sprawdź konfigurację API używanej grupy."
   }
 }

@@ -217,12 +217,14 @@ puts response.body`;
 }
 
 // Match the selected model's declared protocols. A model name alone never
-// establishes which request formats its available channels support.
+// establishes which request formats its available channels support. The model
+// detail UI may also offer text protocol templates, explicitly marked undeclared.
 export function getModelQuickStartExamples(
   modelData,
   serverAddress,
   origin,
   language = 'cURL',
+  { includeTextProtocolTemplates = false } = {},
 ) {
   if (
     !MODEL_EXAMPLE_LANGUAGES.includes(language) ||
@@ -235,16 +237,30 @@ export function getModelQuickStartExamples(
   const baseUrl = getDocsBaseUrl(serverAddress, origin);
   if (!baseUrl) return [];
 
-  return PROTOCOLS.filter(([endpoint]) =>
-    modelData.supported_endpoint_types.includes(endpoint),
+  const declared = modelData.supported_endpoint_types;
+  const textProtocols = ['openai', 'openai-response', 'anthropic'];
+  const offerTemplates =
+    includeTextProtocolTemplates &&
+    declared.some((endpoint) => textProtocols.includes(endpoint)) &&
+    !declared.includes('image-generation');
+  return PROTOCOLS.filter(
+    ([endpoint]) =>
+      declared.includes(endpoint) ||
+      (offerTemplates && textProtocols.includes(endpoint)),
   ).map(([endpoint, label]) => {
-    const request = buildDocsRequestData(modelData, endpoint, baseUrl);
-    const command = buildDocsRequest(modelData, endpoint, baseUrl)
+    // The docs generator intentionally accepts declared endpoints only. Use a
+    // local copy for an explicitly requested template; never alter catalog data.
+    const exampleModel = declared.includes(endpoint)
+      ? modelData
+      : { ...modelData, supported_endpoint_types: [...declared, endpoint] };
+    const request = buildDocsRequestData(exampleModel, endpoint, baseUrl);
+    const command = buildDocsRequest(exampleModel, endpoint, baseUrl)
       .replace(/^```bash\n/, '')
       .replace(/\n```$/, '');
     return {
       endpoint,
       label,
+      declared: declared.includes(endpoint),
       code:
         language === 'cURL'
           ? `export NAN_API_KEY="YOUR_API_KEY"\n\n${command}`
