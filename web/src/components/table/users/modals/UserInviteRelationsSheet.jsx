@@ -36,6 +36,7 @@ import {
 import { API, renderGroup, renderQuota, showError } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import CardTable from '../../../common/ui/CardTable';
+import InvitePromotionStats from '../../../common/invitation/InvitePromotionStats';
 
 const { Text } = Typography;
 
@@ -245,6 +246,13 @@ const UserInviteRelationsSheet = ({
     >
       <Spin spinning={loading}>
         <div className='p-3 space-y-3'>
+          {visible && user?.id && (
+            <Card className='!rounded-2xl'>
+              <InvitePromotionStats
+                endpoint={`/api/user/${user.id}/invite-promotion`}
+              />
+            </Card>
+          )}
           <Card className='!rounded-2xl shadow-sm border-0'>
             <div className='flex flex-col gap-2'>
               {canGoBack ? (

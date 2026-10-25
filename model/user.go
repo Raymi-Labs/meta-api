@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -1357,12 +1358,16 @@ func GetUserById(id int, selectAll bool) (*User, error) {
 }
 
 func GetUserIdByAffCode(affCode string) (int, error) {
+	return GetUserIdByAffCodeWithContext(context.Background(), affCode)
+}
+
+func GetUserIdByAffCodeWithContext(ctx context.Context, affCode string) (int, error) {
 	affCode = strings.TrimSpace(affCode)
 	if affCode == "" {
 		return 0, errors.New("affCode 为空！")
 	}
 	var user User
-	err := DB.Select("id").First(&user, "aff_code = ? AND status = ?", affCode, common.UserStatusEnabled).Error
+	err := DB.WithContext(ctx).Select("id").First(&user, "aff_code = ? AND status = ?", affCode, common.UserStatusEnabled).Error
 	return user.Id, err
 }
 

@@ -1,0 +1,571 @@
+/* Invitation-only campaign scene. Ordinary registration retains its theme. */
+.invite-register-page {
+  min-height: calc(100svh - 64px);
+  background: radial-gradient(ellipse at 47% 55%, #143869 0, transparent 43%),
+    radial-gradient(ellipse at 4% 0%, #16366b 0, transparent 48%), #060e22;
+  color: #eaf3ff;
+}
+.invite-register-page > .blur-ball {
+  display: none;
+}
+.invite-register-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #84baff80 1px, transparent 1.5px),
+    linear-gradient(#4986de09 1px, transparent 1px),
+    linear-gradient(90deg, #4986de09 1px, transparent 1px);
+  background-size:
+    113px 97px,
+    64px 64px,
+    64px 64px;
+  mask-image: linear-gradient(transparent, #000 25%, #000 75%, transparent);
+}
+.invite-register-page::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  width: 650px;
+  height: 260px;
+  top: -220px;
+  left: 18%;
+  background: #3d8bff;
+  filter: blur(100px);
+  opacity: 0.35;
+}
+.invite-register-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.95fr) minmax(330px, 1fr);
+  align-items: center;
+  gap: 46px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 35px auto;
+}
+.invite-benefits {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  color: #eaf3ff;
+  padding: 12px 0;
+}
+.invite-benefits__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.invite-benefits__ring {
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  right: -30px;
+  top: 150px;
+  border: 1px solid #74bbff66;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 15px #4b8aff05,
+    0 0 0 43px #5eb3ff09,
+    0 0 75px #397bff20,
+    inset 0 0 45px #397bff16;
+}
+.invite-benefits__ring::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border: 1px dashed #8ec7ff35;
+  border-radius: 50%;
+  animation: invite-orbit 18s linear 2;
+}
+.invite-benefits__ring::after {
+  content: '';
+  position: absolute;
+  inset: 40px;
+  border: 1px solid #a2cfff18;
+  border-radius: 50%;
+}
+.invite-benefits__watermark {
+  position: absolute;
+  bottom: 46px;
+  left: 0;
+  color: #b5d6ff07;
+  font-size: 102px;
+  font-weight: 900;
+  letter-spacing: -6px;
+}
+.invite-benefits__crystal {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: rotate(30deg);
+  border: 1px solid #7ecbff99;
+  background: linear-gradient(140deg, #d8f6ff99, #4191ff22);
+  box-shadow: 0 0 24px #66bdff50;
+  border-radius: 5px;
+  animation: invite-drift 6s ease-in-out 3;
+}
+.invite-benefits__crystal--one {
+  right: 5px;
+  top: 158px;
+}
+.invite-benefits__crystal--two {
+  right: 320px;
+  bottom: 95px;
+  width: 18px;
+  height: 18px;
+  animation-delay: -2s;
+}
+.invite-benefits__brand {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+}
+.invite-benefits__wordmark {
+  color: #f0f7ff;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.invite-benefits__eyebrow {
+  color: #7d9cc7;
+  font-size: 9px;
+  letter-spacing: 2.2px;
+  padding-left: 16px;
+  border-left: 1px solid #699cd34d;
+}
+.invite-benefits__stage {
+  position: relative;
+  min-height: 674px;
+  display: flex;
+  align-items: center;
+}
+.invite-benefits__content {
+  position: relative;
+  z-index: 3;
+  width: 51%;
+  padding: 34px 0;
+}
+.invite-benefits__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid #5f9ce540;
+  border-radius: 30px;
+  background: #4078bb16;
+  color: #a4ceff;
+  font-size: 11px;
+  margin: 0 0 22px;
+}
+.invite-benefits h1 {
+  margin: 0;
+  font-size: clamp(40px, 4vw, 58px);
+  font-weight: 850;
+  line-height: 1.17;
+  letter-spacing: -2px;
+  color: #f5f8ff;
+  text-shadow: 0 3px 30px #388aff25;
+}
+.invite-benefits h1 > span {
+  color: #77c9ff;
+  background: linear-gradient(100deg, #beeaff 5%, #65b4ff 55%, #9c9fff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.invite-benefits__description {
+  margin: 18px 0 30px;
+  font-size: 14px;
+  color: #9ab1d2;
+  line-height: 1.8;
+}
+.invite-benefits__character {
+  position: absolute;
+  pointer-events: none;
+  right: -8px;
+  top: 6px;
+  width: 296px;
+  --figure-height: 620px;
+  height: calc(var(--figure-height) * 1.0864);
+  overflow: hidden;
+  filter: drop-shadow(0 0 18px #75b9ff50);
+  mask-image: linear-gradient(#000 0%, #000 97%, transparent 100%);
+  animation: invite-arrive 1.2s ease-out both;
+}
+.invite-benefits__character img {
+  display: block;
+  width: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: var(--figure-height);
+  max-width: none;
+}
+/* Join at the skirt: keep the upper 46% intact, lengthen only the lower part.
+   0.46 + 0.54 * 1.16 = 1.0864; translation keeps the seam aligned. */
+.invite-benefits__figure-upper {
+  clip-path: inset(0 0 54% 0);
+}
+.invite-benefits__figure-lower {
+  clip-path: inset(46% 0 0 0);
+  transform-origin: top left;
+  transform: translateY(-7.36%) scaleY(1.16);
+}
+.invite-benefits__models {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.invite-benefits__model {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  min-width: 0;
+  border: 1px solid #638bd436;
+  border-radius: 13px;
+  background: linear-gradient(100deg, #1c345ac9, #122440c9);
+  box-shadow: inset 0 1px #c6e2ff09;
+}
+.invite-benefits__model-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #84b9ff4d;
+  border-radius: 9px;
+  background: #2b579a36;
+  color: #a4ceff;
+  font-size: 18px;
+  font-weight: 700;
+}
+.invite-benefits__model h2 {
+  font-size: 20px;
+  font-weight: 750;
+  color: #e9f3ff;
+  margin: 0;
+  line-height: 1.3;
+}
+.invite-benefits__model p {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: #96adcd;
+  line-height: 1.5;
+}
+.invite-benefits__model-badge {
+  margin-left: auto;
+  align-self: flex-start;
+  flex: none;
+  font-size: 9px;
+  color: #a7d8ff;
+  background: #2c71bf30;
+  border: 1px solid #62a7ef29;
+  padding: 3px 5px;
+  border-radius: 5px;
+}
+.invite-benefits__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 28px;
+}
+.invite-benefits__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 15px 22px;
+  border: 1px solid #93c6ff88;
+  border-radius: 11px;
+  background: linear-gradient(110deg, #2879ed, #525bef);
+  color: #fff;
+  box-shadow:
+    0 6px 30px #2b72ff4d,
+    inset 0 1px #b5dbff50;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.invite-benefits__cta:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 36px #2b72ff70;
+}
+.invite-benefits__cta:focus-visible,
+.invite-benefits__prices:focus-visible {
+  outline: 3px solid #a7dbff;
+  outline-offset: 4px;
+}
+.invite-benefits__prices {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9fbee7;
+  font-size: 12px;
+  text-decoration: none;
+}
+.invite-benefits__prices:hover {
+  color: #d6edff;
+}
+.invite-benefits__footer {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  border-top: 1px solid #92b8ed25;
+  padding-top: 18px;
+  color: #9bb5d7;
+  font-size: 11px;
+}
+.invite-benefits__footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#invite-register-form {
+  scroll-margin-top: 88px;
+  min-width: 0;
+}
+.invite-register-page #invite-register-form {
+  --semi-color-text-0: #edf4ff;
+  --semi-color-text-1: #c0d0e8;
+  --semi-color-text-2: #99afd0;
+  --semi-color-text-3: #8a9cb7;
+  --semi-color-bg-0: #102039;
+  --semi-color-bg-1: #102039;
+  --semi-color-bg-2: #132642;
+  --semi-color-bg-3: #192e4c;
+  --semi-color-fill-0: #ffffff07;
+  --semi-color-fill-1: #94b7eb12;
+  --semi-color-fill-2: #94b7eb20;
+  --semi-color-border: #7fa4da30;
+  --semi-color-primary: #73b8ff;
+  --semi-color-primary-hover: #a1d0ff;
+  color: #eaf3ff;
+}
+.invite-register-page #invite-register-form > .flex > .w-full > .semi-card {
+  background: linear-gradient(150deg, #172b48ed, #0c192ded);
+  border: 1px solid #6890c24a !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 24px 70px #0004,
+    inset 0 1px #b5d7ff1c;
+  position: relative;
+}
+.invite-register-page #invite-register-form .semi-typography {
+  color: #e9f2ff !important;
+}
+.invite-register-page #invite-register-form .semi-input-wrapper {
+  background: #060f2270;
+  border: 1px solid #709bd329;
+  border-radius: 9px;
+}
+.invite-register-page #invite-register-form .semi-input-wrapper-focus {
+  border-color: #69abff;
+  box-shadow: 0 0 0 3px #428bff20;
+}
+.invite-register-page #invite-register-form .semi-input {
+  color: #eaf3ff;
+}
+.invite-register-page #invite-register-form .semi-input::placeholder {
+  color: #899dbb;
+}
+.invite-register-page
+  #invite-register-form
+  .semi-button-primary[type='submit'] {
+  background: linear-gradient(110deg, #2879ed, #525bef);
+  color: white;
+  box-shadow: 0 5px 20px #2879ed35;
+  min-height: 40px;
+}
+.invite-register-page #invite-register-form a {
+  color: #9acbff;
+}
+@keyframes invite-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes invite-drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(30deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(42deg);
+  }
+}
+@keyframes invite-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .invite-register-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(310px, 1fr);
+    gap: 28px;
+  }
+  .invite-benefits__content {
+    width: 55%;
+  }
+  .invite-benefits__character {
+    width: 239px;
+    --figure-height: 510px;
+    right: -25px;
+    top: 62px;
+  }
+  .invite-benefits__model {
+    flex-wrap: wrap;
+  }
+  .invite-benefits__model p {
+    display: none;
+  }
+}
+@media (max-width: 1023px) {
+  .invite-register-layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 740px;
+    gap: 36px;
+    margin-top: 30px;
+  }
+}
+@media (max-width: 600px) {
+  .invite-register-page {
+    padding-top: 20px;
+  }
+  .invite-benefits {
+    padding: 0;
+  }
+  .invite-benefits__brand {
+    gap: 12px;
+  }
+  .invite-benefits__wordmark {
+    font-size: 17px;
+  }
+  .invite-benefits__eyebrow {
+    font-size: 8px;
+    padding-left: 12px;
+    letter-spacing: 1.4px;
+  }
+  .invite-benefits__stage {
+    display: block;
+    min-height: 0;
+    padding-top: 32px;
+  }
+  .invite-benefits__content {
+    width: 100%;
+    padding: 0;
+  }
+  .invite-benefits__kicker {
+    max-width: 62%;
+    padding: 6px 8px;
+    font-size: 10px;
+    margin-bottom: 20px;
+  }
+  .invite-benefits h1 {
+    font-size: 38px;
+    max-width: 62%;
+    letter-spacing: -1px;
+  }
+  .invite-benefits__description {
+    max-width: 58%;
+    min-height: 54px;
+    font-size: 12px;
+    margin: 14px 0 25px;
+  }
+  .invite-benefits__character {
+    --figure-height: 310px;
+    width: 145px;
+    top: 7px;
+    right: -10px;
+    z-index: 1;
+    mask-image: linear-gradient(transparent, #000 8%, #000 70%, transparent);
+  }
+  .invite-benefits__models {
+    position: relative;
+    z-index: 3;
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+  .invite-benefits__model {
+    display: block;
+    padding: 15px 12px;
+    background: linear-gradient(140deg, #1b3558, #101f38);
+  }
+  .invite-benefits__model-mark,
+  .invite-benefits__model p {
+    display: none;
+  }
+  .invite-benefits__model h2 {
+    font-size: 22px;
+  }
+  .invite-benefits__model-badge {
+    display: inline-block;
+    margin-top: 8px;
+  }
+  .invite-benefits__actions {
+    align-items: center;
+    margin: 22px 0;
+    gap: 15px;
+  }
+  .invite-benefits__cta {
+    width: 100%;
+  }
+  .invite-benefits__footer {
+    gap: 12px;
+    font-size: 10px;
+  }
+  .invite-benefits__ring {
+    width: 300px;
+    height: 300px;
+    right: -85px;
+    top: 60px;
+  }
+  .invite-benefits__watermark {
+    font-size: 60px;
+  }
+  .invite-benefits__crystal--two {
+    right: 145px;
+    bottom: 220px;
+  }
+}
+@media (max-width: 359px) {
+  .invite-benefits h1 {
+    font-size: 32px;
+  }
+  .invite-benefits__character {
+    width: 125px;
+    --figure-height: 267px;
+    right: -13px;
+  }
+  .invite-benefits__kicker {
+    font-size: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .invite-benefits *,
+  .invite-benefits *::before,
+  .invite-benefits *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

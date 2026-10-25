@@ -72,6 +72,7 @@ const EditTokenModal = (props) => {
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
   const formApiRef = useRef(null);
+  const nameFieldRef = useRef(null);
   const loadedTokenValuesRef = useRef(null);
   const [models, setModels] = useState([]);
   const [availableGroups, setAvailableGroups] = useState({
@@ -1241,6 +1242,13 @@ const EditTokenModal = (props) => {
           }}
           onSubmit={submit}
           onSubmitFail={(errs) => {
+            if (!String(formApiRef.current?.getValue('name') || '').trim()) {
+              nameFieldRef.current?.scrollIntoView({ block: 'nearest' });
+              nameFieldRef.current
+                ?.querySelector('input')
+                ?.focus({ preventScroll: true });
+              return;
+            }
             if (quotaSectionRef.current) quotaSectionRef.current.open = true;
             if (advancedSectionRef.current)
               advancedSectionRef.current.open = true;
@@ -1266,14 +1274,22 @@ const EditTokenModal = (props) => {
               {/* 基础信息 */}
               <Card className='token-editor__basic !rounded-lg border-0'>
                 <Row gutter={12}>
-                  <Col span={24}>
-                    <Form.Input
-                      field='name'
-                      label={t('名称')}
-                      placeholder={t('请输入名称')}
-                      rules={[{ required: true, message: t('请输入名称') }]}
-                      showClear
-                    />
+                  <Col span={24} className='token-editor__name'>
+                    <div ref={nameFieldRef}>
+                      <Form.Input
+                        field='name'
+                        label={t('名称')}
+                        placeholder={t('请输入名称')}
+                        rules={[
+                          {
+                            required: true,
+                            whitespace: true,
+                            message: t('请输入令牌名称'),
+                          },
+                        ]}
+                        showClear
+                      />
+                    </div>
                   </Col>
                   <Col span={24}>
                     <Form.Input

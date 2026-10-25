@@ -37,6 +37,8 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import InvitePromotionModal from './modals/InvitePromotionModal';
+
 const { Text } = Typography;
 
 const InvitationCard = ({
@@ -53,6 +55,7 @@ const InvitationCard = ({
   onOpenInviteCommissions,
 }) => {
   const [newCode, setNewCode] = useState('');
+  const [promotionVisible, setPromotionVisible] = useState(false);
   const [savingCode, setSavingCode] = useState(false);
   const hasAvailableReward =
     !!userState?.user?.aff_quota && userState?.user?.aff_quota > 0;
@@ -231,6 +234,13 @@ const InvitationCard = ({
               </Button>
             }
           />
+          <Button
+            className='mt-3 w-full'
+            onClick={() => setPromotionVisible(true)}
+            disabled={!affLink}
+          >
+            {t('推广素材与点击统计')}
+          </Button>
           {/* 设置专属短邀请码：链接变 域名/i/<code>，好记好分享 */}
           <Input
             value={newCode}
@@ -307,6 +317,11 @@ const InvitationCard = ({
           </div>
         </Card>
       </Space>
+      <InvitePromotionModal
+        visible={promotionVisible}
+        onCancel={() => setPromotionVisible(false)}
+        affLink={affLink}
+      />
     </Card>
   );
 };

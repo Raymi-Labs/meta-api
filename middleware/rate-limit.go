@@ -362,3 +362,8 @@ func getRateLimitExpiration(duration int64) time.Duration {
 func SearchRateLimit() func(c *gin.Context) {
 	return userRateLimitFactory(common.SearchRateLimitNum, common.SearchRateLimitDuration, "SR")
 }
+
+// InvitePromotionRateLimit bounds public short-link database writes per IP.
+func InvitePromotionRateLimit() func(c *gin.Context) {
+	return rateLimitFactory(60, 60, "IPROMO")
+}
