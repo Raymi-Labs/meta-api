@@ -26,32 +26,24 @@ const PricingTopSection = ({ sidebarProps, ...props }) => {
   const { filterGroup, t } = sidebarProps;
   return (
     <>
-      <div className='pricing-section-heading'>
-        <h1>{t('模型广场')}</h1>
-        <span
-          className='pricing-current-vendor'
-          title={sidebarProps.filterVendor}
-        >
-          {sidebarProps.filterVendor === 'all'
-            ? t('全部供应商')
-            : sidebarProps.filterVendor === 'unknown'
-              ? t('未知供应商')
-              : sidebarProps.filterVendor}
-        </span>
-        <span className='pricing-title-count'>
-          {t('共 {{count}} 个模型', {
-            count: props.filteredModels?.length ?? 0,
-          })}
+      <SearchActions {...props} setShowFilterModal={setShowFilterModal} />
+      <div className='pricing-catalog-context'>
+        <p className='pricing-price-context' aria-live='polite'>
+          {filterGroup === 'all'
+            ? t('全部分组：每个模型展示其最低适用倍率价格')
+            : t('当前分组：{{group}} · 价格已包含分组倍率', {
+                group: filterGroup,
+              })}
+        </p>
+        <span className='pricing-price-mode'>
+          {props.showWithRecharge
+            ? props.priceConvertMode === 'package'
+              ? t('套餐价格')
+              : t('充值价格')
+            : props.currency}{' '}
+          · 1{props.tokenUnit} Tokens
         </span>
       </div>
-      <SearchActions {...props} setShowFilterModal={setShowFilterModal} />
-      <p className='pricing-price-context' aria-live='polite'>
-        {filterGroup === 'all'
-          ? t('全部分组：每个模型展示其最低适用倍率价格')
-          : t('当前分组：{{group}} · 价格已包含分组倍率', {
-              group: filterGroup,
-            })}
-      </p>
       <PricingFilterModal
         visible={showFilterModal}
         onClose={() => setShowFilterModal(false)}

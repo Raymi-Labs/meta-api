@@ -136,3 +136,30 @@ assert.deepEqual(
 );
 
 console.log('tiered billing display tests passed');
+
+// Catalog K/M switching changes the reference price and its unit together.
+const thousandTokenPricing = buildFirstTierGroupPriceItems({
+  tiers: [tier],
+  effectiveBillingRatio: 0.5,
+  displayPrice,
+  tokenUnit: 'K',
+  precision: 6,
+});
+assert.equal(thousandTokenPricing.items[0].value, '¥0.000500');
+assert.equal(thousandTokenPricing.items[1].value, '¥0.003000');
+assert.equal(thousandTokenPricing.items[2].value, '¥0.000050');
+assert.ok(
+  thousandTokenPricing.items.every((item) => item.suffix === ' / 1K Tokens'),
+);
+const freeTierPricing = buildFirstTierGroupPriceItems({
+  tiers: [tier],
+  effectiveBillingRatio: 0,
+  displayPrice,
+  tokenUnit: 'K',
+});
+assert.ok(freeTierPricing.items.every((item) => item.value === '¥0.0000'));
+assert.deepEqual(
+  buildFirstTierGroupPriceItems({ tiers: [], displayPrice, tokenUnit: 'K' })
+    .items,
+  [],
+);

@@ -6739,6 +6739,8 @@
     "聊聊你的下一步。": "Let's talk about your next step.",
     "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Tell us your use case, target models and expected usage. We can work through an integration plan together.",
     "你的应用": "Your app",
-    "服务支持": "Support"
+    "服务支持": "Support",
+    "卡片视图": "Card view",
+    "加载失败，请重试": "Failed to load. Please try again."
   }
 }

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Select } from '@douyinfe/semi-ui';
 import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
 
 const PricingDisplaySettings = ({
@@ -26,6 +27,8 @@ const PricingDisplaySettings = ({
   priceConvertMode,
   setPriceConvertMode,
   availablePlans = [],
+  selectedPlanId,
+  setSelectedPlanId,
   currency,
   setCurrency,
   showRatio,
@@ -124,6 +127,18 @@ const PricingDisplaySettings = ({
         t={t}
       />
 
+      {priceConvertMode === 'package' && hasAvailablePlans && (
+        <Select
+          aria-label={t('选择套餐')}
+          value={selectedPlanId}
+          onChange={setSelectedPlanId}
+          style={{ width: '100%', marginBottom: 16 }}
+          optionList={availablePlans.map((plan) => ({
+            value: plan.id,
+            label: `${plan.title} · ${plan.currency || 'CNY'} ${plan.price_amount}`,
+          }))}
+        />
+      )}
       <div style={{ display: 'none' }} aria-hidden='true'>
         <SelectableButtonGroup
           pills={pills}

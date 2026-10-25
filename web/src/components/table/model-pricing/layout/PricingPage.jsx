@@ -20,7 +20,9 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Layout, ImagePreview } from '@douyinfe/semi-ui';
 import PricingSidebar from './PricingSidebar';
-import PricingVendors from '../filter/PricingVendors';
+import PricingCatalogFilters from './header/PricingCatalogFilters';
+import { Link } from 'react-router-dom';
+import './pricingCatalog.css';
 import PricingContent from './content/PricingContent';
 import ModelDetailSideSheet from '../modal/ModelDetailSideSheet';
 import { useModelPricingData } from '../../../../hooks/model-pricing/useModelPricingData';
@@ -31,19 +33,41 @@ const PricingPage = () => {
   const { Sider, Content } = Layout;
   const isMobile = useIsMobile();
   const [showRatio, setShowRatio] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState(isMobile ? 'card' : 'table');
+  const [viewMode, setViewMode] = React.useState('card');
+  const resultsRef = React.useRef(null);
+  const changePage = (page) => {
+    pricingData.setCurrentPage(page);
+    resultsRef.current?.scrollIntoView({ block: 'start' });
+  };
   const allProps = {
     ...pricingData,
+    setCurrentPage: changePage,
     showRatio,
     setShowRatio,
     viewMode,
     setViewMode,
-    defaultViewMode: isMobile ? 'card' : 'table',
+    defaultViewMode: 'card',
   };
 
   return (
-    <div className='pricing-page'>
-      <PricingVendors {...allProps} allModels={pricingData.models} horizontal />
+    <div className='pricing-page pricing-catalog'>
+      <header className='pricing-catalog-heading'>
+        <div>
+          <div className='pricing-catalog-title'>
+            <h1>{pricingData.t('模型广场')}</h1>
+            <span className='pricing-title-count'>
+              {pricingData.t('共 {{count}} 个模型', {
+                count: pricingData.models.length,
+              })}
+            </span>
+          </div>
+          <p>{pricingData.t('按供应商、分组、类型、端点和标签筛选模型。')}</p>
+        </div>
+        <Link to='/docs/api-examples'>
+          {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
+        </Link>
+      </header>
+      <PricingCatalogFilters {...allProps} />
       <Layout className='pricing-layout'>
         {!isMobile && (
           <Sider className='pricing-scroll-hide pricing-sidebar'>
@@ -54,6 +78,7 @@ const PricingPage = () => {
         <Content className='pricing-scroll-hide pricing-content'>
           <PricingContent
             {...allProps}
+            resultsRef={resultsRef}
             isMobile={isMobile}
             sidebarProps={allProps}
           />

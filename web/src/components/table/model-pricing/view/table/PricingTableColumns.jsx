@@ -20,14 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Button } from '@douyinfe/semi-ui';
 import { IconCopy } from '@douyinfe/semi-icons';
-import {
-  calculateModelPrice,
-  getModelPriceItems,
-  parseTiersFromExpr,
-  formatTimeRatioValue,
-} from '../../../../../helpers';
-import { buildFirstTierGroupPriceItems } from '../../../../../helpers/tieredBillingDisplay';
-import { splitBillingExprAndRequestRules } from '../../../../../pages/Setting/Ratio/components/requestRuleExpr';
+import { formatTimeRatioValue } from '../../../../../helpers';
+import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
 
 export const getPricingTableColumns = ({
   t,
@@ -45,31 +39,22 @@ export const getPricingTableColumns = ({
   const cache = new WeakMap();
   const pricing = (record) => {
     if (!cache.has(record)) {
-      const data = calculateModelPrice({
+      cache.set(
         record,
-        selectedGroup,
-        groupRatio,
-        timeRatioMap,
-        tokenUnit,
-        displayPrice,
-        currency,
-        quotaDisplayType: siteDisplayType,
-      });
-      const { billingExpr } = splitBillingExprAndRequestRules(
-        record.billing_expr || '',
-      );
-      const tier = data.isDynamicPricing
-        ? buildFirstTierGroupPriceItems({
-            tiers: parseTiersFromExpr(billingExpr),
-            effectiveBillingRatio: data.effectiveBillingRatio,
+        getModelCatalogPricing(
+          {
+            record,
+            selectedGroup,
+            groupRatio,
+            timeRatioMap,
+            tokenUnit,
             displayPrice,
-            t,
-          })
-        : null;
-      cache.set(record, {
-        data,
-        items: tier ? tier.items : getModelPriceItems(data, t, siteDisplayType),
-      });
+            currency,
+            quotaDisplayType: siteDisplayType,
+          },
+          t,
+        ),
+      );
     }
     return cache.get(record);
   };

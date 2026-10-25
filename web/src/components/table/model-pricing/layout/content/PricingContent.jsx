@@ -18,16 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState } from 'react';
-import { Tabs, TabPane } from '@douyinfe/semi-ui';
+import { Tabs, TabPane, Button, Empty } from '@douyinfe/semi-ui';
 import PricingTopSection from '../header/PricingTopSection';
 import PricingView from './PricingView';
 import GroupHealthOverview from '../../view/GroupHealthOverview';
 
-const PricingContent = ({ isMobile, sidebarProps, ...props }) => {
+const PricingContent = ({ isMobile, sidebarProps, resultsRef, ...props }) => {
   const [activeTab, setActiveTab] = useState('models');
   return (
-    <div className='pricing-content-body'>
-      {/* 固定的顶部区域（分类介绍 + 搜索和操作） */}
+    <div className='pricing-content-body' ref={resultsRef}>
+      {/* Search, display controls and existing health tab. */}
       <div className='pricing-search-header'>
         <PricingTopSection
           {...props}
@@ -56,15 +56,39 @@ const PricingContent = ({ isMobile, sidebarProps, ...props }) => {
           type='line'
           size='small'
         >
-          <TabPane tab={props.t('模型列表')} itemKey='models' />
+          <TabPane
+            tab={
+              <span>
+                {props.t('模型列表')}{' '}
+                <span className='pricing-result-count'>
+                  {props.filteredModels.length}
+                </span>
+              </span>
+            }
+            itemKey='models'
+          />
           <TabPane tab={props.t('分组健康')} itemKey='health' />
         </Tabs>
       </div>
 
-      {/* 可滚动的内容区域 */}
+      {/* Results follow the page scroll; the group sidebar scrolls independently. */}
       <div className='pricing-scroll-hide pricing-view-container'>
-        {activeTab === 'health' ? (
+        {props.loadError ? (
+          <div className='pricing-catalog-empty' role='alert'>
+            <p>{props.t('加载失败，请重试')}</p>
+            <Button onClick={props.refresh} loading={props.loading}>
+              {props.t('重试')}
+            </Button>
+          </div>
+        ) : activeTab === 'health' ? (
           <GroupHealthOverview {...props} />
+        ) : !props.loading && props.filteredModels.length === 0 ? (
+          <div className='pricing-catalog-empty'>
+            <Empty description={props.t('搜索无结果')} />
+            <Button onClick={props.resetCatalogFilters}>
+              {props.t('重置')}
+            </Button>
+          </div>
         ) : (
           <PricingView {...props} viewMode={sidebarProps.viewMode} />
         )}

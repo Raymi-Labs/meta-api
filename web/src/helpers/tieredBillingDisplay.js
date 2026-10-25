@@ -33,6 +33,8 @@ export const buildFirstTierGroupPriceItems = ({
   tiers,
   effectiveBillingRatio,
   displayPrice,
+  tokenUnit = 'M',
+  precision = 4,
   t = (value) => value,
 }) => {
   const firstTier = Array.isArray(tiers) ? tiers[0] : null;
@@ -49,10 +51,11 @@ export const buildFirstTierGroupPriceItems = ({
       key: `tiered-${variable.key}`,
       label: t(variable.label),
       value: formatModelPricingUnitPrice(
-        unitPriceUSD * safeRatio,
+        (unitPriceUSD * safeRatio) / (tokenUnit === 'K' ? 1000 : 1),
         displayPrice,
+        precision,
       ),
-      suffix: ' / 1M Tokens',
+      suffix: tokenUnit === 'K' ? ' / 1K Tokens' : ' / 1M Tokens',
     };
   }).filter(Boolean);
 

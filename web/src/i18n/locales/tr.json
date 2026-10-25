@@ -6527,6 +6527,8 @@
     "聊聊你的下一步。": "Bir sonraki adımınızı konuşalım.",
     "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Kullanım senaryonuzu, hedeflediğiniz modelleri ve beklenen kullanımınızı bize anlatın; entegrasyon planını birlikte şekillendirelim.",
     "你的应用": "Uygulamanız",
-    "服务支持": "Destek"
+    "服务支持": "Destek",
+    "卡片视图": "Kart görünümü",
+    "加载失败，请重试": "Yükleme başarısız. Lütfen tekrar deneyin."
   }
 }

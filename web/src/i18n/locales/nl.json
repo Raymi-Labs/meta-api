@@ -6527,6 +6527,8 @@
     "聊聊你的下一步。": "Laten we je volgende stap bespreken.",
     "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Vertel ons over je toepassing, de gewenste modellen en het verwachte gebruik, zodat we samen een integratieaanpak kunnen uitwerken.",
     "你的应用": "Je app",
-    "服务支持": "Ondersteuning"
+    "服务支持": "Ondersteuning",
+    "卡片视图": "Kaartweergave",
+    "加载失败，请重试": "Laden mislukt. Probeer het opnieuw."
   }
 }

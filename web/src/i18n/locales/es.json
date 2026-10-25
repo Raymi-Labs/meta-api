@@ -6527,6 +6527,8 @@
     "聊聊你的下一步。": "Hablemos de tu siguiente paso.",
     "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Cuéntanos tu caso de uso, los modelos que quieres utilizar y el uso previsto para definir juntos la solución de integración.",
     "你的应用": "Tu aplicación",
-    "服务支持": "Asistencia"
+    "服务支持": "Asistencia",
+    "卡片视图": "Vista de tarjetas",
+    "加载失败，请重试": "No se pudo cargar. Vuelve a intentarlo."
   }
 }

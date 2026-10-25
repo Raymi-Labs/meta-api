@@ -135,6 +135,8 @@ const FilterModalContent = ({ sidebarProps, t }) => {
         priceConvertMode={priceConvertMode}
         setPriceConvertMode={setPriceConvertMode}
         availablePlans={availablePlans}
+        selectedPlanId={sidebarProps.selectedPlanId}
+        setSelectedPlanId={sidebarProps.setSelectedPlanId}
         currency={currency}
         setCurrency={setCurrency}
         showRatio={showRatio}
