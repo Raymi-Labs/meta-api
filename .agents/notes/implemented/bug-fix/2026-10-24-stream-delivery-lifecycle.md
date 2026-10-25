@@ -18,6 +18,8 @@ Responses 只在完整、有效且未失败的 completed 事件成功写出并 f
 
 可确认的本地下游写错使用 downstream_write_failed/502/skip-retry，controller 在健康采样时记为未归因失败并保留分母，不惩罚上游渠道、不切换重放且沿用失败退款。该分类要求本地 error 类型且没有 upstream status，供应商同名 error 不适用；可确认 context.Canceled 继续走客户端断开分类。
 
+DeepSeek 官方 Messages 精确历史思考拒绝的纯保活补救由[独立例外](2026-10-25-deepseek-heartbeat-adjustment.md)持有，复用本篇 writer 的交接并增加来源证据；不放宽通用重放规则。
+
 ## Existing notes
 
 [K3 请求完整性](../../implemented/bug-fix/2026-09-29-kimi-request-stream-integrity.md)、[空输出保护](../../implemented/bug-fix/2026-10-13-responses-empty-output-no-shared-cooldown.md)部分重叠，保留失败退款、工具身份、禁重放及空输出不触发共享冷却；本篇补充完成交接和 worker 生命周期。[分组健康](../../implemented/bug-fix/2026-10-22-group-health-outcome-accounting.md)继续持有健康分类，仅共用实际写入证据，不更改分母或数据库。通知额度、任务计费与其他活跃笔记不持有本决定，无需替换。

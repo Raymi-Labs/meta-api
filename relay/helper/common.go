@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
@@ -119,8 +120,11 @@ func PingData(c *gin.Context) error {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
 
-	if _, err := c.Writer.Write([]byte(": PING\n\n")); err != nil {
+	const payload = ": PING\n\n"
+	if n, err := c.Writer.Write([]byte(payload)); err != nil {
 		return fmt.Errorf("write ping data failed: %w", err)
+	} else if n != len(payload) {
+		return fmt.Errorf("write ping data failed: %w", io.ErrShortWrite)
 	}
 	return FlushWriter(c)
 }
@@ -138,8 +142,11 @@ func ClaudePingData(c *gin.Context) error {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
 
-	if _, err := c.Writer.Write([]byte("event: ping\ndata: {\"type\":\"ping\"}\n\n")); err != nil {
+	const payload = "event: ping\ndata: {\"type\":\"ping\"}\n\n"
+	if n, err := c.Writer.Write([]byte(payload)); err != nil {
 		return fmt.Errorf("write claude ping data failed: %w", err)
+	} else if n != len(payload) {
+		return fmt.Errorf("write claude ping data failed: %w", io.ErrShortWrite)
 	}
 	return FlushWriter(c)
 }

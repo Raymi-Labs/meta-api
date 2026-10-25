@@ -102,6 +102,9 @@ func tryHealClaudeParamError(
 	if message == "" {
 		return httpResp, false
 	}
+	if adjusted, effort, ok := adaptRejectedClaudeThinking(info, requestJSON, message); ok {
+		return retryClaudeAdaptiveThinking(c, info, adaptor, httpResp, body, adjusted, effort)
+	}
 	if strings.Contains(strings.ToLower(message), emptyClaudeThinkingError) {
 		cleanedJSON, result, err := sanitizeEmptyClaudeThinkingJSON(requestJSON)
 		if err != nil || !result.Changed() {

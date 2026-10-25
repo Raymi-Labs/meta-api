@@ -10,7 +10,7 @@ Claude 渠道将 Chat 转为 Messages 后，上游明确返回 `does not support
 
 复用 `relay/claude_param_heal.go` 与现有 Chat、Messages 入口，在当前请求的真实 HTTP 400、结构化 invalid_request_error 中识别明确的采样参数拒绝；只删除 temperature/top_p/top_k 中明确指认且实际存在的一项，并在原渠道最多重发一次。不缓存或传播供应商能力，不新增模型前缀名单、渠道 ID 特判或配置表。
 
-错误体有界读取且完整恢复，取消、已输出响应、透传、错误类型不符、歧义或语义参数拒绝均不新增重放。沿用既有空 thinking 修复。使用已有管理员 attempts 记录原始拒绝与调整参数，成功只结算最终响应，失败保留退款链。模型不可用给出模型名/令牌分组的具体提示，不静默替换模型。
+错误体有界读取且完整恢复，取消、已输出响应、透传、错误类型不符、歧义或其他语义参数拒绝均不由采样识别器新增重放。沿用既有空 thinking 修复。使用已有管理员 attempts 记录原始拒绝与调整参数，成功只结算最终响应，失败保留退款链。模型不可用给出模型名/令牌分组的具体提示，不静默替换模型。
 
 ## Alternatives considered
 
@@ -34,3 +34,5 @@ Claude 渠道将 Chat 转为 Messages 后，上游明确返回 `does not support
 活跃笔记审计：Claude thinking/beta、审核身份头笔记部分相邻，保留其协议与身份边界；Kimi 请求保真、DeepSeek Responses 的参数覆盖约定不属于本次 Claude 修复。无现有采样自愈笔记归属。
 
 [DeepSeek 历史思考兼容](2026-10-23-deepseek-messages-thinking-history.md)复用错误体读取与调整记录，但使用独立的官方域名、错误文案和本次降级边界，不扩展采样参数删除范围。
+
+[明确 adaptive 拒绝兼容](2026-10-25-claude-adaptive-refusal-heal.md)与采样共用一次补救预算，但另行约束手动思考模式迁移、显式关闭、档位保留和未知字段边界；不扩大采样参数删除名单。

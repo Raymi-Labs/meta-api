@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
@@ -40,7 +41,7 @@ func tryHealDeepSeekThinkingError(c *gin.Context, info *relaycommon.RelayInfo, a
 	if model_setting.GetGlobalSettings().PassThroughRequestEnabled || info.ChannelSetting.PassThroughBodyEnabled || c.GetBool(deepSeekThinkingHealDoneKey) {
 		return resp, false
 	}
-	if c.Request == nil || c.Request.Context().Err() != nil || c.Writer == nil || c.Writer.Written() {
+	if !canAdjustDeepSeekThinking(c) {
 		return resp, false
 	}
 	requestURL, err := adaptor.GetRequestURL(info)
@@ -51,7 +52,7 @@ func tryHealDeepSeekThinkingError(c *gin.Context, info *relaycommon.RelayInfo, a
 		return resp, false
 	}
 	body, ok := peekClaudeHealError(resp)
-	if !ok || c.Request.Context().Err() != nil || c.Writer.Written() || !service.IsDeepSeekMissingThinkingHistory(claudeHealErrorMessage(body)) {
+	if !ok || !canAdjustDeepSeekThinking(c) || !service.IsDeepSeekMissingThinkingHistory(claudeHealErrorMessage(body)) {
 		return resp, false
 	}
 	adjusted, err := sjson.SetBytes(requestJSON, "thinking.type", "disabled")
@@ -60,6 +61,15 @@ func tryHealDeepSeekThinkingError(c *gin.Context, info *relaycommon.RelayInfo, a
 	}
 	c.Set(deepSeekThinkingHealDoneKey, true)
 	recordClaudeAdjustment(c, info, resp, body, deepSeekThinkingAdjustment)
+	if c.Writer.Written() {
+		// Headers were already committed by a known ping. Record the exception
+		// in the existing admin-only attempt instead of claiming a header was sent.
+		if value, exists := c.Get("request_failure_attempts"); exists {
+			if attempts, ok := value.([]map[string]interface{}); ok && len(attempts) > 0 {
+				attempts[len(attempts)-1]["after_keepalive"] = true
+			}
+		}
+	}
 	logger.LogWarn(c, fmt.Sprintf("request adjustment: DeepSeek rejected missing historical thinking; disabling thinking for this request and retrying once (channel #%d, model %s)", info.ChannelId, info.UpstreamModelName))
 	retry, retryErr := adaptor.DoRequest(c, info, bytes.NewReader(adjusted))
 	if retryErr != nil {
@@ -74,6 +84,22 @@ func tryHealDeepSeekThinkingError(c *gin.Context, info *relaycommon.RelayInfo, a
 		_ = resp.Body.Close()
 	}
 	info.ReasoningEffort = "none"
-	c.Header("X-Request-Adjusted", deepSeekThinkingAdjustment)
+	// A replay can restart heartbeats after the eligibility check stopped them.
+	// Join before deciding whether the adjustment header can still be delivered.
+	helper.StopStreamKeepAlive(c)
+	if !c.Writer.Written() {
+		c.Header("X-Request-Adjusted", deepSeekThinkingAdjustment)
+	} else if value, exists := c.Get("request_failure_attempts"); exists {
+		if attempts, ok := value.([]map[string]interface{}); ok && len(attempts) > 0 {
+			attempt := attempts[len(attempts)-1]
+			if attempt["adjustment"] == deepSeekThinkingAdjustment {
+				attempt["adjustment_header_not_delivered"] = true
+			}
+		}
+	}
 	return healed, true
+}
+
+func canAdjustDeepSeekThinking(c *gin.Context) bool {
+	return helper.CanAdjustClaudeRequestBeforeOutput(c)
 }

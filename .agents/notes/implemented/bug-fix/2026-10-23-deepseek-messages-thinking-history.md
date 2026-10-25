@@ -12,6 +12,8 @@ Status: implemented
 
 最终错误从保留的结构化上游 message 识别该精确文案，避免本地追加的 request id 干扰分类，提示完整回传历史思考、新建会话或关闭思考；不向普通用户暴露供应商地址和请求内容。调整通过 `X-Request-Adjusted: deepseek_thinking_disabled` 和管理员 attempts 明确记录，最终用量日志把 reasoning_effort 标为 none，不能将非思考答复伪装成正常思考模式。
 
+纯保活已经提交响应的定向例外由[纯保活补救](2026-10-25-deepseek-heartbeat-adjustment.md)接管；正文/工具输出、写失败及其他供应商仍沿用本篇边界。
+
 ## Existing capabilities and notes audit
 
 [Claude 采样兼容](../../implemented/bug-fix/2026-10-19-claude-sampling-compatibility.md)部分重叠，继续持有采样参数范围和有界重试机制，本次不把语义变化纳入采样参数删除名单。[Claude thinking 保真](../../implemented/bug-fix/2026-10-17-claude-thinking-forwarding.md)部分重叠，有效历史块继续保真，仅明确拒绝后的本次思考开关例外另行记录。[DeepSeek Responses](../../implemented/bug-fix/2026-10-18-deepseek-native-responses.md)控制另一原生协议，保持独立；无应删除或拒绝的旧提案。

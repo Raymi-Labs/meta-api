@@ -136,7 +136,7 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "quota", "账户或令牌额度不足", "请检查账户余额、令牌额度及套餐限制。"
 	case err.StatusCode == http.StatusRequestEntityTooLarge:
 		return "request_too_large", "请求体超过大小限制", "请减少消息、附件或图片大小后重试。"
-	case err.StatusCode == http.StatusTooManyRequests:
+	case err.StatusCode == http.StatusTooManyRequests || upstream && isExplicitUpstreamConcurrencyLimit(err):
 		return "rate_limit", "请求受到限流或并发限制", "请按 Retry-After 等待，降低并发后重试。"
 	case err.StatusCode == http.StatusRequestTimeout || err.StatusCode == http.StatusGatewayTimeout || strings.Contains(message, "timeout") || strings.Contains(message, "deadline exceeded"):
 		return "timeout", "请求处理超时", "请稍后重试；若持续超时，请携带请求 ID 联系管理员。"
@@ -153,6 +153,27 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 	default:
 		return "upstream_error", "请求处理失败", "请稍后重试；仍失败时复制排查信息并联系管理员。"
 	}
+}
+
+// This is diagnostic-only: some providers report a concurrency rejection as
+// 403/502/503. Do not change their HTTP status or reuse this to expand retries,
+// channel cooldowns, or automatic disabling.
+func isExplicitUpstreamConcurrencyLimit(err *types.NewAPIError) bool {
+	if err == nil {
+		return false
+	}
+	switch err.StatusCode {
+	case http.StatusForbidden, http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable:
+	default:
+		return false
+	}
+	upstream := err.ToOpenAIError()
+	if code, ok := upstream.Code.(string); ok && code == "gateway_concurrency_limit" {
+		return true
+	}
+	message := strings.ToLower(strings.TrimSpace(upstream.Message))
+	return strings.Contains(message, "you've reached your concurrent request limit. please wait for your ongoing requests to finish and try again.") ||
+		strings.HasPrefix(message, "concurrency limit exceeded for account, please retry later")
 }
 
 // RecordFinalRequestFailure runs once after the request handler has returned.

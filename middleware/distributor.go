@@ -156,6 +156,7 @@ func Distribute() func(c *gin.Context) {
 					return
 				}
 				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup, grouphealth.OutcomeServiceFailure)
+				observeRouteOutage(c, modelRequest.Model, usingGroup, specificChannelID)
 				showGroup := usingGroup
 				if usingGroup == "auto" && selectGroup != "" {
 					showGroup = fmt.Sprintf("auto(%s)", selectGroup)
