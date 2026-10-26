@@ -116,7 +116,7 @@
 
 | 能力 | 实现 | 数据与权限 | 边界 |
 | --- | --- | --- | --- |
-| 正式发布与临时入口退役 | [更新/回退](../scripts/newapi-release)、[运维说明](installation/one-click-update.md)、[故障回归](../scripts/server-release/test_release_safety.py) | root 运维、同一发布锁；在线备份/MySQL schema 预检、健康检查、失败及 HUP/INT/TERM 恢复；旧入口返回78 | 更新源离线时提前拒绝，回退仍可用；封存缓存发布/演练及旧自动更新入口；不执行临时渠道 SQL，不上线缓存候选功能，不保证 SIGKILL/断电/不可逆迁移恢复 |
+| 正式发布与临时入口退役 | [更新/回退](../scripts/newapi-release)、[运维说明](installation/one-click-update.md)、[故障回归](../scripts/server-release/test_release_safety.py)、[锁目录回归](../scripts/server-release/test_lock.py) | root 运维、同一发布锁；保留既有公共父目录权限与锁 inode，拒绝不安全锁路径；在线备份/MySQL schema 预检、健康检查、失败及 HUP/INT/TERM 恢复；旧入口返回78 | 更新源离线时提前拒绝，回退仍可用；封存缓存发布/演练及旧自动更新入口；不执行临时渠道 SQL，不上线缓存候选功能，不保证 SIGKILL/断电/不可逆迁移恢复 |
 | 同版本快速启动/重启 | [newapi-restart](../scripts/newapi-release)、[使用说明](installation/one-click-update.md#应用停止后的快速恢复)、[入口回归](../scripts/server-release/test_restart.py) | root、同一发布锁；既有容器 start/restart；Docker 调用超时、启动稳定且状态接口连续两次成功 | 保留容器/镜像/配置，不拉镜像或等待备份，不重启依赖；缺失容器明确失败；历史重启计数/错误不影响本次验收；支持 dry-run，失败非零退出 |
 | 发布恢复包封存与离线校验 | [发布工具](../scripts/newapi-release)、[说明](installation/one-click-update.md)、[清单回归](../scripts/server-release/test_backup_manifest.py) | 数据转储完成后仅记录中间校验；部署状态/日志/镜像元数据全部完成后生成含隐藏文件的相对路径 SHA256SUMS；verify-backup 不依赖 Docker | 拒绝链接、额外/缺失/变化文件；失败/中断不产生完整包标记；健康部署后封存失败明确报错但不自动回退；文件校验不等于数据库或PITR恢复演练 |
 | 源站磁盘维护与镜像保留 | [规则与回退](../scripts/server-storage/README.md)、[镜像预览/清理](../scripts/server-storage/image-retain.py) | root 运维；复用已有三份完整备份保留与无损日志压缩，每小时检查；指定仓库旧镜像每日检查 | 超过30天且无容器/当前/回滚/备份引用才删除；共用发布锁、默认预览、禁止 force；不删除业务记录、binlog、附件或日志历史，不发布应用版本 |
