@@ -367,3 +367,8 @@ func SearchRateLimit() func(c *gin.Context) {
 func InvitePromotionRateLimit() func(c *gin.Context) {
 	return rateLimitFactory(60, 60, "IPROMO")
 }
+
+// DesktopFeedbackRateLimit bounds explicit reports by authenticated account.
+func DesktopFeedbackRateLimit() gin.HandlerFunc {
+	return userRateLimitFactory(10, 60, "DF")
+}

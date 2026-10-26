@@ -329,6 +329,11 @@ const NotificationSettings = ({
         },
         { key: 'user', title: t('用户管理'), description: t('用户账户管理') },
         {
+          key: 'desktopFeedback',
+          title: t('客户端反馈'),
+          description: t('客户端反馈'),
+        },
+        {
           key: 'pulseOps',
           title: t('Pulse 运营'),
           description: t('周期与摄入监控'),

@@ -7184,6 +7184,14 @@
     "管理员暂未开启分组健康展示": "Quản trị viên chưa bật hiển thị trạng thái nhóm",
     "请先加载分组调用表现": "Hãy tải hiệu năng gọi của nhóm trước",
     "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "Tốc độ đầu ra là tổng token đầu ra của các yêu cầu truyền dòng thành công chia cho tổng thời gian từ đầu ra hợp lệ đầu tiên đến khi hoàn tất. Hiển thị — khi không có mẫu hợp lệ.",
-    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Mô hình này chưa công bố hỗ trợ giao thức này. Trước tiên, hãy kiểm tra cấu hình API của nhóm bạn đang sử dụng."
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Mô hình này chưa công bố hỗ trợ giao thức này. Trước tiên, hãy kiểm tra cấu hình API của nhóm bạn đang sử dụng.",
+    "客户端反馈": "Phản hồi ứng dụng",
+    "待处理": "Chờ xử lý",
+    "已解决": "Đã giải quyết",
+    "操作系统": "Hệ điều hành",
+    "问题描述": "Mô tả vấn đề",
+    "页面": "Trang",
+    "工具": "Công cụ",
+    "反馈详情": "Chi tiết phản hồi"
   }
 }

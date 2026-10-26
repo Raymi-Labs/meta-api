@@ -54,6 +54,7 @@ const routerMap = {
   personal: '/console/personal',
   pulse: '/console/pulse',
   pulseOps: '/console/pulse-ops',
+  desktopFeedback: '/console/desktop-feedback',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -225,6 +226,12 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('用户管理'),
         itemKey: 'user',
         to: '/user',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('客户端反馈'),
+        itemKey: 'desktopFeedback',
+        to: '/desktop-feedback',
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {

@@ -56,6 +56,7 @@ export const DEFAULT_ADMIN_CONFIG = {
     user: true,
     subscription: true,
     pulseOps: true,
+    desktopFeedback: true,
     setting: true,
   },
 };

@@ -56,6 +56,7 @@ export function getLucideIcon(key, selected = false) {
     case 'imagePlayground':
     case 'midjourney':
       return <ImageIcon {...commonProps} color={iconColor} />;
+    case 'desktopFeedback':
     case 'chat':
       return <MessageSquare {...commonProps} color={iconColor} />;
     case 'token':

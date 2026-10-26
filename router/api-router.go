@@ -160,6 +160,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/aff-withdrawals/self", controller.GetUserAffWithdrawals)
 				selfRoute.PUT("/setting", controller.UpdateUserSetting)
 				selfRoute.GET("/quota-notices", controller.GetSelfQuotaNotices)
+				selfRoute.POST("/desktop-feedback", middleware.DesktopFeedbackRateLimit(), controller.CreateDesktopFeedback)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)
@@ -305,6 +306,14 @@ func SetApiRouter(router *gin.Engine) {
 			performanceRoute.POST("/reset_stats", controller.ResetPerformanceStats)
 			performanceRoute.POST("/gc", controller.ForceGC)
 		}
+		desktopFeedbackRoute := apiRouter.Group("/desktop-feedback")
+		desktopFeedbackRoute.Use(middleware.AdminAuth())
+		{
+			desktopFeedbackRoute.GET("/", controller.GetDesktopFeedbackList)
+			desktopFeedbackRoute.GET("/:id", controller.GetDesktopFeedback)
+			desktopFeedbackRoute.PATCH("/:id", controller.UpdateDesktopFeedback)
+		}
+
 		channelConcurrencyRoute := apiRouter.Group("/channel_concurrency")
 		channelConcurrencyRoute.Use(middleware.AdminAuth())
 		{

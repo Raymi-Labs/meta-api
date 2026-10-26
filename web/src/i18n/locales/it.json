@@ -6568,6 +6568,15 @@
     "管理员暂未开启分组健康展示": "L’amministratore non ha abilitato la visualizzazione dello stato dei gruppi",
     "请先加载分组调用表现": "Carica prima le prestazioni dei gruppi",
     "输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。": "La velocità di output è il totale dei token di output delle richieste di streaming riuscite diviso per la loro durata complessiva dal primo output valido al completamento. Viene mostrato — quando non sono disponibili campioni validi.",
-    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Per questo modello non è ancora stato dichiarato il supporto per questo protocollo. Verifica prima la configurazione API del gruppo che utilizzi."
+    "该模型尚未声明支持此协议，请先确认所用分组的接口配置。": "Per questo modello non è ancora stato dichiarato il supporto per questo protocollo. Verifica prima la configurazione API del gruppo che utilizzi.",
+    "客户端反馈": "Feedback del client",
+    "待处理": "In attesa",
+    "已解决": "Risolto",
+    "操作系统": "Sistema operativo",
+    "问题描述": "Descrizione del problema",
+    "错误信息": "Dettagli dell’errore",
+    "页面": "Pagina",
+    "工具": "Strumento",
+    "反馈详情": "Dettagli del feedback"
   }
 }
