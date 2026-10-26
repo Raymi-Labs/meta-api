@@ -6,6 +6,7 @@ from email.message import EmailMessage
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -19,6 +20,15 @@ _spec = importlib.util.spec_from_file_location('pitr_backup_common', Path(__file
 backup = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(backup)
 Error = backup.BackupError
+FULL_BACKUP_UNIT = 'newapi-pitr-backup.service'
+BACKUP_PENDING = 'PITR full backup failure requires a newer verified backup: ' + FULL_BACKUP_UNIT
+
+
+class ServiceFailure(Error):
+    """A parsed service result confirms failure, rather than a failed query."""
+    def __init__(self, message, state=None):
+        super().__init__(message)
+        self.state = dict(state or {})
 
 
 def object_json(data, diagnostic):
@@ -42,6 +52,72 @@ def age(value, now):
         return max(0, result)
     except (AttributeError, TypeError, ValueError):
         raise Error('invalid or future coverage timestamp') from None
+
+
+def backup_failure(path, now):
+    if not path.exists():
+        return None
+    value = object_json(backup.private_bytes(path), 'full backup failure watermark is invalid')
+    if (value.get('format_version') != 1 or value.get('unit') != FULL_BACKUP_UNIT
+            or 'previous_success' not in value
+            or not isinstance(value.get('previous_success'), (dict, type(None)))
+            or 'service_error' in value and (not isinstance(value['service_error'], str)
+                                             or not value['service_error'] or len(value['service_error']) > 512)
+            or 'service_state' in value and (not isinstance(value['service_state'], dict)
+                                             or not all(isinstance(key, str) and isinstance(item, str)
+                                                        for key, item in value['service_state'].items()))):
+        raise Error('full backup failure watermark is invalid')
+    age(value.get('observed_at'), now)
+    previous = value['previous_success']
+    if previous is not None:
+        if not isinstance(previous.get('run_id'), str) or not previous['run_id']:
+            raise Error('full backup failure watermark is invalid')
+        age(previous.get('finished_at'), now)
+    return value
+
+
+def remember_backup_failure(path, latest_path, now, previous, error):
+    # Snapshot the last success without allowing a concurrently completed retry
+    # (after this failure observation) to become the baseline it must surpass.
+    baseline = previous.get('previous_success') if previous else None
+    try:
+        latest = object_json(backup.private_bytes(latest_path), 'full backup receipt is invalid')
+        age(latest.get('finished_at'), now)
+        if (latest.get('status') == 'success' and isinstance(latest.get('run_id'), str) and latest['run_id']
+                and dt.datetime.fromisoformat(latest['finished_at'].replace('Z', '+00:00')) <= now):
+            baseline = {key: latest[key] for key in ('run_id', 'finished_at')}
+    except (Error, OSError, ValueError, TypeError):
+        pass  # A missing/invalid old success must not prevent latching failure.
+    value = {'format_version': 1, 'unit': FULL_BACKUP_UNIT, 'observed_at': now.isoformat(),
+             'previous_success': baseline, 'service_error': str(error), 'service_state': error.state}
+    backup.atomic_json(path, value)
+    return value
+
+
+def clear_backup_failure(path):
+    # The monitor lock serializes writers. Persist the deletion itself before
+    # reporting recovery, independently of later health/notification writes.
+    directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+    try:
+        path.unlink()
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
+def newer_backup_completed(failure, latest, now):
+    """Call only after the remote marker and manifest have verified this receipt."""
+    for key in ('started_at', 'verified_at', 'finished_at'):
+        age(latest.get(key), now)
+    started, verified, finished = (dt.datetime.fromisoformat(latest[key].replace('Z', '+00:00'))
+                                   for key in ('started_at', 'verified_at', 'finished_at'))
+    observed = dt.datetime.fromisoformat(failure['observed_at'].replace('Z', '+00:00'))
+    previous = failure['previous_success']
+    if (not isinstance(latest.get('run_id'), str) or not latest['run_id']
+            or not observed < started <= verified <= finished
+            or previous and (latest['run_id'] == previous['run_id']
+                             or finished <= dt.datetime.fromisoformat(previous['finished_at'].replace('Z', '+00:00')))):
+        raise Error(BACKUP_PENDING)
 
 
 def position(value):
@@ -116,14 +192,14 @@ def check_unit(unit, processes):
     active, substate, result = values['ActiveState'], values['SubState'], values['Result']
     if (active == 'failed' or substate == 'failed' or substate.startswith('auto-restart')
             or result != 'success'):
-        raise Error('PITR service failed: ' + unit + ' (result=' + result
-                    + ', state=' + active + '/' + substate + ')')
+        raise ServiceFailure('PITR service failed: ' + unit + ' (result=' + result
+                             + ', state=' + active + '/' + substate + ')', values)
     if active not in ('active', 'activating', 'reloading', 'deactivating', 'inactive'):
         raise Error('PITR service status is invalid: ' + unit)
     # ExecMainStatus can describe the previous main process while a new start
     # is in progress. Result/SubState still expose failed automatic retries.
     if active == 'inactive' and exit_status != 0:
-        raise Error('PITR service exited unsuccessfully: ' + unit)
+        raise ServiceFailure('PITR service exited unsuccessfully: ' + unit, values)
     return values
 
 
@@ -210,7 +286,11 @@ def verify_full_backup(remote, status, latest, current, now, maximum_age):
     if (marker.get('status') != 'success' or marker.get('run_id') != latest.get('run_id')
             or manifest.get('run_id') != latest.get('run_id')
             or marker.get('manifest_sha256') != hashlib.sha256(manifest_raw).hexdigest()
-            or manifest.get('source') != source or manifest.get('dump') != latest.get('dump')):
+            or manifest.get('source') != source or manifest.get('dump') != latest.get('dump')
+            or marker.get('finished_at') != latest.get('finished_at')
+            or marker.get('verified_at') != latest.get('verified_at')
+            or manifest.get('verified_at') != latest.get('verified_at')
+            or manifest.get('started_at') != latest.get('started_at')):
         raise Error('remote full backup manifest differs from its completion receipt')
     dump = manifest.get('dump')
     if not isinstance(dump, dict) or dump.get('name') != 'mysql.sql.gz' or type(dump.get('size')) is not int or dump['size'] <= 0:
@@ -286,12 +366,26 @@ def execute(args):
         state = backup.private_directory(args.state_dir)
         now = dt.datetime.now(dt.timezone.utc)
         report = {'observed_at': now.isoformat(), 'healthy': False, 'error': None}
+        failure_path = state / 'backup-failure.json'
         try:
+            failure = backup_failure(failure_path, now)
+            if failure:
+                report['backup_failure'] = failure
+                report['backup_service_error'] = failure.get('service_error',
+                    'PITR full backup service failed; original details are unavailable')
             # Reserve time for mail even when a remote verification hangs.
             with backup.deadline(65):
                 report['services'] = {}
                 for unit in args.check_unit:
-                    report['services'][unit] = check_unit(unit, processes)
+                    try:
+                        report['services'][unit] = check_unit(unit, processes)
+                    except ServiceFailure as exc:
+                        if unit == FULL_BACKUP_UNIT:
+                            failure = remember_backup_failure(failure_path, args.full_backup_status, now, failure, exc)
+                            report['backup_failure'] = failure
+                            report['backup_service_error'] = str(exc)
+                            raise Error(BACKUP_PENDING) from None
+                        raise
                 status = object_json(backup.private_bytes(args.archive_status), 'archive status is invalid')
                 remote = backup.CryptRemote(status['root'], args.rclone_config, processes)
                 current = source_position(args, processes)
@@ -303,12 +397,18 @@ def execute(args):
                     raise Error('source filesystem free space is below the PITR warning threshold')
                 latest = object_json(backup.private_bytes(args.full_backup_status), 'full backup receipt is invalid')
                 report['full_backup'] = verify_full_backup(remote, status, latest, current, now, args.max_backup_age)
+                if failure:
+                    report['backup_failure'] = failure
+                    newer_backup_completed(failure, latest, now)
                 # Charge time spent reading remote data to the RPO measurement and
                 # sample production again instead of reporting an old observation.
                 now = dt.datetime.now(dt.timezone.utc)
                 current = source_position(args, processes)
                 report.update(source=current, observed_at=now.isoformat(),
                               lag_seconds=coverage(status, current, now, args.max_lag, args.max_stale))
+                if failure:
+                    clear_backup_failure(failure_path)
+                    report['backup_failure_recovered_by'] = latest['run_id']
                 report['healthy'] = True
         except (Error, OSError, ValueError, KeyError, TypeError) as exc:
             report['error'] = str(exc) if isinstance(exc, Error) else 'PITR monitoring input or source is unavailable'

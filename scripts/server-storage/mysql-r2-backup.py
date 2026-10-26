@@ -21,6 +21,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 import zlib
 
@@ -41,6 +42,26 @@ NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 
 class BackupError(Exception):
     """Only fixed, non-secret diagnostic messages belong in this exception."""
+
+
+class GzipIntegrityError(BackupError):
+    """The bytes returned by the reader did not pass gzip/content validation."""
+
+
+class IncompleteGzipError(GzipIntegrityError):
+    """The reader reached EOF before a complete gzip member was received."""
+
+
+class ReadbackStream:
+    """Count bytes delivered to validation without buffering the backup."""
+    def __init__(self, stream):
+        self.stream = stream
+        self.bytes_received = 0
+
+    def read(self, size):
+        data = self.stream.read(size)
+        self.bytes_received += len(data)
+        return data
 
 
 def timestamp():
@@ -275,13 +296,61 @@ class CryptRemote:
         self.processes.check(reader, "metadata readback failed")
         self.check_config()
 
-    def verify_dump(self, destination, expected):
-        reader = self.reader(destination)
-        actual = gzip_digest(reader.stdout, expected["size"])
-        self.processes.check(reader, "database backup readback failed")
-        self.check_config()
-        if actual != expected:
-            raise BackupError("database backup readback hash or size did not match")
+    def verify_dump(self, destination, expected, *, on_attempt=None):
+        # Re-read only this immutable dump, never repeat the snapshot/upload.
+        # The enclosing job deadline still bounds all attempts and backoff.
+        for number in range(1, 4):
+            attempt = {"attempt": number, "started_at": timestamp(),
+                       "bytes_received": 0, "reader_exit_code": None,
+                       "status": "failed", "retryable": False}
+            reader, counted = None, None
+            try:
+                reader = self.reader(destination)
+                counted = ReadbackStream(reader.stdout)
+                incomplete, actual = None, None
+                try:
+                    actual = gzip_digest(counted, expected["size"])
+                except IncompleteGzipError as exc:
+                    incomplete = exc
+                # Both paths above consumed stdout to EOF, so waiting cannot
+                # deadlock on an unread pipe. Early CRC/format errors do not
+                # enter here: the Processes context cancels those readers.
+                attempt["reader_exit_code"] = reader.wait()
+                self.check_config()
+                if actual is not None and actual != expected:
+                    raise GzipIntegrityError("database backup readback hash or size did not match")
+                if attempt["reader_exit_code"] != 0:
+                    # A failed transfer can yield an empty/truncated gzip, or
+                    # even all expected bytes. Neither is a verified attempt.
+                    attempt.update(status="reader_failed", retryable=True)
+                elif incomplete is not None:
+                    raise incomplete
+                else:
+                    attempt["status"] = "verified"
+            except GzipIntegrityError:
+                attempt["status"] = "integrity_failed"
+                raise
+            except BaseException as exc:
+                if isinstance(exc, (KeyboardInterrupt, SystemExit)) or (
+                        isinstance(exc, BackupError) and str(exc) in (
+                            "backup exceeded its time limit", "backup was interrupted")):
+                    attempt["status"] = "interrupted"
+                raise
+            finally:
+                if counted is not None:
+                    attempt["bytes_received"] = counted.bytes_received
+                if reader is not None:
+                    attempt["reader_exit_code"] = reader.poll()
+                    if attempt["reader_exit_code"] is not None:
+                        reader.stdout.close()
+                attempt["finished_at"] = timestamp()
+                if on_attempt is not None:
+                    on_attempt(attempt)
+            if attempt["status"] == "verified":
+                return
+            if number < 3:
+                time.sleep(number)
+        raise BackupError("database backup readback failed after three attempts")
 
 
 def gzip_digest(stream, maximum):
@@ -294,20 +363,20 @@ def gzip_digest(stream, maximum):
                 break
             size += len(block)
             if size > maximum:
-                raise BackupError("database backup readback exceeds the uploaded size")
+                raise GzipIntegrityError("database backup readback exceeds the uploaded size")
             digest.update(block)
             if decoder.eof:
-                raise BackupError("gzip contains trailing bytes or multiple members")
+                raise GzipIntegrityError("gzip contains trailing bytes or multiple members")
             # Bound decompression memory even for highly compressible SQL.
             while block:
                 decoder.decompress(block, BLOCK)
                 if decoder.unused_data:
-                    raise BackupError("gzip contains trailing bytes or multiple members")
+                    raise GzipIntegrityError("gzip contains trailing bytes or multiple members")
                 block = decoder.unconsumed_tail
         if not decoder.eof or size == 0:
-            raise BackupError("gzip backup is truncated or empty")
+            raise IncompleteGzipError("gzip backup is truncated or empty")
     except zlib.error:
-        raise BackupError("gzip backup integrity verification failed") from None
+        raise GzipIntegrityError("gzip backup integrity verification failed") from None
     return {"sha256": digest.hexdigest(), "size": size}
 
 
@@ -652,7 +721,11 @@ def execute(args):
                         receipt["dump"] = stream_dump(args, remote, destination + "/mysql.sql.gz", processes, run_id)
                 receipt["stage"] = "readback"
                 atomic_json(receipt_path, receipt)
-                remote.verify_dump(destination + "/mysql.sql.gz", receipt["dump"])
+                def record_readback_attempt(attempt):
+                    receipt.setdefault("readback_attempts", []).append(attempt)
+                    atomic_json(receipt_path, receipt)
+                remote.verify_dump(destination + "/mysql.sql.gz", receipt["dump"],
+                                   on_attempt=record_readback_attempt)
                 receipt["verified_at"] = timestamp()
                 receipt["stage"] = "manifest"
                 atomic_json(receipt_path, receipt)

@@ -49,7 +49,7 @@ else:
 
 
 RCLONE = r'''
-import gzip,json,os,sys
+import gzip,json,os,signal,sys,time
 from pathlib import Path
 root=Path(os.environ['FAKE_ROOT'])
 args=sys.argv[1:]
@@ -65,14 +65,33 @@ if operation=='rcat':
     if path.name==os.environ.get('FAIL_UPLOAD'):sys.exit(5)
 else:
     data=path.read_bytes()
+    read_failed=False
     if path.name=='mysql.sql.gz':
+        attempts=root/'dump-read-attempts'
+        number=int(attempts.read_text())+1 if attempts.exists() else 1
+        attempts.write_text(str(number))
+        if os.environ.get('SLOW_READ'):time.sleep(5)
+        if os.environ.get('TERM_READ'):
+            os.kill(os.getppid(),signal.SIGTERM)
+            time.sleep(5)
+        if number<=int(os.environ.get('TRANSIENT_READ_FAILURES','0')):
+            data=data[:-8]
+            read_failed=True
+        if number<=int(os.environ.get('TRANSIENT_EMPTY_READ_FAILURES','0')):
+            data=b''
+            read_failed=True
+        if number<=int(os.environ.get('TRANSIENT_COMPLETE_READ_FAILURES','0')):
+            read_failed=True
+        if os.environ.get('TRUNCATED_READ'):data=data[:-8]
+        if os.environ.get('EMPTY_READ'):data=b''
         if os.environ.get('BAD_GZIP'):data=b'not a gzip stream'
+        if os.environ.get('BAD_CRC'):data=data[:-8]+bytes([data[-8]^1])+data[-7:]
         if os.environ.get('BAD_HASH'):data=gzip.compress(b'different valid sql')
         if os.environ.get('EXTRA_MEMBER'):data+=gzip.compress(b'extra SQL')
     if path.name==os.environ.get('BAD_READ'):data+=b'x'
     sys.stdout.buffer.write(data)
     sys.stdout.buffer.flush()
-    if path.name==os.environ.get('FAIL_READ'):sys.exit(6)
+    if read_failed or path.name==os.environ.get('FAIL_READ'):sys.exit(6)
 '''
 
 
@@ -117,13 +136,18 @@ class PipelineTests(unittest.TestCase):
         return list((self.root / "cloud").rglob(name))
 
     def failure(self, environment, marker_absent=True):
-        with mock.patch.dict(os.environ, environment):
-            with self.assertRaises(backup.BackupError):
+        processes = backup.Processes()
+        with mock.patch.dict(os.environ, environment), \
+                mock.patch.object(backup.time, "sleep"), \
+                mock.patch.object(backup, "Processes", return_value=processes):
+            with self.assertRaises(backup.BackupError) as caught:
                 backup.execute(self.args)
         self.assertEqual(self.receipt()["status"], "failed")
         self.assertFalse((self.root / "state/latest-success.json").exists())
         if marker_absent:
             self.assertFalse(self.objects("SUCCESS.json"))
+        self.assertTrue(all(child.poll() is not None for child in processes.children))
+        return str(caught.exception)
 
     def test_success_is_read_back_and_receipts_are_private(self):
         receipt = backup.execute(self.args)
@@ -164,6 +188,123 @@ class PipelineTests(unittest.TestCase):
 
     def test_remote_exit_failure_after_correct_bytes_is_not_success(self):
         self.failure({"FAIL_READ": "mysql.sql.gz"})
+        attempts = self.receipt()["readback_attempts"]
+        self.assertEqual(len(attempts), 3)
+        self.assertTrue(all(item["status"] == "reader_failed" for item in attempts))
+
+    def test_transient_truncated_readback_retries_same_object_without_new_dump(self):
+        processes = backup.Processes()
+        with mock.patch.dict(os.environ, {"TRANSIENT_READ_FAILURES": "2"}), \
+                mock.patch.object(backup.time, "sleep") as sleep, \
+                mock.patch.object(backup, "Processes", return_value=processes):
+            receipt = backup.execute(self.args)
+        attempts = receipt["readback_attempts"]
+        self.assertEqual([item["status"] for item in attempts], ["reader_failed", "reader_failed", "verified"])
+        self.assertEqual([item["reader_exit_code"] for item in attempts], [6, 6, 0])
+        self.assertEqual([item["retryable"] for item in attempts], [True, True, False])
+        self.assertEqual(attempts[0]["bytes_received"], receipt["dump"]["size"] - 8)
+        self.assertEqual(attempts[-1]["bytes_received"], receipt["dump"]["size"])
+        self.assertEqual(sleep.call_args_list, [mock.call(1), mock.call(2)])
+        calls = (self.root / "remote-calls").read_text().splitlines()
+        self.assertEqual(calls.count("rcat mysql.sql.gz"), 1)
+        self.assertEqual(calls.count("cat mysql.sql.gz"), 3)
+        self.assertEqual(len(list((self.root / "state").glob("*/receipt.json"))), 1)
+        manifest = json.loads(self.objects("manifest.json")[0].read_text())
+        self.assertEqual(manifest["readback_attempts"], attempts)
+        self.assertTrue(all(child.poll() is not None for child in processes.children))
+
+    def test_transient_empty_readback_is_retried(self):
+        with mock.patch.dict(os.environ, {"TRANSIENT_EMPTY_READ_FAILURES": "1"}), \
+                mock.patch.object(backup.time, "sleep"):
+            receipt = backup.execute(self.args)
+        self.assertEqual(receipt["readback_attempts"][0]["bytes_received"], 0)
+        self.assertEqual(receipt["readback_attempts"][0]["reader_exit_code"], 6)
+        self.assertEqual(receipt["readback_attempts"][-1]["status"], "verified")
+
+    def test_matching_bytes_with_transient_reader_failure_still_require_retry(self):
+        with mock.patch.dict(os.environ, {"TRANSIENT_COMPLETE_READ_FAILURES": "1"}), \
+                mock.patch.object(backup.time, "sleep"):
+            receipt = backup.execute(self.args)
+        attempts = receipt["readback_attempts"]
+        self.assertEqual([item["status"] for item in attempts], ["reader_failed", "verified"])
+        self.assertEqual([item["reader_exit_code"] for item in attempts], [6, 0])
+        self.assertTrue(all(item["bytes_received"] == receipt["dump"]["size"] for item in attempts))
+
+    def test_truncated_successful_reader_is_not_retried(self):
+        message = self.failure({"TRUNCATED_READ": "1"})
+        self.assertIn("gzip backup is truncated or empty", message)
+        self.assertEqual(len(self.receipt()["readback_attempts"]), 1)
+        self.assertEqual(self.receipt()["readback_attempts"][0]["status"], "integrity_failed")
+
+    def test_empty_successful_reader_is_not_retried(self):
+        self.failure({"EMPTY_READ": "1"})
+        attempt = self.receipt()["readback_attempts"][0]
+        self.assertEqual(attempt["reader_exit_code"], 0)
+        self.assertEqual(attempt["bytes_received"], 0)
+        self.assertFalse(attempt["retryable"])
+
+    def test_integrity_failure_is_not_retried_even_if_reader_fails(self):
+        for mode in ("BAD_CRC", "BAD_HASH", "EXTRA_MEMBER"):
+            with self.subTest(mode=mode):
+                with mock.patch.dict(os.environ, {mode: "1", "FAIL_READ": "mysql.sql.gz"}), \
+                        mock.patch.object(backup.time, "sleep") as sleep:
+                    attempts = []
+                    with backup.Processes() as processes:
+                        remote = backup.CryptRemote(self.args.remote, self.config, processes)
+                        data = gzip.compress(b"INSERT INTO fixture VALUES (1);\n" * 10000)
+                        destination = "r2-backup:fixture-" + mode + "/mysql.sql.gz"
+                        writer = remote.writer(destination)
+                        writer.communicate(data)
+                        processes.check(writer, "fixture upload failed")
+                        with self.assertRaises(backup.BackupError):
+                            remote.verify_dump(destination, {"size": len(data), "sha256": hashlib.sha256(data).hexdigest()},
+                                               on_attempt=lambda item: attempts.append(dict(item)))
+                    self.assertEqual(len(attempts), 1)
+                    self.assertEqual(attempts[0]["status"], "integrity_failed")
+                    self.assertFalse(attempts[0]["retryable"])
+                    sleep.assert_not_called()
+
+    def test_readback_retry_exhaustion_preserves_previous_success(self):
+        previous = backup.execute(self.args)
+        previous_bytes = (self.root / "state/latest-success.json").read_bytes()
+        processes = backup.Processes()
+        with mock.patch.dict(os.environ, {"TRUNCATED_READ": "1", "FAIL_READ": "mysql.sql.gz"}), \
+                mock.patch.object(backup.time, "sleep"), \
+                mock.patch.object(backup, "Processes", return_value=processes):
+            with self.assertRaisesRegex(backup.BackupError, "readback failed"):
+                backup.execute(self.args)
+        records = [json.loads(path.read_text()) for path in (self.root / "state").glob("*/receipt.json")]
+        failed = next(item for item in records if item["status"] == "failed")
+        self.assertEqual(len(failed["readback_attempts"]), 3)
+        self.assertEqual((self.root / "state/latest-success.json").read_bytes(), previous_bytes)
+        self.assertEqual([json.loads(path.read_text())["run_id"] for path in self.objects("SUCCESS.json")], [previous["run_id"]])
+        self.assertTrue(all(child.poll() is not None for child in processes.children))
+
+    def test_readback_timeout_is_not_retried(self):
+        self.args.timeout_seconds = 1
+        self.assertIn("time limit", self.failure({"SLOW_READ": "1"}))
+        self.assertEqual(len(self.receipt()["readback_attempts"]), 1)
+        self.assertEqual(self.receipt()["readback_attempts"][0]["status"], "interrupted")
+        self.assertEqual((self.root / "dump-read-attempts").read_text(), "1")
+
+    def test_readback_term_is_not_retried(self):
+        self.assertIn("interrupted", self.failure({"TERM_READ": "1"}))
+        self.assertEqual(len(self.receipt()["readback_attempts"]), 1)
+        self.assertEqual(self.receipt()["readback_attempts"][0]["status"], "interrupted")
+        self.assertEqual((self.root / "dump-read-attempts").read_text(), "1")
+
+    def test_interrupted_backoff_does_not_start_another_reader(self):
+        processes = backup.Processes()
+        with mock.patch.dict(os.environ, {"TRANSIENT_READ_FAILURES": "3"}), \
+                mock.patch.object(backup.time, "sleep", side_effect=backup.BackupError("backup exceeded its time limit")), \
+                mock.patch.object(backup, "Processes", return_value=processes):
+            with self.assertRaisesRegex(backup.BackupError, "time limit"):
+                backup.execute(self.args)
+        self.assertEqual((self.root / "dump-read-attempts").read_text(), "1")
+        self.assertEqual(len(self.receipt()["readback_attempts"]), 1)
+        self.assertFalse(self.objects("SUCCESS.json"))
+        self.assertFalse((self.root / "state/latest-success.json").exists())
+        self.assertTrue(all(child.poll() is not None for child in processes.children))
 
     def test_manifest_upload_failure_does_not_commit(self):
         self.failure({"FAIL_UPLOAD": "manifest.json"})
@@ -310,6 +451,26 @@ class GzipIntegrityTests(unittest.TestCase):
     def test_large_compression_ratio_uses_bounded_decompression(self):
         data = gzip.compress(b"0" * (backup.BLOCK * 10))
         self.assertEqual(backup.gzip_digest(io.BytesIO(data), len(data))["size"], len(data))
+
+    def test_short_reads_across_header_payload_and_trailer(self):
+        data = gzip.compress(b"INSERT INTO fixture VALUES (1);\n" * 1024)
+
+        class ShortReader(io.BytesIO):
+            def read(self, count):
+                return super().read(min(count, chunk))
+
+        for chunk in (1, 2, 7, 17, len(data) - 8):
+            with self.subTest(chunk=chunk), mock.patch.object(backup, "BLOCK", 31):
+                self.assertEqual(backup.gzip_digest(ShortReader(data), len(data)),
+                                 {"size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+
+    def test_corrupt_crc_and_size_trailer_are_rejected(self):
+        data = gzip.compress(b"SQL" * 1000)
+        for offset in (-8, -4):
+            invalid = bytearray(data)
+            invalid[offset] ^= 1
+            with self.subTest(offset=offset), self.assertRaisesRegex(backup.BackupError, "integrity"):
+                backup.gzip_digest(io.BytesIO(invalid), len(invalid))
 
 
 @unittest.skipUnless(sys.platform.startswith("linux") and shutil.which("timeout"),

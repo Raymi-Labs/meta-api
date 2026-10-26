@@ -86,6 +86,10 @@ systemctl enable --now newapi-pitr-backup.timer
 
 生产监控 unit 还通过重复的 `--check-unit` 检查新全备和归档 service 的最近运行结果。服务缺失、失败、超时、信号退出或自动重试会在下一次监控时告警，不能被尚未过期的上一份成功全备回执掩盖。正常启动、运行和成功结束不报警；候选阶段不要求新全备 timer 已启用。手动运行监控器时如需同样检查，须传入这两个 service 参数。
 
+确认全备服务失败后，监控在私有状态目录持久保存 `backup-failure.json`。重试进入 activating/running、Result重置为success或上一份成功全备仍新鲜，都不能解除故障；只有故障观测后启动的新全备通过远端SUCCESS、manifest及最终覆盖检查，才删除水位并发送恢复通知。水位保留原始固定诊断，提醒仍按现有周期去重。systemctl查询超时、不可用或输出无效只表示本轮观测失败，不新建或抬高全备失败水位；水位损坏则失败关闭。不得手动删除水位来消除告警。
+
+全备读回中明确的读取进程失败最多重读同一对象三次，尝试结果写入 `readback_attempts`；不重新持有快照、不放宽gzip或内容哈希校验。若发生信号中断、总期限、真实完整性错误或重试耗尽，仍保留原成功回执且本轮失败。故障修复与邮件验证边界见[决策记录](../../.agents/notes/implemented/bug-fix/2026-10-26-pitr-readback-and-recovery-alerts.md)。
+
 ```bash
 systemctl list-timers 'newapi-*'
 journalctl -u newapi-binlog-archive.service -u newapi-pitr-monitor.service --since '30 minutes ago'

@@ -16,6 +16,8 @@ Status: implemented
 
 ## Existing notes audit
 
+- [全备读回与恢复告警修复](../../implemented/bug-fix/2026-10-26-pitr-readback-and-recovery-alerts.md)：补充读回有限重试和全备失败持久水位；自动重试启动不等于恢复，保留历史验收边界。
+
 - [每日 R2 全备](../../implemented/process/2026-10-22-continuous-r2-database-backup.md)：部分取代。不采集坐标和长持发布锁的旧取舍由本篇 opt-in PITR 路径替代；旧任务、密钥保管、流式低磁盘策略仍成立。
 - [恢复包与日志离机](../../implemented/process/2026-10-22-verified-recovery-archives.md)：相邻能力，日志退役不属于本轮。
 - [发布安全](../../implemented/process/2026-10-21-release-entrypoint-safety.md)：部分重叠，仅增加备份实例锁快速拒绝，不更新或停止业务容器。
