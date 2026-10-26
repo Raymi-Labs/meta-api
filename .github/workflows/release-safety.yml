@@ -51,6 +51,18 @@ jobs:
         run: |
           gcc -shared -fPIC -O2 scripts/server-storage/test_pitr_delay.c -o "$NEWAPI_PITR_TEST_DELAY_LIBRARY" -ldl
           python3 -B -m unittest discover -s scripts/server-storage -p 'test_pitr_anchor.py' -v
+      - name: Verify permanent migration seed and native MySQL replication filters
+        timeout-minutes: 10
+        env:
+          NEWAPI_MIGRATION_DOCKER_TEST: '1'
+        run: python3 -B -m unittest discover -s scripts/server-migration -p 'test_mysql_target_seed.py' -v
+      - name: Verify Redis RDB import, absolute expiration and AOF crash recovery
+        timeout-minutes: 10
+        env:
+          NEWAPI_REDIS_MIGRATION_IMAGE: redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+        run: |
+          docker pull "$NEWAPI_REDIS_MIGRATION_IMAGE"
+          python3 -B -m unittest discover -s scripts/server-migration -p 'test_redis_migration.py' -v
       - name: Install rclone for isolated encryption roundtrip
         run: |
           sudo apt-get update -qq
@@ -58,9 +70,16 @@ jobs:
       - name: Verify encryption and retirement with a temporary local backend
         run: sudo env NEWAPI_RCLONE_INTEGRATION=1 python3 -B -m unittest discover -s scripts/server-storage -p 'test_log_offload_rclone.py' -v
       - name: Check opt-in Docker exercise entrypoint
-        run: python3 -B scripts/server-release/exercise-restart.py --help
+        run: |
+          python3 -B scripts/server-release/exercise-restart.py --help
+          python3 -B scripts/server-release/exercise-migration.py --help
       - name: Build exact MySQL PITR recovery tools
         run: docker build -t newapi-pitr-tools:8.0.46 -f scripts/server-storage/Dockerfile.pitr-tools .
+      - name: Verify frozen cutover audit against a real 76-table schema
+        timeout-minutes: 10
+        env:
+          NEWAPI_FINAL_AUDIT_MYSQL_IMAGE: newapi-pitr-tools:8.0.46
+        run: python3 -B -m unittest discover -s scripts/server-migration -p 'test_mysql_final_audit.py' -v
       - name: Exercise archive event boundary under the production memory limit
         timeout-minutes: 20
         run: |

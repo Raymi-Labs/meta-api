@@ -65,6 +65,8 @@ Usage:
   newapi-release status
   newapi-release init [sha-abcdefg]
   newapi-release verify-backup DIRECTORY
+  newapi-release migration-stop CONTAINER_ID IMAGE_ID --ingress-frozen [--dry-run]
+  newapi-release migration-create IMAGE_DIGEST SOURCE_SCHEMA_SHA256 [--dry-run]
 
 The update command resolves latest to an immutable SHA image, backs up MySQL,
 tests migrations against a temporary schema, deploys, and rolls back on failure.
@@ -74,6 +76,11 @@ The restart command starts a stopped container or restarts the existing running
 container, keeps its image/configuration, and verifies application health.
 The verify-backup command checks a sealed recovery package offline; it does not
 require root or Docker and does not perform a database restore.
+Migration stop requires frozen ingress and an empty application connection queue;
+it stops only the explicitly identified application, without changing MySQL.
+Migration create validates a restored schema and already-local immutable image,
+creates only the application without starting it, and leaves release state unset.
+After data cutover, use newapi-restart and then newapi-release init.
 EOF
 }
 
@@ -204,6 +211,159 @@ command_restart() {
   fi
   append_history "$operation" "$running_id" "$running_id" failed "" || log "WARNING: cannot write restart history" >&2
   die "恢复未通过或操作超时；检查 docker inspect ${CONTAINER_NAME} 和 docker logs --since 5m --tail 100 ${CONTAINER_NAME}；必要时 newapi-rollback。超时后 Docker 操作可能仍在完成，请先检查状态"
+}
+
+check_migration_prerequisites() {
+  check_restart_prerequisites
+  require_command sha256sum
+  require_command awk
+  [ -d "$APP_DIR" ] || die "app directory not found: $APP_DIR"
+}
+
+migration_container_snapshot() {
+  timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null
+}
+
+require_migration_drained() {
+  local expected_container="$1" connections
+  # Check both address families in the application network namespace. Only
+  # established connections whose LOCAL port is 3000 are incoming requests.
+  connections="$(timeout --kill-after=2 10 docker exec "$expected_container" sh -c '
+    test -r /proc/net/tcp && test -r /proc/net/tcp6 || exit 1
+    awk '\''$4 == "01" && toupper($2) ~ /:0BB8$/ { count++ } END { print count+0 }'\'' /proc/net/tcp /proc/net/tcp6
+  ' 2>/dev/null)" || die "cannot verify application connections; migration stop refused"
+  [[ "$connections" =~ ^[0-9]+$ ]] || die "unrecognized application connection count"
+  [ "$connections" -eq 0 ] || die "application still has $connections established inbound connections; keep ingress frozen and wait"
+}
+
+command_migration_stop() {
+  local expected_container expected_image snapshot result operation_timeout arg frozen=0 policy policy_name policy_retries receipt
+  local -a remaining=()
+  for arg in "$@"; do
+    if [ "$arg" = --ingress-frozen ]; then frozen=1; else remaining+=("$arg"); fi
+  done
+  parse_dry_run "${remaining[@]}"
+  [ "${#POSITIONAL_ARGS[@]}" -eq 2 ] && [ "$frozen" -eq 1 ] \
+    || die "migration-stop requires CONTAINER_ID IMAGE_ID --ingress-frozen; first freeze every write ingress and drain requests"
+  expected_container="${POSITIONAL_ARGS[0]}"
+  expected_image="${POSITIONAL_ARGS[1]}"
+  [[ "$expected_container" =~ ^[0-9a-f]{64}$ && "$expected_image" =~ ^sha256:[0-9a-f]{64}$ ]] \
+    || die "migration-stop requires full immutable container and image IDs"
+  acquire_lock
+  snapshot="$(migration_container_snapshot)" || die "cannot inspect migration source application"
+  [ "$snapshot" = "$expected_container $expected_image running" ] \
+    || die "migration source identity or running state differs from expected"
+  require_no_snapshot_ddl_guard
+  require_migration_drained "$expected_container"
+  sleep 1
+  require_migration_drained "$expected_container"
+  [ "$(migration_container_snapshot)" = "$snapshot" ] || die "migration source changed while checking drain"
+  policy="$(timeout --kill-after=5 10 docker inspect -f '{{.HostConfig.RestartPolicy.Name}} {{.HostConfig.RestartPolicy.MaximumRetryCount}}' "$expected_container" 2>/dev/null)" \
+    || die "cannot inspect source restart policy; migration stop refused"
+  read -r policy_name policy_retries <<<"$policy"
+  [[ "$policy_name" =~ ^(no|always|unless-stopped|on-failure)$ && "$policy_retries" =~ ^[0-9]+$ ]] \
+    || die "unrecognized source restart policy"
+  [ "$DRY_RUN" -eq 0 ] || { log "dry-run: migration source identity and empty inbound connections verified; no container stopped"; return; }
+  # Record intent before the stop; interruption must not look like success.
+  install -d -m 700 "$STATE_DIR"
+  receipt="$(mktemp "$STATE_DIR/migration-stop.XXXXXX")"
+  python3 - "$receipt" "$expected_container" "$expected_image" "$policy_name" "$policy_retries" "$(timestamp_iso)" <<'PY'
+import json,os,sys
+with open(sys.argv[1], "w") as output:
+    json.dump({"format_version":1, "container_id":sys.argv[2], "image_id":sys.argv[3],
+               "original_restart_policy":{"Name":sys.argv[4], "MaximumRetryCount":int(sys.argv[5])},
+               "required_restart_policy":"no", "prepared_at":sys.argv[6]}, output, sort_keys=True)
+    output.write("\n")
+    output.flush()
+    os.fsync(output.fileno())
+PY
+  append_history migration-stop "$expected_container" "$expected_image" started "$receipt"
+  # An always policy can become a writer again after a daemon restart despite
+  # a manual docker stop. Disable automatic restart before stopping.
+  # On error or interruption never restore that policy or restart the source.
+  if ! timeout --kill-after=5 15 docker update --restart=no "$expected_container" >/dev/null 2>&1 \
+    || [ "$(timeout --kill-after=5 10 docker inspect -f '{{.HostConfig.RestartPolicy.Name}} {{.HostConfig.RestartPolicy.MaximumRetryCount}}' "$expected_container" 2>/dev/null)" != "no 0" ] \
+    || [ "$(migration_container_snapshot)" != "$snapshot" ]; then
+    append_history migration-policy "$expected_container" "$expected_image" failed "$receipt" || true
+    die "source restart policy was not verified disabled; no stop attempted; keep ingress frozen and inspect private receipt"
+  fi
+  append_history migration-policy "$expected_container" "$expected_image" success "$receipt"
+  operation_timeout=$((RESTART_STOP_TIMEOUT + 15))
+  if timeout --kill-after=5 "$operation_timeout" docker stop --time "$RESTART_STOP_TIMEOUT" "$expected_container" >/dev/null 2>&1; then
+    result="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}} {{.State.ExitCode}} {{.State.OOMKilled}} {{.HostConfig.RestartPolicy.Name}} {{.HostConfig.RestartPolicy.MaximumRetryCount}}' "$CONTAINER_NAME" 2>/dev/null)" || result=unknown
+    if [ "$result" = "$expected_container $expected_image exited 0 false no 0" ]; then
+      append_history migration-stop "$expected_container" "$expected_image" success "$receipt"
+      log "migration source stopped cleanly with restart=no: $expected_container; private restart-policy receipt: $receipt"
+      return 0
+    fi
+  fi
+  append_history migration-stop "$expected_container" "$expected_image" failed "$receipt" || true
+  die "migration stop not verified cleanly; keep ingress frozen, inspect container and final transactions before continuing; no automatic restart attempted"
+}
+
+command_migration_create() {
+  local expected_image expected_schema local_id database scope actual_schema created mysql_before
+  parse_dry_run "$@"
+  [ "${#POSITIONAL_ARGS[@]}" -eq 2 ] || die "migration-create requires IMAGE_DIGEST SOURCE_SCHEMA_SHA256"
+  expected_image="${POSITIONAL_ARGS[0]}"
+  expected_schema="${POSITIONAL_ARGS[1]}"
+  [[ "$expected_image" == "$IMAGE_REPOSITORY@sha256:"* && "${expected_image##*@sha256:}" =~ ^[0-9a-f]{64}$ ]] \
+    || die "migration-create requires an immutable digest from the configured image repository"
+  [[ "$expected_schema" =~ ^[0-9a-f]{64}$ ]] || die "invalid source schema fingerprint"
+  [ -f "$COMPOSE_FILE" ] || die "compose file not found"
+  acquire_lock
+  [ ! -e "$STATE_FILE" ] || die "target already has release state; migration-create refuses to overwrite it"
+  if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then die "target application container already exists; inspect it before using restart"; fi
+  local_id="$(image_id "$expected_image" 2>/dev/null)" || die "required immutable image is not local; no image will be pulled"
+  [[ "$local_id" =~ ^sha256:[0-9a-f]{64}$ ]] || die "invalid local image identity"
+  # Render only into a pipe; Compose environment may contain production secrets.
+  if ! docker compose -f "$COMPOSE_FILE" config --format json 2>/dev/null | python3 -c '
+import json,sys
+config=json.load(sys.stdin)
+service=config.get("services",{}).get(sys.argv[1],{})
+if service.get("image") != sys.argv[2] or service.get("container_name") != sys.argv[3]:
+    sys.exit(1)
+' "$SERVICE_NAME" "$expected_image" "$CONTAINER_NAME" 2>/dev/null; then
+    die "compose application image or container name differs from expected; configuration was not printed"
+  fi
+  mysql_before="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}} {{.State.StartedAt}}' "$MYSQL_CONTAINER" 2>/dev/null)" \
+    || die "cannot inspect target MySQL"
+  [[ "$mysql_before" == *" running "* ]] || die "target MySQL is not running"
+  require_no_snapshot_ddl_guard
+  database="$(timeout --kill-after=2 10 docker exec "$MYSQL_CONTAINER" sh -c 'printf "%s" "${MYSQL_DATABASE:?}"' 2>/dev/null)" \
+    || die "cannot determine target database"
+  [[ "$database" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsafe target database identifier"
+  scope="$(timeout --kill-after=2 15 docker exec -e TARGET_DB="$database" "$MYSQL_CONTAINER" sh -c '
+    MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET --batch --skip-column-names --execute="
+      SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('\''mysql'\'','\''information_schema'\'','\''performance_schema'\'','\''sys'\'');
+      SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='\''$TARGET_DB'\'' AND TABLE_TYPE='\''BASE TABLE'\'';
+      SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='\''$TARGET_DB'\'' AND (ENGINE IS NULL OR ENGINE <> '\''InnoDB'\'');
+      SELECT @@global.read_only, @@global.super_read_only;"
+  ' 2>/dev/null)" || die "cannot verify restored target database scope"
+  if ! printf '%s\n' "$scope" | python3 -c '
+import sys
+rows=sys.stdin.read().splitlines()
+if len(rows)!=4 or rows[0]!="1" or not rows[1].isdigit() or int(rows[1])<1 or rows[2]!="0" or rows[3] not in ("0\t0","1\t0","1\t1"):
+    sys.exit(1)
+'; then die "target must contain one nonempty InnoDB business database with known read-only status"; fi
+  actual_schema="$(schema_fingerprint "$database")" || die "could not fingerprint target schema"
+  [ "$actual_schema" = "$expected_schema" ] || die "target schema differs from the verified source schema"
+  [ "$DRY_RUN" -eq 0 ] || { log "dry-run: restored target schema and local immutable image verified; no application created"; return; }
+  append_history migration-create "" "$expected_image" started ""
+  # Compose create has no --no-deps. up --no-start --no-deps creates the selected
+  # service only, without starting it or reconciling its dependencies.
+  if ! timeout --kill-after=5 90 docker compose -f "$COMPOSE_FILE" up --no-start --no-deps --no-build --pull never --no-recreate "$SERVICE_NAME" >/dev/null 2>&1; then
+    append_history migration-create "" "$expected_image" failed "" || true
+    die "application creation failed or timed out; inspect partial container state before retrying"
+  fi
+  created="$(migration_container_snapshot)" || created=unknown
+  if [[ "$created" != *" $local_id created" ]] \
+    || [ "$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}} {{.State.StartedAt}}' "$MYSQL_CONTAINER" 2>/dev/null)" != "$mysql_before" ]; then
+    append_history migration-create "" "$expected_image" failed "" || true
+    die "created application or MySQL identity validation failed; do not start the application"
+  fi
+  append_history migration-create "" "$expected_image" success ""
+  log "migration application created and remains stopped; schema=$actual_schema; release state not initialized"
 }
 
 image_id() {
@@ -411,6 +571,75 @@ safe_label() {
   printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_'
 }
 
+copy_recovery_configuration() {
+  python3 - "$APP_DIR" "$COMPOSE_FILE" "$STATE_FILE" "$ACTIVE_BACKUP_DIR" <<'PY_CONFIG'
+import os
+from pathlib import Path
+import stat
+import sys
+
+base, compose, state, destination = map(lambda x: Path(os.path.abspath(x)), sys.argv[1:])
+
+def require(ok):
+    if not ok:
+        raise ValueError("unsafe or changing recovery configuration")
+
+def fingerprint(info):
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_nlink,
+            info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+def check_parents(path):
+    # Guard application-controlled directories without rejecting platform
+    # aliases above APP_DIR (for example macOS /var -> /private/var).
+    parent = path.parent
+    while parent == base or base in parent.parents:
+        if os.path.lexists(parent):
+            require(stat.S_ISDIR(parent.lstat().st_mode))
+        parent = parent.parent
+
+try:
+    require(stat.S_ISDIR(base.lstat().st_mode))
+    require(stat.S_ISDIR(destination.lstat().st_mode))
+    files = [(compose, "docker-compose.yml", True), (state, "state.env", False)]
+    files += [(base / name, name, False) for name in
+              (".env", ".env.db", ".env.app", "config/mysql.cnf",
+               "config/redis.conf", "config/99-preparation-readonly.sql")]
+    selected = []
+    for source, name, required in files:
+        check_parents(source)
+        if not os.path.lexists(source):
+            require(not required)
+            continue
+        before = source.lstat()
+        require(stat.S_ISREG(before.st_mode) and before.st_nlink == 1)
+        selected.append((source, name, before))
+    # Validate the entire fixed inventory before copying or starting a dump.
+    for source, name, before in selected:
+        with os.fdopen(os.open(source, os.O_RDONLY | os.O_NOFOLLOW), "rb") as reader:
+            require(fingerprint(os.fstat(reader.fileno())) == fingerprint(before))
+            target = destination / name
+            if target.parent != destination:
+                target.parent.mkdir(mode=0o700, exist_ok=True)
+                require(stat.S_ISDIR(target.parent.lstat().st_mode))
+            with os.fdopen(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600), "wb") as writer:
+                count = 0
+                while True:
+                    block = reader.read(1024 * 1024)
+                    if not block:
+                        break
+                    writer.write(block)
+                    count += len(block)
+                writer.flush()
+                os.fsync(writer.fileno())
+            require(count == before.st_size)
+            require(fingerprint(os.fstat(reader.fileno())) == fingerprint(before))
+            require(fingerprint(source.lstat()) == fingerprint(before))
+except (OSError, ValueError):
+    print("ERROR: recovery configuration is missing, unsafe or changed; database dump was not started", file=sys.stderr)
+    sys.exit(1)
+PY_CONFIG
+}
+
 create_database_backup() {
   local current_version="$1"
   local target_version="$2"
@@ -422,9 +651,7 @@ create_database_backup() {
   ACTIVE_BACKUP_DIR="$BACKUP_ROOT/${timestamp}-${label}-$$"
   install -d -m 700 "$BACKUP_ROOT"
   mkdir -m 700 "$ACTIVE_BACKUP_DIR"
-  cp -a "$COMPOSE_FILE" "$ACTIVE_BACKUP_DIR/docker-compose.yml"
-  [ -f "$APP_DIR/.env" ] && cp -a "$APP_DIR/.env" "$ACTIVE_BACKUP_DIR/.env"
-  [ -f "$STATE_FILE" ] && cp -a "$STATE_FILE" "$ACTIVE_BACKUP_DIR/state.env"
+  copy_recovery_configuration
 
   temporary_dump="$ACTIVE_BACKUP_DIR/mysql.sql.gz.tmp"
   docker exec "$MYSQL_CONTAINER" sh -c \
@@ -1003,7 +1230,9 @@ main() {
     backup_manifest verify "$1"
     return
   fi
-  if [ "$command_name" = restart ]; then
+  if [[ "$command_name" == migration-stop || "$command_name" == migration-create ]]; then
+    check_migration_prerequisites
+  elif [ "$command_name" = restart ]; then
     check_restart_prerequisites
   else
     check_prerequisites
@@ -1014,6 +1243,8 @@ main() {
     update) command_update "$@" ;;
     rollback) command_rollback "$@" ;;
     restart) command_restart "$@" ;;
+    migration-stop) command_migration_stop "$@" ;;
+    migration-create) command_migration_create "$@" ;;
     init) command_init "$@" ;;
     status) command_status ;;
     *) usage >&2; die "unknown command: $command_name" ;;

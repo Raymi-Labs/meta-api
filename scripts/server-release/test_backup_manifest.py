@@ -225,6 +225,118 @@ class BackupManifestTests(unittest.TestCase):
         self.assertFalse((backup / "SHA256SUMS").exists())
         self.assertIn("  mysql.sql.gz\n", (backup / "DATABASE_SHA256SUMS").read_text())
 
+    def prepared_app(self):
+        app = Path(tempfile.mkdtemp(prefix="app-", dir=self.root))
+        (app / "docker-compose.yml").write_text("services: {}\n")
+        (app / "config").mkdir()
+        values = {
+            ".env": b"LEGACY_SECRET=fixture-only\n",
+            ".env.db": b"MYSQL_ROOT_PASSWORD=DB_PRIVATE_FIXTURE_SENTINEL\n",
+            ".env.app": b"CRYPTO_SECRET=APP_PRIVATE_FIXTURE_SENTINEL\n",
+            "config/mysql.cnf": b"[mysqld]\nserver-id=14713539\n",
+            "config/redis.conf": b"requirepass REDIS_PRIVATE_FIXTURE_SENTINEL\n",
+            "config/99-preparation-readonly.sql": b"SET PERSIST_ONLY super_read_only=ON;\n",
+        }
+        for name, value in values.items():
+            (app / name).write_bytes(value)
+        return app, values
+
+    def run_database_backup(self, app, *, compose=None):
+        env = {**os.environ, "NEWAPI_APP_DIR": str(app)}
+        if compose is not None:
+            env["NEWAPI_COMPOSE_FILE"] = str(compose)
+        result = subprocess.run(
+            ["bash", "-c", 'source "$1"; available_kb() { echo 99999999; }; '
+             'docker() { touch "$NEWAPI_APP_DIR/dump-started"; printf "CREATE TABLE example (id BIGINT);\\n"; }; '
+             'create_database_backup old new', "test", str(RELEASE)],
+            env=env, capture_output=True, text=True, timeout=15,
+        )
+        for secret in ("DB_PRIVATE_FIXTURE_SENTINEL", "APP_PRIVATE_FIXTURE_SENTINEL", "REDIS_PRIVATE_FIXTURE_SENTINEL"):
+            self.assertNotIn(secret, result.stdout + result.stderr)
+        return result
+
+    def test_target_recovery_captures_fixed_env_and_config_files_and_seals_them(self):
+        app, values = self.prepared_app()
+        (app / "config/unrelated-private-file").write_text("must not recursively copy config")
+        (app / "mysql_data").mkdir()
+        (app / "mysql_data/do-not-copy").write_text("live database files")
+        result = self.run_database_backup(app)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        backup, = (app / "backups/one-click").iterdir()
+        for name, expected in values.items():
+            self.assertEqual((backup / name).read_bytes(), expected, name)
+            self.assertEqual(stat.S_IMODE((backup / name).stat().st_mode), 0o600, name)
+        self.assertEqual(stat.S_IMODE((backup / "config").stat().st_mode), 0o700)
+        self.assertFalse((backup / "config/unrelated-private-file").exists())
+        self.assertFalse((backup / "mysql_data").exists())
+        self.assertFalse((backup / "SHA256SUMS").exists())
+        for name in ("release-state-after.env", "recovery-metadata.env", "deploy-success.log"):
+            (backup / name).write_text("fixture completion metadata\n")
+        result = self.run_manifest("seal", backup)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = (backup / "SHA256SUMS").read_text()
+        for name in values:
+            self.assertIn("  " + name + "\n", manifest)
+        self.assertEqual(self.run_manifest(directory=backup).returncode, 0)
+        (backup / ".env.app").write_text("changed crypto material")
+        self.assertNotEqual(self.run_manifest(directory=backup).returncode, 0)
+
+    def test_missing_optional_target_config_keeps_legacy_backup_supported(self):
+        app, _ = self.prepared_app()
+        for name in (".env.db", ".env.app"):
+            (app / name).unlink()
+        shutil.rmtree(app / "config")
+        result = self.run_database_backup(app)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        backup, = (app / "backups/one-click").iterdir()
+        self.assertTrue((backup / ".env").is_file())
+        self.assertFalse((backup / ".env.db").exists())
+        self.assertFalse((backup / "config").exists())
+
+    def test_source_config_symlinks_hardlinks_and_special_files_fail_before_dump(self):
+        for name, kind in ((".env.db", "symlink"), (".env.app", "dangling"),
+                           ("config/mysql.cnf", "symlink"), ("config/redis.conf", "hardlink"),
+                           ("config/99-preparation-readonly.sql", "fifo"),
+                           ("docker-compose.yml", "symlink")):
+            with self.subTest(name=name, kind=kind):
+                app, _ = self.prepared_app()
+                unsafe = app / name
+                original = unsafe.read_bytes()
+                unsafe.unlink()
+                external = app / "outside-fixture"
+                if kind == "dangling":
+                    unsafe.symlink_to(external)
+                elif kind == "fifo":
+                    os.mkfifo(unsafe)
+                else:
+                    external.write_bytes(original)
+                    if kind == "hardlink":
+                        os.link(external, unsafe)
+                    else:
+                        unsafe.symlink_to(external)
+                result = self.run_database_backup(app)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertFalse((app / "dump-started").exists())
+
+    def test_source_config_directory_symlink_is_not_followed(self):
+        app, _ = self.prepared_app()
+        external = app / "outside-config"
+        (app / "config").rename(external)
+        (app / "config").symlink_to(external, target_is_directory=True)
+        result = self.run_database_backup(app)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertFalse((app / "dump-started").exists())
+
+    def test_explicit_compose_file_is_copied_under_canonical_package_name(self):
+        app, _ = self.prepared_app()
+        alternate = app / "docker-compose.target.yml"
+        alternate.write_text("services: {target: {image: fixture}}\n")
+        result = self.run_database_backup(app, compose=alternate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        backup, = (app / "backups/one-click").iterdir()
+        self.assertEqual((backup / "docker-compose.yml").read_bytes(), alternate.read_bytes())
+        self.assertFalse((backup / alternate.name).exists())
+
 
 if __name__ == "__main__":
     unittest.main()
