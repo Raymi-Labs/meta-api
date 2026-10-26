@@ -4,6 +4,7 @@
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |
 |---|---|---|---|
+| 新公告邮件同步 | [公告设置](../web/src/pages/Setting/Dashboard/SettingsAnnouncements.jsx)、[任务与防重](../model/announcement_email.go)、[发送服务](../service/announcement_email.go)、[使用说明](announcement-email.md) | 超级管理员 `PUT /api/option/` 的公告保存请求携带 `email_sync`；`GET /api/option/announcement-email/jobs` 分页进度；原公告 JSON、持久任务与收件快照 | 保存时新增才群发，默认勾选可取消；旧调用缺省仅保存，历史/编辑/删除/重复不重发；启用且有合法邮箱用户去重，逐封发送与私密 SQL；跨实例节流、未知不重发，SMTP 接受不等于送达；无定时发布或生产自动部署 |
 | 控制台页面页脚 | [公共布局](../web/src/components/layout/PageLayout.jsx) | `/console` 及其子路径复用统一页面布局；无接口变化 | 控制台整块页脚不渲染并消除其留白，模型广场沿用原隐藏规则；登录/注册页脚按下述认证规则隐藏，其他公开页面与独立额度查询页保持原行为 |
 | 登录与注册 | [登录](../web/src/components/auth/LoginForm.jsx)、[注册](../web/src/components/auth/RegisterForm.jsx)、[共用卡片](../web/src/components/auth/AuthCard.jsx)、[协议确认](../web/src/components/auth/AuthConsent.jsx) | 复用现有密码/OAuth/Passkey/微信/Telegram、条件邮箱验证、2FA、Turnstile 与邀请码接口；认证跳转从路由快照解析安全 next | OAuth 与账号表单同屏；两个政策独立确认并在 handler 检查；仅隐藏 login/register 页面页脚，其他署名保留；17 语言沿用现有资源，邀请专用视觉保留。见[决策](../.agents/notes/implemented/feature/2026-10-25-auth-form-layout.md) |
 | 控制台侧栏滚动 | [侧栏](../web/src/components/layout/SiderBar.jsx)、[样式](../web/src/index.css)、[布局](../web/src/components/layout/PageLayout.jsx) | 沿用用户角色、模块配置及现有控制台路由；无接口变化 | 菜单在剩余视口高度内独立上下滚动，样式不受按需加载的 Semi 样式覆盖；收起按钮固定可见，滚动边缘不带动正文；展开、折叠和手机侧栏共用，不改变系统设置等入口权限 |

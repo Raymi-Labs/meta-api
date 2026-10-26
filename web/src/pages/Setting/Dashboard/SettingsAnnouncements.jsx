@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useReducer } from 'react';
 import {
   Button,
   Space,
@@ -31,6 +31,7 @@ import {
   Switch,
   TextArea,
   Tooltip,
+  Checkbox,
 } from '@douyinfe/semi-ui';
 import {
   IllustrationNoResult,
@@ -45,6 +46,13 @@ import {
   formatDateTimeString,
 } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
+import AnnouncementEmailHistory from './AnnouncementEmailHistory';
+import {
+  announcementDraftReducer,
+  createAnnouncementID,
+  parseAnnouncementDraft,
+  publishAnnouncements,
+} from '../../../helpers/announcementEmail';
 
 const { Text } = Typography;
 
@@ -56,7 +64,17 @@ const getCharacterCount = (value = '') => Array.from(value || '').length;
 const SettingsAnnouncements = ({ options, refresh }) => {
   const { t } = useTranslation();
 
-  const [announcementsList, setAnnouncementsList] = useState([]);
+  const [draft, dispatchDraft] = useReducer(announcementDraftReducer, {
+    items: [],
+    dirty: false,
+    revision: 0,
+  });
+  const announcementsList = draft.items;
+  const hasChanges = draft.dirty;
+  const setAnnouncementsList = (items) =>
+    dispatchDraft({ type: 'edit', items });
+  const [emailSync, setEmailSync] = useState(true);
+  const [emailHistoryRefresh, setEmailHistoryRefresh] = useState(0);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showContentModal, setShowContentModal] = useState(false);
@@ -64,7 +82,6 @@ const SettingsAnnouncements = ({ options, refresh }) => {
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({
     content: '',
     publishDate: new Date(),
@@ -208,6 +225,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             theme='light'
             type='tertiary'
             size='small'
+            disabled={loading}
             onClick={() => handleEditAnnouncement(record)}
           >
             {t('编辑')}
@@ -217,6 +235,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             type='danger'
             theme='light'
             size='small'
+            disabled={loading}
             onClick={() => handleDeleteAnnouncement(record)}
           >
             {t('删除')}
@@ -226,29 +245,27 @@ const SettingsAnnouncements = ({ options, refresh }) => {
     },
   ];
 
-  const updateOption = async (key, value) => {
-    const res = await API.put('/api/option/', {
-      key,
-      value,
-    });
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess('系统公告已更新');
-      if (refresh) refresh();
-    } else {
-      showError(message);
-    }
-  };
-
   const submitAnnouncements = async () => {
+    const revision = draft.revision;
     try {
       setLoading(true);
-      const announcementsJson = JSON.stringify(announcementsList);
-      await updateOption('console_setting.announcements', announcementsJson);
-      setHasChanges(false);
+      const queued = await publishAnnouncements(
+        API,
+        announcementsList,
+        emailSync,
+        t('系统公告更新失败'),
+      );
+      dispatchDraft({ type: 'saved', revision });
+      setEmailHistoryRefresh((value) => value + 1);
+      showSuccess(
+        queued > 0
+          ? t('公告已保存，{{count}} 条公告正在后台发送邮件', { count: queued })
+          : t('系统公告已更新'),
+      );
+      // A settings refresh must not turn a successful publication into a failure.
+      Promise.resolve(refresh?.()).catch(() => {});
     } catch (error) {
-      console.error('系统公告更新失败', error);
-      showError('系统公告更新失败');
+      showError(error.message || t('系统公告更新失败'));
     } finally {
       setLoading(false);
     }
@@ -289,7 +306,6 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         (item) => item.id !== deletingAnnouncement.id,
       );
       setAnnouncementsList(newList);
-      setHasChanges(true);
       showSuccess('公告已删除，请及时点击“保存设置”进行保存');
     }
     setShowDeleteModal(false);
@@ -316,8 +332,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
           item.id === editingAnnouncement.id ? { ...item, ...formData } : item,
         );
       } else {
-        const newId =
-          Math.max(...announcementsList.map((item) => item.id), 0) + 1;
+        const newId = createAnnouncementID();
         const newAnnouncement = {
           id: newId,
           ...formData,
@@ -326,7 +341,6 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       }
 
       setAnnouncementsList(newList);
-      setHasChanges(true);
       setShowAnnouncementModal(false);
       showSuccess(
         editingAnnouncement
@@ -340,34 +354,20 @@ const SettingsAnnouncements = ({ options, refresh }) => {
     }
   };
 
-  const parseAnnouncements = (announcementsStr) => {
-    if (!announcementsStr) {
-      setAnnouncementsList([]);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(announcementsStr);
-      const list = Array.isArray(parsed) ? parsed : [];
-      // 确保每个项目都有id
-      const listWithIds = list.map((item, index) => ({
-        ...item,
-        id: item.id || index + 1,
-      }));
-      setAnnouncementsList(listWithIds);
-    } catch (error) {
-      console.error('解析系统公告失败:', error);
-      setAnnouncementsList([]);
-    }
-  };
-
   useEffect(() => {
     const annStr =
       options['console_setting.announcements'] ?? options.Announcements;
     if (annStr !== undefined) {
-      parseAnnouncements(annStr);
+      try {
+        dispatchDraft({
+          type: 'receive',
+          items: parseAnnouncementDraft(annStr),
+        });
+      } catch {
+        showError(t('系统公告加载失败，已保留当前内容'));
+      }
     }
-  }, [options['console_setting.announcements'], options.Announcements]);
+  }, [options['console_setting.announcements'], options.Announcements, t]);
 
   useEffect(() => {
     const enabledStr = options['console_setting.announcements_enabled'];
@@ -408,7 +408,6 @@ const SettingsAnnouncements = ({ options, refresh }) => {
     );
     setAnnouncementsList(newList);
     setSelectedRowKeys([]);
-    setHasChanges(true);
     showSuccess(
       `已删除 ${selectedRowKeys.length} 个系统公告，请及时点击“保存设置”进行保存`,
     );
@@ -427,6 +426,22 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         </div>
       </div>
 
+      <div className='my-3'>
+        <Checkbox
+          id='announcement-email-sync'
+          checked={emailSync}
+          disabled={loading}
+          onChange={(event) => setEmailSync(event.target.checked)}
+        >
+          {t('发布新公告时同步邮件')}
+        </Checkbox>
+        <p className='mt-2 text-sm text-[var(--semi-color-text-2)]'>
+          {t(
+            '点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。',
+          )}
+        </p>
+      </div>
+
       <Divider margin='12px' />
 
       <div className='flex flex-col md:flex-row justify-between items-center gap-4 w-full'>
@@ -436,6 +451,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             type='primary'
             icon={<Plus size={14} />}
             className='w-full md:w-auto'
+            disabled={loading}
             onClick={handleAddAnnouncement}
           >
             {t('添加公告')}
@@ -445,7 +461,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             type='danger'
             theme='light'
             onClick={handleBatchDelete}
-            disabled={selectedRowKeys.length === 0}
+            disabled={loading || selectedRowKeys.length === 0}
             className='w-full md:w-auto'
           >
             {t('批量删除')}{' '}
@@ -455,7 +471,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             icon={<Save size={14} />}
             onClick={submitAnnouncements}
             loading={loading}
-            disabled={!hasChanges}
+            disabled={!hasChanges || loading}
             type='secondary'
             className='w-full md:w-auto'
           >
@@ -465,7 +481,11 @@ const SettingsAnnouncements = ({ options, refresh }) => {
 
         {/* 启用开关 */}
         <div className='order-1 md:order-2 flex items-center gap-2'>
-          <Switch checked={panelEnabled} onChange={handleToggleEnabled} />
+          <Switch
+            checked={panelEnabled}
+            onChange={handleToggleEnabled}
+            disabled={loading}
+          />
           <Text>{panelEnabled ? t('已启用') : t('已禁用')}</Text>
         </div>
       </div>
@@ -504,46 +524,52 @@ const SettingsAnnouncements = ({ options, refresh }) => {
 
   return (
     <>
-      <Form.Section text={renderHeader()}>
-        <Table
-          columns={columns}
-          dataSource={getCurrentPageData()}
-          rowSelection={rowSelection}
-          rowKey='id'
-          scroll={{ x: 'max-content' }}
-          pagination={{
-            currentPage: currentPage,
-            pageSize: pageSize,
-            total: announcementsList.length,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            pageSizeOptions: ['5', '10', '20', '50'],
-            onChange: (page, size) => {
-              setCurrentPage(page);
-              setPageSize(size);
-            },
-            onShowSizeChange: (current, size) => {
-              setCurrentPage(1);
-              setPageSize(size);
-            },
-          }}
-          size='middle'
-          loading={loading}
-          empty={
-            <Empty
-              image={
-                <IllustrationNoResult style={{ width: 150, height: 150 }} />
-              }
-              darkModeImage={
-                <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
-              }
-              description={t('暂无系统公告')}
-              style={{ padding: 30 }}
-            />
-          }
-          className='overflow-hidden'
-        />
-      </Form.Section>
+      <div data-testid='announcement-settings'>
+        <Form.Section text={renderHeader()}>
+          <Table
+            columns={columns}
+            dataSource={getCurrentPageData()}
+            rowSelection={rowSelection}
+            rowKey='id'
+            scroll={{ x: 'max-content' }}
+            pagination={{
+              currentPage: currentPage,
+              pageSize: pageSize,
+              total: announcementsList.length,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              pageSizeOptions: ['5', '10', '20', '50'],
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+              onShowSizeChange: (current, size) => {
+                setCurrentPage(1);
+                setPageSize(size);
+              },
+            }}
+            size='middle'
+            loading={loading}
+            empty={
+              <Empty
+                image={
+                  <IllustrationNoResult style={{ width: 150, height: 150 }} />
+                }
+                darkModeImage={
+                  <IllustrationNoResultDark
+                    style={{ width: 150, height: 150 }}
+                  />
+                }
+                description={t('暂无系统公告')}
+                style={{ padding: 30 }}
+              />
+            }
+            className='overflow-hidden'
+          />
+        </Form.Section>
+
+        <AnnouncementEmailHistory refreshKey={emailHistoryRefresh} />
+      </div>
 
       <Modal
         title={editingAnnouncement ? t('编辑公告') : t('添加公告')}

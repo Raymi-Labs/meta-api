@@ -6577,6 +6577,15 @@
     "错误信息": "Detalles del error",
     "页面": "Página",
     "工具": "Herramienta",
-    "反馈详情": "Detalles de los comentarios"
+    "反馈详情": "Detalles de los comentarios",
+    "系统公告更新失败": "No se pudieron actualizar los anuncios",
+    "系统公告已更新": "Anuncios actualizados",
+    "系统公告加载失败，已保留当前内容": "No se pudieron cargar los anuncios. Se ha conservado el contenido actual.",
+    "公告已保存，{{count}} 条公告正在后台发送邮件": "Anuncios guardados. Se están enviando correos de {{count}} anuncios en segundo plano.",
+    "发布新公告时同步邮件": "Enviar también por correo los nuevos anuncios",
+    "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Al guardar los ajustes, los nuevos anuncios se envían a los usuarios activos con un correo válido vinculado. Editar, eliminar o volver a guardar no los reenvía.",
+    "已提交邮件服务器": "Aceptado por el servidor de correo",
+    "公告邮件记录": "Historial de correos de anuncios",
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Aceptado significa que el servidor de correo aceptó el mensaje, no que el destinatario lo haya recibido. Los mensajes con resultado desconocido no se reenvían automáticamente para evitar duplicados."
   }
 }

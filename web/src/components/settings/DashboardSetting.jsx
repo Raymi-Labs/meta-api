@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Card, Spin, Button, Modal } from '@douyinfe/semi-ui';
 import { API, showError, showSuccess, toBoolean } from '../../helpers';
 import SettingsAPIInfo from '../../pages/Setting/Dashboard/SettingsAPIInfo';
@@ -52,9 +52,15 @@ const DashboardSetting = () => {
 
   let [loading, setLoading] = useState(false);
   const [showMigrateModal, setShowMigrateModal] = useState(false); // 下个版本会删除
+  const requestSequence = useRef(0);
 
-  const getOptions = async () => {
-    const res = await API.get('/api/option/');
+  const getOptions = async (sequence) => {
+    // A post-save refresh must not reuse an older in-flight options response.
+    const res = await API.get('/api/option/', {
+      disableDuplicate: true,
+      skipErrorHandler: true,
+    });
+    if (sequence !== requestSequence.current) return;
     const { success, message, data } = res.data;
     if (success) {
       let newInputs = {};
@@ -73,19 +79,25 @@ const DashboardSetting = () => {
   };
 
   async function onRefresh() {
+    const sequence = ++requestSequence.current;
     try {
       setLoading(true);
-      await getOptions();
+      await getOptions(sequence);
     } catch (error) {
-      showError('刷新失败');
-      console.error(error);
+      if (sequence === requestSequence.current) {
+        showError('刷新失败');
+        console.error(error);
+      }
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     onRefresh();
+    return () => {
+      requestSequence.current += 1;
+    };
   }, []);
 
   // 用于迁移检测的旧键，下个版本会删除
@@ -107,17 +119,23 @@ const DashboardSetting = () => {
   }, [hasLegacyData]);
 
   const handleMigrate = async () => {
+    const sequence = ++requestSequence.current;
     try {
       setLoading(true);
-      await API.post('/api/option/migrate_console_setting');
+      await API.post('/api/option/migrate_console_setting', undefined, {
+        skipErrorHandler: true,
+      });
+      if (sequence !== requestSequence.current) return;
       showSuccess('旧配置迁移完成');
-      await onRefresh();
       setShowMigrateModal(false);
+      await onRefresh();
     } catch (err) {
-      console.error(err);
-      showError('迁移失败: ' + (err.message || '未知错误'));
+      if (sequence === requestSequence.current) {
+        console.error(err);
+        showError('迁移失败: ' + (err.message || '未知错误'));
+      }
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   };
 

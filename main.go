@@ -139,6 +139,7 @@ func main() {
 	service.StartLogRetentionTask()
 	service.StartPulseBenefitLogTask()
 	service.StartQuotaNoticeTask()
+	service.StartAnnouncementEmailTask()
 	service.StartRouteOutageTask()
 
 	// Wire task polling adaptor factory (breaks service -> relay import cycle)

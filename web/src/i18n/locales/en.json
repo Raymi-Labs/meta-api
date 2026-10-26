@@ -6789,6 +6789,15 @@
     "错误信息": "Error details",
     "页面": "Page",
     "工具": "Tool",
-    "反馈详情": "Feedback details"
+    "反馈详情": "Feedback details",
+    "系统公告更新失败": "Could not update announcements",
+    "系统公告已更新": "Announcements updated",
+    "系统公告加载失败，已保留当前内容": "Could not load announcements. Your current content has been kept.",
+    "公告已保存，{{count}} 条公告正在后台发送邮件": "Announcements saved. Email is being sent for {{count}} announcements in the background.",
+    "发布新公告时同步邮件": "Email users when publishing new announcements",
+    "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "After you click Save settings, new announcements are emailed to enabled users with a valid linked email address. Editing, deleting, or saving again will not resend them.",
+    "已提交邮件服务器": "Accepted by mail server",
+    "公告邮件记录": "Announcement email history",
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepted means the mail server accepted the message, not that the recipient received it. Messages with an unknown outcome are not automatically resent, to avoid duplicates."
   }
 }

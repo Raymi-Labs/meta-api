@@ -6577,6 +6577,15 @@
     "错误信息": "Dettagli dell’errore",
     "页面": "Pagina",
     "工具": "Strumento",
-    "反馈详情": "Dettagli del feedback"
+    "反馈详情": "Dettagli del feedback",
+    "系统公告更新失败": "Impossibile aggiornare gli annunci",
+    "系统公告已更新": "Annunci aggiornati",
+    "系统公告加载失败，已保留当前内容": "Impossibile caricare gli annunci. Il contenuto attuale è stato conservato.",
+    "公告已保存，{{count}} 条公告正在后台发送邮件": "Annunci salvati. Le e-mail per {{count}} annunci vengono inviate in background.",
+    "发布新公告时同步邮件": "Invia anche per e-mail i nuovi annunci",
+    "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Dopo il salvataggio delle impostazioni, i nuovi annunci vengono inviati agli utenti attivi con un indirizzo e-mail valido collegato. Modificare, eliminare o salvare nuovamente non li reinvia.",
+    "已提交邮件服务器": "Accettato dal server di posta",
+    "公告邮件记录": "Cronologia e-mail degli annunci",
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accettato significa che il server di posta ha accettato il messaggio, non che il destinatario lo abbia ricevuto. I messaggi con esito sconosciuto non vengono reinviati automaticamente per evitare duplicati."
   }
 }

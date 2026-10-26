@@ -269,6 +269,7 @@ func SetApiRouter(router *gin.Engine) {
 		optionRoute.Use(middleware.RootAuth())
 		{
 			optionRoute.GET("/", controller.GetOptions)
+			optionRoute.GET("/announcement-email/jobs", controller.ListAnnouncementEmailJobs)
 			optionRoute.GET("/pulse", controller.GetPulseOptions)
 			optionRoute.PUT("/pulse", controller.UpdatePulseOptions)
 			optionRoute.PUT("/", controller.UpdateOption)

@@ -9,6 +9,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/console_setting"
@@ -123,8 +124,9 @@ func GetOptions(c *gin.Context) {
 }
 
 type OptionUpdateRequest struct {
-	Key   string `json:"key"`
-	Value any    `json:"value"`
+	Key       string `json:"key"`
+	Value     any    `json:"value"`
+	EmailSync bool   `json:"email_sync"`
 }
 
 func UpdateOption(c *gin.Context) {
@@ -466,6 +468,21 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	}
+	if option.Key == model.AnnouncementOptionKey {
+		queued, saveErr := model.SaveAnnouncementPublications(option.Value.(string), option.EmailSync, c.GetInt("id"), service.AnnouncementSMTPReady())
+		if saveErr != nil {
+			// SQL errors may contain snapshot addresses; return only validation
+			// errors, never the raw database error.
+			message := "公告保存失败，请检查邮件配置后重试"
+			if strings.Contains(saveErr.Error(), "SMTP 未配置") || strings.HasPrefix(saveErr.Error(), "公告 ID") || strings.HasPrefix(saveErr.Error(), "单次最多同步") {
+				message = saveErr.Error()
+			}
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": message})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": gin.H{"email_jobs_queued": queued}})
+		return
 	}
 	err = model.UpdateOption(option.Key, option.Value.(string))
 	if err != nil {

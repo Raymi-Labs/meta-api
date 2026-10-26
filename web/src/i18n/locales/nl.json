@@ -6577,6 +6577,15 @@
     "错误信息": "Foutdetails",
     "页面": "Pagina",
     "工具": "Hulpmiddel",
-    "反馈详情": "Feedbackdetails"
+    "反馈详情": "Feedbackdetails",
+    "系统公告更新失败": "Aankondigingen konden niet worden bijgewerkt",
+    "系统公告已更新": "Aankondigingen bijgewerkt",
+    "系统公告加载失败，已保留当前内容": "Aankondigingen konden niet worden geladen. De huidige inhoud is behouden.",
+    "公告已保存，{{count}} 条公告正在后台发送邮件": "Aankondigingen opgeslagen. E-mails voor {{count}} aankondigingen worden op de achtergrond verzonden.",
+    "发布新公告时同步邮件": "Nieuwe aankondigingen ook per e-mail versturen",
+    "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Na het opslaan van de instellingen worden nieuwe aankondigingen naar actieve gebruikers met een geldig gekoppeld e-mailadres gestuurd. Bewerken, verwijderen of opnieuw opslaan verstuurt ze niet opnieuw.",
+    "已提交邮件服务器": "Geaccepteerd door mailserver",
+    "公告邮件记录": "E-mailgeschiedenis van aankondigingen",
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Geaccepteerd betekent dat de mailserver het bericht heeft aangenomen, niet dat de ontvanger het heeft ontvangen. Berichten met een onbekende uitkomst worden niet automatisch opnieuw verstuurd om dubbele meldingen te voorkomen."
   }
 }

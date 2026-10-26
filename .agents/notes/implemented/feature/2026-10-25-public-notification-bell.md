@@ -19,6 +19,7 @@ Status: implemented
 - [首页设计](./2026-10-24-public-home-redesign.md)部分重叠：继续持有默认/自定义首页与轻量公共壳边界，本篇持有公告入口及共享已读规则。
 - [公开语言](./2026-10-24-public-languages.md)部分重叠：沿用公开词条加载，不翻译后台动态公告。
 - [额度不足提醒](./2026-10-24-quota-blocked-notifications.md)属于私人账务通知，与公开公告无关，不接入公共铃铛。
+- [新公告邮件同步](./2026-10-26-announcement-email-sync.md)持有发布时邮件队列和防重规则；继续使用本篇的公告列表与展示入口，不改变浏览器已读状态。
 - 尚未完成的全站语言同步属于独立工作，不能混入本次发布。
 
 ## Alternatives considered
