@@ -63,10 +63,18 @@ jobs:
         run: |
           docker pull "$NEWAPI_REDIS_MIGRATION_IMAGE"
           python3 -B -m unittest discover -s scripts/server-migration -p 'test_redis_migration.py' -v
-      - name: Install rclone for isolated encryption roundtrip
+      - name: Install isolated encryption, socket transport and boot verification dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y rclone
+          sudo apt-get install -y rclone socat systemd
+      - name: Verify private MySQL socket binary transport and both half-close directions
+        run: |
+          test -x /usr/bin/socat
+          python3 -B -m unittest discover -s scripts/server-migration -p 'test_pulse_logdb_proxy.py' -v
+      - name: Verify private socket boot ordering in an isolated systemd root
+        run: |
+          test -x /usr/bin/systemd-analyze
+          python3 -B -m unittest discover -s scripts/server-migration -p 'test_pulse_socket_units.py' -v
       - name: Verify encryption and retirement with a temporary local backend
         run: sudo env NEWAPI_RCLONE_INTEGRATION=1 python3 -B -m unittest discover -s scripts/server-storage -p 'test_log_offload_rclone.py' -v
       - name: Check opt-in Docker exercise entrypoint

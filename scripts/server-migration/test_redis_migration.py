@@ -1,7 +1,9 @@
 """Read-only audit regressions plus opt-in real Redis RDB/AOF migration exercise."""
 import copy
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -10,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from unittest import mock
 import uuid
 
 SPEC = importlib.util.spec_from_file_location("redis_migration_audit", Path(__file__).with_name("redis-migration-audit.py"))
@@ -53,6 +56,111 @@ class AuditTests(unittest.TestCase):
             modify(actual)
             with self.assertRaises(audit.AuditError):
                 audit.compare(self.expected, actual)
+
+    def zset_pair(self):
+        legacy = copy.deepcopy(self.expected)
+        legacy["databases"]["0"]["entries"]["key"] = {
+            "type": "zset", "dump_sha1": "a" * 40, "expires_at_ms": 2000}
+        modern = copy.deepcopy(legacy)
+        modern["format_version"] = 2
+        modern["databases"]["0"]["entries"]["key"].update(
+            fingerprint="zset-members-scores-v1", value_sha1="b" * 40)
+        return legacy, modern
+
+    def test_legacy_upgrade_requires_original_dump_continuity(self):
+        legacy, modern = self.zset_pair()
+        upgraded = audit.upgrade(legacy, modern, "c" * 64)
+        self.assertTrue(upgraded["continuity"]["legacy_dump_verified"])
+        self.assertEqual(upgraded["continuity"]["prior_manifest_sha256"], "c" * 64)
+        modern["databases"]["0"]["entries"]["key"]["dump_sha1"] = "d" * 40
+        with self.assertRaises(audit.AuditError):
+            audit.compare(legacy, modern)
+        with self.assertRaises(audit.AuditError):
+            audit.upgrade(legacy, modern, "c" * 64)
+
+    def test_v2_allows_only_zset_encoding_change_with_equal_semantics(self):
+        _, modern = self.zset_pair()
+        actual = copy.deepcopy(modern)
+        actual["databases"]["0"]["entries"]["key"]["dump_sha1"] = "d" * 40
+        self.assertEqual(audit.compare(modern, actual)["zset_encoding_changes"], 1)
+        for field, value in (("value_sha1", "e" * 40), ("fingerprint", "redis-dump-v1"),
+                             ("expires_at_ms", 2001), ("type", "string")):
+            changed = copy.deepcopy(actual)
+            changed["databases"]["0"]["entries"]["key"][field] = value
+            with self.subTest(field=field), self.assertRaises(audit.AuditError):
+                audit.compare(modern, changed)
+        for change in (lambda x: x["databases"].update({"1": {}}),
+                       lambda x: x["databases"]["0"]["entries"].clear(),
+                       lambda x: x["databases"]["0"]["entries"].update(extra=copy.deepcopy(x["databases"]["0"]["entries"]["key"]))):
+            changed = copy.deepcopy(actual)
+            change(changed)
+            with self.assertRaises(audit.AuditError):
+                audit.compare(modern, changed)
+
+    def test_upgrade_cli_checks_private_prior_sha_and_never_prints_values(self):
+        legacy, modern = self.zset_pair()
+        marker = "private-fixture-value-must-not-be-printed"
+        legacy["private_marker"] = marker
+        with tempfile.TemporaryDirectory() as directory:
+            prior, target = Path(directory) / "v1.json", Path(directory) / "v2.json"
+            raw = json.dumps(legacy).encode()
+            prior.write_bytes(raw)
+            prior.chmod(0o600)
+            base = ["audit", "upgrade", "--container", "fixture", "--container-id", "a" * 64,
+                    "--image-id", "sha256:" + "b" * 64, "--auth-env", "FIXTURE_AUTH",
+                    "--prior-manifest", str(prior), "--manifest", str(target), "--prior-sha256"]
+            for sha, changed_dump in (("0" * 64, False), (hashlib.sha256(raw).hexdigest(), True)):
+                current = copy.deepcopy(modern)
+                if changed_dump:
+                    current["databases"]["0"]["entries"]["key"]["dump_sha1"] = "d" * 40
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with mock.patch.object(audit.sys, "argv", [*base, sha]), mock.patch.object(audit, "DockerRedis") as client:
+                    client.return_value.snapshot.return_value = current
+                    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                        self.assertEqual(audit.main(), 1)
+                    if not changed_dump:
+                        client.assert_not_called()
+                self.assertFalse(target.exists())
+                self.assertNotIn(marker, stdout.getvalue() + stderr.getvalue())
+                self.assertEqual(stdout.getvalue(), "")
+
+    def test_private_manifest_fifo_is_rejected_without_blocking(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fifo = Path(directory) / "manifest.json"
+            os.mkfifo(fifo, 0o600)
+            child = """
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location('audit', sys.argv[1])
+audit = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(audit)
+try:
+    audit.read_private(sys.argv[2])
+except audit.AuditError:
+    sys.exit(0)
+sys.exit(1)
+"""
+            result = subprocess.run([audit.sys.executable, "-B", "-c", child, str(Path(audit.__file__)), str(fifo)],
+                                    capture_output=True, timeout=3)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout + result.stderr, b"")
+
+    def test_malformed_manifest_only_emits_fixed_private_diagnostic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "bad.json"
+            marker = "private-value-must-not-appear-in-traceback"
+            manifest.write_text(json.dumps([marker]))
+            manifest.chmod(0o600)
+            argv = ["audit", "verify", "--container", "fixture", "--container-id", "a" * 64,
+                    "--image-id", "sha256:" + "b" * 64, "--auth-env", "FIXTURE_AUTH", "--manifest", str(manifest)]
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with mock.patch.object(audit.sys, "argv", argv), mock.patch.object(audit, "DockerRedis") as client:
+                client.return_value.snapshot.return_value = copy.deepcopy(self.expected)
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    self.assertEqual(audit.main(), 1)
+            self.assertEqual(stdout.getvalue(), "")
+            self.assertNotIn(marker, stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
+            self.assertIn("Redis migration audit failed", stderr.getvalue())
 
 
 @unittest.skipUnless(os.environ.get("NEWAPI_REDIS_MIGRATION_IMAGE"), "opt-in local Docker exercise")
@@ -133,7 +241,7 @@ class RealRedisMigrationTests(unittest.TestCase):
                 commands = [["SET", f"fixture:{index}", "x" * 1024] for index in range(2153)]
                 commands += [["SET", "newapi:pulse:nonce:fixture", "1", "PX", "120000"],
                              ["SET", "affinity:fixture", "channel-123", "PX", "180000"],
-                             ["SET", "expires-during-migration", "short", "PX", "1000"],
+                             ["SET", "expires-during-migration", "short", "PX", "5000"],
                              ["HSET", "hash", "field", "value"], ["RPUSH", "list", "a", "b"],
                              ["SADD", "set", "a", "b"], ["ZADD", "zset", "1.5", "a"],
                              ["XADD", "stream", "*", "field", "value"],
@@ -146,7 +254,26 @@ class RealRedisMigrationTests(unittest.TestCase):
                         protocol.extend(f"${len(value)}\r\n".encode() + value + b"\r\n")
                 docker("exec", "-i", "-e", "REDISCLI_AUTH", source, "redis-cli", "--pipe", data=bytes(protocol),
                        env={**os.environ, "REDISCLI_AUTH": password})
-                before = src.snapshot()
+                # Redis keeps a reduced sorted set in skiplist form, but RDB
+                # loading may choose listpack. Its DUMP bytes then differ even
+                # though every binary member, score and absolute TTL is equal.
+                members = [f"extra-{index:03d}" for index in range(128)]
+                additions = [part for index, member in enumerate(members) for part in (str(index + 10), member)]
+                src.cli("ZADD", "zset", *additions)
+                src.cli("ZREM", "zset", *members)
+                src.cli("PEXPIRE", "zset", "180000")
+                self.assertEqual(src.cli("OBJECT", "ENCODING", "zset"), "skiplist")
+                sampled = src.snapshot()
+                legacy = copy.deepcopy(sampled)
+                legacy["format_version"] = 1
+                for db in legacy["databases"].values():
+                    for entry in db["entries"].values():
+                        entry.pop("value_sha1")
+                        entry.pop("fingerprint")
+                legacy_sha = hashlib.sha256(json.dumps(legacy, sort_keys=True).encode()).hexdigest()
+                # A v2 proof must be sampled from the frozen source and match
+                # the old v1 bytes; it cannot be invented from the target.
+                before = audit.upgrade(legacy, src.snapshot(), legacy_sha)
                 self.assertEqual(sum(len(db["entries"]) for db in before["databases"].values()), 2162)
                 # This is the final stopped-writer export; no keys are written
                 # from this point onward, only natural TTL expiration occurs.
@@ -183,8 +310,33 @@ class RealRedisMigrationTests(unittest.TestCase):
                 docker("start", bootstrap)
                 boot = client(bootstrap)
                 ready(boot)
+                self.assertEqual(boot.cli("OBJECT", "ENCODING", "zset"), "listpack")
+                restored = boot.snapshot()
+                with self.assertRaises(audit.AuditError):
+                    audit.compare(legacy, restored)
+                with self.assertRaises(audit.AuditError):
+                    audit.upgrade(legacy, restored, legacy_sha)
+                expiry = before["databases"]["0"]["entries"][hashlib.sha1(b"expires-during-migration").hexdigest()]["expires_at_ms"]
+                clock = boot.cli("TIME")
+                remaining = expiry - (int(clock[0]) * 1000 + int(clock[1]) // 1000)
+                if remaining > 0:
+                    time.sleep(remaining / 1000 + 0.1)
                 first = audit.compare(before, boot.snapshot())
+                self.assertEqual(first["zset_encoding_changes"], 1)
                 self.assertGreaterEqual(first["naturally_expired_keys"], 1)
+                # Alter score/member independently while preserving type and
+                # absolute TTL, so failures specifically exercise semantics.
+                boot.cli("ZADD", "zset", "2.5", "a")
+                with self.assertRaises(audit.AuditError):
+                    audit.compare(before, boot.snapshot())
+                boot.cli("ZADD", "zset", "1.5", "a")
+                boot.cli("ZADD", "zset", "1.5", "different-member")
+                boot.cli("ZREM", "zset", "a")
+                with self.assertRaises(audit.AuditError):
+                    audit.compare(before, boot.snapshot())
+                boot.cli("ZADD", "zset", "1.5", "a")
+                boot.cli("ZREM", "zset", "different-member")
+                audit.compare(before, boot.snapshot())
                 self.assertEqual(persistence(boot)["aof_enabled"], "0")
                 boot.cli("CONFIG", "SET", "appendonly", "yes")
                 wait_aof(boot)
@@ -209,6 +361,9 @@ class RealRedisMigrationTests(unittest.TestCase):
                                   "existing_empty_aof_false_restore_rejected": True,
                                   "export_sha256_and_rdb_checksum_verified": True,
                                   "rdb_bootstrap_to_aof_and_crash_restart_verified": True,
+                                  "zset_skiplist_to_listpack_verified": True,
+                                  "zset_member_and_score_tampering_rejected": True,
+                                  "legacy_manifest_continuity_verified": True,
                                   "normal_restart_verified": True}))
             finally:
                 for container in reversed(containers):

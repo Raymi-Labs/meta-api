@@ -1,0 +1,16 @@
+[Unit]
+Description=Meta Pulse private LOG_DB connection to verified MySQL container
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStart=/usr/local/lib/newapi-migration/pulse-logdb-proxy.py
+StandardInput=socket
+StandardOutput=null
+StandardError=journal
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStopSec=15

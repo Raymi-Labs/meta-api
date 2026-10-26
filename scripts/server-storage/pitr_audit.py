@@ -49,11 +49,59 @@ def canonical(value):
     return (json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n").encode()
 
 
+def _ddl_spans(ddl):
+    """Yield code/opaque spans without rewriting quoted values or comments."""
+    start = offset = 0
+    while offset < len(ddl):
+        char = ddl[offset]
+        line_comment = char == "#" or (ddl.startswith("--", offset) and
+            (offset + 2 == len(ddl) or ddl[offset + 2].isspace()))
+        if char in "'\"`" or line_comment or ddl.startswith("/*", offset):
+            yield True, ddl[start:offset]
+            opaque_start = offset
+            if char in "'\"`":
+                quote = char
+                offset += 1
+                while offset < len(ddl):
+                    if ddl[offset] == "\\" and quote != "`":
+                        offset = min(offset + 2, len(ddl))
+                    elif ddl[offset] == quote:
+                        offset += 1
+                        if offset < len(ddl) and ddl[offset] == quote:
+                            offset += 1
+                        else:
+                            break
+                    else:
+                        offset += 1
+            elif line_comment:
+                while offset < len(ddl) and ddl[offset] not in "\r\n":
+                    offset += 1
+            else:
+                end = ddl.find("*/", offset + 2)
+                offset = len(ddl) if end == -1 else end + 2
+            yield False, ddl[opaque_start:offset]
+            start = offset
+        else:
+            offset += 1
+    yield True, ddl[start:]
+
+
 def normalize_create(ddl):
-    # AUTO_INCREMENT's allocator high-water mark is not transactional: a later
-    # rolled-back insert can advance it while a consistent dump is running.
-    # Rows and all other DDL are compared exactly; retain the raw DDL hash too.
-    return re.sub(r"(?<=ENGINE=InnoDB) AUTO_INCREMENT=\d+", "", ddl)
+    # A same-charset explicit COLLATE already fixes the column character set.
+    # SHOW CREATE can add redundant CHARACTER SET after dump/restore. Keep the
+    # collation itself, all unrelated DDL and the separate raw DDL digest.
+    redundant_charset = re.compile(
+        r"\bCHARACTER\s+SET\s+([A-Z][A-Z0-9_]*)\s+"
+        r"(?=COLLATE\s+([A-Z][A-Z0-9_]*)(?![A-Z0-9_]))", re.IGNORECASE)
+
+    def normalize_code(code):
+        code = redundant_charset.sub(
+            lambda m: "" if m[2].lower().startswith(m[1].lower() + "_") else m[0], code)
+        # The allocator high-water mark is not transactional: a rolled-back
+        # insert can advance it during a consistent dump. Never alter literals.
+        return re.sub(r"(?<=ENGINE=InnoDB) AUTO_INCREMENT=\d+", "", code)
+
+    return "".join(normalize_code(span) if code else span for code, span in _ddl_spans(ddl))
 
 
 def audit_database(query, lines, database):

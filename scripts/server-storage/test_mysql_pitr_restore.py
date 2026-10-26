@@ -462,6 +462,70 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(pitr_audit.normalize_create("id INT) ENGINE=InnoDB AUTO_INCREMENT=123 DEFAULT CHARSET=utf8mb4"), "id INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
         self.assertIn("AUTO_INCREMENT=123", pitr_audit.normalize_create("note VARCHAR(60) DEFAULT ' AUTO_INCREMENT=123'"))
 
+    def test_redundant_column_charset_matches_restore_without_hiding_collation(self):
+        source = "CREATE TABLE `t` (\n `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n `note` text COLLATE latin1_swedish_ci\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        restored = source.replace("varchar(255) COLLATE", "varchar(255) CHARACTER SET utf8mb4 COLLATE").replace("text COLLATE", "text CHARACTER SET latin1 COLLATE")
+        self.assertEqual(pitr_audit.normalize_create(source), pitr_audit.normalize_create(restored))
+        self.assertNotEqual(hashlib.sha256(source.encode()).hexdigest(), hashlib.sha256(restored.encode()).hexdigest())
+        changed = restored.replace("utf8mb4_unicode_ci DEFAULT", "utf8mb4_bin DEFAULT")
+        self.assertNotEqual(pitr_audit.normalize_create(source), pitr_audit.normalize_create(changed))
+        self.assertEqual(pitr_audit.normalize_create("c TEXT character set UTF8MB4 COLLATE utf8mb4_unicode_ci"), "c TEXT COLLATE utf8mb4_unicode_ci")
+
+    def test_charset_normalization_requires_adjacent_matching_unquoted_collation(self):
+        unchanged = (
+            "c TEXT CHARACTER SET utf8mb4",
+            "c TEXT CHARACTER SET latin1 COLLATE utf8mb4_unicode_ci",
+            "c TEXT CHARACTER SET utf8mb3 COLLATE utf8_general_ci",
+            "c TEXT CHARACTER SET utf8mb4 NOT NULL COLLATE utf8mb4_unicode_ci",
+            "c TEXT CHARACTER SET utf8mb4 /* retained */ COLLATE utf8mb4_unicode_ci",
+            "c TEXT CHARACTER SET `utf8mb4` COLLATE utf8mb4_unicode_ci",
+            "c TEXT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`",
+            "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        )
+        for ddl in unchanged:
+            with self.subTest(ddl=ddl):
+                self.assertEqual(pitr_audit.normalize_create(ddl), ddl)
+        a = "c TEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci"
+        b = "c TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+        self.assertNotEqual(pitr_audit.normalize_create(a), pitr_audit.normalize_create(b))
+
+    def test_charset_normalization_preserves_literals_identifiers_and_comments(self):
+        phrase = "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+        allocator = "ENGINE=InnoDB AUTO_INCREMENT=123"
+        protected = (
+            "DEFAULT '" + phrase + "'",
+            'DEFAULT "' + phrase + '"',
+            "COMMENT '" + phrase + " " + allocator + "'",
+            "enum('" + phrase + "', 'other')",
+            "set('" + phrase + "', 'other')",
+            "GENERATED ALWAYS AS (concat('" + phrase + "', `other`))",
+            "`identifier " + phrase + "` varchar(30)",
+            "`doubled`` " + phrase + "` varchar(30)",
+            "DEFAULT 'doubled'' " + phrase + "'",
+            "DEFAULT 'escaped\\' " + phrase + "'",
+            'DEFAULT "escaped\\\" ' + phrase + '"',
+            "/* " + phrase + " " + allocator + " */",
+            "/*!80000 " + phrase + " */",
+            "-- " + phrase + " " + allocator + "\n",
+            "# " + phrase + " " + allocator + "\r\n",
+            "DEFAULT 'unterminated " + phrase,
+            "/* unterminated " + phrase,
+        )
+        for value in protected:
+            with self.subTest(value=value):
+                ddl = "c TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci " + value
+                self.assertEqual(pitr_audit.normalize_create(ddl), "c TEXT COLLATE utf8mb4_unicode_ci " + value)
+
+    def test_normalization_continues_after_opaque_spans_and_is_idempotent(self):
+        ddl = "CREATE TABLE `t` (`a` varchar(10) DEFAULT 'ENGINE=InnoDB AUTO_INCREMENT=123', /* opaque */\n `b` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,\n -- CHARACTER SET latin1 COLLATE latin1_bin\n `c` text CHARACTER SET latin1 COLLATE latin1_bin) ENGINE=InnoDB AUTO_INCREMENT=987 DEFAULT CHARSET=utf8mb4"
+        normalized = pitr_audit.normalize_create(ddl)
+        self.assertIn("DEFAULT 'ENGINE=InnoDB AUTO_INCREMENT=123'", normalized)
+        self.assertIn("-- CHARACTER SET latin1 COLLATE latin1_bin", normalized)
+        self.assertIn("`b` text COLLATE utf8mb4_bin", normalized)
+        self.assertIn("`c` text COLLATE latin1_bin", normalized)
+        self.assertNotIn("AUTO_INCREMENT=987", normalized)
+        self.assertEqual(pitr_audit.normalize_create(normalized), normalized)
+
     def test_financial_and_schema_drift_is_detected(self):
         base = {"database": "new-api", "tables": {"users": {"kind": "BASE TABLE", "schema_sha256": "a", "count": 1, "data_sha256": "b", "financial": {"rows": [[1, "100"]]}}}, "objects": {}}
         other = copy.deepcopy(base)

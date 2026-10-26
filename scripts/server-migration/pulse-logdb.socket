@@ -1,0 +1,17 @@
+[Unit]
+Description=Meta Pulse private LOG_DB socket
+DefaultDependencies=no
+After=wg-quick@wg0.service docker.service
+Requires=wg-quick@wg0.service
+Before=multi-user.target shutdown.target
+Conflicts=shutdown.target
+
+[Socket]
+ListenStream=10.77.0.1:3306
+Accept=yes
+NoDelay=true
+MaxConnections=64
+MaxConnectionsPerSource=32
+
+[Install]
+WantedBy=multi-user.target
