@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { getPublicShellPage } from '../src/helpers/publicRoutes.js';
 import {
   detectDesktopOS,
   formatDesktopDownloadSize,
@@ -207,6 +208,11 @@ for (const invalid of [
   assert.throws(() => normalizeDesktopDownloadCatalog(invalid));
 }
 
+// Download stays in the public shell without requiring console authentication.
+for (const pathname of ['/download', '/download/']) {
+  assert.equal(getPublicShellPage(pathname), 'download');
+}
+
 Promise.all([
   readFile(
     new URL('../src/pages/Home/EnterpriseHome.jsx', import.meta.url),
@@ -218,25 +224,44 @@ Promise.all([
   ),
   readFile(new URL('../src/index.jsx', import.meta.url), 'utf8'),
   readFile(
-    new URL('../src/hooks/common/useNavigation.js', import.meta.url),
+    new URL('../src/components/layout/HeaderDownloadLink.jsx', import.meta.url),
+    'utf8',
+  ),
+  readFile(
+    new URL('../src/components/layout/PublicFooter.jsx', import.meta.url),
     'utf8',
   ),
 ])
-  .then(([homeSource, shellSource, entrySource, navigationSource]) => {
-    assert.match(homeSource, /to='\/download'/);
-    assert.match(homeSource, /t\('下载客户端'\)/);
-    assert.match(shellSource, /DesktopDownload/);
-    assert.match(shellSource, /prefetchApp: false/);
-    assert.match(entrySource, /download/);
-    assert.match(navigationSource, /itemKey: 'download'/);
-    assert.match(navigationSource, /to: '\/download'/);
-    assert.match(
-      navigationSource,
-      /if \(link\.itemKey === 'download'\) \{\s*return true;/,
-    );
+  .then(
+    ([
+      homeSource,
+      shellSource,
+      entrySource,
+      downloadLinkSource,
+      footerSource,
+    ]) => {
+      assert.match(homeSource, /to='\/download'/);
+      assert.match(homeSource, /t\('下载客户端'\)/);
+      assert.match(shellSource, /DesktopDownload/);
+      assert.match(
+        entrySource,
+        /if \(getPublicShellPage\(location\.pathname\)\) \{\s*return <PublicHomeShell \/>;/,
+      );
+      assert.match(downloadLinkSource, /to='\/download'/);
+      assert.match(downloadLinkSource, /t\('下载客户端'\)/);
+      // Unlike console links, the download entry must not trigger app-shell prefetch.
+      assert.doesNotMatch(
+        downloadLinkSource,
+        /prefetchAppShell|onMouseEnter=|onTouchStart=/,
+      );
+      assert.match(
+        footerSource,
+        /text: '下载客户端', to: '\/download', prefetchApp: false/,
+      );
 
-    console.log('desktop download helpers: ok');
-  })
+      console.log('desktop download helpers: ok');
+    },
+  )
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

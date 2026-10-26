@@ -41,6 +41,7 @@ import {
 import Home from '../../pages/Home';
 import GlobalTopProgress from '../common/ui/GlobalTopProgress';
 import PublicFooter from './PublicFooter';
+import HeaderDownloadLink from './HeaderDownloadLink';
 import PublicLanguageSelector from './PublicLanguageSelector';
 import { usePublicNotifications } from '../../hooks/common/usePublicNotifications';
 import { getPublicShellPage } from '../../helpers/publicRoutes';
@@ -252,6 +253,7 @@ const PublicHomeShell = () => {
             </nav>
 
             <div className='public-header-actions flex items-center gap-2 md:gap-3'>
+              <HeaderDownloadLink t={t} />
               <button
                 id='public-menu-toggle'
                 type='button'

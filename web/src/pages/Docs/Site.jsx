@@ -35,6 +35,7 @@ import { useSiteLanguage } from '../../hooks/common/useSiteLanguage';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import PublicLanguageSelector from '../../components/layout/PublicLanguageSelector';
 import ThemeToggle from '../../components/layout/headerbar/ThemeToggle';
+import HeaderDownloadLink from '../../components/layout/HeaderDownloadLink';
 
 export default function DocsSite() {
   const { t } = useTranslation();
@@ -65,6 +66,10 @@ export default function DocsSite() {
         }
         controls={
           <div className='nan-docs-controls'>
+            <HeaderDownloadLink
+              t={t}
+              href={`${MAIN_ORIGIN}/download?lang=${language}`}
+            />
             <ThemeToggle theme={theme} onThemeToggle={setTheme} t={t} />
             <PublicLanguageSelector variant='label' />
           </div>
