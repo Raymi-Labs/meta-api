@@ -22,6 +22,12 @@ from pathlib import Path
 root=Path(os.environ["NEWAPI_APP_DIR"])
 path=root/"runtime.json"
 data=json.loads(path.read_text())
+def save_runtime():
+    # Interruption tests poll concurrently, like Docker inspect. Publish a
+    # complete state instead of exposing write_text's truncate/write window.
+    temporary=path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(data))
+    os.replace(temporary,path)
 args=sys.argv[1:]
 case=os.environ.get("CASE","")
 with (root/"events").open("a") as out: out.write("docker:"+" ".join(args)+"\n")
@@ -62,20 +68,20 @@ elif args[0]=="compose":
         assert args[args.index("--pull")+1]=="never"
         if case=="create-error": sys.exit(1)
         data["status"]="running" if case=="unexpected-start" else "created"
-        path.write_text(json.dumps(data))
+        save_runtime()
         if case=="interrupt": time.sleep(20)
     else: raise AssertionError("unexpected compose action")
 elif args[0]=="update":
     assert args==["update","--restart=no",data["id"]]
     if case=="policy-update-error": sys.exit(1)
     if case!="policy-not-disabled": data["policy"]="no"
-    path.write_text(json.dumps(data))
+    save_runtime()
     if case=="interrupt-policy": time.sleep(20)
 elif args[0]=="stop":
     assert args[-1]==data["id"]
     if case=="stop-error": sys.exit(1)
     data.update(status="exited",exit=137 if case=="forced-stop" else 0)
-    path.write_text(json.dumps(data))
+    save_runtime()
     if case=="interrupt": time.sleep(20)
 else: raise AssertionError("unexpected Docker mutation: "+str(args))
 '''
