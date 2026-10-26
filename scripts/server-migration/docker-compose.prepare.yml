@@ -1,0 +1,80 @@
+# Preparation only: deliberately no application service, published ports or timers.
+# Copy to /opt/newapi/docker-compose.yml after checking that the target is unused.
+name: newapi
+
+services:
+  mysql:
+    image: mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+    container_name: newapi-mysql
+    restart: unless-stopped
+    env_file: .env.db
+    environment:
+      MYSQL_DATABASE: new-api
+      MYSQL_ROOT_HOST: localhost
+      TZ: Asia/Shanghai
+    volumes:
+      - type: bind
+        source: /opt/newapi/mysql_data
+        target: /var/lib/mysql
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /opt/newapi/config/mysql.cnf
+        target: /etc/mysql/conf.d/newapi.cnf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /opt/newapi/config/99-preparation-readonly.sql
+        target: /docker-entrypoint-initdb.d/99-preparation-readonly.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    mem_limit: 24g
+    stop_grace_period: 2m
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_ROOT_PASSWORD}" mysql --protocol=SOCKET -uroot -N -B -e "SELECT 1" | grep -qx 1']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    logging:
+      driver: local
+      options:
+        max-size: 20m
+        max-file: '5'
+
+  redis:
+    image: redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    container_name: newapi-redis
+    restart: unless-stopped
+    command: [redis-server, /usr/local/etc/redis/redis.conf]
+    volumes:
+      - type: bind
+        source: /opt/newapi/redis_data
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /opt/newapi/config/redis.conf
+        target: /usr/local/etc/redis/redis.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    mem_limit: 2g
+    stop_grace_period: 1m
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$(sed -n "s/^requirepass //p" /usr/local/etc/redis/redis.conf)" redis-cli ping | grep -qx PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging:
+      driver: local
+      options:
+        max-size: 20m
+        max-file: '5'
+
+networks:
+  default:
+    name: newapi_default
+    internal: true

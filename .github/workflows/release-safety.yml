@@ -7,12 +7,14 @@ on:
       - 'scripts/newapi-release'
       - 'scripts/server-release/**'
       - 'scripts/server-storage/**'
+      - 'scripts/server-migration/**'
       - '.github/workflows/release-safety.yml'
   pull_request:
     paths:
       - 'scripts/newapi-release'
       - 'scripts/server-release/**'
       - 'scripts/server-storage/**'
+      - 'scripts/server-migration/**'
       - '.github/workflows/release-safety.yml'
   workflow_dispatch:
 
@@ -34,6 +36,11 @@ jobs:
           done
       - name: Exercise isolated failure recovery
         run: python3 -B -m unittest discover -s scripts/server-release -p 'test_*.py' -v
+      - name: Verify application-free migration preparation without starting containers
+        env:
+          NEWAPI_PREPARATION_COMPOSE_TEST: '1'
+        run: |
+          python3 -B -m unittest discover -s scripts/server-migration -p 'test_*.py' -v
       - name: Exercise storage retention and verified log offload
         run: python3 -B -m unittest discover -s scripts/server-storage -p 'test_*.py' -v
       - name: Exercise real MySQL snapshot locks and cancellation
