@@ -148,18 +148,23 @@ business-database scope, and those must also have a non-business default DB.
 
 def read_json(remote, destination):
     child = remote.reader(destination)
-    raw = child.stdout.read(BLOCK + 1)
-    if len(raw) > BLOCK:
-        child.terminate()
-        raise RestoreError("remote metadata exceeds the limit")
-    remote.processes.check(child, "remote metadata read failed")
     try:
-        value = json.loads(raw)
-        if not isinstance(value, dict):
-            raise ValueError()
-    except (ValueError, UnicodeError):
-        raise RestoreError("invalid remote JSON metadata") from None
-    return value, raw
+        raw = child.stdout.read(BLOCK + 1)
+        if len(raw) > BLOCK:
+            child.terminate()
+            raise RestoreError("remote metadata exceeds the limit")
+        remote.processes.check(child, "remote metadata read failed")
+        try:
+            value = json.loads(raw)
+            if not isinstance(value, dict):
+                raise ValueError()
+        except (ValueError, UnicodeError):
+            raise RestoreError("invalid remote JSON metadata") from None
+        return value, raw
+    finally:
+        # Processes retains each Popen for job cleanup; do not retain its pipe
+        # until the end of a chain containing thousands of remote objects.
+        child.stdout.close()
 
 
 def download(remote, destination, path, expected):
@@ -170,22 +175,25 @@ def download(remote, destination, path, expected):
         raise RestoreError("insufficient isolated workstation space for download")
     child = remote.reader(destination)
     digest, size = hashlib.sha256(), 0
-    with path.open("xb") as out:
-        os.chmod(path, 0o600)
-        while True:
-            block = child.stdout.read(BLOCK)
-            if not block:
-                break
-            size += len(block)
-            if size > expected["size"]:
-                raise RestoreError("remote object exceeds recorded size")
-            digest.update(block)
-            out.write(block)
-        out.flush()
-        os.fsync(out.fileno())
-    remote.processes.check(child, "remote object read failed")
-    if size != expected["size"] or digest.hexdigest() != expected["sha256"]:
-        raise RestoreError("remote object fingerprint mismatch")
+    try:
+        with path.open("xb") as out:
+            os.chmod(path, 0o600)
+            while True:
+                block = child.stdout.read(BLOCK)
+                if not block:
+                    break
+                size += len(block)
+                if size > expected["size"]:
+                    raise RestoreError("remote object exceeds recorded size")
+                digest.update(block)
+                out.write(block)
+            out.flush()
+            os.fsync(out.fileno())
+        remote.processes.check(child, "remote object read failed")
+        if size != expected["size"] or digest.hexdigest() != expected["sha256"]:
+            raise RestoreError("remote object fingerprint mismatch")
+    finally:
+        child.stdout.close()
 
 
 def load_backup(remote, destination, directory):

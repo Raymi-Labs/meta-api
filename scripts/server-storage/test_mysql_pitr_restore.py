@@ -6,6 +6,8 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -263,6 +265,129 @@ class RestoreTests(unittest.TestCase):
         objects["crypt:a/SUCCESS.json"] = json.dumps(marker).encode()
         with self.assertRaisesRegex(restore.RestoreError, "coordinate"):
             restore.load_backup(Remote(objects), "crypt:a", self.root)
+
+
+class ReaderResourceTests(unittest.TestCase):
+    def remote(self, data, error=None):
+        child = mock.Mock(stdout=io.BytesIO(data))
+        remote = mock.Mock()
+        remote.reader.return_value = child
+        remote.processes.check.side_effect = error
+        return remote, child
+
+    def test_metadata_success_closes_pipe_after_validation(self):
+        remote, child = self.remote(b'{"verified":true}')
+        self.assertEqual(restore.read_json(remote, "fixture"), ({"verified": True}, b'{"verified":true}'))
+        self.assertTrue(child.stdout.closed)
+        remote.processes.check.assert_called_once_with(child, "remote metadata read failed")
+
+    def test_metadata_errors_close_pipe_without_changing_diagnostics(self):
+        cases = ((b"invalid", None, restore.RestoreError, "invalid remote JSON metadata"),
+                 (b"[]", None, restore.RestoreError, "invalid remote JSON metadata"),
+                 (b"x" * (restore.BLOCK + 1), None, restore.RestoreError, "exceeds the limit"),
+                 (b"{}", restore.backup.BackupError("remote metadata read failed"),
+                  restore.backup.BackupError, "remote metadata read failed"))
+        for data, error, expected, message in cases:
+            with self.subTest(message=message, size=len(data)):
+                remote, child = self.remote(data, error)
+                with self.assertRaisesRegex(expected, message):
+                    restore.read_json(remote, "fixture")
+                self.assertTrue(child.stdout.closed)
+                if len(data) > restore.BLOCK:
+                    child.terminate.assert_called_once()
+
+    def test_download_success_and_integrity_or_process_errors_close_pipe(self):
+        expected = {"size": 3, "sha256": hashlib.sha256(b"abc").hexdigest()}
+        cases = ((b"abc", None, None, None),
+                 (b"abcd", None, restore.RestoreError, "exceeds recorded size"),
+                 (b"ab", None, restore.RestoreError, "fingerprint mismatch"),
+                 (b"xyz", None, restore.RestoreError, "fingerprint mismatch"),
+                 (b"abc", restore.backup.BackupError("remote object read failed"),
+                  restore.backup.BackupError, "remote object read failed"))
+        with tempfile.TemporaryDirectory() as directory:
+            for number, (data, error, failure, message) in enumerate(cases):
+                with self.subTest(number=number):
+                    remote, child = self.remote(data, error)
+                    path = Path(directory) / str(number)
+                    if failure is None:
+                        restore.download(remote, "fixture", path, expected)
+                        self.assertEqual(path.read_bytes(), data)
+                        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+                    else:
+                        with self.assertRaisesRegex(failure, message):
+                            restore.download(remote, "fixture", path, expected)
+                    self.assertTrue(child.stdout.closed)
+
+    def test_download_local_file_errors_close_pipe(self):
+        expected = {"size": 3, "sha256": hashlib.sha256(b"abc").hexdigest()}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "existing"
+            path.write_bytes(b"keep")
+            remote, child = self.remote(b"abc")
+            with self.assertRaises(FileExistsError):
+                restore.download(remote, "fixture", path, expected)
+            self.assertTrue(child.stdout.closed)
+            self.assertEqual(path.read_bytes(), b"keep")
+            remote, child = self.remote(b"abc")
+            with mock.patch.object(restore.os, "fsync", side_effect=OSError("fixture fsync failure")):
+                with self.assertRaisesRegex(OSError, "fixture fsync failure"):
+                    restore.download(remote, "fixture", Path(directory) / "new", expected)
+            self.assertTrue(child.stdout.closed)
+
+    def test_read_exception_and_interruption_close_both_reader_types(self):
+        for failure in (OSError("fixture pipe failure"), restore.backup.BackupError("backup was interrupted")):
+            for operation in ("metadata", "download"):
+                with self.subTest(operation=operation, error=str(failure)), tempfile.TemporaryDirectory() as directory:
+                    class BrokenStream(io.BytesIO):
+                        def read(self, _size):
+                            raise failure
+                    remote, child = self.remote(b"")
+                    child.stdout = BrokenStream()
+                    with self.assertRaises(type(failure)) as caught:
+                        if operation == "metadata":
+                            restore.read_json(remote, "fixture")
+                        else:
+                            restore.download(remote, "fixture", Path(directory) / "segment",
+                                             {"size": 3, "sha256": hashlib.sha256(b"abc").hexdigest()})
+                    self.assertIs(caught.exception, failure)
+                    self.assertTrue(child.stdout.closed)
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "requires Linux RLIMIT_NOFILE")
+    def test_long_chain_real_subprocess_readers_under_low_fd_limit(self):
+        # Keep the resource limit in a subprocess so unrelated tests are not
+        # affected. Retain every Popen just as the real Processes owner does.
+        script = r'''
+import hashlib, importlib.util, json, resource, subprocess, sys, tempfile
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+spec = importlib.util.spec_from_file_location("restore_fd_test", Path(sys.argv[1]) / "mysql-pitr-restore.py")
+restore = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(restore)
+resource.setrlimit(resource.RLIMIT_NOFILE, (64, resource.getrlimit(resource.RLIMIT_NOFILE)[1]))
+data = b"{}\n"
+expected = {"size": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+with tempfile.TemporaryDirectory() as directory, restore.backup.Processes() as processes:
+    class Remote:
+        def __init__(self):
+            self.processes = processes
+        def reader(self, _path):
+            return processes.start([sys.executable, "-B", "-c", "print('{}')"],
+                                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    remote = Remote()
+    for number in range(256):
+        assert restore.read_json(remote, "fixture:receipt") == ({}, data)
+        path = Path(directory) / str(number)
+        restore.download(remote, "fixture:segment", path, expected)
+        assert path.read_bytes() == data
+        path.unlink()
+    assert len(processes.children) == 512
+    assert all(child.stdout.closed and child.poll() == 0 for child in processes.children)
+    print(json.dumps({"readers": len(processes.children), "open_stdout": 0, "soft_nofile": 64}))
+'''
+        result = subprocess.run([sys.executable, "-B", "-c", script, str(Path(restore.__file__).parent)],
+                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(json.loads(result.stdout), {"readers": 512, "open_stdout": 0, "soft_nofile": 64})
 
 
 class AuditTests(unittest.TestCase):
