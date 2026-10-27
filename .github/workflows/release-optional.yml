@@ -35,7 +35,7 @@ jobs:
       runner: ${{ steps.plan.outputs.runner }}
       build_needed: ${{ steps.plan.outputs.build_needed }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Resolve release and skip existing assets
         id: plan
         env:
@@ -61,10 +61,10 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
       ASSET_NAME: ${{ needs.prepare.outputs.asset }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.prepare.outputs.revision }}
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: '1.4.0'
       - name: Build frontend
@@ -75,7 +75,7 @@ jobs:
           cd web
           bun install --frozen-lockfile
           DISABLE_ESLINT_PLUGIN=true VITE_REACT_APP_VERSION="$RELEASE_TAG" bun run build
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
       - name: Build server binary

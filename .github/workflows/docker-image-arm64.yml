@@ -32,7 +32,7 @@ jobs:
             runner: ubuntu-latest
           - arch: arm64
             platform: linux/arm64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
 
     permissions:
@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: ${{ github.event_name == 'workflow_dispatch' && 0 || 1 }}
           ref: ${{ github.event.inputs.tag || github.ref }}
@@ -69,11 +69,8 @@ jobs:
       - name: Normalize GHCR repository
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        run: docker buildx create --driver docker-container --use --bootstrap
 
       - name: Detect Docker Hub credentials
         id: dockerhub
@@ -89,18 +86,16 @@ jobs:
           fi
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Log in to Docker Hub
         if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: printf '%s' "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
       - name: Prepare image tags
         id: tags
@@ -118,32 +113,26 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Extract metadata (labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.IMAGE_NAME }}
-          labels: |
-            org.opencontainers.image.revision=${{ env.BUILD_COMMIT }}
-            org.opencontainers.image.version=${{ env.TAG }}
-
       - name: Build & push single-arch (GHCR + optional Docker Hub)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=release-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=release-${{ matrix.arch }}
-          provenance: false
-          sbom: false
-          build-args: |
-            BUILD_COMMIT=${{ env.BUILD_COMMIT }}
-            BUILD_REPOSITORY=${{ github.repository }}
-            BUILD_BRANCH=${{ env.TAG }}
+        env:
+          IMAGE_TAGS: ${{ steps.tags.outputs.tags }}
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          tags=()
+          while IFS= read -r image_tag; do
+            [[ -z "$image_tag" ]] || tags+=(--tag "$image_tag")
+          done <<< "$IMAGE_TAGS"
+          docker buildx build --push --platform "$TARGET_PLATFORM" \
+            "${tags[@]}" --provenance=false --sbom=false \
+            --cache-from "type=registry,ref=${IMAGE_NAME}:buildcache-${TARGET_ARCH}" \
+            --cache-to "type=registry,ref=${IMAGE_NAME}:buildcache-${TARGET_ARCH},mode=max" \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${BUILD_COMMIT}" \
+            --label "org.opencontainers.image.version=${TAG}" \
+            --build-arg "BUILD_COMMIT=${BUILD_COMMIT}" \
+            --build-arg "BUILD_REPOSITORY=${GITHUB_REPOSITORY}" \
+            --build-arg "BUILD_BRANCH=${TAG}" .
 
       - name: Verify image architecture and version
         env:
@@ -186,18 +175,16 @@ jobs:
           fi
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Log in to Docker Hub
         if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: printf '%s' "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
       - name: Create & push manifest (GHCR - version)
         run: |

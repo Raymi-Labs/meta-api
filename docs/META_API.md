@@ -31,6 +31,8 @@ git remote add upstream https://github.com/QuantumNous/new-api.git
 
 ## 发布与部署
 
+公司 main 通过 PR 合入。组织要求 Actions 使用完整提交 SHA 且来源受限；常规发布使用获准的 checkout/setup-go/setup-bun 与执行器自带 Docker、gh CLI，ARM64 镜像在原生执行器构建。历史标签、nightly/alpha/Electron 和独立工具包流程未在公司仓库重新适配；不能据此认定其可运行。原仓库继续提供历史产物。
+
 复用 [现有发布流程](installation/release-artifacts.md)：应用标签构建 Linux AMD64/ARM64 程序、独立文档压缩包及其校验文件，并生成双架构镜像。公司镜像地址为：
 
 ```text

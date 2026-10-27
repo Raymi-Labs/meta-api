@@ -23,7 +23,9 @@ assert.deepEqual(Object.keys(linux.jobs), ['linux'], 'tags must not allocate opt
 assert.ok(linux.on.push.tags.includes('*'));
 assert.equal(linux.jobs.linux.steps[0].with.ref, '${{ inputs.release_tag || github.ref }}');
 const automaticRelease = linux.jobs.linux.steps.find((step) => step.name === 'Release');
-assert.equal(automaticRelease.with.target_commitish, undefined, 'existing pushed tags do not need a target override');
+assert.match(automaticRelease.run, /gh release create/);
+assert.match(automaticRelease.run, /--verify-tag/);
+assert.doesNotMatch(automaticRelease.run, /--target|--clobber|release edit/, 'release creation must preserve existing tags and metadata');
 const linuxFill = linux.jobs.linux.steps.find((step) => step.name === 'Fill missing Linux assets without updating release metadata').run;
 assert.match(linuxFill, /'release', 'upload'/);
 assert.doesNotMatch(linuxFill, /--clobber|'release', '(create|edit)'/);
@@ -44,8 +46,13 @@ assert.ok(stages[1].includes(`golang:${goVersion}-alpine `), 'Docker and go.mod 
 assert.doesNotMatch(stages[2], /--platform=/, 'runtime must retain the requested target platform');
 assert.match(dockerfile, /CGO_ENABLED=0/);
 assert.match(dockerfile, /GOOS=\$\{TARGETOS:-linux\} GOARCH=\$\{TARGETARCH:-amd64\}/);
-const build = images.jobs.build_single_arch.steps.find((step) => step.uses?.startsWith('docker/build-push-action'));
-assert.equal(build.with['cache-to'], 'type=gha,mode=max,scope=release-${{ matrix.arch }}');
+const build = images.jobs.build_single_arch.steps.find((step) => step.name === 'Build & push single-arch (GHCR + optional Docker Hub)');
+assert.match(build.run, /docker buildx build --push --platform "\$TARGET_PLATFORM"/);
+assert.match(build.run, /buildcache-\$\{TARGET_ARCH\}/);
+assert.deepEqual(images.jobs.build_single_arch.strategy.matrix.include.map(({arch, runner}) => [arch, runner]), [
+  ['amd64', 'ubuntu-latest'], ['arm64', 'ubuntu-24.04-arm'],
+]);
+assert.equal(images.jobs.create_manifests.permissions.packages, 'write');
 assert.ok(images.jobs.build_single_arch.steps.some((step) => step.run?.includes('scripts/release/verify-image.sh')));
 for (const step of images.jobs.create_manifests.steps.filter((step) => step.name?.includes('latest'))) {
   assert.match(step.run, /\$\{TAG\}-amd64/);
@@ -53,5 +60,11 @@ for (const step of images.jobs.create_manifests.steps.filter((step) => step.name
   assert.doesNotMatch(step.run, /:latest-(amd64|arm64)/, 'manifest inputs must belong to the same release');
 }
 assert.ok(main.on.push.branches.includes('main'));
-assert.match(main.jobs.docker.steps.find((step) => step.uses?.startsWith('docker/build-push-action')).with.tags, /:sha-/);
+assert.match(main.jobs.docker.steps.find((step) => step.name === 'Build and push').run, /:sha-/);
+for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes']) {
+  for (const step of Object.values(workflow(name).jobs).flatMap((job) => job.steps ?? [])) {
+    if (!step.uses) continue;
+    assert.match(step.uses, /^(actions\/[^@]+|oven-sh\/setup-bun)@[a-f0-9]{40}$/, `${name}: company Actions must use approved sources and full commit SHAs`);
+  }
+}
 console.log('Release policy passed: Linux defaults, manual optional artifacts, immutable sources, cross-compiled image targets.');

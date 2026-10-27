@@ -10,6 +10,8 @@ Status: implemented
 
 ## Decision
 
+[公司 Actions 适配](2026-10-27-company-actions-policy.md) 取代公司常规发布中的第三方 Actions 及 ARM64 执行器选择：使用 CLI、原生 ARM64 和 GHCR 缓存；本篇记录的 Linux 附件矩阵、交叉编译能力和历史验证仍成立。
+
 - 公司仓库与发布目标由 [Meta API 仓库迁移](2026-10-27-company-repository.md) 管理；这里的构建矩阵和附件约定继续适用。
 - 保留应用标签的 Linux AMD64/ARM64 程序附件和双架构镜像；macOS、Windows 移到独立的手动作业，选定已发布标签和一个平台后按需补充附件。绑定解析后的提交，跳过已完成附件，不重写发布说明或 draft 状态。
 - Docker 前端及 Go 编译阶段固定 BUILDPLATFORM；现有 CGO_ENABLED=0 配合 TARGETOS/TARGETARCH 交叉编译，运行时镜像仍使用目标架构。每个镜像实际检查 ELF 架构和版本，防止只改标签而放入错误架构程序。

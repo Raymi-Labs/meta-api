@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+公司组织级规则及实际发布入口由 [Actions 与 PR 适配](2026-10-27-company-actions-policy.md) 补充；main 的直接推送被拒绝后改用 PR，未发布的 compat.99 标签保留，公司首个完整版本使用 compat.100。
+
 - 按用户选择新建公开公司仓库，复制原远端已有分支和标签及其历史；原个人仓库继续存在，历史 Release 留在原地址。
 - README 增加 Meta API / Raymi Labs 维护入口，保留原有 New API、QuantumNous 署名、许可证、模块路径、二进制命名和正文。运行时品牌仍使用既有 SystemName 配置。
 - 复用仓库名派生 GHCR 地址的既有发布流程，继续 compat 版本序列；显式赋予多架构清单作业 packages: write，避免依赖原仓库默认令牌权限。
