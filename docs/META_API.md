@@ -45,3 +45,5 @@ GHCR 地址由 `GITHUB_REPOSITORY` 派生；镜像构建和清单发布作业显
 现有程序和 Release 附件仍使用 `new-api-*` 名称，Go 模块仍为 `github.com/QuantumNous/new-api`。服务端名称由既有 `SystemName` 配置提供；本次仓库命名不修改生产后台设置、页面品牌或线上数据。
 
 公司仓库发布不会自动切换生产镜像来源。生产的更新、回退和恢复继续遵循 [受保护入口](installation/one-click-update.md)，公司服务器另行安装 `meta-api` 管理命令并通过 `/etc/meta-api/release.conf` 将更新源指向 `ghcr.io/raymi-labs/meta-api` 与 `Raymi-Labs/meta-api`；镜像现已公开。安装工具与切换来源不会升级正在运行的应用，状态、菜单及快捷命令见上述运维说明。
+
+公司服务器实际部署目录统一为 `/opt/meta-api`，历史 `/opt/newapi` 保留兼容链接；数据不复制、容器与网络身份不改名。迁移须先安装对应的归档兼容脚本并验证连续备份，详见 [部署目录](installation/deployment-directory.md)。

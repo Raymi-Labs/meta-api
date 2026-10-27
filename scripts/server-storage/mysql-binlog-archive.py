@@ -33,6 +33,27 @@ def load_helpers():
 
 backup = load_helpers()
 ArchiveError = backup.BackupError
+LEGACY_APP_DIR = Path('/opt/newapi')
+META_APP_DIR = Path('/opt/meta-api')
+
+
+def canonical_datadir(value):
+    """Allow only the administrator-owned, fixed Meta API migration alias."""
+    path = Path(value)
+    if not path.is_absolute() or '..' in path.parts:
+        raise ArchiveError('datadir must be an absolute normalized path')
+    resolved = path.resolve()
+    if resolved == path:
+        return path
+    if path != LEGACY_APP_DIR / 'mysql_data' or resolved != META_APP_DIR / 'mysql_data':
+        raise ArchiveError('datadir contains an unsupported symlink')
+    backup.safe_path(LEGACY_APP_DIR.parent)
+    backup.safe_path(META_APP_DIR)
+    alias = LEGACY_APP_DIR.lstat()
+    if (not stat.S_ISLNK(alias.st_mode) or alias.st_uid not in (0, os.geteuid())
+            or os.readlink(LEGACY_APP_DIR) != str(META_APP_DIR)):
+        raise ArchiveError('unsafe deployment directory alias')
+    return resolved
 
 
 def sha(value):
@@ -109,16 +130,15 @@ class Store:
 class Source:
     def __init__(self, args, processes):
         self.args, self.processes = args, processes
-        self.datadir = Path(args.datadir)
-        if not self.datadir.is_absolute() or self.datadir.resolve() != self.datadir:
-            raise ArchiveError("datadir must be an absolute path without symlinks")
+        self.datadir = canonical_datadir(args.datadir)
         inspected = json.loads(processes.capture(["docker", "inspect", args.container]))
         if len(inspected) != 1 or not inspected[0].get("State", {}).get("Running"):
             raise ArchiveError("MySQL source container is not running")
         matches = [m for m in inspected[0]["Mounts"]
                    if m.get("Destination", "").rstrip("/") == "/var/lib/mysql"]
         if (len(matches) != 1 or matches[0].get("Type") != "bind"
-                or matches[0].get("Source") != str(self.datadir)):
+                or not isinstance(matches[0].get("Source"), str)
+                or canonical_datadir(matches[0]["Source"]) != self.datadir):
             raise ArchiveError("source datadir is not the inspected MySQL bind mount")
         info = self.datadir.lstat()
         if not stat.S_ISDIR(info.st_mode) or info.st_mode & 0o022:

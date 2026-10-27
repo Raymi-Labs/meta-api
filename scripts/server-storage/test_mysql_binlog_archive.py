@@ -2,6 +2,8 @@ import copy
 import importlib.util
 import io
 import json
+import os
+from types import SimpleNamespace
 import struct
 from pathlib import Path
 import tempfile
@@ -14,6 +16,62 @@ from test_pitr_binlog import event, fde, fixture, MAGIC
 spec = importlib.util.spec_from_file_location("binlog_archive", Path(__file__).with_name("mysql-binlog-archive.py"))
 archive = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(archive)
+
+
+class DatadirAliasTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.old, self.new = self.root / 'newapi', self.root / 'meta-api'
+        self.new.mkdir(mode=0o700)
+        (self.new / 'mysql_data').mkdir(mode=0o700)
+        self.old.symlink_to(self.new)
+        for name, value in [('LEGACY_APP_DIR', self.old), ('META_APP_DIR', self.new)]:
+            patcher = mock.patch.object(archive, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_fixed_alias_and_canonical_bind_are_same_source(self):
+        for configured in (self.old / 'mysql_data', self.new / 'mysql_data'):
+            for mounted in (self.old / 'mysql_data', self.new / 'mysql_data'):
+                with self.subTest(configured=configured, mounted=mounted):
+                    processes = mock.Mock()
+                    processes.capture.return_value = json.dumps([{
+                        'Id': 'same-container', 'State': {'Running': True, 'StartedAt': 'same-start'},
+                        'Mounts': [{'Destination': '/var/lib/mysql', 'Type': 'bind', 'Source': str(mounted)}],
+                    }])
+                    source = archive.Source(SimpleNamespace(datadir=str(configured), container='test'), processes)
+                    self.assertEqual(source.datadir, self.new / 'mysql_data')
+                    self.assertEqual(source.container_id, 'same-container')
+
+    def test_other_links_wrong_target_and_writable_directory_rejected(self):
+        other = self.root / 'other'
+        other.symlink_to(self.new)
+        with self.assertRaises(archive.ArchiveError):
+            archive.canonical_datadir(other / 'mysql_data')
+        self.new.chmod(0o777)
+        with self.assertRaises(archive.ArchiveError):
+            archive.canonical_datadir(self.old / 'mysql_data')
+        self.new.chmod(0o700)
+        self.old.unlink()
+        self.old.symlink_to(other)
+        with self.assertRaises(archive.ArchiveError):
+            archive.canonical_datadir(self.old / 'mysql_data')
+
+    def test_untrusted_alias_owner_and_nested_datadir_link_rejected(self):
+        real = Path.lstat
+        def lstat(path):
+            value = real(path)
+            if path == self.old:
+                return SimpleNamespace(st_mode=value.st_mode, st_uid=os.geteuid() + 10000)
+            return value
+        with mock.patch.object(Path, 'lstat', lstat), self.assertRaises(archive.ArchiveError):
+            archive.canonical_datadir(self.old / 'mysql_data')
+        (self.new / 'mysql_data').rmdir()
+        (self.new / 'mysql_data').symlink_to(self.root)
+        with self.assertRaises(archive.ArchiveError):
+            archive.canonical_datadir(self.old / 'mysql_data')
 
 
 class StoreTests(unittest.TestCase):

@@ -77,7 +77,7 @@ ln -sfn /usr/local/bin/newapi-release /usr/local/bin/newapi-restart
 newapi-release init sha-上一稳定版本
 ```
 
-默认部署目录为 `/opt/newapi`。可通过 `NEWAPI_APP_DIR` 等环境变量覆盖脚本顶部的配置。
+默认部署目录为 `/opt/meta-api`，仅有 `/opt/newapi` 时兼容旧部署；两套独立目录同时存在则拒绝隐式选择。现有目录迁移须遵循 [目录迁移说明](deployment-directory.md)，保留旧路径兼容链接。可通过 `NEWAPI_APP_DIR` 等环境变量显式覆盖脚本顶部配置。
 恢复包清单和快速恢复需要服务器安装 `python3`；快速恢复另需 GNU `timeout`（coreutils）。
 
 ## 应用停止后的快速恢复
@@ -160,7 +160,7 @@ newapi-rollback
 ```
 
 回退只切换应用镜像，不会自动恢复 MySQL，避免覆盖更新后产生的新业务数据。
-数据库备份保存在 `/opt/newapi/backups/one-click/`，仅在确认需要时人工恢复。
+数据库备份位于 `/opt/meta-api/backups/one-click/`；历史 `/opt/newapi/backups/one-click/` 通过兼容链接访问同一份数据，仅在确认需要时人工恢复。
 如果新版本执行了不向后兼容的数据库迁移，旧镜像可能无法直接运行，此时应先
 停止写入，再由管理员评估数据库恢复方案，不能盲目覆盖更新后的业务数据。
 

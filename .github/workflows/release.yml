@@ -61,7 +61,7 @@ jobs:
           sha256sum "new-api-docs-$VERSION.tar.gz" > "new-api-docs-$VERSION.sha256"
       - name: Package server management commands
         run: |
-          tar -czf "meta-api-management-$VERSION.tar.gz" scripts/meta-api scripts/newapi-release scripts/server-release/company-release.conf docs/installation/one-click-update.md
+          tar -czf "meta-api-management-$VERSION.tar.gz" scripts/meta-api scripts/newapi-release scripts/server-release/company-release.conf docs/installation/one-click-update.md docs/installation/deployment-directory.md
           sha256sum "meta-api-management-$VERSION.tar.gz" > "meta-api-management-$VERSION.sha256"
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
