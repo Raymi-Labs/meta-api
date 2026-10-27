@@ -548,9 +548,25 @@ export const useModelPricingData = (initialState) => {
 
   const copyText = async (text) => {
     if (await copy(text)) {
-      showSuccess(t('已复制：') + text);
+      showSuccess(t('复制成功'));
     } else {
-      Modal.error({ title: t('无法复制到剪贴板，请手动复制'), content: text });
+      Modal.error({
+        title: t('无法复制到剪贴板，请手动复制'),
+        content: (
+          <pre
+            tabIndex={0}
+            style={{
+              maxHeight: '40vh',
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              userSelect: 'text',
+            }}
+          >
+            {text}
+          </pre>
+        ),
+      });
     }
   };
 

@@ -6610,6 +6610,12 @@
     "PDF 生成参数无效": "Parametri di generazione PDF non validi",
     "PDF 生成服务繁忙，请稍后重试": "Il servizio PDF è occupato. Riprova più tardi.",
     "预览明细账单": "Anteprima del rendiconto dettagliato",
-    "预览产品明细清单": "Anteprima dell’elenco prodotti"
+    "预览产品明细清单": "Anteprima dell’elenco prodotti",
+    "当前账户": "Account attuale",
+    "选定时间范围": "Periodo selezionato",
+    "常用操作": "Azioni rapide",
+    "请选择有效的起止时间": "Seleziona un orario di inizio e fine valido",
+    "请选择不超过30天的时间范围": "Seleziona un periodo non superiore a 30 giorni",
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Il saldo e i totali cumulativi appartengono all’account attuale. Le altre metriche si riferiscono all’utente e al periodo selezionati; non indicano il tasso di successo delle richieste."
   }
 }

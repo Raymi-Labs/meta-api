@@ -23,6 +23,7 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 
 import DashboardHeader from './DashboardHeader';
+import './dashboardOverview.css';
 import StatsCards from './StatsCards';
 import ChartsPanel from './ChartsPanel';
 import ApiInfoPanel from './ApiInfoPanel';
@@ -45,7 +46,6 @@ import {
   UPTIME_STATUS_MAP,
 } from '../../constants/dashboard.constants';
 import {
-  getTrendSpec,
   handleCopyUrl,
   handleSpeedTest,
   getUptimeStatusColor,
@@ -53,7 +53,7 @@ import {
   renderMonitorList,
 } from '../../helpers/dashboard';
 
-const Dashboard = () => {
+const DashboardContent = () => {
   // ========== Context ==========
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
@@ -82,9 +82,7 @@ const Dashboard = () => {
     dashboardData.consumeQuota,
     dashboardData.consumeTokens,
     dashboardData.times,
-    dashboardData.trendData,
     dashboardData.performanceMetrics,
-    dashboardData.navigate,
     dashboardData.t,
   );
 
@@ -113,7 +111,7 @@ const Dashboard = () => {
       }
     });
 
-    const optionalTasks = [quotaTask];
+    const optionalTasks = [quotaTask, dashboardData.getUserData()];
     if (dashboardData.uptimeEnabled) {
       optionalTasks.push(dashboardData.loadUptimeData());
     }
@@ -121,6 +119,10 @@ const Dashboard = () => {
   };
 
   const handleRefresh = async () => {
+    if (dashboardData.rangePreset !== 'custom') {
+      dashboardData.selectRangePreset(dashboardData.rangePreset);
+      return;
+    }
     const isUserChartTab = dashboardData.activeChartTab === '5';
     const isModelChannelStatsTab = dashboardData.activeChartTab === '6';
     const isUserBalanceTrendTab = dashboardData.activeChartTab === '8';
@@ -129,7 +131,8 @@ const Dashboard = () => {
       includeModelChannelStats: isModelChannelStatsTab,
       includeUserBalanceTrend: isUserBalanceTrendTab,
     });
-    if (data && data.length > 0) {
+    if (!data) return;
+    if (data.length > 0) {
       dashboardCharts.updateChartData(data);
     }
     if (isUserChartTab) {
@@ -137,38 +140,8 @@ const Dashboard = () => {
     }
   };
 
-  const handleSearchConfirm = async () => {
-    const isUserChartTab = dashboardData.activeChartTab === '5';
-    const isModelChannelStatsTab = dashboardData.activeChartTab === '6';
-    const isPerfMetricsTab = dashboardData.activeChartTab === '7';
-    const isUserBalanceTrendTab = dashboardData.activeChartTab === '8';
-    if (!isUserChartTab) {
-      userChartLoadedRef.current = false;
-    }
-    if (!isModelChannelStatsTab) {
-      modelChannelStatsLoadedRef.current = false;
-    }
-    if (!isPerfMetricsTab) {
-      perfMetricsLoadedRef.current = false;
-    }
-    if (!isUserBalanceTrendTab) {
-      userBalanceTrendLoadedRef.current = false;
-    }
-    await dashboardData.handleSearchConfirm(dashboardCharts.updateChartData, {
-      includePerfMetrics: isPerfMetricsTab,
-      includeModelChannelStats: isModelChannelStatsTab,
-      includeUserBalanceTrend: isUserBalanceTrendTab,
-    });
-    if (isUserChartTab) {
-      await loadUserData();
-    }
-    if (isModelChannelStatsTab) {
-      modelChannelStatsLoadedRef.current = true;
-    }
-    if (isUserBalanceTrendTab) {
-      userBalanceTrendLoadedRef.current = true;
-    }
-  };
+  const handleSearchConfirm = (draft, grain) =>
+    dashboardData.applyQuery(draft, grain);
 
   // ========== 数据准备 ==========
   const apiInfoData = statusState?.status?.api_info || [];
@@ -199,8 +172,12 @@ const Dashboard = () => {
 
   // ========== Effects ==========
   useEffect(() => {
+    userChartLoadedRef.current = false;
+    perfMetricsLoadedRef.current = false;
+    modelChannelStatsLoadedRef.current = false;
+    userBalanceTrendLoadedRef.current = false;
     initChart();
-  }, []);
+  }, [dashboardData.queryVersion]);
 
   useEffect(() => {
     if (
@@ -210,7 +187,11 @@ const Dashboard = () => {
     ) {
       loadUserData();
     }
-  }, [dashboardData.activeChartTab, dashboardData.isAdminUser]);
+  }, [
+    dashboardData.activeChartTab,
+    dashboardData.isAdminUser,
+    dashboardData.queryVersion,
+  ]);
 
   useEffect(() => {
     if (
@@ -220,14 +201,22 @@ const Dashboard = () => {
     ) {
       loadModelChannelTagStats();
     }
-  }, [dashboardData.activeChartTab, dashboardData.isAdminUser]);
+  }, [
+    dashboardData.activeChartTab,
+    dashboardData.isAdminUser,
+    dashboardData.queryVersion,
+  ]);
 
   useEffect(() => {
     if (dashboardData.activeChartTab === '7' && !perfMetricsLoadedRef.current) {
       perfMetricsLoadedRef.current = true;
       dashboardData.loadPerfMetricsSummary();
     }
-  }, [dashboardData.activeChartTab, dashboardData.loadPerfMetricsSummary]);
+  }, [
+    dashboardData.activeChartTab,
+    dashboardData.loadPerfMetricsSummary,
+    dashboardData.queryVersion,
+  ]);
 
   useEffect(() => {
     if (
@@ -238,13 +227,21 @@ const Dashboard = () => {
       userBalanceTrendLoadedRef.current = true;
       dashboardData.loadUserBalanceTrend();
     }
-  }, [dashboardData.activeChartTab, dashboardData.isAdminUser]);
+  }, [
+    dashboardData.activeChartTab,
+    dashboardData.isAdminUser,
+    dashboardData.queryVersion,
+  ]);
 
   return (
-    <div className='h-full'>
+    <div className='dashboard-overview'>
       <DashboardHeader
         getGreeting={dashboardData.getGreeting}
-        greetingVisible={dashboardData.greetingVisible}
+        rangePreset={dashboardData.rangePreset}
+        onRangeChange={dashboardData.selectRangePreset}
+        inputs={dashboardData.inputs}
+        dataExportDefaultTime={dashboardData.dataExportDefaultTime}
+        isAdminUser={dashboardData.isAdminUser}
         showSearchModal={dashboardData.showSearchModal}
         refresh={handleRefresh}
         loading={dashboardData.loading}
@@ -260,16 +257,28 @@ const Dashboard = () => {
         inputs={dashboardData.inputs}
         dataExportDefaultTime={dashboardData.dataExportDefaultTime}
         timeOptions={dashboardData.timeOptions}
-        handleInputChange={dashboardData.handleInputChange}
         t={dashboardData.t}
       />
 
+      {(dashboardData.quotaError || dashboardData.accountError) && (
+        <div className='dashboard-load-error' role='alert'>
+          <span>
+            {dashboardData.t('加载失败，请重试')} ·{' '}
+            {dashboardData.t(
+              dashboardData.quotaError ? '使用统计' : '账户数据',
+            )}
+          </span>
+          <button type='button' onClick={handleRefresh}>
+            {dashboardData.t('重试')}
+          </button>
+        </div>
+      )}
       <StatsCards
         groupedStatsData={groupedStatsData}
         loading={dashboardData.loading}
-        getTrendSpec={getTrendSpec}
-        CARD_PROPS={CARD_PROPS}
-        CHART_CONFIG={CHART_CONFIG}
+        quotaError={dashboardData.quotaError}
+        accountLoading={dashboardData.accountLoading}
+        accountError={dashboardData.accountError}
       />
 
       {/* API信息和图表面板 */}
@@ -278,6 +287,8 @@ const Dashboard = () => {
           className={`grid grid-cols-1 gap-4 ${dashboardData.hasApiInfoPanel ? 'lg:grid-cols-4' : ''}`}
         >
           <ChartsPanel
+            quotaLoading={dashboardData.loading}
+            quotaError={dashboardData.quotaError}
             activeChartTab={dashboardData.activeChartTab}
             setActiveChartTab={dashboardData.setActiveChartTab}
             spec_line={dashboardCharts.spec_line}
@@ -395,4 +406,13 @@ const Dashboard = () => {
   );
 };
 
+// Remount account-owned data on identity/role changes before exposing any statistics.
+const Dashboard = () => {
+  const [userState] = useContext(UserContext);
+  const user = userState?.user;
+  if (!user?.id) return null;
+  return (
+    <DashboardContent key={`${user.id}:${user.role}:${user.group || ''}`} />
+  );
+};
 export default Dashboard;

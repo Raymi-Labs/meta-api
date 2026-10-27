@@ -6822,6 +6822,12 @@
     "PDF 生成参数无效": "Invalid PDF generation parameters",
     "PDF 生成服务繁忙，请稍后重试": "The PDF generation service is busy. Please try again later.",
     "预览明细账单": "Preview detailed bill",
-    "预览产品明细清单": "Preview product list"
+    "预览产品明细清单": "Preview product list",
+    "当前账户": "Current account",
+    "选定时间范围": "Selected period",
+    "常用操作": "Quick actions",
+    "请选择有效的起止时间": "Select a valid start and end time",
+    "请选择不超过30天的时间范围": "Select a period of no more than 30 days",
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Balance and lifetime totals belong to the current account. Other metrics use the selected user and period; they do not indicate request success rate."
   }
 }

@@ -22,10 +22,16 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers/apiCore';
 import { setUserData } from '../../helpers/data';
-import { isAdmin } from '../../helpers/storage';
 import { showError } from '../../helpers/toast';
 import { timestamp2string } from '../../helpers/date';
 import { getDefaultTime, getInitialTimestamp } from '../../helpers/dashboard';
+import {
+  dashboardPresetRange,
+  isDashboardAdmin,
+  dashboardQuotaRows,
+  dashboardRates,
+  validateDashboardQuery,
+} from '../../helpers/dashboardQuery';
 import { TIME_OPTIONS } from '../../constants/dashboard.constants';
 import { useIsMobile } from '../common/useIsMobile';
 import { useLatestRequestGuard } from '../common/useLatestRequestGuard';
@@ -36,6 +42,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const quotaRequestGuard = useLatestRequestGuard();
+  const refreshRequestGuard = useLatestRequestGuard();
   const uptimeRequestGuard = useLatestRequestGuard();
   const userQuotaRequestGuard = useLatestRequestGuard();
   const perfMetricsRequestGuard = useLatestRequestGuard();
@@ -43,8 +50,13 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const userBalanceTrendRequestGuard = useLatestRequestGuard();
 
   // ========== 基础状态 ==========
-  const [loading, setLoading] = useState(false);
-  const [greetingVisible, setGreetingVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [quotaError, setQuotaError] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(true);
+  const [accountError, setAccountError] = useState(false);
+  const accountRequestGuard = useLatestRequestGuard();
+  const [queryVersion, setQueryVersion] = useState(0);
+  const [rangePreset, setRangePreset] = useState('custom');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const showLoading = useMinimumLoadingTime(loading);
 
@@ -54,7 +66,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     token_name: '',
     model_name: '',
     start_timestamp: getInitialTimestamp(),
-    end_timestamp: timestamp2string(new Date().getTime() / 1000 + 3600),
+    end_timestamp: timestamp2string(new Date().getTime() / 1000),
     channel: '',
     data_export_default_time: '',
   });
@@ -99,8 +111,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const [activeUptimeTab, setActiveUptimeTab] = useState('');
 
   // ========== 常量 ==========
-  const now = new Date();
-  const isAdminUser = isAdmin();
+  const isAdminUser = isDashboardAdmin(userState?.user);
 
   // ========== Panel enable flags ==========
   const apiInfoEnabled = statusState?.status?.api_info_enabled ?? true;
@@ -122,19 +133,10 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     [t],
   );
 
-  const performanceMetrics = useMemo(() => {
-    const { start_timestamp, end_timestamp } = inputs;
-    const timeDiff =
-      (Date.parse(end_timestamp) - Date.parse(start_timestamp)) / 60000;
-    const avgRPM = isNaN(times / timeDiff)
-      ? '0'
-      : (times / timeDiff).toFixed(3);
-    const avgTPM = isNaN(consumeTokens / timeDiff)
-      ? '0'
-      : (consumeTokens / timeDiff).toFixed(3);
-
-    return { avgRPM, avgTPM, timeDiff };
-  }, [times, consumeTokens, inputs.start_timestamp, inputs.end_timestamp]);
+  const performanceMetrics = useMemo(
+    () => dashboardRates(times, consumeTokens, inputs),
+    [times, consumeTokens, inputs.start_timestamp, inputs.end_timestamp],
+  );
 
   const getGreeting = useMemo(() => {
     const hours = new Date().getHours();
@@ -155,18 +157,68 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   }, [t, userState?.user?.username]);
 
   // ========== 回调函数 ==========
-  const handleInputChange = useCallback((value, name) => {
-    if (name === 'data_export_default_time') {
-      setDataExportDefaultTime(value);
-      localStorage.setItem('data_export_default_time', value);
-      return;
-    }
-    setInputs((inputs) => ({ ...inputs, [name]: value }));
-  }, []);
+  const applyQuery = useCallback(
+    (draft, grain, preset = 'custom') => {
+      const error = validateDashboardQuery(draft, grain, isAdminUser);
+      if (error) {
+        showError(
+          t(
+            error === 'range-too-long'
+              ? '请选择不超过30天的时间范围'
+              : '请选择有效的起止时间',
+          ),
+        );
+        return false;
+      }
+      quotaRequestGuard.createRequestId();
+      refreshRequestGuard.createRequestId();
+      setInputs({
+        ...draft,
+        username: isAdminUser ? draft.username || '' : '',
+      });
+      setDataExportDefaultTime(grain);
+      setRangePreset(preset);
+      try {
+        localStorage.setItem('data_export_default_time', grain);
+      } catch {
+        /* Current query remains usable without storage. */
+      }
+      setLoading(true);
+      setQuotaError(false);
+      setQueryVersion((version) => version + 1);
+      setSearchModalVisible(false);
+      return true;
+    },
+    [isAdminUser, t, quotaRequestGuard, refreshRequestGuard],
+  );
 
   const showSearchModal = useCallback(() => {
     setSearchModalVisible(true);
   }, []);
+
+  const selectRangePreset = useCallback(
+    (preset) => {
+      if (preset === 'custom') {
+        showSearchModal();
+        return;
+      }
+      const range = dashboardPresetRange(preset);
+      if (!range) {
+        showError(t('请选择有效的起止时间'));
+        return;
+      }
+      applyQuery(
+        {
+          ...inputs,
+          start_timestamp: range.start_timestamp,
+          end_timestamp: range.end_timestamp,
+        },
+        range.grain,
+        preset,
+      );
+    },
+    [inputs, applyQuery, showSearchModal, t],
+  );
 
   const handleCloseModal = useCallback(() => {
     setSearchModalVisible(false);
@@ -176,6 +228,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const loadQuotaData = useCallback(async () => {
     const requestId = quotaRequestGuard.createRequestId();
     setLoading(true);
+    setQuotaError(false);
     try {
       let url = '';
       const { start_timestamp, end_timestamp, username } = inputs;
@@ -183,39 +236,33 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
       let localEndTimestamp = Date.parse(end_timestamp) / 1000;
 
       if (isAdminUser) {
-        url = `/api/data/?username=${username}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&default_time=${dataExportDefaultTime}`;
+        url = `/api/data/?username=${encodeURIComponent(username)}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&default_time=${dataExportDefaultTime}`;
       } else {
         url = `/api/data/self/?start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&default_time=${dataExportDefaultTime}`;
       }
 
       const res = await API.get(url);
       if (!quotaRequestGuard.isLatestRequest(requestId)) {
-        return [];
+        return null;
       }
       const { success, message, data } = res.data;
       if (success) {
-        setQuotaData(data);
-        if (data.length === 0) {
-          data.push({
-            count: 0,
-            model_name: '',
-            is_empty_placeholder: true,
-            quota: 0,
-            created_at: now.getTime() / 1000,
-          });
-        }
-        data.sort((a, b) => a.created_at - b.created_at);
-        return data;
+        const rows = dashboardQuotaRows(data);
+        setQuotaData(rows);
+        return rows;
       } else {
-        showError(message);
-        return [];
+        setQuotaError(true);
+        return null;
       }
+    } catch {
+      if (quotaRequestGuard.isLatestRequest(requestId)) setQuotaError(true);
+      return null;
     } finally {
       if (quotaRequestGuard.isLatestRequest(requestId)) {
         setLoading(false);
       }
     }
-  }, [dataExportDefaultTime, inputs, isAdminUser, now, quotaRequestGuard]);
+  }, [dataExportDefaultTime, inputs, isAdminUser, quotaRequestGuard]);
 
   const loadUptimeData = useCallback(async () => {
     const requestId = uptimeRequestGuard.createRequestId();
@@ -396,25 +443,58 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   );
 
   const getUserData = useCallback(async () => {
-    let res = await API.get(`/api/user/self`);
-    const { success, message, data } = res.data;
-    if (success) {
-      userDispatch({ type: 'login', payload: data });
-      setUserData(data);
-    } else {
-      showError(message);
+    const requestId = accountRequestGuard.createRequestId();
+    setAccountLoading(true);
+    setAccountError(false);
+    try {
+      const { data: response } = await API.get('/api/user/self');
+      if (!accountRequestGuard.isLatestRequest(requestId)) return;
+      if (!response.success || !response.data)
+        throw new Error('Invalid account response');
+      userDispatch({ type: 'login', payload: response.data });
+      setUserData(response.data);
+    } catch {
+      if (accountRequestGuard.isLatestRequest(requestId)) setAccountError(true);
+    } finally {
+      if (accountRequestGuard.isLatestRequest(requestId))
+        setAccountLoading(false);
     }
-  }, [userDispatch]);
+  }, [userDispatch, accountRequestGuard]);
+
+  useEffect(
+    () => () => {
+      quotaRequestGuard.createRequestId();
+      refreshRequestGuard.createRequestId();
+      accountRequestGuard.createRequestId();
+      uptimeRequestGuard.createRequestId();
+      userQuotaRequestGuard.createRequestId();
+      perfMetricsRequestGuard.createRequestId();
+      modelChannelStatsRequestGuard.createRequestId();
+      userBalanceTrendRequestGuard.createRequestId();
+    },
+    [
+      quotaRequestGuard,
+      refreshRequestGuard,
+      accountRequestGuard,
+      uptimeRequestGuard,
+      userQuotaRequestGuard,
+      perfMetricsRequestGuard,
+      modelChannelStatsRequestGuard,
+      userBalanceTrendRequestGuard,
+    ],
+  );
 
   const refresh = useCallback(
     async (options = {}) => {
+      const requestId = refreshRequestGuard.createRequestId();
       const {
         includeUptime = uptimeEnabled,
         includePerfMetrics = false,
         includeUserBalanceTrend = false,
       } = options;
       const data = await loadQuotaData();
-      const tasks = [];
+      if (!refreshRequestGuard.isLatestRequest(requestId)) return null;
+      const tasks = [getUserData()];
       if (includeUptime) {
         tasks.push(loadUptimeData());
       }
@@ -430,10 +510,12 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
       if (tasks.length > 0) {
         await Promise.allSettled(tasks);
       }
-      return data;
+      return refreshRequestGuard.isLatestRequest(requestId) ? data : null;
     },
     [
+      refreshRequestGuard,
       loadQuotaData,
+      getUserData,
       loadUptimeData,
       loadPerfMetricsSummary,
       loadModelChannelTagStats,
@@ -443,29 +525,16 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     ],
   );
 
-  const handleSearchConfirm = useCallback(
-    async (updateChartDataCallback, options = {}) => {
-      const data = await refresh(options);
-      if (data && data.length > 0 && updateChartDataCallback) {
-        updateChartDataCallback(data);
-      }
-      setSearchModalVisible(false);
-    },
-    [refresh],
-  );
-
-  // ========== Effects ==========
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setGreetingVisible(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   return {
     // 基础状态
     loading: showLoading,
-    greetingVisible,
+    quotaError,
+    accountLoading,
+    accountError,
+    queryVersion,
+    rangePreset,
+    selectRangePreset,
+    applyQuery,
     searchModalVisible,
 
     // 输入状态
@@ -518,7 +587,6 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     uptimeEnabled,
 
     // 函数
-    handleInputChange,
     showSearchModal,
     handleCloseModal,
     loadQuotaData,
@@ -531,7 +599,6 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     handleUserBalanceTrendDaysChange,
     getUserData,
     refresh,
-    handleSearchConfirm,
 
     // 导航和翻译
     navigate,
