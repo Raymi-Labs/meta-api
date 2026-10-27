@@ -91,3 +91,5 @@ R2 对象语义修复后，Linux 存储套件 171 项中 156 项通过、15 项�
 切换预检通过后，于 09:36:17–09:36:20 UTC 在现有 job lock、发布锁下停止旧 timer 调度，释放锁后启用新 timer。旧 timer 为 disabled/inactive，新 timer 为 enabled/active，下一次计划执行为北京时间 2026-10-24 04:10；新 timer 之前没有触发记录，本次没有即时补跑，全备 service 仍为 inactive/dead/success。只交接调度，保留旧程序、service、timer 文件及备份，不重启或部署业务容器。回退仍使用原每日任务。实际定时触发尚待下一计划时刻，不能将本次手动 A/B 成功描述为已经观察到下一次日常调度完成。
 
 生产部署代码包含已通过 CI 的锚点取消保护、R2 缺失对象语义及 service 失败告警修复；最后的代码门禁为 `761b13abd`，发布安全、Notes 和 Docker 构建均成功。本次仅运维能力更新，不改变应用版本或创建应用 Release。已验证恢复链从本次带锚点全备开始，不将现有七天本地 binlog 保留等同于此前七天均已恢复验证。
+
+[部署目录迁移](2026-10-27-deployment-directory.md) 增加固定且受信任的 /opt/newapi -> /opt/meta-api 别名兼容，配置数据目录与 Docker bind source 必须归一到同一真实路径；通用防链接、文件身份和归档链检查继续保留。

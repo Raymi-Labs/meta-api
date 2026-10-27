@@ -3,7 +3,22 @@ set -Eeuo pipefail
 
 umask 077
 
-APP_DIR="${NEWAPI_APP_DIR:-/opt/newapi}"
+select_app_dir() {
+  local preferred="$1" legacy="$2"
+  if [ -d "$preferred" ]; then
+    if { [ -e "$legacy" ] || [ -L "$legacy" ]; } && ! [ "$preferred" -ef "$legacy" ]; then
+      printf 'Two independent deployment directories exist; set NEWAPI_APP_DIR explicitly.\n' >&2
+      return 1
+    fi
+    printf '%s\n' "$preferred"
+  elif [ -d "$legacy" ]; then
+    printf '%s\n' "$legacy"
+  else
+    printf '%s\n' "$preferred"
+  fi
+}
+
+APP_DIR="${NEWAPI_APP_DIR:-$(select_app_dir /opt/meta-api /opt/newapi)}"
 COMPOSE_FILE="${NEWAPI_COMPOSE_FILE:-$APP_DIR/docker-compose.yml}"
 SERVICE_NAME="${NEWAPI_SERVICE_NAME:-new-api}"
 CONTAINER_NAME="${NEWAPI_CONTAINER_NAME:-new-api-master}"
@@ -1326,6 +1341,7 @@ command_status() {
   current_id="$(actual_image_id)"
   current_version="$(actual_version)"
   declared_image="$(compose_service_image 2>/dev/null || printf unknown)"
+  printf 'app_directory=%s\n' "$APP_DIR"
   printf 'running_image=%s\n' "$current_image"
   printf 'running_id=%s\n' "$current_id"
   printf 'running_version=%s\n' "$current_version"

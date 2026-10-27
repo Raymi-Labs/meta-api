@@ -36,3 +36,5 @@ Status: implemented
 ## Consequences
 
 stop 会中断现有请求，交互操作须确认；手动停止的容器在 Docker daemon/主机重启后可能按原 restart policy 启动。公开包以后可被匿名下载；本轮用户已明确授权，其他包可见性不改变。
+
+后续目录统一见 [部署目录迁移](2026-10-27-deployment-directory.md)：实际目录改为 /opt/meta-api，保留 /opt/newapi 兼容链接及容器/网络/回滚身份；菜单和公司来源继续复用。
