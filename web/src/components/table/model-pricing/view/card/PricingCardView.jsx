@@ -68,7 +68,7 @@ const PricingCardView = ({
   );
 
   const health = useModelHealthSummaries(paginatedModels, !loading);
-  if (showSkeleton) return <PricingCardSkeleton skeletonCount={6} />;
+  if (showSkeleton) return <PricingCardSkeleton />;
   return (
     <div>
       <div className='pricing-catalog-grid'>
@@ -120,7 +120,7 @@ const PricingCardView = ({
               <div className='pricing-model-card-header'>
                 <div className='pricing-model-icon' aria-hidden='true'>
                   {icon
-                    ? getLobeHubIcon(icon, 28)
+                    ? getLobeHubIcon(icon, 24)
                     : model.model_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className='pricing-model-identity'>

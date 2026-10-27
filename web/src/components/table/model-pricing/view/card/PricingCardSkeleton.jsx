@@ -20,19 +20,19 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Skeleton } from '@douyinfe/semi-ui';
 
-export default function PricingCardSkeleton({ skeletonCount = 6 }) {
+export default function PricingCardSkeleton({ skeletonCount = 8 }) {
   return (
     <div className='pricing-catalog-grid' aria-hidden='true'>
       {Array.from({ length: skeletonCount }, (_, index) => (
         <div className='pricing-model-card pricing-model-skeleton' key={index}>
           <Skeleton.Title
             active
-            style={{ width: '65%', height: 24, marginBottom: 24 }}
+            style={{ width: '65%', height: 20, marginBottom: 12 }}
           />
           <Skeleton.Paragraph active rows={3} />
           <Skeleton.Title
             active
-            style={{ width: '100%', height: 70, marginTop: 24 }}
+            style={{ width: '100%', height: 60, marginTop: 12 }}
           />
         </div>
       ))}

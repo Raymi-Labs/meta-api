@@ -44,7 +44,7 @@ export function shouldNavigateModelCard(event, selection = '') {
     event.button === 0 &&
     !selection &&
     !event.target.closest(
-      'a,button,input,label,select,textarea,[role="checkbox"]',
+      'a,button,input,label,select,textarea,[role="checkbox"],.semi-checkbox',
     )
   );
 }
