@@ -188,6 +188,7 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.GET("/invoices", controller.GetAllInvoiceRequests)
 				adminRoute.GET("/invoices/:id/file", controller.DownloadInvoiceFile)
 				adminRoute.GET("/invoices/:id", controller.GetInvoiceRequestDetail)
+				adminRoute.POST("/invoices/:id/render-pdf", controller.RenderInvoicePDF)
 				adminRoute.POST("/invoices/:id/approve", controller.ApproveInvoiceRequest)
 				adminRoute.POST("/invoices/:id/reject", controller.RejectInvoiceRequest)
 				adminRoute.POST("/invoices/:id/resend-email", controller.ResendInvoiceEmail)

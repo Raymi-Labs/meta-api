@@ -6918,6 +6918,17 @@
     "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Après l’enregistrement des paramètres, les nouvelles annonces sont envoyées aux utilisateurs actifs ayant une adresse e-mail valide associée. Modifier, supprimer ou enregistrer à nouveau ne déclenche pas de nouvel envoi.",
     "已提交邮件服务器": "Accepté par le serveur de messagerie",
     "公告邮件记录": "Historique des e-mails d’annonces",
-    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepté signifie que le serveur de messagerie a accepté le message, sans garantir sa réception. Les messages dont le résultat est inconnu ne sont pas renvoyés automatiquement afin d’éviter les doublons."
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepté signifie que le serveur de messagerie a accepté le message, sans garantir sa réception. Les messages dont le résultat est inconnu ne sont pas renvoyés automatiquement afin d’éviter les doublons.",
+    "印章加载失败，请重试或手动上传 PDF": "Impossible de charger le cachet. Réessayez ou importez un PDF manuellement.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "Impossible de générer le PDF. Réessayez ou importez un PDF manuellement.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "Le relevé détaillé est généré en PDF à l’envoi. Vous pouvez aussi importer un fichier de remplacement.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "La liste des produits est générée en PDF à l’envoi. Vous pouvez aussi importer un fichier de remplacement.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Le renvoi réutilise les pièces jointes enregistrées et génère les relevés détaillés et listes de produits manquants. Vous pouvez changer le destinataire ou importer des fichiers de remplacement.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "Cette pièce jointe sera générée et enregistrée à l’envoi, sans enregistrement ni importation manuels.",
+    "未上传替换文件，将自动生成 PDF": "Aucun fichier de remplacement importé. Le PDF sera généré automatiquement.",
+    "PDF 生成参数无效": "Paramètres de génération PDF non valides",
+    "PDF 生成服务繁忙，请稍后重试": "Le service PDF est occupé. Réessayez plus tard.",
+    "预览明细账单": "Aperçu du relevé détaillé",
+    "预览产品明细清单": "Aperçu de la liste des produits"
   }
 }

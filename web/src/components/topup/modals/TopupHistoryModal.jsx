@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import React, { useEffect, useMemo, useState, useContext } from 'react';
+import React, { useEffect, useMemo, useState, useContext, useRef } from 'react';
 import {
   Avatar,
   Badge,
@@ -52,7 +52,11 @@ import {
 } from '../../../helpers';
 import { isAdmin } from '../../../helpers/utils';
 import { getQuotaPerUnit } from '../../../helpers/quota';
-import { openInvoicePdf } from '../../../helpers/invoicePdf';
+import {
+  openInvoicePdf,
+  renderInvoicePdf,
+  prepareInvoiceAttachmentFiles,
+} from '../../../helpers/invoicePdf';
 import { UserContext } from '../../../context/User';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import PaymentRiskCaseDetailModal from './PaymentRiskCaseDetailModal';
@@ -682,15 +686,17 @@ function buildInvoicePrintHtml(invoice, stampUrl = '', options = {}) {
   <style>
     @page { size: A4 landscape; margin: 14mm; }
     * { box-sizing: border-box; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    body { margin: 0; color: #243244; background: #fff; font: 14px/1.55 "Songti SC", "SimSun", "Noto Serif CJK SC", serif; }
+    body { margin: 0; color: #243244; background: #fff; font: 14px/1.55 "Noto Serif CJK SC", "Songti SC", "SimSun", serif; }
     .certificate { position: relative; min-height: 176mm; padding: 4mm 18mm 6mm 2mm; overflow: hidden; }
-    h1 { margin: 0; text-align: center; font: 700 25px/1.25 "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 1px; color: #23364a; }
+    h1 { margin: 0; text-align: center; font: 700 25px/1.25 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 1px; color: #23364a; }
     .title-line { height: 2px; margin: 14px 0 8px; background: #2d5f86; }
     .intro { margin: 0 26px 16px; text-indent: 2em; font-size: 14px; }
-    h2 { margin: 0 0 8px; font: 700 16px/1.2 "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f3447; }
+    h2 { margin: 0 0 8px; font: 700 16px/1.2 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f3447; }
     table { width: calc(100% - 40px); border-collapse: collapse; table-layout: fixed; margin-left: 20px; }
     th { background: #22364b; color: #fff; font-weight: 700; }
     th, td { border: 1px solid #cfd8e3; padding: 6px 7px; vertical-align: middle; word-break: break-all; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
     tbody tr:nth-child(even) { background: #f7f9fb; }
     .center { text-align: center; }
     .money { text-align: right; white-space: nowrap; }
@@ -720,15 +726,15 @@ function buildInvoicePrintHtml(invoice, stampUrl = '', options = {}) {
     <table>
       <thead>
         <tr>
-          <th style="width: 44px;">序号</th>
-          <th style="width: 90px;">交易类型</th>
-          <th style="width: 96px;">业务编号</th>
+          <th style="width: 4%;">序号</th>
+          <th style="width: 8%;">交易类型</th>
+          <th style="width: 9%;">业务编号</th>
           <th>订单编码/交易号</th>
-          <th style="width: 150px;">付款方/收款方</th>
-          <th style="width: 110px;">商品/套餐</th>
-          <th style="width: 118px;">支付渠道</th>
-          <th style="width: 120px;">支付金额</th>
-          <th style="width: 160px;">支付时间</th>
+          <th style="width: 12%;">付款方/收款方</th>
+          <th style="width: 10%;">商品/套餐</th>
+          <th style="width: 10%;">支付渠道</th>
+          <th style="width: 10%;">支付金额</th>
+          <th style="width: 16%;">支付时间</th>
         </tr>
       </thead>
       <tbody>${orderRows}</tbody>
@@ -831,13 +837,15 @@ function buildInvoiceServiceConfirmationHtml(
   <style>
     @page { size: A4 portrait; margin: 11mm 12mm; }
     * { box-sizing: border-box; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    body { margin: 0; color: #243244; background: #fff; font: 12px/1.38 "Songti SC", "SimSun", "Noto Serif CJK SC", serif; }
+    body { margin: 0; color: #243244; background: #fff; font: 12px/1.38 "Noto Serif CJK SC", "Songti SC", "SimSun", serif; }
     .certificate { position: relative; min-height: 273mm; max-width: 186mm; margin: 0 auto; padding: 0 0 4mm; overflow: hidden; }
     .topline { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2d5f86; padding-bottom: 4px; color: #2d5f86; font: 600 11px/1.2 "PingFang SC", sans-serif; }
-    h1 { margin: 8px 0 5px; text-align: center; color: #23364a; font: 700 22px/1.2 "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0.8px; }
+    h1 { margin: 8px 0 5px; text-align: center; color: #23364a; font: 700 22px/1.2 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0.8px; }
     .lead { margin: 0 4px 7px; text-align: center; color: #526579; font-size: 11px; }
-    h2 { margin: 7px 0 4px; color: #1f3447; font: 700 14px/1.2 "PingFang SC", "Microsoft YaHei", sans-serif; page-break-after: avoid; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: avoid; }
+    h2 { margin: 7px 0 4px; color: #1f3447; font: 700 14px/1.2 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif; page-break-after: avoid; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
     .meta-table th { width: 19mm; background: #eef3f8; color: #23364a; }
     .meta-table td { background: #fff; }
     th { background: #22364b; color: #fff; font-weight: 700; text-align: center; }
@@ -852,7 +860,7 @@ function buildInvoiceServiceConfirmationHtml(
     .sign-box p { margin: 7px 0; }
     .provider-name { font-weight: 700; }
     .stamp-hint { color: #526579; }
-    .provider-seal { position: absolute; z-index: 2; right: 0; bottom: -4mm; width: 32mm; height: 32mm; object-fit: contain; opacity: 0.9; transform: rotate(-6deg); pointer-events: none; }
+    .provider-seal { position: absolute; z-index: 2; right: 2mm; bottom: -4mm; width: 32mm; height: 32mm; object-fit: contain; opacity: 0.9; transform: rotate(-6deg); pointer-events: none; }
     .pending-note { margin-top: 20px; padding: 10px 12px; border: 1px solid #f59e0b; color: #9a5b00; background: #fff8e6; text-align: center; font-weight: 700; }
     .draft-watermark { position: fixed; z-index: 10; left: 50%; top: 48%; transform: translate(-50%, -50%) rotate(-24deg); color: rgba(185, 28, 28, 0.15); font: 800 42px/1 "PingFang SC", sans-serif; letter-spacing: 4px; white-space: nowrap; pointer-events: none; }
     @media screen { body { padding: 18px; background: #eef2f7; } .certificate { padding: 12mm; background: #fff; box-shadow: 0 10px 34px rgba(15, 23, 42, 0.12); } }
@@ -1062,6 +1070,8 @@ const TopupHistoryModal = ({
     setInvoiceReviewServiceConfirmationFile,
   ] = useState(null);
   const [invoiceReviewSubmitting, setInvoiceReviewSubmitting] = useState(false);
+  const invoiceReviewBusy = useRef(false);
+  const invoiceEmailBusy = useRef(false);
   const [invoiceEmailState, setInvoiceEmailState] = useState({
     visible: false,
     record: null,
@@ -2072,6 +2082,7 @@ const TopupHistoryModal = ({
   };
 
   const openInvoiceReviewModal = (record, action) => {
+    if (invoiceReviewBusy.current) return;
     setInvoiceReviewState({ visible: true, action, record });
     setInvoiceReviewForm({
       invoiceUrl: record?.invoice_url || '',
@@ -2087,6 +2098,7 @@ const TopupHistoryModal = ({
   };
 
   const closeInvoiceReviewModal = () => {
+    if (invoiceReviewBusy.current) return;
     setInvoiceReviewState({ visible: false, action: null, record: null });
     setInvoiceReviewForm({
       invoiceUrl: '',
@@ -2101,29 +2113,71 @@ const TopupHistoryModal = ({
     setInvoiceReviewServiceConfirmationFile(null);
   };
 
-  const loadInvoiceStampDataUrl = async () => {
+  const loadInvoiceStampDataUrl = async ({ required = false } = {}) => {
     const stampUrl = `${window.location.origin}/invoice-stamp.png`;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(stampUrl, { cache: 'force-cache' });
-      if (!response.ok) {
-        return stampUrl;
-      }
-      const blob = await response.blob();
-      return await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result || stampUrl);
-        reader.onerror = () => resolve(stampUrl);
-        reader.readAsDataURL(blob);
+      const response = await fetch(stampUrl, {
+        cache: 'force-cache',
+        signal: controller.signal,
       });
+      if (!response.ok) throw new Error('stamp download failed');
+      const blob = await response.blob();
+      const signature = new Uint8Array(await blob.slice(0, 8).arrayBuffer());
+      if (
+        signature.join(',') !== '137,80,78,71,13,10,26,10' ||
+        blob.size > 1024 * 1024
+      ) {
+        throw new Error('invalid stamp');
+      }
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(new Blob([blob], { type: 'image/png' }));
+      });
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      return dataUrl;
     } catch (error) {
+      if (required) {
+        throw new Error(t('印章加载失败，请重试或手动上传 PDF'));
+      }
       return stampUrl;
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
+
+  const prepareInvoiceFiles = (record, selected, files, saved = {}) =>
+    prepareInvoiceAttachmentFiles({
+      selected,
+      files,
+      saved,
+      loadDetail: () => loadInvoiceDetailData(record),
+      loadStamp: () => loadInvoiceStampDataUrl({ required: true }),
+      buildHtml: (kind, detail, stamp) =>
+        kind === 'detail_bill'
+          ? buildInvoicePrintHtml(detail, stamp, { official: true })
+          : buildInvoiceServiceConfirmationHtml(detail, stamp, {
+              official: true,
+            }),
+      renderPdf: (kind, html) =>
+        renderInvoicePdf(
+          API,
+          record.id,
+          kind,
+          html,
+          t('自动生成 PDF 失败，请重试或手动上传 PDF'),
+        ),
+    });
 
   const submitInvoiceReview = async () => {
     const { record, action } = invoiceReviewState;
     const id = Number(record?.id || 0);
-    if (!id || !action) return;
+    if (!id || !action || invoiceReviewBusy.current) return;
     if (action === 'approve' && !invoiceReviewFile) {
       Toast.error({ content: t('请上传发票 PDF') });
       return;
@@ -2136,36 +2190,25 @@ const TopupHistoryModal = ({
       Toast.error({ content: t('发票接收邮箱不能为空') });
       return;
     }
-    if (
-      action === 'approve' &&
-      invoiceReviewForm.sendEmail &&
-      invoiceReviewForm.sendDetailBill &&
-      !invoiceReviewDetailBillFile
-    ) {
-      Toast.error({
-        content: t(
-          '请上传明细账单 PDF（可在当前弹窗点击【生成明细账单】打印并另存为 PDF）',
-        ),
-      });
-      return;
-    }
-    if (
-      action === 'approve' &&
-      invoiceReviewForm.sendEmail &&
-      invoiceReviewForm.sendServiceConfirmation &&
-      !invoiceReviewServiceConfirmationFile
-    ) {
-      Toast.error({
-        content: t(
-          '请上传产品明细清单 PDF（可在当前弹窗点击【生成产品明细清单】打印并另存为 PDF）',
-        ),
-      });
-      return;
-    }
+    invoiceReviewBusy.current = true;
     setInvoiceReviewSubmitting(true);
     try {
       let payload;
       if (action === 'approve') {
+        const files = await prepareInvoiceFiles(
+          record,
+          {
+            detail_bill:
+              invoiceReviewForm.sendEmail && invoiceReviewForm.sendDetailBill,
+            service_confirmation:
+              invoiceReviewForm.sendEmail &&
+              invoiceReviewForm.sendServiceConfirmation,
+          },
+          {
+            detail_bill: invoiceReviewDetailBillFile,
+            service_confirmation: invoiceReviewServiceConfirmationFile,
+          },
+        );
         payload = new FormData();
         payload.append('invoice_url', invoiceReviewForm.invoiceUrl.trim());
         payload.append(
@@ -2189,7 +2232,7 @@ const TopupHistoryModal = ({
         payload.append('admin_remark', invoiceReviewForm.adminRemark.trim());
         payload.append('invoice_file', invoiceReviewFile);
         if (invoiceReviewForm.sendEmail && invoiceReviewForm.sendDetailBill) {
-          payload.append('detail_bill_file', invoiceReviewDetailBillFile);
+          payload.append('detail_bill_file', files.detail_bill);
         }
         if (
           invoiceReviewForm.sendEmail &&
@@ -2197,7 +2240,7 @@ const TopupHistoryModal = ({
         ) {
           payload.append(
             'service_confirmation_file',
-            invoiceReviewServiceConfirmationFile,
+            files.service_confirmation,
           );
         }
       } else {
@@ -2224,11 +2267,13 @@ const TopupHistoryModal = ({
           content: t(action === 'approve' ? '发票已通过' : '发票已驳回'),
         });
       }
-      closeInvoiceReviewModal();
       await refreshInvoices();
+      invoiceReviewBusy.current = false;
+      closeInvoiceReviewModal();
     } catch (error) {
-      Toast.error({ content: t('审核发票失败') });
+      Toast.error({ content: t(error?.message || '审核发票失败') });
     } finally {
+      invoiceReviewBusy.current = false;
       setInvoiceReviewSubmitting(false);
     }
   };
@@ -2246,16 +2291,25 @@ const TopupHistoryModal = ({
     if (!success) {
       throw new Error(message || '加载发票详情失败');
     }
-    return data || record || null;
+    if (!data || Number(data.id) !== id) {
+      throw new Error('加载发票详情失败');
+    }
+    return data;
   };
 
   const openResendInvoiceEmailModal = (record) => {
+    if (invoiceEmailBusy.current) return;
     setInvoiceEmailState({
       visible: true,
       record,
       invoiceSentTo: record?.invoice_sent_to || record?.email || '',
-      sendDetailBill: Boolean(record?.detail_bill_file_name),
-      sendServiceConfirmation: Boolean(record?.service_confirmation_file_name),
+      sendDetailBill:
+        Boolean(record?.detail_bill_file_name) ||
+        record?.need_detail_bill !== false,
+      sendServiceConfirmation: Boolean(
+        record?.service_confirmation_file_name ||
+          record?.need_service_confirmation,
+      ),
       detailBillFile: null,
       serviceConfirmationFile: null,
       submitting: false,
@@ -2263,6 +2317,7 @@ const TopupHistoryModal = ({
   };
 
   const closeResendInvoiceEmailModal = () => {
+    if (invoiceEmailBusy.current) return;
     setInvoiceEmailState({
       visible: false,
       record: null,
@@ -2277,37 +2332,30 @@ const TopupHistoryModal = ({
 
   const submitResendInvoiceEmail = async () => {
     const id = Number(invoiceEmailState.record?.id || 0);
-    if (!id || invoiceEmailState.submitting) return;
+    if (!id || invoiceEmailBusy.current) return;
     if (!invoiceEmailState.invoiceSentTo.trim()) {
       Toast.error({ content: t('发票接收邮箱不能为空') });
       return;
     }
-    if (
-      invoiceEmailState.sendDetailBill &&
-      !invoiceEmailState.detailBillFile &&
-      !invoiceEmailState.record?.detail_bill_file_name
-    ) {
-      Toast.error({
-        content: t(
-          '请上传明细账单 PDF（可在当前弹窗点击【生成明细账单】打印并另存为 PDF）',
-        ),
-      });
-      return;
-    }
-    if (
-      invoiceEmailState.sendServiceConfirmation &&
-      !invoiceEmailState.serviceConfirmationFile &&
-      !invoiceEmailState.record?.service_confirmation_file_name
-    ) {
-      Toast.error({
-        content: t(
-          '请上传产品明细清单 PDF（可在当前弹窗点击【生成产品明细清单】打印并另存为 PDF）',
-        ),
-      });
-      return;
-    }
+    invoiceEmailBusy.current = true;
     setInvoiceEmailState((prev) => ({ ...prev, submitting: true }));
     try {
+      const files = await prepareInvoiceFiles(
+        invoiceEmailState.record,
+        {
+          detail_bill: invoiceEmailState.sendDetailBill,
+          service_confirmation: invoiceEmailState.sendServiceConfirmation,
+        },
+        {
+          detail_bill: invoiceEmailState.detailBillFile,
+          service_confirmation: invoiceEmailState.serviceConfirmationFile,
+        },
+        {
+          detail_bill: invoiceEmailState.record?.detail_bill_file_name,
+          service_confirmation:
+            invoiceEmailState.record?.service_confirmation_file_name,
+        },
+      );
       const payload = new FormData();
       payload.append('invoice_sent_to', invoiceEmailState.invoiceSentTo.trim());
       payload.append(
@@ -2318,20 +2366,11 @@ const TopupHistoryModal = ({
         'send_service_confirmation',
         String(invoiceEmailState.sendServiceConfirmation),
       );
-      if (
-        invoiceEmailState.sendDetailBill &&
-        invoiceEmailState.detailBillFile
-      ) {
-        payload.append('detail_bill_file', invoiceEmailState.detailBillFile);
+      if (files.detail_bill) {
+        payload.append('detail_bill_file', files.detail_bill);
       }
-      if (
-        invoiceEmailState.sendServiceConfirmation &&
-        invoiceEmailState.serviceConfirmationFile
-      ) {
-        payload.append(
-          'service_confirmation_file',
-          invoiceEmailState.serviceConfirmationFile,
-        );
+      if (files.service_confirmation) {
+        payload.append('service_confirmation_file', files.service_confirmation);
       }
       const res = await API.post(
         `/api/user/invoices/${id}/resend-email`,
@@ -2349,11 +2388,13 @@ const TopupHistoryModal = ({
       } else {
         Toast.success({ content: t('邮件已发送') });
       }
-      closeResendInvoiceEmailModal();
       await refreshInvoices();
+      invoiceEmailBusy.current = false;
+      closeResendInvoiceEmailModal();
     } catch (error) {
       Toast.error({ content: t(error?.message || '重发邮件失败') });
     } finally {
+      invoiceEmailBusy.current = false;
       setInvoiceEmailState((prev) => ({ ...prev, submitting: false }));
     }
   };
@@ -2481,35 +2522,6 @@ const TopupHistoryModal = ({
     }
   };
 
-  const printInvoiceDetailBillForRecord = async (record) => {
-    const targetWindow = window.open('', '_blank', 'width=960,height=720');
-    if (!targetWindow) {
-      Toast.error({ content: t('浏览器阻止了明细账单窗口') });
-      return;
-    }
-    targetWindow.opener = null;
-    targetWindow.document.open();
-    targetWindow.document.write(
-      invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;">正在加载明细账单...</body>`,
-    );
-    targetWindow.document.close();
-    try {
-      const detail = await loadInvoiceDetailData(record);
-      await openInvoiceDetailBillPdfWindow(detail, {
-        targetWindow,
-        autoPrint: true,
-      });
-    } catch (error) {
-      targetWindow.document.open();
-      targetWindow.document.write(
-        invoiceText`<!doctype html><meta charset="utf-8"><title>明细账单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || invoiceText`加载明细账单失败`,
-        )}</body>`,
-      );
-      targetWindow.document.close();
-    }
-  };
-
   const viewInvoiceServiceConfirmation = async (record) => {
     const targetWindow = window.open('', '_blank', 'width=960,height=720');
     if (!targetWindow) {
@@ -2525,35 +2537,6 @@ const TopupHistoryModal = ({
     try {
       const detail = await loadInvoiceDetailData(record);
       await openInvoiceServiceConfirmationPdfWindow(detail, { targetWindow });
-    } catch (error) {
-      targetWindow.document.open();
-      targetWindow.document.write(
-        invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;color:#b91c1c;">${escapeHtml(
-          error?.message || invoiceText`加载产品明细清单失败`,
-        )}</body>`,
-      );
-      targetWindow.document.close();
-    }
-  };
-
-  const printInvoiceServiceConfirmationForRecord = async (record) => {
-    const targetWindow = window.open('', '_blank', 'width=960,height=720');
-    if (!targetWindow) {
-      Toast.error({ content: t('浏览器阻止了产品明细清单窗口') });
-      return;
-    }
-    targetWindow.opener = null;
-    targetWindow.document.open();
-    targetWindow.document.write(
-      invoiceText`<!doctype html><meta charset="utf-8"><title>产品明细清单</title><body style="font:14px sans-serif;padding:24px;">正在加载产品明细清单...</body>`,
-    );
-    targetWindow.document.close();
-    try {
-      const detail = await loadInvoiceDetailData(record);
-      await openInvoiceServiceConfirmationPdfWindow(detail, {
-        targetWindow,
-        autoPrint: true,
-      });
     } catch (error) {
       targetWindow.document.open();
       targetWindow.document.write(
@@ -5333,6 +5316,9 @@ const TopupHistoryModal = ({
         onOk={submitInvoiceReview}
         onCancel={closeInvoiceReviewModal}
         confirmLoading={invoiceReviewSubmitting}
+        cancelButtonProps={{ disabled: invoiceReviewSubmitting }}
+        closable={!invoiceReviewSubmitting}
+        closeOnEsc={!invoiceReviewSubmitting}
         maskClosable={false}
         okButtonProps={
           invoiceReviewState.action === 'reject'
@@ -5340,7 +5326,10 @@ const TopupHistoryModal = ({
             : undefined
         }
       >
-        <div className='space-y-3'>
+        <fieldset
+          disabled={invoiceReviewSubmitting}
+          className='space-y-3 border-0 m-0 p-0 min-w-0'
+        >
           {invoiceReviewState.action === 'approve' ? (
             <>
               <Input
@@ -5427,20 +5416,16 @@ const TopupHistoryModal = ({
                 >
                   <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
                     <Text type='tertiary' size='small'>
-                      {t(
-                        '上传明细账单 PDF：可先生成打印并“另存为 PDF”，再上传',
-                      )}
+                      {t('发送时自动生成明细账单 PDF；也可手动上传替换。')}
                     </Text>
                     <Button
                       size='small'
                       theme='outline'
                       onClick={() =>
-                        printInvoiceDetailBillForRecord(
-                          invoiceReviewState.record,
-                        )
+                        viewInvoiceDetailBill(invoiceReviewState.record)
                       }
                     >
-                      {t('生成明细账单')}
+                      {t('预览明细账单')}
                     </Button>
                   </div>
                   <input
@@ -5459,7 +5444,7 @@ const TopupHistoryModal = ({
                       </Text>
                     ) : (
                       <Text type='tertiary' size='small'>
-                        {t('尚未选择明细账单 PDF')}
+                        {t('未上传替换文件，将自动生成 PDF')}
                       </Text>
                     )}
                   </div>
@@ -5488,20 +5473,18 @@ const TopupHistoryModal = ({
                 >
                   <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
                     <Text type='tertiary' size='small'>
-                      {t(
-                        '上传产品明细清单 PDF：可先生成打印并“另存为 PDF”，再上传',
-                      )}
+                      {t('发送时自动生成产品明细清单 PDF；也可手动上传替换。')}
                     </Text>
                     <Button
                       size='small'
                       theme='outline'
                       onClick={() =>
-                        printInvoiceServiceConfirmationForRecord(
+                        viewInvoiceServiceConfirmation(
                           invoiceReviewState.record,
                         )
                       }
                     >
-                      {t('生成产品明细清单')}
+                      {t('预览产品明细清单')}
                     </Button>
                   </div>
                   <input
@@ -5520,7 +5503,7 @@ const TopupHistoryModal = ({
                       </Text>
                     ) : (
                       <Text type='tertiary' size='small'>
-                        {t('尚未选择产品明细清单 PDF')}
+                        {t('未上传替换文件，将自动生成 PDF')}
                       </Text>
                     )}
                   </div>
@@ -5544,7 +5527,7 @@ const TopupHistoryModal = ({
             maxCount={1000}
             autosize
           />
-        </div>
+        </fieldset>
       </Modal>
 
       <Modal
@@ -5591,10 +5574,13 @@ const TopupHistoryModal = ({
         closeOnEsc={!invoiceEmailState.submitting}
         maskClosable={false}
       >
-        <div className='space-y-3'>
+        <fieldset
+          disabled={invoiceEmailState.submitting}
+          className='space-y-3 border-0 m-0 p-0 min-w-0'
+        >
           <Text type='secondary'>
             {t(
-              '可直接重发已保存的发票、明细账单和产品明细清单，支持修改收件邮箱。未保存的附件需补传一次，之后即可复用。',
+              '重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。',
             )}
           </Text>
           <Input
@@ -5634,17 +5620,17 @@ const TopupHistoryModal = ({
                   {t(
                     invoiceEmailState.record?.detail_bill_file_name
                       ? '将复用已保存的 PDF；如需更换，可上传新文件。'
-                      : '尚未保存此附件，请上传一次；之后重发可直接复用。',
+                      : '发送时将自动生成并保存此附件，无需另存或上传。',
                   )}
                 </Text>
                 <Button
                   size='small'
                   theme='outline'
                   onClick={() =>
-                    printInvoiceDetailBillForRecord(invoiceEmailState.record)
+                    viewInvoiceDetailBill(invoiceEmailState.record)
                   }
                 >
-                  {t('生成明细账单')}
+                  {t('预览明细账单')}
                 </Button>
               </div>
               <input
@@ -5670,7 +5656,7 @@ const TopupHistoryModal = ({
                           filename:
                             invoiceEmailState.record.detail_bill_file_name,
                         })
-                      : t('尚未选择明细账单 PDF')}
+                      : t('未上传替换文件，将自动生成 PDF')}
                   </Text>
                 )}
               </div>
@@ -5700,19 +5686,17 @@ const TopupHistoryModal = ({
                   {t(
                     invoiceEmailState.record?.service_confirmation_file_name
                       ? '将复用已保存的 PDF；如需更换，可上传新文件。'
-                      : '尚未保存此附件，请上传一次；之后重发可直接复用。',
+                      : '发送时将自动生成并保存此附件，无需另存或上传。',
                   )}
                 </Text>
                 <Button
                   size='small'
                   theme='outline'
                   onClick={() =>
-                    printInvoiceServiceConfirmationForRecord(
-                      invoiceEmailState.record,
-                    )
+                    viewInvoiceServiceConfirmation(invoiceEmailState.record)
                   }
                 >
-                  {t('生成产品明细清单')}
+                  {t('预览产品明细清单')}
                 </Button>
               </div>
               <input
@@ -5739,13 +5723,13 @@ const TopupHistoryModal = ({
                             invoiceEmailState.record
                               .service_confirmation_file_name,
                         })
-                      : t('尚未选择产品明细清单 PDF')}
+                      : t('未上传替换文件，将自动生成 PDF')}
                   </Text>
                 )}
               </div>
             </div>
           ) : null}
-        </div>
+        </fieldset>
       </Modal>
     </>
   );

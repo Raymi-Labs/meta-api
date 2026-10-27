@@ -3,7 +3,7 @@ FROM --platform=$BUILDPLATFORM oven/bun:1.4.0@sha256:5ff609364c049b54eb0ff560ec9
 
 # 预渲染（SEO 阶段 2）需要在 build 后跑 puppeteer-core 控制真浏览器抓取页面 HTML，
 # 这里在 builder 阶段装系统 chromium + 中文字体（避免预渲染 HTML 出现方框乱码）。
-# 仅影响 builder 镜像，最终 runtime 镜像（debian:bookworm-slim）不变。
+# 发票 PDF 在 runtime 中也使用 Chromium；两个阶段各自安装目标架构依赖。
 RUN apt-get update \
     && apt-get install -y --no-install-recommends chromium fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
@@ -57,11 +57,12 @@ RUN BUILD_VERSION="${APP_VERSION:-$(cat VERSION 2>/dev/null)}"; \
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates tzdata libasan8 wget \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata libasan8 wget chromium fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
 COPY --from=builder2 /build/new-api /
+ENV INVOICE_PDF_CHROME_PATH=/usr/bin/chromium
 EXPOSE 3000
 WORKDIR /data
 ENTRYPOINT ["/new-api"]
