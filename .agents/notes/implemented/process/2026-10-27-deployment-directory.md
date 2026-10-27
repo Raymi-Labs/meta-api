@@ -30,6 +30,7 @@ Status: implemented
 - Linux 文件并发读取演练验证无旧路径缺失、原 inode/已打开句柄不变；失败只清理本次自指向临时链接。真实 MySQL 8.0.46 隔离 bind mount 演练完成迁移前后写入、同 UUID/inode、新旧路径归档读取及隔离容器重启后数据检查，测试容器已清理。
 - 本地发布工具 91 项回归通过（Linux 原子交换一项在 macOS 跳过，服务器 Linux 四项目录测试全部通过）；存储 221 项回归通过（21 项环境依赖集成用例留给既有 CI）；13 项附件回归、Bash/工作流语法、发布策略及笔记检查通过。
 - 首次隔离演练因临时源码归属和无同名 MySQL 标签提前拒绝，未接触生产目录；改为 root 自有临时 helper 及已缓存的确切镜像后通过。一次本地恢复测试受三秒测试窗口影响超时，单项及完整套件重跑通过，生产超时与健康要求未放宽。
+- 首轮 GitHub 隔离 MySQL 演练在建表时失败：原就绪检查使用 socket，会把官方镜像初始化阶段的临时数据库误判为最终服务。改用仅在最终服务启动后开放的容器内 TCP 检查，并在失败时保留 SQL stderr 与隔离容器日志；不改变生产数据库连接或超时。
 - 2026-10-27 在公司业务服务器完成原子迁移，记录 `/root/meta-api-directory-5qw9_2g6/`，原脚本与候选源码在 `/root/meta-api-directory-tools-k3v1o6jw/`。应用/MySQL/Redis 的 ID、镜像、启动时间，数据目录 inode/权限/归属，Compose 与发布状态哈希完全一致；应用仍为 compat.97。
 - status 显示 /opt/meta-api、release_state=synchronized；公司更新和旧镜像回退预演通过。新旧数据路径下的真实归档 Source 均校验同一 UUID 并可读取 binlog；迁移后归档继续成功推进，PITR 监控正常。
 

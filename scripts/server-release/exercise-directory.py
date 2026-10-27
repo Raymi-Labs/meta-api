@@ -58,8 +58,11 @@ def main():
                                '--binlog-row-image=FULL', '--sync-binlog=1').stdout.strip()
             def sql(query, check=True):
                 return docker('exec', '-e', 'MYSQL_PWD=fixture-only', container, 'mysql', '--user=root',
-                              '--protocol=SOCKET', '--batch', '--skip-column-names', '-e', query, check=check)
+                              '--protocol=TCP', '--host=127.0.0.1', '--batch', '--skip-column-names', '-e', query, check=check)
             def ready():
+                # The image's temporary initialization server accepts socket
+                # queries, then shuts down. TCP is disabled until the final
+                # server starts; wait for that server before creating fixtures.
                 for _ in range(90):
                     if sql('SELECT 1', check=False).returncode == 0:
                         return
@@ -91,6 +94,13 @@ def main():
             assert sql('SELECT @@server_uuid').stdout.strip() == source_uuid
             assert (new / 'mysql_data').stat().st_ino == inode
             print('PASS: real MySQL writes stay online through exchange; old/new binlog Source verified; same data survives isolated restart')
+        except Exception as error:
+            if isinstance(error, subprocess.CalledProcessError):
+                print(error.stderr or error.stdout or 'Docker command failed without output', file=sys.stderr)
+            if container is not None:
+                logs = docker('logs', '--tail', '80', container, check=False)
+                print(logs.stdout + logs.stderr, file=sys.stderr)
+            raise
         finally:
             if container is not None:
                 docker('rm', '-f', container)
