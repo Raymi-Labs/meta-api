@@ -6593,6 +6593,17 @@
     "已提交邮件服务器": "Vom Mailserver angenommen",
     "公告邮件记录": "E-Mail-Verlauf der Ankündigungen",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Angenommen bedeutet, dass der Mailserver die Nachricht akzeptiert hat, nicht dass sie beim Empfänger angekommen ist. Nachrichten mit unbekanntem Ergebnis werden nicht automatisch erneut gesendet, um Duplikate zu vermeiden.",
-    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Referenzpreise basieren auf der günstigsten verfügbaren Gruppe. Die tatsächlichen Kosten hängen von Ihrer Gruppe und den Abrechnungsregeln ab."
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Referenzpreise basieren auf der günstigsten verfügbaren Gruppe. Die tatsächlichen Kosten hängen von Ihrer Gruppe und den Abrechnungsregeln ab.",
+    "印章加载失败，请重试或手动上传 PDF": "Der Stempel konnte nicht geladen werden. Erneut versuchen oder eine PDF manuell hochladen.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "Die PDF konnte nicht automatisch erstellt werden. Erneut versuchen oder manuell hochladen.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "Die detaillierte Abrechnung wird beim Senden als PDF erstellt. Sie können eine Ersatzdatei hochladen.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "Die Produktliste wird beim Senden als PDF erstellt. Sie können eine Ersatzdatei hochladen.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Beim erneuten Senden werden gespeicherte Anhänge wiederverwendet und fehlende Abrechnungen und Produktlisten erstellt. Sie können den Empfänger ändern oder Ersatzdateien hochladen.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "Dieser Anhang wird beim Senden automatisch erstellt und gespeichert. Manuelles Speichern oder Hochladen ist nicht nötig.",
+    "未上传替换文件，将自动生成 PDF": "Keine Ersatzdatei hochgeladen. Die PDF wird automatisch erstellt.",
+    "PDF 生成参数无效": "Ungültige Parameter für die PDF-Erstellung",
+    "PDF 生成服务繁忙，请稍后重试": "Der PDF-Dienst ist ausgelastet. Bitte später erneut versuchen.",
+    "预览明细账单": "Abrechnung anzeigen",
+    "预览产品明细清单": "Produktliste anzeigen"
   }
 }

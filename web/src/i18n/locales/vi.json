@@ -7208,6 +7208,17 @@
     "已提交邮件服务器": "Máy chủ thư đã chấp nhận",
     "公告邮件记录": "Lịch sử email thông báo",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Đã chấp nhận nghĩa là máy chủ thư đã nhận thư, không có nghĩa người nhận đã nhận được. Thư có kết quả chưa rõ sẽ không được tự động gửi lại để tránh thông báo trùng lặp.",
-    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Giá tham khảo dựa trên nhóm áp dụng có giá thấp nhất. Chi phí thực tế phụ thuộc vào nhóm sử dụng và quy tắc tính phí."
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Giá tham khảo dựa trên nhóm áp dụng có giá thấp nhất. Chi phí thực tế phụ thuộc vào nhóm sử dụng và quy tắc tính phí.",
+    "印章加载失败，请重试或手动上传 PDF": "Không tải được con dấu. Hãy thử lại hoặc tải PDF lên thủ công.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "Không tạo được PDF. Hãy thử lại hoặc tải PDF lên thủ công.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "Bản kê chi tiết PDF được tự động tạo khi gửi. Bạn cũng có thể tải tệp thay thế lên.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "Danh sách sản phẩm PDF được tự động tạo khi gửi. Bạn cũng có thể tải tệp thay thế lên.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Khi gửi lại, hệ thống dùng tệp đính kèm đã lưu và tự tạo bản kê hoặc danh sách sản phẩm còn thiếu. Bạn có thể đổi email người nhận hoặc tải tệp thay thế lên.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "Tệp đính kèm này sẽ được tạo và lưu khi gửi. Không cần lưu riêng hoặc tải lên thủ công.",
+    "未上传替换文件，将自动生成 PDF": "Chưa tải tệp thay thế lên. PDF sẽ được tạo tự động.",
+    "PDF 生成参数无效": "Tham số tạo PDF không hợp lệ",
+    "PDF 生成服务繁忙，请稍后重试": "Dịch vụ tạo PDF đang bận. Vui lòng thử lại sau.",
+    "预览明细账单": "Xem trước bản kê chi tiết",
+    "预览产品明细清单": "Xem trước danh sách sản phẩm"
   }
 }

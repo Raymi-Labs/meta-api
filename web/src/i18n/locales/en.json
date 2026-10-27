@@ -6805,6 +6805,17 @@
     "已提交邮件服务器": "Accepted by mail server",
     "公告邮件记录": "Announcement email history",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepted means the mail server accepted the message, not that the recipient received it. Messages with an unknown outcome are not automatically resent, to avoid duplicates.",
-    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Reference prices use the lowest applicable group. Actual charges depend on your group and billing rules."
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Reference prices use the lowest applicable group. Actual charges depend on your group and billing rules.",
+    "印章加载失败，请重试或手动上传 PDF": "Failed to load the seal. Retry or upload a PDF manually.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "Failed to generate the PDF. Retry or upload a PDF manually.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "The detailed bill PDF is generated when sending. You can upload a replacement.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "The product list PDF is generated when sending. You can upload a replacement.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Resending reuses saved attachments and generates missing detailed bills and product lists. You can change the recipient or upload replacement files.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "This attachment will be generated and saved when sending. No manual saving or upload is needed.",
+    "未上传替换文件，将自动生成 PDF": "No replacement uploaded. The PDF will be generated automatically.",
+    "PDF 生成参数无效": "Invalid PDF generation parameters",
+    "PDF 生成服务繁忙，请稍后重试": "The PDF generation service is busy. Please try again later.",
+    "预览明细账单": "Preview detailed bill",
+    "预览产品明细清单": "Preview product list"
   }
 }

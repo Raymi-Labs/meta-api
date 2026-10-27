@@ -41,12 +41,70 @@ export async function loadInvoicePdf(api, url, fallback) {
       await invoicePdfErrorMessage(error?.response?.data, fallback),
     );
   }
-  const blob = response.data;
+  return validateInvoicePdf(response.data, fallback);
+}
+
+async function validateInvoicePdf(blob, fallback) {
   // Business errors can be JSON with HTTP 200; never open them as a PDF.
   if (!(blob instanceof Blob) || (await blob.slice(0, 5).text()) !== '%PDF-') {
     throw new Error(await invoicePdfErrorMessage(blob, fallback));
   }
   return new Blob([blob], { type: 'application/pdf' });
+}
+
+// The server uses Chromium's native print engine with this same print HTML.
+export async function renderInvoicePdf(api, id, kind, html, fallback) {
+  let response;
+  try {
+    response = await api.post(
+      `/api/user/invoices/${id}/render-pdf`,
+      { kind, html },
+      { responseType: 'blob', skipErrorHandler: true, timeout: 60000 },
+    );
+  } catch (error) {
+    throw new Error(
+      await invoicePdfErrorMessage(error?.response?.data, fallback),
+    );
+  }
+  const blob = await validateInvoicePdf(response.data, fallback);
+  if (blob.size > 10 * 1024 * 1024) throw new Error(fallback);
+  return blob;
+}
+
+// Prepare every selected attachment before the approval/send request starts.
+// A null file means the server should reuse the already saved attachment.
+export async function prepareInvoiceAttachmentFiles({
+  selected,
+  files,
+  saved = {},
+  loadDetail,
+  loadStamp,
+  buildHtml,
+  renderPdf,
+}) {
+  const result = {};
+  const missing = [];
+  for (const kind of ['detail_bill', 'service_confirmation']) {
+    if (!selected[kind]) continue;
+    result[kind] = files[kind] || null;
+    if (!result[kind] && !saved[kind]) missing.push(kind);
+  }
+  if (missing.length === 0) return result;
+  const snapshot = await loadDetail();
+  // Freeze the issue date across both documents, even when rendering crosses midnight.
+  const detail = {
+    ...snapshot,
+    reviewed_at: snapshot.reviewed_at || Math.floor(Date.now() / 1000),
+  };
+  const stamp = await loadStamp();
+  // Sequential rendering keeps browser memory bounded on small servers.
+  for (const kind of missing) {
+    const blob = await renderPdf(kind, buildHtml(kind, detail, stamp));
+    result[kind] = new File([blob], `${kind}-${detail.id}.pdf`, {
+      type: 'application/pdf',
+    });
+  }
+  return result;
 }
 
 export async function openInvoicePdf(api, url, messages) {

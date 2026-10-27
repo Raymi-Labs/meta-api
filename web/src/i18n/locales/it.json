@@ -6593,6 +6593,17 @@
     "已提交邮件服务器": "Accettato dal server di posta",
     "公告邮件记录": "Cronologia e-mail degli annunci",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accettato significa che il server di posta ha accettato il messaggio, non che il destinatario lo abbia ricevuto. I messaggi con esito sconosciuto non vengono reinviati automaticamente per evitare duplicati.",
-    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "I prezzi indicativi si basano sul gruppo applicabile più economico. Il costo effettivo dipende dal gruppo e dalle regole di fatturazione."
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "I prezzi indicativi si basano sul gruppo applicabile più economico. Il costo effettivo dipende dal gruppo e dalle regole di fatturazione.",
+    "印章加载失败，请重试或手动上传 PDF": "Impossibile caricare il timbro. Riprova o carica un PDF manualmente.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "Impossibile generare il PDF. Riprova o carica un PDF manualmente.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "Il rendiconto dettagliato PDF viene generato all’invio. Puoi anche caricare un file sostitutivo.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "L’elenco prodotti PDF viene generato all’invio. Puoi anche caricare un file sostitutivo.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Il reinvio riutilizza gli allegati salvati e genera i rendiconti e gli elenchi prodotti mancanti. Puoi cambiare il destinatario o caricare file sostitutivi.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "Questo allegato verrà generato e salvato all’invio. Non occorre salvarlo o caricarlo manualmente.",
+    "未上传替换文件，将自动生成 PDF": "Nessun file sostitutivo caricato. Il PDF verrà generato automaticamente.",
+    "PDF 生成参数无效": "Parametri di generazione PDF non validi",
+    "PDF 生成服务繁忙，请稍后重试": "Il servizio PDF è occupato. Riprova più tardi.",
+    "预览明细账单": "Anteprima del rendiconto dettagliato",
+    "预览产品明细清单": "Anteprima dell’elenco prodotti"
   }
 }

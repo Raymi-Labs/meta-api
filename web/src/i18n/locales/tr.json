@@ -6593,6 +6593,17 @@
     "已提交邮件服务器": "Posta sunucusu kabul etti",
     "公告邮件记录": "Duyuru e-posta geçmişi",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Kabul edildi, posta sunucusunun iletiyi kabul ettiği anlamına gelir; alıcının aldığı anlamına gelmez. Sonucu bilinmeyen iletiler, yinelenen bildirimleri önlemek için otomatik olarak yeniden gönderilmez.",
-    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Referans fiyatlar en uygun geçerli gruba dayanır. Gerçek ücretler kullandığınız gruba ve faturalandırma kurallarına bağlıdır."
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Referans fiyatlar en uygun geçerli gruba dayanır. Gerçek ücretler kullandığınız gruba ve faturalandırma kurallarına bağlıdır.",
+    "印章加载失败，请重试或手动上传 PDF": "Mühür yüklenemedi. Yeniden deneyin veya PDF dosyasını elle yükleyin.",
+    "自动生成 PDF 失败，请重试或手动上传 PDF": "PDF oluşturulamadı. Yeniden deneyin veya PDF dosyasını elle yükleyin.",
+    "发送时自动生成明细账单 PDF；也可手动上传替换。": "Ayrıntılı hesap dökümü PDF dosyası gönderim sırasında oluşturulur. Yerine başka bir dosya yükleyebilirsiniz.",
+    "发送时自动生成产品明细清单 PDF；也可手动上传替换。": "Ürün listesi PDF dosyası gönderim sırasında oluşturulur. Yerine başka bir dosya yükleyebilirsiniz.",
+    "重发时复用已保存的附件，缺失的明细账单和产品明细清单会自动生成；支持修改收件邮箱或上传替换文件。": "Yeniden gönderimde kayıtlı ekler kullanılır; eksik hesap dökümleri ve ürün listeleri otomatik oluşturulur. Alıcıyı değiştirebilir veya ekleri başka dosyalarla değiştirebilirsiniz.",
+    "发送时将自动生成并保存此附件，无需另存或上传。": "Bu ek gönderim sırasında otomatik oluşturulup kaydedilir. Elle kaydetmeniz veya yüklemeniz gerekmez.",
+    "未上传替换文件，将自动生成 PDF": "Yeni dosya yüklenmedi. PDF otomatik oluşturulacak.",
+    "PDF 生成参数无效": "PDF oluşturma parametreleri geçersiz",
+    "PDF 生成服务繁忙，请稍后重试": "PDF hizmeti meşgul. Lütfen daha sonra yeniden deneyin.",
+    "预览明细账单": "Ayrıntılı hesap dökümünü önizle",
+    "预览产品明细清单": "Ürün listesini önizle"
   }
 }
