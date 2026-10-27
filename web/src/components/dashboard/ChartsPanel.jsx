@@ -69,6 +69,8 @@ const formatDateTime = (timestamp) => {
 };
 
 const ChartsPanel = ({
+  quotaLoading,
+  quotaError,
   activeChartTab,
   setActiveChartTab,
   spec_line,
@@ -303,15 +305,24 @@ const ChartsPanel = ({
       bodyStyle={{ padding: 0 }}
     >
       <div
-        className={isModelChannelTab || isUserBalanceTrendTab ? 'p-2' : 'h-96 p-2'}
+        className={
+          isModelChannelTab || isUserBalanceTrendTab ? 'p-2' : 'h-96 p-2'
+        }
       >
         <Suspense fallback={<ChartFallback t={t} />}>
-          {activeChartTab === '1' && (
-            <VChart spec={spec_line} option={CHART_CONFIG} />
-          )}
-          {activeChartTab === '4' && (
-            <VChart spec={spec_rank_bar} option={CHART_CONFIG} />
-          )}
+          {['1', '4'].includes(activeChartTab) &&
+            (quotaLoading ? (
+              <ChartFallback t={t} />
+            ) : quotaError ? (
+              <div className='dashboard-chart-unavailable'>
+                {t('加载失败，请重试')}
+              </div>
+            ) : (
+              <VChart
+                spec={activeChartTab === '1' ? spec_line : spec_rank_bar}
+                option={CHART_CONFIG}
+              />
+            ))}
           {activeChartTab === '5' && isAdminUser && (
             <VChart spec={spec_user_rank} option={CHART_CONFIG} />
           )}

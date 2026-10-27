@@ -23,11 +23,7 @@ import {
   IllustrationConstruction,
   IllustrationConstructionDark,
 } from '@douyinfe/semi-illustrations';
-import {
-  timestamp2string,
-  timestamp2string1,
-  isDataCrossYear,
-} from './date';
+import { timestamp2string, timestamp2string1, isDataCrossYear } from './date';
 import { copy } from './clipboard';
 import { showSuccess } from './toast';
 import {
@@ -39,7 +35,12 @@ import {
 
 // ========== 时间相关工具函数 ==========
 export const getDefaultTime = () => {
-  return localStorage.getItem(STORAGE_KEYS.DATA_EXPORT_DEFAULT_TIME) || 'hour';
+  try {
+    const value = localStorage.getItem(STORAGE_KEYS.DATA_EXPORT_DEFAULT_TIME);
+    return ['hour', 'day', 'week'].includes(value) ? value : 'hour';
+  } catch {
+    return 'hour';
+  }
 };
 
 export const getTimeInterval = (timeType, isSeconds = false) => {
@@ -396,7 +397,9 @@ export const processUserData = (data, dataExportDefaultTime, limit = 10) => {
     userQuotaTotal.set(item.username, previousQuota + item.quota);
   });
 
-  const sorted = Array.from(userQuotaTotal.entries()).sort((a, b) => b[1] - a[1]);
+  const sorted = Array.from(userQuotaTotal.entries()).sort(
+    (a, b) => b[1] - a[1],
+  );
   const topUsers = sorted.slice(0, limit).map(([username]) => username);
   const topUserSet = new Set(topUsers);
 

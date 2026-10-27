@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form } from '@douyinfe/semi-ui';
 
 const SearchModal = ({
@@ -29,10 +29,18 @@ const SearchModal = ({
   inputs,
   dataExportDefaultTime,
   timeOptions,
-  handleInputChange,
   t,
 }) => {
-  const formRef = useRef();
+  const [draft, setDraft] = useState({
+    ...inputs,
+    data_export_default_time: dataExportDefaultTime,
+  });
+  useEffect(() => {
+    if (searchModalVisible)
+      setDraft({ ...inputs, data_export_default_time: dataExportDefaultTime });
+  }, [searchModalVisible, inputs, dataExportDefaultTime]);
+  const handleInputChange = (value, name) =>
+    setDraft((previous) => ({ ...previous, [name]: value }));
 
   const FORM_FIELD_PROPS = {
     className: 'w-full mb-2 !rounded-lg',
@@ -42,23 +50,27 @@ const SearchModal = ({
     <Component {...FORM_FIELD_PROPS} {...props} />
   );
 
-  const { start_timestamp, end_timestamp, username } = inputs;
+  const { start_timestamp, end_timestamp, username } = draft;
 
   return (
     <Modal
       title={t('搜索条件')}
       visible={searchModalVisible}
-      onOk={handleSearchConfirm}
+      onOk={() => handleSearchConfirm(draft, draft.data_export_default_time)}
       onCancel={handleCloseModal}
       closeOnEsc={true}
       size={isMobile ? 'full-width' : 'small'}
       centered
     >
-      <Form ref={formRef} layout='vertical' className='w-full'>
+      <Form
+        key={String(searchModalVisible)}
+        layout='vertical'
+        className='w-full'
+      >
         {createFormField(Form.DatePicker, {
           field: 'start_timestamp',
           label: t('起始时间'),
-          initValue: start_timestamp,
+          initValue: inputs.start_timestamp,
           value: start_timestamp,
           type: 'dateTime',
           name: 'start_timestamp',
@@ -68,7 +80,7 @@ const SearchModal = ({
         {createFormField(Form.DatePicker, {
           field: 'end_timestamp',
           label: t('结束时间'),
-          initValue: end_timestamp,
+          initValue: inputs.end_timestamp,
           value: end_timestamp,
           type: 'dateTime',
           name: 'end_timestamp',
@@ -90,7 +102,7 @@ const SearchModal = ({
           createFormField(Form.Input, {
             field: 'username',
             label: t('用户名称'),
-            value: username,
+            initValue: inputs.username,
             placeholder: t('可选值'),
             name: 'username',
             onChange: (value) => handleInputChange(value, 'username'),

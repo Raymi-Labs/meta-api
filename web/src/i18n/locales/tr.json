@@ -6604,6 +6604,12 @@
     "PDF 生成参数无效": "PDF oluşturma parametreleri geçersiz",
     "PDF 生成服务繁忙，请稍后重试": "PDF hizmeti meşgul. Lütfen daha sonra yeniden deneyin.",
     "预览明细账单": "Ayrıntılı hesap dökümünü önizle",
-    "预览产品明细清单": "Ürün listesini önizle"
+    "预览产品明细清单": "Ürün listesini önizle",
+    "当前账户": "Geçerli hesap",
+    "选定时间范围": "Seçilen dönem",
+    "常用操作": "Hızlı işlemler",
+    "请选择有效的起止时间": "Geçerli bir başlangıç ve bitiş zamanı seçin",
+    "请选择不超过30天的时间范围": "En fazla 30 günlük bir dönem seçin",
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Bakiye ve toplam değerler geçerli hesaba aittir. Diğer ölçümler seçilen kullanıcı ve döneme göre hesaplanır; istek başarı oranını göstermez."
   }
 }
