@@ -1,3 +1,13 @@
+# Meta API · Raymi Labs
+
+[Meta API](https://github.com/Raymi-Labs/meta-api) is the company-maintained AI API gateway from [Raymi Labs](https://github.com/Raymi-Labs), based on [QuantumNous/new-api](https://github.com/QuantumNous/new-api).
+
+[Service](https://meta-api.vip) · [Documentation](https://docs.meta-api.vip) · [Company releases](https://github.com/Raymi-Labs/meta-api/releases) · [Repository and release guide](docs/META_API.md)
+
+The upstream attribution, license, Go module path, and existing program names are preserved. The original repository and its historical releases remain available at [nanashiwang/new-api](https://github.com/nanashiwang/new-api). The upstream project documentation follows below.
+
+---
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)

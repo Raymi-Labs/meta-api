@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: ${{ inputs.release_tag || github.ref }}
@@ -45,7 +45,7 @@ jobs:
             VERSION=$(git describe --tags --always)
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: '1.4.0'
       - name: Build Frontend
@@ -60,7 +60,7 @@ jobs:
           tar -czf "new-api-docs-$VERSION.tar.gz" -C web/docs-dist .
           sha256sum "new-api-docs-$VERSION.tar.gz" > "new-api-docs-$VERSION.sha256"
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
       - name: Build Backend (amd64)
@@ -73,17 +73,31 @@ jobs:
           DEBIAN_FRONTEND=noninteractive sudo apt-get install -y gcc-aarch64-linux-gnu
           CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$VERSION' -extldflags '-static'" -o "new-api-arm64-$VERSION"
       - name: Release
-        uses: softprops/action-gh-release@v2
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        with:
-          tag_name: ${{ env.VERSION }}
-          prerelease: ${{ contains(env.VERSION, '-') }}
-          files: |
-            new-api-*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null; then
+            python3 - <<'PYNOTES'
+          import os
+          from pathlib import Path
+          version = os.environ["VERSION"]
+          changelog = Path("CHANGELOG.compat.md").read_text()
+          marker = f"## {version} —"
+          if marker in changelog:
+              section = changelog.split(marker, 1)[1].split("\n## ", 1)[0]
+              notes = section.split("\n", 1)[1].strip()
+          else:
+              notes = f"发布 {version}，源码与附件对应此标签。完整更新记录见仓库 CHANGELOG.compat.md。"
+          Path("/tmp/release-notes.md").write_text(notes + "\n")
+          PYNOTES
+            flags=()
+            [[ "$VERSION" != *-* ]] || flags+=(--prerelease)
+            gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --verify-tag \
+              --title "$VERSION" --notes-file /tmp/release-notes.md "${flags[@]}"
+          fi
       - name: Fill missing Linux assets without updating release metadata
-        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

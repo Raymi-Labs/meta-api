@@ -1,3 +1,7 @@
+## 公司维护入口
+
+本仓库以 **Meta API** 名称由 **Raymi Labs** 维护，主仓库为 `Raymi-Labs/meta-api`。常规提交和新版本发布以该公司仓库为目标；`nanashiwang/new-api` 保留为历史仓库，`QuantumNous/new-api` 继续作为上游。已有上游标识保护规则继续适用。仓库、镜像与本地路径约定见 [Meta API 说明](docs/META_API.md)。
+
 # AGENTS.md — Project Conventions for new-api
 
 ## Overview

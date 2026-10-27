@@ -1,3 +1,13 @@
+# Meta API · Raymi Labs
+
+[Meta API](https://github.com/Raymi-Labs/meta-api) 是 [Raymi Labs](https://github.com/Raymi-Labs) 维护的大模型 API 网关，基于 [QuantumNous/new-api](https://github.com/QuantumNous/new-api)。
+
+[在线服务](https://meta-api.vip) · [使用文档](https://docs.meta-api.vip) · [公司版本发布](https://github.com/Raymi-Labs/meta-api/releases) · [仓库与发布说明](docs/META_API.md)
+
+保留上游署名、许可证、Go 模块路径及现有程序名。原仓库及历史版本继续保留在 [nanashiwang/new-api](https://github.com/nanashiwang/new-api)。以下为保留的上游项目说明。
+
+---
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)
