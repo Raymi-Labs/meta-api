@@ -96,7 +96,7 @@ const PricingCardView = ({
             ),
           ];
           const icon = model.icon || model.vendor_icon;
-          const stats = health.get(model.model_name);
+          const stats = health.summaries.get(model.model_name);
           return (
             <article
               key={key}
@@ -197,46 +197,86 @@ const PricingCardView = ({
                     <ScanText size={13} />
                     {t('上下文长度')}
                   </dt>
-                  <dd>{formatModelContext(model.context_length)}</dd>
+                  <dd>
+                    {formatModelContext(model.context_length) === '—'
+                      ? t('未配置')
+                      : formatModelContext(model.context_length)}
+                  </dd>
                 </div>
-                <div>
-                  <dt>
-                    <Timer size={13} />
-                    {t('首字均值')}
-                  </dt>
-                  <dd>{formatHealthLatency(stats?.avg_ttft_ms)}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <Gauge size={13} />
-                    {t('输出速度')}
-                  </dt>
-                  <dd>{formatModelThroughput(stats?.avg_output_tps)}</dd>
-                </div>
+                {health.state === 'ready' ? (
+                  <>
+                    <div>
+                      <dt>
+                        <Timer size={13} />
+                        {t('首字均值')}
+                      </dt>
+                      <dd>
+                        {formatHealthLatency(stats?.avg_ttft_ms) === '—'
+                          ? t('暂无数据')
+                          : formatHealthLatency(stats?.avg_ttft_ms)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>
+                        <Gauge size={13} />
+                        {t('输出速度')}
+                      </dt>
+                      <dd>
+                        {formatModelThroughput(stats?.avg_output_tps) === '—'
+                          ? t('暂无数据')
+                          : formatModelThroughput(stats?.avg_output_tps)}
+                      </dd>
+                    </div>
+                  </>
+                ) : (
+                  <div className='pricing-card-health-status'>
+                    <dt>{t('性能对比')}</dt>
+                    <dd>
+                      {health.state === 'anonymous' ? (
+                        <Link
+                          to={`/login?next=${encodeURIComponent(buildModelDetailPath(model.model_name))}`}
+                        >
+                          {t('登录后查看可用分组的调用表现')}
+                        </Link>
+                      ) : health.state === 'error' ? (
+                        <button type='button' onClick={health.retry}>
+                          {t('加载失败，请重试')}
+                        </button>
+                      ) : (
+                        t('加载中')
+                      )}
+                    </dd>
+                  </div>
+                )}
               </dl>
-              {model.description && (
-                <p className='pricing-model-description'>{model.description}</p>
-              )}
-              {data.isDynamicPricing && (
-                <p className='pricing-card-tier-note'>
-                  {t('阶梯计费：展示首档参考价，完整规则见详情')}
-                </p>
-              )}
-              {showRatio && (
-                <div className='pricing-card-ratios'>
-                  {model.quota_type === 0 && (
-                    <span>
-                      {t('模型倍率')}: {model.model_ratio ?? '—'} ·{' '}
-                      {t('补全倍率')}: {model.completion_ratio ?? '—'}
-                    </span>
-                  )}
-                  <span>
-                    {t('分组倍率')}: {data.usedGroupRatio}× · {t('时间倍率')}:{' '}
-                    {formatTimeRatioValue(data.timeRatio)}×
-                  </span>
-                </div>
-              )}
+              <p
+                className='pricing-model-description'
+                aria-hidden={!model.description || undefined}
+              >
+                {model.description || ''}
+              </p>
               <div className='pricing-model-card-footer'>
+                <div className='pricing-card-notes'>
+                  {data.isDynamicPricing && (
+                    <p className='pricing-card-tier-note'>
+                      {t('阶梯计费：展示首档参考价，完整规则见详情')}
+                    </p>
+                  )}
+                  {showRatio && (
+                    <div className='pricing-card-ratios'>
+                      {model.quota_type === 0 && (
+                        <span>
+                          {t('模型倍率')}: {model.model_ratio ?? '—'} ·{' '}
+                          {t('补全倍率')}: {model.completion_ratio ?? '—'}
+                        </span>
+                      )}
+                      <span>
+                        {t('分组倍率')}: {data.usedGroupRatio}× ·{' '}
+                        {t('时间倍率')}: {formatTimeRatioValue(data.timeRatio)}×
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className='pricing-model-tags'>
                   {tags.slice(0, 3).map((tag) => (
                     <span key={tag}>{tag}</span>

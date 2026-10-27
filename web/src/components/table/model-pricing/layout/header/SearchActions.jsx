@@ -68,12 +68,15 @@ export default function SearchActions({
         title={t('动态或不适用的价格排在末尾')}
       />
       <Button
+        className='pricing-filter-trigger'
+        aria-label={t('更多筛选')}
+        title={t('更多筛选')}
         icon={<SlidersHorizontal size={16} />}
         theme='outline'
         type='tertiary'
         onClick={() => setShowFilterModal(true)}
       >
-        {t('更多筛选')}
+        <span className='pricing-filter-label'>{t('更多筛选')}</span>
       </Button>
       <div
         className='pricing-view-switch'
@@ -98,18 +101,23 @@ export default function SearchActions({
       <Button
         theme='borderless'
         type='tertiary'
-        title={t('按K显示单位')}
+        className='pricing-unit-toggle'
+        aria-label={`${t('单位')}: 1${tokenUnit} Tokens`}
+        title={`${t('单位')}: 1${tokenUnit} → 1${tokenUnit === 'M' ? 'K' : 'M'} Tokens`}
         onClick={() => setTokenUnit(tokenUnit === 'M' ? 'K' : 'M')}
       >
         {tokenUnit}
       </Button>
       <Button
-        icon={<RotateCcw size={14} />}
+        className='pricing-reset'
+        aria-label={t('重置')}
+        title={t('重置')}
+        icon={<RotateCcw size={16} />}
         theme='borderless'
         type='tertiary'
         onClick={resetCatalogFilters}
       >
-        {t('重置')}
+        <span className='pricing-reset-label'>{t('重置')}</span>
       </Button>
       {selectedRowKeys.length > 0 && (
         <Button

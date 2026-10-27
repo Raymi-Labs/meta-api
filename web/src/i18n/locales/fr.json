@@ -6918,6 +6918,7 @@
     "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Après l’enregistrement des paramètres, les nouvelles annonces sont envoyées aux utilisateurs actifs ayant une adresse e-mail valide associée. Modifier, supprimer ou enregistrer à nouveau ne déclenche pas de nouvel envoi.",
     "已提交邮件服务器": "Accepté par le serveur de messagerie",
     "公告邮件记录": "Historique des e-mails d’annonces",
-    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepté signifie que le serveur de messagerie a accepté le message, sans garantir sa réception. Les messages dont le résultat est inconnu ne sont pas renvoyés automatiquement afin d’éviter les doublons."
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepté signifie que le serveur de messagerie a accepté le message, sans garantir sa réception. Les messages dont le résultat est inconnu ne sont pas renvoyés automatiquement afin d’éviter les doublons.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Les prix indicatifs correspondent au groupe applicable le moins cher. Le coût réel dépend du groupe utilisé et des règles de facturation."
   }
 }

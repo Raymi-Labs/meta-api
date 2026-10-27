@@ -23,6 +23,7 @@ import PricingCatalogFilters from './header/PricingCatalogFilters';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './pricingCatalog.css';
 import PricingContent from './content/PricingContent';
+import PricingTopSection from './header/PricingTopSection';
 import { useModelPricingData } from '../../../../hooks/model-pricing/useModelPricingData';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import {
@@ -107,6 +108,7 @@ const PricingPage = () => {
           {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
         </Link>
       </header>
+      <PricingTopSection {...allProps} sidebarProps={allProps} />
       <PricingCatalogFilters {...allProps} />
       <Layout className='pricing-layout'>
         <Content className='pricing-scroll-hide pricing-content'>

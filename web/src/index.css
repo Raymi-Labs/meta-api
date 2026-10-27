@@ -1190,9 +1190,9 @@ html.dark .home-hero::before {
   color: #171c29;
 }
 .site-header .public-nav-link {
-  color: #525b6b;
-  font-size: 13px;
-  font-weight: 500;
+  color: #34363c;
+  font-size: 14px;
+  font-weight: 400;
   padding: 8px 10px;
 }
 .site-header .public-nav-link:hover,
@@ -2041,5 +2041,32 @@ body[theme-mode='dark'] .pricing-page {
   html.dark .public-header .public-primary-nav {
     background: #151c28;
     border-color: #263143;
+  }
+}
+
+/* Leave room for the shared download action without losing mobile navigation. */
+@media (max-width: 767px) {
+  .public-header .public-header-inner {
+    gap: 8px;
+  }
+  .public-header .public-header-actions {
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .public-header .public-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .public-header .public-brand img {
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 479px) {
+  .public-header .public-brand-name {
+    display: none;
+  }
+  .public-header .public-register-link {
+    padding-inline: 8px;
+    margin-left: 0;
   }
 }

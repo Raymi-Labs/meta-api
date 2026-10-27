@@ -9,7 +9,7 @@
 }
 .auth-page__container {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
 }
 .auth-card {
   width: 100%;
@@ -17,15 +17,15 @@
   color: var(--semi-color-text-0);
   background: var(--semi-color-bg-1);
   border: 1px solid var(--semi-color-border);
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow: 0 8px 32px rgba(24, 39, 75, 0.04);
 }
 .auth-card__body {
-  padding: 30px 28px 24px;
+  padding: 30px 32px;
 }
 .auth-card__heading {
   text-align: center;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
 }
 .auth-card__heading img {
   display: block;
@@ -35,8 +35,8 @@
 }
 .auth-card__heading h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 650;
+  font-size: 21px;
+  font-weight: 600;
   line-height: 1.35;
 }
 .auth-card__footer {
@@ -68,7 +68,7 @@
   min-height: 40px;
   height: auto;
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: 6px !important;
   border: 1px solid var(--semi-color-border);
 }
 .auth-provider-button .semi-button-content {
@@ -83,12 +83,14 @@
   margin-bottom: 6px;
 }
 .auth-card .semi-input-wrapper {
-  min-height: 40px;
-  border-radius: 8px;
+  min-height: 34px;
+  background: var(--semi-color-bg-0);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 6px !important;
 }
 .auth-card .semi-form .semi-button-primary {
   min-height: 40px;
-  border-radius: 8px;
+  border-radius: 6px !important;
 }
 .auth-card .auth-consent {
   display: flex;
@@ -138,5 +140,17 @@
 .auth-card .auth-submit {
   width: 100%;
   min-height: 40px;
-  border-radius: 8px;
+  border-radius: 6px !important;
+}
+
+.auth-card .semi-input {
+  height: 32px;
+  font-size: 13px;
+}
+.auth-card .auth-submit {
+  box-shadow: 0 2px 3px #0000000d;
+}
+.auth-card .auth-provider-button {
+  background: var(--semi-color-bg-0);
+  font-weight: 400;
 }

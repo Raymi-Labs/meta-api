@@ -18,17 +18,52 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { X } from 'lucide-react';
 import PricingVendors from '../../filter/PricingVendors';
 import PricingQuotaTypes from '../../filter/PricingQuotaTypes';
 import PricingTags from '../../filter/PricingTags';
 import { usePricingFilterCounts } from '../../../../../hooks/model-pricing/usePricingFilterCounts';
 
 export default function PricingCatalogFilters(props) {
+  const { t } = props;
   const { quotaTypeModels, tagModels } = usePricingFilterCounts(props);
+  const selected = [
+    {
+      value: props.filterVendor,
+      label: t('供应商'),
+      text:
+        props.filterVendor === 'unknown' ? t('未知供应商') : props.filterVendor,
+      clear: props.setFilterVendor,
+    },
+    {
+      value: props.filterQuotaType,
+      label: t('计费类型'),
+      text: t(
+        props.filterQuotaType === 0
+          ? '按量计费'
+          : props.filterQuotaType === 1
+            ? '按次计费'
+            : '按小时计费',
+      ),
+      clear: props.setFilterQuotaType,
+    },
+    {
+      value: props.filterTag,
+      label: t('标签'),
+      text: props.filterTag,
+      clear: props.setFilterTag,
+    },
+    {
+      value: props.filterEndpointType,
+      label: t('端点类型'),
+      text: props.filterEndpointType,
+      clear: props.setFilterEndpointType,
+    },
+  ].filter(({ value }) => value != null && value !== 'all');
   return (
-    <section className='pricing-catalog-filters' aria-label={props.t('筛选')}>
+    <section className='pricing-catalog-filters' aria-label={t('筛选')}>
       <div className='pricing-catalog-vendors'>
-        <span className='pricing-facet-label'>{props.t('供应商')}</span>
+        <span className='pricing-facet-label'>{t('供应商')}</span>
         <PricingVendors {...props} allModels={props.models} horizontal />
       </div>
       <PricingQuotaTypes
@@ -45,6 +80,23 @@ export default function PricingCatalogFilters(props) {
           pills
           hideUnavailable
         />
+      )}
+      {selected.length > 0 && (
+        <div className='pricing-active-filters' aria-label={t('筛选')}>
+          {selected.map(({ label, text, clear }) => (
+            <button
+              key={label}
+              type='button'
+              onClick={() => clear('all')}
+              aria-label={`${t('清除')} · ${label}: ${text}`}
+            >
+              <span>
+                {label}: {text}
+              </span>
+              <X size={13} aria-hidden='true' />
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );

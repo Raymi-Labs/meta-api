@@ -30,7 +30,9 @@ const PricingTopSection = ({ sidebarProps, ...props }) => {
       <div className='pricing-catalog-context'>
         <p className='pricing-price-context' aria-live='polite'>
           {filterGroup === 'all'
-            ? t('全部分组：每个模型展示其最低适用倍率价格')
+            ? t(
+                '参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。',
+              )
             : t('当前分组：{{group}} · 价格已包含分组倍率', {
                 group: filterGroup,
               })}
@@ -41,7 +43,6 @@ const PricingTopSection = ({ sidebarProps, ...props }) => {
               ? t('套餐价格')
               : t('充值价格')
             : props.currency}{' '}
-          · 1{props.tokenUnit} Tokens
         </span>
       </div>
       <PricingFilterModal

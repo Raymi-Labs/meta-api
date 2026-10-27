@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState } from 'react';
 import { Tabs, TabPane, Button, Empty } from '@douyinfe/semi-ui';
-import PricingTopSection from '../header/PricingTopSection';
 import PricingView from './PricingView';
 import GroupHealthOverview from '../../view/GroupHealthOverview';
 
@@ -27,29 +26,8 @@ const PricingContent = ({ isMobile, sidebarProps, resultsRef, ...props }) => {
   const [activeTab, setActiveTab] = useState('models');
   return (
     <div className='pricing-content-body' ref={resultsRef}>
-      {/* Search, display controls and existing health tab. */}
+      {/* Model and health results share the same filters. */}
       <div className='pricing-search-header'>
-        <PricingTopSection
-          {...props}
-          isMobile={isMobile}
-          sidebarProps={sidebarProps}
-          showWithRecharge={sidebarProps.showWithRecharge}
-          setShowWithRecharge={sidebarProps.setShowWithRecharge}
-          priceConvertMode={sidebarProps.priceConvertMode}
-          setPriceConvertMode={sidebarProps.setPriceConvertMode}
-          subscriptionPlans={sidebarProps.subscriptionPlans}
-          availablePlans={sidebarProps.availablePlans}
-          selectedPlanId={sidebarProps.selectedPlanId}
-          setSelectedPlanId={sidebarProps.setSelectedPlanId}
-          currency={sidebarProps.currency}
-          setCurrency={sidebarProps.setCurrency}
-          showRatio={sidebarProps.showRatio}
-          setShowRatio={sidebarProps.setShowRatio}
-          viewMode={sidebarProps.viewMode}
-          setViewMode={sidebarProps.setViewMode}
-          tokenUnit={sidebarProps.tokenUnit}
-          setTokenUnit={sidebarProps.setTokenUnit}
-        />
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -71,7 +49,7 @@ const PricingContent = ({ isMobile, sidebarProps, resultsRef, ...props }) => {
         </Tabs>
       </div>
 
-      {/* Results follow the page scroll; the group sidebar scrolls independently. */}
+      {/* Results follow the page scroll. */}
       <div className='pricing-scroll-hide pricing-view-container'>
         {props.loadError ? (
           <div className='pricing-catalog-empty' role='alert'>

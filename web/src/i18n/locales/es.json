@@ -6586,6 +6586,7 @@
     "点击保存设置后，新增公告将发给已启用且绑定有效邮箱的用户。编辑、删除或重复保存不会重发。": "Al guardar los ajustes, los nuevos anuncios se envían a los usuarios activos con un correo válido vinculado. Editar, eliminar o volver a guardar no los reenvía.",
     "已提交邮件服务器": "Aceptado por el servidor de correo",
     "公告邮件记录": "Historial de correos de anuncios",
-    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Aceptado significa que el servidor de correo aceptó el mensaje, no que el destinatario lo haya recibido. Los mensajes con resultado desconocido no se reenvían automáticamente para evitar duplicados."
+    "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Aceptado significa que el servidor de correo aceptó el mensaje, no que el destinatario lo haya recibido. Los mensajes con resultado desconocido no se reenvían automáticamente para evitar duplicados.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Los precios de referencia corresponden al grupo aplicable más económico. El coste real depende del grupo y de las reglas de facturación."
   }
 }

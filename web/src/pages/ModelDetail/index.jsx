@@ -163,10 +163,10 @@ export default function ModelDetail() {
   const sections = [
     ['pricing', '价格详情'],
     ['capabilities', '模型能力'],
+    ['quick-start', '快速开始'],
     ['performance', '性能对比'],
     ['usage', '分组用量'],
     ['endpoints', 'API端点'],
-    ['quick-start', '快速开始'],
     ...(related.length ? [['related', '同厂商模型']] : []),
   ];
   const priceMode = data.showWithRecharge ? data.priceConvertMode : 'base';
@@ -186,18 +186,18 @@ export default function ModelDetail() {
         <div className='model-detail-identity'>
           <div className='model-detail-title-row'>
             <h1>{model.display_name || model.model_name}</h1>
-            <Button
-              theme='borderless'
-              type='tertiary'
-              icon={<Copy size={17} />}
-              aria-label={t('复制模型名称')}
-              title={t('复制模型名称')}
-              onClick={() => data.copyText(model.model_name)}
-            />
+            <div className='model-detail-model-key'>
+              <code className='model-detail-model-id'>{model.model_name}</code>
+              <Button
+                theme='borderless'
+                type='tertiary'
+                icon={<Copy size={17} />}
+                aria-label={t('复制模型名称')}
+                title={t('复制模型名称')}
+                onClick={() => data.copyText(model.model_name)}
+              />
+            </div>
           </div>
-          {model.display_name && (
-            <code className='model-detail-model-id'>{model.model_name}</code>
-          )}
           <div className='model-detail-metadata'>
             <span>{model.vendor_name || t('未知供应商')}</span>
             <span aria-hidden='true'>·</span>
@@ -214,24 +214,38 @@ export default function ModelDetail() {
             </span>
             <span aria-hidden='true'>·</span>
             <span>
-              {t('上下文长度')}: {formatModelContext(model.context_length)}
+              {t('上下文长度')}:{' '}
+              {formatModelContext(model.context_length) === '—'
+                ? t('未配置')
+                : formatModelContext(model.context_length)}
             </span>
+            {tags.length > 0 && (
+              <div className='model-detail-tags'>
+                {tags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+            )}
           </div>
-          <p>
-            {model.description || model.vendor_description || t('暂无模型描述')}
-          </p>
-          {tags.length > 0 && (
-            <div className='model-detail-tags'>
-              {tags.map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
-          )}
+          <p>{model.description || t('暂无模型描述')}</p>
         </div>
-        <Link className='model-detail-primary' to='/docs/api-examples'>
-          {t('API 文档')}
-          <ArrowUpRight size={16} aria-hidden='true' />
-        </Link>
+        <div className='model-detail-actions'>
+          <button
+            className='model-detail-primary'
+            type='button'
+            onClick={() => {
+              const section = pageRef.current?.querySelector('#quick-start');
+              section?.scrollIntoView({ block: 'start' });
+              section?.focus({ preventScroll: true });
+            }}
+          >
+            {t('快速开始')}
+            <ArrowUpRight size={16} aria-hidden='true' />
+          </button>
+          <Link className='model-detail-doc-link' to='/docs/api-examples'>
+            {t('API 文档')}
+          </Link>
+        </div>
       </header>
 
       <div className='model-detail-layout'>
@@ -329,7 +343,9 @@ export default function ModelDetail() {
             )}
             <p className='model-detail-caption'>
               {selectedGroup === 'all'
-                ? t('全部分组：每个模型展示其最低适用倍率价格')
+                ? t(
+                    '参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。',
+                  )
                 : t('当前分组：{{group}} · 价格已包含分组倍率', {
                     group: selectedGroup,
                   })}
@@ -407,6 +423,7 @@ export default function ModelDetail() {
               </div>
             </section>
             <div className='model-detail-group-prices'>
+              {groups.length > 0 && <h3>{t('分组价格')}</h3>}
               <ModelGroupRows
                 key={model.model_name}
                 model={model}
@@ -416,6 +433,19 @@ export default function ModelDetail() {
                 health={health}
               />
             </div>
+          </section>
+          <section
+            id='quick-start'
+            tabIndex={-1}
+            className='model-detail-section'
+          >
+            <h2>{t('快速开始')}</h2>
+            <ModelQuickStart
+              modelData={model}
+              serverAddress={data.statusState?.status?.server_address}
+              t={t}
+              copyText={data.copyText}
+            />
           </section>
           <ModelAnalytics
             key={model.model_name}
@@ -434,15 +464,6 @@ export default function ModelDetail() {
             {!model.supported_endpoint_types?.length && (
               <p className='model-detail-caption'>{t('未声明')}</p>
             )}
-          </section>
-          <section id='quick-start' className='model-detail-section'>
-            <h2>{t('快速开始')}</h2>
-            <ModelQuickStart
-              modelData={model}
-              serverAddress={data.statusState?.status?.server_address}
-              t={t}
-              copyText={data.copyText}
-            />
           </section>
           {related.length > 0 && (
             <section id='related' className='model-detail-section'>
