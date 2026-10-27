@@ -29,5 +29,5 @@ export const androidDownload = Object.freeze({
   sha256: '499f09f38d01c75fab1cc419d6e8a57e3af8c57ff241dda699cd67fa4b1d977e',
   url: `${base}/${filename}`,
   checksumURL: `${base}/${filename}.sha256`,
-  backupURL: `https://github.com/nanashiwang/yuanheng-switch/releases/download/mobile-v${version}/${filename}`,
+  backupURL: `https://github.com/Raymi-Labs/yuanheng-switch/releases/download/mobile-v${version}/${filename}`,
 });

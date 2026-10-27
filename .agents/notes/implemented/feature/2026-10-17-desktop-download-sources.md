@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+元衡客户端仓库迁入 `Raymi-Labs/yuanheng-switch`，GitHub 备用链接使用公司仓库；原个人仓库由 GitHub 转移跳转兼容，主下载域与安装包名称不变。
+
 复用 downloads.json 的 ServerAddress 派生 URL、当前版本及实际包目录。仅对精确匹配 meta-api.vip 官方稳定版 YuanHeng.Desktop 安装包的地址增加 origin=1，使主按钮使用已存在的公开只读直链，同时提供同版同文件的 R2 与 GitHub 链接。其他域名、非标准包、预发布版、任意查询/片段保持后端地址且不推导备用源。
 
 卡片容器由链接改为 article，主下载与备用下载为独立可聚焦链接，避免嵌套链接。沿用现有语言和公开页面入口，不增加后台字段或改 ServerAddress。
