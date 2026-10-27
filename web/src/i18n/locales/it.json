@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Risoluzione",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Questo modello imposta il prezzo di vendita del sito, non le capacità del modello. La fatturazione usa durata e fascia inviate. Usa una formula completa per contenuti in ingresso e costi aggiuntivi.",
+    "视频按秒模板": "Modello di prezzo video al secondo",
+    "视频按秒 / 表达式": "Video al secondo / Espressione",
+    "生成秒价表达式": "Genera formula al secondo",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Solo testo in video, fatturato sui secondi richiesti. Inserisci USD/secondo; moltiplicatori di gruppo e orari separati. Applica le modifiche per salvare. Nessuna generazione viene inviata.",
     "HTML 广告代码": "Codice HTML pubblicitario",
     "一个入口，多种模型": "Un’API, più modelli",
     "元衡 AI": "Yuanheng AI",
@@ -6587,6 +6593,7 @@
     "已提交邮件服务器": "Accettato dal server di posta",
     "公告邮件记录": "Cronologia e-mail degli annunci",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accettato significa che il server di posta ha accettato il messaggio, non che il destinatario lo abbia ricevuto. I messaggi con esito sconosciuto non vengono reinviati automaticamente per evitare duplicati.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "I prezzi indicativi si basano sul gruppo applicabile più economico. Il costo effettivo dipende dal gruppo e dalle regole di fatturazione.",
     "印章加载失败，请重试或手动上传 PDF": "Impossibile caricare il timbro. Riprova o carica un PDF manualmente.",
     "自动生成 PDF 失败，请重试或手动上传 PDF": "Impossibile generare il PDF. Riprova o carica un PDF manualmente.",
     "发送时自动生成明细账单 PDF；也可手动上传替换。": "Il rendiconto dettagliato PDF viene generato all’invio. Puoi anche caricare un file sostitutivo.",

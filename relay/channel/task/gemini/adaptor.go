@@ -136,6 +136,9 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if !ok {
 		return nil, fmt.Errorf("unexpected task_request type")
 	}
+	if req.HasImage() || req.InputReference != "" {
+		return nil, fmt.Errorf("this Gemini video adapter supports text input only")
+	}
 
 	// Create structured video generation request
 	body := GeminiVideoPayload{
@@ -148,6 +151,17 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	metadata := req.Metadata
 	if err := taskcommon.UnmarshalMetadata(metadata, &body.Parameters); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
+	}
+	if req.Duration > 0 {
+		body.Parameters.DurationSeconds = float64(req.Duration)
+	}
+	if req.Resolution != "" {
+		body.Parameters.Resolution = req.Resolution
+	} else if req.Size != "" {
+		body.Parameters.Resolution = req.Size
+	}
+	if req.AspectRatio != "" {
+		body.Parameters.AspectRatio = req.AspectRatio
 	}
 
 	data, err := common.Marshal(body)
@@ -242,6 +256,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	}
 
 	if !op.Done {
+		if strings.TrimSpace(op.Name) == "" {
+			return nil, fmt.Errorf("gemini operation missing name")
+		}
 		ti.Status = model.TaskStatusInProgress
 		ti.Progress = "50%"
 		return ti, nil
@@ -258,6 +275,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		if uri := op.Response.GenerateVideoResponse.GeneratedSamples[0].Video.URI; uri != "" {
 			ti.RemoteUrl = uri
 		}
+	}
+	if ti.RemoteUrl == "" && len(op.Response.Videos) == 0 && op.Response.BytesBase64Encoded == "" && op.Response.Video == "" {
+		return nil, fmt.Errorf("gemini completed operation missing video output")
 	}
 
 	return ti, nil

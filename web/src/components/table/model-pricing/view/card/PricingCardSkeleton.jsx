@@ -24,7 +24,7 @@ export default function PricingCardSkeleton({ skeletonCount = 6 }) {
   return (
     <div className='pricing-catalog-grid' aria-hidden='true'>
       {Array.from({ length: skeletonCount }, (_, index) => (
-        <div className='pricing-model-card' key={index}>
+        <div className='pricing-model-card pricing-model-skeleton' key={index}>
           <Skeleton.Title
             active
             style={{ width: '65%', height: 24, marginBottom: 24 }}

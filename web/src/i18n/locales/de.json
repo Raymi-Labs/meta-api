@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Auflösung",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Diese Vorlage legt den Verkaufspreis der Website fest, nicht die Modellfähigkeiten. Abgerechnet werden gesendete Dauer und Tarifstufe. Für Eingabemedien und Zusatzkosten ist ein vollständiger Ausdruck nötig.",
+    "视频按秒模板": "Vorlage für Videopreis pro Sekunde",
+    "视频按秒 / 表达式": "Video pro Sekunde / Ausdruck",
+    "生成秒价表达式": "Sekundenpreis-Ausdruck erzeugen",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Nur Text-zu-Video, Abrechnung nach angeforderten Ausgabesekunden. USD/Sekunde eingeben; Gruppen- und Zeitfaktoren gelten zusätzlich. Änderungen zum Speichern anwenden. Kein Videoauftrag wird gesendet.",
     "HTML 广告代码": "HTML-Werbecode",
     "一个入口，多种模型": "Eine API, mehrere Modelle",
     "元衡 AI": "Yuanheng AI",
@@ -6587,6 +6593,7 @@
     "已提交邮件服务器": "Vom Mailserver angenommen",
     "公告邮件记录": "E-Mail-Verlauf der Ankündigungen",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Angenommen bedeutet, dass der Mailserver die Nachricht akzeptiert hat, nicht dass sie beim Empfänger angekommen ist. Nachrichten mit unbekanntem Ergebnis werden nicht automatisch erneut gesendet, um Duplikate zu vermeiden.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Referenzpreise basieren auf der günstigsten verfügbaren Gruppe. Die tatsächlichen Kosten hängen von Ihrer Gruppe und den Abrechnungsregeln ab.",
     "印章加载失败，请重试或手动上传 PDF": "Der Stempel konnte nicht geladen werden. Erneut versuchen oder eine PDF manuell hochladen.",
     "自动生成 PDF 失败，请重试或手动上传 PDF": "Die PDF konnte nicht automatisch erstellt werden. Erneut versuchen oder manuell hochladen.",
     "发送时自动生成明细账单 PDF；也可手动上传替换。": "Die detaillierte Abrechnung wird beim Senden als PDF erstellt. Sie können eine Ersatzdatei hochladen.",

@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Résolution",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Ce modèle définit le prix de vente du site, pas les capacités du modèle. La facturation utilise la durée et le palier envoyés. Utilisez une formule complète pour les médias entrants et les coûts supplémentaires.",
+    "视频按秒模板": "Modèle de tarif vidéo par seconde",
+    "视频按秒 / 表达式": "Vidéo par seconde / Expression",
+    "生成秒价表达式": "Générer la formule par seconde",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Texte vers vidéo uniquement, facturé selon les secondes demandées. Saisissez USD/seconde ; multiplicateurs de groupe et horaires séparés. Appliquez les modifications pour enregistrer. Aucune vidéo soumise.",
     "HTML 广告代码": "Code HTML publicitaire",
     "一个入口，多种模型": "Un accès, plusieurs modèles",
     "元衡 AI": "Yuanheng AI",
@@ -6919,6 +6925,7 @@
     "已提交邮件服务器": "Accepté par le serveur de messagerie",
     "公告邮件记录": "Historique des e-mails d’annonces",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Accepté signifie que le serveur de messagerie a accepté le message, sans garantir sa réception. Les messages dont le résultat est inconnu ne sont pas renvoyés automatiquement afin d’éviter les doublons.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Les prix indicatifs correspondent au groupe applicable le moins cher. Le coût réel dépend du groupe utilisé et des règles de facturation.",
     "印章加载失败，请重试或手动上传 PDF": "Impossible de charger le cachet. Réessayez ou importez un PDF manuellement.",
     "自动生成 PDF 失败，请重试或手动上传 PDF": "Impossible de générer le PDF. Réessayez ou importez un PDF manuellement.",
     "发送时自动生成明细账单 PDF；也可手动上传替换。": "Le relevé détaillé est généré en PDF à l’envoi. Vous pouvez aussi importer un fichier de remplacement.",

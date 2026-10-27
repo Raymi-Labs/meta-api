@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Link } from 'react-router-dom';
 import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Button } from '@douyinfe/semi-ui';
@@ -104,7 +105,7 @@ export const getPricingTableColumns = ({
           <div className='pricing-group-description'>
             {record.vendor_name} ·{' '}
             {record.billing_mode === 'tiered_expr'
-              ? t('阶梯计费：展示首档参考价，完整规则见详情')
+              ? t(isVideoPriceExpression(record.billing_expr) ? '视频按秒 / 表达式' : '阶梯计费：展示首档参考价，完整规则见详情')
               : record.quota_type === 0
                 ? t('按量计费')
                 : record.quota_type === 2

@@ -8,7 +8,9 @@ Status: implemented
 
 ## Decision
 
-在 PublicHomeShell 的语言选择右侧增加轻量 Bell 按钮与蓝色未读圆点，扩展已有 PublicNoticeModal 显示公开系统公告列表和单篇公告。数据继续来自匿名可读的 /api/status.announcements 与 /api/notice；不新增接口、后台配置或权限。页面打开后延续 4.5 秒的公告检查，首页保留原今日关闭自动提示规则；手动按钮始终可用，手动打开/关闭后不再被迟到自动请求重新打开。
+[模型发现与接入路径](2026-10-26-model-discovery-experience.md)更新搜索与筛选布局、缺失状态、快速开始入口和首页手动公告规则；本文其余数据及权限契约继续有效。
+
+在 PublicHomeShell 的语言选择右侧增加轻量 Bell 按钮与蓝色未读圆点，扩展已有 PublicNoticeModal 显示公开系统公告列表和单篇公告。数据继续来自匿名可读的 /api/status.announcements 与 /api/notice；不新增接口、后台配置或权限。页面打开后延续 4.5 秒的公告检查以更新未读状态；首页仅手动打开，弹层移除今日关闭按钮，已开始的后台读取不会打开弹层。
 
 公开页与控制台使用统一的本浏览器已读工具，保留 notice_read_keys 的旧公告键格式；只将成功展示的内容记为已读。单篇公告按完整正文独立比较，notice_close_date 仅控制今日自动提示。坏值和禁写采用会话回退，同页/跨标签更新订阅。控制台管理员待办继续使用原权限与数据链路，现有按钮只移动到语言右侧。
 

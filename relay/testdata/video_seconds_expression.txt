@@ -1,0 +1,1 @@
+param("duration") == nil ? tier("video_config_preview", 0) : (param("resolution") == "720P" && param("duration") >= 4 && param("duration") <= 15 ? tier("video_0", param("duration") * 100000 * (param("sampleCount") ?? 1)) : (tier("unsupported_video_parameters", -1)))

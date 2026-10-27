@@ -357,7 +357,10 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	}
 	exprStr, ok := billing_setting.GetTieredExpr(info.OriginModelName)
 	if !ok {
-		return ModelPriceHelperPerCall(c, info), nil
+		price := ModelPriceHelperPerCall(c, info)
+		_, price.UsePrice = ratio_setting.GetModelPrice(info.OriginModelName, false)
+		info.PriceData = price
+		return price, nil
 	}
 	requestInput, err := ResolveIncomingBillingExprRequestInput(c, info)
 	if err != nil {

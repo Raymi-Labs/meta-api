@@ -1,0 +1,1 @@
+param("duration") == nil ? tier("configuration_preview", 0) : (param("duration") >= 4 && param("duration") <= 15 ? (param("resolution") == "768P" ? tier("video_768P", param("duration") * 100000) : (param("resolution") == "2K" ? tier("video_2K", param("duration") * 200000) : (tier("unsupported_video_parameters", -1)))) : tier("invalid_video_duration", -1))

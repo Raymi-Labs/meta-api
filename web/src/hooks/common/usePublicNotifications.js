@@ -23,14 +23,13 @@ import {
   getAnnouncementKey,
   getReadAnnouncementKeys,
   isNoticeContentUnread,
-  isNoticeMutedToday,
   markAnnouncementKeysRead,
   markNoticeContentRead,
   normalizeAnnouncements,
   subscribeNoticeReadState,
 } from '../../helpers/noticeReadState';
 
-export const usePublicNotifications = ({ status, autoShow }) => {
+export const usePublicNotifications = ({ status }) => {
   const [visible, setVisible] = useState(false);
   const [content, setContent] = useState('');
   const [announcements, setAnnouncements] = useState(() =>
@@ -102,22 +101,13 @@ export const usePublicNotifications = ({ status, autoShow }) => {
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       if (manualOpened.current) return;
-      const nextContent = await load();
-      if (
-        !cancelled &&
-        nextContent &&
-        autoShow &&
-        !manualOpened.current &&
-        !isNoticeMutedToday()
-      ) {
-        setVisible(true);
-      }
+      if (!cancelled) await load();
     }, 4500);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [autoShow, load]);
+  }, [load]);
 
   const open = () => {
     manualOpened.current = true;

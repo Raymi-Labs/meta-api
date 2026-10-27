@@ -20,10 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 import { usePublicTranslation } from '../../helpers/publicLocale';
-import {
-  getAnnouncementKey,
-  muteNoticeToday,
-} from '../../helpers/noticeReadState';
+import { getAnnouncementKey } from '../../helpers/noticeReadState';
 import RichContent from '../common/RichContent';
 
 const PublicNoticeModal = ({
@@ -191,16 +188,6 @@ const PublicNoticeModal = ({
           )}
         </div>
         <footer className='public-notice-footer'>
-          <button
-            type='button'
-            className='public-notice-ghost'
-            onClick={() => {
-              muteNoticeToday();
-              close();
-            }}
-          >
-            {t('今日关闭')}
-          </button>
           <button
             type='button'
             className='public-notice-primary'

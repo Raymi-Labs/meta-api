@@ -21,6 +21,7 @@ import { calculateModelPrice, getModelPriceItems } from './utils';
 import { parseTiersFromExpr } from './render';
 import { buildFirstTierGroupPriceItems } from './tieredBillingDisplay';
 import { splitBillingExprAndRequestRules } from '../pages/Setting/Ratio/components/requestRuleExpr';
+import { isVideoPriceExpression } from './videoPricingTemplate';
 
 // Cards and the comparison table must use the same group, currency and tier.
 export function getModelCatalogPricing(options, t) {
@@ -30,6 +31,20 @@ export function getModelCatalogPricing(options, t) {
     return {
       data,
       items: getModelPriceItems(data, t, options.quotaDisplayType),
+    };
+  }
+  if (isVideoPriceExpression(options.record.billing_expr)) {
+    return {
+      data,
+      items: [
+        {
+          key: 'video-parameters',
+          label: t('视频按秒 / 表达式'),
+          value: t('见价格详情'),
+          suffix: '',
+          isDynamic: true,
+        },
+      ],
     };
   }
   const { billingExpr } = splitBillingExprAndRequestRules(

@@ -259,6 +259,9 @@ func (a *TaskAdaptor) convertToAliRequest(info *relaycommon.RelayInfo, req relay
 	if info.IsModelMapped {
 		upstreamModel = info.UpstreamModelName
 	}
+	if req.Size == "" && req.Resolution != "" {
+		req.Size = req.Resolution
+	}
 	aliReq := &AliVideoRequest{
 		Model: upstreamModel,
 		Input: AliVideoInput{
@@ -270,11 +273,22 @@ func (a *TaskAdaptor) convertToAliRequest(info *relaycommon.RelayInfo, req relay
 			Watermark:    false,
 		},
 	}
+	if aliReq.Input.ImgURL == "" && len(req.Images) == 1 {
+		aliReq.Input.ImgURL = req.Images[0]
+	}
+	if len(req.Images) == 2 {
+		aliReq.Input.FirstFrameURL = req.Images[0]
+		aliReq.Input.LastFrameURL = req.Images[1]
+		aliReq.Input.ImgURL = ""
+	}
+	if len(req.Images) > 2 {
+		return nil, errors.New("this Wan adapter supports at most first and last frame images")
+	}
 
 	// 处理分辨率映射
 	if req.Size != "" {
 		// text to video size must be contained *
-		if strings.Contains(req.Model, "t2v") && !strings.Contains(req.Size, "*") {
+		if strings.Contains(upstreamModel, "t2v") && !strings.Contains(req.Size, "*") {
 			return nil, fmt.Errorf("invalid size: %s, example: %s", req.Size, "1920*1080")
 		}
 		if strings.Contains(req.Size, "*") {
@@ -289,22 +303,22 @@ func (a *TaskAdaptor) convertToAliRequest(info *relaycommon.RelayInfo, req relay
 		}
 	} else {
 		// 根据模型设置默认分辨率
-		if strings.Contains(req.Model, "t2v") { // image to video
-			if strings.HasPrefix(req.Model, "wan2.5") {
+		if strings.Contains(upstreamModel, "t2v") { // image to video
+			if strings.HasPrefix(upstreamModel, "wan2.5") {
 				aliReq.Parameters.Size = "1920*1080"
-			} else if strings.HasPrefix(req.Model, "wan2.2") {
+			} else if strings.HasPrefix(upstreamModel, "wan2.2") {
 				aliReq.Parameters.Size = "1920*1080"
 			} else {
 				aliReq.Parameters.Size = "1280*720"
 			}
 		} else {
-			if strings.HasPrefix(req.Model, "wan2.6") {
+			if strings.HasPrefix(upstreamModel, "wan2.6") {
 				aliReq.Parameters.Resolution = "1080P"
-			} else if strings.HasPrefix(req.Model, "wan2.5") {
+			} else if strings.HasPrefix(upstreamModel, "wan2.5") {
 				aliReq.Parameters.Resolution = "1080P"
-			} else if strings.HasPrefix(req.Model, "wan2.2-i2v-flash") {
+			} else if strings.HasPrefix(upstreamModel, "wan2.2-i2v-flash") {
 				aliReq.Parameters.Resolution = "720P"
-			} else if strings.HasPrefix(req.Model, "wan2.2-i2v-plus") {
+			} else if strings.HasPrefix(upstreamModel, "wan2.2-i2v-plus") {
 				aliReq.Parameters.Resolution = "1080P"
 			} else {
 				aliReq.Parameters.Resolution = "720P"
@@ -340,6 +354,9 @@ func (a *TaskAdaptor) convertToAliRequest(info *relaycommon.RelayInfo, req relay
 
 	if aliReq.Model != upstreamModel {
 		return nil, errors.New("can't change model with metadata")
+	}
+	if aliReq.Parameters == nil {
+		return nil, errors.New("video parameters must not be null")
 	}
 
 	return aliReq, nil
@@ -469,10 +486,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "RUNNING":
 		taskResult.Status = model.TaskStatusInProgress
 	case "SUCCEEDED":
+		if aliResp.Code != "" || strings.TrimSpace(aliResp.Output.VideoURL) == "" {
+			return nil, fmt.Errorf("ali successful task missing video or contains query error")
+		}
 		taskResult.Status = model.TaskStatusSuccess
 		// 阿里直接返回视频URL，不需要额外的代理端点
 		taskResult.Url = aliResp.Output.VideoURL
-	case "FAILED", "CANCELED", "UNKNOWN":
+	case "FAILED", "CANCELED":
 		taskResult.Status = model.TaskStatusFailure
 		if aliResp.Message != "" {
 			taskResult.Reason = aliResp.Message
@@ -482,7 +502,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Reason = "task failed"
 		}
 	default:
-		taskResult.Status = model.TaskStatusQueued
+		return nil, fmt.Errorf("unknown ali task status")
 	}
 
 	return &taskResult, nil

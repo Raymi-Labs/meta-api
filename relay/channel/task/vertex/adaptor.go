@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"regexp"
 	"strings"
@@ -165,6 +166,9 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 		return nil, fmt.Errorf("request not found in context")
 	}
 	req := v.(relaycommon.TaskSubmitReq)
+	if req.HasImage() || req.InputReference != "" {
+		return nil, fmt.Errorf("this Vertex video adapter supports text input only")
+	}
 
 	body := requestPayload{
 		Instances:  []map[string]any{{"prompt": req.Prompt}},
@@ -175,6 +179,13 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 			body.Parameters["storageUri"] = v
 		}
 		if v, ok := req.Metadata["sampleCount"]; ok {
+			n, valid := v.(float64)
+			if valid && (math.IsNaN(n) || math.IsInf(n, 0) || n != math.Trunc(n) || n <= 0 || n > 100) {
+				return nil, fmt.Errorf("invalid sampleCount")
+			}
+			if _, integer := v.(int); !valid && !integer {
+				return nil, fmt.Errorf("sampleCount must be a number")
+			}
 			if i, ok := v.(int); ok {
 				body.Parameters["sampleCount"] = i
 			}
@@ -185,6 +196,22 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	}
 	if _, ok := body.Parameters["sampleCount"]; !ok {
 		body.Parameters["sampleCount"] = 1
+	}
+	for _, key := range []string{"durationSeconds", "resolution", "aspectRatio", "generateAudio", "personGeneration", "negativePrompt", "seed"} {
+		if value, ok := req.Metadata[key]; ok {
+			body.Parameters[key] = value
+		}
+	}
+	if req.Duration > 0 {
+		body.Parameters["durationSeconds"] = req.Duration
+	}
+	if req.Resolution != "" {
+		body.Parameters["resolution"] = req.Resolution
+	} else if req.Size != "" {
+		body.Parameters["resolution"] = req.Size
+	}
+	if req.AspectRatio != "" {
+		body.Parameters["aspectRatio"] = req.AspectRatio
 	}
 
 	if body.Parameters["sampleCount"].(int) <= 0 {
@@ -297,6 +324,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		return ti, nil
 	}
 	if !op.Done {
+		if strings.TrimSpace(op.Name) == "" {
+			return nil, fmt.Errorf("vertex operation missing name")
+		}
 		ti.Status = model.TaskStatusInProgress
 		ti.Progress = "50%"
 		return ti, nil
@@ -346,7 +376,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		ti.Url = "data:" + mime + ";base64," + op.Response.Video
 		return ti, nil
 	}
-	return ti, nil
+	return nil, fmt.Errorf("vertex completed operation missing supported video output")
 }
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {

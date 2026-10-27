@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Resolutie",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Dit sjabloon stelt de verkoopprijs van de site in, niet de modelmogelijkheden. Facturering gebruikt de verzonden duur en tariefklasse. Gebruik een volledige expressie voor invoermedia en extra kosten.",
+    "视频按秒模板": "Sjabloon voor videoprijs per seconde",
+    "视频按秒 / 表达式": "Video per seconde / Expressie",
+    "生成秒价表达式": "Expressie per seconde genereren",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Alleen tekst naar video, op basis van aangevraagde uitvoerseconden. Voer USD/seconde in; groeps- en tijdfactoren gelden apart. Pas wijzigingen toe om op te slaan. Er wordt geen video aangevraagd.",
     "HTML 广告代码": "HTML-advertentiecode",
     "一个入口，多种模型": "Eén API, meerdere modellen",
     "元衡 AI": "Yuanheng AI",
@@ -6587,6 +6593,7 @@
     "已提交邮件服务器": "Geaccepteerd door mailserver",
     "公告邮件记录": "E-mailgeschiedenis van aankondigingen",
     "已提交表示邮件服务器已接受，不代表收件人已收到。结果未知的邮件不会自动重发，以免重复通知。": "Geaccepteerd betekent dat de mailserver het bericht heeft aangenomen, niet dat de ontvanger het heeft ontvangen. Berichten met een onbekende uitkomst worden niet automatisch opnieuw verstuurd om dubbele meldingen te voorkomen.",
+    "参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。": "Richtprijzen zijn gebaseerd op de goedkoopste toepasselijke groep. De werkelijke kosten hangen af van uw groep en de factureringsregels.",
     "印章加载失败，请重试或手动上传 PDF": "De stempel kon niet worden geladen. Probeer opnieuw of upload handmatig een PDF.",
     "自动生成 PDF 失败，请重试或手动上传 PDF": "De PDF kon niet worden gemaakt. Probeer opnieuw of upload handmatig een PDF.",
     "发送时自动生成明细账单 PDF；也可手动上传替换。": "De gedetailleerde rekening wordt bij het verzenden als PDF gemaakt. U kunt ook een vervangend bestand uploaden.",

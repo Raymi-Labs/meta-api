@@ -17,9 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { UserContext } from '../../context/User';
 import { API } from '../../helpers/apiCore';
+import { getModelHealthView } from '../../helpers/modelHealthView';
 
 /** Only the current page is queried; responses never survive an identity change. */
 export function useModelHealthSummaries(models, enabled = true) {
@@ -29,6 +30,8 @@ export function useModelHealthSummaries(models, enabled = true) {
     models.map((model) => model.model_name).slice(0, 100),
   );
   const [result, setResult] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   useEffect(() => {
     if (!enabled || !user?.id || names === '[]') return;
     let active = true;
@@ -46,13 +49,19 @@ export function useModelHealthSummaries(models, enabled = true) {
           if (active) {
             setResult(
               data?.success && Array.isArray(data.data?.models)
-                ? { user, names, models: data.data.models }
-                : null,
+                ? {
+                    user,
+                    names,
+                    attempt,
+                    state: 'ready',
+                    models: data.data.models,
+                  }
+                : { user, names, attempt, state: 'error' },
             );
           }
         })
         .catch(() => {
-          if (active) setResult(null);
+          if (active) setResult({ user, names, attempt, state: 'error' });
         });
     };
     refresh();
@@ -61,8 +70,9 @@ export function useModelHealthSummaries(models, enabled = true) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [user, names, enabled]);
-  return enabled && user?.id && result?.user === user && result?.names === names
-    ? new Map(result.models.map((item) => [item.model, item]))
-    : new Map();
+  }, [user, names, enabled, attempt]);
+  return {
+    ...getModelHealthView({ result, user, names, enabled, attempt }),
+    retry,
+  };
 }

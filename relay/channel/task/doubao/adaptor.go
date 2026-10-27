@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -133,11 +134,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, errors.Wrap(err, "convert request payload failed")
 	}
-	if info.IsModelMapped {
-		body.Model = info.UpstreamModelName
-	} else {
-		info.UpstreamModelName = body.Model
-	}
+	body.Model = info.UpstreamModelName
 	data, err := common.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -244,6 +241,24 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq) (*
 	if err := taskcommon.UnmarshalMetadata(metadata, &r); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
 	}
+	if req.Duration > 0 {
+		r.Duration = dto.IntValue(req.Duration)
+	}
+	if req.Duration == 0 && req.Seconds != "" {
+		n, err := strconv.Atoi(req.Seconds)
+		if err != nil || n <= 0 {
+			return nil, fmt.Errorf("invalid seconds")
+		}
+		r.Duration = dto.IntValue(n)
+	}
+	if req.Resolution != "" {
+		r.Resolution = req.Resolution
+	} else if req.Size != "" {
+		r.Resolution = req.Size
+	}
+	if req.AspectRatio != "" {
+		r.Ratio = req.AspectRatio
+	}
 
 	return &r, nil
 }
@@ -267,20 +282,22 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusInProgress
 		taskResult.Progress = "50%"
 	case "succeeded":
+		if resTask.Content.VideoURL == "" {
+			return nil, fmt.Errorf("doubao successful task missing video_url")
+		}
 		taskResult.Status = model.TaskStatusSuccess
 		taskResult.Progress = "100%"
 		taskResult.Url = resTask.Content.VideoURL
 		// 解析 usage 信息用于按倍率计费
 		taskResult.CompletionTokens = resTask.Usage.CompletionTokens
 		taskResult.TotalTokens = resTask.Usage.TotalTokens
-	case "failed":
+	case "failed", "cancelled", "expired":
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
 		taskResult.Reason = "task failed"
 	default:
 		// Unknown status, treat as processing
-		taskResult.Status = model.TaskStatusInProgress
-		taskResult.Progress = "30%"
+		return nil, fmt.Errorf("unknown doubao task status")
 	}
 
 	return &taskResult, nil

@@ -158,6 +158,10 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	}
 	if body.Image == "" && body.ImageTail == "" {
 		c.Set("action", constant.TaskActionTextGenerate)
+		info.Action = constant.TaskActionTextGenerate
+	} else {
+		info.Action = constant.TaskActionGenerate
+		c.Set("action", info.Action)
 	}
 	data, err := common.Marshal(body)
 	if err != nil {
@@ -176,6 +180,7 @@ func (a *TaskAdaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, req
 
 // DoResponse handles upstream response, returns taskID etc.
 func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (taskID string, taskData []byte, taskErr *dto.TaskError) {
+	defer resp.Body.Close()
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		taskErr = service.TaskErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
@@ -191,6 +196,9 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 	if kResp.Code != 0 {
 		taskErr = service.TaskErrorWrapperLocal(fmt.Errorf("%s", kResp.Message), "task_failed", http.StatusBadRequest)
 		return
+	}
+	if strings.TrimSpace(kResp.Data.TaskId) == "" {
+		return "", nil, service.TaskErrorWrapper(fmt.Errorf("kling submission missing task_id"), "invalid_response", http.StatusBadGateway)
 	}
 	ov := dto.NewOpenAIVideo()
 	ov.ID = info.PublicTaskID
@@ -273,6 +281,17 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq, in
 	if err := taskcommon.UnmarshalMetadata(req.Metadata, &r); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
 	}
+	r.ModelName = taskcommon.DefaultString(info.UpstreamModelName, "kling-v1")
+	r.Model = r.ModelName
+	if r.Image == "" && len(req.Images) > 0 {
+		r.Image = req.Images[0]
+	}
+	if len(req.Images) > 2 {
+		return nil, fmt.Errorf("this Kling adapter supports at most first and last frame images")
+	}
+	if r.ImageTail == "" && len(req.Images) == 2 {
+		r.ImageTail = req.Images[1]
+	}
 	return &r, nil
 }
 
@@ -335,6 +354,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal response body")
 	}
+	if resPayload.Code != 0 {
+		return nil, fmt.Errorf("kling query returned code %d", resPayload.Code)
+	}
 	taskInfo.Code = resPayload.Code
 	taskInfo.TaskID = resPayload.Data.TaskId
 	taskInfo.Reason = resPayload.Data.TaskStatusMsg
@@ -355,6 +377,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	if videos := resPayload.Data.TaskResult.Videos; len(videos) > 0 {
 		video := videos[0]
 		taskInfo.Url = video.Url
+	}
+	if taskInfo.Status == model.TaskStatusSuccess && strings.TrimSpace(taskInfo.Url) == "" {
+		return nil, fmt.Errorf("kling successful task missing video")
 	}
 	return taskInfo, nil
 }

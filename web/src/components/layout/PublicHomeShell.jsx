@@ -106,7 +106,6 @@ const PublicHomeShell = () => {
   const status = statusState?.status || {};
   const notices = usePublicNotifications({
     status,
-    autoShow: !isPublicSubpage,
   });
   const systemName = getSystemName();
   const logo = getLogo();

@@ -208,6 +208,30 @@ func calculateVideoPriceReference(c *gin.Context, ch *model.Channel, name, group
 	ctx, _ := createInternalJSONContext(c, http.MethodPost, "/v1/videos", body, "application/json")
 	defer common.CleanupBodyStorage(ctx)
 	info := &relaycommon.RelayInfo{OriginModelName: name, UsingGroup: group, UserGroup: userGroup, StartTime: time.Now()}
+	// Quotes normalize through existing adapters, without sending or reserving.
+	if common.IsVideoTaskChannel(ch.Type) {
+		info.ChannelMeta = &relaycommon.ChannelMeta{ChannelType: ch.Type, UpstreamModelName: name}
+		info.TaskRelayInfo = &relaycommon.TaskRelayInfo{}
+		ctx.Set("model_mapping", ch.GetModelMapping())
+		if err := helper.ModelMappedHelper(ctx, info, nil); err != nil {
+			return nil, err
+		}
+		adaptor := relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(ch.Type)))
+		adaptor.Init(info)
+		if taskErr := adaptor.ValidateRequestAndSetAction(ctx, info); taskErr != nil {
+			return nil, fmt.Errorf("invalid video quote request: %s", taskErr.Code)
+		}
+		if preparer, ok := adaptor.(interface {
+			PrepareTaskRequest(*gin.Context, *relaycommon.RelayInfo) error
+		}); ok {
+			if err := preparer.PrepareTaskRequest(ctx, info); err != nil {
+				return nil, err
+			}
+		}
+		if _, err := relay.PrepareVideoRequestSnapshot(ctx, info, adaptor); err != nil {
+			return nil, err
+		}
+	}
 	price, err := helper.ModelPriceHelperTask(ctx, info)
 	if err != nil {
 		return nil, fmt.Errorf("当前参数不能完成本地估价，请检查定价表达式和请求参数")

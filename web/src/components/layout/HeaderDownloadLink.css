@@ -6,12 +6,12 @@
   gap: 7px;
   min-height: 34px;
   padding: 7px 12px;
-  border: 1px solid #b8ccff;
+  border: 1px solid #e5e7ed;
   border-radius: 7px;
-  background: #edf3ff;
-  color: #2757cf;
+  background: transparent;
+  color: #525b6b;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 18px;
   text-decoration: none;
   white-space: nowrap;
