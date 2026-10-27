@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-复用现有认证接口和配置驱动的 OAuth 提供商，使用共享 AuthCard 排版和 AuthConsent 状态。每个已启用协议独立勾选，未启用的协议不阻塞；密码、OAuth、微信、Telegram 和 Passkey 在发起认证前检查完整同意状态。保持注册 username/password/password2 与条件邮箱验证契约，保留邀请码、Turnstile、2FA、next 安全回跳。页脚只按 login/register 路由隐藏，其他归属信息及源文件不删除。
+复用现有认证接口和配置驱动的 OAuth 提供商，使用共享 AuthCard 排版和 AuthConsent 状态。每个已启用协议独立勾选，未启用的协议不阻塞；密码、OAuth、微信、Telegram 和 Passkey 在发起认证前检查完整同意状态。保持注册 username/password/password2 与条件邮箱验证契约，保留邀请码、Turnstile、2FA、next 安全回跳。登录注册不显示旧页脚，其他归属信息及源文件保留；原先仅按 login/register 隐藏的范围由[统一页面布局停用旧页脚](../simplification/2026-10-27-legacy-footer-removal.md)扩展，认证决定不变。
 
 ## Existing decisions
 
