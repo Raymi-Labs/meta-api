@@ -1,5 +1,11 @@
 {
   "translation": {
+    "同步模型能力": "Modelmogelijkheden synchroniseren",
+    "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Synchroniseer context en modaliteiten vanuit models.dev en de communitycatalogus. Standaard dagelijks gecontroleerd; handmatige waarden hebben voorrang.",
+    "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Modelmogelijkheden gesynchroniseerd: {{created}} toegevoegd, {{updated}} bijgewerkt",
+    "模型能力同步失败，现有数据已保留": "Synchronisatie van modelmogelijkheden mislukt; bestaande gegevens zijn behouden",
+    "单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。": "Gemeten in tokens. Bij ingeschakelde synchronisatie kunnen contextwaarde 0 en lege modaliteiten automatisch worden aangevuld; handmatige waarden hebben voorrang.",
+    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。": "Schakel uit om catalogussynchronisatie en achtergrondupdates te stoppen. Indien ingeschakeld worden context en modaliteiten op basis van exacte model-ID’s aangevuld; automatisch ingevulde waarden kunnen verder worden bijgewerkt.",
     "分辨率": "Resolutie",
     "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Dit sjabloon stelt de verkoopprijs van de site in, niet de modelmogelijkheden. Facturering gebruikt de verzonden duur en tariefklasse. Gebruik een volledige expressie voor invoermedia en extra kosten.",
     "视频按秒模板": "Sjabloon voor videoprijs per seconde",

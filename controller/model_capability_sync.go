@@ -1,0 +1,217 @@
+package controller
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
+	"github.com/gin-gonic/gin"
+)
+
+var (
+	modelCapabilitySyncMutex sync.Mutex
+	modelCapabilityTaskOnce  sync.Once
+	errModelCapabilityBusy   = errors.New("模型能力同步正在进行，请稍后重试")
+)
+
+// The existing metadata export omits limits and modalities. The full catalog
+// from the same configured source supplies these fields; it is community
+// metadata, not evidence of a channel's actual routing or billing capabilities.
+func modelCapabilitySourceURL() string {
+	return strings.TrimRight(getUpstreamBase(), "/") + "/api/all.json"
+}
+
+type capabilityProvider struct {
+	ID      string `json:"id"`
+	Billing struct {
+		Priority int `json:"priority"`
+	} `json:"billing"`
+	Models map[string]json.RawMessage `json:"models"`
+}
+
+type capabilityModel struct {
+	ID    string `json:"id"`
+	Limit struct {
+		Context json.RawMessage `json:"context"`
+	} `json:"limit"`
+	Modalities struct {
+		Input  json.RawMessage `json:"input"`
+		Output json.RawMessage `json:"output"`
+	} `json:"modalities"`
+}
+
+func decodeCapabilityModalities(raw json.RawMessage) model.ModelModalities {
+	var values model.ModelModalities
+	if len(raw) == 0 || common.Unmarshal(raw, &values) != nil {
+		return nil
+	}
+	for i, value := range values {
+		// This source calls PDF input "pdf". The local catalog groups document
+		// inputs under "file"; this is not a promise to support every file format.
+		if strings.EqualFold(strings.TrimSpace(value), "pdf") {
+			values[i] = "file"
+		}
+	}
+	validated := model.Model{InputModalities: values}
+	if validated.NormalizeDisplayMetadata() != nil {
+		return nil
+	}
+	return validated.InputModalities
+}
+
+func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetadata, error) {
+	var providers map[string]json.RawMessage
+	if err := common.Unmarshal(data, &providers); err != nil {
+		return nil, fmt.Errorf("invalid model capability catalog: %w", err)
+	}
+	// Equal priorities follow the source export's stable provider-ID order.
+	providerIDs := make([]string, 0, len(providers))
+	for id := range providers {
+		providerIDs = append(providerIDs, id)
+	}
+	sort.Strings(providerIDs)
+	entries := make(map[string]model.ModelCapabilityMetadata)
+	priorities := make(map[string]int)
+	for _, providerID := range providerIDs {
+		var provider capabilityProvider
+		if providerID == "" || strings.TrimSpace(providerID) != providerID ||
+			common.Unmarshal(providers[providerID], &provider) != nil || provider.ID != providerID {
+			continue
+		}
+		for id, raw := range provider.Models {
+			var upstream capabilityModel
+			if id == "" || strings.TrimSpace(id) != id || common.Unmarshal(raw, &upstream) != nil || upstream.ID != id {
+				continue
+			}
+			var contextLength int64
+			if common.Unmarshal(upstream.Limit.Context, &contextLength) != nil || contextLength < 0 || contextLength > 9007199254740991 {
+				contextLength = 0
+			}
+			entry := model.ModelCapabilityMetadata{
+				ContextLength:    contextLength,
+				InputModalities:  decodeCapabilityModalities(upstream.Modalities.Input),
+				OutputModalities: decodeCapabilityModalities(upstream.Modalities.Output),
+				Provider:         providerID,
+			}
+			if entry.ContextLength == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
+				continue
+			}
+			if previous, exists := priorities[id]; exists && previous >= provider.Billing.Priority {
+				continue
+			}
+			entries[id], priorities[id] = entry, provider.Billing.Priority
+		}
+	}
+	if len(entries) == 0 {
+		return nil, errors.New("model capability catalog contains no valid entries")
+	}
+	return entries, nil
+}
+
+func fetchModelCapabilities(ctx context.Context, source string) (map[string]model.ModelCapabilityMetadata, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := getHTTPClient().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		// A failed or rate-limited source is left alone until the next scheduled
+		// run. Never change endpoints or retry in a tight loop.
+		return nil, fmt.Errorf("model capability source returned HTTP %d", resp.StatusCode)
+	}
+	maxMB := common.GetEnvOrDefault("SYNC_HTTP_MAX_MB", 10)
+	if maxMB < 1 || maxMB > 64 {
+		maxMB = 10
+	}
+	maxBytes := int64(maxMB) << 20
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > maxBytes {
+		return nil, errors.New("model capability catalog exceeds size limit")
+	}
+	return parseModelCapabilities(data)
+}
+
+func runModelCapabilitySync(parent context.Context) (model.ModelCapabilitySyncResult, error) {
+	if !modelCapabilitySyncMutex.TryLock() {
+		return model.ModelCapabilitySyncResult{}, errModelCapabilityBusy
+	}
+	defer modelCapabilitySyncMutex.Unlock()
+	timeout := common.GetEnvOrDefault("SYNC_HTTP_TIMEOUT_SECONDS", 30)
+	if timeout < 1 || timeout > 300 {
+		timeout = 30
+	}
+	ctx, cancel := context.WithTimeout(parent, time.Duration(timeout)*time.Second)
+	defer cancel()
+	source := modelCapabilitySourceURL()
+	entries, err := fetchModelCapabilities(ctx, source)
+	if err != nil {
+		return model.ModelCapabilitySyncResult{}, err
+	}
+	result, err := model.ApplyModelCapabilityMetadata(ctx, entries, source)
+	// An interrupted batch may still have applied earlier rows.
+	if result.Updated > 0 || result.Created > 0 {
+		model.RefreshPricing()
+	}
+	return result, err
+}
+
+func SyncModelCapabilities(c *gin.Context) {
+	result, err := runModelCapabilitySync(c.Request.Context())
+	if err != nil {
+		if errors.Is(err, errModelCapabilityBusy) {
+			c.JSON(http.StatusConflict, gin.H{"success": false, "message": err.Error()})
+			return
+		}
+		common.SysError("model capability sync failed: " + err.Error())
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "模型能力同步未完成，请稍后重试；未同步字段保留原有配置"})
+		return
+	}
+	common.ApiSuccess(c, result)
+}
+
+func modelCapabilitySyncInterval() time.Duration {
+	hours := common.GetEnvOrDefault("MODEL_METADATA_SYNC_INTERVAL_HOURS", 24)
+	if hours < 1 || hours > 8760 {
+		hours = 24
+	}
+	return time.Duration(hours) * time.Hour
+}
+
+func StartModelCapabilitySyncTask() {
+	modelCapabilityTaskOnce.Do(func() {
+		if !common.IsMasterNode || !common.GetEnvOrDefaultBool("MODEL_METADATA_SYNC_ENABLED", true) {
+			return
+		}
+		interval := modelCapabilitySyncInterval()
+		go func() {
+			// Startup and migrations finish before the first bounded source read.
+			timer := time.NewTimer(time.Minute)
+			defer timer.Stop()
+			for range timer.C {
+				result, err := runModelCapabilitySync(context.Background())
+				if err != nil && !errors.Is(err, errModelCapabilityBusy) {
+					common.SysError("scheduled model capability sync failed: " + err.Error())
+				} else if result.Updated > 0 || result.Created > 0 {
+					common.SysLog(fmt.Sprintf("model capability sync completed: updated=%d created=%d", result.Updated, result.Created))
+				}
+				timer.Reset(interval)
+			}
+		}()
+	})
+}

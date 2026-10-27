@@ -17,10 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../../helpers';
 import { ITEMS_PER_PAGE } from '../../constants';
+import { requestModelCapabilitySync } from '../../helpers/modelCapabilitySync';
 import { useTableCompactMode } from '../common/useTableCompactMode';
 
 export const useModelsData = () => {
@@ -94,6 +95,8 @@ export const useModelsData = () => {
   const [editingVendor, setEditingVendor] = useState({ id: undefined });
   const [syncing, setSyncing] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [syncingCapabilities, setSyncingCapabilities] = useState(false);
+  const syncInFlight = useRef(false);
 
   const vendorMap = useMemo(() => {
     const map = {};
@@ -164,6 +167,8 @@ export const useModelsData = () => {
 
   // Sync upstream models/vendors for missing models only
   const syncUpstream = async (opts = {}) => {
+    if (syncInFlight.current) return false;
+    syncInFlight.current = true;
     const locale = opts?.locale;
     setSyncing(true);
     try {
@@ -187,12 +192,16 @@ export const useModelsData = () => {
       }
     } catch (e) {
       showError(t('同步失败'));
+    } finally {
+      syncInFlight.current = false;
+      setSyncing(false);
     }
-    setSyncing(false);
   };
 
   // Preview upstream differences
   const previewUpstreamDiff = async (opts = {}) => {
+    if (syncInFlight.current) return null;
+    syncInFlight.current = true;
     const locale = opts?.locale;
     setPreviewing(true);
     try {
@@ -203,17 +212,20 @@ export const useModelsData = () => {
         return data || { missing: [], conflicts: [] };
       }
       showError(message || t('预览失败'));
-      return { missing: [], conflicts: [] };
+      return null;
     } catch (e) {
       showError(t('预览失败'));
-      return { missing: [], conflicts: [] };
+      return null;
     } finally {
+      syncInFlight.current = false;
       setPreviewing(false);
     }
   };
 
   // Apply selected overwrite
   const applyUpstreamOverwrite = async (payloadOrArray = []) => {
+    if (syncInFlight.current) return false;
+    syncInFlight.current = true;
     const isArray = Array.isArray(payloadOrArray);
     const overwrite = isArray ? payloadOrArray : payloadOrArray.overwrite || [];
     const locale = isArray ? undefined : payloadOrArray.locale;
@@ -243,7 +255,30 @@ export const useModelsData = () => {
       showError(t('同步失败'));
       return false;
     } finally {
+      syncInFlight.current = false;
       setSyncing(false);
+    }
+  };
+
+  const syncCapabilities = async () => {
+    if (syncInFlight.current) return false;
+    syncInFlight.current = true;
+    setSyncingCapabilities(true);
+    try {
+      const result = await requestModelCapabilitySync(API);
+      showSuccess(
+        t('模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个', result),
+      );
+      await refresh();
+      return true;
+    } catch (error) {
+      showError(
+        error.response?.data?.message || t('模型能力同步失败，现有数据已保留'),
+      );
+      return false;
+    } finally {
+      syncInFlight.current = false;
+      setSyncingCapabilities(false);
     }
   };
 
@@ -487,6 +522,8 @@ export const useModelsData = () => {
     // Upstream sync
     syncing,
     previewing,
+    syncingCapabilities,
+    syncCapabilities,
     syncUpstream,
     previewUpstreamDiff,
     applyUpstreamOverwrite,

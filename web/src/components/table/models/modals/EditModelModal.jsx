@@ -430,7 +430,9 @@ const EditModelModal = (props) => {
                     <Form.InputNumber
                       field='context_length'
                       label={t('上下文长度')}
-                      extraText={t('单位为 Token，0 表示未知')}
+                      extraText={t(
+                        '单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。',
+                      )}
                       min={0}
                       max={Number.MAX_SAFE_INTEGER}
                       precision={0}
@@ -629,7 +631,7 @@ const EditModelModal = (props) => {
                       field='sync_official'
                       label={t('参与官方同步')}
                       extraText={t(
-                        '关闭后，此模型将不会被“同步官方”自动覆盖或创建',
+                        '关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。',
                       )}
                       size='large'
                     />

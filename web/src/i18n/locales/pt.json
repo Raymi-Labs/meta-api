@@ -1,5 +1,11 @@
 {
   "translation": {
+    "同步模型能力": "Sincronizar capacidades",
+    "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Sincroniza contexto e modalidades a partir do models.dev e do catálogo da comunidade. Verificação diária por padrão; os valores manuais têm prioridade.",
+    "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Capacidades sincronizadas: {{created}} adicionados, {{updated}} atualizados",
+    "模型能力同步失败，现有数据已保留": "Falha ao sincronizar as capacidades; os dados existentes foram mantidos",
+    "单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。": "Medido em tokens. Com a sincronização ativada, um contexto de 0 ou modalidades vazias podem ser preenchidos automaticamente; os valores manuais têm prioridade.",
+    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。": "Desative para interromper a sincronização do catálogo e as atualizações em segundo plano. Quando ativada, preenche contexto e modalidades pelo ID exato do modelo; os valores automáticos podem continuar sendo atualizados.",
     "分辨率": "Resolução",
     "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Este modelo define o preço de venda do site, não as capacidades do modelo. A cobrança usa duração e faixa enviadas. Use uma expressão completa para mídias de entrada e custos adicionais.",
     "视频按秒模板": "Modelo de preço de vídeo por segundo",

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
@@ -38,6 +39,8 @@ type Model struct {
 	UpdatedTime      int64           `json:"updated_time" gorm:"bigint"`
 	DeletedAt        gorm.DeletedAt  `json:"-" gorm:"index;uniqueIndex:uk_model_name_delete_at,priority:2"`
 
+	ModelCapabilitySyncState string `json:"-" gorm:"type:text"`
+
 	BoundChannels []BoundChannel `json:"bound_channels,omitempty" gorm:"-"`
 	EnableGroups  []string       `json:"enable_groups,omitempty" gorm:"-"`
 	QuotaTypes    []int          `json:"quota_types,omitempty" gorm:"-"`
@@ -56,16 +59,31 @@ func (mi *Model) Insert() error {
 	originalStatus := mi.Status
 	originalSyncOfficial := mi.SyncOfficial
 
-	// 先创建记录（GORM 会对零值字段应用默认值）
-	if err := DB.Create(mi).Error; err != nil {
-		return err
-	}
-
-	// 使用保存的原始值进行更新，确保零值能正确保存
-	return DB.Model(&Model{}).Where("id = ?", mi.Id).Updates(map[string]interface{}{
-		"status":        originalStatus,
-		"sync_official": originalSyncOfficial,
-	}).Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		// Share the automatic capability sync's creation lock for enabled models.
+		// This also protects explicit admin creation and the legacy catalog sync.
+		locked, err := lockModelMetadataCreationAbility(tx, mi.ModelName)
+		if err != nil {
+			return err
+		}
+		if locked {
+			var count int64
+			if err := tx.Model(&Model{}).Where("model_name = ?", mi.ModelName).Count(&count).Error; err != nil {
+				return err
+			}
+			if count > 0 {
+				return errors.New("模型名称已存在")
+			}
+		}
+		// 先创建记录（GORM 会对零值字段应用默认值）
+		if err := tx.Create(mi).Error; err != nil {
+			return err
+		}
+		// 使用保存的原始值进行更新，确保零值能正确保存
+		return tx.Model(&Model{}).Where("id = ?", mi.Id).Updates(map[string]interface{}{
+			"status": originalStatus, "sync_official": originalSyncOfficial,
+		}).Error
+	})
 }
 
 func IsModelNameDuplicated(id int, name string) (bool, error) {

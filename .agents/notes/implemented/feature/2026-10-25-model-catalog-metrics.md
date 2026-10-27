@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[模型能力自动同步](2026-10-27-model-capability-sync.md)部分扩展本篇的同步边界：上下文和模态允许补空及更新自动拥有的值，人工配置继续优先。
+
 [模型发现与接入路径](2026-10-26-model-discovery-experience.md)更新搜索与筛选布局、缺失状态、快速开始入口和首页手动公告规则；本文其余数据及权限契约继续有效。
 
 复用模型管理的 description，新增可选 display_name、context_length、input_modalities、output_modalities，模型ID继续作为路由和请求标识。空值表示未配置，供应商同步不得覆盖本地新增展示字段。详情将输入/输出模态并列放在模型介绍与价格摘要后、分组价格前，上下文长度放入顶部模型元信息；使用对应图标与文字，导航顺序与正文一致。

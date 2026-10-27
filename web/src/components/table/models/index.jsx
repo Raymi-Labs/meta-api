@@ -169,6 +169,8 @@ const ModelsPage = () => {
               setShowEdit={setShowEdit}
               batchDeleteModels={batchDeleteModels}
               syncing={modelsData.syncing}
+              syncingCapabilities={modelsData.syncingCapabilities}
+              syncCapabilities={modelsData.syncCapabilities}
               syncUpstream={modelsData.syncUpstream}
               previewing={modelsData.previewing}
               previewUpstreamDiff={modelsData.previewUpstreamDiff}

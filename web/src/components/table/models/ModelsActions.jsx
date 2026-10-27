@@ -36,6 +36,8 @@ const ModelsActions = ({
   batchDeleteModels,
   syncing,
   previewing,
+  syncingCapabilities,
+  syncCapabilities,
   syncUpstream,
   previewUpstreamDiff,
   applyUpstreamOverwrite,
@@ -57,6 +59,7 @@ const ModelsActions = ({
   const handleSyncUpstream = async (locale) => {
     // 先预览
     const data = await previewUpstreamDiff?.({ locale });
+    if (!data) return;
     const conflictItems = data?.conflicts || [];
     if (conflictItems.length > 0) {
       setConflicts(conflictItems);
@@ -154,12 +157,36 @@ const ModelsActions = ({
             className='flex-1 md:flex-initial'
             size='small'
             loading={syncing || previewing}
+            disabled={syncingCapabilities}
             onClick={() => {
               setSyncLocale('zh');
               setShowSyncModal(true);
             }}
           >
             {t('同步')}
+          </Button>
+        </Popover>
+
+        <Popover
+          position='bottom'
+          trigger='hover'
+          content={
+            <div className='p-2 max-w-[360px] text-sm'>
+              {t(
+                '从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。',
+              )}
+            </div>
+          }
+        >
+          <Button
+            type='secondary'
+            className='flex-1 md:flex-initial'
+            size='small'
+            loading={syncingCapabilities}
+            disabled={syncing || previewing}
+            onClick={syncCapabilities}
+          >
+            {t('同步模型能力')}
           </Button>
         </Popover>
 
