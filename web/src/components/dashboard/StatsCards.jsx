@@ -18,99 +18,68 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Card, Avatar, Skeleton, Tag } from '@douyinfe/semi-ui';
-import { VChart } from '@visactor/react-vchart';
-import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
+import { Wallet, CircleDollarSign, Activity, Hash } from 'lucide-react';
 
-const StatsCards = ({
+const icons = {
+  account: Wallet,
+  spend: CircleDollarSign,
+  requests: Activity,
+  tokens: Hash,
+};
+export default function StatsCards({
   groupedStatsData,
   loading,
-  getTrendSpec,
-  CARD_PROPS,
-  CHART_CONFIG,
-}) => {
-  const navigate = useNavigate();
+  quotaError,
+  accountLoading,
+  accountError,
+}) {
   const { t } = useTranslation();
   return (
-    <div className='mb-4'>
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-        {groupedStatsData.map((group, idx) => (
-          <Card
-            key={idx}
-            {...CARD_PROPS}
-            className={`${group.color} border-0 !rounded-2xl w-full`}
-            title={group.title}
+    <div className='dashboard-stat-grid'>
+      {groupedStatsData.map((card) => {
+        const Icon = icons[card.id];
+        const busy = card.id === 'account' ? accountLoading : loading;
+        const failed = card.id === 'account' ? accountError : quotaError;
+        return (
+          <section
+            className='dashboard-stat-card'
+            key={card.id}
+            aria-label={card.title}
+            aria-busy={busy}
           >
-            <div className='space-y-4'>
-              {group.items.map((item, itemIdx) => (
-                <div
-                  key={itemIdx}
-                  className='flex items-center justify-between cursor-pointer'
-                  onClick={item.onClick}
-                >
-                  <div className='flex items-center'>
-                    <Avatar
-                      className='mr-3'
-                      size='small'
-                      color={item.avatarColor}
-                    >
-                      {item.icon}
-                    </Avatar>
-                    <div>
-                      <div className='text-xs text-gray-500'>{item.title}</div>
-                      <div className='text-lg font-semibold'>
-                        <Skeleton
-                          loading={loading}
-                          active
-                          placeholder={
-                            <Skeleton.Paragraph
-                              active
-                              rows={1}
-                              style={{
-                                width: '65px',
-                                height: '24px',
-                                marginTop: '4px',
-                              }}
-                            />
-                          }
-                        >
-                          {item.value}
-                        </Skeleton>
-                      </div>
-                    </div>
-                  </div>
-                  {item.title === t('当前余额') ? (
-                    <Tag
-                      color='white'
-                      shape='circle'
-                      size='large'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate('/console/topup');
-                      }}
-                    >
-                      {t('充值')}
-                    </Tag>
-                  ) : (
-                    (loading ||
-                      (item.trendData && item.trendData.length > 0)) && (
-                      <div className='w-24 h-10'>
-                        <VChart
-                          spec={getTrendSpec(item.trendData, item.trendColor)}
-                          option={CHART_CONFIG}
-                        />
-                      </div>
-                    )
-                  )}
-                </div>
-              ))}
+            <div className='dashboard-stat-heading'>
+              <span>{card.title}</span>
+              <Icon size={17} aria-hidden='true' />
             </div>
-          </Card>
-        ))}
-      </div>
+            <div className='dashboard-stat-value'>
+              <Skeleton
+                loading={busy}
+                active
+                placeholder={
+                  <Skeleton.Title style={{ width: 110, height: 30 }} />
+                }
+              >
+                {failed ? '—' : card.value}
+              </Skeleton>
+            </div>
+            <div className='dashboard-stat-scope'>
+              {t(card.id === 'account' ? '当前账户' : '选定时间范围')}
+            </div>
+            {card.secondary.length > 0 && (
+              <dl className='dashboard-stat-secondary'>
+                {card.secondary.map((item) => (
+                  <div key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd>{busy || failed ? '—' : item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
-};
-
-export default StatsCards;
+}

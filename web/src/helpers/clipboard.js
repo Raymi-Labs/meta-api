@@ -18,12 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 export async function copy(text) {
-  let okay = true;
   try {
     await navigator.clipboard.writeText(text);
-  } catch (e) {
+    return true;
+  } catch {
+    let textarea;
+    const previousFocus = window.document.activeElement;
     try {
-      const textarea = window.document.createElement('textarea');
+      textarea = window.document.createElement('textarea');
       textarea.value = text;
       textarea.setAttribute('readonly', '');
       textarea.style.position = 'fixed';
@@ -31,12 +33,17 @@ export async function copy(text) {
       textarea.style.top = '-9999px';
       window.document.body.appendChild(textarea);
       textarea.select();
-      window.document.execCommand('copy');
-      window.document.body.removeChild(textarea);
-    } catch (error) {
-      okay = false;
-      console.error(error);
+      return window.document.execCommand('copy') === true;
+    } catch {
+      return false;
+    } finally {
+      textarea?.remove();
+      try {
+        if (previousFocus?.isConnected)
+          previousFocus.focus({ preventScroll: true });
+      } catch {
+        /* Restoring focus cannot change the clipboard result. */
+      }
     }
   }
-  return okay;
 }

@@ -6604,6 +6604,12 @@
     "PDF 生成参数无效": "Parâmetros inválidos para geração do PDF",
     "PDF 生成服务繁忙，请稍后重试": "O serviço de PDF está ocupado. Tente novamente mais tarde.",
     "预览明细账单": "Prévia do demonstrativo detalhado",
-    "预览产品明细清单": "Prévia da lista de produtos"
+    "预览产品明细清单": "Prévia da lista de produtos",
+    "当前账户": "Conta atual",
+    "选定时间范围": "Período selecionado",
+    "常用操作": "Ações rápidas",
+    "请选择有效的起止时间": "Selecione datas de início e fim válidas",
+    "请选择不超过30天的时间范围": "Selecione um período de até 30 dias",
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "O saldo e os totais acumulados pertencem à conta atual. As outras métricas usam o utilizador e período selecionados; não indicam a taxa de sucesso dos pedidos."
   }
 }
