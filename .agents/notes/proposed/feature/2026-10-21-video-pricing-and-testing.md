@@ -10,6 +10,10 @@ Status: proposed
 
 ## Existing capabilities and evidence
 
+[多厂商共同契约](../../implemented/bug-fix/2026-10-26-video-task-common-contract.md)补出站计价快照、原生任务保存Key、提交后防重、秒价/固定档位表达式辅助和结果检查。仍不是完整供应商能力注册、通用实际用量结算或逐新型号真实验收；原提案保留未实施范围。
+
+H3 文生视频首期由[H3 基础链路](../../implemented/feature/2026-10-26-minimax-h3-video.md)接管：V2 适配、规范计价参数、已知型号秒价表达式模板与模拟验收。它不等于通用结构化视频价格表、参考生成计费或按实际用量结算，本提案其余部分保持 proposed。
+
 - `router/video-router.go` 已提供 `/v1/videos`、`/v1/video/generations` 的提交和查询，以及可灵、即梦的部分原生入口。截图中的 `/alibailian/api/v1/services/aigc/video-generation/video-synthesis` 不是本站现有路由。
 - `relay/relay_adaptor.go` 已注册 Ali、Kling、Doubao/VolcEngine、MiniMax/Hailuo、Sora、Gemini/Vertex、Vidu 和 xAI 的任务适配器。已有适配器不代表已覆盖各厂商最新模型、参数或实际账户权限。
 - `relay/relay_task.go` 复用鉴权、分组、渠道映射、预扣与任务记录；`service/task_polling.go` 提供后台轮询、终态处理和退款；`model/task.go` 已有任务私有计费快照。

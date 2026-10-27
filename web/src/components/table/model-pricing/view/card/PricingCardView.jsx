@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Link, useNavigate } from 'react-router-dom';
 import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Checkbox, Pagination, Button } from '@douyinfe/semi-ui';
@@ -259,7 +260,11 @@ const PricingCardView = ({
                 <div className='pricing-card-notes'>
                   {data.isDynamicPricing && (
                     <p className='pricing-card-tier-note'>
-                      {t('阶梯计费：展示首档参考价，完整规则见详情')}
+                      {t(
+                        isVideoPriceExpression(model.billing_expr)
+                          ? '视频按秒 / 表达式'
+                          : '阶梯计费：展示首档参考价，完整规则见详情',
+                      )}
                     </p>
                   )}
                   {showRatio && (

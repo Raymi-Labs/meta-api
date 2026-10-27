@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Çözünürlük",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Bu şablon model yeteneklerini değil, sitenin satış fiyatını belirler. Gönderilen süre ve kademeye göre ücretlendirilir. Girdi medyası ve ek maliyetler için tam ifade kullanın.",
+    "视频按秒模板": "Saniyelik video fiyat şablonu",
+    "视频按秒 / 表达式": "Saniyelik video / İfade",
+    "生成秒价表达式": "Saniyelik fiyat ifadesi oluştur",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Yalnızca metinden video; istenen çıktı saniyesine göre ücretlendirilir. USD/saniye girin; grup ve zaman çarpanları ayrıca uygulanır. Kaydetmek için değişiklikleri uygulayın. Video isteği gönderilmez.",
     "HTML 广告代码": "HTML reklam kodu",
     "一个入口，多种模型": "Tek API, birden fazla model",
     "元衡 AI": "Yuanheng AI",

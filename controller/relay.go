@@ -1037,7 +1037,7 @@ func RelayTask(c *gin.Context) {
 			TimeRatioMatchedAt: relayInfo.PriceData.TimeRatioInfo.MatchedAt,
 			OtherRatios:        relayInfo.PriceData.OtherRatios,
 			OriginModelName:    relayInfo.OriginModelName,
-			PerCallBilling:     common.StringsContains(constant.TaskPricePatches, relayInfo.OriginModelName) || billing_setting.GetBillingMode(relayInfo.OriginModelName) == billing_setting.BillingModeTieredExpr,
+			PerCallBilling:     relayInfo.PriceData.UsePrice || common.StringsContains(constant.TaskPricePatches, relayInfo.OriginModelName) || billing_setting.GetBillingMode(relayInfo.OriginModelName) == billing_setting.BillingModeTieredExpr,
 		}
 		task.Quota = result.Quota
 		task.Data = result.TaskData
@@ -1076,6 +1076,9 @@ func shouldRetryTaskRelay(c *gin.Context, channelId int, taskErr *dto.TaskError,
 		return false
 	}
 	if taskErr.LocalError {
+		return false
+	}
+	if c.GetBool("video_submission_started") {
 		return false
 	}
 	if service.ShouldSkipRetryAfterChannelAffinityFailure(c) {

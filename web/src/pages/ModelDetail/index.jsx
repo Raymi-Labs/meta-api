@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Select, Spin } from '@douyinfe/semi-ui';
 import {
@@ -379,7 +380,11 @@ export default function ModelDetail() {
             {priceData.isDynamicPricing && (
               <div className='model-detail-dynamic'>
                 <p className='model-detail-caption'>
-                  {t('阶梯计费：展示首档参考价，完整规则见详情')}
+                  {t(
+                    isVideoPriceExpression(model.billing_expr)
+                      ? '视频按秒 / 表达式'
+                      : '阶梯计费：展示首档参考价，完整规则见详情',
+                  )}
                 </p>
                 <h3 className='model-detail-caption'>{t('基础价格')}</h3>
                 <DynamicPricingBreakdown

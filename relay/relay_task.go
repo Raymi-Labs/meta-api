@@ -144,6 +144,8 @@ func ResolveOriginTask(c *gin.Context, info *relaycommon.RelayInfo) *dto.TaskErr
 // 控制器负责 defer Refund 和成功后 Settle。
 func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitResult, *dto.TaskError) {
 	info.InitChannelMeta(c)
+	// A retry must not reuse another adaptor's normalized pricing snapshot.
+	info.BillingRequestInput = nil
 
 	// 1. 确定 platform → 创建适配器 → 验证请求
 	platform := constant.TaskPlatform(c.GetString("platform"))
@@ -171,10 +173,25 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 	if err := helper.ModelMappedHelper(c, info, nil); err != nil {
 		return nil, service.TaskErrorWrapperLocal(err, "model_mapping_failed", http.StatusBadRequest)
 	}
+	if preparer, ok := adaptor.(interface {
+		PrepareTaskRequest(*gin.Context, *relaycommon.RelayInfo) error
+	}); ok {
+		if err := preparer.PrepareTaskRequest(c, info); err != nil {
+			return nil, service.TaskErrorWrapperLocal(err, "invalid_task_parameters", http.StatusBadRequest)
+		}
+	}
 
 	// 3. 预生成公开 task ID（仅首次）
 	if info.PublicTaskID == "" {
 		info.PublicTaskID = model.GenerateTaskID()
+	}
+	var preparedBody []byte
+	if common.IsVideoTaskChannel(info.ChannelType) {
+		var err error
+		preparedBody, err = PrepareVideoRequestSnapshot(c, info, adaptor)
+		if err != nil {
+			return nil, service.TaskErrorWrapperLocal(err, "invalid_video_request", http.StatusBadRequest)
+		}
 	}
 
 	// 4. 价格计算：基础模型价格
@@ -215,12 +232,22 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 	}
 
 	// 8. 构建请求体
-	requestBody, err := adaptor.BuildRequestBody(c, info)
+	var requestBody io.Reader
+	if preparedBody != nil {
+		requestBody = bytes.NewReader(preparedBody)
+	} else {
+		requestBody, err = adaptor.BuildRequestBody(c, info)
+	}
 	if err != nil {
 		return nil, service.TaskErrorWrapper(err, "build_request_failed", http.StatusInternalServerError)
 	}
 
 	// 9. 发送请求
+	if common.IsVideoTaskChannel(info.ChannelType) {
+		// No shared provider idempotency contract: an error response may follow
+		// an accepted paid task. Never automatically resubmit this video attempt.
+		c.Set("video_submission_started", true)
+	}
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
 		var apiErr *types.NewAPIError
@@ -429,15 +456,16 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	return
 }
 
-// tryRealtimeFetch 尝试从上游实时拉取 Gemini/Vertex 任务状态。
-// 仅当渠道类型为 Gemini 或 Vertex 时触发；其他渠道或出错时返回 nil。
+// tryRealtimeFetch 实时查询 Gemini/Vertex 或明确支持的 MiniMax H3 任务。
+// 其他渠道或出错时回退已有数据库状态，不把查询错误当任务失败。
 // 当非 OpenAI Video API 时，还会构建自定义格式的响应体。
 func tryRealtimeFetch(c *gin.Context, task *model.Task, isOpenAIVideoAPI bool) []byte {
 	channelModel, err := model.GetChannelById(task.ChannelId, true)
 	if err != nil {
 		return nil
 	}
-	if channelModel.Type != constant.ChannelTypeVertexAi && channelModel.Type != constant.ChannelTypeGemini {
+	isH3 := channelModel.Type == constant.ChannelTypeMiniMax && common.IsMiniMaxH3Model(task.Properties.UpstreamModelName)
+	if channelModel.Type != constant.ChannelTypeVertexAi && channelModel.Type != constant.ChannelTypeGemini && !isH3 {
 		return nil
 	}
 	releaseSlot, acquired := acquireRealtimeTaskChannelCapacity(c, channelModel)
@@ -464,8 +492,9 @@ func tryRealtimeFetch(c *gin.Context, task *model.Task, isOpenAIVideoAPI bool) [
 	adaptor.Init(service.TaskPollingRelayInfo(channelModel, task.UserId, key))
 
 	resp, err := adaptor.FetchTask(baseURL, key, map[string]any{
-		"task_id": task.GetUpstreamTaskID(),
-		"action":  task.Action,
+		"task_id":        task.GetUpstreamTaskID(),
+		"action":         task.Action,
+		"upstream_model": task.Properties.UpstreamModelName,
 	}, proxy)
 	if err != nil || resp == nil {
 		return nil

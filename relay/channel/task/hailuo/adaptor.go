@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -29,20 +30,45 @@ type TaskAdaptor struct {
 	ChannelType int
 	apiKey      string
 	baseURL     string
+	h3Body      []byte
+	h3TaskID    string
+	h3Polling   bool
 }
 
 func (a *TaskAdaptor) Init(info *relaycommon.RelayInfo) {
 	a.pollingInfo = info
+	a.h3Body = nil
+	a.h3TaskID = ""
+	a.h3Polling = false
 	a.ChannelType = info.ChannelType
 	a.baseURL = info.ChannelBaseUrl
 	a.apiKey = info.ApiKey
 }
 
 func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.TaskError) {
+	if strings.HasPrefix(strings.ToLower(c.GetHeader("Content-Type")), "application/json") {
+		var raw map[string]any
+		if err := common.UnmarshalBodyReusable(c, &raw); err != nil {
+			return service.TaskErrorWrapperLocal(fmt.Errorf("invalid video JSON"), "invalid_request", http.StatusBadRequest)
+		}
+		if _, hasContent := raw["content"]; hasContent || isH3Family(info.OriginModelName) {
+			prompt, err := h3Prompt(raw)
+			if err != nil {
+				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+			}
+			name, _ := raw["model"].(string)
+			c.Set("task_request", relaycommon.TaskSubmitReq{Prompt: prompt, Model: name})
+			info.Action = constant.TaskActionGenerate
+			return nil
+		}
+	}
 	return relaycommon.ValidateBasicTaskRequest(c, info, constant.TaskActionGenerate)
 }
 
 func (a *TaskAdaptor) BuildRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if isH3Family(info.UpstreamModelName) {
+		return strings.TrimRight(a.baseURL, "/") + "/v2/video_generation", nil
+	}
 	return fmt.Sprintf("%s%s", a.baseURL, TextToVideoEndpoint), nil
 }
 
@@ -54,6 +80,12 @@ func (a *TaskAdaptor) BuildRequestHeader(c *gin.Context, req *http.Request, info
 }
 
 func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayInfo) (io.Reader, error) {
+	if isH3Family(info.UpstreamModelName) {
+		if len(a.h3Body) == 0 {
+			return nil, fmt.Errorf("H3 request has not been validated and priced")
+		}
+		return bytes.NewReader(a.h3Body), nil
+	}
 	v, exists := c.Get("task_request")
 	if !exists {
 		return nil, fmt.Errorf("request not found in context")
@@ -81,6 +113,7 @@ func (a *TaskAdaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, req
 }
 
 func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (taskID string, taskData []byte, taskErr *dto.TaskError) {
+	defer resp.Body.Close()
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		taskErr = service.TaskErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
@@ -90,8 +123,17 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 
 	var hResp VideoResponse
 	if err := common.Unmarshal(responseBody, &hResp); err != nil {
+		if isH3Family(info.UpstreamModelName) {
+			return "", nil, service.TaskErrorWrapper(fmt.Errorf("invalid H3 submission JSON; provider acceptance is unknown"), "invalid_response", http.StatusBadGateway)
+		}
 		taskErr = service.TaskErrorWrapper(errors.Wrapf(err, "body: %s", responseBody), "unmarshal_response_body_failed", http.StatusInternalServerError)
 		return
+	}
+	if isH3Family(info.UpstreamModelName) {
+		var envelope map[string]any
+		if err := common.Unmarshal(responseBody, &envelope); err != nil || envelope["error"] != nil || !validH3TaskID(hResp.TaskID) {
+			return "", nil, service.TaskErrorWrapper(fmt.Errorf("invalid H3 submission response; missing task_id or error response"), "invalid_response", http.StatusBadGateway)
+		}
 	}
 
 	if hResp.BaseResp.StatusCode != StatusSuccess {
@@ -101,6 +143,9 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 			http.StatusBadRequest,
 		)
 		return
+	}
+	if strings.TrimSpace(hResp.TaskID) == "" {
+		return "", nil, service.TaskErrorWrapper(fmt.Errorf("hailuo submission missing task_id"), "invalid_response", http.StatusBadGateway)
 	}
 
 	ov := dto.NewOpenAIVideo()
@@ -119,7 +164,17 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 		return nil, fmt.Errorf("invalid task_id")
 	}
 
-	uri := fmt.Sprintf("%s%s?task_id=%s", baseUrl, QueryTaskEndpoint, taskID)
+	upstreamModel, _ := body["upstream_model"].(string)
+	a.h3Polling = isH3Family(upstreamModel)
+	a.h3TaskID = taskID
+	uri := fmt.Sprintf("%s%s?task_id=%s", baseUrl, QueryTaskEndpoint, url.QueryEscape(taskID))
+	if a.h3Polling {
+		// Provider task IDs are opaque but must never become a path traversal.
+		if !validH3TaskID(taskID) {
+			return nil, fmt.Errorf("invalid H3 task ID")
+		}
+		uri = strings.TrimRight(baseUrl, "/") + "/v2/query/video_generation/" + url.PathEscape(taskID)
+	}
 
 	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
@@ -164,6 +219,7 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq, in
 	if err := req.UnmarshalMetadata(&videoRequest); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata to video request failed")
 	}
+	videoRequest.Model = info.UpstreamModelName
 
 	return videoRequest, nil
 }
@@ -184,6 +240,9 @@ func (a *TaskAdaptor) parseResolutionFromSize(size string, modelConfig ModelConf
 }
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {
+	if a.h3Polling {
+		return a.parseH3Result(respBody)
+	}
 	resTask := QueryTaskResponse{}
 	if err := common.Unmarshal(respBody, &resTask); err != nil {
 		return nil, errors.Wrap(err, "unmarshal task result failed")
@@ -194,10 +253,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	if resTask.BaseResp.StatusCode == StatusSuccess {
 		taskResult.Code = 0
 	} else {
-		taskResult.Code = resTask.BaseResp.StatusCode
-		taskResult.Reason = resTask.BaseResp.StatusMsg
-		taskResult.Status = model.TaskStatusFailure
-		taskResult.Progress = "100%"
+		return nil, fmt.Errorf("hailuo query returned code %d", resTask.BaseResp.StatusCode)
 	}
 
 	switch resTask.Status {
@@ -211,6 +267,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusSuccess
 		taskResult.Progress = "100%"
 		taskResult.Url = a.buildVideoURL(resTask.TaskID, resTask.FileID)
+		if taskResult.Url == "" {
+			return nil, fmt.Errorf("hailuo successful task result not retrievable")
+		}
 	case TaskStatusFailed:
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
@@ -218,14 +277,16 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Reason = "task failed"
 		}
 	default:
-		taskResult.Status = model.TaskStatusInProgress
-		taskResult.Progress = "30%"
+		return nil, fmt.Errorf("unknown hailuo task status")
 	}
 
 	return &taskResult, nil
 }
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, error) {
+	if isH3Family(originTask.Properties.UpstreamModelName) {
+		return common.Marshal(originTask.ToOpenAIVideo())
+	}
 	var hailuoResp QueryTaskResponse
 	if err := common.Unmarshal(originTask.Data, &hailuoResp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal hailuo task data failed")

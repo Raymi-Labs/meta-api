@@ -50,6 +50,7 @@ import {
 } from '../hooks/useModelPricingEditorState';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import TieredPricingEditor from './TieredPricingEditor';
+import { canUseVideoTemplate } from '../../../../helpers/videoPricingTemplate';
 
 const { Text } = Typography;
 const EMPTY_CANDIDATE_MODEL_NAMES = [];
@@ -168,6 +169,7 @@ export default function ModelPricingEditor({
     if (model?.billingMode !== 'tiered_expr') {
       return '';
     }
+    if (canUseVideoTemplate(model.name)) return t('视频按秒 / 表达式');
     return (model.billingExpr || '').includes('tier(')
       ? t('阶梯计费')
       : t('表达式计费');
@@ -451,7 +453,7 @@ export default function ModelPricingEditor({
                     <Radio value='per-audio-hour'>
                       {t('按量计费')} / {t('小时')}
                     </Radio>
-                    <Radio value='tiered_expr'>{t('表达式/阶梯计费')}</Radio>
+                    <Radio value='tiered_expr'>{canUseVideoTemplate(selectedModel.name) ? t('视频按秒 / 表达式') : t('表达式/阶梯计费')}</Radio>
                   </RadioGroup>
                   <div className='mt-2 text-xs text-gray-500'>
                     {`${t('按量计费')} / ${t('小时')}: ${t('音频输入价格')}。${t(

@@ -164,6 +164,7 @@ func (a *TaskAdaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, req
 }
 
 func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (taskID string, taskData []byte, taskErr *dto.TaskError) {
+	defer resp.Body.Close()
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		taskErr = service.TaskErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
@@ -180,6 +181,9 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 	if vResp.State == "failed" {
 		taskErr = service.TaskErrorWrapperLocal(fmt.Errorf("task failed"), "task_failed", http.StatusBadRequest)
 		return
+	}
+	if strings.TrimSpace(vResp.TaskId) == "" {
+		return "", nil, service.TaskErrorWrapper(fmt.Errorf("vidu submission missing task_id"), "invalid_response", http.StatusBadGateway)
 	}
 
 	ov := dto.NewOpenAIVideo()
@@ -259,6 +263,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "processing":
 		taskInfo.Status = model.TaskStatusInProgress
 	case "success":
+		if len(taskResp.Creations) == 0 || strings.TrimSpace(taskResp.Creations[0].URL) == "" {
+			return nil, fmt.Errorf("vidu successful task missing creation URL")
+		}
 		taskInfo.Status = model.TaskStatusSuccess
 		if len(taskResp.Creations) > 0 {
 			taskInfo.Url = taskResp.Creations[0].URL

@@ -40,6 +40,9 @@ func TestVideoChannelTestsNeverGenerateOrRotateKeys(t *testing.T) {
 		{"happyhorse-1.0-t2v", constant.ChannelTypeAli, "", ""},
 		{"seedance-2.0", constant.ChannelTypeVolcEngine, "", ""},
 		{"MiniMax-Hailuo-02", constant.ChannelTypeMiniMax, "", ""},
+		{"MiniMax-H3", constant.ChannelTypeMiniMax, "", ""},
+		{"MiniMax-H3-Max", constant.ChannelTypeOpenAI, "", ""},
+		{"h3-alias", constant.ChannelTypeMiniMax, `{"h3-alias":"MiniMax-H3"}`, ""},
 		{"custom", constant.ChannelTypeKling, "", ""},
 		{"alias", constant.ChannelTypeXai, `{"alias":"nested","nested":"grok-imagine-video"}`, ""},
 		{"private-id", constant.ChannelTypeOpenAI, "", "openai-video"},
@@ -116,6 +119,45 @@ func TestVideoPriceReferenceReusesTaskExpressionAndGroup(t *testing.T) {
 	q, err := calculateVideoPriceReference(ctx, ch, name, "default", "default", map[string]any{})
 	require.NoError(t, err)
 	require.Zero(t, q.Quota)
+}
+
+func TestH3PriceReferenceUsesNormalizedAliasParameters(t *testing.T) {
+	setupTokenModelHelperDB(t)
+	name := "h3-price-reference-test"
+	setVideoTestPrice(t, name, `param("resolution") == "2K" ? tier("video",param("duration") * 100000) : tier("other",0)`)
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":2}`))
+	mapping := `{"h3-price-reference-test":"MiniMax-H3"}`
+	ch := &model.Channel{Type: constant.ChannelTypeMiniMax, Group: "default", ModelMapping: &mapping}
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("POST", "/preflight", nil)
+	params := map[string]any{"prompt": "preview", "seconds": "5", "size": "2k", "aspect_ratio": "16:9"}
+	price, err := calculateVideoPriceReference(c, ch, name, "default", "default", params)
+	require.NoError(t, err)
+	require.Equal(t, 1.0, price.AmountUSD)
+	params["duration"] = 15
+	_, err = calculateVideoPriceReference(c, ch, name, "default", "default", params)
+	require.Error(t, err)
+}
+
+func TestVideoSubmittedTaskNeverAutomaticallyRetries(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("video_submission_started", true)
+	for _, status := range []int{429, 500, 502, 503, 504, 401} {
+		require.False(t, shouldRetryTaskRelay(c, 1, &dto.TaskError{StatusCode: status, Code: "upstream_error"}, 3))
+	}
+}
+
+func TestVideoPriceQuoteUsesAdapterDefaults(t *testing.T) {
+	setupTokenModelHelperDB(t)
+	name := "grok-imagine-video"
+	setVideoTestPrice(t, name, `tier("video",param("duration")*100000)`)
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
+	ch := &model.Channel{Type: constant.ChannelTypeXai, Group: "default"}
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("POST", "/preflight", nil)
+	q, err := calculateVideoPriceReference(c, ch, name, "default", "default", map[string]any{"prompt": "quote", "seconds": "6"})
+	require.NoError(t, err)
+	require.InDelta(t, .6, q.AmountUSD, .00001)
 }
 
 func TestVideoHistoryIsBoundedPrivateAndScoped(t *testing.T) {

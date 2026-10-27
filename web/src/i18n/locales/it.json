@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Risoluzione",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Questo modello imposta il prezzo di vendita del sito, non le capacità del modello. La fatturazione usa durata e fascia inviate. Usa una formula completa per contenuti in ingresso e costi aggiuntivi.",
+    "视频按秒模板": "Modello di prezzo video al secondo",
+    "视频按秒 / 表达式": "Video al secondo / Espressione",
+    "生成秒价表达式": "Genera formula al secondo",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Solo testo in video, fatturato sui secondi richiesti. Inserisci USD/secondo; moltiplicatori di gruppo e orari separati. Applica le modifiche per salvare. Nessuna generazione viene inviata.",
     "HTML 广告代码": "Codice HTML pubblicitario",
     "一个入口，多种模型": "Un’API, più modelli",
     "元衡 AI": "Yuanheng AI",

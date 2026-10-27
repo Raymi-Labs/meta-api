@@ -160,6 +160,24 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 		var bodyMap map[string]interface{}
 		if err := common.Unmarshal(cachedBody, &bodyMap); err == nil {
 			bodyMap["model"] = info.UpstreamModelName
+			if info.Action != constant.TaskActionRemix {
+				req, err := relaycommon.GetTaskRequest(c)
+				if err != nil {
+					return nil, err
+				}
+				seconds := req.Seconds
+				if seconds == "" && req.Duration > 0 {
+					seconds = strconv.Itoa(req.Duration)
+				}
+				if seconds == "" {
+					seconds = "4"
+				}
+				bodyMap["seconds"] = seconds
+				delete(bodyMap, "duration")
+				if req.Size == "" {
+					bodyMap["size"] = "720x1280"
+				}
+			}
 			if newBody, err := common.Marshal(bodyMap); err == nil {
 				return bytes.NewReader(newBody), nil
 			}
@@ -170,7 +188,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if strings.Contains(contentType, "multipart/form-data") {
 		formData, err := common.ParseMultipartFormReusable(c)
 		if err != nil {
-			return bytes.NewReader(cachedBody), nil
+			return nil, fmt.Errorf("invalid video multipart request: %w", err)
 		}
 		var buf bytes.Buffer
 		writer := multipart.NewWriter(&buf)
@@ -187,7 +205,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 			for _, fh := range fileHeaders {
 				f, err := fh.Open()
 				if err != nil {
-					continue
+					return nil, fmt.Errorf("cannot read video reference file")
 				}
 				ct := fh.Header.Get("Content-Type")
 				if ct == "" || ct == "application/octet-stream" {
@@ -198,7 +216,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 					f.Close()
 					f, err = fh.Open()
 					if err != nil {
-						continue
+						return nil, fmt.Errorf("cannot reopen video reference file")
 					}
 				}
 				h := make(textproto.MIMEHeader)
@@ -207,13 +225,18 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 				part, err := writer.CreatePart(h)
 				if err != nil {
 					f.Close()
-					continue
+					return nil, err
 				}
-				io.Copy(part, f)
+				_, copyErr := io.Copy(part, f)
 				f.Close()
+				if copyErr != nil {
+					return nil, fmt.Errorf("cannot copy video reference file")
+				}
 			}
 		}
-		writer.Close()
+		if err := writer.Close(); err != nil {
+			return nil, err
+		}
 		c.Request.Header.Set("Content-Type", writer.FormDataContentType())
 		return &buf, nil
 	}
@@ -315,6 +338,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Reason = "task failed"
 		}
 	default:
+		return nil, fmt.Errorf("unknown sora task status")
 	}
 	if resTask.Progress > 0 && resTask.Progress < 100 {
 		taskResult.Progress = fmt.Sprintf("%d%%", resTask.Progress)
@@ -328,6 +352,9 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {
 	var err error
 	if data, err = sjson.SetBytes(data, "id", task.TaskID); err != nil {
 		return nil, errors.Wrap(err, "set id failed")
+	}
+	if data, err = sjson.SetBytes(data, "task_id", task.TaskID); err != nil {
+		return nil, err
 	}
 	return data, nil
 }

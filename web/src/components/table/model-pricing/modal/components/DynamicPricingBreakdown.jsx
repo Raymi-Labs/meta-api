@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Avatar, Tag, Table, Typography } from '@douyinfe/semi-ui';
 import { IconPriceTag } from '@douyinfe/semi-icons';
 import { parseTiersFromExpr } from '../../../../../helpers';
@@ -101,14 +102,14 @@ export default function DynamicPricingBreakdown({
   const hasTiers = tiers && tiers.length > 0;
   const hasRules = ruleGroups && ruleGroups.length > 0;
 
-  if (!hasTiers && !hasRules) {
+  if (isVideoPriceExpression(billingExpr) || (!hasTiers && !hasRules)) {
     return (
       <div>
         <div className='flex items-center mb-3'>
           <Avatar size='small' color='amber' className='mr-2 shadow-md'>
             <IconPriceTag size={16} />
           </Avatar>
-          <Text className='text-lg font-medium'>{t('动态计费')}</Text>
+          <Text className='text-lg font-medium'>{t(isVideoPriceExpression(billingExpr) ? '视频按秒 / 表达式' : '动态计费')}</Text>
         </div>
         <div className='text-sm text-gray-500'>
           <code style={{ fontSize: 12, wordBreak: 'break-all' }}>{billingExpr}</code>

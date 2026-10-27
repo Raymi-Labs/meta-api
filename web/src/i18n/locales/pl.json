@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Rozdzielczość",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Ten szablon ustala cenę sprzedaży serwisu, a nie możliwości modelu. Opłata zależy od wysłanego czasu i poziomu. Dla materiałów wejściowych i kosztów dodatkowych użyj pełnego wyrażenia.",
+    "视频按秒模板": "Szablon ceny wideo za sekundę",
+    "视频按秒 / 表达式": "Wideo za sekundę / Wyrażenie",
+    "生成秒价表达式": "Generuj wyrażenie ceny za sekundę",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Tylko tekst na wideo, opłata za żądaną liczbę sekund. Wpisz USD/sekundę; mnożniki grupy i czasu stosowane osobno. Zastosuj zmiany, aby zapisać. Wideo nie jest generowane.",
     "HTML 广告代码": "Kod HTML reklamy",
     "一个入口，多种模型": "Jedno API, wiele modeli",
     "元衡 AI": "Yuanheng AI",

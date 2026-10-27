@@ -62,6 +62,22 @@ func TestModelPriceHelperTieredUsesPreloadedRequestInput(t *testing.T) {
 	require.Equal(t, common.QuotaPerUnit, info.TieredBillingSnapshot.QuotaPerUnit)
 }
 
+func TestTaskExplicitFixedPriceLocksSettlementUnit(t *testing.T) {
+	saved, _ := common.Marshal(ratio_setting.GetModelPriceCopy())
+	t.Cleanup(func() { require.NoError(t, ratio_setting.UpdateModelPriceByJSONString(string(saved))) })
+	require.NoError(t, ratio_setting.UpdateModelPriceByJSONString(`{"video-fixed-unit-test":0.2}`))
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	info := &relaycommon.RelayInfo{OriginModelName: "video-fixed-unit-test", UsingGroup: "default", UserGroup: "default"}
+	price, err := ModelPriceHelperTask(c, info)
+	require.NoError(t, err)
+	require.True(t, price.UsePrice)
+	require.Equal(t, 0.2, price.ModelPrice)
+	info.OriginModelName = "video-unset-unit-test"
+	price, err = ModelPriceHelperTask(c, info)
+	require.NoError(t, err)
+	require.False(t, price.UsePrice)
+}
+
 func TestModelPriceHelperTieredReservesDefaultCompletionWhenUnset(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	saved := billing_setting.TieredBundle{

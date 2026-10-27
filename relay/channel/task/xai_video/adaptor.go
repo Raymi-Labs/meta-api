@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -94,6 +95,19 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err := common.Unmarshal(body, &payload); err != nil {
 		return nil, errors.Wrap(err, "unmarshal_xai_video_request_failed")
 	}
+	if raw, ok := payload["duration"]; ok {
+		n, valid := numericInt(raw)
+		if !valid {
+			return nil, errors.New("invalid video duration")
+		}
+		payload["duration"] = n
+		if alias, exists := payload["seconds"]; exists {
+			m, valid := numericInt(alias)
+			if !valid || m != n {
+				return nil, errors.New("conflicting duration and seconds")
+			}
+		}
+	}
 	if info != nil && info.ChannelMeta != nil && strings.TrimSpace(info.UpstreamModelName) != "" {
 		payload["model"] = info.UpstreamModelName
 	}
@@ -101,6 +115,8 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 		if raw, exists := payload["seconds"]; exists {
 			if duration, ok := numericInt(raw); ok {
 				payload["duration"] = duration
+			} else {
+				return nil, errors.New("invalid seconds")
 			}
 		}
 	}
@@ -143,7 +159,7 @@ func numericInt(value any) (int, bool) {
 	case int64:
 		return int(typed), typed > 0
 	case float64:
-		return int(typed), typed > 0
+		return int(typed), typed > 0 && typed < float64(math.MaxInt) && typed == math.Trunc(typed)
 	case string:
 		v, err := strconv.Atoi(strings.TrimSpace(typed))
 		return v, err == nil && v > 0

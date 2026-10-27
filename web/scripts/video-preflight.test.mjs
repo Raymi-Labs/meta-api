@@ -6,6 +6,10 @@ import {
 } from '../src/helpers/videoTest.js';
 for (const model of [
   'grok-imagine-video-1.5',
+  'MiniMax-H3',
+  'org/MiniMax-H3-Max',
+  'MiniMax-H3-Highspeed',
+  'MiniMax-H3-Lite',
   'wan2.6-t2v',
   'veo3.1',
   'seedance-2.0',

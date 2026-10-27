@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Độ phân giải",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Mẫu này đặt giá bán của trang, không xác nhận khả năng mô hình. Tính phí theo thời lượng và mức thực tế gửi đi. Dùng biểu thức đầy đủ cho tài liệu đầu vào và chi phí bổ sung.",
+    "视频按秒模板": "Mẫu giá video theo giây",
+    "视频按秒 / 表达式": "Video theo giây / Biểu thức",
+    "生成秒价表达式": "Tạo biểu thức giá theo giây",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Chỉ tạo video từ văn bản, tính theo số giây đầu ra yêu cầu. Nhập USD/giây; hệ số nhóm và thời gian áp dụng riêng. Cần áp dụng thay đổi để lưu mẫu. Không gửi yêu cầu tạo video.",
     "HTML 广告代码": "Mã quảng cáo HTML",
     "一个入口，多种模型": "Một cổng, nhiều mô hình",
     "元衡 AI": "Yuanheng AI",

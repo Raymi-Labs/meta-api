@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useEffect, useMemo, useState } from 'react';
 import { API, showError, showSuccess } from '../../../../helpers';
+import { canUseVideoTemplate } from '../../../../helpers/videoPricingTemplate';
 import {
   combineBillingExpr,
   splitBillingExprAndRequestRules,
@@ -352,6 +353,7 @@ export const buildSummaryText = (model, t) => {
       ? `，${t('请求规则')}`
       : '';
   if (model.billingMode === 'tiered_expr') {
+    if (canUseVideoTemplate(model.name)) return `${t('视频按秒 / 表达式')}${requestRuleSuffix}`;
     const expr = model.billingExpr;
     if (!expr) return `${t('表达式计费')}${requestRuleSuffix}`;
     const tierCount = (expr.match(/tier\(/g) || []).length;
@@ -550,7 +552,7 @@ export const buildPreviewRows = (model, t) => {
         key: 'BillingExpr',
         label: 'ModelBillingExpr',
         value:
-          tierCount > 0
+          tierCount > 0 && !canUseVideoTemplate(model.name)
             ? `${tierCount} ${t('档')} — ${
                 finalBillingExpr.length > 60
                   ? finalBillingExpr.slice(0, 60) + '...'

@@ -1,5 +1,11 @@
 {
   "translation": {
+    "分辨率": "Resolution",
+    "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "This template sets the site selling price, not model capabilities. Billing uses outgoing duration and tier. Use a full expression for input media and other extra costs.",
+    "视频按秒模板": "Video per-second template",
+    "视频按秒 / 表达式": "Video per second / Expression",
+    "生成秒价表达式": "Generate per-second expression",
+    "仅文生视频，按请求输出秒数计费；填写 USD/秒，分组和时间倍率另算。生成模板后仍需应用更改，不提交视频。": "Text-to-video only, billed by requested output seconds. Enter USD/second; group and time multipliers apply separately. Apply changes to save the generated template. No video is submitted.",
     "HTML 广告代码": "HTML ad code",
     "一个入口，多种模型": "One API, multiple models",
     "元衡 AI": "Yuanheng AI",

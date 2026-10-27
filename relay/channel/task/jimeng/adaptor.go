@@ -171,6 +171,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, errors.Wrap(err, "convert request payload failed")
 	}
+	info.UpstreamModelName = body.ReqKey
 	data, err := common.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -203,6 +204,9 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 		taskErr = service.TaskErrorWrapper(fmt.Errorf("%s", jResp.Message), fmt.Sprintf("%d", jResp.Code), http.StatusInternalServerError)
 		return
 	}
+	if strings.TrimSpace(jResp.Data.TaskID) == "" {
+		return "", nil, service.TaskErrorWrapper(fmt.Errorf("jimeng submission missing task_id"), "invalid_response", http.StatusBadGateway)
+	}
 
 	ov := dto.NewOpenAIVideo()
 	ov.ID = info.PublicTaskID
@@ -224,8 +228,12 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 	if isNewAPIRelay(key) {
 		uri = fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncGetResult&Version=2022-08-31", a.baseURL)
 	}
+	reqKey, _ := body["upstream_model"].(string)
+	if strings.TrimSpace(reqKey) == "" {
+		reqKey = "jimeng_vgfm_t2v_l20"
+	} // Legacy tasks without persisted model.
 	payload := map[string]string{
-		"req_key": "jimeng_vgfm_t2v_l20", // This is fixed value from doc: https://www.volcengine.com/docs/85621/1544774
+		"req_key": reqKey,
 		"task_id": taskID,
 	}
 	payloadBytes, err := common.Marshal(payload)
@@ -404,6 +412,7 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq, in
 	if err := taskcommon.UnmarshalMetadata(req.Metadata, &r); err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
 	}
+	r.ReqKey = info.UpstreamModelName
 
 	// 即梦视频3.0 ReqKey转换
 	// https://www.volcengine.com/docs/85621/1792707
@@ -436,18 +445,23 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	if resTask.Code == 10000 {
 		taskResult.Code = 0
 	} else {
-		taskResult.Code = resTask.Code // todo uni code
-		taskResult.Reason = resTask.Message
-		taskResult.Status = model.TaskStatusFailure
-		taskResult.Progress = "100%"
+		return nil, fmt.Errorf("jimeng query returned code %d", resTask.Code)
 	}
 	switch resTask.Data.Status {
 	case "in_queue":
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
 	case "done":
+		if strings.TrimSpace(resTask.Data.VideoUrl) == "" {
+			return nil, fmt.Errorf("jimeng successful task missing video URL")
+		}
 		taskResult.Status = model.TaskStatusSuccess
 		taskResult.Progress = "100%"
+	case "generating":
+		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Progress = "50%"
+	default:
+		return nil, fmt.Errorf("unknown jimeng task status")
 	}
 	taskResult.Url = resTask.Data.VideoUrl
 	return &taskResult, nil

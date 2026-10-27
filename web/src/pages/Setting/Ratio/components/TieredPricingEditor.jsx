@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import H3SecondsPricing from './H3SecondsPricing';
+import { h3VideoProfiles } from '../../../../helpers/h3VideoPricing';
+import { canUseVideoTemplate } from '../../../../helpers/videoPricingTemplate';
+import VideoPricingTemplate from './VideoPricingTemplate';
 import {
   Banner,
   Button,
@@ -1360,6 +1364,7 @@ function LlmPromptHelper({ t, model }) {
 
 export default function TieredPricingEditor({ model, onExprChange, requestRuleExpr, onRequestRuleExprChange, t }) {
   const currentExpr = model?.billingExpr || '';
+  const isH3Video = canUseVideoTemplate(model?.name || '');
 
   const [editorMode, setEditorMode] = useState('visual');
   const [visualConfig, setVisualConfig] = useState(null);
@@ -1397,7 +1402,11 @@ export default function TieredPricingEditor({ model, onExprChange, requestRuleEx
 
   useEffect(() => {
     const parsed = tryParseVisualConfig(currentExpr);
-    if (parsed) {
+    if (isH3Video) {
+      setEditorMode('raw');
+      setRawExpr(combineBillingExpr(currentExpr, currentRequestRuleExpr) || currentExpr);
+      setVisualConfig(null);
+    } else if (parsed) {
       setEditorMode('visual');
       setVisualConfig(parsed);
       setRawExpr(currentExpr);
@@ -1504,7 +1513,15 @@ export default function TieredPricingEditor({ model, onExprChange, requestRuleEx
 
   return (
     <div>
-      <div style={{ marginBottom: 12 }}>
+      {!h3VideoProfiles[model?.name] && isH3Video && <VideoPricingTemplate key={model?.name} t={t} onApply={expr=>{onExprChange(expr);setRawExpr(combineBillingExpr(expr,currentRequestRuleExpr)||expr);setVisualConfig(null);setEditorMode('raw');}} />}
+      <H3SecondsPricing key={model?.name} model={model?.name} t={t}
+        onApply={(expr) => {
+          onExprChange(expr);
+          setRawExpr(combineBillingExpr(expr, currentRequestRuleExpr) || expr);
+          setVisualConfig(null);
+          setEditorMode('raw');
+        }} />
+      {!isH3Video && <div style={{ marginBottom: 12 }}>
         <RadioGroup
           type='button'
           size='small'
@@ -1514,15 +1531,15 @@ export default function TieredPricingEditor({ model, onExprChange, requestRuleEx
           <Radio value='visual'>{t('可视化编辑')}</Radio>
           <Radio value='raw'>{t('表达式编辑')}</Radio>
         </RadioGroup>
-      </div>
+      </div>}
 
-      <PresetSection applyPreset={applyPreset} t={t} />
+      {!isH3Video && <PresetSection applyPreset={applyPreset} t={t} />}
 
       <Card
         bodyStyle={{ padding: 16 }}
         style={{ marginBottom: 12, background: 'var(--semi-color-fill-0)' }}
       >
-        {editorMode === 'visual' ? (
+        {editorMode === 'visual' && !isH3Video ? (
           <VisualEditor
             visualConfig={visualConfig}
             onChange={handleVisualChange}
@@ -1590,7 +1607,7 @@ export default function TieredPricingEditor({ model, onExprChange, requestRuleEx
         )}
       </Card>
 
-      <Card
+      {!isH3Video && <Card
         bodyStyle={{ padding: 16 }}
         style={{ marginBottom: 12, background: 'var(--semi-color-fill-0)' }}
       >
@@ -1675,9 +1692,9 @@ export default function TieredPricingEditor({ model, onExprChange, requestRuleEx
             </div>
           )}
         </div>
-      </Card>
+      </Card>}
 
-      <LlmPromptHelper t={t} model={model} />
+      {!isH3Video && <LlmPromptHelper t={t} model={model} />}
 
     </div>
   );
