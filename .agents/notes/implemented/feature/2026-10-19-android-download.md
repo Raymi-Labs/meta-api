@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+元衡客户端仓库迁入 `Raymi-Labs/yuanheng-switch`，GitHub 备用链接使用公司仓库；原个人仓库由 GitHub 转移跳转兼容，主下载域与安装包名称不变。
+
 扩展现有公开下载页，在桌面区域之前显示独立 Android 卡片，固定为已验证的 0.1.0-alpha.1，显示 Android 10+ / ARM64、版本、大小、测试状态、安装提示和校验值。主链接走现有下载域的移动版本路径，GitHub 为备用。安卓信息与桌面接口加载/失败独立。原桌面三平台动态目录及备用源规则保持；自动更新说明限定为桌面版。复用公开页面的中文/英文词条、响应式样式和导航。
 
 现行 [桌面下载来源笔记](../../implemented/feature/2026-10-17-desktop-download-sources.md) 部分重叠，保留原精确地址边界；新增安卓版本独立由本篇负责。APK 分发由 yuanheng-switch 的移动分发工作流验证包摘要和签名后完成，官网使用已核验的固定版本路径。
