@@ -65,7 +65,7 @@ const officialDownloadLinks = (url, filename, version, definition) => {
       { label: 'R2', url: `https://download.meta-api.vip${path}` },
       {
         label: 'GitHub',
-        url: `https://github.com/nanashiwang/yuanheng-switch/releases/download/v${version}/${filename}`,
+        url: `https://github.com/Raymi-Labs/yuanheng-switch/releases/download/v${version}/${filename}`,
       },
     ],
   };

@@ -69,7 +69,7 @@ for (const [id, suffix] of [
     },
     {
       label: 'GitHub',
-      url: `https://github.com/nanashiwang/yuanheng-switch/releases/download/v1.2.3/${item.filename}`,
+      url: `https://github.com/Raymi-Labs/yuanheng-switch/releases/download/v1.2.3/${item.filename}`,
     },
   ]);
   assert.deepEqual(normalize({ ...item, url: result.url }), result);
