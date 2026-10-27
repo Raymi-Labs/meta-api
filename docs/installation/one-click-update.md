@@ -67,6 +67,14 @@ NEWAPI_GITHUB_REPOSITORY=Raymi-Labs/meta-api
 更新目标，不重写当前镜像、Compose、数据库、容器名和回滚记录，旧个人镜像仍可作为回滚目标。
 安装工具不等于升级应用。状态输出中的 `update_*_repository` 用于核对实际来源。
 
+更新时的“当前运行镜像（current）”是切换前的实际版本，“准备更新到（target）”才是本次目标。
+首次从个人镜像更新到公司镜像时，current 仍显示 `nanashiwang/new-api` 属于正常情况；成功后
+current 和 Compose 指向公司镜像，旧镜像保留在回退记录中。日志依次显示在线备份、临时库
+预检、应用切换、恢复包封存四个阶段。大型数据库备份可能需要数分钟，期间旧服务仍在线。
+旧工具的 `mysqldump: [Warning] Using a password on the command line interface can be insecure.`
+是密码传参警告，本身不代表备份失败；新工具从容器已有环境读取凭据，不再使用密码命令行参数，
+真正的转储错误仍显示并阻止继续更新。
+
 旧命令安装方式继续兼容（已有发布状态时不要重新 init）：
 
 ```bash

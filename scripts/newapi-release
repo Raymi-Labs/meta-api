@@ -609,7 +609,7 @@ actual_version() {
 
 schema_fingerprint() {
   local database_name="$1"
-  docker exec -e TARGET_DB="$database_name" "$MYSQL_CONTAINER" sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -Nse "
+  docker exec -e TARGET_DB="$database_name" "$MYSQL_CONTAINER" sh -c 'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET -Nse "
     SELECT CONCAT('\''C|'\'', TABLE_NAME, '\''|'\'', COLUMN_NAME, '\''|'\'', COLUMN_TYPE, '\''|'\'', IS_NULLABLE, '\''|'\'', COALESCE(COLUMN_DEFAULT, '\''<NULL>'\''), '\''|'\'', EXTRA)
     FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '\''$TARGET_DB'\'' ORDER BY TABLE_NAME, ORDINAL_POSITION;
     SELECT CONCAT('\''I|'\'', TABLE_NAME, '\''|'\'', INDEX_NAME, '\''|'\'', NON_UNIQUE, '\''|'\'', GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX))
@@ -622,7 +622,7 @@ cleanup_preflight() {
   [ -n "$PREFLIGHT_CONTAINER" ] && docker rm -f "$PREFLIGHT_CONTAINER" >/dev/null 2>&1
   if [ -n "$PREFLIGHT_DB" ] && [ -n "$PREFLIGHT_USER" ]; then
     docker exec -e TARGET_DB="$PREFLIGHT_DB" -e TARGET_USER="$PREFLIGHT_USER" "$MYSQL_CONTAINER" sh -c \
-      'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS \`$TARGET_DB\`; DROP USER IF EXISTS '\''$TARGET_USER'\''@'\''%'\'';"' \
+      'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET -e "DROP DATABASE IF EXISTS \`$TARGET_DB\`; DROP USER IF EXISTS '\''$TARGET_USER'\''@'\''%'\'';"' \
       >/dev/null 2>&1
   fi
   if [[ -n "$PREFLIGHT_WORK_DIR" && "$PREFLIGHT_WORK_DIR" == /tmp/newapi-preflight-* ]]; then
@@ -699,12 +699,12 @@ preflight_target() {
   mkdir -p "$PREFLIGHT_WORK_DIR"
 
   docker exec -e TARGET_DB="$PREFLIGHT_DB" -e TARGET_USER="$PREFLIGHT_USER" -e TARGET_PASSWORD="$PREFLIGHT_PASSWORD" "$MYSQL_CONTAINER" sh -c \
-    'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE \`$TARGET_DB\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER '\''$TARGET_USER'\''@'\''%'\'' IDENTIFIED BY '\''$TARGET_PASSWORD'\''; GRANT ALL PRIVILEGES ON \`$TARGET_DB\`.* TO '\''$TARGET_USER'\''@'\''%'\'';"'
+    'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET -e "CREATE DATABASE \`$TARGET_DB\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER '\''$TARGET_USER'\''@'\''%'\'' IDENTIFIED BY '\''$TARGET_PASSWORD'\''; GRANT ALL PRIVILEGES ON \`$TARGET_DB\`.* TO '\''$TARGET_USER'\''@'\''%'\'';"'
 
   docker exec "$MYSQL_CONTAINER" sh -c \
-    'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --no-data --skip-triggers --single-transaction --no-tablespaces "$MYSQL_DATABASE"' \
+    'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysqldump --user=root --protocol=SOCKET --no-data --skip-triggers --single-transaction --no-tablespaces "$MYSQL_DATABASE"' \
     | docker exec -i -e TARGET_DB="$PREFLIGHT_DB" "$MYSQL_CONTAINER" sh -c \
-      'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$TARGET_DB"'
+      'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET "$TARGET_DB"'
 
   for pass in $(seq 1 "$PREFLIGHT_PASSES"); do
     run_preflight_pass "$pass"
@@ -807,10 +807,11 @@ create_database_backup() {
   install -d -m 700 "$BACKUP_ROOT"
   mkdir -m 700 "$ACTIVE_BACKUP_DIR"
   copy_recovery_configuration
+  log "备份目录：$ACTIVE_BACKUP_DIR"
 
   temporary_dump="$ACTIVE_BACKUP_DIR/mysql.sql.gz.tmp"
   docker exec "$MYSQL_CONTAINER" sh -c \
-    'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --quick --routines --triggers --events --hex-blob --no-tablespaces "$MYSQL_DATABASE"' \
+    'MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysqldump --user=root --protocol=SOCKET --single-transaction --quick --routines --triggers --events --hex-blob --no-tablespaces "$MYSQL_DATABASE"' \
     | gzip -1 >"$temporary_dump"
   mv "$temporary_dump" "$ACTIVE_BACKUP_DIR/mysql.sql.gz"
   gzip -t "$ACTIVE_BACKUP_DIR/mysql.sql.gz"
@@ -1231,13 +1232,17 @@ command_update() {
   acquire_lock
   require_online_update_source
   require_no_snapshot_ddl_guard
+  log "更新来源：${IMAGE_REPOSITORY}（GitHub：${GITHUB_REPOSITORY}）"
   resolve_target "$requested"
 
   current_image="$(actual_image)"
   current_id="$(actual_image_id)"
   current_version="$(actual_version)"
-  log "current: $current_image ($current_version)"
-  log "target:  $TARGET_IMAGE ($TARGET_VERSION)"
+  log "当前运行镜像（current）：$current_image ($current_version)"
+  log "准备更新到（target）：$TARGET_IMAGE ($TARGET_VERSION)"
+  if [[ "$current_image" != "$IMAGE_REPOSITORY:"* && "$current_image" != "$IMAGE_REPOSITORY@"* ]]; then
+    log "当前运行镜像与更新源不同；更新成功后切换到上述目标，旧镜像保留用于回退。"
+  fi
 
   if [ "$current_id" = "$TARGET_ID" ]; then
     reconcile_current_target "$current_image" "$current_version"
@@ -1248,9 +1253,13 @@ command_update() {
     return 0
   }
 
+  log "[1/4] 在线备份数据库，旧服务继续运行；大型数据库可能需要数分钟，请等待备份完成。"
   create_database_backup "$current_version" "$TARGET_VERSION"
+  log "[2/4] 在临时数据库预检新版本，旧服务继续运行。"
   preflight_target
+  log "[3/4] 切换应用镜像并检查健康，MySQL/Redis 保持运行。"
   deploy_target "$ACTIVE_BACKUP_DIR/docker-compose.yml"
+  log "[4/4] 记录运行版本并校验、封存恢复包。"
   state_previous_image="$current_image"
   state_previous_id="$current_id"
   state_previous_version="$current_version"
@@ -1269,7 +1278,8 @@ command_update() {
       || log "WARNING: could not append backup sealing failure"
     die "application update is healthy, but recovery package sealing failed: $ACTIVE_BACKUP_DIR; MySQL dump retained, no complete SHA256SUMS marker; application was not rolled back"
   fi
-  log "update succeeded: $TARGET_IMAGE"
+  log "更新成功，当前运行：$TARGET_IMAGE ($TARGET_VERSION)"
+  log "回退镜像：${state_previous_image}；后续更新来源：$IMAGE_REPOSITORY"
 }
 
 command_rollback() {
