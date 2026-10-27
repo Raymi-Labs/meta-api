@@ -38,3 +38,5 @@ Status: implemented
 ## Consequences
 
 公司仓库独立承接后续提交、版本和镜像，原个人仓库保留历史使用关系。公司首版继续使用 compat 序列；应用运行行为不变。新仓库不自动继承个人仓库的 Secrets、Issues、Release 页面和包权限。首次构建没有缓存，正式发布必须核实 Linux 附件和镜像完成；旧目录兼容链接需保留到相关工具迁移完成。
+
+后续扩展见 [公司更新源与管理命令](2026-10-27-server-management-cli.md)：保留本篇原有边界，独立安装公司来源配置及管理工具；meta-api 包已获授权公开，不修改 Actions 允许名单、SHA 固定和主分支 PR 保护。

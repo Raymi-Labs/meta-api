@@ -54,3 +54,7 @@ bun scripts/release/check-policy.mjs
 python3 -B -m unittest discover -s scripts/release -p 'test_*.py' -v
 make verify-notes
 ```
+
+## Meta API 服务器管理包
+
+从 compat.101 起，公司 Release 另附 `meta-api-management-<版本>.tar.gz` 及 SHA256 校验，包含受保护发布引擎、meta-api 菜单/快捷入口脚本、公司更新源配置与安装说明。需独立安装，下载或发布应用镜像不会自动替换服务器运维工具。使用前核对校验值，安装步骤见 [一键更新](one-click-update.md)。

@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 import socket
+import shutil
+import sys
 import subprocess
 import tempfile
 import uuid
@@ -29,16 +31,29 @@ def main():
         root = Path(directory)
         command = root / "newapi-restart"
         command.symlink_to(Path(__file__).resolve().parents[1] / "newapi-release")
+        management = root / "meta-api"
+        shutil.copy2(Path(__file__).resolve().parents[1] / "meta-api", management)
+        (root / "newapi-release").symlink_to(Path(__file__).resolve().parents[1] / "newapi-release")
+        # The unchanged MySQL snapshot guard is covered separately by unit and
+        # real-MySQL tests. Only this synthetic guard call is stubbed here; all
+        # container lifecycle operations go to the actual Docker executable.
+        docker_path = shutil.which("docker")
+        wrapper = root / "docker"
+        wrapper.write_text(f"#!{sys.executable}\nimport os,sys\n"
+                           f"if sys.argv[1:3] == ['exec', '{name}-guard']:\n    print(0)\n"
+                           f"else:\n    os.execv({docker_path!r}, [{docker_path!r}, *sys.argv[1:]])\n")
+        wrapper.chmod(0o755)
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
         env = {**os.environ, "NEWAPI_APP_DIR": directory, "NEWAPI_STATE_DIR": str(root / "state"),
-               "NEWAPI_CONTAINER_NAME": name, "NEWAPI_LOCK_FILE": str(root / "release.lock"),
+               "PATH": str(root) + os.pathsep + os.environ["PATH"],
+               "NEWAPI_MYSQL_CONTAINER": name + "-guard", "NEWAPI_CONTAINER_NAME": name, "NEWAPI_LOCK_FILE": str(root / "release.lock"),
                "NEWAPI_HEALTH_URL": f"http://127.0.0.1:{port}/api/status",
                "NEWAPI_HEALTH_TIMEOUT": "20", "NEWAPI_RESTART_STOP_TIMEOUT": "1"}
 
-        def invoke(*arguments, expect=0):
-            result = subprocess.run(["bash", str(command), *arguments], env=env,
+        def invoke(*arguments, expect=0, cli=None):
+            result = subprocess.run(["bash", str(cli or command), *arguments], env=env,
                                     text=True, capture_output=True, timeout=50)
             print(result.stdout, end="", flush=True)
             if result.returncode != expect:
@@ -71,9 +86,14 @@ def main():
             started = inspect()["State"]["StartedAt"]
             invoke()  # Running -> restart.
             assert inspect()["State"]["StartedAt"] != started
-            docker("stop", "--timeout", "1", name)
+            started = inspect()["State"]["StartedAt"]
+            invoke("start", cli=management)
+            assert inspect()["State"]["StartedAt"] == started
+            invoke("stop", "--dry-run", cli=management)
+            assert inspect()["State"]["Status"] == "running"
+            invoke("stop", "--yes", cli=management)
             assert inspect()["State"]["Status"] == "exited"
-            invoke()  # Explicit stop -> start.
+            invoke("start", cli=management)  # Explicit stop -> start.
             docker("kill", name)
             assert inspect()["State"]["ExitCode"] == 137
             invoke()  # SIGKILL exit -> start.
@@ -86,8 +106,8 @@ def main():
             final = inspect()
             assert final["State"]["StartedAt"] == started
             assert final["Id"] == initial["Id"] and final["Image"] == initial["Image"]
-            assert len((root / "state" / "history.tsv").read_text().splitlines()) == 4
-            print("PASS: created, running restart, stopped, SIGKILL, lock conflict, dry-run; same ID/image", flush=True)
+            assert len((root / "state" / "history.tsv").read_text().splitlines()) == 6
+            print("PASS: created, running restart, idempotent start, guarded stop/start, SIGKILL, lock conflict, dry-run; same ID/image", flush=True)
         except BaseException:
             if container_created:
                 print("Fixture logs:", docker("logs", "--tail", "30", name, check=False).stdout, flush=True)

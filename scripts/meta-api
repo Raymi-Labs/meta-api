@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+  cat <<'EOF'
+Meta API 服务器管理
+  meta-api                     打开交互菜单
+  meta-api status               查看状态与更新源
+  meta-api update [目标]        备份、预检后更新（默认 latest）
+  meta-api start                启动当前应用，已运行时不重启
+  meta-api restart              同版本重启并检查健康
+  meta-api stop [--yes]         停止应用，MySQL/Redis 保持运行
+  meta-api rollback             回退上一应用镜像
+  meta-api-update               等同 meta-api update
+  meta-api-start/restart/stop/rollback  对应快捷入口
+更新、启动、重启、停止、回退均支持 --dry-run；停止后的应用须先 start 再更新。
+EOF
+}
+
+confirm_action() {
+  local answer
+  [ -t 0 ] || { printf '%s\n' '需要交互确认；停止脚本调用请显式使用 --yes。' >&2; return 1; }
+  printf '%s [y/N]: ' "$1"
+  IFS= read -r answer || return 1
+  [[ "$answer" == y || "$answer" == Y ]]
+}
+
+main() {
+  local invoked command_name selected arg confirmed preview
+  local engine
+  invoked="$(basename "$0")"
+  case "$invoked" in
+    meta-api-update|meta-api-start|meta-api-restart|meta-api-stop|meta-api-rollback) command_name="${invoked#meta-api-}" ;;
+    *) command_name="${1:-menu}"; [ "$#" -eq 0 ] || shift ;;
+  esac
+  case "$command_name" in
+    help|-h|--help) usage; return 0 ;;
+    menu|status|update|start|restart|stop|rollback) ;;
+    *) usage >&2; return 2 ;;
+  esac
+  if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then usage; return 0; fi
+  if [ "$(id -u)" -ne 0 ]; then
+    exec sudo -- /usr/local/bin/meta-api "$command_name" "$@"
+  fi
+  engine="$(cd -- "$(dirname -- "$0")" && pwd)/newapi-release"
+  [ -x "$engine" ] || { printf '找不到已安装的发布工具：%s\n' "$engine" >&2; return 1; }
+  if [ "$command_name" = menu ]; then
+    [ "$#" -eq 0 ] || { usage >&2; return 2; }
+    [ -t 0 ] && [ -t 1 ] || { usage; return 2; }
+    while true; do
+      printf '\nMeta API 管理\n1) 查看状态\n2) 更新\n3) 启动\n4) 重启\n5) 停止\n6) 回退\n0) 退出\n请选择 [0-6]: '
+      IFS= read -r selected || return 0
+      case "$selected" in
+        0) return 0 ;;
+        1) "$engine" status || printf '状态查询失败，请检查上方提示。\n' ;;
+        2|3|4|5|6)
+          case "$selected" in
+            2) command_name=update ;;
+            3) command_name=start ;;
+            4) command_name=restart ;;
+            5) command_name=stop ;;
+            6) command_name=rollback ;;
+          esac
+          if confirm_action "确认执行 ${command_name}？更新/重启/停止/回退可能中断请求"; then
+            if [ "$command_name" = stop ]; then
+              "$engine" stop --yes || printf '停止未完成，请检查上方提示。\n'
+            else
+              "$engine" "$command_name" || printf '操作未完成，请检查上方提示。\n'
+            fi
+          else
+            printf '已取消。\n'
+          fi ;;
+        *) printf '请输入 0 到 6。\n' ;;
+      esac
+    done
+  fi
+  if [ "$command_name" = stop ]; then
+    confirmed=0; preview=0
+    for arg in "$@"; do
+      case "$arg" in
+        --yes) confirmed=1 ;;
+        --dry-run) preview=1 ;;
+        *) usage >&2; return 2 ;;
+      esac
+    done
+    if [ "$confirmed" -eq 0 ] && [ "$preview" -eq 0 ]; then
+      confirm_action '停止应用会中断当前请求，确认停止？' || { printf '已取消。\n'; return 1; }
+      set -- --yes "$@"
+    fi
+  fi
+  exec "$engine" "$command_name" "$@"
+}
+
+main "$@"

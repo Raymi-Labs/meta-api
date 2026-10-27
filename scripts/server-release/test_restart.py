@@ -32,10 +32,12 @@ if operation=="inspect":
     fields={".Id":data["id"], ".Image":data["image"], ".State.Status":data["status"],
             ".State.StartedAt":data["started"], ".RestartCount":str(data["restarts"])}
     print(" ".join(fields[v.strip("{}")] for v in args[2].split()))
-elif operation in ("start","restart"):
+elif operation in ("start","restart","stop"):
     assert args[-1]==data["id"], "operate on inspected immutable container ID"
     if os.environ.get("CASE")=="operation-error": sys.exit(1)
-    data.update(status="running",started="new-start",acted=True)
+    data.update(status="exited" if operation=="stop" else "running",started="new-start",acted=True)
+    if os.environ.get("CASE")=="stop-still-running": data["status"]="running"
+    if os.environ.get("CASE")=="stop-replaced": data["id"]="replacement-container"
     path.write_text(json.dumps(data))
 else:
     raise RuntimeError("unexpected Docker action: "+str(args))
@@ -47,7 +49,7 @@ from pathlib import Path
 args=sys.argv[1:]
 assert args.pop(0).startswith("--kill-after=")
 assert int(args.pop(0))>0
-if os.environ.get("CASE")=="operation-timeout" and args[:2] in (["docker","start"],["docker","restart"]):
+if os.environ.get("CASE")=="operation-timeout" and args[:2] in (["docker","start"],["docker","restart"],["docker","stop"]):
     with (Path(os.environ["NEWAPI_APP_DIR"])/"events").open("a") as out: out.write("operation-timeout\n")
     sys.exit(124)
 os.execvp(args[0], args)
@@ -106,6 +108,66 @@ class RestartTests(unittest.TestCase):
         self.assertEqual(data["id"], self.data["id"])
         self.assertEqual(data["image"], self.data["image"])
         self.assertIn("\tsuccess\t", (self.state.parent / "history.tsv").read_text())
+
+    def test_start_running_checks_health_without_restart(self):
+        self.command = RELEASE
+        self.data['status'] = 'running'
+        self.write_runtime()
+        before = (self.root / 'runtime.json').read_bytes()
+        result = self.run_cli('start')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('操作=check', result.stdout)
+        self.assertEqual((self.root / 'runtime.json').read_bytes(), before)
+        self.assertNotIn('docker:restart', self.events)
+        self.assertNotIn('docker:exec', self.events)
+
+    def test_stop_requires_confirmation_and_dry_run_is_inert(self):
+        self.command = RELEASE
+        self.data['status'] = 'running'
+        self.write_runtime()
+        before = (self.root / 'runtime.json').read_bytes()
+        self.assertNotEqual(self.run_cli('stop').returncode, 0)
+        self.assertEqual(self.run_cli('stop', '--dry-run').returncode, 0)
+        self.assertEqual((self.root / 'runtime.json').read_bytes(), before)
+        self.assertFalse((self.state.parent / 'history.tsv').exists())
+
+    def test_stop_only_application_and_start_same_container(self):
+        self.command = RELEASE
+        self.data['status'] = 'running'
+        self.write_runtime()
+        result = self.run_cli('stop', '--yes')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('docker:stop --timeout 2 same-container', self.events)
+        self.assertNotIn('docker:exec', self.events)
+        self.assertEqual(json.loads((self.root / 'runtime.json').read_text())['status'], 'exited')
+        self.assertIn('\tstarted\t', (self.state.parent / 'history.tsv').read_text())
+        self.assertIn('\tsuccess\t', (self.state.parent / 'history.tsv').read_text())
+        self.assert_success(self.run_cli('start'), 'start')
+
+    def test_stop_errors_timeout_and_unconfirmed_result_fail(self):
+        self.command = RELEASE
+        for case in ('operation-error', 'operation-timeout', 'stop-still-running', 'stop-replaced'):
+            with self.subTest(case=case):
+                self.data['status'] = 'running'
+                self.write_runtime()
+                result = self.run_cli('stop', '--yes', CASE=case)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('停止未完成', result.stderr)
+                self.assertIn('\tfailed\t', (self.state.parent / 'history.tsv').read_text())
+
+    def test_stop_shares_lock_and_rejects_unsupported_state(self):
+        self.command = RELEASE
+        self.data['status'] = 'running'
+        self.write_runtime()
+        with (self.root / 'release.lock').open('w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result = self.run_cli('stop', '--yes')
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn('docker:stop', self.events)
+        self.data['status'] = 'paused'
+        self.write_runtime()
+        self.assertNotEqual(self.run_cli('stop', '--yes').returncode, 0)
+        self.assertNotIn('docker:stop', self.events)
 
     def test_stopped_container_starts_with_old_restart_count_and_fatal_logs(self):
         self.assert_success(self.run_cli(), "start")

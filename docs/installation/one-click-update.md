@@ -4,7 +4,70 @@
 `latest`，确认它对应 GitHub `main` 的最新提交，再将 Compose 固定到不可变的
 `sha-xxxxxxx` 镜像。
 
+## Meta API 管理入口
+
+公司服务器安装后，直接输入 `meta-api` 打开菜单：状态、更新、启动、重启、停止、回退。
+普通 sudo 用户由固定的 `/usr/local/bin/meta-api` 提权；交互变更操作会询问确认，空输入默认取消。
+也可直接使用：
+
+```bash
+meta-api status
+meta-api-update                 # 等同 meta-api update
+meta-api start                  # 已运行时只检查健康，不重启
+meta-api restart                # 同版本恢复/重启
+meta-api stop                   # 确认后仅停止应用
+meta-api rollback               # 使用已记录的上一镜像
+meta-api-update --dry-run       # 拉取和解析目标，但不部署/备份
+meta-api-stop --dry-run         # 只预览
+```
+
+`meta-api-start`、`meta-api-restart`、`meta-api-stop`、`meta-api-rollback` 为对应快捷入口。
+自动脚本停止须显式 `meta-api stop --yes`。所有变更共用原发布锁，仅操作已核实 ID 的应用；
+MySQL/Redis 保持运行。stop 会中断请求，不是更新的前置步骤；停止后先 start 恢复在线再更新。
+stop 保留原 restart policy，主机或 Docker daemon 重启可能使应用自动启动，不适合永久退役。
+
 ## 安装
+
+从已验证的公司发布源码或 Release 的 `meta-api-management-<版本>.tar.gz` 解包后安装。
+应先备份现有脚本与 `/etc/meta-api/release.conf`，安装期间持有 `/run/newapi-release.lock`，
+避免与更新/恢复并发。以下在 root shell 内执行：
+
+```bash
+# 复用已有锁文件，不删除锁或更改 /run 权限；若被占用则退出并等维护完成。
+exec 9>>/run/newapi-release.lock
+flock -n 9 || exit 1
+bash -n scripts/newapi-release scripts/meta-api
+install -m 755 scripts/newapi-release /usr/local/bin/newapi-release.next
+mv /usr/local/bin/newapi-release.next /usr/local/bin/newapi-release
+install -m 755 scripts/meta-api /usr/local/bin/meta-api.next
+mv /usr/local/bin/meta-api.next /usr/local/bin/meta-api
+for command in update start restart stop rollback; do
+  ln -sfn /usr/local/bin/meta-api "/usr/local/bin/meta-api-$command"
+done
+install -d -m 755 -o root -g root /etc/meta-api
+install -m 644 -o root -g root scripts/server-release/company-release.conf /etc/meta-api/release.conf.next
+mv /etc/meta-api/release.conf.next /etc/meta-api/release.conf
+flock -u 9
+exec 9>&-
+meta-api status
+meta-api-update --dry-run
+```
+
+配置文件仅允许以下两个键，按数据解析而不执行 shell；文件及其父目录必须安全、由 root 管理，
+不能由普通用户写入或使用符号链接。缺失默认文件时保留原个人源兼容行为，显式指定
+`NEWAPI_RELEASE_CONFIG` 时缺失/无效配置直接报错；显式 `NEWAPI_IMAGE_REPOSITORY` /
+`NEWAPI_GITHUB_REPOSITORY` 环境变量仍优先，隔离演练可使用。
+
+```text
+NEWAPI_IMAGE_REPOSITORY=ghcr.io/raymi-labs/meta-api
+NEWAPI_GITHUB_REPOSITORY=Raymi-Labs/meta-api
+```
+
+公司镜像公开，无需在服务器保存个人 GitHub 凭据。新旧命令读取同一配置；迁移只改变未来
+更新目标，不重写当前镜像、Compose、数据库、容器名和回滚记录，旧个人镜像仍可作为回滚目标。
+安装工具不等于升级应用。状态输出中的 `update_*_repository` 用于核对实际来源。
+
+旧命令安装方式继续兼容（已有发布状态时不要重新 init）：
 
 ```bash
 install -m 755 scripts/newapi-release /usr/local/bin/newapi-release
@@ -131,7 +194,7 @@ newapi-release status
 
 ```bash
 python3 -B -m unittest discover -s scripts/server-release -p 'test_*.py' -v
-bash -n scripts/newapi-release
+bash -n scripts/newapi-release scripts/meta-api
 bash -n scripts/server-release/retired-entrypoint.sh
 ```
 
@@ -147,4 +210,4 @@ python3 -B scripts/server-release/exercise-restart.py --execute --fixture-image 
 
 该脚本只操作随机命名的 HTTP 测试容器及独立网络，无生产挂载，端口只绑定回环地址，
 不拉取镜像；覆盖创建后启动、运行中重启、手动停止、SIGKILL 后恢复、锁冲突及预览，
-最后清理测试资源。命令替身回归与真实 Docker 演练分别验证不同层面的行为。
+新增菜单入口的 start 幂等性和 stop/start；最后清理测试资源。未改动的 MySQL 快照锁查询在此演练使用独立命令替身，绝不读取生产 MySQL；其真实锁行为由 release-safety 的 MySQL 测试覆盖。命令替身回归与真实 Docker 演练分别验证不同层面的行为。
