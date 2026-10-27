@@ -99,6 +99,17 @@ func TestDisplayVendorInference(t *testing.T) {
 	tests := []struct{ models, mapping, want string }{
 		{"deepseek-ai/DeepSeek-V4.1-Flash", "", "deepseek"},
 		{"gpt-4o,o3-mini", "", "openai"},
+		{"codex-auto-review", "", "openai"},
+		{"  CODEX-AUTO-REVIEW  ", "", "openai"},
+		{"codex-auto-review,gpt-6.1-sol", "", "openai"},
+		{"codex-auto-review,gpt-6.1-sol", `{"gpt-6.1-sol":"codex-auto-review"}`, "openai"},
+		{"review-alias", `{"review-alias":"codex-auto-review"}`, "openai"},
+		{"codex-auto-review,kimi-k3", "", ""},
+		{"codex-auto-review,unknown", "", ""},
+		{"codex", "", ""},
+		{"codex-other", "", ""},
+		{"notcodex-auto-review", "", ""},
+		{"codex-auto-review-extra", "", ""},
 		{"anthropic/claude-sonnet-4", "", "anthropic"},
 		{"gemini-2.5-pro", "", "google"},
 		{"Qwen/Qwen3-32B", "", "qwen"},
@@ -140,5 +151,34 @@ func TestDisplayVendorInference(t *testing.T) {
 			require.EqualValues(t, 1, CountChannelCategories([]*Channel{c})[category.Key])
 			require.EqualValues(t, 1, CountChannelVendors([]*Channel{c})[vendor])
 		})
+	}
+}
+
+func TestCodexAutoReviewChannelCategories(t *testing.T) {
+	protocol, explicit := ChannelVendorProtocol, "moonshot"
+	mapping := `{"gpt-6.1-sol":"codex-auto-review"}`
+	channels := []*Channel{
+		{Id: 1, Type: constant.ChannelTypeOpenAI, Models: "codex-auto-review,gpt-6.1-sol", ModelMapping: &mapping},
+		{Id: 2, Type: constant.ChannelTypeOpenAI, Models: "codex-auto-review,kimi-k3"},
+		{Id: 3, Type: constant.ChannelTypeOpenAI, Models: "codex-auto-review", ChannelVendor: &protocol},
+		{Id: 4, Type: constant.ChannelTypeOpenAI, Models: "codex-auto-review", ChannelVendor: &explicit},
+	}
+
+	require.Equal(t, map[string]int64{
+		"all": 4, "vendor:openai": 1, "type:1": 2, "vendor:moonshot": 1,
+	}, CountChannelCategories(channels))
+	for categoryKey, wantIDs := range map[string][]int{
+		"vendor:openai": {1}, "type:1": {2, 3}, "vendor:moonshot": {4},
+	} {
+		category, err := ParseChannelCategory(categoryKey)
+		require.NoError(t, err)
+		var ids []int
+		for _, channel := range FilterChannelsByCategory(channels, category) {
+			ids = append(ids, channel.Id)
+		}
+		require.Equal(t, wantIDs, ids, categoryKey)
+	}
+	for _, channel := range channels {
+		require.Equal(t, constant.ChannelTypeOpenAI, channel.Type)
 	}
 }
