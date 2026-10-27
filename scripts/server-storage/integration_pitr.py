@@ -43,7 +43,7 @@ def snapshot(server, config, work, source_uuid):
 def run(work):
     os.chdir(work)  # Local crypt backend is relative; no production path exists.
     config = work / "rclone.conf"
-    obscured = subprocess.run(["rclone", "obscure", secrets.token_urlsafe(32)], check=True, stdout=subprocess.PIPE).stdout.decode().strip()
+    obscured = subprocess.run(["rclone", "obscure", "--", secrets.token_urlsafe(32)], check=True, stdout=subprocess.PIPE).stdout.decode().strip()
     config.write_text("[local]\ntype=local\n[crypt]\ntype=crypt\nremote=local:objects\npassword=" + obscured + "\n")
     config.chmod(0o600)
     with restore.backup.Processes() as processes:

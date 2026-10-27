@@ -27,9 +27,9 @@ class RcloneIntegrationTests(unittest.TestCase):
         self.objects = self.base / "objects"
         self.objects.mkdir(mode=0o700)
         self.config = self.base / "rclone.conf"
-        # Only randomly generated throwaway test credentials are used.
-        password = secrets.token_urlsafe(32)
-        obscured = subprocess.run(["rclone", "obscure", password], check=True, stdout=subprocess.PIPE,
+        # Exercise leading '-' as data using only throwaway test credentials.
+        password = "-" + secrets.token_urlsafe(32)
+        obscured = subprocess.run(["rclone", "obscure", "--", password], check=True, stdout=subprocess.PIPE,
                                   stderr=subprocess.DEVNULL, text=True, timeout=15).stdout.strip()
         self.config.write_text("[backing]\ntype = local\n\n[vault]\ntype = crypt\n"
                                f"remote = backing:{self.objects}\npassword = {obscured}\n")

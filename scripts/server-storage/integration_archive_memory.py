@@ -78,7 +78,7 @@ def run(work):
     datadir.mkdir(mode=0o700)
     row_start, expected_sha = fixture(datadir / FILE)
     source = FileSource(datadir)
-    obscured = subprocess.run(["rclone", "obscure", secrets.token_urlsafe(32)],
+    obscured = subprocess.run(["rclone", "obscure", "--", secrets.token_urlsafe(32)],
                               check=True, stdout=subprocess.PIPE).stdout.decode().strip()
     config = work / "rclone.conf"
     config.write_text("[local]\ntype=local\n[crypt]\ntype=crypt\nremote=local:objects\npassword=" + obscured + "\n")
