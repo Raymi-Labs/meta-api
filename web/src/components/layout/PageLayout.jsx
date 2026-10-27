@@ -20,7 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 import HeaderBar from './headerbar';
 import { Layout } from '@douyinfe/semi-ui';
 import App from '../../App';
-import FooterBar from './Footer';
 import ErrorBoundary from '../common/ErrorBoundary';
 import React, {
   lazy,
@@ -59,12 +58,6 @@ const PageLayout = () => {
 
   const isConsoleRoute = /^\/console(?:\/|$)/i.test(location.pathname);
   const isDocsRoute = /^\/docs(?:\/|$)/i.test(location.pathname);
-  const isAuthRoute = /^\/(?:login|register)\/?$/i.test(location.pathname);
-  const shouldHideFooter =
-    isConsoleRoute ||
-    isAuthRoute ||
-    location.pathname === '/pricing' ||
-    isModelDetailPath(location.pathname);
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
@@ -259,16 +252,6 @@ const PageLayout = () => {
             </ErrorBoundary>
             <UserOnboarding />
           </Content>
-          {!shouldHideFooter && (
-            <Layout.Footer
-              style={{
-                flex: '0 0 auto',
-                width: '100%',
-              }}
-            >
-              <FooterBar />
-            </Layout.Footer>
-          )}
         </Layout>
       </Layout>
     </Layout>
