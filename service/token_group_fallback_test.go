@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -17,8 +18,11 @@ import (
 )
 
 func TestPreferredGroupFallback(t *testing.T) {
+	oldRatios := ratio_setting.GroupRatio2JSONString()
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"primary":1,"backup":3,"last":5,"private":7}`))
 	oldAuto, oldUsable := setting.AutoGroups2JsonString(), setting.UserUsableGroups2JSONString()
 	t.Cleanup(func() {
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldRatios))
 		require.NoError(t, setting.UpdateAutoGroupsByJsonString(oldAuto))
 		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(oldUsable))
 	})
@@ -53,6 +57,18 @@ func TestPreferredGroupFallback(t *testing.T) {
 				common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, true) // Previously ignored for fixed tokens.
 				return &RetryParam{Ctx: c, TokenGroup: "primary", ModelName: "fallback-model", Retry: common.GetPointer(0)}
 			}
+			scoped := param(true)
+			common.SetContextKey(scoped.Ctx, constant.ContextKeyTokenRoutingConfig, `{"groups":["primary","backup"],"model_groups":{"fallback-model":["backup"]}}`)
+			scopedChannel, scopedGroup, scopedErr := CacheGetRandomSatisfiedChannel(scoped)
+			require.NoError(t, scopedErr)
+			require.Equal(t, 2, scopedChannel.Id)
+			require.Equal(t, "backup", scopedGroup)
+			scoped.ExcludeChannels = []int{2}
+			scoped.IncreaseRetry()
+			scopedChannel, _, scopedErr = CacheGetRandomSatisfiedChannel(scoped)
+			require.NoError(t, scopedErr)
+			require.Nil(t, scopedChannel, "neither the primary group nor global auto groups may escape the model scope")
+			require.Equal(t, 1, scoped.GetRetry())
 			p := param(true)
 			channel, group, err := CacheGetRandomSatisfiedChannel(p)
 			require.NoError(t, err)

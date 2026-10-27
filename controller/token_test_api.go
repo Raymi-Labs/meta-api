@@ -8,12 +8,14 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 )
 
 type tokenTestRequest struct {
 	Model string `json:"model"`
+	Group string `json:"group"`
 }
 
 func GetTokenModels(c *gin.Context) {
@@ -24,9 +26,10 @@ func GetTokenModels(c *gin.Context) {
 	fallback, _ := strconv.ParseBool(c.Query("auto_group_fallback"))
 
 	var (
-		models []string
-		token  *model.Token
-		err    error
+		models     []string
+		token      *model.Token
+		err        error
+		testGroups []string
 	)
 
 	if tokenID != "" {
@@ -41,9 +44,28 @@ func GetTokenModels(c *gin.Context) {
 			common.ApiError(c, tokenErr)
 			return
 		}
+		testGroups, err = tokenCatalogGroups(userId, token)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		token, err = scopedTokenForTest(userId, token, requestedGroup)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
 		models, err = resolveTokenAllowedModels(userId, token)
 	} else {
-		models, err = resolveRequestedTokenModels(userId, requestedGroup, fallback)
+		if raw := c.Query("routing_config"); raw != "" {
+			token = &model.Token{Group: requestedGroup, RoutingConfig: raw}
+			if err := tokenRoutingDraft(c, token); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+			models, err = resolveTokenAllowedModels(userId, token)
+		} else {
+			models, err = resolveRequestedTokenModels(userId, requestedGroup, fallback)
+		}
 	}
 	if err != nil {
 		common.ApiError(c, err)
@@ -60,6 +82,7 @@ func GetTokenModels(c *gin.Context) {
 			"success": true,
 			"message": "",
 			"data":    modelOptions,
+			"groups":  testGroups,
 		})
 		return
 	}
@@ -113,6 +136,20 @@ func TestToken(c *gin.Context) {
 		return
 	}
 	userCache, err := model.GetUserCache(userId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	// Check the exact requested model before producing a narrowed test token;
+	// wildcard aliases in the catalog must not erase an exact model override.
+	if requestedGroup := strings.TrimSpace(req.Group); requestedGroup != "" && requestedGroup != "*" && token.RoutingConfig != "" {
+		groups, scopeErr := service.TokenConfiguredGroups(userCache.Group, token, req.Model)
+		if scopeErr != nil || !common.StringsContains(groups, requestedGroup) {
+			common.ApiError(c, fmt.Errorf("该模型不允许使用所选测试分组"))
+			return
+		}
+	}
+	token, err = scopedTokenForTest(userId, token, req.Group)
 	if err != nil {
 		common.ApiError(c, err)
 		return

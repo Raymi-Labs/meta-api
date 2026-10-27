@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { readTokenRouting } from './tokenRouting';
 import React from 'react';
 import {
   Button,
@@ -93,6 +94,14 @@ const renderStatus = (text, record, t) => {
 
 // 渲染分组列
 const renderGroupColumn = (text, record, t) => {
+  if (record?.routing_config)
+    return (
+      <Space wrap spacing={4}>
+        {readTokenRouting(record.routing_config).groups.map((group) => (
+          <Tag key={group}>{group}</Tag>
+        ))}
+      </Space>
+    );
   if (text === 'auto') {
     return (
       <Tooltip
@@ -128,11 +137,13 @@ const renderGroupColumn = (text, record, t) => {
 const renderGroupRatio = (record, t) => {
   const ratio = record?.group_ratio;
   const isFixed =
+    !record?.routing_config &&
     record?.group_ratio_status === 'fixed' &&
     typeof ratio === 'number' &&
     Number.isFinite(ratio) &&
     ratio >= 0;
-  const isAuto = record?.group_ratio_status === 'auto';
+  const isAuto =
+    record?.group_ratio_status === 'auto' || !!record?.routing_config;
   const label = isFixed ? `${ratio}x` : isAuto ? t('自动') : '—';
   const hint =
     isFixed &&

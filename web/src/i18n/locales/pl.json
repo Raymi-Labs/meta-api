@@ -1,5 +1,15 @@
 {
   "translation": {
+    "测试分组": "Grupa testowa",
+    "按 Key 默认范围": "Domyślny zakres Key",
+    "选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。": "Wyświetlane i testowane są tylko dozwolone modele wybranej grupy, bez zmiany grupy.",
+    "请为 Key 和每条模型规则选择有效分组": "Wybierz prawidłowe grupy dla Key i każdej reguły modelu",
+    "按模型配置多个分组": "Konfiguruj wiele grup według modelu",
+    "留空允许所选分组内全部模型；选择多个模型后可分别指定分组。": "Pozostaw puste dla wszystkich modeli wybranych grup lub wybierz modele i przypisz grupy.",
+    "可用分组（可多选，按选择顺序路由）": "Dostępne grupy (wiele, routing w kolejności wyboru)",
+    "仅在所选分组内自动路由和重试，按实际使用分组计费；所有模型共用此 Key 的额度。": "Routing i ponowienia pozostają w wybranych grupach. Opłata zależy od użytej grupy; wszystkie modele współdzielą limit tego Key.",
+    "继承此 Key 的全部可用分组": "Dziedzicz wszystkie dostępne grupy tego Key",
+    "原分组已移除，请重新指定分组或清除规则以继承。": "Pierwotne grupy zostały usunięte. Przypisz grupy ponownie lub wyczyść regułę, aby dziedziczyć.",
     "同步模型能力": "Synchronizuj możliwości modeli",
     "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Synchronizuje kontekst i modalności z models.dev i katalogu społeczności. Domyślnie sprawdza codziennie; wartości ręczne mają pierwszeństwo.",
     "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Możliwości zsynchronizowane: dodano {{created}}, zaktualizowano {{updated}}",

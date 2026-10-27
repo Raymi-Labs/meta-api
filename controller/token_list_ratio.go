@@ -35,6 +35,14 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 			if group == "" {
 				group = userGroup
 			}
+			if token.RoutingConfig != "" {
+				groups, scopeErr := service.TokenConfiguredGroups(userGroup, token, "")
+				if scopeErr == nil && len(groups) > 0 {
+					item.GroupRatioStatus = "auto"
+				}
+				items = append(items, item)
+				continue
+			}
 			if _, allowed := usableGroups[group]; allowed {
 				if group == "auto" {
 					item.GroupRatioStatus = "auto"

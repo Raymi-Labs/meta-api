@@ -107,7 +107,7 @@ func Distribute() func(c *gin.Context) {
 				tokenModelLimit = map[string]bool{}
 			}
 			matchName := ratio_setting.FormatMatchingModelName(modelRequest.Model) // match gpts & thinking-*
-			if _, ok := tokenModelLimit[matchName]; !ok {
+			if _, ok := tokenModelLimit[matchName]; !ok && !(service.HasTokenRoutingConfig(c) && tokenModelLimit[modelRequest.Model]) {
 				abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorTokenModelForbidden, map[string]any{"Model": modelRequest.Model}))
 				return
 			}
@@ -135,6 +135,10 @@ func Distribute() func(c *gin.Context) {
 					usingGroup = playgroundRequest.Group
 					common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
 				}
+			}
+			if service.HasTokenRoutingConfig(c) && len(service.RequestModelRoutingGroups(c, usingGroup, modelRequest.Model)) == 0 {
+				abortWithOpenAiMessage(c, http.StatusForbidden, "当前模型没有可用的授权分组", types.ErrorCodeAccessDenied)
+				return
 			}
 			service.PrepareSlowTTFTRequest(
 				c,
@@ -242,9 +246,8 @@ func tryAffinityChannel(c *gin.Context, modelName string, usingGroup string, cli
 	if service.IsChannelModelCircuitOpen(preferred, modelName) {
 		return nil, "", false
 	}
-	if usingGroup == "auto" {
-		userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
-		autoGroups := service.GetUserAutoGroup(userGroup)
+	if usingGroup == "auto" || service.HasTokenRoutingConfig(c) {
+		autoGroups := service.RequestModelRoutingGroups(c, usingGroup, modelName)
 		for _, group := range autoGroups {
 			if model.IsChannelEnabledForGroupModel(group, modelName, preferred.Id) {
 				return preferred, group, true
@@ -276,6 +279,21 @@ func selectChannelForRequest(c *gin.Context, modelName string, usingGroup string
 		if err != nil {
 			return nil, usingGroup, types.NewErrorWithStatusCode(errors.New(i18n.T(c, i18n.MsgDistributorInvalidChannelId)), types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 		}
+		if service.HasTokenRoutingConfig(c) {
+			matched := ""
+			for _, group := range service.RequestModelRoutingGroups(c, usingGroup, modelName) {
+				if model.IsChannelEnabledForGroupModel(group, modelName, channel.Id) {
+					matched = group
+					break
+				}
+			}
+			if matched == "" {
+				return nil, usingGroup, types.NewErrorWithStatusCode(errors.New("指定渠道不在当前模型的授权分组内"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
+			}
+			common.SetContextKey(c, constant.ContextKeyAutoGroup, matched)
+			common.SetContextKey(c, constant.ContextKeyUsingGroup, matched)
+			usingGroup = matched
+		}
 		if !service.IsChannelAllowedForClient(channel, clientID) {
 			return nil, usingGroup, types.NewErrorWithStatusCode(errors.New("当前客户端工具不允许使用该渠道"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 		}
@@ -301,6 +319,9 @@ func selectChannelForRequest(c *gin.Context, modelName string, usingGroup string
 	if preferred, selectGroup, ok := tryAffinityChannel(c, modelName, usingGroup, clientID, excludeChannels); ok {
 		setupErr := SetupContextForSelectedChannel(c, preferred, modelName)
 		if setupErr == nil {
+			if service.HasTokenRoutingConfig(c) {
+				service.CommitChannelCandidateSelection(&service.RetryParam{Ctx: c, TokenGroup: usingGroup, ModelName: modelName, Retry: common.GetPointer(0)}, selectGroup)
+			}
 			service.MarkChannelAffinityUsed(c, selectGroup, preferred.Id)
 			return preferred, selectGroup, nil
 		}

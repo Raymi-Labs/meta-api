@@ -464,6 +464,10 @@ func tryStickToAffinityChannel(
 			}
 			// 与 distributor 路径对齐：标记亲和已用（供 SkipRetryOnFailure 规则与 admin 日志/统计生效），
 			// 用 tryAffinityChannel 返回的生效分组，避免 auto 分组下的 group 维度错乱。
+			if service.HasTokenRoutingConfig(c) {
+				service.CommitChannelCandidateSelection(retryParam, selectGroup)
+				info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+			}
 			service.MarkChannelAffinityUsed(c, selectGroup, affinityCh.Id)
 			if inWaitQueue {
 				middleware.RecordChannelWaitAcquired()

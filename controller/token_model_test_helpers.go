@@ -22,6 +22,7 @@ import (
 )
 
 type tokenModelOption struct {
+	Groups                 []string                `json:"groups"`
 	Name                   string                  `json:"name"`
 	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
 }
@@ -142,21 +143,15 @@ func resolveTokenAllowedModelsRaw(userId int, token *model.Token) ([]string, err
 	if token == nil {
 		return nil, fmt.Errorf("token is nil")
 	}
-	models, err := resolveRequestedTokenModelsRaw(userId, token.Group, token.AllowsGroupFallback())
+	options, err := tokenRoutingCatalog(userId, token)
 	if err != nil {
 		return nil, err
 	}
-	if !token.ModelLimitsEnabled {
-		return models, nil
+	names := make([]string, 0, len(options))
+	for _, option := range options {
+		names = append(names, option.Name)
 	}
-	limits := token.GetModelLimitsMap()
-	filtered := make([]string, 0, len(models))
-	for _, modelName := range models {
-		if limits[ratio_setting.FormatMatchingModelName(modelName)] || limits[modelName] {
-			filtered = append(filtered, modelName)
-		}
-	}
-	return filtered, nil
+	return names, nil
 }
 
 func resolveTokenAllowedModels(userId int, token *model.Token) ([]string, error) {
@@ -175,14 +170,21 @@ func buildTokenModelOptions(userId int, token *model.Token, requestedGroup strin
 	)
 
 	if token != nil {
-		models, err = resolveTokenAllowedModels(userId, token)
+		options, err := tokenRoutingCatalog(userId, token)
 		if err != nil {
 			return nil, err
 		}
-		groups, err = resolveRequestedTokenGroups(userId, token.Group, token.AllowsGroupFallback())
+		user, err := model.GetUserCache(userId)
 		if err != nil {
 			return nil, err
 		}
+		visible := make([]tokenModelOption, 0, len(options))
+		for _, option := range options {
+			if model.IsModelVisibleToRole(option.Name, user.Role) {
+				visible = append(visible, option)
+			}
+		}
+		return visible, nil
 	} else {
 		models, err = resolveRequestedTokenModels(userId, requestedGroup, fallback...)
 		if err != nil {
@@ -328,7 +330,7 @@ func prepareOwnedTokenContext(c *gin.Context, token *model.Token) error {
 
 	usingGroup := userCache.Group
 	tokenGroup := strings.TrimSpace(token.Group)
-	if tokenGroup != "" {
+	if tokenGroup != "" && token.RoutingConfig == "" {
 		if _, ok := service.GetUserUsableGroups(userCache.Group)[tokenGroup]; !ok {
 			return fmt.Errorf("无权访问 %s 分组", tokenGroup)
 		}
@@ -395,7 +397,7 @@ func selectTokenTestChannelByAbility(c *gin.Context, modelName string) (*model.C
 		usingGroup = userGroup
 	}
 
-	groups := service.RequestRoutingGroups(c, usingGroup)
+	groups := service.RequestModelRoutingGroups(c, usingGroup, modelName)
 
 	normalizedModel := ratio_setting.FormatMatchingModelName(modelName)
 	for _, group := range groups {
