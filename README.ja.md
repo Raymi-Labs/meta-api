@@ -1,3 +1,13 @@
+# Meta API · Raymi Labs
+
+[Meta API](https://github.com/Raymi-Labs/meta-api) は、[Raymi Labs](https://github.com/Raymi-Labs) が保守する大規模言語モデル向け API ゲートウェイです。[QuantumNous/new-api](https://github.com/QuantumNous/new-api) を基盤としています。
+
+[サービス](https://meta-api.vip) · [ドキュメント](https://docs.meta-api.vip) · [会社のリリース](https://github.com/Raymi-Labs/meta-api/releases) · [リポジトリとリリースの案内](docs/META_API.md)
+
+上流の帰属表示、ライセンス、Go モジュールのパス、既存のプログラム名を保持しています。元のリポジトリと過去のリリースは [nanashiwang/new-api](https://github.com/nanashiwang/new-api) に残ります。以下は保持された上流プロジェクトの説明です。
+
+---
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)

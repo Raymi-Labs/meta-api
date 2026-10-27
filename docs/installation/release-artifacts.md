@@ -1,5 +1,7 @@
 # 服务端发布产物
 
+公司仓库为 [Raymi-Labs/meta-api](https://github.com/Raymi-Labs/meta-api)，后续发布使用该仓库及 `ghcr.io/raymi-labs/meta-api` 镜像。下文保留的个人仓库命令适用于历史版本；公司版本请将 `--repo` / `-R` 目标设为 `Raymi-Labs/meta-api`。仓库、命名和生产边界见 [Meta API 说明](../META_API.md)。
+
 本项目的线上部署使用 Linux Docker 镜像。服务端程序包与桌面客户端独立；本说明不改变 Electron/其他桌面客户端的发布流程，也不授权生产升级。
 
 ## 常规发布

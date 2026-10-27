@@ -1,3 +1,13 @@
+# Meta API · Raymi Labs
+
+[Meta API](https://github.com/Raymi-Labs/meta-api) est la passerelle API pour modèles d’IA maintenue par [Raymi Labs](https://github.com/Raymi-Labs), basée sur [QuantumNous/new-api](https://github.com/QuantumNous/new-api).
+
+[Service](https://meta-api.vip) · [Documentation](https://docs.meta-api.vip) · [Versions de Raymi Labs](https://github.com/Raymi-Labs/meta-api/releases) · [Guide du dépôt et des versions](docs/META_API.md)
+
+Les attributions, la licence, le chemin du module Go et les noms des programmes sont conservés. Le dépôt d’origine et ses anciennes versions restent disponibles sur [nanashiwang/new-api](https://github.com/nanashiwang/new-api). La documentation du projet amont est conservée ci-dessous.
+
+---
+
 <div align="center">
 
 ![new-api](/web/public/logo.png)
