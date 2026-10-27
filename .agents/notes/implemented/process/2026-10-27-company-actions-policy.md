@@ -32,3 +32,5 @@ Raymi Labs 的组织级规则要求 main 通过 PR 合入，Actions 必须使用
 ## Consequences
 
 保留组织保护和审批策略，使用正常 PR 合入；公司首版递增为 compat.100，未发布的 compat.99 标签不移动。缓存由 Actions cache 切为按 main/架构隔离的 GHCR buildcache 标签；不依赖 Docker Action 注入缓存运行时凭据。原生 ARM64 执行器可能排队，新仓库需要首次构建；历史标签及未迁移的独立 nightly/alpha/Electron/工具包流程仍受组织限制，不能声称它们已在公司仓库可用，历史版本使用原仓库。
+
+后续扩展见 [公司更新源与管理命令](2026-10-27-server-management-cli.md)：保留本篇原有边界，独立安装公司来源配置及管理工具；meta-api 包已获授权公开，不修改 Actions 允许名单、SHA 固定和主分支 PR 保护。

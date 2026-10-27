@@ -62,6 +62,10 @@ Usage:
   newapi-update [latest|sha-abcdefg] [--dry-run]
   newapi-rollback [--dry-run]
   newapi-restart [--dry-run]
+  meta-api [status|update|start|restart|stop|rollback]
+  meta-api-update [latest|sha-abcdefg] [--dry-run]
+  newapi-release start [--dry-run]
+  newapi-release stop --yes [--dry-run]
   newapi-release status
   newapi-release init [sha-abcdefg]
   newapi-release verify-backup DIRECTORY
@@ -82,6 +86,49 @@ Migration create validates a restored schema and already-local immutable image,
 creates only the application without starting it, and leaves release state unset.
 After data cutover, use newapi-restart and then newapi-release init.
 EOF
+}
+
+load_source_config() {
+  local config="${NEWAPI_RELEASE_CONFIG:-/etc/meta-api/release.conf}" values configured_image configured_github
+  if [ ! -e "$config" ] && [ ! -L "$config" ]; then
+    [ -z "${NEWAPI_RELEASE_CONFIG:-}" ] || die "release source configuration does not exist"
+    return 0
+  fi
+  # Parse data, never source shell. A writable or redirected source config could
+  # otherwise make root deploy an untrusted image.
+  values="$(python3 - "$config" <<'PY'
+import os,re,stat,sys
+from pathlib import Path
+try:
+    p=Path(sys.argv[1])
+    if not p.is_absolute() or '..' in p.parts or p.is_symlink() or p.parent.is_symlink(): raise ValueError()
+    p=p.parent.resolve()/p.name
+    info=p.stat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o022: raise ValueError()
+    for parent in [p.parent, *p.parent.parents]:
+        info=parent.stat()
+        if parent.is_symlink() or info.st_uid not in (0,os.geteuid()): raise ValueError()
+        if info.st_mode & 0o022 and not (parent != p.parent and info.st_uid == 0 and info.st_mode & stat.S_ISVTX): raise ValueError()
+    data={}
+    patterns={'NEWAPI_IMAGE_REPOSITORY':r'[a-z0-9.-]+(?::[0-9]+)?(?:/[a-z0-9._-]+)+',
+              'NEWAPI_GITHUB_REPOSITORY':r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'}
+    for line in p.read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith('#'): continue
+        key,sep,value=line.partition('=')
+        if sep != '=' or key not in patterns or key in data or not re.fullmatch(patterns[key],value): raise ValueError()
+        data[key]=value
+    if set(data) != set(patterns): raise ValueError()
+    print(data['NEWAPI_IMAGE_REPOSITORY'])
+    print(data['NEWAPI_GITHUB_REPOSITORY'])
+except (OSError,ValueError):
+    print('unsafe or invalid release source configuration',file=sys.stderr)
+    raise SystemExit(1)
+PY
+)" || die "cannot load release source configuration: $config"
+  configured_image="${values%%$'\n'*}"
+  configured_github="${values#*$'\n'}"
+  IMAGE_REPOSITORY="${NEWAPI_IMAGE_REPOSITORY:-$configured_image}"
+  GITHUB_REPOSITORY="${NEWAPI_GITHUB_REPOSITORY:-$configured_github}"
 }
 
 require_command() {
@@ -225,10 +272,14 @@ wait_for_restart_health() {
   return 1
 }
 
-command_restart() {
-  local snapshot container_id running_id state operation operation_timeout
+command_restart() { command_container_recovery restart "$@"; }
+command_start() { command_container_recovery start "$@"; }
+
+command_container_recovery() {
+  local mode="$1" snapshot container_id running_id state operation operation_timeout
+  shift
   parse_dry_run "$@"
-  [ "${#POSITIONAL_ARGS[@]}" -eq 0 ] || die "restart accepts only --dry-run"
+  [ "${#POSITIONAL_ARGS[@]}" -eq 0 ] || die "$mode accepts only --dry-run"
   acquire_lock
   snapshot="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}}' "$CONTAINER_NAME")" \
     || die "cannot inspect $CONTAINER_NAME; restart requires an existing container (no image will be pulled or recreated)"
@@ -236,12 +287,17 @@ command_restart() {
   [ -n "$container_id" ] && [ -n "$running_id" ] || die "invalid container inspection result"
   case "$state" in
     exited|created) operation=start ;;
-    running|restarting) operation=restart ;;
+    running|restarting) operation=restart; [ "$mode" != start ] || operation=check ;;
     *) die "unsupported container state: $state; inspect the container before retrying" ;;
   esac
   log "恢复当前容器：${CONTAINER_NAME}，状态=${state}，操作=${operation}，镜像=${running_id}"
   if [ "$DRY_RUN" -eq 1 ]; then
     log "dry-run：仅预览，不启动或重启容器"
+    return 0
+  fi
+  if [ "$mode" = start ] && [[ "$state" == running || "$state" == restarting ]]; then
+    wait_for_restart_health "$container_id" "$running_id" || die "应用已运行但健康检查未通过；未执行重启"
+    log "应用已运行且健康，无需启动；未执行重启"
     return 0
   fi
   # Startup can execute automatic schema migrations even for the current image.
@@ -259,6 +315,42 @@ command_restart() {
   fi
   append_history "$operation" "$running_id" "$running_id" failed "" || log "WARNING: cannot write restart history" >&2
   die "恢复未通过或操作超时；检查 docker inspect ${CONTAINER_NAME} 和 docker logs --since 5m --tail 100 ${CONTAINER_NAME}；必要时 newapi-rollback。超时后 Docker 操作可能仍在完成，请先检查状态"
+}
+
+command_stop() {
+  local arg confirmed=0 snapshot container_id running_id state final operation_timeout
+  local -a remaining=()
+  for arg in "$@"; do
+    if [ "$arg" = --yes ]; then confirmed=1; else remaining+=("$arg"); fi
+  done
+  # Bash 3 treats an empty array as unset under nounset.
+  parse_dry_run ${remaining[@]+"${remaining[@]}"}
+  [ "${#POSITIONAL_ARGS[@]}" -eq 0 ] || die "stop accepts only --yes and --dry-run"
+  [ "$confirmed" -eq 1 ] || [ "$DRY_RUN" -eq 1 ] || die "停止应用会中断请求；请使用 meta-api stop 确认，或明确传入 --yes"
+  acquire_lock
+  snapshot="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}}' "$CONTAINER_NAME")" \
+    || die "cannot inspect application; no container stopped"
+  read -r container_id running_id state <<<"$snapshot"
+  [ -n "$container_id" ] && [ -n "$running_id" ] || die "invalid container inspection result"
+  case "$state" in
+    exited|created) log "应用已停止：${CONTAINER_NAME}；未修改容器"; return 0 ;;
+    running|restarting) ;;
+    *) die "unsupported container state: $state; no container stopped" ;;
+  esac
+  log "停止当前应用：${CONTAINER_NAME}，容器=${container_id}，镜像=${running_id}；MySQL/Redis 保持运行"
+  [ "$DRY_RUN" -eq 0 ] || { log "dry-run：仅预览，不停止容器"; return 0; }
+  append_history stop "$running_id" "$running_id" started ""
+  operation_timeout=$((RESTART_STOP_TIMEOUT + 15))
+  if timeout --kill-after=5 "$operation_timeout" docker stop --timeout "$RESTART_STOP_TIMEOUT" "$container_id" >/dev/null; then
+    final="$(timeout --kill-after=5 10 docker inspect -f '{{.Id}} {{.Image}} {{.State.Status}}' "$CONTAINER_NAME")" || final=""
+    if [ "$final" = "$container_id $running_id exited" ]; then
+      append_history stop "$running_id" "$running_id" success ""
+      log "停止成功；启动使用 meta-api start，更新前须先恢复在线"
+      return 0
+    fi
+  fi
+  append_history stop "$running_id" "$running_id" failed "" || true
+  die "停止未完成或结果未确认；请检查容器状态，Docker 超时后操作可能仍在继续"
 }
 
 check_migration_prerequisites() {
@@ -1237,6 +1329,8 @@ command_status() {
   printf 'running_image=%s\n' "$current_image"
   printf 'running_id=%s\n' "$current_id"
   printf 'running_version=%s\n' "$current_version"
+  printf 'update_image_repository=%s\n' "$IMAGE_REPOSITORY"
+  printf 'update_github_repository=%s\n' "$GITHUB_REPOSITORY"
   printf 'compose_image=%s\n' "$declared_image"
   printf 'container_state=%s\n' "$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME")"
   printf 'container_restarts=%s\n' "$(docker inspect -f '{{.RestartCount}}' "$CONTAINER_NAME")"
@@ -1278,9 +1372,11 @@ main() {
     backup_manifest verify "$1"
     return
   fi
+  require_command python3
+  load_source_config
   if [[ "$command_name" == migration-stop || "$command_name" == migration-create ]]; then
     check_migration_prerequisites
-  elif [ "$command_name" = restart ]; then
+  elif [[ "$command_name" == restart || "$command_name" == start || "$command_name" == stop || "$command_name" == status ]]; then
     check_restart_prerequisites
   else
     check_prerequisites
@@ -1291,10 +1387,12 @@ main() {
     update) command_update "$@" ;;
     rollback) command_rollback "$@" ;;
     restart) command_restart "$@" ;;
+    start) command_start "$@" ;;
+    stop) command_stop "$@" ;;
     migration-stop) command_migration_stop "$@" ;;
     migration-create) command_migration_create "$@" ;;
     init) command_init "$@" ;;
-    status) command_status ;;
+    status) [ "$#" -eq 0 ] || die "status accepts no arguments"; command_status ;;
     *) usage >&2; die "unknown command: $command_name" ;;
   esac
 }

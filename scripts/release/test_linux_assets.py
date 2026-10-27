@@ -14,9 +14,10 @@ class LinuxAssetTests(unittest.TestCase):
         command = "const w = Bun.YAML.parse(await Bun.file('.github/workflows/release.yml').text()); console.log(JSON.stringify(w.jobs.linux.steps.find(s => s.name === 'Fill missing Linux assets without updating release metadata').run));"
         shell = json.loads(subprocess.check_output(['bun', '-e', command], cwd=root, text=True))
         cls.code = shell.split("python3 - <<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
-        cls.version = 'v1.0.0-compat.53'
+        cls.version = 'v1.0.0-compat.101'
         cls.names = [f'new-api-{cls.version}', f'new-api-arm64-{cls.version}',
-                     f'new-api-docs-{cls.version}.tar.gz', f'new-api-docs-{cls.version}.sha256']
+                     f'new-api-docs-{cls.version}.tar.gz', f'new-api-docs-{cls.version}.sha256',
+                     f'meta-api-management-{cls.version}.tar.gz', f'meta-api-management-{cls.version}.sha256']
 
     def execute(self, assets, *, read_error=None):
         with patch.dict('os.environ', {'VERSION': self.version, 'GITHUB_REPOSITORY': 'owner/repo'}), \

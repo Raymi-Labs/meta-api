@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/newapi-release'
+      - 'scripts/meta-api'
       - 'scripts/server-release/**'
       - 'scripts/server-storage/**'
       - 'scripts/server-migration/**'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'scripts/newapi-release'
+      - 'scripts/meta-api'
       - 'scripts/server-release/**'
       - 'scripts/server-storage/**'
       - 'scripts/server-migration/**'
@@ -28,10 +30,10 @@ jobs:
   release-safety:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Check Bash syntax
         run: |
-          for script in scripts/newapi-release scripts/server-release/retired-entrypoint.sh scripts/server-release/release-test-harness.bash scripts/server-storage/newapi-mysql-full-backup.sh; do
+          for script in scripts/meta-api scripts/newapi-release scripts/server-release/retired-entrypoint.sh scripts/server-release/release-test-harness.bash scripts/server-storage/newapi-mysql-full-backup.sh; do
             bash -n "$script"
           done
       - name: Exercise isolated failure recovery

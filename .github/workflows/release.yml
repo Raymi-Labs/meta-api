@@ -59,6 +59,10 @@ jobs:
           cd ..
           tar -czf "new-api-docs-$VERSION.tar.gz" -C web/docs-dist .
           sha256sum "new-api-docs-$VERSION.tar.gz" > "new-api-docs-$VERSION.sha256"
+      - name: Package server management commands
+        run: |
+          tar -czf "meta-api-management-$VERSION.tar.gz" scripts/meta-api scripts/newapi-release scripts/server-release/company-release.conf docs/installation/one-click-update.md
+          sha256sum "meta-api-management-$VERSION.tar.gz" > "meta-api-management-$VERSION.sha256"
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
@@ -111,7 +115,7 @@ jobs:
           release = json.loads(subprocess.check_output([
               'gh', 'release', 'view', version, '--repo', repo, '--json', 'assets',
           ], text=True))
-          for filename in [f'new-api-{version}', f'new-api-arm64-{version}', f'new-api-docs-{version}.tar.gz', f'new-api-docs-{version}.sha256']:
+          for filename in [f'new-api-{version}', f'new-api-arm64-{version}', f'new-api-docs-{version}.tar.gz', f'new-api-docs-{version}.sha256', f'meta-api-management-{version}.tar.gz', f'meta-api-management-{version}.sha256']:
               existing = [a for a in release['assets'] if a['name'] == filename]
               if existing:
                   if len(existing) != 1 or existing[0]['state'] != 'uploaded' or existing[0]['size'] <= 0:
