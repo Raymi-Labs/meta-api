@@ -136,6 +136,10 @@ func resolveMappedChannelModel(channel *Channel, modelName string) string {
 }
 
 func inferModelDisplayVendor(modelName string) string {
+	// This known alias has no GPT segment; keep other Codex names unclassified.
+	if strings.EqualFold(strings.TrimSpace(modelName), "codex-auto-review") {
+		return "openai"
+	}
 	vendor := ""
 	for candidate, segments := range channelVendorSegments {
 		if hasModelNameSegment(modelName, segments...) {
