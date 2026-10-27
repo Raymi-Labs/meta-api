@@ -66,6 +66,12 @@ class ReleaseSafetyTests(unittest.TestCase):
         result, events = self.run_case("success")
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(events, ["resolve", "backup:old-image", "preflight:old-image", "up:new-image", "cleanup"])
+        self.assertIn("当前运行镜像（current）：old-image", result.stdout)
+        self.assertIn("准备更新到（target）：new-image", result.stdout)
+        self.assertIn("旧镜像保留用于回退", result.stdout)
+        positions = [result.stdout.index(f"[{stage}/4]") for stage in range(1, 5)]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("更新成功，当前运行：new-image", result.stdout)
         self.assertIn("CURRENT_IMAGE=new-image", (self.state / "state.env").read_text())
         self.assertIn("PREVIOUS_IMAGE=old-image", (self.state / "state.env").read_text())
         backup = self.root / "backups/one-click/test"
