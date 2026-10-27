@@ -14,6 +14,7 @@ const (
 	ContextKeyTokenUnlimited           ContextKey = "token_unlimited_quota"
 	ContextKeyTokenKey                 ContextKey = "token_key"
 	ContextKeyTokenId                  ContextKey = "token_id"
+	ContextKeyTokenRoutingConfig       ContextKey = "token_routing_config"
 	ContextKeyTokenGroup               ContextKey = "token_group"
 	ContextKeyTokenSpecificChannelId   ContextKey = "specific_channel_id"
 	ContextKeyTokenModelLimitEnabled   ContextKey = "token_model_limit_enabled"

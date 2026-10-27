@@ -52,6 +52,12 @@ import {
 import { IconCreditCard, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
 import TokenGroupPicker from '../TokenGroupPicker';
+import TokenRoutingEditor from '../TokenRoutingEditor';
+import {
+  readTokenRouting,
+  tokenRoutingPayload,
+  tokenRoutingModelPreview,
+} from '../tokenRouting';
 import TokenModelCopyList from '../TokenModelCopyList';
 import { UserContext } from '../../../../context/User';
 import { StatusContext } from '../../../../context/Status';
@@ -102,6 +108,7 @@ const EditTokenModal = (props) => {
   const [groupsError, setGroupsError] = useState(false);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState(false);
+  const [modelGroups, setModelGroups] = useState({});
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [channelsError, setChannelsError] = useState(false);
   const [tokenReady, setTokenReady] = useState(false);
@@ -125,6 +132,8 @@ const EditTokenModal = (props) => {
     channel_limits: [],
     allow_ips: '',
     group: '',
+    routing_enabled: !isEdit,
+    routing_config: '',
     group_vendor: '',
     cross_group_retry: false,
     auto_group_fallback:
@@ -438,6 +447,10 @@ const EditTokenModal = (props) => {
         disableDuplicate: true,
         params: {
           group: groupValue,
+          detail: true,
+          routing_config: tokenRoutingModelPreview(
+            formApiRef.current?.getValues(),
+          ),
           auto_group_fallback: !!(
             formApiRef.current?.getValue('auto_group_fallback') ??
             getInitValues().auto_group_fallback
@@ -448,10 +461,20 @@ const EditTokenModal = (props) => {
       const { success, message, data } = res.data;
       if (success) {
         const localModelOptions = buildModelOptions(
-          Array.isArray(data) ? data : [],
+          Array.isArray(data)
+            ? data.map((item) => (typeof item === 'string' ? item : item.name))
+            : [],
+        );
+        setModelGroups(
+          Object.fromEntries(
+            (Array.isArray(data) ? data : [])
+              .filter((item) => Array.isArray(item?.groups))
+              .map((item) => [item.name, item.groups]),
+          ),
         );
         setModels(localModelOptions);
-        if (shouldNotify) syncModelLimitsWithOptions(localModelOptions, true);
+        if (shouldNotify && !formApiRef.current?.getValue('routing_enabled'))
+          syncModelLimitsWithOptions(localModelOptions, true);
       } else {
         setModels([]);
         setModelsError(true);
@@ -485,6 +508,9 @@ const EditTokenModal = (props) => {
         disableDuplicate: true,
         params: {
           group: groupValue,
+          routing_config: tokenRoutingPayload(
+            formApiRef.current?.getValues() || {},
+          ),
           auto_group_fallback: !!(
             formApiRef.current?.getValue('auto_group_fallback') ??
             getInitValues().auto_group_fallback
@@ -598,6 +624,7 @@ const EditTokenModal = (props) => {
           data.package_limit_quota || 0,
         );
         data.group_vendor = resolveTokenGroupVendor(data.group);
+        data.routing_enabled = !!data.routing_config;
         loadedTokenValuesRef.current = { ...getInitValues(), ...data };
         applyLoadedTokenValues();
         await loadModels(data.group || '');
@@ -650,8 +677,12 @@ const EditTokenModal = (props) => {
         formApiRef.current?.setValues(getInitValues());
         setTokenMode('standard');
         setLoading(false);
-        loadModels('');
-        loadChannels('', []);
+        setModels([]);
+        setModelsError(false);
+        setModelsLoading(false);
+        setChannelOptions([]);
+        setChannelsError(false);
+        setChannelsLoading(false);
       }
     } else {
       loadedTokenValuesRef.current = null;
@@ -928,6 +959,8 @@ const EditTokenModal = (props) => {
   };
 
   const sanitizeModelLimits = (modelLimits) => {
+    if (formApiRef.current?.getValue('routing_enabled'))
+      return modelLimits || [];
     if (
       isEdit &&
       formApiRef.current?.getValue('group') ===
@@ -967,6 +1000,16 @@ const EditTokenModal = (props) => {
     ) {
       showError(t('请选择令牌分组'));
       return;
+    }
+    if (values.routing_enabled) {
+      const config = readTokenRouting(tokenRoutingPayload(values));
+      if (
+        !config.groups.length ||
+        Object.values(config.model_groups).some((groups) => !groups.length)
+      ) {
+        showError(t('请为 Key 和每条模型规则选择有效分组'));
+        return;
+      }
     }
     submittingRef.current = true;
     setLoading(true);
@@ -1015,6 +1058,8 @@ const EditTokenModal = (props) => {
           localInputs.channel_limits = localInputs.channel_limits.join(',');
           localInputs.channel_limits_enabled =
             localInputs.channel_limits.length > 0;
+          localInputs.routing_config = tokenRoutingPayload(values);
+          delete localInputs.routing_enabled;
           delete localInputs.group_vendor;
         } else {
           localInputs = {
@@ -1081,6 +1126,8 @@ const EditTokenModal = (props) => {
           localInputs.channel_limits = localInputs.channel_limits.join(',');
           localInputs.channel_limits_enabled =
             localInputs.channel_limits.length > 0;
+          localInputs.routing_config = tokenRoutingPayload(values);
+          delete localInputs.routing_enabled;
           delete localInputs.group_vendor;
           const packageResult = normalizePackageFields(localInputs);
           if (!packageResult.ok) {
@@ -1195,12 +1242,35 @@ const EditTokenModal = (props) => {
           onValueChange={(values, changedValues) => {
             setSelectedGroup(values.group || '');
             if (
+              Object.prototype.hasOwnProperty.call(
+                changedValues,
+                'routing_config',
+              ) ||
+              Object.prototype.hasOwnProperty.call(
+                changedValues,
+                'routing_enabled',
+              ) ||
               Object.prototype.hasOwnProperty.call(changedValues, 'group') ||
               Object.prototype.hasOwnProperty.call(
                 changedValues,
                 'auto_group_fallback',
               )
             ) {
+              if (
+                values.routing_enabled &&
+                !readTokenRouting(values.routing_config).groups.length
+              ) {
+                modelRequestRef.current++;
+                channelRequestRef.current++;
+                setModels([]);
+                setModelGroups({});
+                setChannelOptions([]);
+                setModelsLoading(false);
+                setChannelsLoading(false);
+                setModelsError(false);
+                setChannelsError(false);
+                return;
+              }
               if (values.group) {
                 const nextVendor = resolveTokenGroupVendor(values.group);
                 if (
@@ -1209,23 +1279,31 @@ const EditTokenModal = (props) => {
                   formApiRef.current?.setValue('group_vendor', nextVendor);
                 }
               }
-              loadModels(
-                values.group || '',
-                !isEdit ||
-                  (tokenReady &&
-                    (values.group !== loadedTokenValuesRef.current?.group ||
-                      values.auto_group_fallback !==
-                        loadedTokenValuesRef.current?.auto_group_fallback)),
-              );
-              loadChannels(
-                values.group || '',
-                formApiRef.current?.getValue('model_limits') || [],
-                !isEdit ||
-                  (tokenReady &&
-                    (values.group !== loadedTokenValuesRef.current?.group ||
-                      values.auto_group_fallback !==
-                        loadedTokenValuesRef.current?.auto_group_fallback)),
-              );
+              if (
+                !values.routing_enabled ||
+                readTokenRouting(values.routing_config).groups.length
+              )
+                loadModels(
+                  values.group || '',
+                  !isEdit ||
+                    (tokenReady &&
+                      (values.group !== loadedTokenValuesRef.current?.group ||
+                        values.auto_group_fallback !==
+                          loadedTokenValuesRef.current?.auto_group_fallback)),
+                );
+              if (
+                !values.routing_enabled ||
+                readTokenRouting(values.routing_config).groups.length
+              )
+                loadChannels(
+                  values.group || '',
+                  formApiRef.current?.getValue('model_limits') || [],
+                  !isEdit ||
+                    (tokenReady &&
+                      (values.group !== loadedTokenValuesRef.current?.group ||
+                        values.auto_group_fallback !==
+                          loadedTokenValuesRef.current?.auto_group_fallback)),
+                );
             }
             if (
               Object.prototype.hasOwnProperty.call(
@@ -1302,87 +1380,175 @@ const EditTokenModal = (props) => {
                           : [{ required: true, message: t('请选择令牌分组') }]
                       }
                     />
-                    <TokenGroupPicker
-                      key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
-                      userId={userState?.user?.id}
-                      groups={
-                        availableGroups.userId === userState?.user?.id
-                          ? availableGroups.groups.filter(
-                              ({ value }) =>
-                                value !== 'auto' ||
-                                (isEdit &&
-                                  loadedTokenValuesRef.current?.group ===
-                                    'auto'),
-                            )
-                          : []
-                      }
-                      value={values.group}
-                      loading={groupsLoading}
-                      error={groupsError}
-                      onRetry={loadGroups}
-                      onSelect={(group) =>
-                        formApiRef.current?.setValue('group', group)
-                      }
-                      details={
-                        <>
-                          <TokenGroupHealth
-                            group={values.group}
-                            stats={groupHealthByName.get(values.group)}
-                            loading={groupHealth.loading}
-                            error={groupHealth.error}
-                            onRetry={groupHealth.refresh}
-                            collectionEnabled={
-                              groupHealth.data?.enabled !== false
-                            }
-                            collectionData={groupHealth.data}
-                          />
-                          <div className='text-xs mt-2 break-words'>
-                            {t('支持模型')}：
-                            {modelsLoading ? (
-                              t('加载中...')
-                            ) : modelsError ? (
-                              t('暂不可用')
-                            ) : models.length ? (
-                              <TokenModelCopyList
-                                key={values.group}
-                                models={models}
-                              />
-                            ) : (
-                              t('暂无可用模型')
-                            )}
-                          </div>
-                        </>
-                      }
-                    />
                     {!isSellableToken && (
                       <>
-                        <div
-                          style={{
-                            display: values.group === 'auto' ? 'block' : 'none',
+                        <Form.Switch
+                          field='routing_enabled'
+                          label={t('按模型配置多个分组')}
+                          onChange={(enabled) => {
+                            if (
+                              enabled &&
+                              !formApiRef.current?.getValue('routing_config')
+                            ) {
+                              const group =
+                                formApiRef.current?.getValue('group');
+                              formApiRef.current?.setValue(
+                                'routing_config',
+                                JSON.stringify({
+                                  groups:
+                                    group && group !== 'auto' ? [group] : [],
+                                }),
+                              );
+                            }
                           }}
-                        >
-                          <Form.Switch
-                            field='cross_group_retry'
-                            label={t('跨分组重试')}
-                            extraText={t(
-                              '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
-                            )}
+                        />
+                        <Form.Input
+                          field='routing_config'
+                          noLabel
+                          fieldStyle={{ display: 'none' }}
+                        />
+                        <Form.Select
+                          field='model_limits'
+                          label={t('模型限制列表')}
+                          placeholder={t(
+                            '请选择该令牌支持的模型，留空支持所有模型',
+                          )}
+                          multiple
+                          optionList={models}
+                          extraText={t(
+                            '留空允许所选分组内全部模型；选择多个模型后可分别指定分组。',
+                          )}
+                          filter={selectFilter}
+                          autoClearSearchValue={false}
+                          searchPosition='dropdown'
+                          showClear
+                          style={{ width: '100%' }}
+                        />
+                        {values.routing_enabled && (
+                          <TokenRoutingEditor
+                            value={values.routing_config}
+                            groups={
+                              availableGroups.userId === userState?.user?.id
+                                ? availableGroups.groups
+                                : []
+                            }
+                            models={values.model_limits || []}
+                            modelGroups={modelGroups}
+                            disabled={groupsLoading || groupsError}
+                            onChange={(raw) => {
+                              formApiRef.current?.setValue(
+                                'routing_config',
+                                raw,
+                              );
+                              formApiRef.current?.setValue(
+                                'group',
+                                readTokenRouting(raw).groups[0] || '',
+                              );
+                            }}
                           />
-                        </div>
-                        <div
-                          style={{
-                            display: values.group === 'auto' ? 'none' : 'block',
-                          }}
-                        >
-                          <Form.Switch
-                            field='auto_group_fallback'
-                            label={t('故障时自动切换分组（Auto）')}
-                            extraText={t(
-                              '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
-                            )}
-                          />
-                        </div>
+                        )}
                       </>
+                    )}
+                    <div
+                      style={{
+                        display:
+                          values.routing_enabled && !isSellableToken
+                            ? 'none'
+                            : 'block',
+                      }}
+                    >
+                      <TokenGroupPicker
+                        key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
+                        userId={userState?.user?.id}
+                        groups={
+                          availableGroups.userId === userState?.user?.id
+                            ? availableGroups.groups.filter(
+                                ({ value }) =>
+                                  value !== 'auto' ||
+                                  (isEdit &&
+                                    loadedTokenValuesRef.current?.group ===
+                                      'auto'),
+                              )
+                            : []
+                        }
+                        value={values.group}
+                        loading={groupsLoading}
+                        error={groupsError}
+                        onRetry={loadGroups}
+                        onSelect={(group) =>
+                          formApiRef.current?.setValue('group', group)
+                        }
+                        details={
+                          <>
+                            <TokenGroupHealth
+                              group={values.group}
+                              stats={groupHealthByName.get(values.group)}
+                              loading={groupHealth.loading}
+                              error={groupHealth.error}
+                              onRetry={groupHealth.refresh}
+                              collectionEnabled={
+                                groupHealth.data?.enabled !== false
+                              }
+                              collectionData={groupHealth.data}
+                            />
+                            <div className='text-xs mt-2 break-words'>
+                              {t('支持模型')}：
+                              {modelsLoading ? (
+                                t('加载中...')
+                              ) : modelsError ? (
+                                t('暂不可用')
+                              ) : models.length ? (
+                                <TokenModelCopyList
+                                  key={values.group}
+                                  models={models}
+                                />
+                              ) : (
+                                t('暂无可用模型')
+                              )}
+                            </div>
+                          </>
+                        }
+                      />
+                      {!isSellableToken && (
+                        <>
+                          <div
+                            style={{
+                              display:
+                                values.group === 'auto' ? 'block' : 'none',
+                            }}
+                          >
+                            <Form.Switch
+                              field='cross_group_retry'
+                              label={t('跨分组重试')}
+                              extraText={t(
+                                '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
+                              )}
+                            />
+                          </div>
+                          <div
+                            style={{
+                              display:
+                                values.group === 'auto' ? 'none' : 'block',
+                            }}
+                          >
+                            <Form.Switch
+                              field='auto_group_fallback'
+                              label={t('故障时自动切换分组（Auto）')}
+                              extraText={t(
+                                '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
+                              )}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {values.routing_enabled && groupsError && (
+                      <div role='alert'>
+                        {t('分组加载失败')}{' '}
+                        <Button htmlType='button' onClick={loadGroups}>
+                          {t('重试')}
+                        </Button>
+                      </div>
                     )}
                     {modelsError && (
                       <div role='alert'>
@@ -1764,23 +1930,7 @@ const EditTokenModal = (props) => {
                         </div>
                       </div>
                       <Row gutter={12}>
-                        <Col span={24}>
-                          <Form.Select
-                            field='model_limits'
-                            label={t('模型限制列表')}
-                            placeholder={t(
-                              '请选择该令牌支持的模型，留空支持所有模型',
-                            )}
-                            multiple
-                            optionList={models}
-                            extraText={t('非必要，不建议启用模型限制')}
-                            filter={selectFilter}
-                            autoClearSearchValue={false}
-                            searchPosition='dropdown'
-                            showClear
-                            style={{ width: '100%' }}
-                          />
-                        </Col>
+                        <Col span={24}></Col>
                         {isAdminUser && (
                           <Col span={24}>
                             <Form.Slot

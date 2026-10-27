@@ -31,18 +31,17 @@ func TokenRoutingGroups(userGroup, preferredGroup string, fallback bool) []strin
 }
 
 func UsesPreferredGroupFallback(c *gin.Context, group string) bool {
-	return group != "auto" && common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback)
+	return HasTokenRoutingConfig(c) || (group != "auto" && common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback))
 }
 
 func RequestRoutingGroups(c *gin.Context, preferredGroup string) []string {
-	return TokenRoutingGroups(common.GetContextKeyString(c, constant.ContextKeyUserGroup), preferredGroup,
-		common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback))
+	return RequestModelRoutingGroups(c, preferredGroup, c.GetString("original_model"))
 }
 
 // Candidate discovery must not advance the request's group state: capacity
 // polling needs to revisit a group if its temporary exclusions are removed.
 func preferredGroupCandidates(param *RetryParam) ([]*model.Channel, string, error) {
-	groups := RequestRoutingGroups(param.Ctx, param.TokenGroup)
+	groups := RequestModelRoutingGroups(param.Ctx, param.TokenGroup, param.ModelName)
 	start := common.GetContextKeyInt(param.Ctx, constant.ContextKeyAutoGroupIndex)
 	if start < 0 {
 		start = 0
@@ -65,7 +64,7 @@ func preferredGroupCandidates(param *RetryParam) ([]*model.Channel, string, erro
 }
 
 func commitPreferredGroupSelection(param *RetryParam, group string) {
-	for index, candidate := range RequestRoutingGroups(param.Ctx, param.TokenGroup) {
+	for index, candidate := range RequestModelRoutingGroups(param.Ctx, param.TokenGroup, param.ModelName) {
 		if candidate != group {
 			continue
 		}

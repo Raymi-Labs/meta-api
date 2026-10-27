@@ -1,5 +1,15 @@
 {
   "translation": {
+    "测试分组": "Testgroep",
+    "按 Key 默认范围": "Standaardbereik van Key",
+    "选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。": "Alleen toegestane modellen van de gekozen groep worden getoond en getest, zonder groepswisseling.",
+    "请为 Key 和每条模型规则选择有效分组": "Selecteer geldige groepen voor de Key en elke modelregel",
+    "按模型配置多个分组": "Meerdere groepen per model instellen",
+    "留空允许所选分组内全部模型；选择多个模型后可分别指定分组。": "Laat leeg voor alle modellen in de geselecteerde groepen, of selecteer modellen en wijs groepen toe.",
+    "可用分组（可多选，按选择顺序路由）": "Beschikbare groepen (meerdere, routering in selectievolgorde)",
+    "仅在所选分组内自动路由和重试，按实际使用分组计费；所有模型共用此 Key 的额度。": "Routering en herhalingen blijven binnen geselecteerde groepen. Facturering volgt de gebruikte groep; alle modellen delen het quotum van deze Key.",
+    "继承此 Key 的全部可用分组": "Alle beschikbare groepen van deze Key overnemen",
+    "原分组已移除，请重新指定分组或清除规则以继承。": "De oorspronkelijke groepen zijn verwijderd. Wijs opnieuw groepen toe of wis de regel om over te nemen.",
     "同步模型能力": "Modelmogelijkheden synchroniseren",
     "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Synchroniseer context en modaliteiten vanuit models.dev en de communitycatalogus. Standaard dagelijks gecontroleerd; handmatige waarden hebben voorrang.",
     "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Modelmogelijkheden gesynchroniseerd: {{created}} toegevoegd, {{updated}} bijgewerkt",

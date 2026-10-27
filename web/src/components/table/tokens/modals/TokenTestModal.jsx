@@ -99,6 +99,10 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [models, setModels] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [groupSelection, setGroupSelection] = useState({});
+  const selectedGroup =
+    groupSelection.tokenId === token?.id ? groupSelection.group : '';
   const [loadingModels, setLoadingModels] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
   const [testing, setTesting] = useState(false);
@@ -111,7 +115,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
     return () => {
       requestSerial.current++;
     };
-  }, [visible, token?.id, selectedModel]);
+  }, [visible, token?.id, selectedModel, selectedGroup]);
 
   useEffect(() => {
     if (!visible || !token?.id) {
@@ -123,13 +127,18 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
       return;
     }
 
+    let active = true;
     const loadModels = async () => {
       setLoadingModels(true);
+      setModels([]);
+      setSelectedModel('');
       try {
         const res = await API.get('/api/token/models', {
-          params: { token_id: token.id, detail: true },
+          params: { token_id: token.id, detail: true, group: selectedGroup },
         });
+        if (!active) return;
         const { success, message, data } = res.data || {};
+        setGroups(res.data?.groups || []);
         if (!success) {
           showError(t(message || '加载模型失败'));
           setModels([]);
@@ -145,15 +154,19 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
             : nextModels[0]?.name || '',
         );
       } catch (error) {
+        if (!active) return;
         showError(error?.message || t('加载模型失败'));
         setModels([]);
       } finally {
-        setLoadingModels(false);
+        if (active) setLoadingModels(false);
       }
     };
 
     loadModels();
-  }, [visible, token?.id, t]);
+    return () => {
+      active = false;
+    };
+  }, [visible, token?.id, selectedGroup, t]);
 
   const selectedModelMeta = useMemo(
     () => models.find((item) => item.name === selectedModel) || null,
@@ -219,6 +232,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
     try {
       const res = await API.post(`/api/token/test/${token.id}`, {
         model: selectedModel,
+        group: selectedGroup,
       });
       if (serial !== requestSerial.current) return;
       const { success, message, time, test_kind, data } = res.data || {};
@@ -316,6 +330,29 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
         />
 
         <div className='flex flex-col gap-2'>
+          <Typography.Text strong id='token-test-group-label'>
+            {t('测试分组')}
+          </Typography.Text>
+          <Select
+            aria-labelledby='token-test-group-label'
+            value={selectedGroup}
+            disabled={testing}
+            onChange={(group) =>
+              setGroupSelection({ tokenId: token.id, group })
+            }
+            optionList={[
+              { value: '', label: t('按 Key 默认范围') },
+              ...groups.map((group) => ({ value: group, label: group })),
+            ]}
+            style={{ width: '100%' }}
+          />
+          <Typography.Text type='tertiary'>
+            {t(
+              '选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。',
+            )}
+          </Typography.Text>
+        </div>
+        <div className='flex flex-col gap-2'>
           <Typography.Text strong>{t('测试模型')}</Typography.Text>
           <Select
             value={selectedModel}
@@ -323,6 +360,7 @@ const TokenTestModal = ({ visible, token, onCancel }) => {
             optionList={modelOptions}
             filter={selectFilter}
             searchable
+            disabled={testing || loadingModels}
             loading={loadingModels}
             placeholder={t('请选择模型')}
             emptyContent={t('没有可用模型')}

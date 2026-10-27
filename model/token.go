@@ -38,6 +38,7 @@ type Token struct {
 	AllowIps                *string        `json:"allow_ips" gorm:"default:''"`
 	UsedQuota               int            `json:"used_quota" gorm:"default:0"` // used quota
 	Group                   string         `json:"group" gorm:"default:''"`
+	RoutingConfig           string         `json:"routing_config" gorm:"type:text"`
 	CrossGroupRetry         bool           `json:"cross_group_retry"`                        // 跨分组重试，仅auto分组有效
 	AutoGroupFallback       bool           `json:"auto_group_fallback" gorm:"default:false"` // 固定首选分组不可用时按自动分组顺序回退
 	MaxConcurrency          int            `json:"max_concurrency" gorm:"type:int;default:0"`
@@ -466,7 +467,7 @@ func (token *Token) Update() (err error) {
 	err = DB.Model(token).Select("name", "status", "source_type", "billing_mode",
 		"sellable_token_product_id", "sellable_token_issuance_id", "expired_time", "remain_quota",
 		"unlimited_quota", "model_limits_enabled", "model_limits", "channel_limits_enabled", "channel_limits", "allow_ips", "group",
-		"cross_group_retry", "auto_group_fallback", "max_concurrency", "window_request_limit", "window_seconds",
+		"cross_group_retry", "auto_group_fallback", "routing_config", "max_concurrency", "window_request_limit", "window_seconds",
 		"package_enabled", "package_limit_quota", "package_period", "package_custom_seconds",
 		"package_used_quota", "package_next_reset_time", "package_period_mode").Updates(token).Error
 	return err

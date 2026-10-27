@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -31,10 +32,15 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 		service.InitHttpClient()
 	}
 	for _, tc := range []struct {
+		routing                                    string
 		name                                       string
 		on, unavailable, healthy, allFail, limited bool
 		retries, primaryCalls, backupCalls, status int
 	}{
+		{name: "scoped_model_to_backup", routing: `{"groups":["primary","backup"],"model_groups":{"group-fallback-model":["backup"],"group-other-model":["primary"]}}`, on: true, retries: 1, backupCalls: 1, status: 200},
+		{name: "scoped_no_global_expansion", routing: `{"groups":["primary"]}`, on: true, retries: 1, primaryCalls: 1, status: 503},
+		{name: "scoped_fallback", routing: `{"groups":["primary","backup"]}`, retries: 1, primaryCalls: 1, backupCalls: 1, status: 200},
+		{name: "scoped_all_fail_refund", routing: `{"groups":["primary","backup"]}`, allFail: true, retries: 1, primaryCalls: 1, backupCalls: 1, status: 503},
 		{name: "preferred_healthy", on: true, healthy: true, retries: 1, primaryCalls: 1, status: 200},
 		{name: "unavailable_on", on: true, unavailable: true, retries: 1, backupCalls: 1, status: 200},
 		{name: "unavailable_off", unavailable: true, retries: 1, status: 503},
@@ -67,13 +73,13 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 				require.NoError(t, setting.UpdateAutoGroupsByJsonString(oldAuto))
 				require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(oldUsable))
 			})
-			require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"group-fallback-model":1}`))
+			require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"group-fallback-model":1,"group-other-model":1}`))
 			require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"primary":1,"backup":3,"last":5}`))
 			require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"primary":"","backup":"","last":""}`))
 			require.NoError(t, setting.UpdateAutoGroupsByJsonString(`["backup","last"]`))
 			const initialQuota = 1000000
 			user := &model.User{Id: 998601, Username: "fallback-fixture", Group: "primary", Role: common.RoleCommonUser, Quota: initialQuota, Status: common.UserStatusEnabled}
-			token := &model.Token{Id: 998602, UserId: user.Id, Key: "fallback-fixture-token", Group: "primary", AutoGroupFallback: tc.on, Status: common.TokenStatusEnabled, RemainQuota: initialQuota, ChannelLimitsEnabled: tc.limited, ChannelLimits: "998603"}
+			token := &model.Token{Id: 998602, UserId: user.Id, Key: "fallback-fixture-token", Group: "primary", RoutingConfig: tc.routing, AutoGroupFallback: tc.on, Status: common.TokenStatusEnabled, RemainQuota: initialQuota, ChannelLimitsEnabled: tc.limited, ChannelLimits: "998603"}
 			require.NoError(t, db.Create(user).Error)
 			require.NoError(t, db.Create(token).Error)
 			var primaryCalls, backupCalls atomic.Int32
@@ -88,7 +94,8 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 			}
 			primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				primaryCalls.Add(1)
-				if tc.healthy {
+				body, _ := io.ReadAll(r.Body)
+				if tc.healthy || strings.Contains(string(body), "group-other-model") {
 					success(w)
 				} else {
 					failure(w)
@@ -117,6 +124,9 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 				require.NoError(t, db.Create(ch).Error)
 				require.NoError(t, db.Create(&model.Ability{Group: group, Model: "group-fallback-model", ChannelId: ch.Id, Enabled: status == common.ChannelStatusEnabled, Priority: common.GetPointer(int64(1)), Weight: 1}).Error)
 			}
+			if tc.name == "scoped_model_to_backup" {
+				require.NoError(t, db.Create(&model.Ability{Group: "primary", Model: "group-other-model", ChannelId: 998603, Enabled: true, Priority: common.GetPointer(int64(1)), Weight: 1}).Error)
+			}
 			r := gin.New()
 			r.Use(middleware.RequestFailureLog(), middleware.RouteTag("relay"))
 			r.POST("/v1/chat/completions", func(c *gin.Context) {
@@ -125,7 +135,7 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 				common.SetContextKey(c, constant.ContextKeyUserRole, user.Role)
 				common.SetContextKey(c, constant.ContextKeyUsingGroup, token.Group)
 				common.SetContextKey(c, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
-				c.Set(common.RequestIdKey, "fallback-"+tc.name)
+				c.Set(common.RequestIdKey, "fallback-"+tc.name+c.GetHeader("X-Fixture-Suffix"))
 			}, middleware.Distribute(), func(c *gin.Context) { Relay(c, types.RelayFormatOpenAI) })
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(`{"model":"group-fallback-model","messages":[{"role":"user","content":"OK"}]}`))
@@ -158,6 +168,27 @@ func TestRelayPreferredGroupFallback(t *testing.T) {
 				var gotToken model.Token
 				return db.First(&gotUser, user.Id).Error == nil && db.First(&gotToken, token.Id).Error == nil && gotUser.Quota == initialQuota-log.Quota && gotToken.RemainQuota == initialQuota-log.Quota
 			}, 3*time.Second, 10*time.Millisecond, "charge once on final group; failed requests refund")
+			if tc.name == "scoped_model_to_backup" {
+				w2 := httptest.NewRecorder()
+				req2 := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(`{"model":"group-other-model","messages":[{"role":"user","content":"OK"}]}`))
+				req2.Header.Set("Content-Type", "application/json")
+				req2.Header.Set("X-Fixture-Suffix", "-second")
+				r.ServeHTTP(w2, req2)
+				require.Equal(t, 200, w2.Code, w2.Body.String())
+				require.EqualValues(t, 1, primaryCalls.Load())
+				require.EqualValues(t, 1, backupCalls.Load())
+				var all []model.Log
+				require.NoError(t, db.Where("token_id = ? AND type = ?", token.Id, model.LogTypeConsume).Order("id").Find(&all).Error)
+				require.Len(t, all, 2)
+				require.Equal(t, "primary", all[1].Group)
+				require.Equal(t, 3*all[1].Quota, all[0].Quota, "same usage uses the selected model's 1x or 3x group")
+				require.Eventually(t, func() bool {
+					var balance model.Token
+					var wallet model.User
+					return db.First(&balance, token.Id).Error == nil && db.First(&wallet, user.Id).Error == nil && balance.RemainQuota == initialQuota-all[0].Quota-all[1].Quota && wallet.Quota == balance.RemainQuota
+				}, 3*time.Second, 10*time.Millisecond)
+			}
+
 		})
 	}
 }

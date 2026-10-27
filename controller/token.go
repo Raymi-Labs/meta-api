@@ -722,17 +722,11 @@ func AddToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	channelLimitsEnabled, channelLimits, err := normalizeTokenChannelLimitsForSave(
-		c.GetInt("id"),
-		c.GetInt("role"),
-		token.Group,
-		token.ModelLimits,
-		token.ModelLimitsEnabled,
-		token.ChannelLimits,
-		token.ChannelLimitsEnabled,
-		"",
-		token.AutoGroupFallback,
-	)
+	if err := validateTokenRoutingForSave(c.GetInt("id"), &token); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	channelLimitsEnabled, channelLimits, err := normalizeTokenChannelLimitsForToken(c.GetInt("id"), c.GetInt("role"), &token, "")
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -796,6 +790,7 @@ func AddToken(c *gin.Context) {
 		Group:                token.Group,
 		CrossGroupRetry:      token.CrossGroupRetry,
 		AutoGroupFallback:    token.AutoGroupFallback,
+		RoutingConfig:        token.RoutingConfig,
 		MaxConcurrency:       token.MaxConcurrency,
 		WindowRequestLimit:   token.WindowRequestLimit,
 		WindowSeconds:        token.WindowSeconds,
@@ -841,8 +836,12 @@ func DeleteToken(c *gin.Context) {
 func UpdateToken(c *gin.Context) {
 	userId := c.GetInt("id")
 	statusOnly := c.Query("status_only")
-	token := model.Token{}
-	err := c.ShouldBindJSON(&token)
+	payload := struct {
+		model.Token
+		RoutingConfig *string `json:"routing_config"`
+	}{}
+	err := c.ShouldBindJSON(&payload)
+	token := payload.Token
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -857,21 +856,23 @@ func UpdateToken(c *gin.Context) {
 		return
 	}
 	if statusOnly == "" {
+		token.RoutingConfig = cleanToken.RoutingConfig
+		if payload.RoutingConfig != nil {
+			token.RoutingConfig = *payload.RoutingConfig
+		}
+		token.SourceType = cleanToken.SourceType
+		if cleanToken.SourceType == model.TokenSourceTypeSellableToken {
+			token.RoutingConfig = cleanToken.RoutingConfig
+		}
+		if err := validateTokenRoutingForSave(userId, &token); err != nil {
+			common.ApiError(c, err)
+			return
+		}
 		if err := validateTokenGroupSelection(userId, token.Group); err != nil {
 			common.ApiError(c, err)
 			return
 		}
-		channelLimitsEnabled, channelLimits, err := normalizeTokenChannelLimitsForSave(
-			userId,
-			c.GetInt("role"),
-			token.Group,
-			token.ModelLimits,
-			token.ModelLimitsEnabled,
-			token.ChannelLimits,
-			token.ChannelLimitsEnabled,
-			cleanToken.ChannelLimits,
-			token.AutoGroupFallback && cleanToken.SourceType != model.TokenSourceTypeSellableToken,
-		)
+		channelLimitsEnabled, channelLimits, err := normalizeTokenChannelLimitsForToken(userId, c.GetInt("role"), &token, cleanToken.ChannelLimits)
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -935,6 +936,7 @@ func UpdateToken(c *gin.Context) {
 			cleanToken.AllowIps = token.AllowIps
 			cleanToken.CrossGroupRetry = token.CrossGroupRetry
 			cleanToken.AutoGroupFallback = token.AutoGroupFallback
+			cleanToken.RoutingConfig = token.RoutingConfig
 			cleanToken.MaxConcurrency = token.MaxConcurrency
 			cleanToken.WindowRequestLimit = token.WindowRequestLimit
 			cleanToken.WindowSeconds = token.WindowSeconds

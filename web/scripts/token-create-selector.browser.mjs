@@ -270,6 +270,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     );
   });
   const ready = async () => {
+    // This suite covers the retained single-group editor. The multi-group
+    // default and mappings have their own token-routing.browser.mjs suite.
+    const routing = page.locator('#routing_enabled');
+    if (await routing.count() && await routing.getAttribute('aria-checked') === 'true') await routing.click();
     await page.getByRole('radio').first().waitFor();
     await page.waitForFunction(
       () =>
@@ -796,7 +800,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await delay(100);
   failGroups = true;
   await page.evaluate(() => window.qa.open());
-  await page.getByText('分组加载失败', { exact: false }).waitFor();
+  await page.getByText('分组加载失败', { exact: false }).filter({ visible: true }).waitFor();
   assert.equal(await page.getByRole('radio').count(), 0);
   assert.equal(await create().isEnabled(), false);
   failGroups = false;

@@ -9,6 +9,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/relay/channel/ai360"
@@ -137,7 +138,33 @@ func ListModels(c *gin.Context, modelType int) {
 	}
 
 	modelLimitEnable := common.GetContextKeyBool(c, constant.ContextKeyTokenModelLimitEnabled)
-	if modelLimitEnable {
+	if raw := common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig); raw != "" {
+		token := &model.Token{Group: common.GetContextKeyString(c, constant.ContextKeyTokenGroup), RoutingConfig: raw, ModelLimitsEnabled: modelLimitEnable}
+		if limits, ok := c.Get("token_model_limit"); ok {
+			if allowed, ok := limits.(map[string]bool); ok {
+				names := []string{}
+				for name, enabled := range allowed {
+					if enabled {
+						names = append(names, name)
+					}
+				}
+				token.ModelLimits = strings.Join(names, ",")
+			}
+		}
+		token.ChannelLimitsEnabled = common.GetContextKeyBool(c, constant.ContextKeyTokenChannelLimitEnabled)
+		ids := middleware.GetAllowedTokenChannelIDs(c)
+		token.ChannelLimits = serializeChannelLimitIDs(ids)
+		options, err := buildTokenModelOptions(c.GetInt("id"), token, "")
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		for _, option := range options {
+			if !isHiddenRelayModel(option.Name) {
+				userOpenAiModels = append(userOpenAiModels, dto.OpenAIModels{Id: option.Name, Object: "model", Created: 1626777600, OwnedBy: "custom", SupportedEndpointTypes: option.SupportedEndpointTypes})
+			}
+		}
+	} else if modelLimitEnable {
 		s, ok := common.GetContextKey(c, constant.ContextKeyTokenModelLimit)
 		var tokenModelLimit map[string]bool
 		if ok {

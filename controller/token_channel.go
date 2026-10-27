@@ -264,9 +264,13 @@ func mergePersistedTokenChannelOptions(options []tokenChannelOption, channelLimi
 }
 
 func normalizeTokenChannelLimitsForSave(userID int, role int, group string, modelLimits string, modelLimitsEnabled bool, channelLimits string, channelLimitsEnabled bool, existingChannelLimits string, fallback ...bool) (bool, string, error) {
-	normalizedIDs := normalizeChannelLimitIDs(channelLimits)
+	return normalizeTokenChannelLimitsForToken(userID, role, &model.Token{Group: group, ModelLimits: modelLimits, ModelLimitsEnabled: modelLimitsEnabled, ChannelLimits: channelLimits, ChannelLimitsEnabled: channelLimitsEnabled, AutoGroupFallback: len(fallback) > 0 && fallback[0]}, existingChannelLimits)
+}
+
+func normalizeTokenChannelLimitsForToken(userID, role int, token *model.Token, existingChannelLimits string) (bool, string, error) {
+	normalizedIDs := normalizeChannelLimitIDs(token.ChannelLimits)
 	if role < common.RoleAdminUser {
-		if channelLimitsEnabled || len(normalizedIDs) > 0 || strings.TrimSpace(channelLimits) != "" {
+		if token.ChannelLimitsEnabled || len(normalizedIDs) > 0 || strings.TrimSpace(token.ChannelLimits) != "" {
 			return false, "", fmt.Errorf("仅管理员可配置渠道限制")
 		}
 		return false, "", nil
@@ -274,8 +278,7 @@ func normalizeTokenChannelLimitsForSave(userID int, role int, group string, mode
 	if len(normalizedIDs) == 0 {
 		return false, "", nil
 	}
-
-	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled, fallback...)
+	options, err := buildTokenChannelOptionsForToken(userID, token)
 	if err != nil {
 		return false, "", err
 	}
@@ -316,6 +319,7 @@ func GetTokenChannels(c *gin.Context) {
 
 	tokenIDRaw := strings.TrimSpace(c.Query("token_id"))
 	tokenChannelLimitIDs := []int{}
+	routingConfig := ""
 	if tokenIDRaw != "" {
 		tokenID, err := strconv.Atoi(tokenIDRaw)
 		if err != nil || tokenID <= 0 {
@@ -341,9 +345,15 @@ func GetTokenChannels(c *gin.Context) {
 			fallback = false
 		}
 		tokenChannelLimitIDs = token.GetChannelLimitIDs()
+		routingConfig = token.RoutingConfig
 	}
 
-	options, err := buildTokenChannelOptions(userID, group, modelLimits, modelLimitsEnabled, fallback)
+	draft := &model.Token{Group: group, ModelLimits: modelLimits, ModelLimitsEnabled: modelLimitsEnabled, AutoGroupFallback: fallback, RoutingConfig: routingConfig}
+	if err := tokenRoutingDraft(c, draft); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	options, err := buildTokenChannelOptionsForToken(userID, draft)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -359,4 +369,57 @@ func GetTokenChannels(c *gin.Context) {
 		"message": "",
 		"data":    options,
 	})
+}
+
+// Combine exact per-group model intersections; persisted unavailable channels
+// are still displayed by the existing merger, but never become new grants.
+func buildTokenChannelOptionsForToken(userID int, token *model.Token) ([]tokenChannelOption, error) {
+	if token.RoutingConfig == "" {
+		return buildTokenChannelOptions(userID, token.Group, token.ModelLimits, token.ModelLimitsEnabled, token.AllowsGroupFallback())
+	}
+	config, err := model.ParseTokenRoutingConfig(token.RoutingConfig)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := tokenCatalogGroups(userID, token)
+	if err != nil {
+		return nil, err
+	}
+	byID := map[int]*tokenChannelOption{}
+	for _, group := range groups {
+		options, err := buildTokenChannelOptions(userID, group, token.ModelLimits, token.ModelLimitsEnabled, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, option := range options {
+			names := []string{}
+			for _, name := range option.MatchedModels {
+				if common.StringsContains(config.GroupsForModel(name), group) {
+					names = append(names, name)
+				}
+			}
+			if len(names) == 0 {
+				continue
+			}
+			existing := byID[option.ID]
+			if existing == nil {
+				option.MatchedModels = []string{}
+				option.MatchedGroups = []string{}
+				existing = &option
+				byID[option.ID] = existing
+			}
+			existing.MatchedGroups = append(existing.MatchedGroups, group)
+			for _, name := range names {
+				if !common.StringsContains(existing.MatchedModels, name) {
+					existing.MatchedModels = append(existing.MatchedModels, name)
+				}
+			}
+		}
+	}
+	result := make([]tokenChannelOption, 0, len(byID))
+	for _, option := range byID {
+		result = append(result, *option)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].ID < result[j].ID })
+	return result, nil
 }
