@@ -34,7 +34,7 @@ import EditTokenModal from './src/components/table/tokens/modals/EditTokenModal'
 import TokenTestModal from './src/components/table/tokens/modals/TokenTestModal';import './src/index.css';
 i18n.use(initReactI18next).init({lng:'zh',resources:{zh:{translation:{}}},interpolation:{escapeValue:false}});
 function App(){const [visible,setVisible]=useState(true),[edit,setEdit]=useState({}),[test,setTest]=useState(false);
-window.qa={edit:()=>{setEdit({id:99,status:1});setTest(false);setVisible(true)},create:()=>{setEdit({});setTest(false);setVisible(true)},test:()=>{setVisible(false);setTest(true)}};
+window.qa={edit:(id=99)=>{setEdit({id,status:1});setTest(false);setVisible(true)},create:()=>{setEdit({});setTest(false);setVisible(true)},test:()=>{setVisible(false);setTest(true)}};
 return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=>{}]}><StatusContext.Provider value={[{status:{quota_per_unit:500000,default_use_auto_group:true}},()=>{}]}><EditTokenModal visiable={visible} editingToken={edit} handleClose={()=>setVisible(false)} refresh={()=>{}}/><TokenTestModal visible={test} token={{id:99,name:'fixture'}} onCancel={()=>setTest(false)}/></StatusContext.Provider></UserContext.Provider></BrowserRouter>};createRoot(document.getElementById('root')).render(<App/>);`,
   );
   const { config } = await loadConfigFromFile(
@@ -61,6 +61,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     saves = [],
     tests = [];
   let failSave = false;
+  let holdSave = false,
+    releaseSave;
   let stored = {
     id: 99,
     name: 'fixture',
@@ -109,6 +111,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
       extra.groups = ['default', 'vip'];
     } else if (url.pathname === '/api/token/channels') data = [];
     else if (url.pathname === '/api/token/99') data = stored;
+    else if (url.pathname === '/api/token/100')
+      data = { ...stored, id: 100, name: 'second-routing-key' };
     else if (url.pathname === '/api/token/test/99')
       tests.push(request.postDataJSON());
     else if (
@@ -123,6 +127,12 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
       }
       stored = { ...stored, ...request.postDataJSON() };
       saves.push(request.postDataJSON());
+      if (holdSave) {
+        holdSave = false;
+        await new Promise((resolve) => {
+          releaseSave = resolve;
+        });
+      }
     } else if (url.pathname.includes('health'))
       data = { enabled: false, groups: [] };
     else data = {};
@@ -185,6 +195,48 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   );
   assert.equal(saves.length, 2);
   assert.equal(saves[1].routing_config, saves[0].routing_config);
+  // A delayed save must not close or clear a different multi-group editor.
+  await page.evaluate(() => window.qa.edit());
+  await page.getByLabel('model-b 可用分组', { exact: true }).waitFor();
+  holdSave = true;
+  await page.locator('#name').fill('delayed-routing-key');
+  await page.locator('.token-editor__submit:visible').click();
+  await new Promise((resolve, reject) => {
+    const deadline = Date.now() + 5000;
+    const check = () =>
+      releaseSave
+        ? resolve()
+        : Date.now() > deadline
+          ? reject(new Error('save did not start'))
+          : setTimeout(check, 20);
+    check();
+  });
+  assert.ok(releaseSave, 'the synthetic save must be pending');
+  await page.evaluate(() => window.qa.edit(100));
+  await page.waitForFunction(
+    () => document.querySelector('#name')?.value === 'second-routing-key',
+  );
+  await page.locator('#name').fill('second-draft');
+  const oldSaveResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/token/') &&
+      response.request().method() === 'PUT',
+  );
+  releaseSave();
+  await oldSaveResponse;
+  await page.waitForTimeout(250);
+  assert.equal(await page.locator('#name').inputValue(), 'second-draft');
+  assert.equal(
+    await page.locator('.token-editor__submit:visible').isEnabled(),
+    true,
+  );
+  assert.match(await groupSelect().innerText(), /vip/);
+  await page.locator('.token-editor__submit:visible').click();
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-sidesheet-inner'),
+  );
+  assert.equal(saves.at(-1).id, 100);
+  assert.equal(saves.at(-1).routing_config, saves[0].routing_config);
   await page.evaluate(() => window.qa.test());
   await page.getByLabel('测试分组', { exact: true }).waitFor();
   await select(page.getByLabel('测试分组', { exact: true }), 'vip');
@@ -258,7 +310,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   }
   assert.deepEqual(errors, []);
   console.log(
-    `PASS: create, model groups, edit, failed save, group test, mobile, legacy fixed/auto compatibility. Screenshots: ${artifacts}`,
+    `PASS: create, model groups, edit, failed save, delayed save isolation, group test, mobile, legacy fixed/auto compatibility. Screenshots: ${artifacts}`,
   );
 } catch (error) {
   if (page) {

@@ -23,7 +23,10 @@ import React, {
   useState,
   useMemo,
   useCallback,
+  useContext,
 } from 'react';
+import { UserContext } from '../../../context/User';
+import { Button } from '@douyinfe/semi-ui';
 import { API } from '../../../helpers';
 import CardPro from '../../common/ui/CardPro';
 import TokensTable from './TokensTable';
@@ -39,7 +42,7 @@ import { useFluentIntegration } from '../../../hooks/tokens/useFluentIntegration
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { createCardProPagination } from '../../../helpers/utils';
 
-function TokensPage() {
+function TokensPageContent() {
   // openFluentNotificationRef 用于打破 TDZ 循环依赖：
   // useTokensData 需要在初始化时接收回调，但回调本身来自后续的 useFluentIntegration
   const openFluentNotificationRef = useRef(null);
@@ -96,8 +99,10 @@ function TokensPage() {
 
   // Fetch runtime status for tokens that have runtime limits
   const [runtimeStatusMap, setRuntimeStatusMap] = useState({});
+  const runtimeRequestRef = useRef(0);
 
   const fetchRuntimeStatus = useCallback(async (tokensList) => {
+    const requestId = ++runtimeRequestRef.current;
     const ids = tokensList
       .filter(
         (tk) =>
@@ -114,7 +119,11 @@ function TokensPage() {
       const res = await API.post('/api/token/runtime_status', {
         token_ids: ids,
       });
-      if (res.data?.success && res.data?.data) {
+      if (
+        requestId === runtimeRequestRef.current &&
+        res.data?.success &&
+        res.data?.data
+      ) {
         setRuntimeStatusMap(res.data.data);
       }
     } catch {
@@ -123,13 +132,20 @@ function TokensPage() {
   }, []);
 
   useEffect(() => {
-    if (!tokensData.tokens || tokensData.tokens.length === 0) return;
+    setRuntimeStatusMap({});
+    if (!tokensData.tokens || tokensData.tokens.length === 0) {
+      runtimeRequestRef.current++;
+      return;
+    }
     fetchRuntimeStatus(tokensData.tokens);
     const interval = setInterval(
       () => fetchRuntimeStatus(tokensData.tokens),
       30000,
     );
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      runtimeRequestRef.current++;
+    };
   }, [tokensData.tokens, fetchRuntimeStatus]);
 
   // Merge runtime status into tokens
@@ -153,7 +169,7 @@ function TokensPage() {
   );
 
   return (
-    <>
+    <div className='tokens-page'>
       <EditTokenModal
         refresh={refresh}
         editingToken={editingToken}
@@ -176,9 +192,11 @@ function TokensPage() {
         t={tokensData.t}
       />
       <CardPro
+        mobileActionsInitiallyVisible
         type='type1'
         descriptionArea={
           <TokensDescription
+            tokenCount={tokensData.tokenCount}
             compactMode={compactMode}
             setCompactMode={setCompactMode}
             t={t}
@@ -194,6 +212,7 @@ function TokensPage() {
               batchDisableTokens={batchDisableTokens}
               batchCopyTokens={batchCopyTokens}
               batchDeleteTokens={batchDeleteTokens}
+              getTokenFullKey={tokensData.getTokenFullKey}
               copyText={copyText}
               loading={loading}
               t={t}
@@ -223,16 +242,30 @@ function TokensPage() {
         })}
         t={tokensData.t}
       >
-        <TokensTable
-          {...enhancedTokensData}
-          openTestModal={(token) => {
-            setTestingToken(token);
-            setShowTestModal(true);
-          }}
-        />
+        {tokensData.listError ? (
+          <div className='tokens-list-error' role='alert'>
+            <p>{t('加载失败，请重试')}</p>
+            <Button onClick={tokensData.retryList}>{t('重试')}</Button>
+          </div>
+        ) : (
+          <TokensTable
+            {...enhancedTokensData}
+            openTestModal={(token) => {
+              setTestingToken(token);
+              setShowTestModal(true);
+            }}
+          />
+        )}
       </CardPro>
-    </>
+    </div>
   );
 }
-
+function TokensPage() {
+  const [state] = useContext(UserContext);
+  const user = state?.user;
+  if (!user?.id) return null;
+  return (
+    <TokensPageContent key={`${user.id}:${user.role}:${user.group || ''}`} />
+  );
+}
 export default TokensPage;

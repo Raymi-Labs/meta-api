@@ -44,6 +44,7 @@ const { Text } = Typography;
 const CardPro = ({
   type = 'type1',
   className = '',
+  mobileActionsInitiallyVisible = false,
   children,
   // 各个区域的内容
   statsArea,
@@ -62,7 +63,9 @@ const CardPro = ({
   ...props
 }) => {
   const isMobile = useIsMobile();
-  const [showMobileActions, setShowMobileActions] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(
+    mobileActionsInitiallyVisible,
+  );
 
   const toggleMobileActions = () => {
     setShowMobileActions(!showMobileActions);

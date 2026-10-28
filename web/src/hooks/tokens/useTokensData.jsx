@@ -53,6 +53,7 @@ export const useTokensData = (openFluentNotification) => {
   const [tokens, setTokens] = useState([]);
 
   const [tokenCount, setTokenCount] = useState(0);
+  const [listError, setListError] = useState(false);
   const [searchMode, setSearchMode] = useState(false); // whether current list is search-result view
   const [groupOptions, setGroupOptions] = useState([]);
 
@@ -64,6 +65,9 @@ export const useTokensData = (openFluentNotification) => {
     id: undefined,
   });
   const clearEditingTokenTimerRef = useRef(null);
+  const aliveRef = useRef(false);
+  const mutationBusyRef = useRef(false);
+  const lastListRequestRef = useRef({ mode: 'list', page: 1, size: pageSize });
   // requestCounter 由 usePaginatedList 提供，通过 nextRequestId / isLatestRequest 使用
 
   // UI 状态
@@ -193,46 +197,62 @@ export const useTokensData = (openFluentNotification) => {
     const reqId = nextRequestId();
     setLoading(true);
     setSearchMode(false);
-    const res = await API.get('/api/token/', {
-      params: {
-        p: page,
-        size,
-      },
-    });
-    if (!isLatestRequest(reqId)) {
-      return;
-    }
-    const { success, message, data } = res.data;
-    if (success) {
+    lastListRequestRef.current = { mode: 'list', page, size };
+    setSelectedKeys([]);
+    setShowKeys({});
+    setListError(false);
+    setSearching(false);
+    try {
+      const res = await API.get('/api/token/', {
+        params: { p: page, size },
+        disableDuplicate: true,
+      });
+      if (!isLatestRequest(reqId)) return;
+      const { success, data } = res.data || {};
+      if (!success || !Array.isArray(data?.items))
+        throw new Error('Invalid token list');
       syncPageData(data);
-    } else {
-      showError(message);
-    }
-    if (isLatestRequest(reqId)) {
-      setLoading(false);
+    } catch {
+      if (isLatestRequest(reqId)) setListError(true);
+    } finally {
+      if (isLatestRequest(reqId)) setLoading(false);
     }
   };
 
   // 刷新函数
   const refresh = async (page = activePage) => {
     if (searchMode) {
-      await searchTokens(page, pageSize);
+      await searchTokens(page, pageSize, lastListRequestRef.current.filters);
     } else {
       await loadTokens(page);
     }
-    setSelectedKeys([]);
   };
 
   // 复制文本函数
   const copyText = async (text) => {
     if (await copy(text)) {
+      if (!aliveRef.current) return false;
       showSuccess(t('已复制到剪贴板！'));
+      return true;
     } else {
       Modal.error({
         title: t('无法复制到剪贴板，请手动复制'),
-        content: text,
+        content: (
+          <pre
+            tabIndex={0}
+            style={{
+              maxHeight: '40vh',
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {text}
+          </pre>
+        ),
         size: 'large',
       });
+      return false;
     }
   };
 
@@ -249,6 +269,7 @@ export const useTokensData = (openFluentNotification) => {
     try {
       // List API returns masked keys; fetch the full key only when needed.
       const res = await API.get(`/api/token/${record.id}/key`);
+      if (!aliveRef.current) return '';
       const { success, message, data } = res.data || {};
       if (!success || !data?.key) {
         showError(message || t('获取令牌失败'));
@@ -364,39 +385,41 @@ export const useTokensData = (openFluentNotification) => {
 
   // Token 管理函数（delete/enable/disable）
   const manageToken = async (id, action, record) => {
+    if (mutationBusyRef.current) return;
+    mutationBusyRef.current = true;
     setLoading(true);
-    let data = { id };
-    let res;
-    switch (action) {
-      case 'delete':
-        res = await API.delete(`/api/token/${id}/`);
-        break;
-      case 'enable':
-        data.status = 1;
-        res = await API.put('/api/token/?status_only=true', data);
-        break;
-      case 'disable':
-        data.status = 2;
-        res = await API.put('/api/token/?status_only=true', data);
-        break;
-    }
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess(t('操作成功完成！'));
-      let token = res.data.data;
-      let newTokens = [...tokens];
-      if (action !== 'delete') {
-        record.status = token.status;
+    try {
+      let res;
+      if (action === 'delete') res = await API.delete(`/api/token/${id}/`);
+      else if (action === 'enable' || action === 'disable')
+        res = await API.put('/api/token/?status_only=true', {
+          id,
+          status: action === 'enable' ? 1 : 2,
+        });
+      else return;
+      const { success, message, data } = res.data || {};
+      if (!success) {
+        showError(message || t('操作失败'));
+        return;
       }
-      setTokens(newTokens);
-    } else {
-      showError(message);
+      showSuccess(t('操作成功完成！'));
+      setTokens((current) =>
+        action === 'delete'
+          ? current.filter((item) => item.id !== id)
+          : current.map((item) =>
+              item.id === id ? { ...item, status: data.status } : item,
+            ),
+      );
+    } catch {
+      showError(t('操作失败'));
+    } finally {
+      mutationBusyRef.current = false;
+      if (aliveRef.current) setLoading(false);
     }
-    setLoading(false);
   };
 
   // 搜索 Token 函数
-  const searchTokens = async (page = 1, size = pageSize) => {
+  const searchTokens = async (page = 1, size = pageSize, appliedFilters) => {
     const normalizedPage = Number.isInteger(page) && page > 0 ? page : 1;
     const normalizedSize = Number.isInteger(size) && size > 0 ? size : pageSize;
 
@@ -410,8 +433,9 @@ export const useTokensData = (openFluentNotification) => {
       searchUsedBalanceMin,
       searchUsedBalanceMax,
       searchAmountSort,
-    } = getFormValues();
-    if (!hasTokenFilters(getFormValues())) {
+    } = appliedFilters || getFormValues();
+    const filters = appliedFilters || getFormValues();
+    if (!hasTokenFilters(filters)) {
       setSearchMode(false);
       await loadTokens(normalizedPage, normalizedSize);
       return;
@@ -458,26 +482,48 @@ export const useTokensData = (openFluentNotification) => {
     ) {
       params.used_balance_max = searchUsedBalanceMax;
     }
-    const res = await API.get('/api/token/search', { params });
-    if (!isLatestRequest(reqId)) {
-      return;
-    }
-    const { success, message, data } = res.data;
-    if (success) {
-      setSearchMode(true);
+    setSearchMode(true);
+    lastListRequestRef.current = {
+      mode: 'search',
+      page: normalizedPage,
+      size: normalizedSize,
+      filters: { ...filters },
+    };
+    setSelectedKeys([]);
+    setShowKeys({});
+    setListError(false);
+    setLoading(true);
+    try {
+      const res = await API.get('/api/token/search', {
+        params,
+        disableDuplicate: true,
+      });
+      if (!isLatestRequest(reqId)) return;
+      const { success, data } = res.data || {};
+      if (!success || !Array.isArray(data?.items))
+        throw new Error('Invalid token search');
       syncPageData(data);
-    } else {
-      showError(message);
+    } catch {
+      if (isLatestRequest(reqId)) setListError(true);
+    } finally {
+      if (isLatestRequest(reqId)) {
+        setSearching(false);
+        setLoading(false);
+      }
     }
-    if (isLatestRequest(reqId)) {
-      setSearching(false);
-    }
+  };
+
+  const retryList = () => {
+    const request = lastListRequestRef.current;
+    return request.mode === 'search'
+      ? searchTokens(request.page, request.size, request.filters)
+      : loadTokens(request.page, request.size);
   };
 
   // 分页处理函数
   const handlePageChange = (page) => {
     if (searchMode) {
-      searchTokens(page, pageSize).then();
+      searchTokens(page, pageSize, lastListRequestRef.current.filters).then();
     } else {
       loadTokens(page, pageSize).then();
     }
@@ -486,7 +532,7 @@ export const useTokensData = (openFluentNotification) => {
   const handlePageSizeChange = async (size) => {
     setPageSize(size);
     if (searchMode) {
-      await searchTokens(1, size);
+      await searchTokens(1, size, lastListRequestRef.current.filters);
     } else {
       await loadTokens(1, size);
     }
@@ -494,6 +540,7 @@ export const useTokensData = (openFluentNotification) => {
 
   // 行选择处理函数
   const rowSelection = {
+    selectedRowKeys: selectedKeys.map((token) => token.id),
     onSelect: (record, selected) => {},
     onSelectAll: (selected, selectedRows) => {},
     onChange: (selectedRowKeys, selectedRows) => {
@@ -525,6 +572,8 @@ export const useTokensData = (openFluentNotification) => {
       showError(t('请至少选择一个令牌！'));
       return;
     }
+    if (mutationBusyRef.current) return;
+    mutationBusyRef.current = true;
     setLoading(true);
     try {
       const ids = selectedKeys.map((token) => token.id);
@@ -558,7 +607,8 @@ export const useTokensData = (openFluentNotification) => {
     } catch (error) {
       showError(error?.message || t('批量操作失败'));
     } finally {
-      setLoading(false);
+      mutationBusyRef.current = false;
+      if (aliveRef.current) setLoading(false);
     }
   };
 
@@ -624,7 +674,10 @@ export const useTokensData = (openFluentNotification) => {
 
   // 初始化数据
   useEffect(() => {
+    aliveRef.current = true;
     return () => {
+      aliveRef.current = false;
+      nextRequestId();
       if (clearEditingTokenTimerRef.current) {
         clearTimeout(clearEditingTokenTimerRef.current);
       }
@@ -658,6 +711,8 @@ export const useTokensData = (openFluentNotification) => {
   }, []);
 
   return {
+    listError,
+    retryList,
     // 基础状态
     tokens,
     loading,

@@ -673,6 +673,7 @@ const renderOperations = (
   t,
 ) => {
   let chatsArray = [];
+  let chatConfigInvalid = false;
   try {
     const raw = localStorage.getItem('chats');
     const parsed = JSON.parse(raw);
@@ -692,7 +693,7 @@ const renderOperations = (
       }
     }
   } catch (_) {
-    showError(t('聊天链接配置错误，请联系管理员'));
+    chatConfigInvalid = true;
   }
   if (!chatsArray.some((item) => item.value?.startsWith('ccswitch'))) {
     chatsArray.push({
@@ -715,7 +716,9 @@ const renderOperations = (
           type='tertiary'
           data-onboarding='token-chat-action'
           onClick={() => {
-            if (chatsArray.length === 0) {
+            if (chatConfigInvalid) {
+              showError(t('聊天链接配置错误，请联系管理员'));
+            } else if (chatsArray.length === 0) {
               showError(t('请联系管理员配置聊天链接'));
             } else {
               const first = chatsArray[0];

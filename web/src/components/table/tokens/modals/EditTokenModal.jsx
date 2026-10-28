@@ -116,6 +116,7 @@ const EditTokenModal = (props) => {
   const modelRequestRef = useRef(0);
   const tokenRequestRef = useRef(0);
   const submittingRef = useRef(false);
+  const editorSessionRef = useRef(0);
   const quotaSectionRef = useRef(null);
   const advancedSectionRef = useRef(null);
   const Dialog = isEdit ? SideSheet : Modal;
@@ -167,6 +168,7 @@ const EditTokenModal = (props) => {
   };
 
   const handleCancel = () => {
+    editorSessionRef.current += 1;
     setChannelLimitTagMode(readStoredChannelLimitTagMode());
     props.handleClose();
   };
@@ -664,6 +666,8 @@ const EditTokenModal = (props) => {
   }, [props.visiable, props.editingToken.id, userState?.user?.id]);
 
   useEffect(() => {
+    editorSessionRef.current += 1;
+    submittingRef.current = false;
     setTokenReady(false);
     setSelectedGroup('');
     if (quotaSectionRef.current) quotaSectionRef.current.open = false;
@@ -691,6 +695,7 @@ const EditTokenModal = (props) => {
       setChannelLimitTagMode(readStoredChannelLimitTagMode());
     }
     return () => {
+      editorSessionRef.current += 1;
       tokenRequestRef.current += 1;
       modelRequestRef.current += 1;
       channelRequestRef.current += 1;
@@ -1012,6 +1017,8 @@ const EditTokenModal = (props) => {
       }
     }
     submittingRef.current = true;
+    const session = editorSessionRef.current;
+    const isCurrentSession = () => session === editorSessionRef.current;
     setLoading(true);
     try {
       if (isEdit) {
@@ -1072,6 +1079,7 @@ const EditTokenModal = (props) => {
           ...localInputs,
           id: parseInt(props.editingToken.id),
         });
+        if (!isCurrentSession()) return;
         const { success, message } = res.data;
         if (success) {
           if (typeof window !== 'undefined') {
@@ -1090,6 +1098,7 @@ const EditTokenModal = (props) => {
         const count = parseInt(values.tokenCount, 10) || 1;
         let successCount = 0;
         for (let i = 0; i < count; i++) {
+          if (!isCurrentSession()) return;
           let { tokenCount: _tc, ...localInputs } = values;
           const baseName =
             values.name.trim() === '' ? 'default' : values.name.trim();
@@ -1144,6 +1153,7 @@ const EditTokenModal = (props) => {
           delete localInputs.remain_amount;
           delete localInputs.package_limit_amount;
           let res = await API.post(`/api/token/`, localInputs);
+          if (!isCurrentSession()) return;
           const { success, message } = res.data;
           if (success) {
             successCount++;
@@ -1165,17 +1175,19 @@ const EditTokenModal = (props) => {
         }
       }
     } catch {
-      showError(t('保存失败，请重试'));
+      if (isCurrentSession()) showError(t('保存失败，请重试'));
     } finally {
-      submittingRef.current = false;
-      setLoading(false);
+      if (isCurrentSession()) {
+        submittingRef.current = false;
+        setLoading(false);
+      }
     }
   };
 
   return (
     <Dialog
       {...(isEdit
-        ? { placement: 'right' }
+        ? { placement: 'right', className: 'token-edit-dialog' }
         : { className: 'token-create-dialog', centered: true })}
       title={
         <Space>

@@ -33,6 +33,7 @@ const TokensActions = ({
   batchCopyTokens,
   batchDeleteTokens,
   copyText,
+  getTokenFullKey,
   loading = false,
   t,
 }) => {
@@ -142,6 +143,7 @@ const TokensActions = ({
         visible={showCopyModal}
         onCancel={() => setShowCopyModal(false)}
         selectedKeys={selectedKeys}
+        getTokenFullKey={getTokenFullKey}
         copyText={copyText}
         t={t}
       />
