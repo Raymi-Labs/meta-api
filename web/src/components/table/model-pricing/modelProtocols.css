@@ -1,0 +1,76 @@
+.model-protocol-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--semi-color-text-2);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.model-protocol-caption {
+  flex-shrink: 0;
+}
+.model-protocol-tag,
+.model-protocol-template {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.model-protocol-template {
+  border-style: dashed;
+  color: var(--semi-color-primary);
+}
+.model-protocol-template:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
+.model-endpoint-heading {
+  margin: 18px 0 6px;
+  color: var(--semi-color-text-0);
+  font-size: 14px;
+  font-weight: 600;
+}
+.model-endpoint-note {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+.model-endpoint-row {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--semi-color-border);
+  min-width: 0;
+}
+.model-endpoint-row:last-child {
+  border: 0;
+}
+.model-endpoint-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--semi-color-text-0);
+}
+.model-endpoint-state {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+}
+.model-endpoint-path {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 5px;
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+}
+.model-endpoint-path code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.model-endpoint-method {
+  flex-shrink: 0;
+}

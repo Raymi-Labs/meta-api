@@ -12,6 +12,8 @@ Status: implemented
 
 余额刷新和最近记录独立失败状态，未知不显示零。确认支付固定当前报价对应的金额/方式，输入变化使旧确认失效；不新增支付服务或自动扣款。未知兑换请求保留原标识与额度，不允许误改额度重发。
 
+充值配置信息的独立加载、失败重试及兑换码优先于邀请的辅助区顺序，见[界面恢复补充](2026-10-28-ordinary-user-ui-hierarchy.md)；不改变本篇支付确认与兑换码重试边界。
+
 ## Existing capability review
 
 - 钱包 → user/self、topup/info、amount/pay 与订阅接口 → controller/topup.go / model/topup.go；用户上下文提供 quota/transferable_quota，金额复用现有 currency/quota helpers。

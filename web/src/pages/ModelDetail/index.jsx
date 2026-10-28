@@ -83,6 +83,13 @@ export default function ModelDetail() {
     pageRef.current?.scrollIntoView({ block: 'start' });
     setPriceGroup('all');
   }, [location.pathname]);
+  useLayoutEffect(() => {
+    if (model?.model_name && location.hash === '#endpoints') {
+      pageRef.current
+        ?.querySelector('#endpoints')
+        ?.scrollIntoView({ block: 'start' });
+    }
+  }, [model?.model_name, location.hash]);
 
   const backLink = (
     <Link
@@ -467,9 +474,6 @@ export default function ModelDetail() {
               endpointMap={data.endpointMap}
               t={t}
             />
-            {!model.supported_endpoint_types?.length && (
-              <p className='model-detail-caption'>{t('未声明')}</p>
-            )}
           </section>
           {related.length > 0 && (
             <section id='related' className='model-detail-section'>

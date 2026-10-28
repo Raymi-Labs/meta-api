@@ -29,6 +29,7 @@ import {
   Row,
   Col,
   Spin,
+  Skeleton,
   Tooltip,
   Tabs,
   TabPane,
@@ -70,6 +71,8 @@ const RechargeCard = ({
   renderQuota,
   statusLoading,
   topupInfo,
+  topupInfoError = false,
+  onRetryTopupInfo,
   subscriptionLoading = false,
   subscriptionPlans = [],
   billingPreference,
@@ -99,8 +102,15 @@ const RechargeCard = ({
       <div className='wallet-recharge-form'>
         {/* 在线充值表单 */}
         {statusLoading ? (
-          <div className='py-8 flex justify-center'>
-            <Spin size='large' />
+          <div className='py-8' role='status' aria-label={t('加载中')}>
+            <Skeleton.Title active style={{ width: '40%' }} />
+            <Skeleton.Paragraph active rows={3} style={{ marginTop: 16 }} />
+            <Skeleton.Button active style={{ width: '100%', marginTop: 16 }} />
+          </div>
+        ) : topupInfoError ? (
+          <div role='alert' className='py-8 flex flex-col items-center gap-4'>
+            <Text type='secondary'>{t('加载失败')}</Text>
+            <Button onClick={onRetryTopupInfo}>{t('重试')}</Button>
           </div>
         ) : enableOnlineTopUp ||
           enableStripeTopUp ||

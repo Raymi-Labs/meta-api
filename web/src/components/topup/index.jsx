@@ -151,6 +151,8 @@ const TopUpContent = () => {
     statusState?.status?.enable_stripe_topup || false,
   );
   const [statusLoading, setStatusLoading] = useState(true);
+  const [topupInfoLoading, setTopupInfoLoading] = useState(true);
+  const [topupInfoError, setTopupInfoError] = useState(false);
 
   // Creem 状态
   const [creemProducts, setCreemProducts] = useState([]);
@@ -639,66 +641,74 @@ const TopUpContent = () => {
   };
 
   const getTopupInfo = async () => {
+    setTopupInfoLoading(true);
+    setTopupInfoError(false);
     try {
       const res = await API.get('/api/user/topup/info');
-      if (res.data?.success) {
-        const data = res.data.data;
-        setTopupInfo({
-          amount_options: data.amount_options || [],
-          discount: data.discount || {},
-        });
-        let pMethods = Array.isArray(data.pay_methods)
-          ? data.pay_methods
-          : JSON.parse(data.pay_methods || '[]');
-        const enableWaffo = !!data.enable_waffo_topup;
-        const waffoMethods = Array.isArray(data.waffo_pay_methods)
-          ? data.waffo_pay_methods
-          : [];
-        if (enableWaffo && waffoMethods.length > 0) {
-          pMethods = pMethods.filter((m) => m.type !== 'waffo');
-          pMethods = [
-            ...pMethods,
-            ...waffoMethods.map((method, index) => ({
-              ...method,
-              name: method.name || `Waffo ${index + 1}`,
-              type: `waffo:${index}`,
-              min_topup: data.waffo_min_topup || 1,
-              color: method.color || 'rgba(var(--semi-blue-5), 1)',
-            })),
-          ];
-        }
-        setPayMethods(pMethods.filter((m) => m.name && m.type));
-        setEnableStripeTopUp(!!data.enable_stripe_topup);
-        setEnableOnlineTopUp(!!data.enable_online_topup);
-        setEnableCreemTopUp(!!data.enable_creem_topup);
-        setEnableWaffoTopUp(enableWaffo);
-        setWaffoMinTopUp(data.waffo_min_topup || 1);
-        const mTopUp = data.enable_online_topup
-          ? data.min_topup
-          : data.enable_stripe_topup
-            ? data.stripe_min_topup
-            : enableWaffo
-              ? data.waffo_min_topup
-              : 1;
-        setMinTopUp(mTopUp);
-        setTopUpCount(mTopUp);
-        setCreemProducts(JSON.parse(data.creem_products || '[]'));
-        if (data.amount_options?.length > 0) {
-          setPresetAmounts(
-            data.amount_options.map((v) => ({
-              value: v,
-              discount: data.discount[v] || 1.0,
-            })),
-          );
-        } else {
-          setPresetAmounts(
-            [1, 5, 10, 30, 50, 100, 300, 500].map((m) => ({
-              value: mTopUp * m,
-            })),
-          );
-        }
+      if (!res.data?.success) {
+        setTopupInfoError(true);
+        return;
       }
-    } catch (e) {}
+      const data = res.data.data;
+      setTopupInfo({
+        amount_options: data.amount_options || [],
+        discount: data.discount || {},
+      });
+      let pMethods = Array.isArray(data.pay_methods)
+        ? data.pay_methods
+        : JSON.parse(data.pay_methods || '[]');
+      const enableWaffo = !!data.enable_waffo_topup;
+      const waffoMethods = Array.isArray(data.waffo_pay_methods)
+        ? data.waffo_pay_methods
+        : [];
+      if (enableWaffo && waffoMethods.length > 0) {
+        pMethods = pMethods.filter((m) => m.type !== 'waffo');
+        pMethods = [
+          ...pMethods,
+          ...waffoMethods.map((method, index) => ({
+            ...method,
+            name: method.name || `Waffo ${index + 1}`,
+            type: `waffo:${index}`,
+            min_topup: data.waffo_min_topup || 1,
+            color: method.color || 'rgba(var(--semi-blue-5), 1)',
+          })),
+        ];
+      }
+      setPayMethods(pMethods.filter((m) => m.name && m.type));
+      setEnableStripeTopUp(!!data.enable_stripe_topup);
+      setEnableOnlineTopUp(!!data.enable_online_topup);
+      setEnableCreemTopUp(!!data.enable_creem_topup);
+      setEnableWaffoTopUp(enableWaffo);
+      setWaffoMinTopUp(data.waffo_min_topup || 1);
+      const mTopUp = data.enable_online_topup
+        ? data.min_topup
+        : data.enable_stripe_topup
+          ? data.stripe_min_topup
+          : enableWaffo
+            ? data.waffo_min_topup
+            : 1;
+      setMinTopUp(mTopUp);
+      setTopUpCount(mTopUp);
+      setCreemProducts(JSON.parse(data.creem_products || '[]'));
+      if (data.amount_options?.length > 0) {
+        setPresetAmounts(
+          data.amount_options.map((v) => ({
+            value: v,
+            discount: data.discount[v] || 1.0,
+          })),
+        );
+      } else {
+        setPresetAmounts(
+          [1, 5, 10, 30, 50, 100, 300, 500].map((m) => ({
+            value: mTopUp * m,
+          })),
+        );
+      }
+    } catch (e) {
+      setTopupInfoError(true);
+    } finally {
+      setTopupInfoLoading(false);
+    }
   };
 
   const getAffLink = async (
@@ -1081,8 +1091,10 @@ const TopUpContent = () => {
             payWay={payWay}
             userState={userState}
             renderQuota={renderQuota}
-            statusLoading={statusLoading}
+            statusLoading={statusLoading || topupInfoLoading}
             topupInfo={topupInfo}
+            topupInfoError={topupInfoError}
+            onRetryTopupInfo={getTopupInfo}
             onOpenHistory={() => openHistoryTab('records')}
             onOpenInvoices={() => openHistoryTab('invoices')}
             subscriptionLoading={subscriptionLoading}

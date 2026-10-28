@@ -27,6 +27,7 @@ import {
   Typography,
 } from '@douyinfe/semi-ui';
 import { IconSearch, IconFilter } from '@douyinfe/semi-icons';
+import { useIsMobile } from '../../../hooks/common/useIsMobile';
 
 const TokensFilters = ({
   formInitValues,
@@ -39,8 +40,16 @@ const TokensFilters = ({
 }) => {
   // 处理表单重置并立即搜索
   const formApiRef = useRef(null);
+  const isMobile = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [advancedVisible, setAdvancedVisible] = useState(false);
   const [activeAdvancedCount, setActiveAdvancedCount] = useState(0);
+  const [activeBasicCount, setActiveBasicCount] = useState(
+    () =>
+      [formInitValues.searchToken, formInitValues.searchGroup].filter(
+        (value) => value !== '' && value !== null && value !== undefined,
+      ).length,
+  );
   const { Text } = Typography;
 
   const getAdvancedCount = () => {
@@ -67,6 +76,7 @@ const TokensFilters = ({
     if (!formApiRef.current) return;
     formApiRef.current.reset();
     setActiveAdvancedCount(0);
+    setActiveBasicCount(0);
     setTimeout(() => {
       searchTokens();
     }, 100);
@@ -114,6 +124,13 @@ const TokensFilters = ({
         formApiRef.current = api;
       }}
       onSubmit={() => searchTokens(1)}
+      onValueChange={(values) => {
+        setActiveBasicCount(
+          [values.searchToken, values.searchGroup].filter(
+            (value) => value !== '' && value !== null && value !== undefined,
+          ).length,
+        );
+      }}
       allowEmpty={true}
       autoComplete='off'
       layout='horizontal'
@@ -133,65 +150,93 @@ const TokensFilters = ({
           />
         </div>
 
-        <div className='tokens-filter-row__field'>
-          <Form.Input
-            field='searchToken'
-            prefix={<IconSearch />}
-            placeholder={t('密钥')}
-            showClear
-            pure
-            size='small'
-          />
-        </div>
-
-        <div className='tokens-filter-row__field'>
-          <Form.Select
-            field='searchGroup'
-            placeholder={t('选择分组')}
-            optionList={groupOptions}
-            className='w-full'
-            showClear
-            pure
-            size='small'
-            onChange={() => {
-              // Group 是高频筛选项，变更后立即刷新，减少一次点击。
-              setTimeout(() => {
-                searchTokens(1);
-              }, 100);
-            }}
-          />
-        </div>
-
-        <div className='tokens-filter-row__buttons'>
+        <div className='tokens-filter-row__mobile-actions'>
           <Button
             type='tertiary'
             htmlType='submit'
             loading={loading || searching}
-            className='flex-1 md:flex-initial md:w-auto'
             size='small'
           >
             {t('查询')}
           </Button>
           <Button
             type='tertiary'
-            onClick={openAdvancedFilters}
-            className='flex-1 md:flex-initial md:w-auto'
+            theme={filtersOpen ? 'light' : 'tertiary'}
+            aria-expanded={filtersOpen}
             icon={<IconFilter />}
+            onClick={() => setFiltersOpen((open) => !open)}
             size='small'
           >
-            {activeAdvancedCount > 0
-              ? `${t('高级筛选')}(${activeAdvancedCount})`
-              : t('高级筛选')}
+            {activeBasicCount + activeAdvancedCount > 0
+              ? `${t('筛选')}(${activeBasicCount + activeAdvancedCount})`
+              : t('筛选')}
           </Button>
+        </div>
 
-          <Button
-            type='tertiary'
-            onClick={handleReset}
-            className='flex-1 md:flex-initial md:w-auto'
-            size='small'
-          >
-            {t('重置')}
-          </Button>
+        <div
+          className='tokens-filter-row__secondary'
+          hidden={isMobile && !filtersOpen}
+        >
+          <div className='tokens-filter-row__field'>
+            <Form.Input
+              field='searchToken'
+              prefix={<IconSearch />}
+              placeholder={t('密钥')}
+              showClear
+              pure
+              size='small'
+            />
+          </div>
+
+          <div className='tokens-filter-row__field'>
+            <Form.Select
+              field='searchGroup'
+              placeholder={t('选择分组')}
+              optionList={groupOptions}
+              className='w-full'
+              showClear
+              pure
+              size='small'
+              onChange={() => {
+                // Group 是高频筛选项，变更后立即刷新，减少一次点击。
+                setTimeout(() => {
+                  searchTokens(1);
+                }, 100);
+              }}
+            />
+          </div>
+
+          <div className='tokens-filter-row__buttons'>
+            <Button
+              type='tertiary'
+              htmlType='submit'
+              loading={loading || searching}
+              className='flex-1 md:flex-initial md:w-auto'
+              size='small'
+            >
+              {t('查询')}
+            </Button>
+            <Button
+              type='tertiary'
+              onClick={openAdvancedFilters}
+              className='flex-1 md:flex-initial md:w-auto'
+              icon={<IconFilter />}
+              size='small'
+            >
+              {activeAdvancedCount > 0
+                ? `${t('高级筛选')}(${activeAdvancedCount})`
+                : t('高级筛选')}
+            </Button>
+
+            <Button
+              type='tertiary'
+              onClick={handleReset}
+              className='flex-1 md:flex-initial md:w-auto'
+              size='small'
+            >
+              {t('重置')}
+            </Button>
+          </div>
         </div>
       </div>
 

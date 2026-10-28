@@ -22,6 +22,10 @@ import {
   buildDocsRequestData,
   getDocsBaseUrl,
 } from '../Docs/runtimeDocs.js';
+import {
+  getDeclaredModelProtocols,
+  getModelProtocolOptions,
+} from '../../helpers/modelProtocols.js';
 
 export const MODEL_EXAMPLE_LANGUAGES = [
   'Python',
@@ -31,14 +35,6 @@ export const MODEL_EXAMPLE_LANGUAGES = [
   'C#',
   'Ruby',
   'cURL',
-];
-
-const PROTOCOLS = [
-  ['openai', 'Chat Completions'],
-  ['openai-response', 'Responses'],
-  ['anthropic', 'Messages'],
-  ['gemini', 'Gemini'],
-  ['image-generation', 'Images'],
 ];
 
 // Generated snippets contain administrator-supplied model names. Always render
@@ -237,34 +233,27 @@ export function getModelQuickStartExamples(
   const baseUrl = getDocsBaseUrl(serverAddress, origin);
   if (!baseUrl) return [];
 
-  const declared = modelData.supported_endpoint_types;
-  const textProtocols = ['openai', 'openai-response', 'anthropic'];
-  const offerTemplates =
-    includeTextProtocolTemplates &&
-    declared.some((endpoint) => textProtocols.includes(endpoint)) &&
-    !declared.includes('image-generation');
-  return PROTOCOLS.filter(
-    ([endpoint]) =>
-      declared.includes(endpoint) ||
-      (offerTemplates && textProtocols.includes(endpoint)),
-  ).map(([endpoint, label]) => {
-    // The docs generator intentionally accepts declared endpoints only. Use a
-    // local copy for an explicitly requested template; never alter catalog data.
-    const exampleModel = declared.includes(endpoint)
-      ? modelData
-      : { ...modelData, supported_endpoint_types: [...declared, endpoint] };
-    const request = buildDocsRequestData(exampleModel, endpoint, baseUrl);
-    const command = buildDocsRequest(exampleModel, endpoint, baseUrl)
-      .replace(/^```bash\n/, '')
-      .replace(/\n```$/, '');
-    return {
-      endpoint,
-      label,
-      declared: declared.includes(endpoint),
-      code:
-        language === 'cURL'
-          ? `export NAN_API_KEY="YOUR_API_KEY"\n\n${command}`
-          : renderRequest(request, language),
-    };
-  });
+  const declared = getDeclaredModelProtocols(modelData);
+  return getModelProtocolOptions(modelData, includeTextProtocolTemplates).map(
+    ({ endpoint, label }) => {
+      // The docs generator intentionally accepts declared endpoints only. Use a
+      // local copy for an explicitly requested template; never alter catalog data.
+      const exampleModel = declared.includes(endpoint)
+        ? modelData
+        : { ...modelData, supported_endpoint_types: [...declared, endpoint] };
+      const request = buildDocsRequestData(exampleModel, endpoint, baseUrl);
+      const command = buildDocsRequest(exampleModel, endpoint, baseUrl)
+        .replace(/^```bash\n/, '')
+        .replace(/\n```$/, '');
+      return {
+        endpoint,
+        label,
+        declared: declared.includes(endpoint),
+        code:
+          language === 'cURL'
+            ? `export NAN_API_KEY="YOUR_API_KEY"\n\n${command}`
+            : renderRequest(request, language),
+      };
+    },
+  );
 }

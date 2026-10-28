@@ -23,6 +23,7 @@ import PricingVendors from '../../filter/PricingVendors';
 import PricingQuotaTypes from '../../filter/PricingQuotaTypes';
 import PricingTags from '../../filter/PricingTags';
 import { usePricingFilterCounts } from '../../../../../hooks/model-pricing/usePricingFilterCounts';
+import { getModelProtocolLabel } from '../../../../../helpers/modelProtocols';
 
 export default function PricingCatalogFilters(props) {
   const { t } = props;
@@ -55,8 +56,8 @@ export default function PricingCatalogFilters(props) {
     },
     {
       value: props.filterEndpointType,
-      label: t('端点类型'),
-      text: props.filterEndpointType,
+      label: t('已声明协议'),
+      text: getModelProtocolLabel(props.filterEndpointType),
       clear: props.setFilterEndpointType,
     },
   ].filter(({ value }) => value != null && value !== 'all');
