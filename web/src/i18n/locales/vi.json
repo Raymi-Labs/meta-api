@@ -7248,6 +7248,8 @@
     "按发布日期从新到旧，未知日期排在最后": "Sắp xếp theo ngày phát hành từ mới đến cũ; ngày không rõ xếp cuối",
     "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "Dùng YYYY-MM-DD hoặc YYYY-MM. Để trống để tự động đồng bộ; giá trị nhập thủ công được ưu tiên giữ lại.",
     "发布日期仅支持精确匹配模型": "Ngày phát hành chỉ được hỗ trợ cho mô hình khớp chính xác",
-    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Ngày phát hành phải hợp lệ theo định dạng YYYY-MM-DD hoặc YYYY-MM và không trước năm 1970"
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Ngày phát hành phải hợp lệ theo định dạng YYYY-MM-DD hoặc YYYY-MM và không trước năm 1970",
+    "请选择有效的时间范围": "Chọn khoảng thời gian hợp lệ",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Bộ lọc có hiệu lực sau khi tìm kiếm. Làm mới, xuất và tổng hợp dùng điều kiện đã áp dụng."
   }
 }

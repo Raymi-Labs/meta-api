@@ -6845,6 +6845,8 @@
     "按发布日期从新到旧，未知日期排在最后": "Newest release dates first; unknown dates last",
     "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "Use YYYY-MM-DD or YYYY-MM. Leave blank for automatic sync; manual values take priority.",
     "发布日期仅支持精确匹配模型": "Release dates are only supported for exact model matches",
-    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Release date must be a valid YYYY-MM-DD or YYYY-MM, no earlier than 1970"
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Release date must be a valid YYYY-MM-DD or YYYY-MM, no earlier than 1970",
+    "请选择有效的时间范围": "Select a valid time range",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filters apply after Search. Refresh, export and summaries use the applied filters."
   }
 }

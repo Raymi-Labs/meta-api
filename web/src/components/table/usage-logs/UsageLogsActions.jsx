@@ -18,19 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button, Tag, Space, Skeleton } from '@douyinfe/semi-ui';
+import { Button, Skeleton } from '@douyinfe/semi-ui';
 import { renderQuota } from '../../../helpers';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
-import { useMinimumLoadingTime } from '../../../hooks/common/useMinimumLoadingTime';
-import { BarChart3 } from 'lucide-react';
-
-function formatPercent(value) {
-  const rate = Number(value || 0);
-  if (!Number.isFinite(rate) || rate <= 0) {
-    return '0.00%';
-  }
-  return `${(rate * 100).toFixed(2)}%`;
-}
 
 const LogsActions = ({
   exporting,
@@ -44,125 +34,124 @@ const LogsActions = ({
   isAdminUser,
   openTopUsersDrawer,
   openGroupSummary,
+  refresh,
+  handleEyeClick,
+  loading,
+  filtersOpen,
+  setFiltersOpen,
+  setShowColumnSelector,
   t,
 }) => {
-  const showSkeleton = useMinimumLoadingTime(loadingStat);
-  const needSkeleton = !statError && (!showStat || showSkeleton);
-
-  const placeholder = (
-    <Space>
-      <Skeleton.Title style={{ width: 108, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 65, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 64, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 108, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 108, height: 21, borderRadius: 6 }} />
-    </Space>
-  );
-
+  const number = (value) =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
+  const percent = (value) =>
+    number(value) === null ? '—' : `${(value * 100).toFixed(2)}%`;
+  const metrics = [
+    [
+      t('消耗额度'),
+      number(stat.quota) === null ? '—' : renderQuota(stat.quota),
+    ],
+    ['RPM', number(stat.rpm) ?? '—'],
+    ['TPM', number(stat.tpm) ?? '—'],
+    [t('命中缓存率'), percent(stat.cache_hit_rate)],
+    [t('全局缓存率'), percent(stat.cache_global_rate)],
+  ];
   return (
-    <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-2 w-full'>
-      <Skeleton loading={needSkeleton} active placeholder={placeholder}>
-        {statError ? (
-          <Tag color='red'>{statError}</Tag>
-        ) : (
-          <Space
-            title={t(
-              '额度与缓存率仅统计消费记录；缓存率可能取最近样本，RPM/TPM 为所选范围内最近一分钟。',
-            )}
-          >
-            <Tag
-              color='blue'
-              style={{
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                padding: 13,
-              }}
-              className='!rounded-lg'
-            >
-              {t('消耗额度')}: {renderQuota(stat.quota)}
-            </Tag>
-            <Tag
-              color='pink'
-              style={{
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                padding: 13,
-              }}
-              className='!rounded-lg'
-            >
-              RPM: {stat.rpm}
-            </Tag>
-            <Tag
-              color='white'
-              style={{
-                border: 'none',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                fontWeight: 500,
-                padding: 13,
-              }}
-              className='!rounded-lg'
-            >
-              TPM: {stat.tpm}
-            </Tag>
-            <Tag
-              color='green'
-              style={{
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                padding: 13,
-              }}
-              className='!rounded-lg'
-            >
-              {t('命中缓存率')}: {formatPercent(stat.cache_hit_rate)}
-            </Tag>
-            <Tag
-              color='teal'
-              style={{
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                padding: 13,
-              }}
-              className='!rounded-lg'
-            >
-              {t('全局缓存率')}: {formatPercent(stat.cache_global_rate)}
-            </Tag>
-          </Space>
-        )}
-      </Skeleton>
-
-      <div className='flex flex-wrap items-center gap-2 self-end md:self-auto'>
-        <Button
-          type='primary'
-          size='small'
-          loading={exporting}
-          disabled={exporting}
-          onClick={exportLogs}
-        >
-          {t('导出日志')}
-        </Button>
-        {isAdminUser && (
-          <Button type='tertiary' size='small' onClick={openGroupSummary}>
-            {t('分组汇总')}
-          </Button>
-        )}
-        {isAdminUser ? (
-          <Button
-            type='tertiary'
-            icon={<BarChart3 size={16} />}
-            onClick={openTopUsersDrawer}
-            size='small'
-          >
-            {t('大用户榜单')}
-          </Button>
-        ) : null}
-        <CompactModeToggle
-          compactMode={compactMode}
-          setCompactMode={setCompactMode}
-          t={t}
-        />
+    <>
+      <div className='usage-logs-heading'>
+        <h1>{t('使用日志')}</h1>
       </div>
-    </div>
+      <div className='usage-logs-toolbar'>
+        <div className='usage-logs-tools'>
+          <Button
+            size='small'
+            theme='borderless'
+            onClick={refresh}
+            loading={loading || loadingStat}
+          >
+            {t('刷新日志')}
+          </Button>
+          <Button
+            size='small'
+            theme={filtersOpen ? 'light' : 'borderless'}
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            {t('筛选')}
+          </Button>
+          <Button
+            size='small'
+            theme='borderless'
+            onClick={() => setShowColumnSelector(true)}
+          >
+            {t('列设置')}
+          </Button>
+        </div>
+        <div className='usage-logs-tools'>
+          {isAdminUser && (
+            <>
+              <Button
+                size='small'
+                theme='borderless'
+                onClick={openGroupSummary}
+              >
+                {t('分组汇总')}
+              </Button>
+              <Button
+                size='small'
+                theme='borderless'
+                onClick={openTopUsersDrawer}
+              >
+                {t('大用户榜单')}
+              </Button>
+            </>
+          )}
+          <Button
+            size='small'
+            theme='light'
+            loading={exporting}
+            disabled={exporting}
+            onClick={exportLogs}
+          >
+            {t('导出日志')}
+          </Button>
+          <CompactModeToggle
+            compactMode={compactMode}
+            setCompactMode={setCompactMode}
+            t={t}
+          />
+        </div>
+      </div>
+      <p className='usage-logs-hint'>
+        {t('筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。')}
+      </p>
+      <div className='usage-logs-stats'>
+        {statError ? (
+          <div role='alert' className='usage-logs-stat-error'>
+            <span>{t('加载统计失败')}</span>
+            <Button size='small' onClick={handleEyeClick}>
+              {t('重试')}
+            </Button>
+          </div>
+        ) : (
+          metrics.map(([label, value]) => (
+            <div className='usage-logs-metric' key={label}>
+              <span>{label}</span>
+              {loadingStat || !showStat ? (
+                <Skeleton.Title style={{ width: 70, height: 18 }} />
+              ) : (
+                <strong>{value}</strong>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+      <p className='usage-logs-hint'>
+        {t(
+          '额度与缓存率仅统计消费记录；缓存率可能取最近样本，RPM/TPM 为所选范围内最近一分钟。',
+        )}
+      </p>
+    </>
   );
 };
-
 export default LogsActions;

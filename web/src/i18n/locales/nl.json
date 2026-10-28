@@ -6633,6 +6633,8 @@
     "按发布日期从新到旧，未知日期排在最后": "Nieuwste releasedatums eerst; onbekende datums als laatste",
     "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "Gebruik YYYY-MM-DD of YYYY-MM. Laat leeg voor automatische synchronisatie; handmatige waarden hebben voorrang.",
     "发布日期仅支持精确匹配模型": "Releasedatums worden alleen ondersteund bij exacte modelovereenkomsten",
-    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "De releasedatum moet een geldige YYYY-MM-DD of YYYY-MM zijn, vanaf 1970"
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "De releasedatum moet een geldige YYYY-MM-DD of YYYY-MM zijn, vanaf 1970",
+    "请选择有效的时间范围": "Selecteer een geldig tijdsbereik",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filters gelden na het zoeken. Vernieuwen, exporteren en samenvattingen gebruiken de toegepaste filters."
   }
 }
