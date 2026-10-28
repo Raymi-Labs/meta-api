@@ -18,18 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Typography } from '@douyinfe/semi-ui';
-import { Key } from 'lucide-react';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 
-const { Text } = Typography;
-
-const TokensDescription = ({ compactMode, setCompactMode, t }) => {
+const TokensDescription = ({ tokenCount, compactMode, setCompactMode, t }) => {
   return (
     <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-2 w-full'>
-      <div className='flex items-center text-blue-500'>
-        <Key size={16} className='mr-2' />
-        <Text>{t('令牌管理')}</Text>
+      <div className='tokens-page-title'>
+        <h1>{t('令牌管理')}</h1>
+        <p>
+          {t('总计')}: {tokenCount || 0}
+        </p>
       </div>
 
       <CompactModeToggle

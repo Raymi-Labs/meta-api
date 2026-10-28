@@ -6626,6 +6626,7 @@
     "常用操作": "Ações rápidas",
     "请选择有效的起止时间": "Selecione datas de início e fim válidas",
     "请选择不超过30天的时间范围": "Selecione um período de até 30 dias",
-    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "O saldo e os totais acumulados pertencem à conta atual. As outras métricas usam o utilizador e período selecionados; não indicam a taxa de sucesso dos pedidos."
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "O saldo e os totais acumulados pertencem à conta atual. As outras métricas usam o utilizador e período selecionados; não indicam a taxa de sucesso dos pedidos.",
+    "显示全部列": "Mostrar todas as colunas"
   }
 }

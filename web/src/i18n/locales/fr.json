@@ -6958,6 +6958,7 @@
     "常用操作": "Actions rapides",
     "请选择有效的起止时间": "Sélectionnez des dates de début et de fin valides",
     "请选择不超过30天的时间范围": "Sélectionnez une période de 30 jours maximum",
-    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Le solde et les totaux cumulés concernent le compte actuel. Les autres indicateurs utilisent l’utilisateur et la période sélectionnés ; ils ne représentent pas le taux de réussite des requêtes."
+    "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Le solde et les totaux cumulés concernent le compte actuel. Les autres indicateurs utilisent l’utilisateur et la période sélectionnés ; ils ne représentent pas le taux de réussite des requêtes.",
+    "显示全部列": "Afficher toutes les colonnes"
   }
 }

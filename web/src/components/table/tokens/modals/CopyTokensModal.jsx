@@ -17,42 +17,77 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Button, Space } from '@douyinfe/semi-ui';
+import { showError } from '../../../../helpers';
+import { collectTokenKeys } from '../tokenCopy';
 
-const CopyTokensModal = ({ visible, onCancel, selectedKeys, copyText, t }) => {
-  // Handle copy with name and key format
-  const handleCopyWithName = async () => {
-    let content = '';
-    for (let i = 0; i < selectedKeys.length; i++) {
-      content += selectedKeys[i].name + '    sk-' + selectedKeys[i].key + '\n';
-    }
-    await copyText(content);
+const CopyTokensModal = ({
+  visible,
+  onCancel,
+  selectedKeys,
+  getTokenFullKey,
+  copyText,
+  t,
+}) => {
+  const [busy, setBusy] = useState(false);
+  const session = useRef(0);
+  const inFlight = useRef(false);
+  useEffect(() => {
+    session.current++;
+    inFlight.current = false;
+    setBusy(false);
+    return () => {
+      session.current++;
+    };
+  }, [visible, selectedKeys]);
+  const close = () => {
+    session.current++;
     onCancel();
   };
-
-  // Handle copy with key only format
-  const handleCopyKeyOnly = async () => {
-    let content = '';
-    for (let i = 0; i < selectedKeys.length; i++) {
-      content += 'sk-' + selectedKeys[i].key + '\n';
+  const run = async (withName) => {
+    if (inFlight.current) return;
+    const current = session.current;
+    inFlight.current = true;
+    setBusy(true);
+    try {
+      const content = await collectTokenKeys(
+        [...selectedKeys],
+        getTokenFullKey,
+        withName,
+        () => current === session.current,
+      );
+      if (content === null || current !== session.current) return;
+      const copied = await copyText(content);
+      if (current === session.current && copied !== false) onCancel();
+    } catch {
+      if (current === session.current) showError(t('获取令牌失败'));
+    } finally {
+      if (current === session.current) {
+        inFlight.current = false;
+        setBusy(false);
+      }
     }
-    await copyText(content);
-    onCancel();
   };
-
   return (
     <Modal
       title={t('复制令牌')}
       icon={null}
       visible={visible}
-      onCancel={onCancel}
+      onCancel={close}
       footer={
         <Space>
-          <Button type='tertiary' onClick={handleCopyWithName}>
+          <Button
+            type='tertiary'
+            disabled={busy}
+            loading={busy}
+            onClick={() => run(true)}
+          >
             {t('名称+密钥')}
           </Button>
-          <Button onClick={handleCopyKeyOnly}>{t('仅密钥')}</Button>
+          <Button disabled={busy} loading={busy} onClick={() => run(false)}>
+            {t('仅密钥')}
+          </Button>
         </Space>
       }
     >
@@ -60,5 +95,4 @@ const CopyTokensModal = ({ visible, onCancel, selectedKeys, copyText, t }) => {
     </Modal>
   );
 };
-
 export default CopyTokensModal;

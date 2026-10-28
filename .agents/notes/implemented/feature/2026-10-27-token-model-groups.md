@@ -19,6 +19,8 @@ Status: implemented
 - [创建选择器](../../implemented/feature/2026-10-20-token-create-selector.md)、[列表倍率](../../implemented/feature/2026-10-07-token-list-group-ratio.md)部分重叠：复用选组和倍率，新增多组选项与实际分组计费说明。
 - 视频预检、模型详情、文档、配额通知及健康笔记属于关联消费者，不改变其协议、价格或错误分类。
 
+- [令牌列表与操作隔离](../../implemented/feature/2026-10-27-token-management-experience.md)部分重叠：摘要列表复用本篇多组与实际倍率渲染；保存会话隔离保留 routing_config 载荷，旧保存不能关闭新分组编辑器。
+
 ## Alternatives considered
 
 - 仅扩大旧 group 为逗号串省字段，但破坏既有精确分组语义及旧 Key。
