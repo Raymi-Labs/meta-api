@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import {
   formatModelContext,
+  formatModelContextExact,
   formatModelThroughput,
   shouldNavigateModelCard,
   selectComparisonGroups,
@@ -8,6 +9,18 @@ import {
 } from '../src/helpers/modelPresentation.js';
 
 describe('model presentation interactions and missing metrics', () => {
+  test('context is compact without inflating capacity and retains an exact tooltip', () => {
+    expect(formatModelContext(1_050_000)).toBe('1M');
+    expect(formatModelContext(1_500_000)).toBe('1.5M');
+    expect(formatModelContext(200_000)).toBe('200K');
+    expect(formatModelContext(262_144)).toBe('262K');
+    expect(formatModelContext(32_768)).toBe('32K');
+    expect(formatModelContext(999)).toBe('999 tokens');
+    expect(formatModelContextExact(1_050_000)).toBe(
+      (1_050_000).toLocaleString() + ' tokens',
+    );
+    expect(formatModelContextExact(0)).toBeUndefined();
+  });
   test('card background navigates; copy, selection, nested links and text selection do not', () => {
     const event = (nested = false) => ({
       button: 0,

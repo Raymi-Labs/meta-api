@@ -33,6 +33,7 @@ import { useModelHealthSummaries } from '../../../../../hooks/group-health/useMo
 import { formatHealthLatency } from '../../../../group-health/healthUtils';
 import {
   formatModelContext,
+  formatModelContextExact,
   formatModelThroughput,
   shouldNavigateModelCard,
 } from '../../../../../helpers/modelPresentation';
@@ -193,7 +194,7 @@ const PricingCardView = ({
                     <ScanText size={13} />
                     {t('上下文长度')}
                   </dt>
-                  <dd>
+                  <dd title={formatModelContextExact(model.context_length)}>
                     {formatModelContext(model.context_length) === '—'
                       ? t('未配置')
                       : formatModelContext(model.context_length)}

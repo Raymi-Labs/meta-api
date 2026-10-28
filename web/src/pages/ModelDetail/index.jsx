@@ -46,6 +46,7 @@ import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
 import {
   MODEL_MODALITY_LABELS,
   formatModelContext,
+  formatModelContextExact,
 } from '../../helpers/modelPresentation';
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
@@ -214,7 +215,7 @@ export default function ModelDetail() {
               )}
             </span>
             <span aria-hidden='true'>·</span>
-            <span>
+            <span title={formatModelContextExact(model.context_length)}>
               {t('上下文长度')}:{' '}
               {formatModelContext(model.context_length) === '—'
                 ? t('未配置')
