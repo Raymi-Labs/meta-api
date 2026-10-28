@@ -17,11 +17,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { BILLING_PRICING_VARS } from '../constants/billing.constants';
 import { calculateModelPrice, getModelPriceItems } from './utils';
 import { parseTiersFromExpr } from './render';
 import { buildFirstTierGroupPriceItems } from './tieredBillingDisplay';
 import { splitBillingExprAndRequestRules } from '../pages/Setting/Ratio/components/requestRuleExpr';
 import { isVideoPriceExpression } from './videoPricingTemplate';
+
+const cachePriceKeys = new Set([
+  'cache',
+  'cache-ratio',
+  'create-cache',
+  'create-cache-ratio',
+  'create-cache-1h',
+  'create-cache-1h-ratio',
+  ...BILLING_PRICING_VARS.filter((variable) => variable.group === 'cache').map(
+    (variable) => `tiered-${variable.key}`,
+  ),
+]);
+
+export const isCachePriceItem = (item) => cachePriceKeys.has(item?.key);
 
 // Cards and the comparison table must use the same group, currency and tier.
 export function getModelCatalogPricing(options, t) {

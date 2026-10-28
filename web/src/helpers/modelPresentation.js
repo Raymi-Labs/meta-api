@@ -25,10 +25,19 @@ export const MODEL_MODALITY_LABELS = {
   file: '文件',
 };
 
-export function formatModelContext(value) {
+export function formatModelContextExact(value) {
   return Number.isSafeInteger(Number(value)) && Number(value) > 0
     ? Number(value).toLocaleString() + ' tokens'
-    : '—';
+    : undefined;
+}
+
+export function formatModelContext(value) {
+  if (!formatModelContextExact(value)) return '—';
+  const tokens = Number(value);
+  // Keep the compact limit conservative; the tooltip retains the exact value.
+  if (tokens >= 1000000) return `${Math.floor(tokens / 100000) / 10}M`;
+  if (tokens >= 1000) return `${Math.floor(tokens / 1000)}K`;
+  return `${tokens} tokens`;
 }
 
 export function formatModelThroughput(value) {
