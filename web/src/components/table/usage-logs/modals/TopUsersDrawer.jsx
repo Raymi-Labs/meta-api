@@ -76,6 +76,7 @@ const TopUsersDrawer = ({
   setShowTopUsersDrawer,
   topUsersData,
   topUsersLoading,
+  topUsersError,
   topUsersViewMode,
   setTopUsersViewMode,
   topUsersQuotaOrder,
@@ -153,7 +154,9 @@ const TopUsersDrawer = ({
         dataIndex: 'request_count',
         width: 120,
         render: (value) => (
-          <span className='top-users-drawer__metric'>{renderNumber(value)}</span>
+          <span className='top-users-drawer__metric'>
+            {renderNumber(value)}
+          </span>
         ),
       },
       {
@@ -161,7 +164,9 @@ const TopUsersDrawer = ({
         dataIndex: 'prompt_tokens',
         width: 140,
         render: (value) => (
-          <span className='top-users-drawer__metric'>{renderNumber(value)}</span>
+          <span className='top-users-drawer__metric'>
+            {renderNumber(value)}
+          </span>
         ),
       },
       {
@@ -169,7 +174,9 @@ const TopUsersDrawer = ({
         dataIndex: 'completion_tokens',
         width: 140,
         render: (value) => (
-          <span className='top-users-drawer__metric'>{renderNumber(value)}</span>
+          <span className='top-users-drawer__metric'>
+            {renderNumber(value)}
+          </span>
         ),
       },
     ],
@@ -226,7 +233,9 @@ const TopUsersDrawer = ({
     order,
     leader,
   }) => (
-    <section className={`top-users-drawer__board top-users-drawer__board--${tone}`}>
+    <section
+      className={`top-users-drawer__board top-users-drawer__board--${tone}`}
+    >
       <div className='top-users-drawer__board-head'>
         <div>
           <div className='top-users-drawer__board-title-row'>
@@ -284,138 +293,151 @@ const TopUsersDrawer = ({
       width={980}
       bodyStyle={{ padding: 0 }}
     >
-      <div className='top-users-drawer__shell'>
-        <section className='top-users-drawer__hero'>
-          <div className='top-users-drawer__hero-copy'>
-            <Text className='top-users-drawer__eyebrow'>{t('消费日志排行')}</Text>
-            <Title heading={4} className='top-users-drawer__hero-title'>
-              {t('快速定位高消耗和高频用户')}
-            </Title>
-            <Text className='top-users-drawer__hero-description'>
-              {t('榜单只统计当前时间范围内的消费日志，点击用户名可直接回填筛选条件继续排查。')}
-            </Text>
-          </div>
-
-          <div className='top-users-drawer__overview-grid'>
-            {overviewCards.map((item) => (
-              <div className='top-users-drawer__overview-card' key={item.key}>
-                <span className='top-users-drawer__overview-icon'>
-                  {item.icon}
-                </span>
-                <span className='top-users-drawer__overview-label'>
-                  {item.label}
-                </span>
-                <strong className='top-users-drawer__overview-value'>
-                  {item.value}
-                </strong>
-                <span className='top-users-drawer__overview-helper'>
-                  {item.helper}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {consumeOnlyMode ? (
-          <Banner
-            className='top-users-drawer__banner'
-            type='warning'
-            closeIcon={null}
-            description={t(
-              '当前榜单始终按消费日志统计，已忽略当前非消费日志类型筛选。',
-            )}
-          />
-        ) : null}
-
-        <section className='top-users-drawer__controls'>
-          <div className='top-users-drawer__control-block'>
-            <Text className='top-users-drawer__control-label'>{t('查看方式')}</Text>
-            <RadioGroup
-              type='button'
-              value={topUsersViewMode}
-              onChange={(e) => setTopUsersViewMode(e.target.value)}
-            >
-              {viewModeOptions(t).map((option) => (
-                <Radio value={option.value} key={option.value}>
-                  {option.label}
-                </Radio>
-              ))}
-            </RadioGroup>
-          </div>
-
-          <div className='top-users-drawer__control-grid'>
-            <div className='top-users-drawer__control-field'>
-              <Text className='top-users-drawer__control-label'>
-                {t('榜单条数')}
-              </Text>
-              <Select
-                value={topUsersLimit}
-                optionList={limitOptions}
-                onChange={(value) => setTopUsersLimit(Number(value))}
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div className='top-users-drawer__control-field'>
-              <Text className='top-users-drawer__control-label'>
-                {t('额度榜排序')}
-              </Text>
-              <Select
-                value={topUsersQuotaOrder}
-                optionList={orderOptions(t)}
-                onChange={(value) => setTopUsersQuotaOrder(value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div className='top-users-drawer__control-field'>
-              <Text className='top-users-drawer__control-label'>
-                {t('请求数榜排序')}
-              </Text>
-              <Select
-                value={topUsersRequestOrder}
-                optionList={orderOptions(t)}
-                onChange={(value) => setTopUsersRequestOrder(value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <div className='top-users-drawer__control-action'>
-              <Button
-                block
-                icon={<RefreshCw size={16} />}
-                onClick={refreshTopUsers}
-              >
-                {t('刷新榜单')}
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <div className='top-users-drawer__boards'>
-          {showQuotaTable
-            ? renderTable({
-                title: t('额度榜'),
-                tone: 'blue',
-                dataSource: topUsersData?.by_quota || [],
-                emptyDescription: t('暂无额度榜数据'),
-                order: topUsersQuotaOrder,
-                leader: boardSummary.quotaLeader,
-              })
-            : null}
-
-          {showRequestTable
-            ? renderTable({
-                title: t('请求榜'),
-                tone: 'teal',
-                dataSource: topUsersData?.by_requests || [],
-                emptyDescription: t('暂无请求数榜数据'),
-                order: topUsersRequestOrder,
-                leader: boardSummary.requestLeader,
-              })
-            : null}
+      {topUsersError ? (
+        <div className='usage-logs-error' role='alert'>
+          <p>{t('加载失败，请重试')}</p>
+          <Button onClick={refreshTopUsers}>{t('重试')}</Button>
         </div>
-      </div>
+      ) : (
+        <div className='top-users-drawer__shell'>
+          <section className='top-users-drawer__hero'>
+            <div className='top-users-drawer__hero-copy'>
+              <Text className='top-users-drawer__eyebrow'>
+                {t('消费日志排行')}
+              </Text>
+              <Title heading={4} className='top-users-drawer__hero-title'>
+                {t('快速定位高消耗和高频用户')}
+              </Title>
+              <Text className='top-users-drawer__hero-description'>
+                {t(
+                  '榜单只统计当前时间范围内的消费日志，点击用户名可直接回填筛选条件继续排查。',
+                )}
+              </Text>
+            </div>
+
+            <div className='top-users-drawer__overview-grid'>
+              {overviewCards.map((item) => (
+                <div className='top-users-drawer__overview-card' key={item.key}>
+                  <span className='top-users-drawer__overview-icon'>
+                    {item.icon}
+                  </span>
+                  <span className='top-users-drawer__overview-label'>
+                    {item.label}
+                  </span>
+                  <strong className='top-users-drawer__overview-value'>
+                    {item.value}
+                  </strong>
+                  <span className='top-users-drawer__overview-helper'>
+                    {item.helper}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {consumeOnlyMode ? (
+            <Banner
+              className='top-users-drawer__banner'
+              type='warning'
+              closeIcon={null}
+              description={t(
+                '当前榜单始终按消费日志统计，已忽略当前非消费日志类型筛选。',
+              )}
+            />
+          ) : null}
+
+          <section className='top-users-drawer__controls'>
+            <div className='top-users-drawer__control-block'>
+              <Text className='top-users-drawer__control-label'>
+                {t('查看方式')}
+              </Text>
+              <RadioGroup
+                type='button'
+                value={topUsersViewMode}
+                onChange={(e) => setTopUsersViewMode(e.target.value)}
+              >
+                {viewModeOptions(t).map((option) => (
+                  <Radio value={option.value} key={option.value}>
+                    {option.label}
+                  </Radio>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div className='top-users-drawer__control-grid'>
+              <div className='top-users-drawer__control-field'>
+                <Text className='top-users-drawer__control-label'>
+                  {t('榜单条数')}
+                </Text>
+                <Select
+                  value={topUsersLimit}
+                  optionList={limitOptions}
+                  onChange={(value) => setTopUsersLimit(Number(value))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className='top-users-drawer__control-field'>
+                <Text className='top-users-drawer__control-label'>
+                  {t('额度榜排序')}
+                </Text>
+                <Select
+                  value={topUsersQuotaOrder}
+                  optionList={orderOptions(t)}
+                  onChange={(value) => setTopUsersQuotaOrder(value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className='top-users-drawer__control-field'>
+                <Text className='top-users-drawer__control-label'>
+                  {t('请求数榜排序')}
+                </Text>
+                <Select
+                  value={topUsersRequestOrder}
+                  optionList={orderOptions(t)}
+                  onChange={(value) => setTopUsersRequestOrder(value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className='top-users-drawer__control-action'>
+                <Button
+                  block
+                  icon={<RefreshCw size={16} />}
+                  onClick={refreshTopUsers}
+                >
+                  {t('刷新榜单')}
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <div className='top-users-drawer__boards'>
+            {showQuotaTable
+              ? renderTable({
+                  title: t('额度榜'),
+                  tone: 'blue',
+                  dataSource: topUsersData?.by_quota || [],
+                  emptyDescription: t('暂无额度榜数据'),
+                  order: topUsersQuotaOrder,
+                  leader: boardSummary.quotaLeader,
+                })
+              : null}
+
+            {showRequestTable
+              ? renderTable({
+                  title: t('请求榜'),
+                  tone: 'teal',
+                  dataSource: topUsersData?.by_requests || [],
+                  emptyDescription: t('暂无请求数榜数据'),
+                  order: topUsersRequestOrder,
+                  leader: boardSummary.requestLeader,
+                })
+              : null}
+          </div>
+        </div>
+      )}
     </SideSheet>
   );
 };

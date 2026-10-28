@@ -6627,6 +6627,8 @@
     "请选择有效的起止时间": "Geçerli bir başlangıç ve bitiş zamanı seçin",
     "请选择不超过30天的时间范围": "En fazla 30 günlük bir dönem seçin",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Bakiye ve toplam değerler geçerli hesaba aittir. Diğer ölçümler seçilen kullanıcı ve döneme göre hesaplanır; istek başarı oranını göstermez.",
-    "显示全部列": "Tüm sütunları göster"
+    "显示全部列": "Tüm sütunları göster",
+    "请选择有效的时间范围": "Geçerli bir zaman aralığı seçin",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filtreler aramadan sonra uygulanır. Yenileme, dışa aktarma ve özetler uygulanan filtreleri kullanır."
   }
 }

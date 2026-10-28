@@ -50,10 +50,11 @@ import {
   buildUsageLogQuery,
   readLogExportError,
 } from '../../helpers/usageLogExport';
+import { normalizeUsageLogFilters } from '../../helpers/usageLogQuery';
 import { ITEMS_PER_PAGE } from '../../constants';
 import { useTableCompactMode } from '../common/useTableCompactMode';
 
-export const useLogsData = () => {
+export const useLogsData = (admin = isAdmin()) => {
   const { t } = useTranslation();
 
   // Define column keys for selection
@@ -92,7 +93,7 @@ export const useLogsData = () => {
   const topUsersRequestCounter = useRef(0);
 
   // User and admin
-  const isAdminUser = isAdmin();
+  const isAdminUser = admin;
   // Role-specific storage key to prevent different roles from overwriting each other
   const STORAGE_KEY = isAdminUser
     ? 'logs-table-columns-admin'
@@ -107,6 +108,16 @@ export const useLogsData = () => {
     token: 0,
   });
   const [statError, setStatError] = useState('');
+  const [listError, setListError] = useState('');
+  const [groupPrivacy, setGroupPrivacy] = useState(() => {
+    try {
+      return localStorage.getItem('usage-logs-group-privacy') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const aliveRef = useRef(true);
+  const lastPageRequest = useRef({ page: 1, size: ITEMS_PER_PAGE });
 
   // Form state
   const [formApi, setFormApi] = useState(null);
@@ -136,7 +147,7 @@ export const useLogsData = () => {
       group: q.get('group') || '',
     };
   });
-  const formInitValues = {
+  const [formInitValues] = useState(() => ({
     username: '',
     token_name: '',
     model_name: usageLink?.model || '',
@@ -153,7 +164,11 @@ export const useLogsData = () => {
           timestamp2string(now.getTime() / 1000 + 3600),
         ],
     logType: '0',
-  };
+  }));
+  const appliedRef = useRef(null);
+  if (!appliedRef.current)
+    appliedRef.current = normalizeUsageLogFilters(formInitValues);
+  const [appliedFilters, setAppliedFilters] = useState(appliedRef.current);
 
   // Get default column visibility based on user role
   const getDefaultColumnVisibility = () => {
@@ -237,6 +252,7 @@ export const useLogsData = () => {
   // Top users drawer state (admin only)
   const [showTopUsersDrawer, setShowTopUsersDrawer] = useState(false);
   const [topUsersLoading, setTopUsersLoading] = useState(false);
+  const [topUsersError, setTopUsersError] = useState(false);
   const [topUsersData, setTopUsersData] = useState({
     by_quota: [],
     by_requests: [],
@@ -292,41 +308,8 @@ export const useLogsData = () => {
   }, [BILLING_DISPLAY_MODE_STORAGE_KEY, billingDisplayMode]);
 
   // 获取表单值的辅助函数，确保所有值都是字符串
-  const getFormValues = () => {
-    const formValues = formApi ? formApi.getValues() : formInitValues;
-
-    let start_timestamp = timestamp2string(getTodayStartTimestamp());
-    let end_timestamp = timestamp2string(now.getTime() / 1000 + 3600);
-
-    if (
-      formValues.dateRange &&
-      Array.isArray(formValues.dateRange) &&
-      formValues.dateRange.length === 2
-    ) {
-      start_timestamp = formValues.dateRange[0];
-      end_timestamp = formValues.dateRange[1];
-    }
-
-    return {
-      username: formValues.username || '',
-      token_name: formValues.token_name || '',
-      model_name: formValues.model_name || '',
-      start_timestamp,
-      end_timestamp,
-      channel: formValues.channel || '',
-      channel_ids: (formValues.channel_ids || []).join(','),
-      channel_keyword: formValues.channel_keyword || '',
-      group_vendor: formValues.group_vendor || '',
-      group: formValues.group || '',
-      request_id: formValues.request_id || '',
-      logType: formValues.logType ? parseInt(formValues.logType) : 0,
-    };
-  };
-
-  const toUnixTimestamp = (value) => {
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : 0;
-  };
+  const getFormValues = () =>
+    normalizeUsageLogFilters(formApi ? formApi.getValues() : formInitValues);
 
   const buildQueryString = (params) => {
     const query = new URLSearchParams();
@@ -339,22 +322,7 @@ export const useLogsData = () => {
     return query.toString();
   };
 
-  const normalizeLogQueryValues = (customLogType = null) => {
-    const values = getFormValues();
-    const currentLogType =
-      customLogType !== null
-        ? customLogType
-        : values.logType !== undefined
-          ? values.logType
-          : logType;
-
-    return {
-      ...values,
-      logType: currentLogType,
-      startTimestamp: toUnixTimestamp(values.start_timestamp),
-      endTimestamp: toUnixTimestamp(values.end_timestamp),
-    };
-  };
+  const normalizeLogQueryValues = () => appliedRef.current;
 
   const normalizeGroupOptions = (data) => {
     if (Array.isArray(data)) {
@@ -410,6 +378,8 @@ export const useLogsData = () => {
     } = normalizeLogQueryValues();
 
     setTopUsersLoading(true);
+    setTopUsersError(false);
+    setTopUsersData({ by_quota: [], by_requests: [] });
     try {
       const params = new URLSearchParams({
         username,
@@ -432,20 +402,20 @@ export const useLogsData = () => {
       if (reqId !== topUsersRequestCounter.current) {
         return;
       }
-      const { success, message, data } = res.data || {};
+      const { success, data } = res.data || {};
       if (success) {
         setTopUsersData({
           by_quota: data?.by_quota || [],
           by_requests: data?.by_requests || [],
         });
       } else {
-        showError(message || 'Failed to load top users');
+        setTopUsersError(true);
       }
     } catch (error) {
       if (reqId !== topUsersRequestCounter.current) {
         return;
       }
-      showError(error?.message || 'Failed to load top users');
+      setTopUsersError(true);
     } finally {
       if (reqId === topUsersRequestCounter.current) {
         setTopUsersLoading(false);
@@ -461,9 +431,15 @@ export const useLogsData = () => {
     if (!formApi || !username) {
       return;
     }
-    formApi.setValue('username', `name:${username}`);
+    const values = { ...appliedRef.current, username: `name:${username}` };
+    formApi.setValues({
+      ...values,
+      logType: String(values.logType),
+      dateRange: [values.start_timestamp, values.end_timestamp],
+      channel_ids: values.channel_ids ? values.channel_ids.split(',') : [],
+    });
     setShowTopUsersDrawer(false);
-    await refresh();
+    await applyFilters(values);
   };
 
   const [groupSummaryVisible, setGroupSummaryVisible] = useState(false);
@@ -533,7 +509,7 @@ export const useLogsData = () => {
       return;
     }
     const { success, message, data } = res.data;
-    if (success) {
+    if (success && data && typeof data === 'object') {
       setStat(data);
     } else {
       throw new Error(message || t('加载统计失败'));
@@ -575,7 +551,7 @@ export const useLogsData = () => {
       return;
     }
     const { success, message, data } = res.data;
-    if (success) {
+    if (success && data && typeof data === 'object') {
       setStat(data);
     } else {
       throw new Error(message || t('加载统计失败'));
@@ -622,6 +598,7 @@ export const useLogsData = () => {
     }
     const res = await API.get(`/api/user/${userId}`);
     const { success, message, data } = res.data;
+    if (!aliveRef.current) return;
     if (success) {
       setUserInfoData(data);
       setShowUserInfoModal(true);
@@ -977,17 +954,17 @@ export const useLogsData = () => {
   };
 
   // Load logs function
-  const loadLogs = async (startIdx, pageSize, customLogType = null) => {
+  const loadLogs = async (startIdx, pageSize) => {
     const reqId = ++logsRequestCounter.current;
     setLoading(true);
+    setListError('');
+    lastPageRequest.current = { page: startIdx, size: pageSize };
     setLogs([]);
+    setExpandData({});
     setLogCount(0);
 
     const queryParams = {
-      ...buildUsageLogQuery(
-        normalizeLogQueryValues(customLogType),
-        isAdminUser,
-      ),
+      ...buildUsageLogQuery(normalizeLogQueryValues(), isAdminUser),
       p: startIdx,
       page_size: pageSize,
     };
@@ -997,12 +974,15 @@ export const useLogsData = () => {
     }?${buildQueryString(queryParams)}`;
 
     try {
-      const res = await API.get(url);
+      const res = await API.get(url, {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
       if (reqId !== logsRequestCounter.current) {
         return;
       }
       const { success, message, data } = res.data;
-      if (success) {
+      if (success && Array.isArray(data?.items)) {
         const newPageData = data.items;
         setActivePage(data.page);
         setPageSize(data.page_size);
@@ -1010,11 +990,11 @@ export const useLogsData = () => {
 
         setLogsFormat(newPageData);
       } else {
-        showError(message);
+        setListError(message || t('加载日志失败'));
       }
     } catch (error) {
       if (reqId === logsRequestCounter.current) {
-        showError(error?.message || t('加载日志失败'));
+        setListError(t('加载日志失败'));
       }
     } finally {
       if (reqId === logsRequestCounter.current) {
@@ -1039,7 +1019,7 @@ export const useLogsData = () => {
         '按当前筛选导出全部匹配日志，最多 31 天、10000 条；额度保留 quota 单位，时间为 UTC。',
       ),
       onOk: async () => {
-        if (exportInFlight.current) return;
+        if (!aliveRef.current || exportInFlight.current) return;
         exportInFlight.current = true;
         setExporting(true);
         try {
@@ -1047,6 +1027,7 @@ export const useLogsData = () => {
             `${isAdminUser ? '/api/log/export' : '/api/log/self/export'}?${buildQueryString(query)}`,
             { responseType: 'blob', timeout: 60000, skipErrorHandler: true },
           );
+          if (!aliveRef.current) return;
           if (!String(response.headers['content-type']).includes('text/csv')) {
             throw { response };
           }
@@ -1057,6 +1038,7 @@ export const useLogsData = () => {
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch (error) {
+          if (!aliveRef.current) return;
           showError(
             t(
               await readLogExportError(error, '导出失败，请缩小筛选范围后重试'),
@@ -1064,7 +1046,7 @@ export const useLogsData = () => {
           );
         } finally {
           exportInFlight.current = false;
-          setExporting(false);
+          if (aliveRef.current) setExporting(false);
         }
       },
     });
@@ -1087,25 +1069,70 @@ export const useLogsData = () => {
       });
   };
 
-  // Refresh function
-  const refresh = async () => {
-    setActivePage(1);
-    handleEyeClick();
-    await loadLogs(1, pageSize);
-    if (showTopUsersDrawer) {
-      await loadTopUsers();
+  // A single immutable snapshot drives every consumer of the visible query.
+  const applyFilters = async (values) => {
+    let next;
+    try {
+      next = values || getFormValues();
+      if (
+        !Number.isFinite(next.startTimestamp) ||
+        next.startTimestamp <= 0 ||
+        !Number.isFinite(next.endTimestamp) ||
+        next.endTimestamp < next.startTimestamp
+      )
+        throw new Error('Invalid date range');
+    } catch {
+      showError(t('请选择有效的时间范围'));
+      return false;
     }
+    appliedRef.current = { ...next };
+    setAppliedFilters(appliedRef.current);
+    setLogType(next.logType);
+    setActivePage(1);
+    // An open summary belongs to the previous query; never leave it stale.
+    groupSummaryRequest.current++;
+    setGroupSummaryVisible(false);
+    await Promise.all([
+      loadLogs(1, pageSize),
+      handleEyeClick(),
+      ...(showTopUsersDrawer ? [loadTopUsers()] : []),
+    ]);
+    return true;
   };
+  const submitFilters = () => applyFilters();
+  const resetFilters = () => {
+    formApi?.setValues(formInitValues);
+    return applyFilters(normalizeUsageLogFilters(formInitValues));
+  };
+  const retryList = () =>
+    loadLogs(lastPageRequest.current.page, lastPageRequest.current.size);
+  const refresh = () =>
+    Promise.all([
+      retryList(),
+      handleEyeClick(),
+      ...(showTopUsersDrawer ? [loadTopUsers()] : []),
+    ]);
 
   // Copy text function
   const copyText = async (e, text) => {
     e.stopPropagation();
     if (await copy(text)) {
-      showSuccess('已复制：' + text);
-    } else {
+      if (aliveRef.current) showSuccess(t('已复制到剪贴板！'));
+    } else if (aliveRef.current) {
       Modal.error({ title: t('无法复制到剪贴板，请手动复制'), content: text });
     }
   };
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      logsRequestCounter.current++;
+      statRequestCounter.current++;
+      topUsersRequestCounter.current++;
+      groupSummaryRequest.current++;
+    };
+  }, []);
 
   // Initialize data
   useEffect(() => {
@@ -1149,6 +1176,13 @@ export const useLogsData = () => {
   };
 
   return {
+    appliedFilters,
+    listError,
+    retryList,
+    submitFilters,
+    resetFilters,
+    groupPrivacy,
+    setGroupPrivacy,
     exporting,
     exportLogs,
     fromChannelUsage: Boolean(usageLink),
@@ -1210,6 +1244,7 @@ export const useLogsData = () => {
     showTopUsersDrawer,
     setShowTopUsersDrawer,
     topUsersLoading,
+    topUsersError,
     topUsersData,
     topUsersViewMode,
     setTopUsersViewMode,
@@ -1222,7 +1257,7 @@ export const useLogsData = () => {
     openTopUsersDrawer,
     selectTopUser,
     refreshTopUsers: loadTopUsers,
-    currentTopUsersLogType: getFormValues().logType,
+    currentTopUsersLogType: appliedFilters.logType,
 
     // Functions
     loadLogs,

@@ -6627,6 +6627,8 @@
     "请选择有效的起止时间": "Wählen Sie eine gültige Start- und Endzeit",
     "请选择不超过30天的时间范围": "Wählen Sie einen Zeitraum von höchstens 30 Tagen",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Guthaben und Gesamtwerte gehören zum aktuellen Konto. Andere Kennzahlen gelten für den ausgewählten Benutzer und Zeitraum; sie zeigen keine Erfolgsquote der Anfragen an.",
-    "显示全部列": "Alle Spalten anzeigen"
+    "显示全部列": "Alle Spalten anzeigen",
+    "请选择有效的时间范围": "Wählen Sie einen gültigen Zeitraum",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filter gelten nach der Suche. Aktualisierung, Export und Zusammenfassungen verwenden die angewendeten Filter."
   }
 }
