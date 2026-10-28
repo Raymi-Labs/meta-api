@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { getModelProtocolLabel } from '../../../../helpers/modelProtocols';
 import SelectableButtonGroup from '../../../common/ui/SelectableButtonGroup';
 
 /**
@@ -68,7 +69,7 @@ const PricingEndpointTypes = ({
 
   // 端点类型显示名称映射
   const getEndpointTypeLabel = (endpointType) => {
-    return endpointType;
+    return getModelProtocolLabel(endpointType);
   };
 
   const availableEndpointTypes = getAllEndpointTypes();
@@ -94,7 +95,7 @@ const PricingEndpointTypes = ({
   return (
     <SelectableButtonGroup
       pills={pills}
-      title={t('端点类型')}
+      title={t('已声明协议')}
       items={items}
       activeValue={filterEndpointType}
       onChange={setFilterEndpointType}

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "已声明协议": "Giao thức đã khai báo",
+    "接入示例（未声明）": "Ví dụ tích hợp (chưa khai báo)",
+    "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Khai báo giao thức lấy từ danh mục mô hình, không chứng minh mọi nhóm đã được kiểm thử. Chưa khai báo không có nghĩa là không hỗ trợ; hãy xác nhận nhóm trước khi gọi.",
     "测试分组": "Nhóm kiểm tra",
     "按 Key 默认范围": "Phạm vi mặc định của Key",
     "选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。": "Chỉ hiển thị và kiểm tra mô hình được phép trong nhóm đã chọn, không chuyển sang nhóm khác.",

@@ -25,6 +25,7 @@ import { Button } from '@douyinfe/semi-ui';
 import { IconCopy } from '@douyinfe/semi-icons';
 import { formatTimeRatioValue } from '../../../../../helpers';
 import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
+import ModelProtocolSummary from '../../ModelProtocolSummary';
 
 export const getPricingTableColumns = ({
   t,
@@ -102,10 +103,19 @@ export const getPricingTableColumns = ({
               }}
             />
           </div>
+          <ModelProtocolSummary
+            model={record}
+            catalogState={catalogState}
+            t={t}
+          />
           <div className='pricing-group-description'>
             {record.vendor_name} ·{' '}
             {record.billing_mode === 'tiered_expr'
-              ? t(isVideoPriceExpression(record.billing_expr) ? '视频按秒 / 表达式' : '阶梯计费：展示首档参考价，完整规则见详情')
+              ? t(
+                  isVideoPriceExpression(record.billing_expr)
+                    ? '视频按秒 / 表达式'
+                    : '阶梯计费：展示首档参考价，完整规则见详情',
+                )
               : record.quota_type === 0
                 ? t('按量计费')
                 : record.quota_type === 2

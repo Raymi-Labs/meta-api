@@ -1,5 +1,8 @@
 {
   "translation": {
+    "已声明协议": "Deklarierte Protokolle",
+    "接入示例（未声明）": "Integrationsbeispiele (nicht deklariert)",
+    "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Protokollangaben stammen aus dem Modellkatalog und belegen keine Tests für jede Gruppe. Nicht deklariert bedeutet nicht nicht unterstützt; prüfen Sie Ihre Gruppe vor dem Aufruf.",
     "测试分组": "Testgruppe",
     "按 Key 默认范围": "Standardbereich des Keys",
     "选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。": "Nur zugelassene Modelle der gewählten Gruppe werden angezeigt und getestet, ohne Gruppenwechsel.",

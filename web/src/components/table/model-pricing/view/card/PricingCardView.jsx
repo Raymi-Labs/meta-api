@@ -26,6 +26,7 @@ import { Copy, ScanText, Timer, Gauge } from 'lucide-react';
 import { getLobeHubIcon, formatTimeRatioValue } from '../../../../../helpers';
 import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
 import PricingCardSkeleton from './PricingCardSkeleton';
+import ModelProtocolSummary from '../../ModelProtocolSummary';
 import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoadingTime';
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 
@@ -171,6 +172,11 @@ const PricingCardView = ({
                   />
                 )}
               </div>
+              <ModelProtocolSummary
+                model={model}
+                catalogState={catalogState}
+                t={t}
+              />
               <dl className='pricing-card-prices'>
                 {items.length ? (
                   items.map((item) => (

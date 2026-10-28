@@ -1,5 +1,8 @@
 {
   "translation": {
+    "已声明协议": "Declared protocols",
+    "接入示例（未声明）": "Integration examples (undeclared)",
+    "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Protocol declarations come from the model catalog, not tests of every group. Undeclared does not mean unsupported; confirm your group before calling.",
     "测试分组": "Test group",
     "按 Key 默认范围": "Key default scope",
     "选择具体分组后，仅展示并测试该分组内获准的模型，不会切换到其他分组。": "Only authorized models in the selected group are listed and tested. Tests do not switch groups.",

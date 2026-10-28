@@ -18,48 +18,39 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Avatar, Typography, Badge } from '@douyinfe/semi-ui';
+import { Avatar, Typography } from '@douyinfe/semi-ui';
 import { IconLink } from '@douyinfe/semi-icons';
+import { getModelEndpointRows } from '../../../../../helpers/modelProtocols';
+import '../../modelProtocols.css';
 
 const { Text } = Typography;
 
 const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
-  const renderAPIEndpoints = () => {
-    if (!modelData) return null;
-
-    const mapping = endpointMap;
-    const types = modelData.supported_endpoint_types || [];
-
-    return types.map((type) => {
-      const info = mapping[type] || {};
-      let path = info.path || '';
-      // 如果路径中包含 {model} 占位符，替换为真实模型名称
-      if (path.includes('{model}')) {
-        const modelName = modelData.model_name || modelData.modelName || '';
-        path = path.replaceAll('{model}', modelName);
-      }
-      const method = info.method || 'POST';
-      return (
-        <div
-          key={type}
-          className='flex justify-between border-b border-dashed last:border-0 py-2 last:pb-0'
-          style={{ borderColor: 'var(--semi-color-border)' }}
-        >
-          <span className='flex items-center pr-5'>
-            <Badge dot type='success' className='mr-2' />
-            {type}
-            {path && '：'}
-            {path && (
-              <span className='text-gray-500 md:ml-1 break-all'>{path}</span>
-            )}
-          </span>
-          {path && (
-            <span className='text-gray-500 text-xs md:ml-1'>{method}</span>
-          )}
+  if (!modelData) return null;
+  const rows = getModelEndpointRows(modelData, endpointMap);
+  const declared = rows.filter((row) => row.declared);
+  const templates = rows.filter((row) => !row.declared);
+  const renderRow = (row) => (
+    <div
+      key={row.endpoint}
+      className='model-endpoint-row'
+      data-protocol={row.endpoint}
+      data-declared={row.declared}
+    >
+      <div className='model-endpoint-label'>
+        <span>{row.label}</span>
+        <span className='model-endpoint-state'>
+          {row.declared ? t('已声明协议') : `${t('示例')} · ${t('未声明')}`}
+        </span>
+      </div>
+      {row.path && (
+        <div className='model-endpoint-path'>
+          <span className='model-endpoint-method'>{row.method}</span>
+          <code>{row.path}</code>
         </div>
-      );
-    });
-  };
+      )}
+    </div>
+  );
 
   return (
     <div>
@@ -69,12 +60,27 @@ const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
         </Avatar>
         <div>
           <Text className='text-lg font-medium'>{t('API端点')}</Text>
-          <div className='text-xs text-gray-600'>
-            {t('模型支持的接口端点信息')}
-          </div>
+          <p className='model-endpoint-note'>
+            {t(
+              '协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。',
+            )}
+          </p>
         </div>
       </div>
-      {renderAPIEndpoints()}
+      {declared.length ? (
+        declared.map(renderRow)
+      ) : (
+        <p className='model-endpoint-note'>{t('未声明')}</p>
+      )}
+      {templates.length > 0 && (
+        <>
+          <h3 className='model-endpoint-heading'>{t('接入示例（未声明）')}</h3>
+          <p className='model-endpoint-note'>
+            {t('该模型尚未声明支持此协议，请先确认所用分组的接口配置。')}
+          </p>
+          {templates.map(renderRow)}
+        </>
+      )}
     </div>
   );
 };
