@@ -89,6 +89,9 @@ func hasModelNameSegment(modelName string, segments ...string) bool {
 }
 
 func getDefaultVendorName(modelName string) string {
+	if strings.EqualFold(strings.TrimSpace(modelName), "codex-auto-review") {
+		return "OpenAI"
+	}
 	if hasModelNameSegment(modelName, "mercury") {
 		if isInceptionModel(modelName) {
 			return defaultInceptionVendorName
@@ -99,6 +102,12 @@ func getDefaultVendorName(modelName string) string {
 	// avoids treating every model in a broad xiaomi namespace as MiMo.
 	if hasModelNameSegment(modelName, "mimo") {
 		return defaultMiMoVendorName
+	}
+	if hasModelNameSegment(modelName, "minimax") {
+		if inferModelDisplayVendor(modelName) == "minimax" {
+			return "MiniMax"
+		}
+		return ""
 	}
 
 	modelLower := strings.ToLower(modelName)
@@ -125,7 +134,7 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 		meta, exists := metaMap[modelName]
 		if exists && meta != nil {
 			vendorName := getDefaultVendorName(modelName)
-			if meta.VendorID != 0 || (vendorName != defaultMiMoVendorName && vendorName != defaultInceptionVendorName) {
+			if meta.VendorID != 0 || vendorName == "" {
 				continue
 			}
 			vendorID := getOrCreateVendor(vendorName, vendorMap)
