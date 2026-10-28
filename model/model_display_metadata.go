@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/QuantumNous/new-api/common"
@@ -75,6 +76,19 @@ func normalizeModelModalities(values ModelModalities) (ModelModalities, error) {
 	return result, nil
 }
 
+// ValidModelReleaseDate accepts a calendar day or a source's month precision.
+// It never interprets metadata creation/update timestamps as a release date.
+func ValidModelReleaseDate(value string) bool {
+	layout := "2006-01-02"
+	if len(value) == 7 {
+		layout = "2006-01"
+	} else if len(value) != 10 {
+		return false
+	}
+	parsed, err := time.Parse(layout, value)
+	return err == nil && parsed.Year() >= 1970 && parsed.Format(layout) == value
+}
+
 // NormalizeDisplayMetadata validates presentation only; it does not change
 // model identifiers, routing capabilities, permissions, or billing.
 func (m *Model) NormalizeDisplayMetadata() error {
@@ -85,6 +99,14 @@ func (m *Model) NormalizeDisplayMetadata() error {
 	// Keep numeric values exact in the browser as well as the SQL bigint column.
 	if m.ContextLength < 0 || m.ContextLength > 9007199254740991 {
 		return fmt.Errorf("上下文长度必须是非负安全整数")
+	}
+	if m.ReleaseDate != "" {
+		if !ValidModelReleaseDate(m.ReleaseDate) {
+			return fmt.Errorf("发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年")
+		}
+		if m.NameRule != NameRuleExact {
+			return fmt.Errorf("发布日期仅支持精确匹配模型")
+		}
 	}
 	var err error
 	if m.InputModalities, err = normalizeModelModalities(m.InputModalities); err != nil {

@@ -17,6 +17,7 @@ import (
 type modelMetaRequest struct {
 	model.Model
 	DisplayName      *string                `json:"display_name"`
+	ReleaseDate      *string                `json:"release_date"`
 	ContextLength    *int64                 `json:"context_length"`
 	InputModalities  *model.ModelModalities `json:"input_modalities"`
 	OutputModalities *model.ModelModalities `json:"output_modalities"`
@@ -26,12 +27,16 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 	m := request.Model
 	if existing != nil {
 		m.DisplayName = existing.DisplayName
+		m.ReleaseDate = existing.ReleaseDate
 		m.ContextLength = existing.ContextLength
 		m.InputModalities = existing.InputModalities
 		m.OutputModalities = existing.OutputModalities
 	}
 	if request.DisplayName != nil {
 		m.DisplayName = *request.DisplayName
+	}
+	if request.ReleaseDate != nil {
+		m.ReleaseDate = *request.ReleaseDate
 	}
 	if request.ContextLength != nil {
 		m.ContextLength = *request.ContextLength

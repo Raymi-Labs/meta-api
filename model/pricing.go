@@ -17,6 +17,7 @@ import (
 type Pricing struct {
 	ModelName                string                  `json:"model_name"`
 	DisplayName              string                  `json:"display_name"`
+	ReleaseDate              string                  `json:"release_date"`
 	ContextLength            int64                   `json:"context_length"`
 	InputModalities          ModelModalities         `json:"input_modalities"`
 	OutputModalities         ModelModalities         `json:"output_modalities"`
@@ -321,6 +322,10 @@ func updatePricing() {
 			}
 			pricing.Description = meta.Description
 			pricing.DisplayName = meta.DisplayName
+			// Release dates belong to exact model IDs, never whole name patterns.
+			if meta.NameRule == NameRuleExact && meta.ModelName == model && ValidModelReleaseDate(meta.ReleaseDate) {
+				pricing.ReleaseDate = meta.ReleaseDate
+			}
 			pricing.ContextLength = meta.ContextLength
 			pricing.InputModalities = append(ModelModalities{}, meta.InputModalities...)
 			pricing.OutputModalities = append(ModelModalities{}, meta.OutputModalities...)

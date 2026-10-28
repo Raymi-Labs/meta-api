@@ -11,11 +11,11 @@
     "继承此 Key 的全部可用分组": "Bu Key için tüm kullanılabilir grupları devral",
     "原分组已移除，请重新指定分组或清除规则以继承。": "Önceki gruplar kaldırıldı. Grupları yeniden atayın veya devralmak için kuralı temizleyin.",
     "同步模型能力": "Model yeteneklerini eşitle",
-    "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Bağlam ve modaliteleri models.dev ile topluluk model kataloğundan eşitler. Varsayılan olarak günlük kontrol edilir; elle girilen değerler önceliklidir.",
+    "从 models.dev 与社区模型库同步发布日期、上下文和模态，默认每天检查；人工设置优先。": "Çıkış tarihlerini, bağlamı ve modaliteleri models.dev ile topluluk model kataloğundan eşitler. Varsayılan olarak günlük kontrol edilir; elle girilen değerler önceliklidir.",
     "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Model yetenekleri eşitlendi: {{created}} eklendi, {{updated}} güncellendi",
     "模型能力同步失败，现有数据已保留": "Model yetenekleri eşitlenemedi; mevcut veriler korundu",
     "单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。": "Birim tokendir. Eşitleme açıkken 0 olan bağlam veya boş modaliteler otomatik doldurulabilir; elle girilen değerler önceliklidir.",
-    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。": "Kapatıldığında katalog eşitlemesi ve arka plan yetenek güncellemeleri durur. Açıkken bağlam ve modaliteler tam model kimliğiyle eşleştirilerek doldurulur; otomatik doldurulan değerler güncellenmeye devam edebilir.",
+    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐发布日期、上下文和模态，已自动填入的值可继续更新；人工设置优先。": "Katalog eşitlemesini ve arka planda yetenek güncellemelerini durdurmak için kapatın. Açıldığında çıkış tarihleri, bağlam ve modaliteler tam eşleşen model kimliklerine göre doldurulur. Otomatik değerler güncellenmeye devam edebilir; elle girilen değerler önceliklidir.",
     "分辨率": "Çözünürlük",
     "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Bu şablon model yeteneklerini değil, sitenin satış fiyatını belirler. Gönderilen süre ve kademeye göre ücretlendirilir. Girdi medyası ve ek maliyetler için tam ifade kullanın.",
     "视频按秒模板": "Saniyelik video fiyat şablonu",
@@ -6627,6 +6627,12 @@
     "请选择有效的起止时间": "Geçerli bir başlangıç ve bitiş zamanı seçin",
     "请选择不超过30天的时间范围": "En fazla 30 günlük bir dönem seçin",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Bakiye ve toplam değerler geçerli hesaba aittir. Diğer ölçümler seçilen kullanıcı ve döneme göre hesaplanır; istek başarı oranını göstermez.",
-    "显示全部列": "Tüm sütunları göster"
+    "显示全部列": "Tüm sütunları göster",
+    "最新发布": "En yeni sürümler",
+    "原始顺序": "Orijinal sıra",
+    "按发布日期从新到旧，未知日期排在最后": "En yeni çıkış tarihleri önce; tarihi bilinmeyenler en sonda",
+    "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "YYYY-MM-DD veya YYYY-MM kullanın. Otomatik eşitleme için boş bırakın; elle girilen değerler önceliklidir.",
+    "发布日期仅支持精确匹配模型": "Çıkış tarihi yalnızca tam eşleşen modeller için desteklenir",
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Çıkış tarihi geçerli bir YYYY-MM-DD veya YYYY-MM olmalı ve 1970 yılından önce olmamalıdır"
   }
 }

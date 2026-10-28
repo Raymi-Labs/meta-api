@@ -22,6 +22,8 @@ Status: implemented
 - [独立模型页](../../implemented/feature/2026-10-25-model-detail-page.md)：部分重叠，复用已有 pricing 与详情数据路径，不改变公开权限。
 - [Inception 厂商分类](../../implemented/feature/2026-10-21-inception-vendor.md)：部分重叠，不改厂商归类和真实可用能力。
 
+[发布日期排序](2026-10-28-model-release-date-sort.md)将同源 release_date 纳入同一自动同步与人工保护链路；日期仅作用于精确模型展示和排序。
+
 ## Alternatives considered
 
 - 逐家请求厂商 API 可获得更直接来源，但没有统一的上下文/模态接口，部分需要凭据；本次复用已经配置的免费模型库，并说明其来源边界。

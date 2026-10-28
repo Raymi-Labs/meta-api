@@ -11,11 +11,11 @@
     "继承此 Key 的全部可用分组": "Herdar todos os grupos disponíveis desta Key",
     "原分组已移除，请重新指定分组或清除规则以继承。": "Os grupos originais foram removidos. Atribua grupos novamente ou limpe a regra para herdar.",
     "同步模型能力": "Sincronizar capacidades",
-    "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Sincroniza contexto e modalidades a partir do models.dev e do catálogo da comunidade. Verificação diária por padrão; os valores manuais têm prioridade.",
+    "从 models.dev 与社区模型库同步发布日期、上下文和模态，默认每天检查；人工设置优先。": "Sincroniza datas de lançamento, contexto e modalidades do models.dev e do catálogo da comunidade. A verificação é diária por padrão; os valores manuais têm prioridade.",
     "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Capacidades sincronizadas: {{created}} adicionados, {{updated}} atualizados",
     "模型能力同步失败，现有数据已保留": "Falha ao sincronizar as capacidades; os dados existentes foram mantidos",
     "单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。": "Medido em tokens. Com a sincronização ativada, um contexto de 0 ou modalidades vazias podem ser preenchidos automaticamente; os valores manuais têm prioridade.",
-    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。": "Desative para interromper a sincronização do catálogo e as atualizações em segundo plano. Quando ativada, preenche contexto e modalidades pelo ID exato do modelo; os valores automáticos podem continuar sendo atualizados.",
+    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐发布日期、上下文和模态，已自动填入的值可继续更新；人工设置优先。": "Desative para interromper a sincronização do catálogo e as atualizações de capacidades em segundo plano. Quando ativada, esta opção preenche datas de lançamento, contexto e modalidades com base em IDs de modelo exatos. Os valores automáticos podem continuar sendo atualizados; os manuais têm prioridade.",
     "分辨率": "Resolução",
     "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Este modelo define o preço de venda do site, não as capacidades do modelo. A cobrança usa duração e faixa enviadas. Use uma expressão completa para mídias de entrada e custos adicionais.",
     "视频按秒模板": "Modelo de preço de vídeo por segundo",
@@ -6627,6 +6627,12 @@
     "请选择有效的起止时间": "Selecione datas de início e fim válidas",
     "请选择不超过30天的时间范围": "Selecione um período de até 30 dias",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "O saldo e os totais acumulados pertencem à conta atual. As outras métricas usam o utilizador e período selecionados; não indicam a taxa de sucesso dos pedidos.",
-    "显示全部列": "Mostrar todas as colunas"
+    "显示全部列": "Mostrar todas as colunas",
+    "最新发布": "Lançamentos mais recentes",
+    "原始顺序": "Ordem original",
+    "按发布日期从新到旧，未知日期排在最后": "Datas de lançamento mais recentes primeiro; datas desconhecidas por último",
+    "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "Use YYYY-MM-DD ou YYYY-MM. Deixe em branco para sincronização automática; os valores manuais têm prioridade.",
+    "发布日期仅支持精确匹配模型": "As datas de lançamento só são aceitas para correspondências exatas de modelos",
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "A data de lançamento deve ser válida no formato YYYY-MM-DD ou YYYY-MM, a partir de 1970"
   }
 }

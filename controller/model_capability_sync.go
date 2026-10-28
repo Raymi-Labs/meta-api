@@ -39,8 +39,9 @@ type capabilityProvider struct {
 }
 
 type capabilityModel struct {
-	ID    string `json:"id"`
-	Limit struct {
+	ID          string          `json:"id"`
+	ReleaseDate json.RawMessage `json:"release_date"`
+	Limit       struct {
 		Context json.RawMessage `json:"context"`
 	} `json:"limit"`
 	Modalities struct {
@@ -96,13 +97,18 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 			if common.Unmarshal(upstream.Limit.Context, &contextLength) != nil || contextLength < 0 || contextLength > 9007199254740991 {
 				contextLength = 0
 			}
+			var releaseDate string
+			if common.Unmarshal(upstream.ReleaseDate, &releaseDate) != nil || !model.ValidModelReleaseDate(releaseDate) {
+				releaseDate = ""
+			}
 			entry := model.ModelCapabilityMetadata{
+				ReleaseDate:      releaseDate,
 				ContextLength:    contextLength,
 				InputModalities:  decodeCapabilityModalities(upstream.Modalities.Input),
 				OutputModalities: decodeCapabilityModalities(upstream.Modalities.Output),
 				Provider:         providerID,
 			}
-			if entry.ContextLength == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
+			if entry.ReleaseDate == "" && entry.ContextLength == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
 				continue
 			}
 			if previous, exists := priorities[id]; exists && previous >= provider.Billing.Priority {

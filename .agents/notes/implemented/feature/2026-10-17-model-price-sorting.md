@@ -16,6 +16,8 @@ Status: implemented
 
 [筛选可见性](2026-10-11-pricing-filter-visibility.md)及 [分组健康筛选](../bug-fix/2026-10-17-group-health-filters.md)管理结果范围，本次只扩展模型结果顺序，保留其权限和解除筛选入口。价格来源沿用 `calculateModelPrice`，不改变计费。
 
+[发布日期排序](2026-10-28-model-release-date-sort.md)将默认项调整为最新发布，价格计算与排序口径继续沿用本文。
+
 ## Alternatives considered
 
 只按 model_ratio 排序最简单，但忽略分组与时段且不覆盖按次价格；解析展示字符串会受货币、舍入和动态提示影响。采用同源未舍入价格。

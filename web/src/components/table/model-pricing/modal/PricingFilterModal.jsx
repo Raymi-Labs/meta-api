@@ -25,7 +25,7 @@ import './pricingFilterDrawer.css';
 
 const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
   const handleResetFilters = () => {
-    sidebarProps.setSortOrder('version-desc');
+    sidebarProps.setSortOrder('release-desc');
     resetPricingFilters({
       handleChange: sidebarProps.handleChange,
       setShowWithRecharge: sidebarProps.setShowWithRecharge,

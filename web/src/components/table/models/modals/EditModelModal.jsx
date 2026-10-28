@@ -131,6 +131,7 @@ const EditModelModal = (props) => {
   const getInitValues = () => ({
     model_name: props.editingModel?.model_name || '',
     display_name: '',
+    release_date: '',
     context_length: 0,
     input_modalities: [],
     output_modalities: [],
@@ -165,6 +166,7 @@ const EditModelModal = (props) => {
           ...getInitValues(),
           ...data,
           display_name: data.display_name || '',
+          release_date: data.release_date || '',
           context_length: data.context_length || 0,
           input_modalities: Array.isArray(data.input_modalities)
             ? data.input_modalities
@@ -225,6 +227,8 @@ const EditModelModal = (props) => {
       const submitData = {
         ...values,
         display_name: (values.display_name || '').trim(),
+        release_date:
+          values.name_rule === 0 ? (values.release_date || '').trim() : '',
         context_length: values.context_length || 0,
         input_modalities: values.input_modalities || [],
         output_modalities: values.output_modalities || [],
@@ -423,6 +427,21 @@ const EditModelModal = (props) => {
                       label={t('描述')}
                       placeholder={t('请输入模型描述')}
                       rows={3}
+                      showClear
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <Form.Input
+                      field='release_date'
+                      label={t('发布日期')}
+                      placeholder='YYYY-MM-DD / YYYY-MM'
+                      maxLength={10}
+                      disabled={values.name_rule !== 0}
+                      extraText={t(
+                        values.name_rule === 0
+                          ? '支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。'
+                          : '发布日期仅支持精确匹配模型',
+                      )}
                       showClear
                     />
                   </Col>
@@ -631,7 +650,7 @@ const EditModelModal = (props) => {
                       field='sync_official'
                       label={t('参与官方同步')}
                       extraText={t(
-                        '关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。',
+                        '关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐发布日期、上下文和模态，已自动填入的值可继续更新；人工设置优先。',
                       )}
                       size='large'
                     />

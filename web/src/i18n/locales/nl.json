@@ -11,11 +11,11 @@
     "继承此 Key 的全部可用分组": "Alle beschikbare groepen van deze Key overnemen",
     "原分组已移除，请重新指定分组或清除规则以继承。": "De oorspronkelijke groepen zijn verwijderd. Wijs opnieuw groepen toe of wis de regel om over te nemen.",
     "同步模型能力": "Modelmogelijkheden synchroniseren",
-    "从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。": "Synchroniseer context en modaliteiten vanuit models.dev en de communitycatalogus. Standaard dagelijks gecontroleerd; handmatige waarden hebben voorrang.",
+    "从 models.dev 与社区模型库同步发布日期、上下文和模态，默认每天检查；人工设置优先。": "Synchroniseert releasedatums, context en modaliteiten vanuit models.dev en de communitycatalogus. Standaard dagelijks gecontroleerd; handmatige waarden hebben voorrang.",
     "模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个": "Modelmogelijkheden gesynchroniseerd: {{created}} toegevoegd, {{updated}} bijgewerkt",
     "模型能力同步失败，现有数据已保留": "Synchronisatie van modelmogelijkheden mislukt; bestaande gegevens zijn behouden",
     "单位为 Token。开启同步时，0 或空模态可自动补齐；人工填写的值优先保留。": "Gemeten in tokens. Bij ingeschakelde synchronisatie kunnen contextwaarde 0 en lege modaliteiten automatisch worden aangevuld; handmatige waarden hebben voorrang.",
-    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐上下文和模态，已自动填入的值可继续更新。": "Schakel uit om catalogussynchronisatie en achtergrondupdates te stoppen. Indien ingeschakeld worden context en modaliteiten op basis van exacte model-ID’s aangevuld; automatisch ingevulde waarden kunnen verder worden bijgewerkt.",
+    "关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐发布日期、上下文和模态，已自动填入的值可继续更新；人工设置优先。": "Schakel uit om catalogussynchronisatie en functie-updates op de achtergrond te stoppen. Wanneer ingeschakeld, worden releasedatums, context en modaliteiten aangevuld op basis van exacte model-ID’s. Automatische waarden kunnen verder worden bijgewerkt; handmatige waarden hebben voorrang.",
     "分辨率": "Resolutie",
     "此模板仅配置本站售价，不代表模型支持这些参数。按实际出站时长和档位收费；输入素材等额外成本请使用完整表达式。": "Dit sjabloon stelt de verkoopprijs van de site in, niet de modelmogelijkheden. Facturering gebruikt de verzonden duur en tariefklasse. Gebruik een volledige expressie voor invoermedia en extra kosten.",
     "视频按秒模板": "Sjabloon voor videoprijs per seconde",
@@ -6627,6 +6627,12 @@
     "请选择有效的起止时间": "Selecteer een geldige begin- en eindtijd",
     "请选择不超过30天的时间范围": "Selecteer een periode van maximaal 30 dagen",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Het saldo en de cumulatieve totalen horen bij het huidige account. Andere statistieken gebruiken de geselecteerde gebruiker en periode; ze geven geen succespercentage van verzoeken aan.",
-    "显示全部列": "Alle kolommen tonen"
+    "显示全部列": "Alle kolommen tonen",
+    "最新发布": "Nieuwste releases",
+    "原始顺序": "Oorspronkelijke volgorde",
+    "按发布日期从新到旧，未知日期排在最后": "Nieuwste releasedatums eerst; onbekende datums als laatste",
+    "支持 YYYY-MM-DD 或 YYYY-MM；留空自动同步，人工填写优先保留。": "Gebruik YYYY-MM-DD of YYYY-MM. Laat leeg voor automatische synchronisatie; handmatige waarden hebben voorrang.",
+    "发布日期仅支持精确匹配模型": "Releasedatums worden alleen ondersteund bij exacte modelovereenkomsten",
+    "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "De releasedatum moet een geldige YYYY-MM-DD of YYYY-MM zijn, vanaf 1970"
   }
 }

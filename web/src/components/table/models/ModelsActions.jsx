@@ -173,7 +173,7 @@ const ModelsActions = ({
           content={
             <div className='p-2 max-w-[360px] text-sm'>
               {t(
-                '从 models.dev 与社区模型库同步上下文和模态，默认每天检查；人工设置优先。',
+                '从 models.dev 与社区模型库同步发布日期、上下文和模态，默认每天检查；人工设置优先。',
               )}
             </div>
           }

@@ -61,11 +61,15 @@ export default function SearchActions({
       />
       <Select
         className='pricing-catalog-sort'
-        aria-label={t('价格排序')}
+        aria-label={t('排序方式')}
         value={sortOrder}
         onChange={setSortOrder}
         optionList={pricingSortOptions(t)}
-        title={t('动态或不适用的价格排在末尾')}
+        title={t(
+          sortOrder === 'release-desc'
+            ? '按发布日期从新到旧，未知日期排在最后'
+            : '动态或不适用的价格排在末尾',
+        )}
       />
       <Button
         className='pricing-filter-trigger'
