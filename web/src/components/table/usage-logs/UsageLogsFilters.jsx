@@ -31,22 +31,17 @@ import LogChannelPicker from './components/LogChannelPicker';
 const LogsFilters = ({
   formInitValues,
   setFormApi,
-  refresh,
-  setShowColumnSelector,
+  submitFilters,
+  resetFilters,
+  filtersOpen,
+  groupPrivacy,
+  setGroupPrivacy,
   formApi,
-  setLogType,
   groupOptions,
   loading,
   isAdminUser,
   t,
 }) => {
-  const [groupPrivacy, setGroupPrivacy] = useState(() => {
-    try {
-      return localStorage.getItem('usage-logs-group-privacy') === 'true';
-    } catch {
-      return false;
-    }
-  });
   const sensitiveClass = groupPrivacy ? 'usage-log-group-private' : undefined;
   const [vendor, setVendor] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
@@ -61,7 +56,7 @@ const LogsFilters = ({
     <Form
       initValues={formInitValues}
       getFormApi={(api) => setFormApi(api)}
-      onSubmit={refresh}
+      onSubmit={submitFilters}
       onValueChange={(values) => setVendor(values.group_vendor || '')}
       allowEmpty={true}
       autoComplete='off'
@@ -69,7 +64,7 @@ const LogsFilters = ({
       trigger='change'
       stopValidateWithError={false}
     >
-      <div className='flex flex-col gap-2'>
+      <div className='usage-logs-filters' hidden={!filtersOpen}>
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2'>
           {/* 时间选择器 */}
           <div className='col-span-1 lg:col-span-2'>
@@ -186,12 +181,6 @@ const LogsFilters = ({
               className='w-full sm:w-auto min-w-[120px]'
               showClear
               pure
-              onChange={() => {
-                // 延迟执行搜索，让表单值先更新
-                setTimeout(() => {
-                  refresh();
-                }, 0);
-              }}
               size='small'
             >
               <Form.Select.Option value='0'>{t('全部')}</Form.Select.Option>
@@ -232,27 +221,8 @@ const LogsFilters = ({
             >
               {t('查询')}
             </Button>
-            <Button
-              type='tertiary'
-              onClick={() => {
-                if (formApi) {
-                  formApi.reset();
-                  setLogType(0);
-                  setTimeout(() => {
-                    refresh();
-                  }, 100);
-                }
-              }}
-              size='small'
-            >
+            <Button type='tertiary' onClick={resetFilters} size='small'>
               {t('重置')}
-            </Button>
-            <Button
-              type='tertiary'
-              onClick={() => setShowColumnSelector(true)}
-              size='small'
-            >
-              {t('列设置')}
             </Button>
           </div>
         </div>

@@ -17,9 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { Banner } from '@douyinfe/semi-ui';
-import CardPro from '../../common/ui/CardPro';
+import React, { useContext, useState } from 'react';
+import { Banner, Button } from '@douyinfe/semi-ui';
+import { timestamp2string } from '../../../helpers';
+import { UserContext } from '../../../context/User';
+import './usageLogs.css';
 import LogsTable from './UsageLogsTable';
 import LogsActions from './UsageLogsActions';
 import LogsFilters from './UsageLogsFilters';
@@ -33,9 +35,10 @@ import { useLogsData } from '../../../hooks/usage-logs/useUsageLogsData';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { createCardProPagination } from '../../../helpers/utils';
 
-const LogsPage = () => {
-  const logsData = useLogsData();
+const LogsPageContent = ({ admin }) => {
+  const logsData = useLogsData(admin);
   const isMobile = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(logsData.fromChannelUsage);
 
   return (
     <>
@@ -58,25 +61,122 @@ const LogsPage = () => {
           )}
         />
       )}
-      <CardPro
-        type='type2'
-        statsArea={<LogsActions {...logsData} />}
-        searchArea={<LogsFilters {...logsData} />}
-        paginationArea={createCardProPagination({
-          currentPage: logsData.activePage,
-          pageSize: logsData.pageSize,
-          total: logsData.logCount,
-          onPageChange: logsData.handlePageChange,
-          onPageSizeChange: logsData.handlePageSizeChange,
-          isMobile: isMobile,
-          t: logsData.t,
-        })}
-        t={logsData.t}
-      >
-        <LogsTable {...logsData} />
-      </CardPro>
+      <section className='usage-logs-page'>
+        <LogsActions
+          {...logsData}
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
+        />
+        <LogsFilters {...logsData} filtersOpen={filtersOpen} />
+        <div className='usage-logs-applied' aria-label={logsData.t('应用筛选')}>
+          <span>
+            {logsData.t('时间范围')}:{' '}
+            {timestamp2string(logsData.appliedFilters.startTimestamp)} —{' '}
+            {timestamp2string(logsData.appliedFilters.endTimestamp)} (
+            {Intl.DateTimeFormat().resolvedOptions().timeZone})
+          </span>
+          {Object.entries({
+            logType: [
+              logsData.t('类型'),
+              [
+                logsData.t('全部'),
+                logsData.t('充值'),
+                logsData.t('消费'),
+                logsData.t('管理'),
+                logsData.t('系统'),
+                logsData.t('调用失败'),
+                logsData.t('退款'),
+              ][logsData.appliedFilters.logType],
+            ],
+            model_name: [
+              logsData.t('模型'),
+              logsData.appliedFilters.model_name,
+            ],
+            token_name: [
+              logsData.t('令牌'),
+              logsData.appliedFilters.token_name,
+            ],
+            group: [logsData.t('分组'), logsData.appliedFilters.group],
+            request_id: [
+              logsData.t('Request ID'),
+              logsData.appliedFilters.request_id,
+            ],
+            ...(logsData.isAdminUser
+              ? {
+                  username: [
+                    logsData.t('用户'),
+                    logsData.appliedFilters.username,
+                  ],
+                  channel_ids: [
+                    logsData.t('渠道'),
+                    logsData.appliedFilters.channel_ids,
+                  ],
+                  channel: [
+                    logsData.t('渠道'),
+                    logsData.appliedFilters.channel,
+                  ],
+                  channel_keyword: [
+                    logsData.t('渠道'),
+                    logsData.appliedFilters.channel_keyword,
+                  ],
+                  group_vendor: [
+                    logsData.t('展示厂商'),
+                    logsData.appliedFilters.group_vendor,
+                  ],
+                }
+              : {}),
+          })
+            .filter(([, [, value]]) => value)
+            .map(([key, [label, value]]) => (
+              <span
+                key={key}
+                className={
+                  key === 'group' || key === 'group_vendor'
+                    ? logsData.groupPrivacy
+                      ? 'usage-log-group-private'
+                      : ''
+                    : ''
+                }
+              >
+                {label}: {value}
+              </span>
+            ))}
+        </div>
+        {logsData.listError ? (
+          <div className='usage-logs-error' role='alert'>
+            <p>{logsData.listError}</p>
+            <Button onClick={logsData.retryList} loading={logsData.loading}>
+              {logsData.t('重试')}
+            </Button>
+          </div>
+        ) : (
+          <LogsTable {...logsData} />
+        )}
+        {!logsData.listError && (
+          <div className='usage-logs-pagination'>
+            {createCardProPagination({
+              currentPage: logsData.activePage,
+              pageSize: logsData.pageSize,
+              total: logsData.logCount,
+              onPageChange: logsData.handlePageChange,
+              onPageSizeChange: logsData.handlePageSizeChange,
+              isMobile,
+              t: logsData.t,
+            })}
+          </div>
+        )}
+      </section>
     </>
   );
 };
 
+const LogsPage = () => {
+  const [userState] = useContext(UserContext);
+  return (
+    <LogsPageContent
+      admin={Number(userState?.user?.role) >= 10}
+      key={`${userState?.user?.id}:${userState?.user?.role}`}
+    />
+  );
+};
 export default LogsPage;

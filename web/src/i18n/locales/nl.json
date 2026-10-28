@@ -6627,6 +6627,8 @@
     "请选择有效的起止时间": "Selecteer een geldige begin- en eindtijd",
     "请选择不超过30天的时间范围": "Selecteer een periode van maximaal 30 dagen",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Het saldo en de cumulatieve totalen horen bij het huidige account. Andere statistieken gebruiken de geselecteerde gebruiker en periode; ze geven geen succespercentage van verzoeken aan.",
-    "显示全部列": "Alle kolommen tonen"
+    "显示全部列": "Alle kolommen tonen",
+    "请选择有效的时间范围": "Selecteer een geldig tijdsbereik",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filters gelden na het zoeken. Vernieuwen, exporteren en samenvattingen gebruiken de toegepaste filters."
   }
 }

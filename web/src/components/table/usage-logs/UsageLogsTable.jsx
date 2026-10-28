@@ -72,7 +72,25 @@ const LogsTable = (logsData) => {
 
   // Filter columns based on visibility settings
   const getVisibleColumns = () => {
-    return allColumns.filter((column) => visibleColumns[column.key]);
+    const order = [
+      COLUMN_KEYS.TIME,
+      COLUMN_KEYS.MODEL,
+      COLUMN_KEYS.TYPE,
+      COLUMN_KEYS.COST,
+      COLUMN_KEYS.USE_TIME,
+      COLUMN_KEYS.PROMPT,
+      COLUMN_KEYS.COMPLETION,
+      COLUMN_KEYS.TOKEN,
+      COLUMN_KEYS.GROUP,
+      COLUMN_KEYS.CHANNEL,
+      COLUMN_KEYS.USERNAME,
+      COLUMN_KEYS.RETRY,
+      COLUMN_KEYS.IP,
+      COLUMN_KEYS.DETAILS,
+    ];
+    return allColumns
+      .filter((column) => visibleColumns[column.key])
+      .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   };
 
   const visibleColumnsList = useMemo(() => {
@@ -87,7 +105,7 @@ const LogsTable = (logsData) => {
 
   const expandRowRender = (record, index) => {
     return (
-      <div>
+      <div className='usage-logs-detail'>
         <Descriptions data={expandData[record.key]} />
         {record.type === 5 && (
           <Button
@@ -116,7 +134,7 @@ const LogsTable = (logsData) => {
       rowKey='key'
       loading={loading}
       scroll={compactMode ? undefined : { x: 'max-content' }}
-      className='rounded-xl overflow-hidden'
+      className='usage-logs-table'
       size='middle'
       empty={
         <Empty
@@ -124,7 +142,7 @@ const LogsTable = (logsData) => {
           darkModeImage={
             <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
           }
-          description={t('搜索无结果')}
+          description={loading ? t('加载中...') : t('搜索无结果')}
           style={{ padding: 30 }}
         />
       }

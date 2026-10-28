@@ -7242,6 +7242,8 @@
     "请选择有效的起止时间": "Chọn thời gian bắt đầu và kết thúc hợp lệ",
     "请选择不超过30天的时间范围": "Chọn khoảng thời gian không quá 30 ngày",
     "余额与累计值属于当前账户；其余指标按所选用户和时间范围统计，不代表请求成功率。": "Số dư và số liệu tích lũy thuộc tài khoản hiện tại. Các chỉ số khác theo người dùng và khoảng thời gian đã chọn, không phản ánh tỷ lệ yêu cầu thành công.",
-    "显示全部列": "Hiển thị tất cả cột"
+    "显示全部列": "Hiển thị tất cả cột",
+    "请选择有效的时间范围": "Chọn khoảng thời gian hợp lệ",
+    "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Bộ lọc có hiệu lực sau khi tìm kiếm. Làm mới, xuất và tổng hợp dùng điều kiện đã áp dụng."
   }
 }
