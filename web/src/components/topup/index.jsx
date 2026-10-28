@@ -75,6 +75,9 @@ import {
 } from '../../constants';
 
 import RechargeCard from './RechargeCard';
+import WalletOverview from './WalletOverview';
+import WalletRecentPayments from './WalletRecentPayments';
+import './wallet.css';
 import InvitationCard from './InvitationCard';
 import TransferModal from './modals/TransferModal';
 import WithdrawalModal from './modals/WithdrawalModal';
@@ -126,7 +129,7 @@ const getInviteOrigin = (serverAddress = '') => {
   return window.location.origin.replace(/\/$/, '');
 };
 
-const TopUp = () => {
+const TopUpContent = () => {
   const { t, i18n } = useTranslation();
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
@@ -165,6 +168,17 @@ const TopUp = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [payMethods, setPayMethods] = useState([]);
 
+  const aliveRef = useRef(true);
+  const quotaRequestRef = useRef(0);
+  const [balanceLoading, setBalanceLoading] = useState(true);
+  const [balanceError, setBalanceError] = useState(false);
+  const [walletRevision, setWalletRevision] = useState(0);
+  const paymentBusyRef = useRef(false);
+  const paymentSessionRef = useRef(0);
+  const redeemBusyRef = useRef(false);
+  const [confirmedPayment, setConfirmedPayment] = useState(null);
+  const currentPaymentRef = useRef(null);
+  currentPaymentRef.current = { count: topUpCount, way: payWay };
   const affOriginRef = useRef('');
   const amountRequestRef = useRef(0);
 
@@ -257,10 +271,12 @@ const TopUp = () => {
     payMethods.find((item) => canUsePayMethodForAmount(item.type, amountValue));
 
   const topUp = async (renewTargetSubscriptionId = 0, purchaseMode = '') => {
+    if (!aliveRef.current || redeemBusyRef.current) return;
     if (redemptionCode === '') {
       showInfo(t('请输入兑换码！'));
       return;
     }
+    redeemBusyRef.current = true;
     setIsSubmitting(true);
     try {
       const payload = {
@@ -273,6 +289,7 @@ const TopUp = () => {
       const res = await API.post('/api/user/redeem', payload, {
         skipErrorHandler: true,
       });
+      if (!aliveRef.current) return;
       const { success, message, data } = res.data;
       if (success) {
         showSuccess(t('兑换成功！'));
@@ -293,13 +310,9 @@ const TopUp = () => {
             content: t('成功兑换额度：') + renderQuota(data?.quota_added || 0),
             centered: true,
           });
-          if (userState.user) {
-            const updatedUser = {
-              ...userState.user,
-              quota: userState.user.quota + (data?.quota_added || 0),
-            };
-            userDispatch({ type: 'login', payload: updatedUser });
-          }
+          // Refresh both quota fields from the server; a redeemed code may not be transferable.
+          await getUserQuota();
+          setWalletRevision((revision) => revision + 1);
         }
         setRedemptionCode('');
         setRedeemTargetModalOpen(false);
@@ -343,7 +356,8 @@ const TopUp = () => {
         showError(t('请求失败'));
       }
     } finally {
-      setIsSubmitting(false);
+      redeemBusyRef.current = false;
+      if (aliveRef.current) setIsSubmitting(false);
     }
   };
 
@@ -442,7 +456,16 @@ const TopUp = () => {
       const quote = await fetchQuotedAmount(topUpCount, payWay, {
         showErrorToast: true,
       });
-      if (quote?.amount > 0) setOpen(true);
+      if (
+        aliveRef.current &&
+        quote?.amount > 0 &&
+        currentPaymentRef.current.count === topUpCount &&
+        currentPaymentRef.current.way === payWay
+      ) {
+        paymentSessionRef.current++;
+        setConfirmedPayment({ count: topUpCount, way: payWay, quote });
+        setOpen(true);
+      }
     } catch (error) {
     } finally {
       setPaymentLoading(false);
@@ -454,12 +477,24 @@ const TopUp = () => {
       showError(t('产品配置错误'));
       return;
     }
+    paymentSessionRef.current++;
     setSelectedCreemProduct(product);
     setCreemOpen(true);
   };
 
   const onlineTopUp = async () => {
-    if (!payWay) return;
+    if (
+      !aliveRef.current ||
+      paymentBusyRef.current ||
+      !confirmedPayment ||
+      !open ||
+      confirmedPayment.count !== topUpCount ||
+      confirmedPayment.way !== payWay ||
+      !confirmedPayment.quote?.amount
+    )
+      return;
+    paymentBusyRef.current = true;
+    const paymentSession = paymentSessionRef.current;
     setConfirmLoading(true);
     try {
       const isWaffo = payWay === 'waffo' || payWay.startsWith('waffo:');
@@ -476,6 +511,8 @@ const TopUp = () => {
           payload.pay_method_index = payMethodIndex;
       }
       const res = await API.post(endpoint, payload);
+      if (!aliveRef.current || paymentSession !== paymentSessionRef.current)
+        return;
       if (res?.data?.message === 'success') {
         let redirected;
         if (payWay === 'stripe') {
@@ -492,19 +529,29 @@ const TopUp = () => {
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || t('支付失败'));
     } finally {
-      setOpen(false);
+      if (paymentSession === paymentSessionRef.current) setOpen(false);
+      paymentBusyRef.current = false;
       setConfirmLoading(false);
     }
   };
 
   const onlineCreemTopUp = async () => {
-    if (!selectedCreemProduct?.productId) return;
+    if (
+      !aliveRef.current ||
+      paymentBusyRef.current ||
+      !selectedCreemProduct?.productId
+    )
+      return;
+    paymentBusyRef.current = true;
+    const paymentSession = paymentSessionRef.current;
     setConfirmLoading(true);
     try {
       const res = await API.post('/api/user/creem/pay', {
         product_id: selectedCreemProduct.productId,
         payment_method: 'creem',
       });
+      if (!aliveRef.current || paymentSession !== paymentSessionRef.current)
+        return;
       if (res?.data?.message === 'success') {
         if (!redirectToPayment(res.data.data?.checkout_url)) {
           showError(t('支付失败'));
@@ -515,17 +562,39 @@ const TopUp = () => {
     } catch (err) {
       showError(err?.response?.data?.message || err?.message || t('支付失败'));
     } finally {
-      setCreemOpen(false);
+      paymentBusyRef.current = false;
+      if (paymentSession === paymentSessionRef.current) setCreemOpen(false);
       setConfirmLoading(false);
     }
   };
 
   const getUserQuota = async () => {
-    let res = await API.get(`/api/user/self`);
-    if (res.data?.success) {
+    if (!aliveRef.current) return;
+    const request = ++quotaRequestRef.current;
+    setBalanceLoading(true);
+    setBalanceError(false);
+    try {
+      const res = await API.get('/api/user/self', {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      if (!aliveRef.current || request !== quotaRequestRef.current) return;
+      if (!res.data?.success || !res.data.data)
+        throw new Error('Missing account');
       userDispatch({ type: 'login', payload: res.data.data });
       setUserData(res.data.data);
+    } catch {
+      if (aliveRef.current && request === quotaRequestRef.current)
+        setBalanceError(true);
+    } finally {
+      if (aliveRef.current && request === quotaRequestRef.current)
+        setBalanceLoading(false);
     }
+  };
+  const refreshWallet = () => {
+    getUserQuota();
+    getSubscriptionSelf();
+    setWalletRevision((revision) => revision + 1);
   };
 
   const getSubscriptionPlans = async () => {
@@ -533,14 +602,18 @@ const TopUp = () => {
     try {
       const res = await API.get('/api/subscription/plans');
       if (res.data?.success) setSubscriptionPlans(res.data.data || []);
+    } catch {
+      if (aliveRef.current) showError(t('请求失败，请重试'));
     } finally {
       setSubscriptionLoading(false);
     }
   };
 
   const getSubscriptionSelf = async () => {
+    if (!aliveRef.current) return;
     try {
       const res = await API.get('/api/subscription/self');
+      if (!aliveRef.current) return;
       if (res.data?.success) {
         const d = res.data.data;
         setBillingPreference(d?.billing_preference || 'subscription_first');
@@ -787,6 +860,16 @@ const TopUp = () => {
   const formatLargeNumber = (num) => num.toString();
 
   useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      quotaRequestRef.current++;
+      amountRequestRef.current++;
+      debouncedGetAmount.cancel();
+    };
+  }, []);
+
+  useEffect(() => {
     getUserQuota();
     getTopupInfo();
     getSubscriptionPlans();
@@ -835,6 +918,9 @@ const TopUp = () => {
 
   useEffect(() => {
     debouncedGetAmount.cancel();
+    paymentSessionRef.current++;
+    setOpen(false);
+    setConfirmedPayment(null);
     resetPaymentQuote();
     if (!payWay || !canUsePayMethodForAmount(payWay, topUpCount)) {
       return;
@@ -845,14 +931,20 @@ const TopUp = () => {
   }, [payWay, topUpCount, resetPaymentQuote]);
 
   const renderAmount = (value = paymentQuote.amount) =>
-    formatPaymentMoney(
-      value,
-      paymentQuote.currency,
-      i18n.resolvedLanguage || i18n.language || 'zh-CN',
-    );
+    Number.isFinite(Number(value)) && Number(value) > 0
+      ? formatPaymentMoney(
+          value,
+          paymentQuote.currency,
+          i18n.resolvedLanguage || i18n.language || 'zh-CN',
+        )
+      : '—';
 
   const updateWalletQuota = (remainingQuota, remainingTransferableQuota) => {
-    if (!userState.user) return;
+    if (!aliveRef.current || !userState.user) return;
+    quotaRequestRef.current++;
+    setBalanceError(false);
+    setBalanceLoading(false);
+    setWalletRevision((revision) => revision + 1);
     const updatedUser = {
       ...userState.user,
       quota: Number(remainingQuota || 0),
@@ -863,10 +955,7 @@ const TopUp = () => {
   };
 
   return (
-    <div
-      className='relative w-full px-2 md:px-0'
-      data-onboarding='wallet-management-panel'
-    >
+    <div className='wallet-page' data-onboarding='wallet-management-panel'>
       <TransferModal
         t={t}
         openTransfer={openTransfer}
@@ -913,16 +1002,25 @@ const TopUp = () => {
         t={t}
         open={open}
         onlineTopUp={onlineTopUp}
-        handleCancel={() => setOpen(false)}
+        handleCancel={() => {
+          paymentSessionRef.current++;
+          setOpen(false);
+        }}
         confirmLoading={confirmLoading}
-        topUpCount={topUpCount}
+        topUpCount={confirmedPayment?.count ?? topUpCount}
         renderQuotaWithAmount={renderQuotaWithAmount}
         amountLoading={amountLoading}
-        renderAmount={renderAmount}
-        payWay={payWay}
+        renderAmount={(value = confirmedPayment?.quote?.amount) =>
+          formatPaymentMoney(
+            value,
+            confirmedPayment?.quote?.currency,
+            i18n.resolvedLanguage || i18n.language,
+          )
+        }
+        payWay={confirmedPayment?.way || payWay}
         payMethods={payMethods}
-        amountNumber={paymentQuote.amount}
-        discountRate={topupInfo?.discount?.[topUpCount] || 1.0}
+        amountNumber={confirmedPayment?.quote?.amount}
+        discountRate={topupInfo?.discount?.[confirmedPayment?.count] || 1.0}
       />
       <TopupHistoryModal
         visible={openHistory}
@@ -944,7 +1042,17 @@ const TopUp = () => {
         }}
       />
 
-      <div className='grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(380px,1fr)]'>
+      <WalletOverview
+        user={userState?.user}
+        loading={balanceLoading}
+        error={balanceError}
+        onRefresh={refreshWallet}
+        onCreate={() => setOpenWalletRedemption(true)}
+        onHistory={() => openHistoryTab('records')}
+        onInvoices={() => openHistoryTab('invoices')}
+        t={t}
+      />
+      <div className='wallet-content-grid'>
         <div>
           <RechargeCard
             t={t}
@@ -987,7 +1095,7 @@ const TopUp = () => {
             reloadSubscriptionSelf={getSubscriptionSelf}
           />
         </div>
-        <div className='space-y-6'>
+        <aside className='wallet-secondary'>
           {/* 待发放动作卡片 - 移至侧边栏顶部 */}
           {pendingSubscriptionIssuances.length > 0 && (
             <Card
@@ -1033,19 +1141,6 @@ const TopUp = () => {
             </Card>
           )}
 
-          <InvitationCard
-            t={t}
-            userState={userState}
-            renderQuota={renderQuota}
-            onOpenTransfer={tryOpenTransfer}
-            onOpenWithdrawal={tryOpenWithdrawal}
-            openWithdrawalHistory={() => openHistoryTab('my-withdrawals')}
-            affLink={affLink}
-            affCode={affCode}
-            onSaveAffCode={saveAffCode}
-            handleAffLinkClick={handleAffLinkClick}
-            onOpenInviteCommissions={() => setOpenInviteCommissions(true)}
-          />
           <Card
             className='!rounded-xl shadow-sm border border-slate-200'
             title={
@@ -1093,24 +1188,28 @@ const TopUp = () => {
                 }
               />
             </Form>
-            <div className='mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3'>
-              <Text type='tertiary' size='small'>
-                {t('将可转赠额度生成兑换码，赠送给其他用户')}
-              </Text>
-              <Button
-                type='primary'
-                theme='outline'
-                className='shrink-0'
-                style={{ borderColor: 'var(--semi-color-primary)' }}
-                icon={<IconGift />}
-                onClick={() => setOpenWalletRedemption(true)}
-              >
-                {t('创建兑换码')}
-              </Button>
-            </div>
           </Card>
-        </div>
+          <InvitationCard
+            t={t}
+            userState={userState}
+            renderQuota={renderQuota}
+            onOpenTransfer={tryOpenTransfer}
+            onOpenWithdrawal={tryOpenWithdrawal}
+            openWithdrawalHistory={() => openHistoryTab('my-withdrawals')}
+            affLink={affLink}
+            affCode={affCode}
+            onSaveAffCode={saveAffCode}
+            handleAffLinkClick={handleAffLinkClick}
+            onOpenInviteCommissions={() => setOpenInviteCommissions(true)}
+          />
+        </aside>
       </div>
+      <WalletRecentPayments
+        revision={walletRevision}
+        onHistory={() => openHistoryTab('records')}
+        onInvoices={() => openHistoryTab('invoices')}
+        t={t}
+      />
 
       <Modal
         title={t('选择续费目标')}
@@ -1170,7 +1269,10 @@ const TopUp = () => {
         title={t('确定要充值 $')}
         visible={creemOpen}
         onOk={onlineCreemTopUp}
-        onCancel={() => setCreemOpen(false)}
+        onCancel={() => {
+          paymentSessionRef.current++;
+          setCreemOpen(false);
+        }}
         maskClosable={false}
         size='small'
         centered
@@ -1196,4 +1298,10 @@ const TopUp = () => {
   );
 };
 
+const TopUp = () => {
+  const [userState] = useContext(UserContext);
+  return (
+    <TopUpContent key={`${userState?.user?.id}:${userState?.user?.role}`} />
+  );
+};
 export default TopUp;

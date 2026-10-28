@@ -60,6 +60,11 @@ const server = http.createServer(async (req, res) => {
       const topUpCount = '10';
       const selectedCreemProduct = { productId: 'mock-product' };
       const payWay = new URLSearchParams(location.search).get('method');
+      const aliveRef = {current:true};
+      const paymentBusyRef = {current:false};
+      const paymentSessionRef = {current:1};
+      const open = true;
+      const confirmedPayment = {count:topUpCount,way:payWay,quote:{amount:2,currency:'CNY'}};
       const API = { post: async (endpoint, payload) => ({
         data: await (await fetch('/order', {
           method: 'POST',

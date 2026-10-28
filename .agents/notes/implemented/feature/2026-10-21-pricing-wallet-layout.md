@@ -41,3 +41,5 @@ Status: implemented
 ## Related decision
 
 [独立模型详情](../../implemented/feature/2026-10-25-model-detail-page.md)依据用户新选择取代目录中的分组展示与侧栏详情入口；其余价格、筛选和钱包决定保持原有范围。
+
+[钱包层级与操作隔离](2026-10-28-wallet-experience.md)接管钱包布局：余额/可转赠额度与创建入口常驻，默认充值，本人最近交易复用原账单语义；保留到账/实付及兑换规则。模型广场决定不受影响。

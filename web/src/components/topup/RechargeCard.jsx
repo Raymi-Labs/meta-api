@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Avatar,
   Typography,
   Tag,
   Card,
@@ -34,15 +33,7 @@ import {
   Tabs,
   TabPane,
 } from '@douyinfe/semi-ui';
-import {
-  CreditCard,
-  Coins,
-  Wallet,
-  BarChart2,
-  TrendingUp,
-  Receipt,
-  Sparkles,
-} from 'lucide-react';
+import { CreditCard, Coins, Wallet, Sparkles } from 'lucide-react';
 
 import { getCurrencyConfig, getQuotaPerUnit } from '../../helpers/render';
 import SubscriptionPlansCard from './SubscriptionPlansCard';
@@ -76,12 +67,9 @@ const RechargeCard = ({
   openPaymentConfirm,
   paymentLoading,
   payWay,
-  userState,
   renderQuota,
   statusLoading,
   topupInfo,
-  onOpenHistory,
-  onOpenInvoices,
   subscriptionLoading = false,
   subscriptionPlans = [],
   billingPreference,
@@ -92,22 +80,10 @@ const RechargeCard = ({
   reloadSubscriptionSelf,
 }) => {
   const onlineFormApiRef = useRef(null);
-  const initialTabSetRef = useRef(false);
   const [activeTab, setActiveTab] = useState('topup');
   const shouldShowSubscription =
     !subscriptionLoading && subscriptionPlans.length > 0;
   const shouldShowTabs = shouldShowSubscription;
-
-  useEffect(() => {
-    if (initialTabSetRef.current) return;
-    if (subscriptionLoading) return;
-    if (shouldShowSubscription) {
-      setActiveTab('subscription');
-    } else {
-      setActiveTab('topup');
-    }
-    initialTabSetRef.current = true;
-  }, [shouldShowSubscription, subscriptionLoading]);
 
   useEffect(() => {
     if (!shouldShowTabs && activeTab !== 'topup') {
@@ -120,108 +96,7 @@ const RechargeCard = ({
   const hasSelectedPayMethod = Boolean(payWay);
   const topupContent = (
     <Space vertical style={{ width: '100%' }}>
-      {/* 统计信息 */}
-      <Card
-        className='!rounded-xl w-full'
-        cover={
-          <div
-            className='relative h-30'
-            style={{
-              '--palette-primary-darkerChannel': '37 99 235',
-              backgroundImage: `linear-gradient(0deg, rgba(var(--palette-primary-darkerChannel) / 80%), rgba(var(--palette-primary-darkerChannel) / 80%)), url('/cover-4.webp')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
-          >
-            <div className='relative z-10 h-full flex flex-col justify-between p-4'>
-              <div className='flex justify-between items-center'>
-                <Text strong style={{ color: 'white', fontSize: '16px' }}>
-                  {t('账户统计')}
-                </Text>
-              </div>
-
-              {/* 统计信息 */}
-              <div className='grid grid-cols-3 gap-6 mt-4'>
-                {/* 当前余额 */}
-                <div className='text-center'>
-                  <div
-                    className='text-base sm:text-2xl font-bold mb-2'
-                    style={{ color: 'white' }}
-                  >
-                    {renderQuota(userState?.user?.quota)}
-                  </div>
-                  <div className='flex items-center justify-center text-sm'>
-                    <Wallet
-                      size={14}
-                      className='mr-1'
-                      style={{ color: 'rgba(255,255,255,0.8)' }}
-                    />
-                    <Text
-                      style={{
-                        color: 'rgba(255,255,255,0.8)',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {t('当前余额')}
-                    </Text>
-                  </div>
-                </div>
-
-                {/* 历史用量 */}
-                <div className='text-center'>
-                  <div
-                    className='text-base sm:text-2xl font-bold mb-2'
-                    style={{ color: 'white' }}
-                  >
-                    {renderQuota(userState?.user?.used_quota)}
-                  </div>
-                  <div className='flex items-center justify-center text-sm'>
-                    <TrendingUp
-                      size={14}
-                      className='mr-1'
-                      style={{ color: 'rgba(255,255,255,0.8)' }}
-                    />
-                    <Text
-                      style={{
-                        color: 'rgba(255,255,255,0.8)',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {t('历史消耗')}
-                    </Text>
-                  </div>
-                </div>
-
-                {/* 请求次数 */}
-                <div className='text-center'>
-                  <div
-                    className='text-base sm:text-2xl font-bold mb-2'
-                    style={{ color: 'white' }}
-                  >
-                    {userState?.user?.request_count || 0}
-                  </div>
-                  <div className='flex items-center justify-center text-sm'>
-                    <BarChart2
-                      size={14}
-                      className='mr-1'
-                      style={{ color: 'rgba(255,255,255,0.8)' }}
-                    />
-                    <Text
-                      style={{
-                        color: 'rgba(255,255,255,0.8)',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {t('请求次数')}
-                    </Text>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      >
+      <div className='wallet-recharge-form'>
         {/* 在线充值表单 */}
         {statusLoading ? (
           <div className='py-8 flex justify-center'>
@@ -284,9 +159,9 @@ const RechargeCard = ({
                               )}
                             </Text>
                           </div>
-                          <Text type='secondary' className='text-red-600'>
+                          <Text type='secondary'>
                             {t('预计支付金额：')}
-                            <span style={{ color: 'red' }}>
+                            <span className='wallet-quoted-amount'>
                               {amountLoading
                                 ? t('价格重新计算中...')
                                 : hasSelectedPayMethod
@@ -579,45 +454,26 @@ const RechargeCard = ({
             closeIcon={null}
           />
         )}
-      </Card>
+      </div>
     </Space>
   );
 
   return (
-    <Card className='!rounded-2xl shadow-sm border-0'>
-      {/* 卡片头部 */}
-      <div className='flex items-center justify-between mb-4'>
-        <div className='flex items-center'>
-          <Avatar size='small' color='blue' className='mr-3 shadow-md'>
-            <CreditCard size={16} />
-          </Avatar>
-          <div>
-            <Typography.Text className='text-lg font-medium'>
-              {t('账户充值')}
-            </Typography.Text>
-            <div className='text-xs'>{t('多种充值方式，安全便捷')}</div>
-          </div>
-        </div>
-        <Space>
-          <Button
-            icon={<Receipt size={16} />}
-            theme='outline'
-            onClick={onOpenInvoices}
-          >
-            {t('申请发票')}
-          </Button>
-          <Button
-            icon={<Receipt size={16} />}
-            theme='solid'
-            onClick={onOpenHistory}
-          >
-            {t('账单')}
-          </Button>
-        </Space>
-      </div>
-
+    <Card className='wallet-panel'>
+      <h2 className='wallet-section-title'>{t('账户充值')}</h2>
       {shouldShowTabs ? (
-        <Tabs type='card' activeKey={activeTab} onChange={setActiveTab}>
+        <Tabs type='line' activeKey={activeTab} onChange={setActiveTab}>
+          <TabPane
+            tab={
+              <div className='flex items-center gap-2'>
+                <Wallet size={16} />
+                {t('额度充值')}
+              </div>
+            }
+            itemKey='topup'
+          >
+            <div className='py-2'>{topupContent}</div>
+          </TabPane>
           {shouldShowSubscription ? (
             <TabPane
               tab={
@@ -648,17 +504,6 @@ const RechargeCard = ({
               </div>
             </TabPane>
           ) : null}
-          <TabPane
-            tab={
-              <div className='flex items-center gap-2'>
-                <Wallet size={16} />
-                {t('额度充值')}
-              </div>
-            }
-            itemKey='topup'
-          >
-            <div className='py-2'>{topupContent}</div>
-          </TabPane>
         </Tabs>
       ) : (
         topupContent
