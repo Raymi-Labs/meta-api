@@ -21,7 +21,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Input, Pagination } from '@douyinfe/semi-ui';
 import { ChevronDown, Copy } from 'lucide-react';
-import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
+import {
+  getModelCatalogPricing,
+  isCachePriceItem,
+} from '../../helpers/modelCatalogPricing';
 import { formatModelThroughput } from '../../helpers/modelPresentation';
 import {
   GroupHealthPanel,
@@ -126,10 +129,7 @@ export default function ModelGroupRows({
                 <dd>
                   {items.length
                     ? items
-                        .filter(
-                          (item) =>
-                            !String(item.key).toLowerCase().includes('cache'),
-                        )
+                        .filter((item) => !isCachePriceItem(item))
                         .map((item) => (
                           <span key={item.key}>
                             <small>{item.label}</small> {item.value}
@@ -143,19 +143,13 @@ export default function ModelGroupRows({
               <div>
                 <dt>{t('缓存')}</dt>
                 <dd>
-                  {items
-                    .filter((item) =>
-                      String(item.key).toLowerCase().includes('cache'),
-                    )
-                    .map((item) => (
-                      <span key={item.key} title={item.label}>
-                        <small>{item.label}</small> {item.value}
-                        <small>{item.suffix}</small>
-                      </span>
-                    ))}
-                  {!items.some((item) =>
-                    String(item.key).toLowerCase().includes('cache'),
-                  ) && '—'}
+                  {items.filter(isCachePriceItem).map((item) => (
+                    <span key={item.key} title={item.label}>
+                      <small>{item.label}</small> {item.value}
+                      <small>{item.suffix}</small>
+                    </span>
+                  ))}
+                  {!items.some(isCachePriceItem) && '—'}
                 </dd>
               </div>
               <div>

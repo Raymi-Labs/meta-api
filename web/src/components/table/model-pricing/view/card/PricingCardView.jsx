@@ -168,20 +168,15 @@ const PricingCardView = ({
               </div>
               <dl className='pricing-card-prices'>
                 {items.length ? (
-                  items
-                    .filter(
-                      (item) =>
-                        !String(item.key).toLowerCase().includes('cache'),
-                    )
-                    .map((item) => (
-                      <div key={item.key}>
-                        <dt>{item.label}</dt>
-                        <dd>
-                          <strong>{item.value}</strong>
-                          <span>{item.suffix}</span>
-                        </dd>
-                      </div>
-                    ))
+                  items.map((item) => (
+                    <div key={item.key}>
+                      <dt>{item.label}</dt>
+                      <dd>
+                        <strong>{item.value}</strong>
+                        <span>{item.suffix}</span>
+                      </dd>
+                    </div>
+                  ))
                 ) : (
                   <div>
                     <dt>{t('动态计费')}</dt>
