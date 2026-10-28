@@ -99,6 +99,10 @@ const PricingCardView = ({
           ];
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
+          const showTokenMetrics =
+            data.isPerToken ||
+            (data.isDynamicPricing &&
+              !isVideoPriceExpression(model.billing_expr));
           return (
             <article
               key={key}
@@ -185,67 +189,69 @@ const PricingCardView = ({
                   </div>
                 )}
               </dl>
-              <dl
-                className='pricing-card-performance'
-                title={`${t('全部分组')} · ${t('最近 {{hours}} 小时', { hours: 24 })} · ${t('平台分组统计，不限于个人请求。')}`}
-              >
-                <div>
-                  <dt>
-                    <ScanText size={13} />
-                    {t('上下文长度')}
-                  </dt>
-                  <dd title={formatModelContextExact(model.context_length)}>
-                    {formatModelContext(model.context_length) === '—'
-                      ? t('未配置')
-                      : formatModelContext(model.context_length)}
-                  </dd>
-                </div>
-                {health.state === 'ready' ? (
-                  <>
-                    <div>
-                      <dt>
-                        <Timer size={13} />
-                        {t('首字均值')}
-                      </dt>
-                      <dd>
-                        {formatHealthLatency(stats?.avg_ttft_ms) === '—'
-                          ? t('暂无数据')
-                          : formatHealthLatency(stats?.avg_ttft_ms)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>
-                        <Gauge size={13} />
-                        {t('输出速度')}
-                      </dt>
-                      <dd>
-                        {formatModelThroughput(stats?.avg_output_tps) === '—'
-                          ? t('暂无数据')
-                          : formatModelThroughput(stats?.avg_output_tps)}
-                      </dd>
-                    </div>
-                  </>
-                ) : (
-                  <div className='pricing-card-health-status'>
-                    <dt>{t('性能对比')}</dt>
-                    <dd>
-                      {health.state === 'anonymous' ? (
-                        <Link
-                          to={`/login?next=${encodeURIComponent(buildModelDetailPath(model.model_name))}`}
-                        >
-                          {t('登录后查看可用分组的调用表现')}
-                        </Link>
-                      ) : health.state === 'error' ? (
-                        <button type='button' onClick={health.retry}>
-                          {t('加载失败，请重试')}
-                        </button>
-                      ) : (
-                        t('加载中')
-                      )}
+              {showTokenMetrics && (
+                <dl
+                  className='pricing-card-performance'
+                  title={`${t('全部分组')} · ${t('最近 {{hours}} 小时', { hours: 24 })} · ${t('平台分组统计，不限于个人请求。')}`}
+                >
+                  <div>
+                    <dt>
+                      <ScanText size={13} />
+                      {t('上下文长度')}
+                    </dt>
+                    <dd title={formatModelContextExact(model.context_length)}>
+                      {formatModelContext(model.context_length) === '—'
+                        ? t('未配置')
+                        : formatModelContext(model.context_length)}
                     </dd>
                   </div>
-                )}
-              </dl>
+                  {health.state === 'ready' ? (
+                    <>
+                      <div>
+                        <dt>
+                          <Timer size={13} />
+                          {t('首字均值')}
+                        </dt>
+                        <dd>
+                          {formatHealthLatency(stats?.avg_ttft_ms) === '—'
+                            ? t('暂无数据')
+                            : formatHealthLatency(stats?.avg_ttft_ms)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          <Gauge size={13} />
+                          {t('输出速度')}
+                        </dt>
+                        <dd>
+                          {formatModelThroughput(stats?.avg_output_tps) === '—'
+                            ? t('暂无数据')
+                            : formatModelThroughput(stats?.avg_output_tps)}
+                        </dd>
+                      </div>
+                    </>
+                  ) : (
+                    <div className='pricing-card-health-status'>
+                      <dt>{t('性能对比')}</dt>
+                      <dd>
+                        {health.state === 'anonymous' ? (
+                          <Link
+                            to={`/login?next=${encodeURIComponent(buildModelDetailPath(model.model_name))}`}
+                          >
+                            {t('登录后查看可用分组的调用表现')}
+                          </Link>
+                        ) : health.state === 'error' ? (
+                          <button type='button' onClick={health.retry}>
+                            {t('加载失败，请重试')}
+                          </button>
+                        ) : (
+                          t('加载中')
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
               <p
                 className='pricing-model-description'
                 aria-hidden={!model.description || undefined}
