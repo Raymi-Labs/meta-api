@@ -57,6 +57,11 @@ import {
   renderInvoicePdf,
   prepareInvoiceAttachmentFiles,
 } from '../../../helpers/invoicePdf';
+import {
+  PAYMENT_STATUS_CONFIG,
+  resolveOrderType,
+  formatPaymentRecordMoney as formatMoney,
+} from '../../../helpers/paymentRecordView';
 import { UserContext } from '../../../context/User';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import PaymentRiskCaseDetailModal from './PaymentRiskCaseDetailModal';
@@ -68,12 +73,7 @@ const invoiceText = createInvoiceTemplateTranslator((source) => i18n.t(source));
 
 const { Text } = Typography;
 
-const STATUS_CONFIG = {
-  success: { type: 'success', label: '成功' },
-  pending: { type: 'warning', label: '待支付' },
-  expired: { type: 'danger', label: '已过期' },
-  cancelled: { type: 'tertiary', label: '已取消' },
-};
+const STATUS_CONFIG = PAYMENT_STATUS_CONFIG;
 
 const PAYMENT_METHOD_MAP = {
   stripe: 'Stripe',
@@ -265,37 +265,6 @@ const RISK_REASON_OPTIONS = [
   { label: '支付方式不匹配', value: 'payment_method_mismatch' },
   { label: '支付金额不匹配', value: 'amount_mismatch' },
 ];
-
-function resolveOrderType(record) {
-  if (!record) {
-    return '';
-  }
-  if (record.order_type) {
-    return record.order_type;
-  }
-  const tradeNo = String(record.trade_no || '').toLowerCase();
-  if (Number(record.amount || 0) === 0 && tradeNo.startsWith('sub')) {
-    return 'subscription';
-  }
-  return record.record_type || 'topup';
-}
-
-function formatMoney(value, currency = 'CNY') {
-  const amount = Number(value || 0);
-  if (!Number.isFinite(amount)) {
-    return '-';
-  }
-  const upperCurrency = String(currency || '').toUpperCase();
-  const symbolMap = {
-    CNY: '¥',
-    RMB: '¥',
-    USD: 'US$',
-    EUR: '€',
-    GBP: '£',
-  };
-  const symbol = symbolMap[upperCurrency] || '';
-  return `${symbol}${amount.toFixed(2)}${upperCurrency && !symbol ? ` ${upperCurrency}` : ''}`;
-}
 
 function formatMoneyAmounts(amounts, fallbackMoney, fallbackCurrency = 'CNY') {
   if (amounts && typeof amounts === 'object') {

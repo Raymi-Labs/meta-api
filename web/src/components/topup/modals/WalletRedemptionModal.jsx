@@ -18,14 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  InputNumber,
-  Modal,
-  Space,
-  Tag,
-  Typography,
-} from '@douyinfe/semi-ui';
+import { Button, InputNumber, Modal, Tag, Typography } from '@douyinfe/semi-ui';
 import { Copy, Gift, RefreshCw } from 'lucide-react';
 import {
   API,
@@ -70,6 +63,17 @@ const WalletRedemptionModal = ({
   const [uncertainRequest, setUncertainRequest] = useState(false);
   const [usageSummary, setUsageSummary] = useState(null);
   const pendingRequestRef = useRef(null);
+  const createBusyRef = useRef(false);
+  const aliveRef = useRef(true);
+  const listRequestRef = useRef(0);
+  const [listError, setListError] = useState(false);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      listRequestRef.current++;
+    };
+  }, []);
   const minimumQuota = isAdmin
     ? 1
     : Number(usageSummary?.minimum_quota || 10 * getQuotaPerUnit());
@@ -85,26 +89,33 @@ const WalletRedemptionModal = ({
       : quotaToDisplayAmount(minimumQuota);
 
   const loadRedemptions = async () => {
+    const request = ++listRequestRef.current;
     setLoadingList(true);
+    setListError(false);
     try {
       const response = await API.get(
         '/api/user/redemptions/self?p=1&page_size=20',
+        { disableDuplicate: true, skipErrorHandler: true },
       );
-      if (response.data?.success) {
+      if (!aliveRef.current || request !== listRequestRef.current) return;
+      if (response.data?.success && Array.isArray(response.data?.data?.items)) {
         setRedemptions(response.data?.data?.items || []);
       } else {
-        showError(response.data?.message || t('请求失败，请重试'));
+        setListError(true);
       }
     } catch {
-      showError(t('请求失败，请重试'));
+      if (aliveRef.current && request === listRequestRef.current)
+        setListError(true);
     } finally {
-      setLoadingList(false);
+      if (aliveRef.current && request === listRequestRef.current)
+        setLoadingList(false);
     }
   };
 
   const loadUsageSummary = async () => {
     try {
       const response = await API.get('/api/user/redemptions/self/summary');
+      if (!aliveRef.current) return;
       if (response.data?.success) {
         setUsageSummary(response.data?.data || null);
       }
@@ -115,18 +126,22 @@ const WalletRedemptionModal = ({
 
   useEffect(() => {
     if (visible) {
+      if (!pendingRequestRef.current && amount <= 0) setAmount(minimumAmount);
       loadRedemptions();
       loadUsageSummary();
     }
   }, [visible]);
 
   const createRedemption = async () => {
-    const quota = displayAmountToQuota(amount);
-    if (quota <= 0) {
+    if (!aliveRef.current || createBusyRef.current) return;
+    // A retry queries the original request even when the refreshed balance is lower.
+    const quota =
+      pendingRequestRef.current?.quota ?? displayAmountToQuota(amount);
+    if (!Number.isFinite(quota) || quota <= 0) {
       showError(t('兑换码额度必须大于 0'));
       return;
     }
-    if (!isAdmin && quota < minimumQuota) {
+    if (!pendingRequestRef.current && !isAdmin && quota < minimumQuota) {
       showError(
         t('兑换码额度不能低于 {{amount}}', {
           amount: renderQuota(minimumQuota),
@@ -134,11 +149,11 @@ const WalletRedemptionModal = ({
       );
       return;
     }
-    if (quota > Number(walletQuota || 0)) {
+    if (!pendingRequestRef.current && quota > Number(walletQuota || 0)) {
       showError(t('钱包余额不足'));
       return;
     }
-    if (quota > Number(transferableQuota || 0)) {
+    if (!pendingRequestRef.current && quota > Number(transferableQuota || 0)) {
       showError(t('可创建兑换码额度不足'));
       return;
     }
@@ -151,6 +166,7 @@ const WalletRedemptionModal = ({
       return;
     }
 
+    createBusyRef.current = true;
     setCreating(true);
     try {
       const response = await API.post(
@@ -161,6 +177,7 @@ const WalletRedemptionModal = ({
         },
         { skipErrorHandler: true },
       );
+      if (!aliveRef.current) return;
       if (!response.data?.success) {
         pendingRequestRef.current = null;
         setUncertainRequest(false);
@@ -177,6 +194,9 @@ const WalletRedemptionModal = ({
       setUncertainRequest(false);
       setCreatedCode(redemption.key);
       setAmount(0);
+      listRequestRef.current++;
+      setLoadingList(false);
+      setListError(false);
       setRedemptions((items) => [
         redemption,
         ...items.filter((item) => item.id !== redemption.id),
@@ -190,10 +210,12 @@ const WalletRedemptionModal = ({
     } catch {
       // 请求可能已经在服务端成功，保留同一个 request_id，让重试只返回
       // 原兑换码而不会再次扣款。
+      if (!aliveRef.current) return;
       setUncertainRequest(true);
       showError(t('请求结果未知，请保持原额度并重试'));
     } finally {
-      setCreating(false);
+      createBusyRef.current = false;
+      if (aliveRef.current) setCreating(false);
     }
   };
 
@@ -251,16 +273,22 @@ const WalletRedemptionModal = ({
               {t('可创建兑换码额度')}：{renderQuota(transferableQuota || 0)}
             </Text>
           </div>
-          <Space align='end' className='w-full'>
+          <div className='wallet-redemption-inputs'>
             <InputNumber
-              value={amount}
+              value={
+                pendingRequestRef.current
+                  ? isTokenDisplay
+                    ? pendingRequestRef.current.quota
+                    : quotaToDisplayAmount(pendingRequestRef.current.quota)
+                  : amount
+              }
               onChange={(value) => setAmount(Number(value || 0))}
-              min={minimumAmount}
-              max={maxAmount}
+              min={pendingRequestRef.current ? undefined : minimumAmount}
+              max={pendingRequestRef.current ? undefined : maxAmount}
               precision={isTokenDisplay ? 0 : 2}
-              disabled={uncertainRequest}
+              disabled={uncertainRequest || creating}
               prefix={currencyConfig.symbol}
-              className='min-w-[260px]'
+              aria-label={t('兑换码额度')}
             />
             <Button
               type='primary'
@@ -270,7 +298,7 @@ const WalletRedemptionModal = ({
             >
               {uncertainRequest ? t('重试并查询原请求') : t('创建并扣除额度')}
             </Button>
-          </Space>
+          </div>
           {uncertainRequest && (
             <Text type='warning' size='small' className='mt-2 block'>
               {t('上次请求结果未知，请保持原额度并重试')}
@@ -343,7 +371,12 @@ const WalletRedemptionModal = ({
             </Button>
           </div>
           <div className='max-h-64 space-y-2 overflow-y-auto'>
-            {redemptions.length === 0 && !loadingList ? (
+            {listError ? (
+              <div role='alert'>
+                <Text type='danger'>{t('加载失败，请重试')}</Text>
+                <Button onClick={loadRedemptions}>{t('重试')}</Button>
+              </div>
+            ) : redemptions.length === 0 && !loadingList ? (
               <Text type='tertiary'>{t('暂无兑换码')}</Text>
             ) : (
               redemptions.map((item) => (
