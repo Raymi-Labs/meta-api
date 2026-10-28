@@ -75,6 +75,7 @@ export const sanitizeModelCatalogSnapshot = (value) => {
     sortOrder: enumValue(
       state.sortOrder,
       [
+        'release-desc',
         'version-desc',
         'default',
         'input-asc',
@@ -84,7 +85,7 @@ export const sanitizeModelCatalogSnapshot = (value) => {
         'request-asc',
         'request-desc',
       ],
-      'version-desc',
+      'release-desc',
     ),
     tokenUnit: enumValue(state.tokenUnit, ['K', 'M'], 'M'),
     currency: enumValue(

@@ -343,7 +343,7 @@ func TestModelCapabilitySyncDatabaseCompatibility(t *testing.T) {
 			require.Equal(t, 1, result.Updated)
 			require.EqualValues(t, 256000, readCapabilityModel(t, m.Id).ContextLength)
 			var snapshot modelCapabilitySnapshot
-			require.NoError(t, db.Model(&Model{}).Select("*, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
 			require.NoError(t, db.Model(&m).Update("context_length", 42000).Error)
 			changed, err := applyModelCapabilitySnapshot(context.Background(), snapshot, capabilityEntry(512000), "source")
 			require.NoError(t, err)
@@ -366,5 +366,99 @@ func TestModelCapabilitySyncDatabaseCompatibility(t *testing.T) {
 			require.Zero(t, result.Updated)
 			require.Zero(t, readCapabilityModel(t, m.Id).ContextLength)
 		})
+	}
+}
+
+func TestModelReleaseDateSyncOwnershipAndDatabaseCompatibility(t *testing.T) {
+	for _, dialect := range []string{"sqlite", "mysql", "postgres"} {
+		t.Run(dialect, func(t *testing.T) {
+			db := capabilitySyncTestDB(t, dialect)
+			m := Model{ModelName: "dated", Status: 1, SyncOfficial: 1}
+			require.NoError(t, db.Create(&m).Error)
+			// Preserve SQL NULL from old schemas in optimistic WHERE conditions.
+			require.NoError(t, db.Model(&m).Update("release_date", nil).Error)
+			entry := ModelCapabilityMetadata{ReleaseDate: "2025-01", Provider: "native"}
+			entries := map[string]ModelCapabilityMetadata{m.ModelName: entry}
+			result, err := ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Updated)
+			saved := readCapabilityModel(t, m.Id)
+			require.Equal(t, "2025-01", saved.ReleaseDate)
+			require.Equal(t, "2025-01", *readModelCapabilityState(saved.ModelCapabilitySyncState).ReleaseDate)
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Zero(t, result.Updated)
+			entry.ReleaseDate = "2026-10-24"
+			entries[m.ModelName] = entry
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Updated)
+			saved = readCapabilityModel(t, m.Id)
+			for _, invalid := range []string{"", "invalid", "2025-02-29"} {
+				entry.ReleaseDate = invalid
+				entries[m.ModelName] = entry
+				result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+				require.NoError(t, err)
+				require.Zero(t, result.Updated)
+				require.Equal(t, saved.ModelCapabilitySyncState, readCapabilityModel(t, m.Id).ModelCapabilitySyncState)
+			}
+			var snapshot modelCapabilitySnapshot
+			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&m).Update("release_date", "2026-10-25").Error)
+			entry.ReleaseDate = "2026-10-26"
+			changed, err := applyModelCapabilitySnapshot(context.Background(), snapshot, entry, "source")
+			require.NoError(t, err)
+			require.False(t, changed, "a concurrent manual date edit wins")
+			entries[m.ModelName] = entry
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Updated, "release manual date ownership")
+			saved = readCapabilityModel(t, m.Id)
+			require.Equal(t, "2026-10-25", saved.ReleaseDate)
+			require.Nil(t, readModelCapabilityState(saved.ModelCapabilitySyncState).ReleaseDate)
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Zero(t, result.Updated)
+			// Clearing permits automatic fill; disabling keeps it empty.
+			require.NoError(t, db.Model(&m).Update("release_date", "").Error)
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Updated)
+			require.Equal(t, "2026-10-26", readCapabilityModel(t, m.Id).ReleaseDate)
+			require.NoError(t, db.Model(&m).Updates(map[string]interface{}{"release_date": "", "sync_official": 0}).Error)
+			result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source")
+			require.NoError(t, err)
+			require.Zero(t, result.Updated)
+			require.Empty(t, readCapabilityModel(t, m.Id).ReleaseDate)
+			// Valid date alone is sufficient to create enabled missing metadata.
+			require.NoError(t, db.Create(&Ability{Model: "date-only", Group: "test", ChannelId: 1, Enabled: true}).Error)
+			result, err = ApplyModelCapabilityMetadata(context.Background(), map[string]ModelCapabilityMetadata{"date-only": entry}, "source")
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Created)
+			var fresh Model
+			require.NoError(t, db.Where("model_name = ?", "date-only").First(&fresh).Error)
+			require.Equal(t, "2026-10-26", fresh.ReleaseDate)
+			require.Zero(t, fresh.ContextLength)
+		})
+	}
+}
+
+func TestModelReleaseDateSyncPreservesManualAndUpgradesOldState(t *testing.T) {
+	db := capabilitySyncTestDB(t, "sqlite")
+	for _, initial := range []string{"", "2025-01"} {
+		m := Model{ModelName: "model-" + initial, ReleaseDate: initial, ContextLength: 128000,
+			Status: 1, SyncOfficial: 1, ModelCapabilitySyncState: `{"version":1,"source":"source","context_length":128000}`}
+		require.NoError(t, db.Create(&m).Error)
+		entry := ModelCapabilityMetadata{ReleaseDate: "2026-10-24", ContextLength: 256000}
+		_, err := ApplyModelCapabilityMetadata(context.Background(), map[string]ModelCapabilityMetadata{m.ModelName: entry}, "source")
+		require.NoError(t, err)
+		saved := readCapabilityModel(t, m.Id)
+		require.EqualValues(t, 256000, saved.ContextLength, "old state still owns context")
+		if initial == "" {
+			require.Equal(t, "2026-10-24", saved.ReleaseDate)
+		} else {
+			require.Equal(t, initial, saved.ReleaseDate, "pre-existing manual dates are retained")
+			require.Nil(t, readModelCapabilityState(saved.ModelCapabilitySyncState).ReleaseDate)
+		}
 	}
 }

@@ -25,6 +25,7 @@ type Model struct {
 	Id               int             `json:"id"`
 	ModelName        string          `json:"model_name" gorm:"size:128;not null;uniqueIndex:uk_model_name_delete_at,priority:1"`
 	DisplayName      string          `json:"display_name" gorm:"type:varchar(128)"`
+	ReleaseDate      string          `json:"release_date" gorm:"type:varchar(10);default:''"`
 	ContextLength    int64           `json:"context_length" gorm:"type:bigint;default:0"`
 	InputModalities  ModelModalities `json:"input_modalities" gorm:"type:text"`
 	OutputModalities ModelModalities `json:"output_modalities" gorm:"type:text"`
@@ -99,7 +100,7 @@ func (mi *Model) Update() error {
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return DB.Model(&Model{}).Where("id = ?", mi.Id).
-		Select("model_name", "display_name", "context_length", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
+		Select("model_name", "display_name", "release_date", "context_length", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
 		Updates(mi).Error
 }
 

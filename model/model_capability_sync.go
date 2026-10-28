@@ -14,6 +14,7 @@ import (
 
 // ModelCapabilityMetadata contains display metadata, never routing or billing settings.
 type ModelCapabilityMetadata struct {
+	ReleaseDate      string
 	ContextLength    int64
 	InputModalities  ModelModalities
 	OutputModalities ModelModalities
@@ -36,6 +37,7 @@ type modelCapabilityState struct {
 	Source           string          `json:"source"`
 	Provider         string          `json:"provider,omitempty"`
 	SyncedAt         int64           `json:"synced_at"`
+	ReleaseDate      *string         `json:"release_date,omitempty"`
 	ContextLength    *int64          `json:"context_length,omitempty"`
 	InputModalities  ModelModalities `json:"input_modalities,omitempty"`
 	OutputModalities ModelModalities `json:"output_modalities,omitempty"`
@@ -44,6 +46,7 @@ type modelCapabilityState struct {
 // Preserve SQL NULL and legacy serialization exactly for optimistic comparisons.
 type modelCapabilitySnapshot struct {
 	Model
+	ReleaseSnapshot sql.NullString `gorm:"column:capability_release_snapshot"`
 	ContextSnapshot sql.NullInt64  `gorm:"column:capability_context_snapshot"`
 	InputSnapshot   sql.NullString `gorm:"column:capability_input_snapshot"`
 	OutputSnapshot  sql.NullString `gorm:"column:capability_output_snapshot"`
@@ -68,6 +71,9 @@ func readModelCapabilityState(raw string) modelCapabilityState {
 	if common.UnmarshalJsonStr(raw, &state) != nil || state.Version != 1 || strings.TrimSpace(state.Source) == "" {
 		return modelCapabilityState{}
 	}
+	if state.ReleaseDate != nil && !ValidModelReleaseDate(*state.ReleaseDate) {
+		return modelCapabilityState{}
+	}
 	if state.ContextLength != nil && !validCapabilityContext(*state.ContextLength) {
 		return modelCapabilityState{}
 	}
@@ -83,6 +89,9 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	state := readModelCapabilityState(local.ModelCapabilitySyncState)
 	changes := map[string]interface{}{}
 	released, applied := false, false
+	if state.ReleaseDate != nil && local.ReleaseDate != *state.ReleaseDate {
+		state.ReleaseDate, released = nil, true
+	}
 	if state.ContextLength != nil && local.ContextLength != *state.ContextLength {
 		state.ContextLength, released = nil, true
 	}
@@ -91,6 +100,13 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	}
 	if len(state.OutputModalities) > 0 && !slices.Equal(local.OutputModalities, state.OutputModalities) {
 		state.OutputModalities, released = nil, true
+	}
+	if ValidModelReleaseDate(entry.ReleaseDate) && (local.ReleaseDate == "" || state.ReleaseDate != nil) {
+		if local.ReleaseDate != entry.ReleaseDate {
+			changes["release_date"] = entry.ReleaseDate
+		}
+		value := entry.ReleaseDate
+		state.ReleaseDate, applied = &value, true
 	}
 	if validCapabilityContext(entry.ContextLength) && (local.ContextLength == 0 || state.ContextLength != nil) {
 		if local.ContextLength != entry.ContextLength {
@@ -138,6 +154,7 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 	query := DB.WithContext(ctx).Model(&Model{}).Where(map[string]interface{}{
 		"id": snapshot.Id, "model_name": snapshot.ModelName,
 		"sync_official": snapshot.SyncOfficial, "name_rule": NameRuleExact,
+		"release_date":                snapshot.ReleaseSnapshot,
 		"context_length":              snapshot.ContextSnapshot,
 		"input_modalities":            snapshot.InputSnapshot,
 		"output_modalities":           snapshot.OutputSnapshot,
@@ -148,6 +165,7 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 	if DB.Dialector.Name() == "mysql" {
 		query = query.Where("BINARY model_name = BINARY ?", snapshot.ModelName)
 		for column, value := range map[string]sql.NullString{
+			"release_date":     snapshot.ReleaseSnapshot,
 			"input_modalities": snapshot.InputSnapshot, "output_modalities": snapshot.OutputSnapshot,
 			"model_capability_sync_state": snapshot.StateSnapshot,
 		} {
@@ -214,7 +232,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		return result, nil
 	}
 	var rows []modelCapabilitySnapshot
-	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
+	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
 	if err != nil {
 		return result, err
 	}
@@ -268,6 +286,9 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		if len(changes) == 0 {
 			result.Skipped++
 			continue
+		}
+		if value, ok := changes["release_date"].(string); ok {
+			fresh.ReleaseDate = value
 		}
 		if value, ok := changes["context_length"].(int64); ok {
 			fresh.ContextLength = value

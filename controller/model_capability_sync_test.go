@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const capabilityTestCatalog = `{"native":{"id":"native","models":{"exact-model":{"id":"exact-model","limit":{"context":128000},"modalities":{"input":["image","text","text"],"output":["text"]}}}}}`
+const capabilityTestCatalog = `{"native":{"id":"native","models":{"exact-model":{"id":"exact-model","release_date":"2026-10-24","limit":{"context":128000},"modalities":{"input":["image","text","text"],"output":["text"]}}}}}`
 
 func TestParseModelCapabilitiesPriorityAndExactIDs(t *testing.T) {
 	entries, err := parseModelCapabilities([]byte(`{
@@ -222,6 +222,7 @@ func TestModelCapabilitySyncHandlerRefreshesPricingAndPreservesOnFailure(t *test
 	require.True(t, success)
 	require.Equal(t, 1, result.Updated)
 	pricing := model.GetPricing()
+	require.Equal(t, "2026-10-24", pricing[0].ReleaseDate)
 	require.EqualValues(t, 128000, pricing[0].ContextLength)
 	require.Equal(t, model.ModelModalities{"text", "image"}, pricing[0].InputModalities)
 	require.Equal(t, "curated description", pricing[0].Description)
@@ -232,7 +233,42 @@ func TestModelCapabilitySyncHandlerRefreshesPricingAndPreservesOnFailure(t *test
 	success, _ = invoke()
 	require.False(t, success)
 	require.NoError(t, db.First(&local, local.Id).Error)
+	require.Equal(t, "2026-10-24", local.ReleaseDate)
 	require.EqualValues(t, 128000, local.ContextLength)
 	require.Equal(t, state, local.ModelCapabilitySyncState)
 	require.EqualValues(t, 128000, model.GetPricing()[0].ContextLength)
+}
+
+func TestParseModelCapabilitiesReleaseDates(t *testing.T) {
+	entries, err := parseModelCapabilities([]byte(`{
+		"a":{"id":"a","billing":{"priority":20},"models":{
+			"same-model":{"id":"same-model","release_date":"2025-01"},
+			"priority-model":{"id":"priority-model","release_date":"2026-10-24"},
+			"invalid-day":{"id":"invalid-day","release_date":"2025-02-29","limit":{"context":128000}},
+			"number-date":{"id":"number-date","release_date":1792800000,"modalities":{"input":["text"]}},
+			"date-only":{"id":"date-only","release_date":"2024-02-29","limit":{"context":"invalid"}},
+			"no-date":{"id":"no-date","release_date":null,"limit":{"context":128000}},
+			"invalid-only":{"id":"invalid-only","release_date":"2026-13"},
+			"missing-only":{"id":"missing-only","last_updated":"2026-10-24"}
+		}},
+		"b":{"id":"b","billing":{"priority":20},"models":{
+			"same-model":{"id":"same-model","release_date":"2026-10-24"}
+		}},
+		"c":{"id":"c","billing":{"priority":30},"models":{
+			"priority-model":{"id":"priority-model","release_date":"2025-09-23"}
+		}}
+	}`))
+	require.NoError(t, err)
+	require.Len(t, entries, 6)
+	require.Equal(t, "2025-01", entries["same-model"].ReleaseDate, "equal priority uses provider ID, not latest date")
+	require.Equal(t, "2025-09-23", entries["priority-model"].ReleaseDate, "higher priority wins even with older date")
+	require.Equal(t, "2024-02-29", entries["date-only"].ReleaseDate)
+	require.Zero(t, entries["date-only"].ContextLength)
+	require.Empty(t, entries["invalid-day"].ReleaseDate)
+	require.EqualValues(t, 128000, entries["invalid-day"].ContextLength)
+	require.Empty(t, entries["number-date"].ReleaseDate)
+	require.Equal(t, model.ModelModalities{"text"}, entries["number-date"].InputModalities)
+	require.Empty(t, entries["no-date"].ReleaseDate)
+	require.NotContains(t, entries, "invalid-only")
+	require.NotContains(t, entries, "missing-only", "last_updated is not a release date")
 }

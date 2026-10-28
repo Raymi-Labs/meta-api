@@ -42,7 +42,50 @@ export const getModelSortPrices = (record, effectiveRatio) => {
   return prices;
 };
 
+// Keep month precision in metadata. Its first day is only the sorting boundary,
+// never a synthesized release date displayed or saved back to the model.
+export const modelReleaseDateSortKey = (value) => {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value);
+  if (!match) return null;
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText || 1);
+  if (year < 1970 || month < 1 || month > 12 || day < 1) return null;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (day > days[month - 1]) return null;
+  return year * 10000 + month * 100 + day;
+};
+
 export const sortPricingModels = (models, order, getPrices) => {
+  if (order === 'release-desc') {
+    const collator = new Intl.Collator('en', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    return models
+      .map((model, index) => ({
+        model,
+        index,
+        date: modelReleaseDateSortKey(model.release_date),
+      }))
+      .sort((a, b) => {
+        if (a.date !== b.date) {
+          if (a.date === null) return 1;
+          if (b.date === null) return -1;
+          return b.date - a.date;
+        }
+        const left = a.model.model_name || '';
+        const right = b.model.model_name || '';
+        return (
+          collator.compare(left, right) ||
+          (left < right ? -1 : left > right ? 1 : a.index - b.index)
+        );
+      })
+      .map(({ model }) => model);
+  }
   if (order === 'version-desc') {
     const collator = new Intl.Collator('en', {
       numeric: true,
@@ -87,8 +130,9 @@ export const sortPricingModels = (models, order, getPrices) => {
 };
 
 export const pricingSortOptions = (t) => [
+  { value: 'release-desc', label: t('最新发布') },
   { value: 'version-desc', label: t('版本从新到旧') },
-  { value: 'default', label: t('默认排序') },
+  { value: 'default', label: t('原始顺序') },
   { value: 'input-asc', label: t('输入价格从低到高') },
   { value: 'input-desc', label: t('输入价格从高到低') },
   { value: 'output-asc', label: t('输出价格从低到高') },

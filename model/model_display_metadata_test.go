@@ -55,6 +55,28 @@ func TestModelDisplayMetadataNormalization(t *testing.T) {
 	}
 }
 
+func TestModelReleaseDateValidation(t *testing.T) {
+	for _, value := range []string{"1970-01-01", "2024-02-29", "2026-10-24", "2025-01", "2026-12"} {
+		require.True(t, ValidModelReleaseDate(value), value)
+		m := Model{ReleaseDate: value}
+		require.NoError(t, m.NormalizeDisplayMetadata())
+		require.Equal(t, value, m.ReleaseDate, "preserve source precision")
+	}
+	for _, value := range []string{"", "1969-12-31", "2025-02-29", "2026-04-31", "2026-13", "2026-00", "2026-10-00", "2026-1-01", "2026-10-1", "2026", " 2026-10-24", "2026-10-24 ", "2026-10-24T00:00:00Z", "1792800000"} {
+		require.False(t, ValidModelReleaseDate(value), value)
+		if value != "" {
+			m := Model{ReleaseDate: value}
+			require.Error(t, m.NormalizeDisplayMetadata(), value)
+		}
+	}
+	for _, rule := range []int{NameRulePrefix, NameRuleContains, NameRuleSuffix} {
+		m := Model{ReleaseDate: "2026-10-24", NameRule: rule}
+		require.ErrorContains(t, m.NormalizeDisplayMetadata(), "发布日期仅支持精确匹配模型")
+		m.ReleaseDate = ""
+		require.NoError(t, m.NormalizeDisplayMetadata())
+	}
+}
+
 func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 	for _, dialect := range []string{"sqlite", "mysql", "postgres"} {
 		t.Run(dialect, func(t *testing.T) {
@@ -101,11 +123,13 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			var restored Model
 			require.NoError(t, tableDB.Where("model_name = ?", "legacy").First(&restored).Error)
 			require.Equal(t, "preserved", restored.Description)
+			require.Empty(t, restored.ReleaseDate)
 			require.Zero(t, restored.ContextLength)
 			require.Empty(t, restored.InputModalities)
 			originalDB := DB
 			DB = tableDB
 			t.Cleanup(func() { DB = originalDB })
+			restored.ReleaseDate = "2025-01"
 			restored.DisplayName, restored.ContextLength = "Long context", 256000
 			restored.InputModalities = ModelModalities{"text", "image"}
 			restored.OutputModalities = ModelModalities{"text"}
@@ -113,14 +137,17 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			var saved Model
 			require.NoError(t, tableDB.First(&saved, restored.Id).Error)
 			require.Equal(t, restored.DisplayName, saved.DisplayName)
+			require.Equal(t, restored.ReleaseDate, saved.ReleaseDate)
 			require.Equal(t, restored.ContextLength, saved.ContextLength)
 			require.Equal(t, restored.InputModalities, saved.InputModalities)
 			require.Equal(t, restored.OutputModalities, saved.OutputModalities)
+			saved.ReleaseDate = ""
 			saved.DisplayName, saved.ContextLength = "", 0
 			saved.InputModalities, saved.OutputModalities = ModelModalities{}, ModelModalities{}
 			require.NoError(t, saved.Update())
 			require.NoError(t, tableDB.First(&restored, restored.Id).Error)
 			require.Empty(t, restored.DisplayName)
+			require.Empty(t, restored.ReleaseDate)
 			require.Zero(t, restored.ContextLength)
 			require.Empty(t, restored.InputModalities)
 			require.Empty(t, restored.OutputModalities)
