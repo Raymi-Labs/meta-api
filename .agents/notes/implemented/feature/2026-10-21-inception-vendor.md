@@ -18,6 +18,8 @@ Inception 的 Mercury 模型使用兼容 Chat Completions 的接口，但渠道�
 
 [渠道思考适配](2026-10-25-channel-reasoning-profiles.md)在显式启用 auto 时复用厂商归属选择精确模型模板；单独更改展示分类仍不改变选渠与协议，旧渠道缺省保留原行为。
 
+模型广场对已有零供应商元数据的展示补空范围，按[统一回退规则](../../implemented/bug-fix/2026-10-28-pricing-vendor-fallback.md)扩展为所有默认可识别厂商；MiMo/Inception 特殊名称边界、非零人工归属和共享规则复制保护继续适用。
+
 ## Existing capability review
 
 - 渠道编辑/分类 → channel controller → channel_vendor.go，已有 category 与 vendor 筛选、计数和持久化。
