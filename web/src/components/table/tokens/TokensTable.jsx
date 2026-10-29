@@ -168,6 +168,7 @@ const TokensTable = (tokensData) => {
         <Button
           size='small'
           theme='light'
+          className='token-edit-button'
           onClick={() => {
             setEditingToken(record);
             setShowEdit(true);

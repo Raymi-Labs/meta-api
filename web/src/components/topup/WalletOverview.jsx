@@ -47,10 +47,10 @@ export default function WalletOverview({
       <header className='wallet-heading'>
         <h1>{t('钱包管理')}</h1>
         <div className='wallet-actions'>
-          <Button theme='borderless' onClick={onHistory}>
+          <Button theme='light' onClick={onHistory}>
             {t('账单')}
           </Button>
-          <Button theme='borderless' onClick={onInvoices}>
+          <Button theme='light' onClick={onInvoices}>
             {t('申请发票')}
           </Button>
         </div>
@@ -74,7 +74,7 @@ export default function WalletOverview({
             )}
           </div>
           <Button
-            theme='borderless'
+            theme='light'
             icon={<RefreshCw size={16} />}
             loading={loading}
             aria-label={t('刷新')}
@@ -103,7 +103,7 @@ export default function WalletOverview({
             <Link to='/console/log'>{t('使用日志')}</Link>
           </div>
           <Button
-            theme='outline'
+            theme='solid'
             icon={<Gift size={16} />}
             onClick={onCreate}
             disabled={loading || error || !knownBalance || !knownTransfer}

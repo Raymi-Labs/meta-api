@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Button, Skeleton } from '@douyinfe/semi-ui';
+import { RefreshCw, SlidersHorizontal, Columns3, Download } from 'lucide-react';
 import { renderQuota } from '../../../helpers';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 
@@ -67,7 +68,8 @@ const LogsActions = ({
         <div className='usage-logs-tools'>
           <Button
             size='small'
-            theme='borderless'
+            theme='solid'
+            icon={<RefreshCw size={15} />}
             onClick={refresh}
             loading={loading || loadingStat}
           >
@@ -75,7 +77,9 @@ const LogsActions = ({
           </Button>
           <Button
             size='small'
-            theme={filtersOpen ? 'light' : 'borderless'}
+            theme='light'
+            icon={<SlidersHorizontal size={15} />}
+            className={filtersOpen ? 'console-control-active' : undefined}
             aria-expanded={filtersOpen}
             onClick={() => setFiltersOpen(!filtersOpen)}
           >
@@ -85,7 +89,12 @@ const LogsActions = ({
             <>
               <Button
                 size='small'
-                theme={columnViewMode === 'summary' ? 'light' : 'borderless'}
+                theme='light'
+                className={
+                  columnViewMode === 'summary'
+                    ? 'console-control-active'
+                    : undefined
+                }
                 aria-pressed={columnViewMode === 'summary'}
                 onClick={() => setColumnViewMode('summary')}
               >
@@ -93,7 +102,12 @@ const LogsActions = ({
               </Button>
               <Button
                 size='small'
-                theme={columnViewMode === 'full' ? 'light' : 'borderless'}
+                theme='light'
+                className={
+                  columnViewMode === 'full'
+                    ? 'console-control-active'
+                    : undefined
+                }
                 aria-pressed={columnViewMode === 'full'}
                 onClick={() => setColumnViewMode('full')}
               >
@@ -101,25 +115,22 @@ const LogsActions = ({
               </Button>
             </>
           )}
-          <Button size='small' theme='borderless' onClick={openColumnSelector}>
+          <Button
+            size='small'
+            theme='light'
+            icon={<Columns3 size={15} />}
+            onClick={openColumnSelector}
+          >
             {t('列设置')}
           </Button>
         </div>
         <div className='usage-logs-tools'>
           {isAdminUser && (
             <>
-              <Button
-                size='small'
-                theme='borderless'
-                onClick={openGroupSummary}
-              >
+              <Button size='small' theme='light' onClick={openGroupSummary}>
                 {t('分组汇总')}
               </Button>
-              <Button
-                size='small'
-                theme='borderless'
-                onClick={openTopUsersDrawer}
-              >
+              <Button size='small' theme='light' onClick={openTopUsersDrawer}>
                 {t('大用户榜单')}
               </Button>
             </>
@@ -127,6 +138,7 @@ const LogsActions = ({
           <Button
             size='small'
             theme='light'
+            icon={<Download size={15} />}
             loading={exporting}
             disabled={exporting}
             onClick={exportLogs}

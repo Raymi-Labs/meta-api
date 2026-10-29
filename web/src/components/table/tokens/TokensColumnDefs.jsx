@@ -162,9 +162,7 @@ const renderGroupRatio = (record, t) => {
 
   return (
     <Tooltip content={hint} position='top'>
-      <Tag color='white' shape='circle'>
-        {label}
-      </Tag>
+      <span className='token-ratio-value'>{label}</span>
     </Tooltip>
   );
 };
@@ -184,7 +182,7 @@ const renderTokenKey = (
   const revealed = !!showKeys[record.id];
 
   return (
-    <div className='w-[200px]'>
+    <div className='token-key-field'>
       <Input
         readOnly
         value={revealed ? fullKey : maskedKey}
@@ -477,9 +475,7 @@ const renderQuotaUsage = (text, record, t) => {
     );
     return (
       <Popover content={popoverContent} position='top'>
-        <Tag color='white' shape='circle'>
-          {t('无限额度')}
-        </Tag>
+        <span className='token-quota-value'>{t('无限额度')}</span>
       </Popover>
     );
   }
@@ -515,8 +511,8 @@ const renderQuotaUsage = (text, record, t) => {
   );
   return (
     <Popover content={popoverContent} position='top'>
-      <Tag color='white' shape='circle'>
-        <div className='flex flex-col items-end'>
+      <div className='token-quota-value token-quota-progress'>
+        <div className='flex flex-col items-start'>
           <span className='text-xs leading-none'>{`${renderQuota(remain)} / ${renderQuota(total)}`}</span>
           <Progress
             percent={percent}
@@ -526,7 +522,7 @@ const renderQuotaUsage = (text, record, t) => {
             style={{ width: '100%', marginTop: '1px', marginBottom: 0 }}
           />
         </div>
-      </Tag>
+      </div>
     </Popover>
   );
 };
@@ -534,11 +530,7 @@ const renderQuotaUsage = (text, record, t) => {
 // 将已用额度保存在独立字段中，便于跨 Token 更快比较。
 const renderUsedQuota = (text, record) => {
   const used = parseInt(record.used_quota) || 0;
-  return (
-    <Tag color='white' shape='circle'>
-      {renderQuota(used)}
-    </Tag>
-  );
+  return <span className='token-used-value'>{renderQuota(used)}</span>;
 };
 
 const formatResetTimeCompact = (timestamp) => {

@@ -2070,3 +2070,49 @@ body[theme-mode='dark'] .pricing-page {
     margin-left: 0;
   }
 }
+
+/* Console controls: visible surfaces, with native loading/disabled states retained. */
+:is(.wallet-page, .usage-logs-page, .tokens-page) .semi-button {
+  border-radius: 9px !important;
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page)
+  .semi-button-primary:not(.semi-button-light):not(.semi-button-outline):not(
+    .semi-button-borderless
+  ):not(.semi-button-disabled) {
+  background: #1d63d8;
+  color: #fff;
+  border: 1px solid transparent;
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page)
+  .semi-button-primary:not(.semi-button-light):not(.semi-button-outline):not(
+    .semi-button-borderless
+  ):not(.semi-button-disabled):hover {
+  background: #1854ba;
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page)
+  :is(.semi-button-primary, .semi-button-tertiary):is(
+    .semi-button-light,
+    .semi-button-outline
+  ):not(.semi-button-disabled) {
+  background: var(--semi-color-fill-0);
+  border: 1px solid var(--semi-color-border);
+  color: var(--semi-color-text-1);
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page)
+  :is(.semi-button-primary, .semi-button-tertiary):is(
+    .semi-button-light,
+    .semi-button-outline
+  ):not(.semi-button-disabled):hover {
+  background: var(--semi-color-fill-1);
+  color: var(--semi-color-text-0);
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page)
+  .semi-button.console-control-active:not(.semi-button-disabled) {
+  background: var(--semi-color-primary-light-default);
+  border-color: var(--semi-color-primary);
+  color: var(--semi-color-primary);
+}
+:is(.wallet-page, .usage-logs-page, .tokens-page) .semi-button:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 3px;
+}

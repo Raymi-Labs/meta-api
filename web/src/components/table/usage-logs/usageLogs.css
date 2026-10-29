@@ -32,13 +32,19 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px 32px;
-  padding: 16px 0 8px;
+  padding: 16px 18px;
+  margin-top: 16px;
+  background: var(--semi-color-fill-0);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 12px;
 }
 .usage-logs-metric {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 85px;
+  min-width: 110px;
+  padding-right: 24px;
+  border-right: 1px solid var(--semi-color-border);
 }
 .usage-logs-metric > span {
   color: var(--semi-color-text-2);
@@ -83,7 +89,7 @@
   overflow: hidden;
 }
 .usage-logs-table .semi-table-thead > tr > th {
-  background: var(--semi-color-bg-0);
+  background: var(--semi-color-fill-0);
   font-weight: 500;
   color: var(--semi-color-text-2);
 }
@@ -139,5 +145,30 @@
   }
   .usage-logs-pagination {
     justify-content: center;
+  }
+}
+
+.usage-logs-metric:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+.usage-logs-tools .semi-button {
+  min-height: 32px;
+  padding-inline: 12px;
+}
+@media (max-width: 767px) {
+  .usage-logs-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px;
+  }
+  .usage-logs-metric {
+    min-width: 0;
+    padding-right: 0;
+    border-right: 0;
+    overflow-wrap: anywhere;
+  }
+  .usage-logs-stat-error {
+    grid-column: 1 / -1;
   }
 }
