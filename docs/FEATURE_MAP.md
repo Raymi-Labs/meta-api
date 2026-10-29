@@ -123,6 +123,8 @@
 
 入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。
 
+入口运维补充（2026-10-29）：[meta-api.com 站点](../deploy/reverse-proxy/meta-api.com.conf)通过独立 A 记录、Nginx 虚拟主机与 HTTP-01 证书接入既有主站源站，复用 `/api/status`、`/api/route-probe/stream` 和原 API 鉴权；配置与[验收/回退](REVERSE_PROXY_MIGRATION.md#meta-apicom-独立-https-入口2026-10-29)归档。默认 ServerAddress、文档导航、OAuth/Passkey/支付设置尚未迁移，其他新子域名当前只完成 DNS 准备。见[决策](../.agents/notes/implemented/architecture/2026-10-29-meta-api-com-ingress.md)。
+
 ## 服务器运维监控
 
 | 能力 | 实现 | 数据与权限 | 边界 |

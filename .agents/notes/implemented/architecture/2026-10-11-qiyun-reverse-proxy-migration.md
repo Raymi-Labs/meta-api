@@ -18,6 +18,8 @@ Status: implemented
 
 同源新增入口 `edu.xlrdf.cn` 使用独立 Nginx 虚拟主机、日志和 HTTP-01 证书，复用主域名定义的 upstream/map；仅将外部 Host、重定向和 Cookie 域改写为新域名，源站 Host/SNI、证书校验及流式参数保留。新增入口沿用已有 certbot timer/deploy hook，并实际签发证书及演练续期；不扩展主域名证书，不改变应用默认服务器地址。
 
+`meta-api.com` 沿用独立站点与证书模式；其主域名按用户要求采用独立 A 记录，DNS 准备与 TLS 接入的差异、验收和未迁移的应用设置见[新入口决策](2026-10-29-meta-api-com-ingress.md)。此扩展不改变旧跳板迁移和已退役教育域名的边界。
+
 ## Existing capability and scope
 
 - 原迁移（2026-10-11）启用七个反代虚拟主机，覆盖八个域名：meta-api.vip、cn.meta-api.vip、edu.meta-api.vip、edu.gewu.uk、emoxia.meta-api.vip、chatshare.tv、metar.uk、www.metar.uk；edu.gewu.uk 另有 8443 入口。

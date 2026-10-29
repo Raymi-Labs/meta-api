@@ -1,5 +1,7 @@
 # 反代入口迁移与切换验收
 
+当前主站新增入口（2026-10-29）：`meta-api.com` 使用 DNS-only A 记录直连 `155.103.118.155`，与 `meta-api.vip` 共用业务源站，独立 HTTPS 站点和证书已启用。详见文末 [meta-api.com 入口](#meta-apicom-独立-https-入口2026-10-29)。旧域名继续服务，平台默认地址尚未切换。
+
 当前状态（2026-10-17）：`edu.xlrdf.cn`、`edu.gewu.uk` 已按用户要求从新旧跳板停用，不再列入 DNS 切换清单。下文此前验收记录保留其历史时点。
 
 核对日期：2026-10-11。本文记录入口层运维边界；服务器密码、私钥、ACME 账户与 Cloudflare 凭据不进入仓库。实际 IP 以当次交付的迁移结果为准。
@@ -109,3 +111,22 @@ metar.uk 的百度验证文件在新旧入口的 HTTP/HTTPS 均返回 200，缺�
 按用户要求，`edu.xlrdf.cn`、`edu.gewu.uk` 的 `sites-enabled` 链接、`sites-available` 配置及各自的 Certbot renewal 配置均从新旧跳板的活动目录移走，备份在两机 `/root/retired-edu-domains-20261017/`（700）。不再为这两个域名启用独立虚拟主机或自动续期；保留现有证书材料与 webroot 以便恢复。共享 `meta_nan_origin` / `meta_connection_upgrade` 仍由主站提供，不影响其他入口。
 
 两机 `nginx -t` 通过并完成平滑 reload。`edu.meta-api.vip` 继续使用，不在此次停用范围。Cloudflare DNS 未修改，用户可删除这两个闲置域名的记录，也不应将其加入新跳板切换清单。恢复时将对应三个配置文件/链接移回原路径，先 `nginx -t` 再 reload，并确认旧证书仍有效。
+
+## meta-api.com 独立 HTTPS 入口（2026-10-29）
+
+DNS 准备阶段为主域名配置了指向 `meta-api.vip` 的 CNAME，以跟随旧域名负载均衡；其余 75 个业务子域名复制现有 A/CNAME 目标及代理状态，邮件和验证记录没有复制。DNS 成功不代表 TLS 已接入：跳板缺少 `meta-api.com` 站点和证书时，访问会返回 TLS `unrecognized name`。
+
+用户随后要求主域名直接解析跳板并修复 HTTPS。当前配置：
+
+- 主域名为 `A meta-api.com → 155.103.118.155`，仅 DNS、TTL 自动；不再依赖 `.vip` CNAME，也不再跟随其负载均衡切换。其他 75 条记录未修改。
+- [站点配置](../deploy/reverse-proxy/meta-api.com.conf)对应 `/etc/nginx/sites-available/meta-api.com` 和同名 `sites-enabled` 链接。复用主站的 `meta_nan_origin` upstream 与 `meta_connection_upgrade` map；这些共享定义仍由 `meta-api.vip` 配置提供。
+- 回源到现有业务服务，Host/SNI 仍为 `nan.meta-api.vip`，严格校验证书；保留 100 MB 请求体限制、WebSocket、关闭 SSE/请求缓冲和 3600 秒超时。新站的对外 Host、重定向和 Cookie 域为 `meta-api.com`，日志独立。
+- HTTP 除 `/.well-known/acme-challenge/` 外，按原路径/查询参数跳转到同域 HTTPS。独立 HTTP-01 webroot 为 `/var/www/meta-api-com-acme`，缺失挑战返回 404。现有 Cloudflare 凭据无法查询新 zone，因此使用 HTTP-01，不扩展凭据权限。
+- 独立 Let's Encrypt ECDSA 证书位于 `/etc/letsencrypt/live/meta-api.com/`，有效期至 **2027-01-27 11:14:51（北京时间）**。复用既有 ACME 账户、`certbot.timer` 和 deploy hooks；实际签发与 `certbot renew --cert-name meta-api.com --dry-run --no-random-sleep-on-renew --run-deploy-hooks` 均成功。
+- 备份和激活记录保存在服务器 `/root/meta-api-com-20261029/`（0700）。新增前的 Nginx 普通文件哈希全部保持一致；仅新增站点并在 `nginx -t` 通过后平滑 reload，没有停止或更新应用。
+
+该入口复用现有用户、API Key 和计费。平台 `ServerAddress` 仍是 `https://meta-api.vip`，文档导航仍指向 `docs.meta-api.vip`；第三方登录、Passkey、支付/邮件回调等正式迁移单独处理。其余新子域名的 DNS 记录不表示它们的 HTTPS 或 CloudFront/R2 等服务绑定已完成。
+
+验收：Mac 系统代理路径及独立服务器均通过严格 HTTPS 校验，新旧首页/登录页/状态接口 200，状态 `success=true`，无凭据 `/v1/models` 和 `/api/user/self` 均 401；首页和 241318 字节入口脚本的 SHA-256 一致。Chrome 实际打开 `.com` 首页成功。独立服务器短流探测 nonce/sequence 匹配，消息间隔 350/350 ms，响应 no-store；Mac 代理样本首两条合并到达，不能将独立服务器的时间表现外推到所有客户端。本机直连与 SSH 曾出现握手超时，使用稳定连接完成配置与验收。未执行真实账号登录、付费生成、第三方回调或长时流式测试。
+
+回退新增入口时，只停用 `sites-enabled/meta-api.com` 并在配置检查通过后 reload；不要恢复整个 Nginx 目录或停止应用。保留配置、证书和独立日志用于恢复，停止长期使用时另行停用对应续期配置。主域名 A 记录后续必须随跳板地址单独维护。本次是入口配置与运维文档更新，不发布应用版本。
