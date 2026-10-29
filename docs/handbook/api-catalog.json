@@ -8,6 +8,14 @@
     "file": "api/overview.md"
   },
   {
+    "key": "api-common-endpoints",
+    "path": "/docs/reference/common-endpoints",
+    "group": "API 基础",
+    "title": "常用接口速查",
+    "description": "查询余额、令牌额度、模型、日志和账单。",
+    "file": "api/common-endpoints.md"
+  },
+  {
     "key": "api-authentication",
     "path": "/docs/reference/authentication",
     "group": "API 基础",
