@@ -1,5 +1,7 @@
 {
   "translation": {
+    "摘要视图": "Samenvatting",
+    "完整视图": "Volledige weergave",
     "已声明协议": "Opgegeven protocollen",
     "接入示例（未声明）": "Integratievoorbeelden (niet opgegeven)",
     "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Protocolgegevens komen uit de modelcatalogus, niet uit tests van elke groep. Niet opgegeven betekent niet niet ondersteund; controleer uw groep voordat u een aanvraag doet.",

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@douyinfe/semi-ui';
 import {
@@ -51,6 +51,11 @@ import {
   readLogExportError,
 } from '../../helpers/usageLogExport';
 import { normalizeUsageLogFilters } from '../../helpers/usageLogQuery';
+import {
+  getEffectiveVisibleColumns,
+  readUsageLogColumnMode,
+  USAGE_LOG_COLUMN_MODE_STORAGE_KEY,
+} from '../../helpers/usageLogView';
 import { ITEMS_PER_PAGE } from '../../constants';
 import { useTableCompactMode } from '../common/useTableCompactMode';
 
@@ -229,7 +234,24 @@ export const useLogsData = (admin = isAdmin()) => {
   const [visibleColumns, setVisibleColumns] = useState(
     getInitialVisibleColumns,
   );
+  const [columnViewMode, setColumnViewMode] = useState(() =>
+    readUsageLogColumnMode(isAdminUser, localStorage),
+  );
+  const effectiveVisibleColumns = useMemo(
+    () =>
+      getEffectiveVisibleColumns(
+        visibleColumns,
+        columnViewMode,
+        COLUMN_KEYS,
+        isAdminUser,
+      ),
+    [visibleColumns, columnViewMode, COLUMN_KEYS, isAdminUser],
+  );
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const openColumnSelector = () => {
+    if (!isAdminUser) setColumnViewMode('full');
+    setShowColumnSelector(true);
+  };
   const [billingDisplayMode, setBillingDisplayMode] = useState(
     getInitialBillingDisplayMode,
   );
@@ -302,6 +324,15 @@ export const useLogsData = (admin = isAdmin()) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(visibleColumns));
     }
   }, [visibleColumns]);
+
+  useEffect(() => {
+    if (isAdminUser) return;
+    try {
+      localStorage.setItem(USAGE_LOG_COLUMN_MODE_STORAGE_KEY, columnViewMode);
+    } catch {
+      // The selected view still works when browser storage is unavailable.
+    }
+  }, [isAdminUser, columnViewMode]);
 
   useEffect(() => {
     localStorage.setItem(BILLING_DISPLAY_MODE_STORAGE_KEY, billingDisplayMode);
@@ -643,7 +674,7 @@ export const useLogsData = (admin = isAdmin()) => {
         promptExcludesCache || getCacheCreationBreakdown(other || {}).total > 0;
       let expandDataLocal = [];
 
-      if (logs[i].type === 4 && other?.pulse_reward && logs[i].content) {
+      if ([1, 3, 4].includes(logs[i].type) && logs[i].content) {
         expandDataLocal.push({
           key: t('详情'),
           value: logs[i].content,
@@ -1215,8 +1246,12 @@ export const useLogsData = (admin = isAdmin()) => {
 
     // Column visibility
     visibleColumns,
+    effectiveVisibleColumns,
+    columnViewMode,
+    setColumnViewMode,
     showColumnSelector,
     setShowColumnSelector,
+    openColumnSelector,
     billingDisplayMode,
     setBillingDisplayMode,
     handleColumnVisibilityChange,

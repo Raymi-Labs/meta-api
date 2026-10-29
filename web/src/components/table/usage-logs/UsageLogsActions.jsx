@@ -39,7 +39,9 @@ const LogsActions = ({
   loading,
   filtersOpen,
   setFiltersOpen,
-  setShowColumnSelector,
+  columnViewMode,
+  setColumnViewMode,
+  openColumnSelector,
   t,
 }) => {
   const number = (value) =>
@@ -79,11 +81,27 @@ const LogsActions = ({
           >
             {t('筛选')}
           </Button>
-          <Button
-            size='small'
-            theme='borderless'
-            onClick={() => setShowColumnSelector(true)}
-          >
+          {!isAdminUser && (
+            <>
+              <Button
+                size='small'
+                theme={columnViewMode === 'summary' ? 'light' : 'borderless'}
+                aria-pressed={columnViewMode === 'summary'}
+                onClick={() => setColumnViewMode('summary')}
+              >
+                {t('摘要视图')}
+              </Button>
+              <Button
+                size='small'
+                theme={columnViewMode === 'full' ? 'light' : 'borderless'}
+                aria-pressed={columnViewMode === 'full'}
+                onClick={() => setColumnViewMode('full')}
+              >
+                {t('完整视图')}
+              </Button>
+            </>
+          )}
+          <Button size='small' theme='borderless' onClick={openColumnSelector}>
             {t('列设置')}
           </Button>
         </div>

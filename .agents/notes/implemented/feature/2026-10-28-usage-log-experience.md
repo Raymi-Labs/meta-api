@@ -19,6 +19,7 @@ Status: implemented
 - [渠道用量](../../implemented/feature/2026-09-29-channel-usage-in-management.md)部分重叠：保留渠道集合及 end-1 的闭区间语义。
 - [厂商](../../implemented/feature/2026-10-21-inception-vendor.md)部分重叠：保留厂商/历史分组搜索及隐私模式。
 - 日志模型复制与上游诊断仍由原组件提供；不改变错误分类和模型身份声明。
+- [摘要与完整派生视图](2026-10-29-model-detail-log-view.md)：普通用户展示模式独立于原列偏好，不修改本篇的查询、导出、统计与管理员契约。
 
 ## Alternatives considered
 

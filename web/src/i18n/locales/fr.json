@@ -1,5 +1,7 @@
 {
   "translation": {
+    "摘要视图": "Vue résumée",
+    "完整视图": "Vue complète",
     "已声明协议": "Protocoles déclarés",
     "接入示例（未声明）": "Exemples d’intégration (non déclarés)",
     "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Les protocoles déclarés proviennent du catalogue des modèles, pas de tests de chaque groupe. Non déclaré ne signifie pas non pris en charge ; vérifiez votre groupe avant tout appel.",

@@ -1,5 +1,7 @@
 {
   "translation": {
+    "摘要视图": "Summary view",
+    "完整视图": "Full view",
     "已声明协议": "Declared protocols",
     "接入示例（未声明）": "Integration examples (undeclared)",
     "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Protocol declarations come from the model catalog, not tests of every group. Undeclared does not mean unsupported; confirm your group before calling.",

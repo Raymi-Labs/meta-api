@@ -23,6 +23,7 @@ Status: implemented
 - [筛选抽屉](../../implemented/feature/2026-10-21-pricing-filter-drawer.md)、[筛选可见性](../../implemented/feature/2026-10-11-pricing-filter-visibility.md)：部分重叠；抽屉不再包含分组，其余筛选不变。
 - [运行时文档](../../implemented/feature/2026-10-12-runtime-documentation.md)：复用声明协议和运行时地址生成安全示例。
 - 厂商切换、价格排序与健康筛选保留原始指标口径；视频提案、管理员编辑、钱包和计费后端不受影响。
+- [接入顺序与日志派生视图](2026-10-29-model-detail-log-view.md)：同名 ID 与空描述展示、快速开始和完整计费的顺序由新篇扩展；独立路由、价格、协议与权限边界不变。
 
 ## Alternatives considered
 
