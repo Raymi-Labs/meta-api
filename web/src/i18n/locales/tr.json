@@ -1,5 +1,7 @@
 {
   "translation": {
+    "摘要视图": "Özet görünüm",
+    "完整视图": "Tam görünüm",
     "已声明协议": "Bildirilen protokoller",
     "接入示例（未声明）": "Entegrasyon örnekleri (bildirilmemiş)",
     "协议声明来自模型目录，不代表所有分组均已实测。未声明不等于不支持，调用前请确认所用分组。": "Protokol bildirimleri model kataloğundan gelir ve her grubun test edildiği anlamına gelmez. Bildirilmemiş olması desteklenmediği anlamına gelmez; çağrıdan önce grubunuzu doğrulayın.",

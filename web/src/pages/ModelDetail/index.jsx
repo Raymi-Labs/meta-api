@@ -196,7 +196,12 @@ export default function ModelDetail() {
           <div className='model-detail-title-row'>
             <h1>{model.display_name || model.model_name}</h1>
             <div className='model-detail-model-key'>
-              <code className='model-detail-model-id'>{model.model_name}</code>
+              {model.display_name &&
+                model.display_name !== model.model_name && (
+                  <code className='model-detail-model-id'>
+                    {model.model_name}
+                  </code>
+                )}
               <Button
                 theme='borderless'
                 type='tertiary'
@@ -236,7 +241,7 @@ export default function ModelDetail() {
               </div>
             )}
           </div>
-          <p>{model.description || t('暂无模型描述')}</p>
+          {model.description && <p>{model.description}</p>}
         </div>
         <div className='model-detail-actions'>
           <button
@@ -385,23 +390,6 @@ export default function ModelDetail() {
                 {t('当前模型没有可用分组')}
               </p>
             )}
-            {priceData.isDynamicPricing && (
-              <div className='model-detail-dynamic'>
-                <p className='model-detail-caption'>
-                  {t(
-                    isVideoPriceExpression(model.billing_expr)
-                      ? '视频按秒 / 表达式'
-                      : '阶梯计费：展示首档参考价，完整规则见详情',
-                  )}
-                </p>
-                <h3 className='model-detail-caption'>{t('基础价格')}</h3>
-                <DynamicPricingBreakdown
-                  billingExpr={model.billing_expr}
-                  displayPrice={data.displayPrice}
-                  t={t}
-                />
-              </div>
-            )}
             <section
               id='capabilities'
               className='model-detail-modalities'
@@ -435,17 +423,6 @@ export default function ModelDetail() {
                 ))}
               </div>
             </section>
-            <div className='model-detail-group-prices'>
-              {groups.length > 0 && <h3>{t('分组价格')}</h3>}
-              <ModelGroupRows
-                key={model.model_name}
-                model={model}
-                groups={groups}
-                selectedGroup={selectedGroup}
-                data={data}
-                health={health}
-              />
-            </div>
           </section>
           <section
             id='quick-start'
@@ -459,6 +436,36 @@ export default function ModelDetail() {
               t={t}
               copyText={data.copyText}
             />
+          </section>
+          <section id='billing-details' className='model-detail-section'>
+            {priceData.isDynamicPricing && (
+              <div className='model-detail-dynamic'>
+                <p className='model-detail-caption'>
+                  {t(
+                    isVideoPriceExpression(model.billing_expr)
+                      ? '视频按秒 / 表达式'
+                      : '阶梯计费：展示首档参考价，完整规则见详情',
+                  )}
+                </p>
+                <h3 className='model-detail-caption'>{t('基础价格')}</h3>
+                <DynamicPricingBreakdown
+                  billingExpr={model.billing_expr}
+                  displayPrice={data.displayPrice}
+                  t={t}
+                />
+              </div>
+            )}
+            <div className='model-detail-group-prices'>
+              {groups.length > 0 && <h3>{t('分组价格')}</h3>}
+              <ModelGroupRows
+                key={model.model_name}
+                model={model}
+                groups={groups}
+                selectedGroup={selectedGroup}
+                data={data}
+                health={health}
+              />
+            </div>
           </section>
           <ModelAnalytics
             key={model.model_name}

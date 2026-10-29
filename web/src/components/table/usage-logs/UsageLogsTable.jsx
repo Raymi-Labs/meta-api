@@ -36,7 +36,7 @@ const LogsTable = (logsData) => {
     pageSize,
     logCount,
     compactMode,
-    visibleColumns,
+    effectiveVisibleColumns,
     handlePageChange,
     handlePageSizeChange,
     copyText,
@@ -89,19 +89,19 @@ const LogsTable = (logsData) => {
       COLUMN_KEYS.DETAILS,
     ];
     return allColumns
-      .filter((column) => visibleColumns[column.key])
+      .filter((column) => effectiveVisibleColumns[column.key])
       .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   };
 
-  const visibleColumnsList = useMemo(() => {
+  const effectiveVisibleColumnsList = useMemo(() => {
     return getVisibleColumns();
-  }, [visibleColumns, allColumns]);
+  }, [effectiveVisibleColumns, allColumns]);
 
   const tableColumns = useMemo(() => {
     return compactMode
-      ? visibleColumnsList.map(({ fixed, ...rest }) => rest)
-      : visibleColumnsList;
-  }, [compactMode, visibleColumnsList]);
+      ? effectiveVisibleColumnsList.map(({ fixed, ...rest }) => rest)
+      : effectiveVisibleColumnsList;
+  }, [compactMode, effectiveVisibleColumnsList]);
 
   const expandRowRender = (record, index) => {
     return (
