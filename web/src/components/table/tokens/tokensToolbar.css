@@ -123,13 +123,13 @@
   background: var(--semi-color-bg-0);
 }
 .tokens-page .semi-table-thead > tr > th {
-  background: var(--semi-color-bg-0);
+  background: var(--semi-color-fill-0);
   font-size: 12px;
   font-weight: 500;
   color: var(--semi-color-text-2);
 }
 .tokens-page .semi-table-row-cell {
-  vertical-align: top;
+  vertical-align: middle;
   padding: 16px 12px;
 }
 .tokens-page .semi-button,
@@ -143,7 +143,7 @@
 .token-identity-cell {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 .token-name-line {
@@ -304,4 +304,75 @@
 }
 .tokens-page .semi-table-expand-icon {
   margin-top: 2px;
+}
+
+.token-quota-value {
+  display: inline-block;
+  align-self: flex-start;
+  color: var(--semi-color-text-0);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.token-quota-progress {
+  width: 100%;
+  max-width: 180px;
+}
+.token-used-value {
+  color: var(--semi-color-text-1);
+  font-variant-numeric: tabular-nums;
+}
+.token-ratio-value {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.token-key-field {
+  width: 220px;
+  max-width: 100%;
+}
+.tokens-page .token-key-field .semi-input-wrapper {
+  border: 1px solid var(--semi-color-border);
+  background: var(--semi-color-fill-0);
+  border-radius: 8px !important;
+  height: 32px;
+}
+.token-key-field input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.tokens-page .token-key-field .semi-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px !important;
+}
+.tokens-page .semi-tag {
+  border-radius: 6px;
+}
+.tokens-page .semi-table-expand-icon {
+  border-radius: 6px;
+  background: var(--semi-color-fill-0);
+}
+
+/* Keep the table's own expand control beside identity, not on a separate line. */
+.tokens-page .semi-table-expand-icon + .token-identity-cell {
+  display: inline-flex;
+  width: calc(100% - 28px);
+  vertical-align: middle;
+}
+.tokens-page .semi-table-expand-icon {
+  vertical-align: middle;
+}
+
+.tokens-page .semi-button-primary.token-edit-button:not(.semi-button-disabled) {
+  min-height: 32px;
+  padding-inline: 14px;
+  color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+  border-color: transparent;
+}
+.tokens-page
+  .semi-button-primary.token-edit-button:not(.semi-button-disabled):hover {
+  background: var(--semi-color-primary-light-hover);
 }
