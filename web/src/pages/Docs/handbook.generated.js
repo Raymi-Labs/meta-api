@@ -45,30 +45,31 @@ import article23 from '../../../../docs/handbook/console/payments.md?raw';
 import article24 from '../../../../docs/handbook/console/notifications.md?raw';
 import article25 from '../../../../docs/handbook/console/account-security.md?raw';
 import article26 from '../../../../docs/handbook/api/overview.md?raw';
-import article27 from '../../../../docs/handbook/api/authentication.md?raw';
-import article28 from '../../../../docs/handbook/api/models.md?raw';
-import article29 from '../../../../docs/handbook/api/chat-completions.md?raw';
-import article30 from '../../../../docs/handbook/api/responses.md?raw';
-import article31 from '../../../../docs/handbook/api/messages.md?raw';
-import article32 from '../../../../docs/handbook/api/gemini.md?raw';
-import article33 from '../../../../docs/handbook/api/streaming.md?raw';
-import article34 from '../../../../docs/handbook/api/tools.md?raw';
-import article35 from '../../../../docs/handbook/api/structured-output.md?raw';
-import article36 from '../../../../docs/handbook/api/vision.md?raw';
-import article37 from '../../../../docs/handbook/api/images.md?raw';
-import article38 from '../../../../docs/handbook/api/audio.md?raw';
-import article39 from '../../../../docs/handbook/api/video.md?raw';
-import article40 from '../../../../docs/handbook/api/embeddings.md?raw';
-import article41 from '../../../../docs/handbook/api/rerank.md?raw';
-import article42 from '../../../../docs/handbook/api/realtime.md?raw';
-import article43 from '../../../../docs/handbook/integrations/overview.md?raw';
-import article44 from '../../../../docs/handbook/integrations/sdks.md?raw';
-import article45 from '../../../../docs/handbook/integrations/chat-clients.md?raw';
-import article46 from '../../../../docs/handbook/integrations/ide-assistants.md?raw';
-import article47 from '../../../../docs/handbook/integrations/workflows.md?raw';
-import article48 from '../../../../docs/handbook/integrations/agents-tools.md?raw';
-import article49 from '../../../../docs/handbook/integrations/applications.md?raw';
-import article50 from '../../../../docs/handbook/integrations/mcp.md?raw';
+import article27 from '../../../../docs/handbook/api/common-endpoints.md?raw';
+import article28 from '../../../../docs/handbook/api/authentication.md?raw';
+import article29 from '../../../../docs/handbook/api/models.md?raw';
+import article30 from '../../../../docs/handbook/api/chat-completions.md?raw';
+import article31 from '../../../../docs/handbook/api/responses.md?raw';
+import article32 from '../../../../docs/handbook/api/messages.md?raw';
+import article33 from '../../../../docs/handbook/api/gemini.md?raw';
+import article34 from '../../../../docs/handbook/api/streaming.md?raw';
+import article35 from '../../../../docs/handbook/api/tools.md?raw';
+import article36 from '../../../../docs/handbook/api/structured-output.md?raw';
+import article37 from '../../../../docs/handbook/api/vision.md?raw';
+import article38 from '../../../../docs/handbook/api/images.md?raw';
+import article39 from '../../../../docs/handbook/api/audio.md?raw';
+import article40 from '../../../../docs/handbook/api/video.md?raw';
+import article41 from '../../../../docs/handbook/api/embeddings.md?raw';
+import article42 from '../../../../docs/handbook/api/rerank.md?raw';
+import article43 from '../../../../docs/handbook/api/realtime.md?raw';
+import article44 from '../../../../docs/handbook/integrations/overview.md?raw';
+import article45 from '../../../../docs/handbook/integrations/sdks.md?raw';
+import article46 from '../../../../docs/handbook/integrations/chat-clients.md?raw';
+import article47 from '../../../../docs/handbook/integrations/ide-assistants.md?raw';
+import article48 from '../../../../docs/handbook/integrations/workflows.md?raw';
+import article49 from '../../../../docs/handbook/integrations/agents-tools.md?raw';
+import article50 from '../../../../docs/handbook/integrations/applications.md?raw';
+import article51 from '../../../../docs/handbook/integrations/mcp.md?raw';
 
 export const HANDBOOK_DOCS = [
   {
@@ -343,13 +344,23 @@ export const HANDBOOK_DOCS = [
   },
   {
     ...{
+      key: 'api-common-endpoints',
+      path: '/docs/reference/common-endpoints',
+      group: 'API 基础',
+      title: '常用接口速查',
+      description: '查询余额、令牌额度、模型、日志和账单。',
+    },
+    content: article27,
+  },
+  {
+    ...{
       key: 'api-authentication',
       path: '/docs/reference/authentication',
       group: 'API 基础',
       title: '认证与 API Key',
       description: '配置请求鉴权、令牌权限、分组与安全的凭据使用方式。',
     },
-    content: article27,
+    content: article28,
   },
   {
     ...{
@@ -359,7 +370,7 @@ export const HANDBOOK_DOCS = [
       title: '模型、分组与协议',
       description: '查询可用模型，核对模型 ID、接口协议及账号分组权限。',
     },
-    content: article28,
+    content: article29,
   },
   {
     ...{
@@ -369,7 +380,7 @@ export const HANDBOOK_DOCS = [
       title: 'Chat Completions',
       description: '使用消息列表完成对话，处理返回文本、用量与结束原因。',
     },
-    content: article29,
+    content: article30,
   },
   {
     ...{
@@ -379,7 +390,7 @@ export const HANDBOOK_DOCS = [
       title: 'Responses API',
       description: '使用 Responses 输入与输出结构，理解会话衔接和能力边界。',
     },
-    content: article30,
+    content: article31,
   },
   {
     ...{
@@ -389,7 +400,7 @@ export const HANDBOOK_DOCS = [
       title: 'Claude Messages',
       description: '通过 Messages 协议发送内容块，处理工具调用和流式事件。',
     },
-    content: article31,
+    content: article32,
   },
   {
     ...{
@@ -399,7 +410,7 @@ export const HANDBOOK_DOCS = [
       title: 'Gemini 原生 API',
       description: '配置 Gemini 原生鉴权、内容结构和生成接口。',
     },
-    content: article32,
+    content: article33,
   },
   {
     ...{
@@ -409,7 +420,7 @@ export const HANDBOOK_DOCS = [
       title: '流式输出',
       description: '逐步读取 SSE 输出，正确处理分块、用量和中断。',
     },
-    content: article33,
+    content: article34,
   },
   {
     ...{
@@ -419,7 +430,7 @@ export const HANDBOOK_DOCS = [
       title: '工具调用',
       description: '声明函数工具，由应用校验执行并回传真实结果。',
     },
-    content: article34,
+    content: article35,
   },
   {
     ...{
@@ -429,7 +440,7 @@ export const HANDBOOK_DOCS = [
       title: '结构化输出',
       description: '按模型支持范围使用 JSON Schema，并验证结构和业务内容。',
     },
-    content: article35,
+    content: article36,
   },
   {
     ...{
@@ -439,7 +450,7 @@ export const HANDBOOK_DOCS = [
       title: '图片与视频理解',
       description: '发送图片内容块，了解视觉输入及视频理解的模型限制。',
     },
-    content: article36,
+    content: article37,
   },
   {
     ...{
@@ -449,7 +460,7 @@ export const HANDBOOK_DOCS = [
       title: '图片生成与编辑',
       description: '发起图片生成或编辑，处理结果地址、编码数据和上传文件。',
     },
-    content: article37,
+    content: article38,
   },
   {
     ...{
@@ -459,7 +470,7 @@ export const HANDBOOK_DOCS = [
       title: '语音合成与识别',
       description: '使用语音合成、转写与翻译接口，处理音频文件和返回格式。',
     },
-    content: article38,
+    content: article39,
   },
   {
     ...{
@@ -469,7 +480,7 @@ export const HANDBOOK_DOCS = [
       title: '视频生成与异步任务',
       description: '提交视频任务、查询状态并通过鉴权接口获取成品。',
     },
-    content: article39,
+    content: article40,
   },
   {
     ...{
@@ -479,7 +490,7 @@ export const HANDBOOK_DOCS = [
       title: '文本向量 Embeddings',
       description: '生成文本向量，规划批量输入、维度与应用检索流程。',
     },
-    content: article40,
+    content: article41,
   },
   {
     ...{
@@ -489,7 +500,7 @@ export const HANDBOOK_DOCS = [
       title: '文档重排 Rerank',
       description: '对候选文档精排，并将相关性评分关联到原始文档。',
     },
-    content: article41,
+    content: article42,
   },
   {
     ...{
@@ -499,7 +510,7 @@ export const HANDBOOK_DOCS = [
       title: 'Realtime 实时接口',
       description: '建立 WebSocket 连接，处理实时会话事件及凭据边界。',
     },
-    content: article42,
+    content: article43,
   },
   {
     ...{
@@ -509,7 +520,7 @@ export const HANDBOOK_DOCS = [
       title: '应用与开发集成总览',
       description: '按客户端、IDE、工作流与应用场景选择接入方式',
     },
-    content: article43,
+    content: article44,
   },
   {
     ...{
@@ -519,7 +530,7 @@ export const HANDBOOK_DOCS = [
       title: 'SDK、HTTP 与应用框架',
       description: 'Python、JavaScript、HTTP 与框架的完整接入示例',
     },
-    content: article44,
+    content: article45,
   },
   {
     ...{
@@ -529,7 +540,7 @@ export const HANDBOOK_DOCS = [
       title: '桌面与 Web 聊天客户端',
       description: '聊天软件、Web 客户端与知识库应用的连接设置',
     },
-    content: article45,
+    content: article46,
   },
   {
     ...{
@@ -539,7 +550,7 @@ export const HANDBOOK_DOCS = [
       title: 'IDE 与编程助手接入',
       description: '配置编辑器模型连接并排查工具与协议差异',
     },
-    content: article46,
+    content: article47,
   },
   {
     ...{
@@ -549,7 +560,7 @@ export const HANDBOOK_DOCS = [
       title: 'Dify、n8n 与工作流平台',
       description: '模型节点、HTTP 请求、凭据、重试与业务去重',
     },
-    content: article47,
+    content: article48,
   },
   {
     ...{
@@ -559,7 +570,7 @@ export const HANDBOOK_DOCS = [
       title: 'Agent、工具调用与 Skills',
       description: '受限工具循环、客户端职责与 Skills 使用边界',
     },
-    content: article48,
+    content: article49,
   },
   {
     ...{
@@ -569,7 +580,7 @@ export const HANDBOOK_DOCS = [
       title: '翻译、写作、学术与业务应用',
       description: '应用配置、长文处理、数据范围与批量任务排查',
     },
-    content: article49,
+    content: article50,
   },
   {
     ...{
@@ -579,6 +590,6 @@ export const HANDBOOK_DOCS = [
       title: '模型 API 与 MCP 工具连接',
       description: '分别配置模型和工具服务并按连接层次排错',
     },
-    content: article50,
+    content: article51,
   },
 ];

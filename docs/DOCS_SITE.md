@@ -1,6 +1,6 @@
 # 独立文档站
 
-域名：`https://docs.meta-api.vip`。复用 `web/src/pages/Docs`、64 篇本站 Markdown 和十七种正文语言。参考站的 181 个主题在 `docs/handbook/reference-coverage.json` 中逐项映射；正文按本站路由与功能独立编写，不镜像其专有接口、活动或业务承诺。
+域名：`https://docs.meta-api.vip`。复用 `web/src/pages/Docs`、65 篇本站 Markdown 和十七种正文语言。参考站的 181 个主题在 `docs/handbook/reference-coverage.json` 中逐项映射；正文按本站路由与功能独立编写，不镜像其专有接口、活动或业务承诺。
 
 ## 内容维护
 
