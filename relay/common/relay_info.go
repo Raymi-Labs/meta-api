@@ -685,6 +685,10 @@ func GenRelayInfo(c *gin.Context, relayFormat types.RelayFormat, request dto.Req
 		return nil, errors.New("request is not a OpenAIResponsesCompactionRequest")
 	case types.RelayFormatTask:
 		info = genBaseRelayInfo(c, nil)
+		// Task middleware resolves methods and provider actions that a URL prefix alone cannot distinguish.
+		if mode := c.GetInt("relay_mode"); mode != relayconstant.RelayModeUnknown {
+			info.RelayMode = mode
+		}
 		info.TaskRelayInfo = &TaskRelayInfo{}
 	case types.RelayFormatMjProxy:
 		info = genBaseRelayInfo(c, nil)
