@@ -166,15 +166,25 @@ export default function ModelAnalytics({
       <section id='usage' className='model-detail-section'>
         <div className='model-detail-section-heading'>
           <h2>{t('分组用量')}</h2>
-          <Select
+          <div
+            className='model-usage-switch'
+            role='group'
             aria-label={t('用量类型')}
-            value={usageMetric}
-            onChange={setUsageMetric}
-            optionList={[
+          >
+            {[
               { value: 'total_tokens', label: 'Tokens' },
               { value: 'request_count', label: t('请求次数') },
-            ]}
-          />
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                type='button'
+                aria-pressed={usageMetric === value}
+                onClick={() => setUsageMetric(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <p className='model-detail-caption'>
           {t(

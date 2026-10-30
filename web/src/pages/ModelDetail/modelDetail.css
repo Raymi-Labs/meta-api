@@ -727,6 +727,9 @@ html.dark .model-metric-chart {
   margin-top: 8px;
   overflow-wrap: anywhere;
 }
+.model-chart-tooltip > span > span {
+  min-width: 0;
+}
 .model-chart-tooltip strong {
   margin-left: auto;
   white-space: nowrap;
@@ -754,8 +757,10 @@ html.dark .model-metric-chart {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 .model-chart-legend span {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .model-chart-legend strong {
@@ -764,6 +769,60 @@ html.dark .model-metric-chart {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--semi-color-text-0);
+}
+.model-usage-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--detail-border);
+  border-radius: 10px;
+  background: var(--semi-color-fill-0);
+}
+.model-usage-switch button {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--detail-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.model-usage-switch button[aria-pressed='true'] {
+  background: var(--semi-color-bg-0);
+  box-shadow: 0 1px 4px #0001;
+  color: var(--semi-color-text-0);
+  font-weight: 600;
+}
+.model-usage-switch button:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
+.model-metric-chart.is-usage .model-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 16px 24px;
+}
+.model-metric-chart.is-usage .model-chart-legend > div {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr);
+  align-content: start;
+}
+.model-metric-chart.is-usage .model-chart-legend strong {
+  grid-column: 2;
+  margin: 0;
+  font-size: 20px;
+}
+.model-metric-chart.is-usage .model-chart-tooltip {
+  width: min(360px, calc(100% - 16px));
+}
+.model-metric-chart.is-usage .model-chart-tooltip strong {
+  min-width: 0;
+  max-width: 62%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 .model-chart-empty {
   display: flex;
@@ -786,6 +845,7 @@ html.dark .model-metric-chart {
 }
 .model-chart-data > div {
   overflow: auto;
+  max-width: 100%;
   max-height: 220px;
   margin-top: 10px;
 }
@@ -803,6 +863,7 @@ html.dark .model-metric-chart {
 }
 .model-sample-note {
   display: block;
+  overflow-wrap: anywhere;
   margin-top: 5px;
 }
 .model-detail-modalities {
