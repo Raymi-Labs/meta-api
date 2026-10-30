@@ -17,18 +17,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState } from 'react';
-import { chartMetricValue } from '../../helpers/modelPresentation';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Modal } from '@douyinfe/semi-ui';
+import { Maximize2 } from 'lucide-react';
 import { healthTone } from '../../components/group-health/healthUtils';
+import {
+  chartDisplayValue,
+  formatChartValue,
+  chartDomain,
+  contiguousChartPoints,
+} from '../../helpers/modelChartDisplay';
 
-export const GROUP_CHART_COLORS = ['#3978f6', '#00a995', '#e5a000', '#9b62d6'];
-const number = (value) =>
-  value == null
-    ? '—'
-    : new Intl.NumberFormat(undefined, {
-        maximumFractionDigits: 2,
-        notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
-      }).format(value);
+export const GROUP_CHART_COLORS = ['#16b8a6', '#f5a623', '#5285ed', '#9b72cf'];
 const date = (ts) =>
   new Date(ts * 1000).toLocaleString([], {
     month: '2-digit',
@@ -41,11 +41,23 @@ export default function ModelMetricChart({
   title,
   groups,
   metric,
-  unit = '',
   bar = false,
   t,
+  expandedView = false,
 }) {
   const [hover, setHover] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [width, setWidth] = useState(400);
+  const plotRef = useRef(null);
+  useEffect(() => {
+    const element = plotRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(Math.max(240, entry.contentRect.width)),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const timestamps = [
     ...new Set(
       groups.flatMap((group) => (group.series || []).map((point) => point.ts)),
@@ -56,176 +68,241 @@ export default function ModelMetricChart({
   );
   const nums = values
     .flatMap((map) =>
-      [...map.values()].map((point) => chartMetricValue(point, metric)),
+      [...map.values()].map((point) => chartDisplayValue(point, metric)),
     )
     .filter((value) => value != null);
-  const max = metric === 'success_rate' ? 100 : Math.max(1, ...nums) * 1.1;
-  const width = 400,
-    height = 214,
-    left = 50,
-    right = 15,
-    top = 18,
-    bottom = 35;
-  const x = (i) =>
-    left +
-    ((i + 0.5) / Math.max(1, timestamps.length)) * (width - left - right);
+  const { min, max, ticks } = chartDomain(nums, metric);
+  const height = expandedView ? 320 : 220,
+    left = 58,
+    right = 12,
+    top = 20,
+    bottom = 36;
+  const start = timestamps[0] || 0,
+    span = Math.max(3600, (timestamps.at(-1) || start) - start + 3600);
+  const slot = ((width - left - right) * 3600) / span;
+  const x = (ts) =>
+    left + ((ts - start + 1800) / span) * (width - left - right);
   const y = (value) =>
-    height - bottom - (value / max) * (height - top - bottom);
+    height - bottom - ((value - min) / (max - min)) * (height - top - bottom);
   const hoverIndex = timestamps.indexOf(hover);
-  const format = (value) => `${number(value)}${value == null ? '' : unit}`;
+  const format = (value) => formatChartValue(value, metric);
+  const limited = (point) =>
+    metric === 'success_rate' &&
+    ['empty', 'limited'].includes(healthTone(point));
+  const activeColor = (point, i) =>
+    limited(point) ? '#a8aeb9' : GROUP_CHART_COLORS[i];
+  const timeLabels = [
+    ...new Set([
+      0,
+      ...(width > 500 ? [Math.floor((timestamps.length - 1) / 2)] : []),
+      timestamps.length - 1,
+    ]),
+  ].filter((i) => i >= 0);
   return (
-    <article className={'model-metric-chart' + (bar ? ' is-usage' : '')}>
-      <h3>{title}</h3>
-      {nums.length ? (
-        <div className='model-chart-plot' onMouseLeave={() => setHover(null)}>
-          <svg viewBox={`0 0 ${width} ${height}`} role='img' aria-label={title}>
-            {[0, 0.5, 1].map((ratio) => (
-              <g key={ratio}>
-                <line
-                  x1={left}
-                  x2={width - right}
-                  y1={y(max * ratio)}
-                  y2={y(max * ratio)}
-                  className='model-chart-grid'
-                />
-                <text x={left - 8} y={y(max * ratio) + 4} textAnchor='end'>
-                  {number(max * ratio)}
-                  {metric === 'success_rate' ? '%' : ''}
-                </text>
-              </g>
-            ))}
-            {values.map((map, groupIndex) => {
-              let path = '';
-              let previous = false;
-              timestamps.forEach((ts, i) => {
-                const v = chartMetricValue(map.get(ts), metric);
-                if (v == null) {
-                  previous = false;
-                  return;
-                }
-                path += `${previous ? 'L' : 'M'}${x(i)},${y(v)} `;
-                previous = true;
-              });
-              return (
-                <g key={groups[groupIndex].group}>
-                  {!bar && (
-                    <path
-                      d={path}
-                      fill='none'
-                      stroke={GROUP_CHART_COLORS[groupIndex]}
-                      strokeWidth='2'
-                      vectorEffect='non-scaling-stroke'
-                    />
-                  )}
-                  {timestamps.map((ts, i) => {
-                    const point = map.get(ts),
-                      value = chartMetricValue(point, metric);
-                    if (value == null) return null;
-                    const color =
-                      metric === 'success_rate' &&
-                      ['empty', 'limited'].includes(healthTone(point))
-                        ? '#a8aeb9'
-                        : GROUP_CHART_COLORS[groupIndex];
-                    const slot =
-                        (width - left - right) / Math.max(1, timestamps.length),
-                      w = Math.max(0.8, (slot * 0.8) / groups.length);
-                    return bar ? (
-                      <rect
-                        key={ts}
-                        x={x(i) - slot * 0.4 + groupIndex * w}
-                        y={y(value)}
-                        width={w}
-                        height={Math.max(1, height - bottom - y(value))}
-                        fill={color}
-                      >
-                        <title>
-                          {groups[groupIndex].group} · {date(ts)} ·{' '}
-                          {format(value)}
-                        </title>
-                      </rect>
-                    ) : (
-                      <circle
-                        key={ts}
-                        cx={x(i)}
-                        cy={y(value)}
-                        r='2.2'
-                        fill={color}
-                      >
-                        <title>
-                          {groups[groupIndex].group} · {date(ts)} ·{' '}
-                          {format(value)}
-                        </title>
-                      </circle>
-                    );
-                  })}
+    <article
+      className={
+        'model-metric-chart' +
+        (bar ? ' is-usage' : '') +
+        (expandedView ? ' is-expanded' : '')
+      }
+    >
+      <div className='model-chart-heading'>
+        <h3>{title}</h3>
+        {!expandedView && (
+          <Button
+            theme='borderless'
+            type='tertiary'
+            size='small'
+            icon={<Maximize2 size={15} />}
+            aria-label={t('展开') + ' · ' + title}
+            onClick={() => setExpanded(true)}
+          />
+        )}
+      </div>
+      <div
+        ref={plotRef}
+        className='model-chart-plot'
+        onMouseLeave={() => setHover(null)}
+      >
+        {nums.length ? (
+          <>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              role='img'
+              aria-label={title}
+            >
+              {ticks.map((value) => (
+                <g key={value}>
+                  <line
+                    x1={left}
+                    x2={width - right}
+                    y1={y(value)}
+                    y2={y(value)}
+                    className='model-chart-grid'
+                  />
+                  <text x={left - 10} y={y(value) + 4} textAnchor='end'>
+                    {formatChartValue(value, metric, metric === 'success_rate')}
+                  </text>
                 </g>
-              );
-            })}
-            {timestamps.map((ts, i) => (
-              <rect
-                key={ts}
-                x={left + (i / timestamps.length) * (width - left - right)}
-                y={top}
-                width={(width - left - right) / timestamps.length}
-                height={height - top - bottom}
-                fill='transparent'
-                onMouseEnter={() => setHover(ts)}
-              >
-                <title>
-                  {date(ts) +
-                    '\n' +
-                    values
-                      .map(
-                        (map, index) =>
-                          groups[index].group +
-                          ': ' +
-                          format(chartMetricValue(map.get(ts), metric)),
-                      )
-                      .join('\n')}
-                </title>
-              </rect>
-            ))}
-            {hoverIndex >= 0 && (
-              <line
-                className='model-chart-cursor'
-                x1={x(hoverIndex)}
-                x2={x(hoverIndex)}
-                y1={top}
-                y2={height - bottom}
-                pointerEvents='none'
-              />
-            )}
-            <text x={left} y={height - 10}>
-              {timestamps.length ? date(timestamps[0]) : ''}
-            </text>
-            <text x={width - right} y={height - 10} textAnchor='end'>
-              {timestamps.length ? date(timestamps.at(-1)) : ''}
-            </text>
-          </svg>
-          {hoverIndex >= 0 && (
-            <div className='model-chart-tooltip'>
-              <b>{date(hover)}</b>
-              {groups.map((group, i) => (
-                <span key={group.group}>
-                  <i style={{ background: GROUP_CHART_COLORS[i] }} />
-                  {group.group}
-                  <strong>
-                    {format(chartMetricValue(values[i].get(hover), metric))}
-                  </strong>
-                </span>
               ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className='model-chart-empty'>{t('暂无数据')}</div>
-      )}
+              {values.map((map, groupIndex) => {
+                let previous = null;
+                return (
+                  <g key={groups[groupIndex].group}>
+                    {timestamps.map((ts) => {
+                      const point = map.get(ts),
+                        value = chartDisplayValue(point, metric);
+                      if (value == null) {
+                        previous = null;
+                        return null;
+                      }
+                      const prior = previous;
+                      previous = { ts, point, value };
+                      const joined = contiguousChartPoints(prior?.ts, ts);
+                      const next = chartDisplayValue(
+                        map.get(ts + 3600),
+                        metric,
+                      );
+                      const color = activeColor(point, groupIndex);
+                      const w = Math.min(
+                        36,
+                        (slot * 0.72) / Math.max(1, groups.length),
+                      );
+                      return bar ? (
+                        <rect
+                          key={ts}
+                          x={x(ts) - (w * groups.length) / 2 + groupIndex * w}
+                          y={y(value)}
+                          width={Math.max(0.5, w - 1)}
+                          height={Math.max(0, height - bottom - y(value))}
+                          rx='2'
+                          fill={color}
+                          opacity='0.88'
+                        />
+                      ) : (
+                        <g key={ts}>
+                          {joined && (
+                            <path
+                              d={`M${x(prior.ts)},${y(prior.value)} L${x(ts)},${y(value)}`}
+                              fill='none'
+                              stroke={limited(prior.point) ? '#a8aeb9' : color}
+                              strokeWidth='1.8'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          )}
+                          {((!joined && next == null) ||
+                            limited(point) ||
+                            hover === ts) && (
+                            <circle
+                              cx={x(ts)}
+                              cy={y(value)}
+                              r={hover === ts ? 3.5 : 2.3}
+                              fill={color}
+                              stroke='var(--semi-color-bg-0)'
+                              strokeWidth='1.5'
+                            />
+                          )}
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+              {hoverIndex >= 0 && (
+                <line
+                  className='model-chart-cursor'
+                  x1={x(hover)}
+                  x2={x(hover)}
+                  y1={top}
+                  y2={height - bottom}
+                  pointerEvents='none'
+                />
+              )}
+              {timestamps.map((ts) => (
+                <rect
+                  key={ts}
+                  x={x(ts) - slot / 2}
+                  y={top}
+                  width={slot}
+                  height={height - top - bottom}
+                  fill='transparent'
+                  onMouseEnter={() => setHover(ts)}
+                  onClick={() => setHover(hover === ts ? null : ts)}
+                >
+                  <title>
+                    {date(ts) +
+                      '\n' +
+                      values
+                        .map(
+                          (map, i) =>
+                            groups[i].group +
+                            ': ' +
+                            format(chartDisplayValue(map.get(ts), metric)),
+                        )
+                        .join('\n')}
+                  </title>
+                </rect>
+              ))}
+              {timeLabels.map((i, index) => (
+                <text
+                  key={i}
+                  x={
+                    index === 0
+                      ? left
+                      : index === timeLabels.length - 1
+                        ? width - right
+                        : x(timestamps[i])
+                  }
+                  y={height - 10}
+                  textAnchor={
+                    index === 0
+                      ? 'start'
+                      : index === timeLabels.length - 1
+                        ? 'end'
+                        : 'middle'
+                  }
+                >
+                  {date(timestamps[i])}
+                </text>
+              ))}
+            </svg>
+            {hoverIndex >= 0 && (
+              <div
+                className='model-chart-tooltip'
+                style={
+                  hoverIndex > timestamps.length / 2
+                    ? { left: 8, right: 'auto' }
+                    : { right: 8, left: 'auto' }
+                }
+              >
+                <b>{date(hover)}</b>
+                {groups.map((group, i) => (
+                  <span key={group.group}>
+                    <i
+                      style={{
+                        background: activeColor(values[i].get(hover), i),
+                      }}
+                    />
+                    <span>{group.group}</span>
+                    <strong>
+                      {format(chartDisplayValue(values[i].get(hover), metric))}
+                    </strong>
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className='model-chart-empty'>{t('暂无数据')}</div>
+        )}
+      </div>
       <div className='model-chart-legend'>
         {groups.map((group, i) => (
           <div key={group.group}>
-            <i style={{ background: GROUP_CHART_COLORS[i] }} />
-            <span>{group.group}</span>
-            <strong>{format(chartMetricValue(group, metric))}</strong>
+            <i style={{ background: activeColor(group, i) }} />
+            <span title={group.group}>{group.group}</span>
+            <strong>{format(chartDisplayValue(group, metric))}</strong>
           </div>
         ))}
       </div>
@@ -248,7 +325,7 @@ export default function ModelMetricChart({
                     <th>{date(ts)}</th>
                     {values.map((map, i) => (
                       <td key={i}>
-                        {format(chartMetricValue(map.get(ts), metric))}
+                        {format(chartDisplayValue(map.get(ts), metric))}
                       </td>
                     ))}
                   </tr>
@@ -257,6 +334,27 @@ export default function ModelMetricChart({
             </table>
           </div>
         </details>
+      )}
+      {!expandedView && (
+        <Modal
+          visible={expanded}
+          title={title}
+          footer={null}
+          width='min(1040px, calc(100vw - 32px))'
+          onCancel={() => setExpanded(false)}
+          className='model-chart-modal'
+        >
+          {expanded && (
+            <ModelMetricChart
+              title={title}
+              groups={groups}
+              metric={metric}
+              bar={bar}
+              t={t}
+              expandedView
+            />
+          )}
+        </Modal>
       )}
     </article>
   );

@@ -123,30 +123,26 @@ export default function ModelAnalytics({
                 title={'Uptime · ' + t('成功率')}
                 groups={groups}
                 metric='success_rate'
-                unit='%'
                 t={t}
               />
               <ModelMetricChart
-                title={t('首字均值')}
+                title={t('首字均值') + ' · s'}
                 groups={groups}
                 metric='avg_ttft_ms'
-                unit=' ms'
                 t={t}
               />
               <ModelMetricChart
-                title={t('输出速度')}
+                title={t('输出速度') + ' · tok/s'}
                 groups={groups}
                 metric='avg_output_tps'
-                unit=' tok/s'
                 t={t}
               />
             </div>
             {groups.some((group) => group.completion_count > 0) && (
               <ModelMetricChart
-                title={t('平均完成')}
+                title={t('平均完成') + ' · s'}
                 groups={groups}
                 metric='avg_completion_ms'
-                unit=' ms'
                 t={t}
               />
             )}
