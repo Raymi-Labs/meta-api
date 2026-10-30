@@ -76,6 +76,63 @@
   border: 1px solid var(--semi-color-border);
   border-radius: 12px;
 }
+/* Regular users have fewer fields, so keep their filters in a balanced grid. */
+.usage-logs-filters-user {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.usage-logs-filters-user .usage-logs-filter-fields,
+.usage-logs-filters-user .usage-logs-filter-footer {
+  display: contents;
+}
+.usage-logs-filters-user .usage-logs-filter-date,
+.usage-logs-filters-user .usage-logs-filter-actions {
+  grid-column: 1 / -1;
+}
+.usage-logs-filters-user .semi-form-field-pure,
+.usage-logs-filters-user .usage-logs-filter-group,
+.usage-logs-filters-user .usage-logs-filter-type {
+  min-width: 0;
+  width: 100%;
+}
+.usage-logs-filters-user .usage-logs-filter-actions {
+  min-width: 0;
+  gap: 8px;
+}
+.usage-logs-filters-user .usage-logs-filter-actions label {
+  white-space: nowrap;
+  margin-right: 4px;
+}
+@media (min-width: 768px) {
+  .usage-logs-filters-user {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .usage-logs-filters-user .usage-logs-filter-actions {
+    grid-column: auto;
+  }
+}
+@media (min-width: 1200px) {
+  .usage-logs-filters-user {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .usage-logs-filters-user .usage-logs-filter-date {
+    grid-column: span 6;
+  }
+  .usage-logs-filters-user .usage-logs-filter-token,
+  .usage-logs-filters-user .usage-logs-filter-model,
+  .usage-logs-filters-user .usage-logs-filter-group,
+  .usage-logs-filters-user .usage-logs-filter-request {
+    grid-column: span 3;
+  }
+  .usage-logs-filters-user .usage-logs-filter-type {
+    grid-column: span 2;
+  }
+  .usage-logs-filters-user .usage-logs-filter-actions {
+    grid-column: span 4;
+  }
+}
 .usage-logs-table {
   border: 1px solid var(--semi-color-border);
   border-radius: 12px;

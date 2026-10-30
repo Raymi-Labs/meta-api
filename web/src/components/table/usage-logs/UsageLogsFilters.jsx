@@ -41,6 +41,7 @@ const LogsFilters = ({
   isAdminUser,
   t,
 }) => {
+  const filterSize = isAdminUser ? 'small' : 'default';
   const sensitiveClass = groupPrivacy ? 'usage-log-group-private' : undefined;
   const [vendor, setVendor] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
@@ -63,10 +64,12 @@ const LogsFilters = ({
       trigger='change'
       stopValidateWithError={false}
     >
-      <div className='usage-logs-filters'>
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2'>
+      <div
+        className={`usage-logs-filters${isAdminUser ? '' : ' usage-logs-filters-user'}`}
+      >
+        <div className='usage-logs-filter-fields grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2'>
           {/* 时间选择器 */}
-          <div className='col-span-1 lg:col-span-2'>
+          <div className='usage-logs-filter-date col-span-1 lg:col-span-2'>
             <Form.DatePicker
               field='dateRange'
               className='w-full'
@@ -74,7 +77,7 @@ const LogsFilters = ({
               placeholder={[t('开始时间'), t('结束时间')]}
               showClear
               pure
-              size='small'
+              size={filterSize}
               presets={DATE_RANGE_PRESETS.map((preset) => ({
                 text: t(preset.text),
                 start: preset.start(),
@@ -86,23 +89,27 @@ const LogsFilters = ({
           {/* 其他搜索字段 */}
           <Form.Input
             field='token_name'
+            className='usage-logs-filter-token'
             prefix={<IconSearch />}
             placeholder={t('令牌名称')}
             showClear
             pure
-            size='small'
+            size={filterSize}
           />
 
           <Form.Input
             field='model_name'
+            className='usage-logs-filter-model'
             prefix={<IconSearch />}
             placeholder={t('模型名称')}
             showClear
             pure
-            size='small'
+            size={filterSize}
           />
 
-          <div className={isAdminUser ? 'grid grid-cols-2 gap-2 min-w-0' : ''}>
+          <div
+            className={`usage-logs-filter-group${isAdminUser ? ' grid grid-cols-2 gap-2 min-w-0' : ''}`}
+          >
             {isAdminUser && (
               <Form.Select
                 field='group_vendor'
@@ -121,7 +128,7 @@ const LogsFilters = ({
                 filter
                 showClear
                 pure
-                size='small'
+                size={filterSize}
               />
             )}
             <Form.Select
@@ -139,17 +146,18 @@ const LogsFilters = ({
               filter
               showClear
               pure
-              size='small'
+              size={filterSize}
             />
           </div>
 
           <Form.Input
             field='request_id'
+            className='usage-logs-filter-request'
             prefix={<IconSearch />}
             placeholder={t('Request ID')}
             showClear
             pure
-            size='small'
+            size={filterSize}
           />
 
           {isAdminUser && (
@@ -164,23 +172,23 @@ const LogsFilters = ({
                 )}
                 showClear
                 pure
-                size='small'
+                size={filterSize}
               />
             </>
           )}
         </div>
 
         {/* 操作按钮区域 */}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-3'>
+        <div className='usage-logs-filter-footer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-3'>
           {/* 日志类型选择器 */}
-          <div className='w-full sm:w-auto'>
+          <div className='usage-logs-filter-type w-full sm:w-auto'>
             <Form.Select
               field='logType'
               placeholder={t('日志类型')}
               className='w-full sm:w-auto min-w-[120px]'
               showClear
               pure
-              size='small'
+              size={filterSize}
             >
               <Form.Select.Option value='0'>{t('全部')}</Form.Select.Option>
               <Form.Select.Option value='1'>{t('充值')}</Form.Select.Option>
@@ -192,7 +200,7 @@ const LogsFilters = ({
             </Form.Select>
           </div>
 
-          <div className='flex gap-2 w-full sm:w-auto justify-end items-center flex-wrap'>
+          <div className='usage-logs-filter-actions flex gap-2 w-full sm:w-auto justify-end items-center flex-wrap'>
             <label className='flex items-center gap-2 text-sm'>
               <Switch
                 size='small'
@@ -217,11 +225,11 @@ const LogsFilters = ({
               theme='solid'
               htmlType='submit'
               loading={loading}
-              size='small'
+              size={filterSize}
             >
               {t('查询')}
             </Button>
-            <Button type='tertiary' onClick={resetFilters} size='small'>
+            <Button type='tertiary' onClick={resetFilters} size={filterSize}>
               {t('重置')}
             </Button>
           </div>
