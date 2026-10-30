@@ -33,7 +33,6 @@ const LogsFilters = ({
   setFormApi,
   submitFilters,
   resetFilters,
-  filtersOpen,
   groupPrivacy,
   setGroupPrivacy,
   formApi,
@@ -64,7 +63,7 @@ const LogsFilters = ({
       trigger='change'
       stopValidateWithError={false}
     >
-      <div className='usage-logs-filters' hidden={!filtersOpen}>
+      <div className='usage-logs-filters'>
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2'>
           {/* 时间选择器 */}
           <div className='col-span-1 lg:col-span-2'>
@@ -172,7 +171,7 @@ const LogsFilters = ({
         </div>
 
         {/* 操作按钮区域 */}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3'>
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-3'>
           {/* 日志类型选择器 */}
           <div className='w-full sm:w-auto'>
             <Form.Select
@@ -214,7 +213,8 @@ const LogsFilters = ({
               {t('分组隐私模式')}
             </label>
             <Button
-              type='tertiary'
+              type='primary'
+              theme='solid'
               htmlType='submit'
               loading={loading}
               size='small'
