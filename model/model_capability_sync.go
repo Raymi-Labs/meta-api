@@ -430,37 +430,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		}
 		fresh.ModelCapabilitySyncState = changes["model_capability_sync_state"].(string)
 		fresh.CreatedTime, fresh.UpdatedTime = common.GetTimestamp(), common.GetTimestamp()
-		created := false
-		// Only a single missing model is held in a transaction. Recheck both the
-		// model and its enabled ability so a stale catalog cannot enable routing.
-		err = DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			locked, err := lockModelMetadataCreationAbility(tx, name)
-			if err != nil {
-				return err
-			}
-			if !locked {
-				return nil
-			}
-			var count int64
-			if err := tx.Unscoped().Model(&Model{}).Where("model_name = ?", name).Count(&count).Error; err != nil {
-				return err
-			}
-			if count > 0 {
-				return nil
-			}
-			var currentRules []Model
-			if err := tx.Unscoped().Where("name_rule <> ?", NameRuleExact).Find(&currentRules).Error; err != nil {
-				return err
-			}
-			if capabilityCoveredByRule(name, currentRules) {
-				return nil
-			}
-			if err := tx.Create(&fresh).Error; err != nil {
-				return err
-			}
-			created = true
-			return nil
-		})
+		created, err := createCatalogModel(ctx, &fresh)
 		if err != nil {
 			return result, err
 		}
