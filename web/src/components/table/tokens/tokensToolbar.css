@@ -1,22 +1,23 @@
 .tokens-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
   width: 100%;
   min-width: 0;
 }
 .tokens-toolbar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  display: contents;
 }
 .tokens-toolbar__batch {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  order: 1;
+  flex-basis: 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--semi-color-border);
 }
 .tokens-toolbar__count {
   color: var(--semi-color-text-2);
@@ -27,7 +28,10 @@
   flex: 0 0 auto;
   width: auto;
 }
-.tokens-toolbar__filters,
+.tokens-toolbar__filters {
+  flex: 1 1 640px;
+  min-width: 0;
+}
 .tokens-filter-form {
   width: 100%;
   min-width: 0;
@@ -106,17 +110,6 @@
   --tokens-border: var(--semi-color-border);
   color: var(--semi-color-text-0);
 }
-.tokens-page-title h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-}
-.tokens-page-title p {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--semi-color-text-2);
-}
 .tokens-page .semi-card {
   border-radius: 12px !important;
   box-shadow: none;
@@ -140,12 +133,6 @@
 .tokens-page .semi-table-row:hover > .semi-table-row-cell {
   background: var(--semi-color-fill-0);
 }
-.token-identity-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
 .token-name-line {
   display: flex;
   align-items: flex-start;
@@ -158,57 +145,6 @@
   max-width: 100%;
   white-space: normal;
   overflow-wrap: anywhere;
-}
-.token-quota-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-.token-cell-caption {
-  font-size: 11px;
-  color: var(--semi-color-text-2);
-}
-.token-group-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-.token-restriction-tags {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.token-expanded-details {
-  padding: 16px 20px;
-  background: var(--semi-color-fill-0);
-  border-radius: 10px;
-}
-.token-expanded-details dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 0;
-}
-.token-expanded-details dt {
-  font-size: 12px;
-  margin-bottom: 7px;
-  color: var(--semi-color-text-2);
-}
-.token-expanded-details dd {
-  margin: 0;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: 13px;
-}
-.token-expanded-actions {
-  border-top: 1px solid var(--tokens-border);
-  padding-top: 14px;
-  margin-top: 16px;
-}
-.token-expanded-actions .semi-button-danger {
-  margin-left: 8px;
 }
 .token-list-error,
 .tokens-list-error {
@@ -237,30 +173,9 @@
   .tokens-page .token-mobile-select {
     display: inline-flex;
   }
-  .tokens-page .token-identity-cell {
-    width: 100%;
-  }
-  .token-expanded-details {
-    padding: 12px;
-  }
-  .token-expanded-details dl {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .token-name-line {
     flex-wrap: wrap;
   }
-  .token-expanded-actions .semi-button-danger {
-    margin-left: 0;
-  }
-}
-.tokens-view-options {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-.tokens-view-options .semi-checkbox {
-  font-size: 12px;
-  color: var(--semi-color-text-2);
 }
 .tokens-page .table-scroll-card {
   height: auto;
@@ -298,9 +213,6 @@
 }
 .tokens-page .tokens-filter-row__buttons .semi-button {
   min-height: 34px;
-}
-.tokens-page .token-identity-cell > div.w-\[200px\] {
-  max-width: 100%;
 }
 .tokens-page .semi-table-expand-icon {
   margin-top: 2px;
@@ -353,26 +265,4 @@
 .tokens-page .semi-table-expand-icon {
   border-radius: 6px;
   background: var(--semi-color-fill-0);
-}
-
-/* Keep the table's own expand control beside identity, not on a separate line. */
-.tokens-page .semi-table-expand-icon + .token-identity-cell {
-  display: inline-flex;
-  width: calc(100% - 28px);
-  vertical-align: middle;
-}
-.tokens-page .semi-table-expand-icon {
-  vertical-align: middle;
-}
-
-.tokens-page .semi-button-primary.token-edit-button:not(.semi-button-disabled) {
-  min-height: 32px;
-  padding-inline: 14px;
-  color: var(--semi-color-primary);
-  background: var(--semi-color-primary-light-default);
-  border-color: transparent;
-}
-.tokens-page
-  .semi-button-primary.token-edit-button:not(.semi-button-disabled):hover {
-  background: var(--semi-color-primary-light-hover);
 }

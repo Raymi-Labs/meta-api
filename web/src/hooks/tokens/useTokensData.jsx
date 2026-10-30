@@ -27,7 +27,6 @@ import {
   showSuccess,
   encodeToBase64,
 } from '../../helpers';
-import { useTableCompactMode } from '../common/useTableCompactMode';
 import { usePaginatedList } from '../common/usePaginatedList';
 
 export const useTokensData = (openFluentNotification) => {
@@ -71,7 +70,6 @@ export const useTokensData = (openFluentNotification) => {
   // requestCounter 由 usePaginatedList 提供，通过 nextRequestId / isLatestRequest 使用
 
   // UI 状态
-  const [compactMode, setCompactMode] = useTableCompactMode('tokens');
   const [showKeys, setShowKeys] = useState({});
   const [tokenFullKeys, setTokenFullKeys] = useState({});
   const [ccSwitchToken, setCCSwitchToken] = useState(null);
@@ -734,8 +732,6 @@ export const useTokensData = (openFluentNotification) => {
     closeEdit,
 
     // UI 状态
-    compactMode,
-    setCompactMode,
     showKeys,
     setShowKeys,
     tokenFullKeys,

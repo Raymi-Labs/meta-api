@@ -2,6 +2,8 @@
 
 Status: implemented
 
+顶部布局与默认摘要/完整列切换的展示决定由[完整列与单行工具栏](../simplification/2026-10-31-token-toolbar-full-columns.md)部分取代；下述其余行为契约保持。
+
 手机次级筛选的折叠、条件保留及数量提示，见[手机筛选补充](2026-10-28-ordinary-user-ui-hierarchy.md)。
 
 ## Problem
