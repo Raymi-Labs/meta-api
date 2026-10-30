@@ -202,18 +202,6 @@ export default function ModelAnalytics({
         ) : (
           <p className='model-detail-caption'>{t('请先加载分组调用表现')}</p>
         )}
-        <p className='model-detail-caption'>
-          {t('历史缺失数据不补零；新增指标从部署后开始采集。')}
-          {ready &&
-            groups.map((group) => (
-              <span className='model-sample-note' key={group.group}>
-                {group.group} ·{' '}
-                {t('{{count}} 个有效样本', {
-                  count: group.usage_sample_count || 0,
-                })}
-              </span>
-            ))}
-        </p>
       </section>
     </>
   );

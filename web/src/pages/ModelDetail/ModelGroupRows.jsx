@@ -144,13 +144,6 @@ export default function ModelGroupRows({
                             />
                           ))
                       : t('见价格详情')}
-                    {pricing.isDynamicPricing && (
-                      <small>
-                        {t('本站首档：{{tier}}', {
-                          tier: pricing.firstTierLabel || t('默认'),
-                        })}
-                      </small>
-                    )}
                   </dd>
                 </div>
                 <div>

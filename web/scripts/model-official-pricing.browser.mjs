@@ -565,9 +565,9 @@ try {
       attributes.includes('1.05M tokens') && attributes.includes('128K tokens'),
     );
     assert.ok(
-      attributes.includes('厂商官方') &&
-        attributes.includes('模型库补全') &&
-        attributes.includes('人工配置'),
+      !attributes.includes('厂商官方') &&
+        !attributes.includes('模型库补全') &&
+        !attributes.includes('人工配置'),
     );
     assert.equal(
       await page.$eval('[data-capability="memory"]', (el) => el.dataset.status),
@@ -771,7 +771,7 @@ try {
       '较官方低 92.9%',
     );
     assert.ok(
-      (await page.$eval('.model-group-row', (el) => el.textContent)).includes(
+      !(await page.$eval('.model-group-row', (el) => el.textContent)).includes(
         '本站首档：base',
       ),
     );
