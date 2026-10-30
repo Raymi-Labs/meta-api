@@ -18,72 +18,38 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button, Skeleton } from '@douyinfe/semi-ui';
-import { RefreshCw, SlidersHorizontal, Columns3, Download } from 'lucide-react';
-import { renderQuota } from '../../../helpers';
+import { Button } from '@douyinfe/semi-ui';
+import { RefreshCw, Columns3, Download } from 'lucide-react';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 
 const LogsActions = ({
   exporting,
   exportLogs,
-  stat,
-  statError,
   loadingStat,
-  showStat,
   compactMode,
   setCompactMode,
   isAdminUser,
   openTopUsersDrawer,
   openGroupSummary,
   refresh,
-  handleEyeClick,
   loading,
-  filtersOpen,
-  setFiltersOpen,
   columnViewMode,
   setColumnViewMode,
   openColumnSelector,
   t,
 }) => {
-  const number = (value) =>
-    typeof value === 'number' && Number.isFinite(value) ? value : null;
-  const percent = (value) =>
-    number(value) === null ? '—' : `${(value * 100).toFixed(2)}%`;
-  const metrics = [
-    [
-      t('消耗额度'),
-      number(stat.quota) === null ? '—' : renderQuota(stat.quota),
-    ],
-    ['RPM', number(stat.rpm) ?? '—'],
-    ['TPM', number(stat.tpm) ?? '—'],
-    [t('命中缓存率'), percent(stat.cache_hit_rate)],
-    [t('全局缓存率'), percent(stat.cache_global_rate)],
-  ];
   return (
     <>
-      <div className='usage-logs-heading'>
-        <h1>{t('使用日志')}</h1>
-      </div>
       <div className='usage-logs-toolbar'>
         <div className='usage-logs-tools'>
           <Button
             size='small'
-            theme='solid'
+            theme='light'
             icon={<RefreshCw size={15} />}
             onClick={refresh}
             loading={loading || loadingStat}
           >
             {t('刷新日志')}
-          </Button>
-          <Button
-            size='small'
-            theme='light'
-            icon={<SlidersHorizontal size={15} />}
-            className={filtersOpen ? 'console-control-active' : undefined}
-            aria-expanded={filtersOpen}
-            onClick={() => setFiltersOpen(!filtersOpen)}
-          >
-            {t('筛选')}
           </Button>
           {!isAdminUser && (
             <>
@@ -152,35 +118,6 @@ const LogsActions = ({
           />
         </div>
       </div>
-      <p className='usage-logs-hint'>
-        {t('筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。')}
-      </p>
-      <div className='usage-logs-stats'>
-        {statError ? (
-          <div role='alert' className='usage-logs-stat-error'>
-            <span>{t('加载统计失败')}</span>
-            <Button size='small' onClick={handleEyeClick}>
-              {t('重试')}
-            </Button>
-          </div>
-        ) : (
-          metrics.map(([label, value]) => (
-            <div className='usage-logs-metric' key={label}>
-              <span>{label}</span>
-              {loadingStat || !showStat ? (
-                <Skeleton.Title style={{ width: 70, height: 18 }} />
-              ) : (
-                <strong>{value}</strong>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-      <p className='usage-logs-hint'>
-        {t(
-          '额度与缓存率仅统计消费记录；缓存率可能取最近样本，RPM/TPM 为所选范围内最近一分钟。',
-        )}
-      </p>
     </>
   );
 };
