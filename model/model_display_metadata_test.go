@@ -129,6 +129,8 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			originalDB := DB
 			DB = tableDB
 			t.Cleanup(func() { DB = originalDB })
+			require.Empty(t, restored.OfficialPricing.Tiers)
+			require.NoError(t, common.UnmarshalJsonStr(`{"currency":"USD","tiers":[{"label":"Standard","unit":"million_tokens","input":10,"cache_read":0}]}`, &restored.OfficialPricing))
 			restored.ReleaseDate = "2025-01"
 			restored.DisplayName, restored.ContextLength = "Long context", 256000
 			restored.InputModalities = ModelModalities{"text", "image"}
@@ -136,16 +138,19 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			require.NoError(t, restored.Update())
 			var saved Model
 			require.NoError(t, tableDB.First(&saved, restored.Id).Error)
+			require.Equal(t, restored.OfficialPricing, saved.OfficialPricing)
 			require.Equal(t, restored.DisplayName, saved.DisplayName)
 			require.Equal(t, restored.ReleaseDate, saved.ReleaseDate)
 			require.Equal(t, restored.ContextLength, saved.ContextLength)
 			require.Equal(t, restored.InputModalities, saved.InputModalities)
 			require.Equal(t, restored.OutputModalities, saved.OutputModalities)
+			saved.OfficialPricing = OfficialPricing{}
 			saved.ReleaseDate = ""
 			saved.DisplayName, saved.ContextLength = "", 0
 			saved.InputModalities, saved.OutputModalities = ModelModalities{}, ModelModalities{}
 			require.NoError(t, saved.Update())
 			require.NoError(t, tableDB.First(&restored, restored.Id).Error)
+			require.Empty(t, restored.OfficialPricing.Tiers)
 			require.Empty(t, restored.DisplayName)
 			require.Empty(t, restored.ReleaseDate)
 			require.Zero(t, restored.ContextLength)

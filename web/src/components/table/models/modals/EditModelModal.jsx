@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import OfficialPricingEditor from './OfficialPricingEditor';
 import JSONEditor from '../../../common/ui/JSONEditor';
 import {
   Banner,
@@ -136,6 +137,7 @@ const EditModelModal = (props) => {
     input_modalities: [],
     output_modalities: [],
     description: '',
+    official_pricing: {},
     icon: '',
     tags: [],
     vendor_id: null,
@@ -166,6 +168,7 @@ const EditModelModal = (props) => {
           ...getInitValues(),
           ...data,
           display_name: data.display_name || '',
+          official_pricing: data.official_pricing || {},
           release_date: data.release_date || '',
           context_length: data.context_length || 0,
           input_modalities: Array.isArray(data.input_modalities)
@@ -227,6 +230,7 @@ const EditModelModal = (props) => {
       const submitData = {
         ...values,
         display_name: (values.display_name || '').trim(),
+        official_pricing: values.official_pricing || {},
         release_date:
           values.name_rule === 0 ? (values.release_date || '').trim() : '',
         context_length: values.context_length || 0,
@@ -424,10 +428,23 @@ const EditModelModal = (props) => {
                   <Col span={24}>
                     <Form.TextArea
                       field='description'
-                      label={t('描述')}
+                      label={t('模型介绍')}
                       placeholder={t('请输入模型描述')}
-                      rows={3}
+                      extraText={t('显示在模型详情顶部和模型广场卡片中。')}
+                      rows={5}
                       showClear
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <OfficialPricingEditor
+                      field='official_pricing'
+                      label={t('官方参考价')}
+                      disabled={values.name_rule !== 0}
+                      extraText={
+                        values.name_rule !== 0
+                          ? t('官方参考价仅支持精确匹配模型')
+                          : undefined
+                      }
                     />
                   </Col>
                   <Col span={24}>

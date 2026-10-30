@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[模型头卡与官方参考价](2026-10-30-model-official-pricing.md)扩展顶部展示，介绍继续复用 description；独立官方参考价置于本站价格之前，本站计费与分组明细保持原口径。
+
 [模型能力自动同步](2026-10-27-model-capability-sync.md)部分扩展本篇的同步边界：上下文和模态允许补空及更新自动拥有的值，人工配置继续优先。
 
 [模型发现与接入路径](2026-10-26-model-discovery-experience.md)更新搜索与筛选布局、缺失状态、快速开始入口和首页手动公告规则；本文其余数据及权限契约继续有效。
