@@ -37,6 +37,7 @@ import ModelAttributes from './ModelAttributes';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
+import ModelSectionNav from './ModelSectionNav.jsx';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
@@ -216,21 +217,12 @@ export default function ModelDetail() {
       </header>
 
       <div className='model-detail-layout'>
-        <nav className='model-detail-sections' aria-label={t('模型详情')}>
-          {sections.map(([id, label]) => (
-            <button
-              key={id}
-              type='button'
-              onClick={() =>
-                pageRef.current
-                  ?.querySelector(`#${id}`)
-                  ?.scrollIntoView({ block: 'start' })
-              }
-            >
-              {t(label)}
-            </button>
-          ))}
-        </nav>
+        <ModelSectionNav
+          key={model.model_name}
+          sections={sections}
+          pageRef={pageRef}
+          t={t}
+        />
         <div className='model-detail-main'>
           <ModelOfficialPricing pricing={model.official_pricing} t={t} />
           <ModelAttributes model={model} tags={tags} />
