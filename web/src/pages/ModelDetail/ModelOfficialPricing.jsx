@@ -26,7 +26,7 @@ import {
   officialPricingSource,
 } from '../../helpers/modelOfficialPricing';
 
-export default function ModelOfficialPricing({ pricing, t }) {
+export default function ModelOfficialPricing({ pricing, provenance, t }) {
   const tiers = Array.isArray(pricing?.tiers) ? pricing.tiers : [];
   const columns = officialPriceColumns(tiers);
   const source = officialPricingSource(pricing?.source_url);
@@ -85,6 +85,15 @@ export default function ModelOfficialPricing({ pricing, t }) {
       ) : (
         <p className='model-official-empty'>{t('暂无官方参考价')}</p>
       )}
+      {tiers.length > 0 &&
+        provenance?.kind === 'official' &&
+        provenance?.synced_at > 0 && (
+          <p className='model-detail-caption'>
+            {t('官方价格自动更新于 {{time}}', {
+              time: new Date(provenance.synced_at * 1000).toLocaleString(),
+            })}
+          </p>
+        )}
       {pricing?.notes && (
         <p className='model-detail-caption model-official-notes'>
           {pricing.notes}

@@ -267,15 +267,18 @@ export const useModelsData = () => {
     try {
       const result = await requestModelCapabilitySync(API);
       if (result.sourceFailures)
-        showWarning(t('部分来源暂不可用，已保留原有属性。'));
+        showWarning(t('部分来源暂不可用，已保留原有资料。'));
       showSuccess(
-        t('模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个', result),
+        t(
+          '模型资料已同步：新增 {{created}} 个，更新 {{updated}} 个，其中官方价格 {{pricingUpdated}} 个',
+          result,
+        ),
       );
       await refresh();
       return true;
     } catch (error) {
       showError(
-        error.response?.data?.message || t('模型能力同步失败，现有数据已保留'),
+        error.response?.data?.message || t('模型资料同步失败，现有数据已保留'),
       );
       return false;
     } finally {

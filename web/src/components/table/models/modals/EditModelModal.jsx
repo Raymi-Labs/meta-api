@@ -717,7 +717,7 @@ const EditModelModal = (props) => {
                       field='sync_official'
                       label={t('参与官方同步')}
                       extraText={t(
-                        '关闭后停止属性同步。开启时厂商官方优先，模型库补全；自动值持续更新，人工设置优先保留。',
+                        '开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。',
                       )}
                       size='large'
                     />

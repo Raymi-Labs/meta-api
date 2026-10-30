@@ -60,19 +60,15 @@ var officialTokenLimit = regexp.MustCompile(`^([0-9][0-9,]*) (context window|max
 
 // Parse visible model body, not navigation or script text. Require the page's
 // model identity; a redirect, error document or changed schema cannot supply data.
-func parseOpenAIModelAttributes(data []byte, id string) (model.ModelCapabilityMetadata, error) {
+func openAIModelLines(data []byte, id string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(string(data)))
 	if err != nil {
-		return model.ModelCapabilityMetadata{}, err
+		return nil, err
 	}
-	var lines []string
-	identity := false
-	var visit func(*html.Node, bool)
-	visit = func(n *html.Node, main bool) {
+	var target *html.Node
+	var find func(*html.Node, bool)
+	find = func(n *html.Node, main bool) {
 		if n.Type == html.ElementNode {
-			if n.Data == "script" || n.Data == "style" || n.Data == "svg" {
-				return
-			}
 			if n.Data == "main" {
 				main = true
 			}
@@ -86,24 +82,47 @@ func parseOpenAIModelAttributes(data []byte, id string) (model.ModelCapabilityMe
 						ModelName []interface{} `json:"modelName"`
 					}
 					if common.UnmarshalJsonStr(attrs["props"], &props) == nil && len(props.ModelName) == 2 && props.ModelName[1] == id {
-						identity = true
+						target = n
 					}
 				}
 			}
 		}
-		if main && n.Type == html.TextNode {
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			find(c, main)
+		}
+	}
+	find(doc, false)
+	if target == nil {
+		return nil, errors.New("official model identity not found")
+	}
+	var lines []string
+	var visit func(*html.Node)
+	visit = func(n *html.Node) {
+		if n.Type == html.ElementNode && (n.Data == "script" || n.Data == "style" || n.Data == "svg") {
+			return
+		}
+		if n.Type == html.TextNode {
 			if s := strings.TrimSpace(n.Data); s != "" {
 				lines = append(lines, s)
 			}
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			visit(c, main)
+			visit(c)
 		}
 	}
-	visit(doc, false)
-	if !identity {
-		return model.ModelCapabilityMetadata{}, errors.New("official model identity not found")
+	visit(target)
+	return lines, nil
+}
+
+func parseOpenAIModelAttributes(data []byte, id string) (model.ModelCapabilityMetadata, error) {
+	lines, err := openAIModelLines(data, id)
+	if err != nil {
+		return model.ModelCapabilityMetadata{}, err
 	}
+	return parseOpenAIAttributeLines(lines)
+}
+
+func parseOpenAIAttributeLines(lines []string) (model.ModelCapabilityMetadata, error) {
 	entry := model.ModelCapabilityMetadata{Provider: "openai", Capabilities: model.ModelCapabilities{}}
 	section := ""
 	features := map[string]string{"Streaming": "streaming", "Function calling": "function_calling", "Structured outputs": "structured_output"}
@@ -185,6 +204,9 @@ func markOfficialAttributes(entry model.ModelCapabilityMetadata, address string)
 	if len(entry.OutputModalities) > 0 {
 		entry.FieldSources["output_modalities"] = source
 	}
+	if len(entry.OfficialPricing.Tiers) > 0 {
+		entry.FieldSources["official_pricing"] = source
+	}
 	if entry.ReleaseDate != "" {
 		entry.FieldSources["release_date"] = source
 	}
@@ -195,6 +217,9 @@ func markOfficialAttributes(entry model.ModelCapabilityMetadata, address string)
 }
 
 func mergeOfficialAttributes(base, official model.ModelCapabilityMetadata) model.ModelCapabilityMetadata {
+	if len(official.OfficialPricing.Tiers) > 0 {
+		base.OfficialPricing = official.OfficialPricing
+	}
 	if official.ContextLength > 0 {
 		base.ContextLength = official.ContextLength
 	}
@@ -400,10 +425,21 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 					warn("OpenAI: " + id)
 					continue
 				}
-				entry, err := parseOpenAIModelAttributes(data, id)
+				lines, err := openAIModelLines(data, id)
 				if err != nil {
 					warn("OpenAI: " + id)
 					continue
+				}
+				entry, err := parseOpenAIAttributeLines(lines)
+				if err != nil {
+					warn("OpenAI: " + id)
+					continue
+				}
+				pricing, pricingErr := parseOpenAIPriceLines(lines, address)
+				if pricingErr != nil {
+					warn("OpenAI pricing: " + id)
+				} else {
+					entry.OfficialPricing = pricing
 				}
 				merge(map[string]model.ModelCapabilityMetadata{id: markOfficialAttributes(entry, address)})
 			}

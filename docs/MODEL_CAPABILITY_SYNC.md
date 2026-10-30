@@ -1,14 +1,14 @@
-# 模型能力自动同步
+# 模型资料自动同步
 
-模型管理和模型详情共用上下文 `context_length`、最大输出 `max_output_tokens`、输入/输出模态、逐项能力 `capabilities` 和发布日期。详情在分组定价之后独立展示模型属性；桌面五栏排列，能力分两列，窄屏自动换行。
+模型管理和模型详情共用上下文 `context_length`、最大输出 `max_output_tokens`、输入/输出模态、逐项能力 `capabilities` 和发布日期。详情在官方参考价之后、分组定价之前独立展示模型属性；桌面五栏排列，能力分两列，窄屏自动换行。
 
-开启模型的“参与官方同步”后，主节点在启动一分钟后同步，此后默认每24小时检查；管理员也可以在模型管理点击“同步模型能力”。来源策略是**厂商官方优先，缺失字段用模型库补全**，人工配置优先保留。
+开启模型的“参与官方同步”后，主节点在启动一分钟后同步，此后默认每24小时检查；管理员也可以在模型管理点击“同步模型资料”。来源策略是**厂商官方优先，缺失字段用模型库补全**，人工配置优先保留。
 
 ## 来源与覆盖范围
 
 | 来源 | 自动读取内容 | 接入条件 |
 | --- | --- | --- |
-| [OpenAI 模型文档](https://developers.openai.com/api/docs/models/gpt-6-astra) | 上下文、最大输出、模态、明确列出的推理/流式/函数调用/结构化输出及工具能力；明确缓存输入单价表示提示缓存支持 | 公开页面，无需密钥；只请求本地已配置或启用的 OpenAI 风格精确 ID，校验页面模型身份 |
+| [OpenAI 模型文档](https://developers.openai.com/api/docs/models/gpt-6-astra) | 上下文、最大输出、模态、明确列出的推理/流式/函数调用/结构化输出及工具能力；明确缓存输入单价表示提示缓存支持；标准文本 USD / 1M token 输入、输出、缓存读写参考价及明确的长上下文档位 | 公开页面，无需密钥；只请求本地已配置或启用的 OpenAI 风格精确 ID，校验页面模型身份 |
 | [Claude Models API](https://platform.claude.com/docs/en/api/models/list) | `max_input_tokens`、`max_tokens`、明确的 thinking/citations/code_execution/structured_outputs/server_tools.web_search 支持状态 | 配置专用 `MODEL_METADATA_ANTHROPIC_API_KEY`；固定官方端点和 API 版本 `2026-10-21` |
 | [Gemini Models API](https://ai.google.dev/api/models) | `inputTokenLimit`、`outputTokenLimit`、显式 `thinking` 状态 | 配置专用 `MODEL_METADATA_GEMINI_API_KEY`；固定官方端点 |
 | [basellm/llm-metadata](https://github.com/basellm/llm-metadata) `/api/all.json` | 上下文、最大输出、模态、发布日期、reasoning/tool_call/structured_output | 复用 `SYNC_UPSTREAM_BASE`；属于社区模型库，界面标为“模型库补全” |
@@ -17,7 +17,15 @@
 
 `capabilities` 是布尔对象：`true` 为支持，`false` 为明确不支持，缺键为未知。管理界面提供三种状态选择。`max_output_tokens` 为非负安全整数，0 表示未知。旧客户端未提交新增字段时保留已有值；显式 0 / `{}` 清空。公开 pricing 和管理查询返回只读 `attribute_sources`，按字段区分“厂商官方”“模型库补全”；没有自动来源的配置显示“人工配置”。能力来源可悬停查看，来源链接可打开核验。
 
-这些属性是模型参考资料，不改变本站渠道可用模型、工具协议、计费或权限。已有“同步”向导仍处理介绍、图标和供应商，能力同步不覆盖这些字段及官方参考价。
+这些属性是模型参考资料，不改变本站渠道可用模型、工具协议、计费或权限。已有“同步”向导仍处理介绍、图标和供应商，资料同步不覆盖这些字段及人工官方参考价。
+
+## 官方参考价
+
+OpenAI 官方页面的标准文本 token 价格通过同一次文档请求同步到 `official_pricing`，不读取管理员填写的来源 URL，也不需要 API Key。固定来源校验模型身份、文本价格卡片、USD / 1M 单位和完整输入/输出价格；不从页面的其他模型对比表、Batch/Flex/Fast 选项或本站倍率取值。明确的长上下文门槛与倍率生成独立档位，条件说明原样保留，金额由当前官方页面读取而非写死。
+
+官方价仍是展示资料，独立于本站计费；详情和分组折扣共用同一份价格。`attribute_sources.official_pricing` 返回来源及 `synced_at`，表示该价格表最后一次自动更新的时间；其他属性更新或无变化的检查不会刷新它，人工修改后不再标为自动价格。价格币种、说明和档位作为一整份快照跟踪，管理员修改任意内容后均保留人工版本。
+
+当前自动价格范围仅为可识别的 OpenAI 标准文本费目，其他厂商、图像/音频/视频/工具费用仍需人工维护。官方文档不是稳定的 JSON 价格 API；结构、单位或已识别条件不匹配会保留上次完整价格并报告来源异常，不清零。缺少文本价格卡片的模型不新增自动价格。
 
 ## 人工配置与自动更新
 
@@ -48,6 +56,6 @@
 | `MODEL_METADATA_ANTHROPIC_API_KEY` | 空 | Claude 官方元数据专用凭据，可选 |
 | `MODEL_METADATA_GEMINI_API_KEY` | 空 | Gemini 官方元数据专用凭据，可选 |
 
-手动接口为管理员 `POST /api/models/sync_capabilities`。返回匹配、更新、新建和跳过计数，以及可选 `source_failures`（不可用来源请求数）；部分来源失败时仍应用独立成功的来源，并在管理界面提示，全部失败时返回失败。跳过包含手工保护、禁用、无变化和并发冲突等情形，不能把跳过数当作失败数。后台失败记录日志，等待下一个周期，不循环重试。官方读取并发有界，OpenAI 最多4个并发请求；Claude/Gemini 分页上限20页，游标异常中止该来源。后台只在主节点启动，同进程的后台和手动任务互斥。
+手动接口为管理员 `POST /api/models/sync_capabilities`。返回匹配、更新、新建和跳过计数，以及 `pricing_updated`（已写入官方价格的模型数，包含新增记录）和可选 `source_failures`（不可用来源请求数）；部分来源失败时仍应用独立成功的来源，并在管理界面提示，全部失败时返回失败。跳过包含手工保护、禁用、无变化和并发冲突等情形，不能把跳过数当作失败数。后台失败记录日志，等待下一个周期，不循环重试。官方读取并发有界，OpenAI 最多4个并发请求；Claude/Gemini 分页上限20页，游标异常中止该来源。后台只在主节点启动，同进程的后台和手动任务互斥。
 
-新字段由现有 GORM 迁移增加，使用跨数据库兼容的 TEXT 类型。多实例应继续遵循现有主节点部署规则。代码发布不等于生产部署；本功能要在升级后的服务上才会运行。
+本次价格同步复用既有 `official_pricing` 与内部 TEXT 状态，无新增列。多实例应继续遵循现有主节点部署规则。代码发布不等于生产部署；本功能要在升级后的服务上才会运行。

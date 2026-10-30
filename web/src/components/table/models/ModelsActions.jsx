@@ -173,7 +173,7 @@ const ModelsActions = ({
           content={
             <div className='p-2 max-w-[360px] text-sm'>
               {t(
-                '从 models.dev 与社区模型库同步发布日期、上下文和模态，默认每天检查；人工设置优先。',
+                '同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。',
               )}
             </div>
           }
@@ -186,7 +186,7 @@ const ModelsActions = ({
             disabled={syncing || previewing}
             onClick={syncCapabilities}
           >
-            {t('同步模型能力')}
+            {t('同步模型资料')}
           </Button>
         </Popover>
 
