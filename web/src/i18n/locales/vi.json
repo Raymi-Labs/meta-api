@@ -7351,6 +7351,16 @@
     "请输入有效的函数工具数组，parameters 必须为 object schema。": "Nhập mảng công cụ hàm hợp lệ; parameters phải là schema kiểu object.",
     "调用策略": "Chế độ gọi",
     "通过 reasoning_effort 请求，支持的档位由模型与渠道决定。": "Gửi reasoning_effort; mức hỗ trợ phụ thuộc mô hình và kênh.",
-    "高": "Cao"
+    "高": "Cao",
+    "API 标准": "Chuẩn API",
+    "当前设置无法完整转换，请调整后复制。": "Không thể chuyển đổi đầy đủ các cài đặt này. Hãy điều chỉnh trước khi sao chép.",
+    "请先填写工具结果，再生成下一次请求。": "Nhập kết quả công cụ trước khi tạo yêu cầu tiếp theo.",
+    "尚无用户消息，代码使用 Hello! 示例。": "Chưa có tin nhắn người dùng. Mã sử dụng ví dụ Hello!.",
+    "Messages 必须设置输出上限，示例使用 4096。": "Messages yêu cầu giới hạn đầu ra. Ví dụ này dùng 4096.",
+    "安装与运行": "Cài đặt và chạy",
+    "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Lưu mã thành {{filename}}, thay khóa rồi chạy trong terminal:",
+    "先设置密钥，再粘贴上方 cURL 命令运行。": "Đặt khóa trước, rồi dán và chạy lệnh cURL ở trên.",
+    "复制运行命令": "Sao chép lệnh chạy",
+    "以上命令适用于 macOS / Linux / WSL。": "Các lệnh này dùng cho macOS / Linux / WSL."
   }
 }

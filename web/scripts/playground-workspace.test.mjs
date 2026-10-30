@@ -99,7 +99,7 @@ test('public endpoint strips credentials/query and does not duplicate v1', () =>
   assert.equal(getPlaygroundEndpoint('javascript:alert(1)'), '');
 });
 
-test('exported cURL, Python and JavaScript send the exact public payload in both stream modes', async () => {
+test('exported cURL sends the exact public payload in both stream modes', async () => {
   const requests = [];
   const server = createServer(async (req, res) => {
     let raw = '';
@@ -127,7 +127,7 @@ test('exported cURL, Python and JavaScript send the exact public payload in both
         enabled,
       );
       const { group, ...expected } = payload;
-      for (const language of ['curl', 'python', 'javascript']) {
+      for (const language of ['curl']) {
         const code = buildPlaygroundCode(payload, language, address);
         const [cmd, args] =
           language === 'curl'

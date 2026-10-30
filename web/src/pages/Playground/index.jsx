@@ -607,6 +607,9 @@ const AccountPlayground = ({ owner }) => {
   const codePanel = (
     <RequestCodePanel
       payload={previewPayload}
+      model={catalogState.catalog?.models.find(
+        (item) => item.model_name === previewPayload?.model,
+      )}
       debugData={debugData}
       activeDebugTab={activeDebugTab}
       onActiveDebugTabChange={setActiveDebugTab}
