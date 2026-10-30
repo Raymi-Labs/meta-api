@@ -20,6 +20,7 @@ import (
 var (
 	modelCapabilitySyncMutex sync.Mutex
 	modelCapabilityTaskOnce  sync.Once
+	modelCatalogChanged      = make(chan struct{}, 1)
 	errModelCapabilityBusy   = errors.New("模型能力同步正在进行，请稍后重试")
 )
 
@@ -169,11 +170,36 @@ func fetchModelCapabilities(ctx context.Context, source string) (map[string]mode
 	return parseModelCapabilities(data)
 }
 
-func runModelCapabilitySync(parent context.Context) (model.ModelCapabilitySyncResult, error) {
+// List reads never wait on remote sources. A buffered signal coalesces new rows.
+func reconcileModelCatalog(ctx context.Context) (int, error) {
+	created, err := model.EnsureModelCatalog(ctx)
+	if created > 0 {
+		model.RefreshPricing()
+		select {
+		case modelCatalogChanged <- struct{}{}:
+		default:
+		}
+	}
+	return created, err
+}
+
+func runModelCapabilitySync(parent context.Context) (result model.ModelCapabilitySyncResult, syncErr error) {
 	if !modelCapabilitySyncMutex.TryLock() {
 		return model.ModelCapabilitySyncResult{}, errModelCapabilityBusy
 	}
 	defer modelCapabilitySyncMutex.Unlock()
+	defer func() {
+		reconcileCtx, cancel := context.WithTimeout(parent, 30*time.Second)
+		defer cancel()
+		created, err := model.EnsureModelCatalog(reconcileCtx)
+		result.Created += created
+		if syncErr == nil {
+			syncErr = err
+		}
+		if result.Updated > 0 || result.Created > 0 {
+			model.RefreshPricing()
+		}
+	}()
 	timeout := common.GetEnvOrDefault("SYNC_HTTP_TIMEOUT_SECONDS", 30)
 	if timeout < 1 || timeout > 300 {
 		timeout = 30
@@ -213,10 +239,6 @@ func runModelCapabilitySync(parent context.Context) (model.ModelCapabilitySyncRe
 		common.SysError(fmt.Sprintf("model metadata sources incomplete: %d unavailable requests; prior official values retained", len(warnings)))
 	}
 
-	// An interrupted batch may still have applied earlier rows.
-	if result.Updated > 0 || result.Created > 0 {
-		model.RefreshPricing()
-	}
 	return result, err
 }
 
@@ -249,18 +271,51 @@ func StartModelCapabilitySyncTask() {
 		}
 		interval := modelCapabilitySyncInterval()
 		go func() {
-			// Startup and migrations finish before the first bounded source read.
-			timer := time.NewTimer(time.Minute)
-			defer timer.Stop()
-			for range timer.C {
-				result, err := runModelCapabilitySync(context.Background())
-				if err != nil && !errors.Is(err, errModelCapabilityBusy) {
-					common.SysError("scheduled model capability sync failed: " + err.Error())
-				} else if result.Updated > 0 || result.Created > 0 {
-					common.SysLog(fmt.Sprintf("model capability sync completed: updated=%d created=%d", result.Updated, result.Created))
-				}
-				timer.Reset(interval)
-			}
+			// Local inventory is cheap and independent of the daily network refresh.
+			ticker := time.NewTicker(time.Minute)
+			defer ticker.Stop()
+			runModelCatalogSyncTask(context.Background(), ticker.C, interval)
 		}()
 	})
+}
+
+// A cancellable loop lets lifecycle and cadence be exercised without real timers.
+func runModelCatalogSyncTask(ctx context.Context, ticks <-chan time.Time, interval time.Duration) {
+	nextSync := time.Now().Add(time.Minute)
+	for {
+		changed := false
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticks:
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			created, err := reconcileModelCatalog(ctx)
+			cancel()
+			if err != nil {
+				common.SysError("model catalog reconciliation failed: " + err.Error())
+			}
+			changed = created > 0
+		case <-modelCatalogChanged:
+			changed = true
+		}
+		if !changed && time.Now().Before(nextSync) {
+			continue
+		}
+		// The local reconciliation above may itself have queued a signal.
+		select {
+		case <-modelCatalogChanged:
+		default:
+		}
+		result, err := runModelCapabilitySync(ctx)
+		if errors.Is(err, errModelCapabilityBusy) {
+			nextSync = time.Now() // retry the coalesced change on the next local tick
+			continue
+		}
+		nextSync = time.Now().Add(interval)
+		if err != nil {
+			common.SysError("scheduled model capability sync failed: " + err.Error())
+		} else if result.Updated > 0 || result.Created > 0 {
+			common.SysLog(fmt.Sprintf("model capability sync completed: updated=%d created=%d", result.Updated, result.Created))
+		}
+	}
 }

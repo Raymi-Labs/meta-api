@@ -6775,6 +6775,7 @@
     "模型资料同步失败，现有数据已保留": "Error al sincronizar los modelos. Se han conservado los datos existentes.",
     "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Sincroniza a diario por defecto los atributos y los precios oficiales de texto de OpenAI. Los valores manuales tienen prioridad; los errores conservan los valores existentes.",
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Completa automáticamente los atributos y los precios oficiales de texto de OpenAI. Los valores manuales tienen prioridad; bórralos para reanudar la sincronización automática.",
-    "官方价格自动更新于 {{time}}": "Precios oficiales actualizados automáticamente el {{time}}"
+    "官方价格自动更新于 {{time}}": "Precios oficiales actualizados automáticamente el {{time}}",
+    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Los modelos del catálogo se añaden automáticamente. Los atributos priorizan fuentes oficiales; el catálogo completa la información que falta y se conservan los ajustes manuales."
   }
 }

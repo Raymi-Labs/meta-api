@@ -18,6 +18,8 @@ Status: implemented
 
 [模型属性与厂商优先同步](2026-10-30-model-attributes-official-sources.md)部分取代仅社区来源决定；沿用本篇人工所有权与并发保护，新增最大输出、逐键能力和来源展示。
 
+本地目录补齐由[管理目录跟随广场](2026-10-31-model-catalog-reconciliation.md)扩展：列表/搜索和主节点每分钟使用同一能力行创建锁补建，远端未收录或失败不再阻塞建档；已有规则和软删除保护继续有效。
+
 ## Existing notes audit
 
 - [模型展示元数据与分组指标](../../implemented/feature/2026-10-25-model-catalog-metrics.md)：部分重叠。本次仅放宽“同步不写新展示字段”为“可补空和更新自动拥有字段”，人工值保护、价格及性能口径继续有效。

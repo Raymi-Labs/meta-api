@@ -173,7 +173,7 @@ const ModelsActions = ({
           content={
             <div className='p-2 max-w-[360px] text-sm'>
               {t(
-                '同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。',
+                '自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。',
               )}
             </div>
           }

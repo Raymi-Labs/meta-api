@@ -73,6 +73,10 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 
 // GetAllModelsMeta 获取模型列表（分页）
 func GetAllModelsMeta(c *gin.Context) {
+	if _, err := reconcileModelCatalog(c.Request.Context()); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 
 	pageInfo := common.GetPageQuery(c)
 	modelsMeta, err := model.GetAllModels(pageInfo.GetStartIdx(), pageInfo.GetPageSize())
@@ -101,6 +105,10 @@ func GetAllModelsMeta(c *gin.Context) {
 
 // SearchModelsMeta 搜索模型列表
 func SearchModelsMeta(c *gin.Context) {
+	if _, err := reconcileModelCatalog(c.Request.Context()); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 
 	keyword := c.Query("keyword")
 	vendor := c.Query("vendor")
