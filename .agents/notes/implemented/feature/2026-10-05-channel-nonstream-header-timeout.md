@@ -33,3 +33,7 @@ Grok 渠道非流式调用在默认60秒响应头等待处失败，而43/57秒�
 ## Consequences
 
 延长只提高可等待时间、不提高上游速度，并发名额占用增加；客户端/Nginx/CDN及总时限仍可能更短。只提供配置能力，线上1417设120须部署后另行操作；不自动写生产配置。验证以本地模拟HTTP为主，不发收费请求。
+
+## Scoped extension
+
+[Video submission waits](../bug-fix/2026-10-30-video-channel-wait.md) extend this setting to VideoSubmit. Background polling, streaming and image operations retain their original clients. The original text-only acceptance results above describe the initial implementation.

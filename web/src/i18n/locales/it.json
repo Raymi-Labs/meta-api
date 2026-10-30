@@ -6641,6 +6641,7 @@
     "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "La data di uscita deve essere valida nel formato YYYY-MM-DD o YYYY-MM e non precedente al 1970",
     "请选择有效的时间范围": "Seleziona un intervallo di tempo valido",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "I filtri si applicano dopo la ricerca. Aggiornamento, esportazione e riepiloghi usano i filtri applicati.",
-    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "I tuoi 5 pagamenti più recenti. Apri la fatturazione per lo storico completo e le fatture."
+    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "I tuoi 5 pagamenti più recenti. Apri la fatturazione per lo storico completo e le fatture.",
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 eredita l’impostazione globale; testo non streaming e invio video fino a 600 secondi. Streaming, immagini e controlli in background restano invariati; valgono i timeout totali e del proxy."
   }
 }

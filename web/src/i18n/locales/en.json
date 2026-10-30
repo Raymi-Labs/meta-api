@@ -6853,6 +6853,7 @@
     "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Release date must be a valid YYYY-MM-DD or YYYY-MM, no earlier than 1970",
     "请选择有效的时间范围": "Select a valid time range",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filters apply after Search. Refresh, export and summaries use the applied filters.",
-    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Your 5 most recent payments. Open billing for full records and invoices."
+    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Your 5 most recent payments. Open billing for full records and invoices.",
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 inherits the global setting; applies to non-streaming text and video submission, up to 600 seconds. Streaming, images and background polling are unchanged; total and reverse-proxy timeouts still apply."
   }
 }
