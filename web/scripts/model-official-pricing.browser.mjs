@@ -27,6 +27,8 @@ const status = {
   system_name: 'New API',
   quota_per_unit: 500000,
   quota_display_type: 'USD',
+  usd_exchange_rate: 7,
+  price: 2,
   server_address: baseURL,
   HeaderNavModules: JSON.stringify({
     pricing: { enabled: true, requireAuth: false },
@@ -56,6 +58,12 @@ const pricing = {
       description: '',
       billing_mode: 'tiered_expr',
       billing_expr: 'v1:tier("base", p*10+c*20)',
+      official_pricing: {
+        currency: 'USD',
+        tiers: [
+          { label: '标准', unit: 'million_tokens', input: 20, output: 40 },
+        ],
+      },
     },
     { ...modelDefaults, model_name: 'no-display-name' },
     {
@@ -115,6 +123,29 @@ const fixtureName = `.official-pricing-qa-${process.pid}`;
 const writes = [];
 const fixtureModel = pricing.data[2];
 fixtureModel.id = 1;
+fixtureModel.supports_cache_read = true;
+fixtureModel.cache_ratio = 0.1;
+fixtureModel.enable_groups = [
+  'Public',
+  'Equal',
+  'Higher',
+  'Free',
+  'Extra1',
+  'Extra2',
+  'Extra3',
+];
+Object.assign(
+  pricing.usable_group,
+  Object.fromEntries(fixtureModel.enable_groups.map((name) => [name, name])),
+);
+Object.assign(pricing.group_ratio, {
+  Equal: 5,
+  Higher: 10,
+  Free: 0,
+  Extra1: 1,
+  Extra2: 1,
+  Extra3: 1,
+});
 fixtureModel.name_rule = 0;
 fixtureModel.status = 1;
 const files = ['html', 'jsx'].map((ext) =>
@@ -228,6 +259,37 @@ const clickButton = async (page, text) => {
   );
 };
 
+const selectOption = async (page, label, text) => {
+  const selector = {
+    官方对比档位: '.model-group-comparison-controls .semi-select',
+    价格模式: '.model-detail-settings .semi-select',
+    分组: '.model-detail-price-controls .semi-select',
+  }[label];
+  await page.click(selector);
+  await page.waitForFunction(
+    (text) =>
+      [...document.querySelectorAll('.semi-select-option')].some(
+        (el) => el.textContent.trim() === text,
+      ),
+    {},
+    text,
+  );
+  await page.evaluate(
+    (text) =>
+      [...document.querySelectorAll('.semi-select-option')]
+        .find((el) => el.textContent.trim() === text)
+        .click(),
+    text,
+  );
+  await page.waitForFunction(
+    (selector, text) =>
+      document.querySelector(selector)?.textContent.includes(text),
+    {},
+    selector,
+    text,
+  );
+};
+
 try {
   fs.writeFileSync(
     files[0],
@@ -257,12 +319,110 @@ try {
       await page.$eval('#official-pricing a', (el) => el.href),
       'https://example.com/pricing',
     );
+    await page.waitForSelector('.model-group-discount-lower');
+    assert.equal(
+      await page.$eval(
+        '.model-group-row [data-price-key="input"] del',
+        (el) => el.textContent,
+      ),
+      '¥70',
+    );
+    assert.equal(
+      await page.$eval(
+        '.model-group-row [data-price-key="input"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '较官方低 97.1%',
+    );
+    assert.equal(
+      await page.$('.model-group-row [data-price-key="cache"] del'),
+      null,
+    );
+    assert.equal(
+      await page.$eval(
+        '.model-group-row [data-price-key="cache"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '高于官方',
+    );
+    assert.equal(
+      await page.evaluate(
+        () =>
+          document
+            .querySelector('#pricing')
+            .compareDocumentPosition(document.querySelector('#quick-start')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+      4,
+    );
     await page.click('.model-detail-price-controls .semi-button');
     assert.equal(
       await page.$eval('#official-pricing', (el) => el.textContent),
       official,
       'site unit conversion cannot affect official prices',
     );
+    assert.equal(
+      await page.$eval(
+        '.model-group-row [data-price-key="input"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '较官方低 97.1%',
+    );
+    await selectOption(page, '官方对比档位', 'Input > 272K');
+    await page.waitForFunction(
+      () =>
+        document.querySelector(
+          '.model-group-row [data-price-key="input"] .model-group-discount',
+        )?.textContent === '较官方低 98.6%',
+    );
+    await selectOption(page, '官方对比档位', 'Input ≤ 272K');
+    await clickButton(page, '显示设置');
+    await selectOption(page, '价格模式', 'USD ($)');
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.model-group-row [data-price-key="input"] del')
+          ?.textContent === '$0.01',
+    );
+    assert.equal(
+      await page.$eval(
+        '.model-group-row [data-price-key="input"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '较官方低 90%',
+    );
+    assert.ok(
+      (await page.$eval('.model-group-list', (el) => el.textContent)).includes(
+        '与官方持平',
+      ),
+    );
+    assert.ok(
+      (await page.$eval('.model-group-list', (el) => el.textContent)).includes(
+        '较官方高 100%',
+      ),
+    );
+    assert.ok(
+      (await page.$eval('.model-group-list', (el) => el.textContent)).includes(
+        '较官方低 100%',
+      ),
+    );
+    await page.type('input[aria-label="搜索分组"]', 'Extra3');
+    assert.equal((await page.$$('.model-group-row')).length, 1);
+    assert.ok(
+      (
+        await page.$eval('.model-group-row header', (el) => el.textContent)
+      ).includes('Extra3'),
+    );
+    await page.click('input[aria-label="搜索分组"]', { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+    assert.equal((await page.$$('.model-group-row')).length, 6);
+    await selectOption(page, '分组', 'Higher');
+    assert.equal((await page.$$('.model-group-row')).length, 1);
+    assert.equal(
+      await page.$('.model-group-row [data-price-key="input"] del'),
+      null,
+    );
+    await selectOption(page, '分组', '全部分组');
+    await clickButton(page, '显示设置');
     await page.screenshot({
       path: path.join(artifacts, dark ? 'mobile-dark.png' : 'desktop.png'),
       fullPage: false,
@@ -279,6 +439,24 @@ try {
         () => document.documentElement.scrollWidth <= innerWidth + 2,
       ),
       true,
+    );
+    await page.goto(`${baseURL}/model/same-model`, {
+      waitUntil: 'networkidle0',
+    });
+    await page.waitForSelector(
+      '[data-price-key="tiered-p"] .model-group-discount',
+    );
+    assert.equal(
+      await page.$eval(
+        '[data-price-key="tiered-p"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '较官方低 92.9%',
+    );
+    assert.ok(
+      (await page.$eval('.model-group-row', (el) => el.textContent)).includes(
+        '本站首档：base',
+      ),
     );
     await page.goto(`${baseURL}/model/no-display-name`, {
       waitUntil: 'networkidle0',

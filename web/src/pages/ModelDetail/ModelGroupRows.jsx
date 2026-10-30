@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState } from 'react';
+import ModelGroupPrice from './ModelGroupPrice';
 import { Link } from 'react-router-dom';
 import { Button, Input, Pagination } from '@douyinfe/semi-ui';
 import { ChevronDown, Copy } from 'lucide-react';
@@ -43,6 +44,7 @@ export default function ModelGroupRows({
   model,
   groups,
   selectedGroup,
+  officialTier,
   data,
   health,
 }) {
@@ -131,23 +133,37 @@ export default function ModelGroupRows({
                     ? items
                         .filter((item) => !isCachePriceItem(item))
                         .map((item) => (
-                          <span key={item.key}>
-                            <small>{item.label}</small> {item.value}
-                            <small>{item.suffix}</small>
-                          </span>
+                          <ModelGroupPrice
+                            key={item.key}
+                            item={item}
+                            pricing={pricing}
+                            model={model}
+                            officialTier={officialTier}
+                            data={data}
+                          />
                         ))
                     : t('见价格详情')}
-                  {pricing.isDynamicPricing && <small>{t('首档参考价')}</small>}
+                  {pricing.isDynamicPricing && (
+                    <small>
+                      {t('本站首档：{{tier}}', {
+                        tier: pricing.firstTierLabel || t('默认'),
+                      })}
+                    </small>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt>{t('缓存')}</dt>
                 <dd>
                   {items.filter(isCachePriceItem).map((item) => (
-                    <span key={item.key} title={item.label}>
-                      <small>{item.label}</small> {item.value}
-                      <small>{item.suffix}</small>
-                    </span>
+                    <ModelGroupPrice
+                      key={item.key}
+                      item={item}
+                      pricing={pricing}
+                      model={model}
+                      officialTier={officialTier}
+                      data={data}
+                    />
                   ))}
                   {!items.some(isCachePriceItem) && '—'}
                 </dd>

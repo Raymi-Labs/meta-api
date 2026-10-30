@@ -6870,6 +6870,14 @@
     "模型介绍": "Model introduction",
     "显示在模型详情顶部和模型广场卡片中。": "Shown at the top of model details and on model catalog cards.",
     "官方参考价仅支持精确匹配模型": "Official prices require an exact model name match",
-    "本站价格": "Site pricing"
+    "本站价格": "Site pricing",
+    "与官方持平": "Same as official",
+    "高于官方": "Above official",
+    "较官方低 {{percent}}%": "{{percent}}% below official",
+    "较官方高 {{percent}}%": "{{percent}}% above official",
+    "本站首档：{{tier}}": "Site first tier: {{tier}}",
+    "官方对比档位": "Official comparison tier",
+    "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Prices include applicable group multipliers. Actual charges depend on usage and billing rules.",
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Each rate is compared with the selected official tier. Dynamic pricing shows the site’s first tier, not a whole-request discount."
   }
 }

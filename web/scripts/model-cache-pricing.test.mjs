@@ -291,3 +291,39 @@ test('shared cache classification excludes other metrics and handles absent item
   assert.equal(isCachePriceItem(undefined), false);
   assert.equal(isCachePriceItem({}), false);
 });
+
+test('unrounded comparison amounts share the actual pricing calculation', () => {
+  const result = pricing(
+    {},
+    {
+      groupRatio: { standard: 0.4 },
+      timeRatioMap: { 'fixture-text': { standard: { ratio: 0.5 } } },
+    },
+  );
+  assert.equal(result.data.unitPricesUSD.input, 0.8);
+  assert.equal(result.data.unitPricesUSD.completion, 4);
+  assert.equal(result.data.unitPricesUSD.cache, 0.08000000000000002);
+  const perK = pricing({}, { tokenUnit: 'K' });
+  assert.equal(perK.data.unitPricesUSD.input, 0.004);
+  assert.equal(perK.data.unitPricesUSD['create-cache'], 0.005);
+  const dynamic = pricing(
+    {
+      billing_mode: 'tiered_expr',
+      billing_expr: 'tier("base", p*4+c*20+cr*.4)',
+    },
+    { groupRatio: { standard: 0.5 } },
+  );
+  assert.equal(dynamic.data.firstTierLabel, 'base');
+  assert.equal(dynamic.data.unitPricesUSD['tiered-p'], 2);
+  assert.equal(dynamic.data.unitPricesUSD['tiered-cr'], 0.2);
+  assert.equal(
+    pricing({ quota_type: 1, model_price: 0.09 }).data.unitPricesUSD.fixed,
+    0.09,
+  );
+  assert.equal(
+    pricing({ quota_type: 2, audio_duration_price: 3 }).data.unitPricesUSD[
+      'audio-duration'
+    ],
+    3,
+  );
+});

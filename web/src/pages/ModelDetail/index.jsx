@@ -51,6 +51,7 @@ import {
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelQuickStart from './ModelQuickStart.jsx';
+import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
 
@@ -79,10 +80,12 @@ export default function ModelDetail() {
   });
   const pageRef = useRef(null);
   const [priceGroup, setPriceGroup] = useState('all');
+  const [officialTierIndex, setOfficialTierIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useLayoutEffect(() => {
     pageRef.current?.scrollIntoView({ block: 'start' });
     setPriceGroup('all');
+    setOfficialTierIndex(0);
   }, [location.pathname]);
   useLayoutEffect(() => {
     if (model?.model_name && location.hash === '#endpoints') {
@@ -136,7 +139,7 @@ export default function ModelDetail() {
       group !== 'auto' && group && model.enable_groups?.includes(group),
   );
   const selectedGroup = groups.includes(priceGroup) ? priceGroup : 'all';
-  const { data: priceData, items } = getModelCatalogPricing(
+  const { data: priceData } = getModelCatalogPricing(
     {
       record: model,
       selectedGroup,
@@ -149,6 +152,13 @@ export default function ModelDetail() {
     },
     t,
   );
+  const officialTiers = (model.official_pricing?.tiers || []).filter(
+    (tier) => tier.unit === officialComparisonUnit(model),
+  );
+  const activeOfficialTierIndex = officialTiers[officialTierIndex]
+    ? officialTierIndex
+    : 0;
+  const officialTier = officialTiers[activeOfficialTierIndex];
   const icon = model.icon || model.vendor_icon;
   const tags = [
     ...new Set(
@@ -172,7 +182,7 @@ export default function ModelDetail() {
       : [];
   const sections = [
     ['official-pricing', '官方参考价'],
-    ['pricing', '本站价格'],
+    ['pricing', '分组价格'],
     ['capabilities', '模型能力'],
     ['quick-start', '快速开始'],
     ['performance', '性能对比'],
@@ -244,7 +254,7 @@ export default function ModelDetail() {
           <ModelOfficialPricing pricing={model.official_pricing} t={t} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>
-              <h2>{t('本站价格')}</h2>
+              <h2>{t('分组价格')}</h2>
               <div className='model-detail-price-controls'>
                 <Select
                   aria-label={t('分组')}
@@ -320,9 +330,7 @@ export default function ModelDetail() {
             )}
             <p className='model-detail-caption'>
               {selectedGroup === 'all'
-                ? t(
-                    '参考价：按最低适用分组展示，实际费用取决于所用分组及计费规则。',
-                  )
+                ? t('价格已包含各分组适用倍率，实际费用取决于用量及计费规则。')
                 : t('当前分组：{{group}} · 价格已包含分组倍率', {
                     group: selectedGroup,
                   })}
@@ -336,23 +344,36 @@ export default function ModelDetail() {
                   : t(priceMode === 'package' ? '套餐价格' : '充值价格')}
               </span>
             </p>
-            {groups.length > 0 ? (
-              <dl className='model-detail-prices'>
-                {items.map((item) => (
-                  <div key={item.key}>
-                    <dt>{item.label}</dt>
-                    <dd>
-                      <strong>{item.value}</strong>
-                      <span>{item.suffix}</span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <p className='model-detail-caption'>
-                {t('当前模型没有可用分组')}
-              </p>
+            {officialTiers.length > 0 && (
+              <div className='model-group-comparison-controls'>
+                <label>
+                  <span id='official-tier-label'>{t('官方对比档位')}</span>
+                  <Select
+                    aria-labelledby='official-tier-label'
+                    value={activeOfficialTierIndex}
+                    onChange={setOfficialTierIndex}
+                    optionList={officialTiers.map((tier, index) => ({
+                      value: index,
+                      label: tier.label,
+                    }))}
+                  />
+                </label>
+                <p className='model-detail-caption'>
+                  {t(
+                    '逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。',
+                  )}
+                </p>
+              </div>
             )}
+            <ModelGroupRows
+              key={model.model_name}
+              model={model}
+              groups={groups}
+              selectedGroup={selectedGroup}
+              officialTier={officialTier}
+              data={data}
+              health={health}
+            />
             <section
               id='capabilities'
               className='model-detail-modalities'
@@ -447,17 +468,6 @@ export default function ModelDetail() {
                 />
               </div>
             )}
-            <div className='model-detail-group-prices'>
-              {groups.length > 0 && <h3>{t('分组价格')}</h3>}
-              <ModelGroupRows
-                key={model.model_name}
-                model={model}
-                groups={groups}
-                selectedGroup={selectedGroup}
-                data={data}
-                health={health}
-              />
-            </div>
           </section>
           <ModelAnalytics
             key={model.model_name}

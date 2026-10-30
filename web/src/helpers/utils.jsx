@@ -832,12 +832,30 @@ export const calculateModelPrice = ({
       return `${symbol}${numericPrice.toFixed(precision)}`;
     };
 
+    const unitPricesUSD = {
+      input: inputRatioPriceUSD / unitDivisor,
+      completion:
+        (inputRatioPriceUSD * Number(record.completion_ratio)) / unitDivisor,
+      cache:
+        cacheRatio !== null
+          ? (inputRatioPriceUSD * cacheRatio) / unitDivisor
+          : null,
+      'create-cache':
+        createCacheRatio !== null
+          ? (inputRatioPriceUSD * createCacheRatio) / unitDivisor
+          : null,
+      'create-cache-1h':
+        createCache1hRatio !== null
+          ? (inputRatioPriceUSD * createCache1hRatio) / unitDivisor
+          : null,
+    };
     const inputPrice = formatTokenPrice(inputRatioPriceUSD);
     const audioInputPrice = hasRatioValue(record.audio_ratio)
       ? formatTokenPrice(inputRatioPriceUSD * Number(record.audio_ratio))
       : null;
 
     return {
+      unitPricesUSD,
       inputPrice,
       completionPrice: formatTokenPrice(
         inputRatioPriceUSD * Number(record.completion_ratio),
@@ -886,6 +904,7 @@ export const calculateModelPrice = ({
 
     return {
       price: displayVal,
+      unitPricesUSD: { fixed: priceUSD },
       isPerToken: false,
       isTokensDisplay: false,
       usedGroup,
@@ -902,6 +921,7 @@ export const calculateModelPrice = ({
       parseFloat(record.audio_duration_price) * effectiveBillingRatio;
     return {
       price: displayPrice(priceUSD),
+      unitPricesUSD: { 'audio-duration': priceUSD },
       isPerToken: false,
       isPerHour: true,
       isTokensDisplay: false,
