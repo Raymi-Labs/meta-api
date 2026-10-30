@@ -19,102 +19,58 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Button, Skeleton } from '@douyinfe/semi-ui';
-import { Link } from 'react-router-dom';
-import { Gift, RefreshCw } from 'lucide-react';
+import { BarChart2, RefreshCw, TrendingUp, Wallet } from 'lucide-react';
 import { renderQuota } from '../../helpers';
 
-export default function WalletOverview({
-  user,
-  loading,
-  error,
-  onRefresh,
-  onCreate,
-  onHistory,
-  onInvoices,
-  t,
-}) {
+export default function WalletOverview({ user, loading, error, onRefresh, t }) {
   const quota = (value) =>
     typeof value === 'number' && Number.isFinite(value)
       ? renderQuota(value)
       : '—';
-  const knownBalance =
-    typeof user?.quota === 'number' && Number.isFinite(user.quota);
-  const knownTransfer =
-    typeof user?.transferable_quota === 'number' &&
-    Number.isFinite(user.transferable_quota);
+  const stats = [
+    { label: '当前余额', value: quota(user?.quota), Icon: Wallet },
+    { label: '历史消耗', value: quota(user?.used_quota), Icon: TrendingUp },
+    {
+      label: '请求次数',
+      value: Number.isFinite(user?.request_count) ? user.request_count : '—',
+      Icon: BarChart2,
+    },
+  ];
   return (
-    <>
-      <header className='wallet-heading'>
-        <h1>{t('钱包管理')}</h1>
-        <div className='wallet-actions'>
-          <Button theme='light' onClick={onHistory}>
-            {t('账单')}
-          </Button>
-          <Button theme='light' onClick={onInvoices}>
-            {t('申请发票')}
-          </Button>
-        </div>
-      </header>
-      <section className='wallet-balance-card'>
-        <div className='wallet-balance-values'>
-          <div className='wallet-main-balance'>
-            <span>{t('当前余额')}</span>
+    <section className='wallet-account-summary'>
+      <div className='wallet-summary-heading'>
+        <h2>{t('账户统计')}</h2>
+        <Button
+          theme='borderless'
+          icon={<RefreshCw size={14} />}
+          loading={loading}
+          aria-label={t('刷新')}
+          title={t('刷新')}
+          onClick={onRefresh}
+          className='wallet-refresh'
+          size='small'
+        />
+      </div>
+      <div className='wallet-statistics'>
+        {stats.map(({ label, value, Icon }) => (
+          <div key={label}>
             {loading ? (
-              <Skeleton.Title style={{ width: 120, height: 30 }} />
+              <Skeleton.Title active style={{ width: '80%', height: 28 }} />
             ) : (
-              <strong>{error ? '—' : quota(user?.quota)}</strong>
+              <strong>{error ? '—' : value}</strong>
             )}
-          </div>
-          <div>
-            <span>{t('可创建兑换码额度')}</span>
-            {loading ? (
-              <Skeleton.Title style={{ width: 100, height: 24 }} />
-            ) : (
-              <strong>{error ? '—' : quota(user?.transferable_quota)}</strong>
-            )}
-          </div>
-          <Button
-            theme='light'
-            icon={<RefreshCw size={16} />}
-            loading={loading}
-            aria-label={t('刷新')}
-            onClick={onRefresh}
-          >
-            {t('刷新')}
-          </Button>
-        </div>
-        {error && (
-          <p role='alert' className='wallet-error-text'>
-            {t('加载失败，请重试')}
-          </p>
-        )}
-        <div className='wallet-balance-footer'>
-          <div className='wallet-history-values'>
             <span>
-              {t('历史消耗')}:{' '}
-              {error || loading ? '—' : quota(user?.used_quota)}
+              <Icon size={14} />
+              {t(label)}
             </span>
-            <span>
-              {t('请求次数')}:{' '}
-              {error || loading || typeof user?.request_count !== 'number'
-                ? '—'
-                : user.request_count}
-            </span>
-            <Link to='/console/log'>{t('使用日志')}</Link>
           </div>
-          <Button
-            theme='solid'
-            icon={<Gift size={16} />}
-            onClick={onCreate}
-            disabled={loading || error || !knownBalance || !knownTransfer}
-          >
-            {t('创建兑换码')}
-          </Button>
-        </div>
-        <p className='wallet-hint'>
-          {t('将可转赠额度生成兑换码，赠送给其他用户')}
+        ))}
+      </div>
+      {error && (
+        <p role='alert' className='wallet-balance-error'>
+          {t('加载失败，请重试')}
         </p>
-      </section>
-    </>
+      )}
+    </section>
   );
 }

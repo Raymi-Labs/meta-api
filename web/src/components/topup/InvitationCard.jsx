@@ -81,17 +81,20 @@ const InvitationCard = ({
         <Card
           className='!rounded-xl w-full'
           cover={
-            <div className='wallet-invitation-summary'>
+            <div
+              className='wallet-invitation-summary relative h-30'
+              style={{
+                '--palette-primary-darkerChannel': '0 75 80',
+                backgroundImage: `linear-gradient(0deg, rgba(var(--palette-primary-darkerChannel) / 80%), rgba(var(--palette-primary-darkerChannel) / 80%)), url('/cover-4.webp')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+            >
               {/* 标题和按钮 */}
               <div className='relative z-10 h-full flex flex-col justify-between p-4'>
                 <div className='flex justify-between items-center'>
-                  <Text
-                    strong
-                    style={{
-                      color: 'var(--semi-color-text-0)',
-                      fontSize: '16px',
-                    }}
-                  >
+                  <Text strong style={{ color: 'white', fontSize: '16px' }}>
                     {t('收益统计')}
                   </Text>
                   <Space spacing={8}>
@@ -125,8 +128,8 @@ const InvitationCard = ({
                   {/* 待使用收益 */}
                   <div className='text-center'>
                     <div
-                      className='wallet-invitation-number'
-                      style={{ color: 'var(--semi-color-text-0)' }}
+                      className='text-base sm:text-2xl font-bold mb-2'
+                      style={{ color: 'white' }}
                     >
                       {renderQuota(userState?.user?.aff_quota || 0)}
                     </div>
@@ -134,11 +137,11 @@ const InvitationCard = ({
                       <TrendingUp
                         size={14}
                         className='mr-1'
-                        style={{ color: 'var(--semi-color-text-2)' }}
+                        style={{ color: 'rgba(255,255,255,0.8)' }}
                       />
                       <Text
                         style={{
-                          color: 'var(--semi-color-text-2)',
+                          color: 'rgba(255,255,255,0.8)',
                           fontSize: '12px',
                         }}
                       >
@@ -150,8 +153,8 @@ const InvitationCard = ({
                   {/* 总收益 */}
                   <div className='text-center'>
                     <div
-                      className='wallet-invitation-number'
-                      style={{ color: 'var(--semi-color-text-0)' }}
+                      className='text-base sm:text-2xl font-bold mb-2'
+                      style={{ color: 'white' }}
                     >
                       {renderQuota(userState?.user?.aff_history_quota || 0)}
                     </div>
@@ -159,11 +162,11 @@ const InvitationCard = ({
                       <BarChart2
                         size={14}
                         className='mr-1'
-                        style={{ color: 'var(--semi-color-text-2)' }}
+                        style={{ color: 'rgba(255,255,255,0.8)' }}
                       />
                       <Text
                         style={{
-                          color: 'var(--semi-color-text-2)',
+                          color: 'rgba(255,255,255,0.8)',
                           fontSize: '12px',
                         }}
                       >
@@ -187,8 +190,8 @@ const InvitationCard = ({
                     }}
                   >
                     <div
-                      className='wallet-invitation-number'
-                      style={{ color: 'var(--semi-color-text-0)' }}
+                      className='text-base sm:text-2xl font-bold mb-2'
+                      style={{ color: 'white' }}
                     >
                       {userState?.user?.aff_count || 0}
                     </div>
@@ -196,11 +199,11 @@ const InvitationCard = ({
                       <Users
                         size={14}
                         className='mr-1'
-                        style={{ color: 'var(--semi-color-text-2)' }}
+                        style={{ color: 'rgba(255,255,255,0.8)' }}
                       />
                       <Text
                         style={{
-                          color: 'var(--semi-color-text-2)',
+                          color: 'rgba(255,255,255,0.8)',
                           fontSize: '12px',
                         }}
                       >

@@ -76,7 +76,6 @@ import {
 
 import RechargeCard from './RechargeCard';
 import WalletOverview from './WalletOverview';
-import WalletRecentPayments from './WalletRecentPayments';
 import './wallet.css';
 import InvitationCard from './InvitationCard';
 import TransferModal from './modals/TransferModal';
@@ -174,7 +173,6 @@ const TopUpContent = () => {
   const quotaRequestRef = useRef(0);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [balanceError, setBalanceError] = useState(false);
-  const [walletRevision, setWalletRevision] = useState(0);
   const paymentBusyRef = useRef(false);
   const paymentSessionRef = useRef(0);
   const redeemBusyRef = useRef(false);
@@ -314,7 +312,6 @@ const TopUpContent = () => {
           });
           // Refresh both quota fields from the server; a redeemed code may not be transferable.
           await getUserQuota();
-          setWalletRevision((revision) => revision + 1);
         }
         setRedemptionCode('');
         setRedeemTargetModalOpen(false);
@@ -596,7 +593,6 @@ const TopUpContent = () => {
   const refreshWallet = () => {
     getUserQuota();
     getSubscriptionSelf();
-    setWalletRevision((revision) => revision + 1);
   };
 
   const getSubscriptionPlans = async () => {
@@ -954,7 +950,6 @@ const TopUpContent = () => {
     quotaRequestRef.current++;
     setBalanceError(false);
     setBalanceLoading(false);
-    setWalletRevision((revision) => revision + 1);
     const updatedUser = {
       ...userState.user,
       quota: Number(remainingQuota || 0),
@@ -1052,19 +1047,18 @@ const TopUpContent = () => {
         }}
       />
 
-      <WalletOverview
-        user={userState?.user}
-        loading={balanceLoading}
-        error={balanceError}
-        onRefresh={refreshWallet}
-        onCreate={() => setOpenWalletRedemption(true)}
-        onHistory={() => openHistoryTab('records')}
-        onInvoices={() => openHistoryTab('invoices')}
-        t={t}
-      />
       <div className='wallet-content-grid'>
         <div>
           <RechargeCard
+            overview={
+              <WalletOverview
+                user={userState?.user}
+                loading={balanceLoading}
+                error={balanceError}
+                onRefresh={refreshWallet}
+                t={t}
+              />
+            }
             t={t}
             enableOnlineTopUp={enableOnlineTopUp}
             enableStripeTopUp={enableStripeTopUp}
@@ -1153,6 +1147,19 @@ const TopUpContent = () => {
             </Card>
           )}
 
+          <InvitationCard
+            t={t}
+            userState={userState}
+            renderQuota={renderQuota}
+            onOpenTransfer={tryOpenTransfer}
+            onOpenWithdrawal={tryOpenWithdrawal}
+            openWithdrawalHistory={() => openHistoryTab('my-withdrawals')}
+            affLink={affLink}
+            affCode={affCode}
+            onSaveAffCode={saveAffCode}
+            handleAffLinkClick={handleAffLinkClick}
+            onOpenInviteCommissions={() => setOpenInviteCommissions(true)}
+          />
           <Card
             className='!rounded-xl shadow-sm border border-slate-200'
             title={
@@ -1200,28 +1207,40 @@ const TopUpContent = () => {
                 }
               />
             </Form>
+            <div className='wallet-create-redemption'>
+              <div>
+                <Text type='tertiary' size='small'>
+                  {t('将可转赠额度生成兑换码，赠送给其他用户')}
+                </Text>
+                <div className='wallet-transferable-quota'>
+                  {t('可创建兑换码额度')}:{' '}
+                  {balanceLoading ||
+                  balanceError ||
+                  !Number.isFinite(userState?.user?.transferable_quota)
+                    ? '—'
+                    : renderQuota(userState.user.transferable_quota)}
+                </div>
+              </div>
+              <Button
+                type='primary'
+                theme='outline'
+                className='shrink-0'
+                style={{ borderColor: 'var(--semi-color-primary)' }}
+                icon={<IconGift />}
+                onClick={() => setOpenWalletRedemption(true)}
+                disabled={
+                  balanceLoading ||
+                  balanceError ||
+                  !Number.isFinite(userState?.user?.quota) ||
+                  !Number.isFinite(userState?.user?.transferable_quota)
+                }
+              >
+                {t('创建兑换码')}
+              </Button>
+            </div>
           </Card>
-          <InvitationCard
-            t={t}
-            userState={userState}
-            renderQuota={renderQuota}
-            onOpenTransfer={tryOpenTransfer}
-            onOpenWithdrawal={tryOpenWithdrawal}
-            openWithdrawalHistory={() => openHistoryTab('my-withdrawals')}
-            affLink={affLink}
-            affCode={affCode}
-            onSaveAffCode={saveAffCode}
-            handleAffLinkClick={handleAffLinkClick}
-            onOpenInviteCommissions={() => setOpenInviteCommissions(true)}
-          />
         </aside>
       </div>
-      <WalletRecentPayments
-        revision={walletRevision}
-        onHistory={() => openHistoryTab('records')}
-        onInvoices={() => openHistoryTab('invoices')}
-        t={t}
-      />
 
       <Modal
         title={t('选择续费目标')}
