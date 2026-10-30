@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Avatar,
   Typography,
   Tag,
   Card,
@@ -34,7 +35,7 @@ import {
   Tabs,
   TabPane,
 } from '@douyinfe/semi-ui';
-import { CreditCard, Coins, Wallet, Sparkles } from 'lucide-react';
+import { CreditCard, Coins, Wallet, Sparkles, Receipt } from 'lucide-react';
 
 import { getCurrencyConfig, getQuotaPerUnit } from '../../helpers/render';
 import SubscriptionPlansCard from './SubscriptionPlansCard';
@@ -71,6 +72,9 @@ const RechargeCard = ({
   renderQuota,
   statusLoading,
   topupInfo,
+  overview,
+  onOpenHistory,
+  onOpenInvoices,
   topupInfoError = false,
   onRetryTopupInfo,
   subscriptionLoading = false,
@@ -469,55 +473,85 @@ const RechargeCard = ({
   );
 
   return (
-    <Card className='wallet-panel'>
-      <h2 className='wallet-section-title'>{t('账户充值')}</h2>
-      {shouldShowTabs ? (
-        <Tabs type='line' activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane
-            tab={
-              <div className='flex items-center gap-2'>
-                <Wallet size={16} />
-                {t('额度充值')}
-              </div>
-            }
-            itemKey='topup'
+    <Card className='wallet-recharge-card !rounded-2xl shadow-sm border-0'>
+      <div className='wallet-recharge-heading'>
+        <div className='flex items-center'>
+          <Avatar size='small' color='blue' className='mr-3 shadow-md'>
+            <CreditCard size={16} />
+          </Avatar>
+          <div>
+            <Typography.Text className='text-lg font-medium'>
+              {t('账户充值')}
+            </Typography.Text>
+            <div className='text-xs'>{t('多种充值方式，安全便捷')}</div>
+          </div>
+        </div>
+        <Space>
+          <Button
+            icon={<Receipt size={16} />}
+            theme='outline'
+            onClick={onOpenInvoices}
           >
-            <div className='py-2'>{topupContent}</div>
-          </TabPane>
-          {shouldShowSubscription ? (
+            {t('申请发票')}
+          </Button>
+          <Button
+            icon={<Receipt size={16} />}
+            theme='solid'
+            onClick={onOpenHistory}
+          >
+            {t('账单')}
+          </Button>
+        </Space>
+      </div>
+      <Card className='!rounded-xl w-full' cover={overview}>
+        {shouldShowTabs ? (
+          <Tabs type='card' activeKey={activeTab} onChange={setActiveTab}>
             <TabPane
               tab={
                 <div className='flex items-center gap-2'>
-                  <Sparkles size={16} />
-                  {t('订阅套餐')}
+                  <Wallet size={16} />
+                  {t('额度充值')}
                 </div>
               }
-              itemKey='subscription'
+              itemKey='topup'
             >
-              <div className='py-2'>
-                <SubscriptionPlansCard
-                  t={t}
-                  loading={subscriptionLoading}
-                  plans={subscriptionPlans}
-                  payMethods={payMethods}
-                  enableOnlineTopUp={enableOnlineTopUp}
-                  enableStripeTopUp={enableStripeTopUp}
-                  enableCreemTopUp={enableCreemTopUp}
-                  billingPreference={billingPreference}
-                  onChangeBillingPreference={onChangeBillingPreference}
-                  activeSubscriptions={activeSubscriptions}
-                  activeQuantityByPlan={activeQuantityByPlan}
-                  allSubscriptions={allSubscriptions}
-                  reloadSubscriptionSelf={reloadSubscriptionSelf}
-                  withCard={false}
-                />
-              </div>
+              <div className='py-2'>{topupContent}</div>
             </TabPane>
-          ) : null}
-        </Tabs>
-      ) : (
-        topupContent
-      )}
+            {shouldShowSubscription ? (
+              <TabPane
+                tab={
+                  <div className='flex items-center gap-2'>
+                    <Sparkles size={16} />
+                    {t('订阅套餐')}
+                  </div>
+                }
+                itemKey='subscription'
+              >
+                <div className='py-2'>
+                  <SubscriptionPlansCard
+                    t={t}
+                    loading={subscriptionLoading}
+                    plans={subscriptionPlans}
+                    payMethods={payMethods}
+                    enableOnlineTopUp={enableOnlineTopUp}
+                    enableStripeTopUp={enableStripeTopUp}
+                    enableCreemTopUp={enableCreemTopUp}
+                    billingPreference={billingPreference}
+                    onChangeBillingPreference={onChangeBillingPreference}
+                    activeSubscriptions={activeSubscriptions}
+                    activeQuantityByPlan={activeQuantityByPlan}
+                    allSubscriptions={allSubscriptions}
+                    reloadSubscriptionSelf={reloadSubscriptionSelf}
+                    withCard={false}
+                  />
+                </div>
+              </TabPane>
+            ) : null}
+          </Tabs>
+        ) : (
+          topupContent
+        )}
+      </Card>
     </Card>
   );
 };
