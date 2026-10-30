@@ -49,7 +49,6 @@ const routerMap = {
   task: '/console/task',
   models: '/console/models',
   deployment: '/console/deployment',
-  playground: '/console/playground',
   imagePlayground: '/console/image-playground',
   personal: '/console/personal',
   pulse: '/console/pulse',
@@ -259,11 +258,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   const chatMenuItems = useMemo(() => {
     const items = [
-      {
-        text: t('模型体验'),
-        itemKey: 'playground',
-        to: '/playground',
-      },
       {
         text: t('元衡生图'),
         itemKey: 'imagePlayground',
@@ -541,7 +535,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           }}
         >
           {/* 聊天区域 */}
-          {hasSectionVisibleModules('chat') && (
+          {chatMenuItems.length > 0 && (
             <div className='sidebar-section'>
               {!collapsed && (
                 <div className='sidebar-group-label'>{t('聊天')}</div>

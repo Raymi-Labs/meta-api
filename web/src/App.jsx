@@ -26,7 +26,12 @@ import {
   useParams,
 } from 'react-router-dom';
 import Loading from './components/common/ui/Loading';
-import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers/auth';
+import {
+  AuthRedirect,
+  PrivateRoute,
+  AdminRoute,
+  buildAuthPathWithNext,
+} from './helpers/auth';
 import NotFound from './pages/NotFound';
 import Forbidden from './pages/Forbidden';
 import { StatusContext } from './context/Status';
@@ -235,7 +240,21 @@ function App() {
         <Route
           path='/console/playground'
           element={
-            <PrivateRoute>
+            <Navigate
+              to={`/playground${location.search}${location.hash}`}
+              replace
+            />
+          }
+        />
+        <Route
+          path='/playground'
+          element={
+            <PrivateRoute
+              loginPath={buildAuthPathWithNext(
+                '/login',
+                `${location.pathname}${location.search}${location.hash}`,
+              )}
+            >
               <Suspense fallback={<Loading></Loading>} key={location.pathname}>
                 <Playground />
               </Suspense>

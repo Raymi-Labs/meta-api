@@ -33,8 +33,9 @@ mock.module('react-router-dom', () => ({
 }));
 mock.module('../src/helpers/history', () => ({ history: { location: {} } }));
 let AuthRedirect;
+let PrivateRoute;
 beforeAll(async () => {
-  ({ AuthRedirect } = await import('../src/helpers/auth'));
+  ({ AuthRedirect, PrivateRoute } = await import('../src/helpers/auth'));
 });
 
 const originalWindow = globalThis.window;
@@ -100,5 +101,35 @@ test('anonymous visitors retain the login form', () => {
   assert.equal(
     renderGuard('/login?next=%2Fenterprise', '', false),
     '<span>Login form</span>',
+  );
+});
+
+test('playground direct entry carries the canonical URL through login and back', () => {
+  const target = '/playground?model=test#chat';
+  const loginPath = `/login?next=${encodeURIComponent(target)}`;
+  globalThis.localStorage = { getItem: () => null };
+  assert.equal(
+    renderToStaticMarkup(
+      <StaticRouter location={target}>
+        <PrivateRoute loginPath={loginPath}>
+          <span>Playground</span>
+        </PrivateRoute>
+      </StaticRouter>,
+    ),
+    `<a href="${loginPath}" data-replace="undefined"></a>`,
+  );
+  assert.equal(
+    renderGuard(loginPath, '', true),
+    '<a href="/playground?model=test#chat" data-replace="true"></a>',
+  );
+  assert.equal(
+    renderToStaticMarkup(
+      <StaticRouter location={target}>
+        <PrivateRoute loginPath={loginPath}>
+          <span>Playground</span>
+        </PrivateRoute>
+      </StaticRouter>,
+    ),
+    '<span>Playground</span>',
   );
 });

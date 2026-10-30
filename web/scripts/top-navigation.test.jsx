@@ -95,7 +95,7 @@ test('desktop and mobile navigation render only the requested five entries in or
       links.map((link) => link.href),
       [
         '/pricing',
-        login('/console/playground'),
+        login('/playground'),
         '/enterprise',
         '/docs',
         login('/console'),
@@ -118,7 +118,7 @@ test('public navigation data and rendered console navigation preserve the same p
     );
     for (const [index, path] of [
       [0, '/pricing'],
-      [1, '/console/playground'],
+      [1, '/playground'],
       [4, '/console'],
     ]) {
       assert.equal(consoleLinks[index].href, user ? path : login(path));

@@ -77,7 +77,7 @@ const PublicFooter = ({
         },
         modules.console && {
           text: '模型体验',
-          to: protectedPath('/console/playground'),
+          to: protectedPath('/playground'),
         },
         modules.console && {
           text: 'AI 图像创作',
