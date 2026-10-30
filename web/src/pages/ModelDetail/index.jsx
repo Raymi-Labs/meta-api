@@ -34,7 +34,6 @@ import ModelGroupRows from './ModelGroupRows';
 import ModelAnalytics from './ModelAnalytics';
 import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
 import ModelAttributes from './ModelAttributes';
-import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
@@ -67,9 +66,12 @@ export default function ModelDetail() {
     setOfficialTierIndex(0);
   }, [location.pathname]);
   useLayoutEffect(() => {
-    if (model?.model_name && location.hash === '#endpoints') {
+    if (
+      model?.model_name &&
+      ['#quick-start', '#endpoints'].includes(location.hash)
+    ) {
       pageRef.current
-        ?.querySelector('#endpoints')
+        ?.querySelector('#quick-start')
         ?.scrollIntoView({ block: 'start' });
     }
   }, [model?.model_name, location.hash]);
@@ -166,7 +168,6 @@ export default function ModelDetail() {
     ['performance', '性能对比'],
     ['usage', '分组用量'],
     ['quick-start', '快速开始'],
-    ['endpoints', 'API端点'],
     ...(related.length ? [['related', '同厂商模型']] : []),
     ...(model.faq?.length ? [['faq', '常见问题']] : []),
   ];
@@ -391,16 +392,10 @@ export default function ModelDetail() {
             <h2>{t('快速开始')}</h2>
             <ModelQuickStart
               modelData={model}
+              initialEndpoint={location.state?.quickStartEndpoint}
               serverAddress={data.statusState?.status?.server_address}
               t={t}
               copyText={data.copyText}
-            />
-          </section>
-          <section id='endpoints' className='model-detail-section'>
-            <ModelEndpoints
-              modelData={model}
-              endpointMap={data.endpointMap}
-              t={t}
             />
           </section>
           {related.length > 0 && (

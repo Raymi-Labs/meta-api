@@ -98,6 +98,10 @@ try {
     await page.waitForSelector(
       'article[aria-label="gpt-chat-fixture"] .model-protocol-template',
     );
+    assert.equal(
+      await page.$eval('body', (el) => el.getAttribute('theme-mode') === 'dark'),
+      mobile,
+    );
     const card = await page.$eval(
       'article[aria-label="gpt-chat-fixture"]',
       (el) => el.innerText,
@@ -171,31 +175,25 @@ try {
     await page.click(
       'article[aria-label="gpt-chat-fixture"] .model-protocol-template',
     );
-    await page.waitForSelector(
-      '#endpoints [data-protocol="openai-response"][data-declared="false"]',
+    await page.waitForSelector('#quick-start .model-quickstart pre');
+    assert.match(page.url(), /\/model\/gpt-chat-fixture#quick-start$/);
+    assert.equal(await page.$('#endpoints'), null);
+    assert.doesNotMatch(
+      await page.$eval('.model-detail-sections', (el) => el.innerText),
+      /API端点/,
     );
-    assert.match(page.url(), /\/model\/gpt-chat-fixture#endpoints$/);
     assert.match(
-      await page.$eval('#endpoints', (el) => el.innerText),
-      /未声明不等于不支持/,
+      await page.$eval('#quick-start', (el) => el.innerText),
+      /该模型尚未声明支持此协议/,
     );
     assert.equal(
-      await page.$eval(
-        '#endpoints [data-protocol="openai"]',
-        (el) => el.dataset.declared,
-      ),
-      'true',
+      await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
+      'openai-response',
     );
-    const path = await page.$eval(
-      '#endpoints [data-protocol="openai-response"] code',
-      (el) => el.textContent,
-    );
-    assert.equal(path, '/v1/responses');
     if (screenshotDir)
       await page.screenshot({
-        path: `${screenshotDir}/endpoints-${mobile ? 'mobile' : 'desktop'}.png`,
+        path: `${screenshotDir}/quick-start-${mobile ? 'mobile' : 'desktop'}.png`,
       });
-    await page.select('select[aria-label="接口协议"]', 'openai-response');
     await page.waitForFunction(() =>
       document
         .querySelector('.model-quickstart pre')
@@ -217,6 +215,26 @@ try {
     assert.equal(
       await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
       'openai-response',
+    );
+    await page.select('select[aria-label="接口协议"]', 'openai');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-quickstart pre')
+        ?.textContent.includes('/v1/chat/completions'),
+    );
+    assert.equal(await page.$('.model-quickstart-note[role="status"]'), null);
+    await page.goto(baseURL + '/model/gpt-chat-fixture#endpoints');
+    await page.waitForSelector('#quick-start .model-quickstart pre');
+    await page.waitForFunction(() => {
+      const heading = document.querySelector('#quick-start h2');
+      const top = heading.getBoundingClientRect().top;
+      return top >= 0 && top < window.innerHeight / 2;
+    });
+    assert.equal(await page.$('#endpoints'), null);
+    assert.equal(
+      await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
+      'openai',
+      'legacy endpoint links retain the declared protocol default',
     );
     assert.equal(
       await page.evaluate(

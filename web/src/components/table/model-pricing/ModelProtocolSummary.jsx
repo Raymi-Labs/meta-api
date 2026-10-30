@@ -47,8 +47,8 @@ const ModelProtocolSummary = ({ model, catalogState, t }) => {
       )}
       {showResponsesExample && (
         <Link
-          to={`${buildModelDetailPath(model.model_name)}#endpoints`}
-          state={{ catalogState }}
+          to={`${buildModelDetailPath(model.model_name)}#quick-start`}
+          state={{ catalogState, quickStartEndpoint: 'openai-response' }}
           className='model-protocol-template'
           title={t('该模型尚未声明支持此协议，请先确认所用分组的接口配置。')}
           onClick={(event) => event.stopPropagation()}
