@@ -16,6 +16,7 @@ import (
 )
 
 func TestPricingVendorSurvivesCapabilityMetadataCreation(t *testing.T) {
+	isolateOfficialAttributeRequests(t)
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 	sqlDB, err := db.DB()

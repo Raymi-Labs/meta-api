@@ -15,34 +15,37 @@ import (
 )
 
 type Pricing struct {
-	OfficialPricing          OfficialPricing         `json:"official_pricing"`
-	ModelName                string                  `json:"model_name"`
-	DisplayName              string                  `json:"display_name"`
-	ReleaseDate              string                  `json:"release_date"`
-	ContextLength            int64                   `json:"context_length"`
-	InputModalities          ModelModalities         `json:"input_modalities"`
-	OutputModalities         ModelModalities         `json:"output_modalities"`
-	Description              string                  `json:"description,omitempty"`
-	Icon                     string                  `json:"icon,omitempty"`
-	Tags                     string                  `json:"tags,omitempty"`
-	VendorID                 int                     `json:"vendor_id,omitempty"`
-	QuotaType                int                     `json:"quota_type"`
-	ModelRatio               float64                 `json:"model_ratio"`
-	ModelPrice               float64                 `json:"model_price"`
-	AudioDurationPrice       float64                 `json:"audio_duration_price"`
-	OwnerBy                  string                  `json:"owner_by"`
-	CompletionRatio          float64                 `json:"completion_ratio"`
-	SupportsCacheRead        bool                    `json:"supports_cache_read"`
-	CacheRatio               float64                 `json:"cache_ratio"`
-	SupportsCacheCreation    bool                    `json:"supports_cache_creation"`
-	CacheCreationRatio       float64                 `json:"cache_creation_ratio"`
-	SupportsCacheCreationTTL bool                    `json:"supports_cache_creation_ttl"`
-	CacheCreationRatio1h     float64                 `json:"cache_creation_ratio_1h"`
-	EnableGroup              []string                `json:"enable_groups"`
-	SupportedEndpointTypes   []constant.EndpointType `json:"supported_endpoint_types"`
-	BillingMode              string                  `json:"billing_mode,omitempty"`
-	BillingExpr              string                  `json:"billing_expr,omitempty"`
-	PricingVersion           string                  `json:"pricing_version,omitempty"`
+	OfficialPricing          OfficialPricing                 `json:"official_pricing"`
+	ModelName                string                          `json:"model_name"`
+	DisplayName              string                          `json:"display_name"`
+	ReleaseDate              string                          `json:"release_date"`
+	MaxOutputTokens          int64                           `json:"max_output_tokens"`
+	Capabilities             ModelCapabilities               `json:"capabilities"`
+	AttributeSources         map[string]ModelAttributeSource `json:"attribute_sources,omitempty"`
+	ContextLength            int64                           `json:"context_length"`
+	InputModalities          ModelModalities                 `json:"input_modalities"`
+	OutputModalities         ModelModalities                 `json:"output_modalities"`
+	Description              string                          `json:"description,omitempty"`
+	Icon                     string                          `json:"icon,omitempty"`
+	Tags                     string                          `json:"tags,omitempty"`
+	VendorID                 int                             `json:"vendor_id,omitempty"`
+	QuotaType                int                             `json:"quota_type"`
+	ModelRatio               float64                         `json:"model_ratio"`
+	ModelPrice               float64                         `json:"model_price"`
+	AudioDurationPrice       float64                         `json:"audio_duration_price"`
+	OwnerBy                  string                          `json:"owner_by"`
+	CompletionRatio          float64                         `json:"completion_ratio"`
+	SupportsCacheRead        bool                            `json:"supports_cache_read"`
+	CacheRatio               float64                         `json:"cache_ratio"`
+	SupportsCacheCreation    bool                            `json:"supports_cache_creation"`
+	CacheCreationRatio       float64                         `json:"cache_creation_ratio"`
+	SupportsCacheCreationTTL bool                            `json:"supports_cache_creation_ttl"`
+	CacheCreationRatio1h     float64                         `json:"cache_creation_ratio_1h"`
+	EnableGroup              []string                        `json:"enable_groups"`
+	SupportedEndpointTypes   []constant.EndpointType         `json:"supported_endpoint_types"`
+	BillingMode              string                          `json:"billing_mode,omitempty"`
+	BillingExpr              string                          `json:"billing_expr,omitempty"`
+	PricingVersion           string                          `json:"pricing_version,omitempty"`
 }
 
 type PricingVendor struct {
@@ -330,6 +333,9 @@ func updatePricing() {
 			if meta.NameRule == NameRuleExact && meta.ModelName == model && ValidModelReleaseDate(meta.ReleaseDate) {
 				pricing.ReleaseDate = meta.ReleaseDate
 			}
+			pricing.MaxOutputTokens = meta.MaxOutputTokens
+			pricing.Capabilities = meta.Capabilities.Clone()
+			pricing.AttributeSources = meta.DisplayAttributeSources()
 			pricing.ContextLength = meta.ContextLength
 			pricing.InputModalities = append(ModelModalities{}, meta.InputModalities...)
 			pricing.OutputModalities = append(ModelModalities{}, meta.OutputModalities...)

@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const capabilityTestCatalog = `{"native":{"id":"native","models":{"exact-model":{"id":"exact-model","release_date":"2026-10-24","limit":{"context":128000},"modalities":{"input":["image","text","text"],"output":["text"]}}}}}`
+const capabilityTestCatalog = `{"native":{"id":"native","models":{"exact-model":{"id":"exact-model","release_date":"2026-10-24","limit":{"context":128000,"output":32000},"reasoning":false,"tool_call":true,"modalities":{"input":["image","text","text"],"output":["text"]}}}}}`
 
 func TestParseModelCapabilitiesPriorityAndExactIDs(t *testing.T) {
 	entries, err := parseModelCapabilities([]byte(`{
@@ -176,6 +176,7 @@ func TestSyncUpstreamCreatesModelsWithSyncEnabled(t *testing.T) {
 }
 
 func TestModelCapabilitySyncHandlerRefreshesPricingAndPreservesOnFailure(t *testing.T) {
+	isolateOfficialAttributeRequests(t)
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&model.Model{}, &model.Vendor{}, &model.Ability{}, &model.Channel{}))
@@ -271,4 +272,11 @@ func TestParseModelCapabilitiesReleaseDates(t *testing.T) {
 	require.Empty(t, entries["no-date"].ReleaseDate)
 	require.NotContains(t, entries, "invalid-only")
 	require.NotContains(t, entries, "missing-only", "last_updated is not a release date")
+}
+
+func TestCapabilityCatalogKeepsValidFieldsWithInvalidFlags(t *testing.T) {
+	entries, err := parseModelCapabilities([]byte(`{"provider":{"id":"provider","models":{"model":{"id":"model","limit":{"context":100000,"output":32000},"reasoning":"yes","tool_call":false,"structured_output":null}}}}`))
+	require.NoError(t, err)
+	require.EqualValues(t, 32000, entries["model"].MaxOutputTokens)
+	require.Equal(t, model.ModelCapabilities{"function_calling": false}, entries["model"].Capabilities)
 }

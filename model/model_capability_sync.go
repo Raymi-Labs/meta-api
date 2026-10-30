@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 
@@ -16,6 +17,9 @@ import (
 type ModelCapabilityMetadata struct {
 	ReleaseDate      string
 	ContextLength    int64
+	MaxOutputTokens  int64
+	Capabilities     ModelCapabilities
+	FieldSources     map[string]ModelAttributeSource
 	InputModalities  ModelModalities
 	OutputModalities ModelModalities
 	Provider         string
@@ -26,31 +30,37 @@ type ModelCapabilityMetadata struct {
 // Skipped counts matched records disabled for sync, non-exact rules, unchanged or
 // invalid metadata, and optimistic-update conflicts. Unrelated source entries do not count.
 type ModelCapabilitySyncResult struct {
-	Matched int `json:"matched"`
-	Updated int `json:"updated"`
-	Created int `json:"created"`
-	Skipped int `json:"skipped"`
+	SourceFailures int `json:"source_failures,omitempty"`
+	Matched        int `json:"matched"`
+	Updated        int `json:"updated"`
+	Created        int `json:"created"`
+	Skipped        int `json:"skipped"`
 }
 
 type modelCapabilityState struct {
-	Version          int             `json:"version"`
-	Source           string          `json:"source"`
-	Provider         string          `json:"provider,omitempty"`
-	SyncedAt         int64           `json:"synced_at"`
-	ReleaseDate      *string         `json:"release_date,omitempty"`
-	ContextLength    *int64          `json:"context_length,omitempty"`
-	InputModalities  ModelModalities `json:"input_modalities,omitempty"`
-	OutputModalities ModelModalities `json:"output_modalities,omitempty"`
+	Version          int                             `json:"version"`
+	Source           string                          `json:"source"`
+	Provider         string                          `json:"provider,omitempty"`
+	SyncedAt         int64                           `json:"synced_at"`
+	ReleaseDate      *string                         `json:"release_date,omitempty"`
+	MaxOutputTokens  *int64                          `json:"max_output_tokens,omitempty"`
+	Capabilities     ModelCapabilities               `json:"capabilities,omitempty"`
+	FieldSources     map[string]ModelAttributeSource `json:"field_sources,omitempty"`
+	ContextLength    *int64                          `json:"context_length,omitempty"`
+	InputModalities  ModelModalities                 `json:"input_modalities,omitempty"`
+	OutputModalities ModelModalities                 `json:"output_modalities,omitempty"`
 }
 
 // Preserve SQL NULL and legacy serialization exactly for optimistic comparisons.
 type modelCapabilitySnapshot struct {
 	Model
-	ReleaseSnapshot sql.NullString `gorm:"column:capability_release_snapshot"`
-	ContextSnapshot sql.NullInt64  `gorm:"column:capability_context_snapshot"`
-	InputSnapshot   sql.NullString `gorm:"column:capability_input_snapshot"`
-	OutputSnapshot  sql.NullString `gorm:"column:capability_output_snapshot"`
-	StateSnapshot   sql.NullString `gorm:"column:capability_state_snapshot"`
+	ReleaseSnapshot      sql.NullString `gorm:"column:capability_release_snapshot"`
+	MaxOutputSnapshot    sql.NullInt64  `gorm:"column:capability_max_output_snapshot"`
+	CapabilitiesSnapshot sql.NullString `gorm:"column:capability_flags_snapshot"`
+	ContextSnapshot      sql.NullInt64  `gorm:"column:capability_context_snapshot"`
+	InputSnapshot        sql.NullString `gorm:"column:capability_input_snapshot"`
+	OutputSnapshot       sql.NullString `gorm:"column:capability_output_snapshot"`
+	StateSnapshot        sql.NullString `gorm:"column:capability_state_snapshot"`
 }
 
 func validCapabilityContext(value int64) bool { return value > 0 && value <= 9007199254740991 }
@@ -77,6 +87,12 @@ func readModelCapabilityState(raw string) modelCapabilityState {
 	if state.ContextLength != nil && !validCapabilityContext(*state.ContextLength) {
 		return modelCapabilityState{}
 	}
+	if state.MaxOutputTokens != nil && !validCapabilityContext(*state.MaxOutputTokens) {
+		return modelCapabilityState{}
+	}
+	if state.Capabilities.Validate() != nil {
+		return modelCapabilityState{}
+	}
 	for _, values := range []ModelModalities{state.InputModalities, state.OutputModalities} {
 		if len(values) > 0 && !slices.Equal(values, validCapabilityModalities(values)) {
 			return modelCapabilityState{}
@@ -89,45 +105,110 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	state := readModelCapabilityState(local.ModelCapabilitySyncState)
 	changes := map[string]interface{}{}
 	released, applied := false, false
+	previousSources := maps.Clone(state.FieldSources)
+	if state.FieldSources == nil {
+		state.FieldSources = map[string]ModelAttributeSource{}
+	}
+	incomingSource := func(key string) ModelAttributeSource {
+		if v, ok := entry.FieldSources[key]; ok {
+			return v
+		}
+		return ModelAttributeSource{Kind: "community", URL: source}
+	}
+	allowed := func(key string) bool {
+		return state.FieldSources[key].Kind != "official" || incomingSource(key).Kind == "official"
+	}
+	release := func(key string) { delete(state.FieldSources, key); released = true }
+	appliedField := func(key string) { state.FieldSources[key] = incomingSource(key); applied = true }
 	if state.ReleaseDate != nil && local.ReleaseDate != *state.ReleaseDate {
-		state.ReleaseDate, released = nil, true
+		state.ReleaseDate = nil
+		release("release_date")
 	}
 	if state.ContextLength != nil && local.ContextLength != *state.ContextLength {
-		state.ContextLength, released = nil, true
+		state.ContextLength = nil
+		release("context_length")
+	}
+	if state.MaxOutputTokens != nil && local.MaxOutputTokens != *state.MaxOutputTokens {
+		state.MaxOutputTokens = nil
+		release("max_output_tokens")
 	}
 	if len(state.InputModalities) > 0 && !slices.Equal(local.InputModalities, state.InputModalities) {
-		state.InputModalities, released = nil, true
+		state.InputModalities = nil
+		release("input_modalities")
 	}
 	if len(state.OutputModalities) > 0 && !slices.Equal(local.OutputModalities, state.OutputModalities) {
-		state.OutputModalities, released = nil, true
+		state.OutputModalities = nil
+		release("output_modalities")
 	}
-	if ValidModelReleaseDate(entry.ReleaseDate) && (local.ReleaseDate == "" || state.ReleaseDate != nil) {
+	for key, value := range state.Capabilities {
+		if current, ok := local.Capabilities[key]; !ok || current != value {
+			delete(state.Capabilities, key)
+			release("capabilities." + key)
+		}
+	}
+	if ValidModelReleaseDate(entry.ReleaseDate) && (local.ReleaseDate == "" || state.ReleaseDate != nil) && allowed("release_date") {
 		if local.ReleaseDate != entry.ReleaseDate {
 			changes["release_date"] = entry.ReleaseDate
 		}
 		value := entry.ReleaseDate
-		state.ReleaseDate, applied = &value, true
+		state.ReleaseDate = &value
+		appliedField("release_date")
 	}
-	if validCapabilityContext(entry.ContextLength) && (local.ContextLength == 0 || state.ContextLength != nil) {
-		if local.ContextLength != entry.ContextLength {
-			changes["context_length"] = entry.ContextLength
+	for _, field := range []struct {
+		key               string
+		current, incoming int64
+		owned             **int64
+	}{
+		{"context_length", local.ContextLength, entry.ContextLength, &state.ContextLength},
+		{"max_output_tokens", local.MaxOutputTokens, entry.MaxOutputTokens, &state.MaxOutputTokens},
+	} {
+		if validCapabilityContext(field.incoming) && (field.current == 0 || *field.owned != nil) && allowed(field.key) {
+			if field.current != field.incoming {
+				changes[field.key] = field.incoming
+			}
+			value := field.incoming
+			*field.owned = &value
+			appliedField(field.key)
 		}
-		value := entry.ContextLength
-		state.ContextLength, applied = &value, true
 	}
-	if values := validCapabilityModalities(entry.InputModalities); len(values) > 0 && (len(local.InputModalities) == 0 || len(state.InputModalities) > 0) {
-		if !slices.Equal(local.InputModalities, values) {
-			changes["input_modalities"] = values
+	for _, field := range []struct {
+		key               string
+		current, incoming ModelModalities
+		owned             *ModelModalities
+	}{
+		{"input_modalities", local.InputModalities, entry.InputModalities, &state.InputModalities},
+		{"output_modalities", local.OutputModalities, entry.OutputModalities, &state.OutputModalities},
+	} {
+		if value := validCapabilityModalities(field.incoming); len(value) > 0 && (len(field.current) == 0 || len(*field.owned) > 0) && allowed(field.key) {
+			if !slices.Equal(field.current, value) {
+				changes[field.key] = value
+			}
+			*field.owned = value
+			appliedField(field.key)
 		}
-		state.InputModalities, applied = values, true
 	}
-	if values := validCapabilityModalities(entry.OutputModalities); len(values) > 0 && (len(local.OutputModalities) == 0 || len(state.OutputModalities) > 0) {
-		if !slices.Equal(local.OutputModalities, values) {
-			changes["output_modalities"] = values
+	if entry.Capabilities.Validate() == nil {
+		values := local.Capabilities.Clone()
+		if values == nil {
+			values = ModelCapabilities{}
 		}
-		state.OutputModalities, applied = values, true
+		if state.Capabilities == nil {
+			state.Capabilities = ModelCapabilities{}
+		}
+		for key, value := range entry.Capabilities {
+			_, configured := local.Capabilities[key]
+			_, owned := state.Capabilities[key]
+			if (!configured || owned) && allowed("capabilities."+key) {
+				values[key] = value
+				state.Capabilities[key] = value
+				appliedField("capabilities." + key)
+			}
+		}
+		if !maps.Equal(values, local.Capabilities) {
+			changes["capabilities"] = values
+		}
 	}
-	provenanceChanged := applied && (state.Source != source || state.Provider != entry.Provider)
+	provenanceChanged := applied && (state.Source != source || state.Provider != entry.Provider || !maps.Equal(previousSources, state.FieldSources))
 	if len(changes) == 0 && !released && !provenanceChanged {
 		return nil, nil
 	}
@@ -156,6 +237,8 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 		"sync_official": snapshot.SyncOfficial, "name_rule": NameRuleExact,
 		"release_date":                snapshot.ReleaseSnapshot,
 		"context_length":              snapshot.ContextSnapshot,
+		"max_output_tokens":           snapshot.MaxOutputSnapshot,
+		"capabilities":                snapshot.CapabilitiesSnapshot,
 		"input_modalities":            snapshot.InputSnapshot,
 		"output_modalities":           snapshot.OutputSnapshot,
 		"model_capability_sync_state": snapshot.StateSnapshot,
@@ -166,6 +249,7 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 		query = query.Where("BINARY model_name = BINARY ?", snapshot.ModelName)
 		for column, value := range map[string]sql.NullString{
 			"release_date":     snapshot.ReleaseSnapshot,
+			"capabilities":     snapshot.CapabilitiesSnapshot,
 			"input_modalities": snapshot.InputSnapshot, "output_modalities": snapshot.OutputSnapshot,
 			"model_capability_sync_state": snapshot.StateSnapshot,
 		} {
@@ -232,7 +316,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		return result, nil
 	}
 	var rows []modelCapabilitySnapshot
-	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
+	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
 	if err != nil {
 		return result, err
 	}
@@ -292,6 +376,12 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		}
 		if value, ok := changes["context_length"].(int64); ok {
 			fresh.ContextLength = value
+		}
+		if value, ok := changes["max_output_tokens"].(int64); ok {
+			fresh.MaxOutputTokens = value
+		}
+		if value, ok := changes["capabilities"].(ModelCapabilities); ok {
+			fresh.Capabilities = value
 		}
 		if value, ok := changes["input_modalities"].(ModelModalities); ok {
 			fresh.InputModalities = value

@@ -343,7 +343,7 @@ func TestModelCapabilitySyncDatabaseCompatibility(t *testing.T) {
 			require.Equal(t, 1, result.Updated)
 			require.EqualValues(t, 256000, readCapabilityModel(t, m.Id).ContextLength)
 			var snapshot modelCapabilitySnapshot
-			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
 			require.NoError(t, db.Model(&m).Update("context_length", 42000).Error)
 			changed, err := applyModelCapabilitySnapshot(context.Background(), snapshot, capabilityEntry(512000), "source")
 			require.NoError(t, err)
@@ -403,7 +403,7 @@ func TestModelReleaseDateSyncOwnershipAndDatabaseCompatibility(t *testing.T) {
 				require.Equal(t, saved.ModelCapabilitySyncState, readCapabilityModel(t, m.Id).ModelCapabilitySyncState)
 			}
 			var snapshot modelCapabilitySnapshot
-			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
 			require.NoError(t, db.Model(&m).Update("release_date", "2026-10-25").Error)
 			entry.ReleaseDate = "2026-10-26"
 			changed, err := applyModelCapabilitySnapshot(context.Background(), snapshot, entry, "source")

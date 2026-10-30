@@ -100,6 +100,12 @@ func (m *Model) NormalizeDisplayMetadata() error {
 		return fmt.Errorf("显示名称不能超过 128 个字符")
 	}
 	// Keep numeric values exact in the browser as well as the SQL bigint column.
+	if m.MaxOutputTokens < 0 || m.MaxOutputTokens > 9007199254740991 {
+		return fmt.Errorf("最大输出必须是非负安全整数")
+	}
+	if err := m.Capabilities.Validate(); err != nil {
+		return err
+	}
 	if m.ContextLength < 0 || m.ContextLength > 9007199254740991 {
 		return fmt.Errorf("上下文长度必须是非负安全整数")
 	}

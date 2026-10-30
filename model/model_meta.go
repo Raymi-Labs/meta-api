@@ -22,24 +22,27 @@ type BoundChannel struct {
 }
 
 type Model struct {
-	OfficialPricing  OfficialPricing `json:"official_pricing" gorm:"type:text"`
-	Id               int             `json:"id"`
-	ModelName        string          `json:"model_name" gorm:"size:128;not null;uniqueIndex:uk_model_name_delete_at,priority:1"`
-	DisplayName      string          `json:"display_name" gorm:"type:varchar(128)"`
-	ReleaseDate      string          `json:"release_date" gorm:"type:varchar(10);default:''"`
-	ContextLength    int64           `json:"context_length" gorm:"type:bigint;default:0"`
-	InputModalities  ModelModalities `json:"input_modalities" gorm:"type:text"`
-	OutputModalities ModelModalities `json:"output_modalities" gorm:"type:text"`
-	Description      string          `json:"description,omitempty" gorm:"type:text"`
-	Icon             string          `json:"icon,omitempty" gorm:"type:varchar(128)"`
-	Tags             string          `json:"tags,omitempty" gorm:"type:varchar(255)"`
-	VendorID         int             `json:"vendor_id,omitempty" gorm:"index"`
-	Endpoints        string          `json:"endpoints,omitempty" gorm:"type:text"`
-	Status           int             `json:"status" gorm:"default:1"`
-	SyncOfficial     int             `json:"sync_official" gorm:"default:1"`
-	CreatedTime      int64           `json:"created_time" gorm:"bigint"`
-	UpdatedTime      int64           `json:"updated_time" gorm:"bigint"`
-	DeletedAt        gorm.DeletedAt  `json:"-" gorm:"index;uniqueIndex:uk_model_name_delete_at,priority:2"`
+	OfficialPricing  OfficialPricing                 `json:"official_pricing" gorm:"type:text"`
+	Id               int                             `json:"id"`
+	ModelName        string                          `json:"model_name" gorm:"size:128;not null;uniqueIndex:uk_model_name_delete_at,priority:1"`
+	DisplayName      string                          `json:"display_name" gorm:"type:varchar(128)"`
+	ReleaseDate      string                          `json:"release_date" gorm:"type:varchar(10);default:''"`
+	MaxOutputTokens  int64                           `json:"max_output_tokens" gorm:"type:bigint;default:0"`
+	Capabilities     ModelCapabilities               `json:"capabilities" gorm:"type:text"`
+	AttributeSources map[string]ModelAttributeSource `json:"attribute_sources,omitempty" gorm:"-"`
+	ContextLength    int64                           `json:"context_length" gorm:"type:bigint;default:0"`
+	InputModalities  ModelModalities                 `json:"input_modalities" gorm:"type:text"`
+	OutputModalities ModelModalities                 `json:"output_modalities" gorm:"type:text"`
+	Description      string                          `json:"description,omitempty" gorm:"type:text"`
+	Icon             string                          `json:"icon,omitempty" gorm:"type:varchar(128)"`
+	Tags             string                          `json:"tags,omitempty" gorm:"type:varchar(255)"`
+	VendorID         int                             `json:"vendor_id,omitempty" gorm:"index"`
+	Endpoints        string                          `json:"endpoints,omitempty" gorm:"type:text"`
+	Status           int                             `json:"status" gorm:"default:1"`
+	SyncOfficial     int                             `json:"sync_official" gorm:"default:1"`
+	CreatedTime      int64                           `json:"created_time" gorm:"bigint"`
+	UpdatedTime      int64                           `json:"updated_time" gorm:"bigint"`
+	DeletedAt        gorm.DeletedAt                  `json:"-" gorm:"index;uniqueIndex:uk_model_name_delete_at,priority:2"`
 
 	ModelCapabilitySyncState string `json:"-" gorm:"type:text"`
 
@@ -101,7 +104,7 @@ func (mi *Model) Update() error {
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return DB.Model(&Model{}).Where("id = ?", mi.Id).
-		Select("official_pricing", "model_name", "display_name", "release_date", "context_length", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
+		Select("official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
 		Updates(mi).Error
 }
 

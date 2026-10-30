@@ -70,6 +70,35 @@ const pricing = {
       ...modelDefaults,
       model_name: 'friendly-id',
       display_name: 'GPT 6 Astra',
+      context_length: 1050000,
+      max_output_tokens: 128000,
+      input_modalities: ['text', 'image'],
+      output_modalities: ['text'],
+      capabilities: {
+        reasoning: true,
+        streaming: true,
+        function_calling: true,
+        web_search: true,
+        code_interpreter: true,
+        computer_use: true,
+        file_search: true,
+        structured_output: true,
+        memory: false,
+      },
+      attribute_sources: {
+        context_length: {
+          kind: 'official',
+          url: 'https://developers.openai.com/api/docs/models/gpt-6-astra',
+        },
+        max_output_tokens: {
+          kind: 'community',
+          url: 'https://basellm.github.io/llm-metadata',
+        },
+        'capabilities.reasoning': {
+          kind: 'official',
+          url: 'https://developers.openai.com/api/docs/models/gpt-6-astra',
+        },
+      },
       icon: 'OpenAI',
       description:
         '界面验收数据：管理员可在模型管理中编辑此介绍，完整内容展示在顶部卡片。多档官方参考价与本站实际分组价格独立显示。',
@@ -306,6 +335,67 @@ try {
       waitUntil: 'networkidle0',
     });
     await page.waitForSelector('#official-pricing table');
+    const attributes = await page.$eval(
+      '#capabilities',
+      (el) => el.textContent,
+    );
+    assert.ok(
+      attributes.includes('1.05M tokens') && attributes.includes('128K tokens'),
+    );
+    assert.ok(
+      attributes.includes('厂商官方') &&
+        attributes.includes('模型库补全') &&
+        attributes.includes('人工配置'),
+    );
+    assert.equal(
+      await page.$eval('[data-capability="memory"]', (el) => el.dataset.status),
+      '不支持',
+    );
+    assert.equal(
+      await page.$eval(
+        '[data-capability="background"]',
+        (el) => el.dataset.status,
+      ),
+      '未知',
+    );
+    assert.equal(
+      await page.$eval(
+        '[data-capability="reasoning"]',
+        (el) => el.dataset.status,
+      ),
+      '支持',
+    );
+    assert.equal(
+      await page.evaluate(() => {
+        const a = document.querySelector('#capabilities'),
+          p = document.querySelector('#pricing');
+        return (
+          !p.contains(a) &&
+          a.getBoundingClientRect().top >= p.getBoundingClientRect().bottom
+        );
+      }),
+      true,
+    );
+    if (!dark)
+      assert.equal(
+        await page.$$eval(
+          '.model-attribute-column',
+          (els) =>
+            new Set(els.map((el) => Math.round(el.getBoundingClientRect().top)))
+              .size,
+        ),
+        1,
+      );
+    await page.$eval('#capabilities', (el) =>
+      el.scrollIntoView({ block: 'start' }),
+    );
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'attributes-mobile-dark.png' : 'attributes-desktop.png',
+      ),
+    });
+
     const official = await page.$eval(
       '#official-pricing',
       (el) => el.textContent,
@@ -485,6 +575,20 @@ try {
   };
   await fill('input[aria-label="输入 1"]', '12');
   await fill('textarea#description', '后台保存后的完整介绍');
+  await fill('input#max_output_tokens', '64000');
+  await page.click('[aria-labelledby="capability-label-streaming"]');
+  await page.waitForSelector('.semi-select-option');
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.semi-select-option')]
+      .find((el) => el.textContent.trim() === '不支持')
+      .click(),
+  );
+
+  await page.waitForFunction(() =>
+    document
+      .querySelector('[aria-labelledby="capability-label-streaming"]')
+      .textContent.includes('不支持'),
+  );
   await clickButton(page, '添加价格档位');
   await fill('input[aria-label="档位 3"]', '额外服务');
   await fill('input[aria-label="价格 3"]', '0.01');
@@ -497,6 +601,8 @@ try {
   assert.equal(writes[0].official_pricing.tiers[0].cache_read, 0);
   assert.equal(writes[0].official_pricing.tiers.length, 3);
   assert.equal(writes[0].description, '后台保存后的完整介绍');
+  assert.equal(writes[0].max_output_tokens, 64000);
+  assert.equal(writes[0].capabilities.streaming, false);
   await page.goto(`${baseURL}/model/friendly-id`, {
     waitUntil: 'networkidle0',
   });
@@ -513,12 +619,27 @@ try {
     waitUntil: 'networkidle0',
   });
   await page.waitForSelector('input[aria-label="输入 1"]');
+  await fill('input#max_output_tokens', '0');
+  await page.click('[aria-labelledby="capability-label-streaming"]');
+  await page.waitForSelector('.semi-select-option');
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.semi-select-option')]
+      .find((el) => el.textContent.trim() === '未知')
+      .click(),
+  );
+  await page.waitForFunction(() =>
+    document
+      .querySelector('[aria-labelledby="capability-label-streaming"]')
+      .textContent.includes('未知'),
+  );
   for (let i = 0; i < 3; i++) await clickButton(page, '删除');
   await clickButton(page, '提交');
   await page.waitForFunction(
     () => !document.querySelector('.semi-sidesheet-body'),
   );
   assert.equal(writes.at(-1).official_pricing.tiers.length, 0);
+  assert.equal(writes.at(-1).max_output_tokens, 0);
+  assert.ok(!('streaming' in writes.at(-1).capabilities));
   await page.goto(`${baseURL}/model/friendly-id`, {
     waitUntil: 'networkidle0',
   });
