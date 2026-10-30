@@ -18,36 +18,40 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Skeleton } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
-import { Wallet, CircleDollarSign, Activity, Hash } from 'lucide-react';
+import { Skeleton } from '@douyinfe/semi-ui';
+import { CircleDollarSign, Activity, Hash, Gauge, Coins } from 'lucide-react';
 
 const icons = {
-  account: Wallet,
   spend: CircleDollarSign,
   requests: Activity,
   tokens: Hash,
+  cache: Gauge,
+  'unit-price': Coins,
 };
 export default function StatsCards({
   groupedStatsData,
   loading,
   quotaError,
-  accountLoading,
-  accountError,
+  cacheLoading,
+  cacheError,
+  retryCache,
 }) {
   const { t } = useTranslation();
   return (
     <div className='dashboard-stat-grid'>
       {groupedStatsData.map((card) => {
         const Icon = icons[card.id];
-        const busy = card.id === 'account' ? accountLoading : loading;
-        const failed = card.id === 'account' ? accountError : quotaError;
+        const isCache = card.id === 'cache';
+        const busy = loading || (isCache && cacheLoading);
+        const failed = quotaError || (isCache && cacheError);
         return (
           <section
             className='dashboard-stat-card'
             key={card.id}
             aria-label={card.title}
             aria-busy={busy}
+            title={card.description}
           >
             <div className='dashboard-stat-heading'>
               <span>{card.title}</span>
@@ -64,18 +68,14 @@ export default function StatsCards({
                 {failed ? '—' : card.value}
               </Skeleton>
             </div>
-            <div className='dashboard-stat-scope'>
-              {t(card.id === 'account' ? '当前账户' : '选定时间范围')}
-            </div>
-            {card.secondary.length > 0 && (
-              <dl className='dashboard-stat-secondary'>
-                {card.secondary.map((item) => (
-                  <div key={item.label}>
-                    <dt>{item.label}</dt>
-                    <dd>{busy || failed ? '—' : item.value}</dd>
-                  </div>
-                ))}
-              </dl>
+            {isCache && cacheError && !busy && !quotaError && (
+              <button
+                className='dashboard-cache-retry'
+                type='button'
+                onClick={retryCache}
+              >
+                {t('加载失败，请重试')}
+              </button>
             )}
           </section>
         );

@@ -19,67 +19,49 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useMemo } from 'react';
 import { renderQuota } from '../../helpers/dashboardFormat';
+import { dashboardMetricValues } from '../../helpers/dashboardMetrics';
 
 export const useDashboardStats = (
-  userState,
   consumeQuota,
   consumeTokens,
   times,
-  performanceMetrics,
+  cacheRate,
   t,
 ) => {
-  const groupedStatsData = useMemo(
-    () => [
-      {
-        id: 'account',
-        title: t('当前余额'),
-        value:
-          userState?.user?.quota == null
-            ? '—'
-            : renderQuota(userState.user.quota),
-        secondary: [
-          {
-            label: t('历史消耗'),
-            value:
-              userState?.user?.used_quota == null
-                ? '—'
-                : renderQuota(userState.user.used_quota),
-          },
-          {
-            label: t('请求次数'),
-            value: userState?.user?.request_count?.toLocaleString() ?? '—',
-          },
-        ],
-      },
-      {
-        id: 'spend',
-        title: t('统计额度'),
-        value: renderQuota(consumeQuota),
-        secondary: [],
-      },
-      {
-        id: 'requests',
-        title: t('统计次数'),
-        value: Number(times || 0).toLocaleString(),
-        secondary: [{ label: t('平均RPM'), value: performanceMetrics.avgRPM }],
-      },
-      {
-        id: 'tokens',
-        title: t('统计Tokens'),
-        value: Number(consumeTokens || 0).toLocaleString(),
-        secondary: [{ label: t('平均TPM'), value: performanceMetrics.avgTPM }],
-      },
-    ],
-    [
-      userState?.user?.quota,
-      userState?.user?.used_quota,
-      userState?.user?.request_count,
+  const groupedStatsData = useMemo(() => {
+    const values = dashboardMetricValues(
       consumeQuota,
       consumeTokens,
       times,
-      performanceMetrics,
-      t,
-    ],
-  );
+      cacheRate,
+    );
+    const currency = (value) => (value == null ? '—' : renderQuota(value));
+    const number = (value) => (value == null ? '—' : value.toLocaleString());
+    return [
+      { id: 'spend', title: t('总消费'), value: currency(values.quota) },
+      { id: 'requests', title: t('请求数'), value: number(values.requests) },
+      { id: 'tokens', title: t('Token 用量'), value: number(values.tokens) },
+      {
+        id: 'cache',
+        title: t('缓存命中率'),
+        value:
+          values.cacheRate == null || values.tokens === 0
+            ? '—'
+            : `${(values.cacheRate * 100).toFixed(1)}%`,
+        description: t(
+          '缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。',
+        ),
+      },
+      {
+        id: 'unit-price',
+        title: t('每百万 Token 综合单价'),
+        value:
+          values.unitPrice == null ? '—' : renderQuota(values.unitPrice, 4),
+        description: t(
+          '总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。',
+        ),
+      },
+    ];
+  }, [consumeQuota, consumeTokens, times, cacheRate, t]);
   return { groupedStatsData };
 };

@@ -6642,6 +6642,11 @@
     "请选择有效的时间范围": "Wählen Sie einen gültigen Zeitraum",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filter gelten nach der Suche. Aktualisierung, Export und Zusammenfassungen verwenden die angewendeten Filter.",
     "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Ihre 5 letzten Zahlungen. Vollständige Einträge und Rechnungen finden Sie unter Abrechnung.",
-    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 übernimmt die globale Einstellung; Text ohne Streaming und Videoübermittlung bis 600 Sekunden. Streaming, Bilder und Hintergrundabfragen bleiben unverändert; Gesamt- und Proxy-Zeitlimits gelten weiter."
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 übernimmt die globale Einstellung; Text ohne Streaming und Videoübermittlung bis 600 Sekunden. Streaming, Bilder und Hintergrundabfragen bleiben unverändert; Gesamt- und Proxy-Zeitlimits gelten weiter.",
+    "总消费": "Gesamtausgaben",
+    "Token 用量": "Token-Verbrauch",
+    "每百万 Token 综合单价": "Durchschnittspreis je Million Tokens",
+    "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Aus dem Cache gelesene Tokens ÷ alle Eingabe-Tokens, anhand der gespeicherten Nutzungsprotokolle des gewählten Zeitraums.",
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Gesamtausgaben ÷ Token-Verbrauch × 1.000.000, anhand der Dashboard-Summen; kein Modell-Listenpreis."
   }
 }

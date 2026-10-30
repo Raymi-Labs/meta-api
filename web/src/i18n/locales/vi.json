@@ -7257,6 +7257,11 @@
     "请选择有效的时间范围": "Chọn khoảng thời gian hợp lệ",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Bộ lọc có hiệu lực sau khi tìm kiếm. Làm mới, xuất và tổng hợp dùng điều kiện đã áp dụng.",
     "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "5 khoản thanh toán gần nhất của bạn. Xem mục hóa đơn để biết đầy đủ lịch sử và hóa đơn.",
-    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 kế thừa cấu hình chung; văn bản không truyền luồng và gửi video tối đa 600 giây. Luồng, ảnh và truy vấn nền không đổi; giới hạn tổng và proxy vẫn áp dụng."
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 kế thừa cấu hình chung; văn bản không truyền luồng và gửi video tối đa 600 giây. Luồng, ảnh và truy vấn nền không đổi; giới hạn tổng và proxy vẫn áp dụng.",
+    "总消费": "Tổng chi phí",
+    "Token 用量": "Lượng token sử dụng",
+    "每百万 Token 综合单价": "Đơn giá trung bình mỗi triệu token",
+    "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Token đọc từ bộ nhớ đệm ÷ tổng token đầu vào, dựa trên nhật ký sử dụng còn lưu trong khoảng thời gian đã chọn.",
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Tổng chi phí ÷ lượng token sử dụng × 1.000.000, dựa trên số liệu tổng hợp của bảng điều khiển; đây không phải báo giá mô hình."
   }
 }
