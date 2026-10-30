@@ -6949,6 +6949,17 @@
     "请输入有效的函数工具数组，parameters 必须为 object schema。": "Enter a valid function tools array; parameters must be an object schema.",
     "调用策略": "Tool choice",
     "通过 reasoning_effort 请求，支持的档位由模型与渠道决定。": "Sends reasoning_effort; supported levels depend on the model and channel.",
-    "高": "High"
+    "高": "High",
+    "获取代码": "Get code",
+    "API 标准": "API standard",
+    "当前设置无法完整转换，请调整后复制。": "These settings cannot be fully converted. Adjust them before copying.",
+    "请先填写工具结果，再生成下一次请求。": "Enter the tool results before generating the next request.",
+    "尚无用户消息，代码使用 Hello! 示例。": "No user message yet. The code uses a Hello! example.",
+    "Messages 必须设置输出上限，示例使用 4096。": "Messages requires an output limit. This example uses 4096.",
+    "安装与运行": "Install and run",
+    "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Save the code as {{filename}}, replace the key, then run in a terminal:",
+    "先设置密钥，再粘贴上方 cURL 命令运行。": "Set your key first, then paste and run the cURL command above.",
+    "复制运行命令": "Copy run commands",
+    "以上命令适用于 macOS / Linux / WSL。": "These commands work on macOS / Linux / WSL."
   }
 }

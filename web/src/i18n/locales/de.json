@@ -6737,6 +6737,17 @@
     "请输入有效的函数工具数组，parameters 必须为 object schema。": "Gültiges Array von Funktionswerkzeugen eingeben; parameters muss ein Objektschema sein.",
     "调用策略": "Werkzeugauswahl",
     "通过 reasoning_effort 请求，支持的档位由模型与渠道决定。": "Sendet reasoning_effort; unterstützte Stufen hängen von Modell und Kanal ab.",
-    "高": "Hoch"
+    "高": "Hoch",
+    "获取代码": "Code abrufen",
+    "API 标准": "API-Standard",
+    "当前设置无法完整转换，请调整后复制。": "Diese Einstellungen können nicht vollständig konvertiert werden. Bitte vor dem Kopieren anpassen.",
+    "请先填写工具结果，再生成下一次请求。": "Geben Sie die Werkzeugergebnisse ein, bevor Sie die nächste Anfrage erzeugen.",
+    "尚无用户消息，代码使用 Hello! 示例。": "Noch keine Benutzernachricht. Der Code verwendet ein Hello!-Beispiel.",
+    "Messages 必须设置输出上限，示例使用 4096。": "Messages benötigt ein Ausgabelimit. Dieses Beispiel verwendet 4096.",
+    "安装与运行": "Installieren und ausführen",
+    "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Code als {{filename}} speichern, Schlüssel ersetzen und im Terminal ausführen:",
+    "先设置密钥，再粘贴上方 cURL 命令运行。": "Schlüssel setzen, dann den obigen cURL-Befehl einfügen und ausführen.",
+    "复制运行命令": "Befehle kopieren",
+    "以上命令适用于 macOS / Linux / WSL。": "Diese Befehle funktionieren unter macOS / Linux / WSL."
   }
 }
