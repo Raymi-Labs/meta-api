@@ -188,7 +188,15 @@ export default function ModelDetail() {
     <main className='model-detail-page' ref={pageRef}>
       <div className='model-detail-breadcrumb'>
         {backLink}
-        <span>{t('模型详情')}</span>
+        <div className='model-detail-header-actions'>
+          <Link to={comparePath} className='model-action-secondary'>
+            {t('对比')}
+          </Link>
+          <Link to={playgroundPath} className='model-action-primary'>
+            {t('在模型体验中测试')}
+            <ArrowUpRight size={16} aria-hidden='true' />
+          </Link>
+        </div>
       </div>
       <header className='model-detail-hero'>
         <div className='model-detail-icon' aria-hidden='true'>
@@ -223,15 +231,6 @@ export default function ModelDetail() {
             </span>
           </div>
           {model.description && <p>{model.description}</p>}
-          <div className='model-hero-actions'>
-            <Link to={comparePath} className='model-action-secondary'>
-              {t('对比')}
-            </Link>
-            <Link to={playgroundPath} className='model-action-primary'>
-              {t('在模型体验中测试')}
-              <ArrowUpRight size={16} aria-hidden='true' />
-            </Link>
-          </div>
         </div>
       </header>
 
