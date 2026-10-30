@@ -1448,3 +1448,49 @@ a.model-attribute-source {
     font-size: 10px;
   }
 }
+
+.model-detail-faq-list details {
+  border-bottom: 1px solid var(--semi-color-border);
+}
+.model-detail-faq-list summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 0;
+  color: var(--semi-color-text-0);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  list-style: none;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.model-detail-faq-list summary::-webkit-details-marker {
+  display: none;
+}
+.model-detail-faq-list summary::marker {
+  content: '';
+}
+.model-detail-faq-list summary svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--semi-color-text-2);
+}
+.model-detail-faq-list details[open] summary svg {
+  transform: rotate(180deg);
+}
+.model-detail-faq-list summary:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.model-detail-faq-list details > p {
+  margin: 0;
+  padding: 0 38px 20px 0;
+  color: var(--semi-color-text-1);
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

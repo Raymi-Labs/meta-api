@@ -15,6 +15,7 @@ import (
 )
 
 type Pricing struct {
+	FAQ                      ModelFAQ                        `json:"faq"`
 	OfficialPricing          OfficialPricing                 `json:"official_pricing"`
 	ModelName                string                          `json:"model_name"`
 	DisplayName              string                          `json:"display_name"`
@@ -328,6 +329,7 @@ func updatePricing() {
 				pricing.OfficialPricing = meta.OfficialPricing
 			}
 			pricing.Description = meta.Description
+			pricing.FAQ = meta.FAQ.Clone()
 			pricing.DisplayName = meta.DisplayName
 			// Release dates belong to exact model IDs, never whole name patterns.
 			if meta.NameRule == NameRuleExact && meta.ModelName == model && ValidModelReleaseDate(meta.ReleaseDate) {

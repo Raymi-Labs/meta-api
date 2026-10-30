@@ -70,6 +70,18 @@ const pricing = {
       ...modelDefaults,
       model_name: 'friendly-id',
       display_name: 'GPT 6 Astra',
+      faq: [
+        {
+          question: '如何选择分组？',
+          answer: '先比较分组价格与用量。\n再查看快速开始中的接入示例。',
+        },
+        {
+          question: '答案可以包含什么内容？',
+          answer:
+            '<img src=x onerror=alert(1)> 仅作为文字显示。' +
+            '长内容'.repeat(100),
+        },
+      ],
       context_length: 1050000,
       max_output_tokens: 128000,
       input_modalities: ['text', 'image'],
@@ -145,6 +157,7 @@ const logRecord = {
 };
 
 let browser;
+let rejectNextSave = false;
 const artifacts = fs.mkdtempSync(
   path.join(os.tmpdir(), 'model-official-pricing-'),
 );
@@ -227,9 +240,14 @@ const makePage = async (role = 1, dark = false) => {
       body = { success: true, data: fixtureModel };
     if (url.pathname === '/api/models/' && request.method() === 'PUT') {
       const saved = JSON.parse(request.postData());
-      writes.push(saved);
-      Object.assign(fixtureModel, saved);
-      body = { success: true, data: fixtureModel };
+      if (rejectNextSave) {
+        rejectNextSave = false;
+        body = { success: false, message: 'FAQ 保存失败（验收）' };
+      } else {
+        writes.push(saved);
+        Object.assign(fixtureModel, saved);
+        body = { success: true, data: fixtureModel };
+      }
     }
     if (url.pathname === '/api/status') body = { success: true, data: status };
     if (url.pathname === '/api/pricing') body = pricing;
@@ -326,7 +344,7 @@ try {
   );
   fs.writeFileSync(
     files[1],
-    `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><App/></BrowserRouter>);`,
+    `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {ThemeProvider} from './src/context/Theme';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><App/></ThemeProvider></BrowserRouter>);`,
   );
   await launchBrowser();
   for (const dark of [false, true]) {
@@ -335,6 +353,40 @@ try {
       waitUntil: 'networkidle0',
     });
     await page.waitForSelector('#official-pricing table');
+    await page.waitForSelector('#faq details');
+    assert.equal(
+      await page.$eval(
+        '#faq',
+        (el) => el.parentElement.lastElementChild === el,
+      ),
+      true,
+    );
+    assert.equal(await page.$eval('#faq details', (el) => el.open), false);
+    await clickButton(page, '常见问题');
+    await page.focus('#faq summary');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.$eval('#faq details', (el) => el.open), true);
+    assert.ok(
+      (await page.$eval('#faq details p', (el) => el.innerText)).includes('\n'),
+    );
+    await page.click('#faq details:nth-child(2) summary');
+    assert.equal(
+      await page.$('#faq img'),
+      null,
+      'FAQ answers are rendered as text',
+    );
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'faq-mobile-dark.png' : 'faq-desktop.png',
+      ),
+    });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 2,
+      ),
+      true,
+    );
     const attributes = await page.$eval(
       '#capabilities',
       (el) => el.textContent,
@@ -556,6 +608,13 @@ try {
         '暂无官方参考价',
       ),
     );
+    assert.equal(await page.$('#faq'), null);
+    assert.equal(
+      await page.$$eval('.model-detail-sections button', (els) =>
+        els.some((el) => el.textContent === '常见问题'),
+      ),
+      false,
+    );
     assert.deepEqual(errors, []);
     await page.close();
   }
@@ -569,10 +628,30 @@ try {
     '10',
   );
   const fill = async (selector, text) => {
-    await page.click(selector, { clickCount: 3 });
+    await page.$eval(selector, (el) => {
+      el.focus();
+      el.select();
+    });
     await page.keyboard.press('Backspace');
     await page.type(selector, text);
   };
+  await fill('input#model-faq-question-0', '更新后的问题');
+  await fill('textarea#model-faq-answer-0', '更新后的答案\n第二行');
+  await clickButton(page, '添加常见问题');
+  await clickButton(page, '提交');
+  await page.waitForFunction(() =>
+    document.body.textContent.includes('FAQ 的问题和答案不能为空'),
+  );
+  assert.equal(writes.length, 0, 'empty FAQ cannot be saved');
+  await fill('input#model-faq-question-2', '新增的问题');
+  await fill('textarea#model-faq-answer-2', '新增的答案');
+  await page.click('button[aria-label="上移 FAQ 3"]');
+  await page.click('button[aria-label="下移 FAQ 1"]');
+  assert.equal(
+    await page.$eval('input#model-faq-question-0', (el) => el.value),
+    '新增的问题',
+  );
+  await page.click('button[aria-label="删除 FAQ 3"]');
   await fill('input[aria-label="输入 1"]', '12');
   await fill('textarea#description', '后台保存后的完整介绍');
   await fill('input#max_output_tokens', '64000');
@@ -592,6 +671,17 @@ try {
   await clickButton(page, '添加价格档位');
   await fill('input[aria-label="档位 3"]', '额外服务');
   await fill('input[aria-label="价格 3"]', '0.01');
+  rejectNextSave = true;
+  await clickButton(page, '提交');
+  await page.waitForFunction(() =>
+    document.body.textContent.includes('FAQ 保存失败（验收）'),
+  );
+  assert.equal(writes.length, 0);
+  assert.equal(
+    await page.$eval('input#model-faq-question-0', (el) => el.value),
+    '新增的问题',
+  );
+  await page.screenshot({ path: path.join(artifacts, 'faq-editor.png') });
   await clickButton(page, '提交');
   await page.waitForFunction(
     () => !document.querySelector('.semi-sidesheet-body'),
@@ -600,6 +690,10 @@ try {
   assert.equal(writes[0].official_pricing.tiers[0].input, 12);
   assert.equal(writes[0].official_pricing.tiers[0].cache_read, 0);
   assert.equal(writes[0].official_pricing.tiers.length, 3);
+  assert.deepEqual(writes[0].faq, [
+    { question: '新增的问题', answer: '新增的答案' },
+    { question: '更新后的问题', answer: '更新后的答案\n第二行' },
+  ]);
   assert.equal(writes[0].description, '后台保存后的完整介绍');
   assert.equal(writes[0].max_output_tokens, 64000);
   assert.equal(writes[0].capabilities.streaming, false);
@@ -615,10 +709,49 @@ try {
       '$12',
     ),
   );
+  assert.deepEqual(
+    await page.$$eval('#faq summary span', (els) =>
+      els.map((el) => el.textContent),
+    ),
+    ['新增的问题', '更新后的问题'],
+  );
+  const { page: mobileEditor, errors: mobileErrors } = await makePage(10, true);
+  await mobileEditor.goto(`${baseURL}/${fixtureName}.html`, {
+    waitUntil: 'networkidle0',
+  });
+  await mobileEditor.waitForSelector('input#model-faq-question-0');
+  await mobileEditor.waitForFunction(
+    () => document.body.getAttribute('theme-mode') === 'dark',
+  );
+  await mobileEditor.$eval('.model-faq-editor', (el) =>
+    el.scrollIntoView({ block: 'start' }),
+  );
+  assert.equal(
+    await mobileEditor.$eval('input#model-faq-question-0', (el) => el.value),
+    '新增的问题',
+  );
+  await mobileEditor.screenshot({
+    path: path.join(artifacts, 'faq-editor-mobile-dark.png'),
+  });
+  await mobileEditor.setViewport({ width: 320, height: 900 });
+  assert.equal(
+    await mobileEditor.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 2,
+    ),
+    true,
+  );
+  assert.deepEqual(mobileErrors, []);
+  await mobileEditor.close();
   await page.goto(`${baseURL}/${fixtureName}.html`, {
     waitUntil: 'networkidle0',
   });
   await page.waitForSelector('input[aria-label="输入 1"]');
+  assert.equal(
+    await page.$eval('input#model-faq-question-0', (el) => el.value),
+    '新增的问题',
+  );
+  await page.click('button[aria-label="删除 FAQ 2"]');
+  await page.click('button[aria-label="删除 FAQ 1"]');
   await fill('input#max_output_tokens', '0');
   await page.click('[aria-labelledby="capability-label-streaming"]');
   await page.waitForSelector('.semi-select-option');
@@ -638,6 +771,7 @@ try {
     () => !document.querySelector('.semi-sidesheet-body'),
   );
   assert.equal(writes.at(-1).official_pricing.tiers.length, 0);
+  assert.deepEqual(writes.at(-1).faq, []);
   assert.equal(writes.at(-1).max_output_tokens, 0);
   assert.ok(!('streaming' in writes.at(-1).capabilities));
   await page.goto(`${baseURL}/model/friendly-id`, {
@@ -648,6 +782,7 @@ try {
       '暂无官方参考价',
     ),
   );
+  assert.equal(await page.$('#faq'), null);
   assert.deepEqual(errors, []);
   await page.close();
   console.log(

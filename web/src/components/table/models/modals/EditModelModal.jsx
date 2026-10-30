@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ModelFAQEditor from './ModelFAQEditor';
 import ModelCapabilitiesEditor from './ModelCapabilitiesEditor';
 import OfficialPricingEditor from './OfficialPricingEditor';
 import JSONEditor from '../../../common/ui/JSONEditor';
@@ -140,6 +141,7 @@ const EditModelModal = (props) => {
     input_modalities: [],
     output_modalities: [],
     description: '',
+    faq: [],
     official_pricing: {},
     icon: '',
     tags: [],
@@ -172,6 +174,7 @@ const EditModelModal = (props) => {
           ...data,
           display_name: data.display_name || '',
           official_pricing: data.official_pricing || {},
+          faq: Array.isArray(data.faq) ? data.faq : [],
           release_date: data.release_date || '',
           context_length: data.context_length || 0,
           max_output_tokens: data.max_output_tokens || 0,
@@ -236,6 +239,10 @@ const EditModelModal = (props) => {
         ...values,
         display_name: (values.display_name || '').trim(),
         official_pricing: values.official_pricing || {},
+        faq: (values.faq || []).map(({ question, answer }) => ({
+          question: question.trim(),
+          answer: answer.trim(),
+        })),
         release_date:
           values.name_rule === 0 ? (values.release_date || '').trim() : '',
         context_length: values.context_length || 0,
@@ -440,6 +447,22 @@ const EditModelModal = (props) => {
                       extraText={t('显示在模型详情顶部和模型广场卡片中。')}
                       rows={5}
                       showClear
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <ModelFAQEditor
+                      field='faq'
+                      label={t('常见问题')}
+                      rules={[
+                        {
+                          validator: (_, items) =>
+                            (items || []).every(
+                              (item) =>
+                                item.question?.trim() && item.answer?.trim(),
+                            ),
+                          message: t('FAQ 的问题和答案不能为空'),
+                        },
+                      ]}
                     />
                   </Col>
                   <Col span={24}>

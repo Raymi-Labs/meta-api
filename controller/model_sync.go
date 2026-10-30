@@ -455,7 +455,9 @@ func SyncUpstreamModels(c *gin.Context) {
 				if !needUpdate {
 					return nil
 				}
-				if err := tx.Save(&local).Error; err != nil {
+				// FAQ is local editorial content. Do not write a stale snapshot
+				// over an administrator's concurrent FAQ edit during catalog sync.
+				if err := tx.Omit("faq").Save(&local).Error; err != nil {
 					return err
 				}
 				updatedModels++

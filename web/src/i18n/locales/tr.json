@@ -6703,6 +6703,14 @@
     "清空对话": "Sohbeti temizle",
     "停止生成": "Üretimi durdur",
     "发送": "Gönder",
-    "切换模型保留当前对话；每次只请求选中的模型。": "Model değiştiğinde sohbet korunur. Her istek yalnızca seçili modele gönderilir."
+    "切换模型保留当前对话；每次只请求选中的模型。": "Model değiştiğinde sohbet korunur. Her istek yalnızca seçili modele gönderilir.",
+    "显示在模型详情底部；未配置时隐藏，不受自动同步影响。": "Model ayrıntılarının altında gösterilir. Boşsa gizlenir; otomatik eşitleme içeriği değiştirmez.",
+    "最多 20 条；问题限 200 字，答案限 2000 字，支持换行。": "En fazla 20 kayıt; soru başına 200, yanıt başına 2000 karakter. Satır sonları desteklenir.",
+    "添加常见问题": "Sık sorulan soru ekle",
+    "模型 FAQ 最多配置 20 条": "Model SSS bölümü en fazla 20 kayıt içerebilir",
+    "FAQ 的问题和答案不能为空": "SSS soruları ve yanıtları boş olamaz",
+    "FAQ 问题不能超过 200 个字符": "SSS soruları 200 karakteri aşamaz",
+    "FAQ 答案不能超过 2000 个字符": "SSS yanıtları 2000 karakteri aşamaz",
+    "FAQ 内容过长，请减少问题或答案长度": "SSS içeriği çok uzun. Soruları veya yanıtları kısaltın."
   }
 }

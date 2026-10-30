@@ -127,12 +127,14 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			require.Zero(t, restored.ContextLength)
 			require.Zero(t, restored.MaxOutputTokens)
 			require.Empty(t, restored.Capabilities)
+			require.Empty(t, restored.FAQ)
 			require.Empty(t, restored.InputModalities)
 			originalDB := DB
 			DB = tableDB
 			t.Cleanup(func() { DB = originalDB })
 			require.Empty(t, restored.OfficialPricing.Tiers)
 			require.NoError(t, common.UnmarshalJsonStr(`{"currency":"USD","tiers":[{"label":"Standard","unit":"million_tokens","input":10,"cache_read":0}]}`, &restored.OfficialPricing))
+			restored.FAQ = ModelFAQ{{Question: "问题一", Answer: "回答一\n第二行"}, {Question: "问题二", Answer: "回答二"}}
 			restored.MaxOutputTokens = 128000
 			restored.Capabilities = ModelCapabilities{"streaming": false, "reasoning": true}
 			restored.ReleaseDate = "2025-01"
@@ -148,11 +150,13 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			require.Equal(t, restored.ContextLength, saved.ContextLength)
 			require.Equal(t, restored.MaxOutputTokens, saved.MaxOutputTokens)
 			require.Equal(t, restored.Capabilities, saved.Capabilities)
+			require.Equal(t, restored.FAQ, saved.FAQ)
 			require.Equal(t, restored.InputModalities, saved.InputModalities)
 			require.Equal(t, restored.OutputModalities, saved.OutputModalities)
 			saved.OfficialPricing = OfficialPricing{}
 			saved.MaxOutputTokens = 0
 			saved.Capabilities = ModelCapabilities{}
+			saved.FAQ = ModelFAQ{}
 			saved.ReleaseDate = ""
 			saved.DisplayName, saved.ContextLength = "", 0
 			saved.InputModalities, saved.OutputModalities = ModelModalities{}, ModelModalities{}
@@ -164,6 +168,7 @@ func TestModelDisplayMetadataMigrationCompatibility(t *testing.T) {
 			require.Zero(t, restored.ContextLength)
 			require.Zero(t, restored.MaxOutputTokens)
 			require.Empty(t, restored.Capabilities)
+			require.Empty(t, restored.FAQ)
 			require.Empty(t, restored.InputModalities)
 			require.Empty(t, restored.OutputModalities)
 			require.NoError(t, tableDB.AutoMigrate(&Model{}))

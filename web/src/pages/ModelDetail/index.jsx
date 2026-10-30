@@ -36,6 +36,7 @@ import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
 import ModelAttributes from './ModelAttributes';
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
+import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
@@ -167,6 +168,7 @@ export default function ModelDetail() {
     ['quick-start', '快速开始'],
     ['endpoints', 'API端点'],
     ...(related.length ? [['related', '同厂商模型']] : []),
+    ...(model.faq?.length ? [['faq', '常见问题']] : []),
   ];
   const priceMode = data.showWithRecharge ? data.priceConvertMode : 'base';
 
@@ -418,6 +420,7 @@ export default function ModelDetail() {
               </div>
             </section>
           )}
+          <ModelFAQ key={model.model_name} items={model.faq} />
         </div>
       </div>
     </main>
