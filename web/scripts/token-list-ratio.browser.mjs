@@ -123,6 +123,10 @@ createRoot(document.getElementById('root')).render(
     localStorage.setItem('user', JSON.stringify({ id: 901, role: 1 }));
     localStorage.setItem('page-size', '10');
     localStorage.setItem('chats', '[]');
+    localStorage.setItem(
+      'table_compact_modes',
+      JSON.stringify({ tokens: true }),
+    );
     localStorage.setItem('quota_per_unit', '500000');
   });
   await page.route('**/*', async (route) => {
@@ -172,7 +176,27 @@ createRoot(document.getElementById('root')).render(
   await page.goto(`${baseURL}/${path.basename(fixtureDir)}/index.html`);
   const headers = page.locator('thead th');
   await page.getByRole('columnheader', { name: '倍率', exact: true }).waitFor();
+  for (const label of ['显示全部列', '紧凑列表', '自适应列表']) {
+    assert.equal(await page.getByText(label, { exact: true }).count(), 0);
+  }
+  assert.equal(
+    await page.getByRole('heading', { name: '令牌管理' }).count(),
+    0,
+  );
+  assert.equal(await page.locator('.tokens-page-title').count(), 0);
   const titles = await headers.allTextContents();
+  for (const title of [
+    '名称',
+    '密钥',
+    '可用模型',
+    'IP限制',
+    '运行限制',
+    '创建时间',
+    '最后使用时间',
+    '过期时间',
+  ])
+    assert(titles.includes(title), title);
+
   const ratioIndex = titles.indexOf('倍率');
   assert.equal(ratioIndex, titles.indexOf('分组') + 1);
   const tokenRow = (name) => page.locator('tbody tr').filter({ hasText: name });
@@ -206,14 +230,14 @@ createRoot(document.getElementById('root')).render(
       await page.getByRole('button', { name: label, exact: true }).isEnabled(),
     );
   const actionBox = await page
-    .locator('.tokens-toolbar__actions')
+    .getByRole('button', { name: '添加令牌', exact: true })
     .boundingBox();
   const filterBox = await page
     .locator('.tokens-toolbar__filters')
     .boundingBox();
   assert(
-    filterBox.y >= actionBox.y + actionBox.height,
-    'filters must be below actions',
+    Math.abs(filterBox.y - actionBox.y) < 2,
+    'creation and filters share a row even with a batch selection',
   );
   await page.screenshot({
     path: path.join(outputDir, 'selected-toolbar.png'),
@@ -226,7 +250,7 @@ createRoot(document.getElementById('root')).render(
     0,
   );
   console.log(
-    'PASS batch controls appear only for selection; filters have independent row',
+    'PASS batch controls appear only for selection; creation and filters share a row',
   );
   await ratioCell('普通倍率').hover();
   await page.getByText(/当前分组倍率，已包含适用的专属倍率/).waitFor();
@@ -266,7 +290,11 @@ createRoot(document.getElementById('root')).render(
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('table').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: /显示操作项/ }).click();
+  assert.equal(
+    await page.getByRole('button', { name: /显示操作项/ }).count(),
+    0,
+  );
+  await page.getByRole('button', { name: /筛选/ }).click();
   await page.getByRole('button', { name: '添加令牌', exact: true }).waitFor();
   const mobileFilters = await page
     .locator('.tokens-toolbar__filters')
@@ -285,7 +313,10 @@ createRoot(document.getElementById('root')).render(
     'mobile filters must stack',
   );
   await page.getByPlaceholder('搜索关键字').fill('普通倍率');
-  await page.getByRole('button', { name: '查询', exact: true }).click();
+  await page
+    .locator('.tokens-filter-row__mobile-actions')
+    .getByRole('button', { name: '查询', exact: true })
+    .click();
   await page.getByRole('button', { name: '重置', exact: true }).click();
   const firstCard = page
     .locator('.semi-card')
@@ -311,6 +342,24 @@ createRoot(document.getElementById('root')).render(
   console.log(
     'PASS mobile card shows the same multiplier without horizontal overflow',
   );
+  await firstCard.locator('.token-mobile-select').click();
+  await page.getByRole('group', { name: '批量操作', exact: true }).waitFor();
+  await firstCard.locator('.token-mobile-select').click();
+  await page.getByRole('button', { name: /高级筛选/ }).click();
+  await page.locator('.semi-sidesheet-inner').waitFor();
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.evaluate(() => document.body.setAttribute('theme-mode', 'dark'));
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+    '320px no page overflow',
+  );
+  await page.screenshot({
+    path: path.join(outputDir, 'mobile-dark-320.png'),
+    fullPage: true,
+  });
   assert.deepEqual(
     mutations,
     [],

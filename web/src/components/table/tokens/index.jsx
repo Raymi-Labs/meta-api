@@ -32,7 +32,6 @@ import CardPro from '../../common/ui/CardPro';
 import TokensTable from './TokensTable';
 import TokensActions from './TokensActions';
 import TokensFilters from './TokensFilters';
-import TokensDescription from './TokensDescription';
 import './tokensToolbar.css';
 import EditTokenModal from './modals/EditTokenModal';
 import TokenTestModal from './modals/TokenTestModal';
@@ -88,10 +87,6 @@ function TokensPageContent() {
     loading,
     searching,
     groupOptions,
-
-    // Description state
-    compactMode,
-    setCompactMode,
 
     // 国际化
     t,
@@ -194,14 +189,6 @@ function TokensPageContent() {
       <CardPro
         mobileActionsInitiallyVisible
         type='type1'
-        descriptionArea={
-          <TokensDescription
-            tokenCount={tokensData.tokenCount}
-            compactMode={compactMode}
-            setCompactMode={setCompactMode}
-            t={t}
-          />
-        }
         actionsArea={
           <div className='tokens-toolbar'>
             <TokensActions
