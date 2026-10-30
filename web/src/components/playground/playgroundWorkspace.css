@@ -492,16 +492,31 @@
   margin-bottom: 18px;
   flex: none;
 }
-.pg-code-tools select {
+.pg-code-language {
+  position: relative;
   min-width: 0;
   flex: 1;
+}
+.pg-code-language select {
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--semi-color-bg-0);
   color: var(--semi-color-text-0);
   border: 1px solid var(--semi-color-border);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 12px 46px 12px 14px;
   font-size: 14px;
   font-weight: 550;
+}
+.pg-code-language > svg {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--semi-color-text-2);
 }
 .pg-code-tools button {
   display: flex;

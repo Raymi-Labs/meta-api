@@ -7074,7 +7074,6 @@
     "API 标准": "Standard API",
     "当前设置无法完整转换，请调整后复制。": "Ces paramètres ne peuvent pas être entièrement convertis. Ajustez-les avant de copier.",
     "请先填写工具结果，再生成下一次请求。": "Saisissez les résultats des outils avant de générer la requête suivante.",
-    "尚无用户消息，代码使用 Hello! 示例。": "Aucun message utilisateur. Le code utilise un exemple Hello!.",
     "Messages 必须设置输出上限，示例使用 4096。": "Messages exige une limite de sortie. Cet exemple utilise 4096.",
     "安装与运行": "Installer et exécuter",
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Enregistrez le code dans {{filename}}, remplacez la clé, puis exécutez dans un terminal :",

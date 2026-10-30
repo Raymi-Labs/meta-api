@@ -6742,7 +6742,6 @@
     "API 标准": "API standardı",
     "当前设置无法完整转换，请调整后复制。": "Bu ayarlar tam olarak dönüştürülemiyor. Kopyalamadan önce düzenleyin.",
     "请先填写工具结果，再生成下一次请求。": "Sonraki isteği oluşturmadan önce araç sonuçlarını girin.",
-    "尚无用户消息，代码使用 Hello! 示例。": "Henüz kullanıcı mesajı yok. Kod, Hello! örneğini kullanıyor.",
     "Messages 必须设置输出上限，示例使用 4096。": "Messages bir çıktı sınırı gerektirir. Bu örnek 4096 kullanır.",
     "安装与运行": "Kurulum ve çalıştırma",
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Kodu {{filename}} olarak kaydedin, anahtarı değiştirin ve terminalde çalıştırın:",

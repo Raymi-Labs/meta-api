@@ -6742,7 +6742,6 @@
     "API 标准": "Standard API",
     "当前设置无法完整转换，请调整后复制。": "Nie można w pełni przekonwertować tych ustawień. Dostosuj je przed skopiowaniem.",
     "请先填写工具结果，再生成下一次请求。": "Wprowadź wyniki narzędzi przed wygenerowaniem kolejnego żądania.",
-    "尚无用户消息，代码使用 Hello! 示例。": "Brak wiadomości użytkownika. Kod używa przykładu Hello!.",
     "Messages 必须设置输出上限，示例使用 4096。": "Messages wymaga limitu wyjścia. Ten przykład używa 4096.",
     "安装与运行": "Instalacja i uruchomienie",
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Zapisz kod jako {{filename}}, zastąp klucz i uruchom w terminalu:",

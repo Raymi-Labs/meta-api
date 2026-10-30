@@ -10,7 +10,7 @@ Status: implemented
 
 复用工作区负载与协议声明，扩展右侧导出为 Chat Completions / Messages / Responses、Python / JavaScript / cURL / JSON。Python 与 JavaScript 使用 OpenAI 或 Anthropic SDK，显示可复制的依赖安装、环境变量和执行命令。高亮复用已有 highlight.js，生成内容先交库转义，不拼接不可信 HTML。代码只读取 META_API_KEY，不导出会话或真实密钥。
 
-协议选择仅控制导出，聊天仍走现有会话接口。转换普通文本、系统提示、图片和工具定义/回合；不支持且有语义的字段阻止跨协议复制并显示字段名称，不默默丢弃。Messages 缺少 max_tokens 时明确采用 4096；仅系统提示或空白状态补 Hello! 示例并标注。未知协议支持保留模板并复用模型详情提示。
+协议选择仅控制导出，聊天仍走现有会话接口。转换普通文本、系统提示、图片和工具定义/回合；不支持且有语义的字段阻止跨协议复制并显示字段名称，不默默丢弃。Messages 缺少 max_tokens 时明确采用 4096；仅系统提示或空白状态补 Hello! 示例，按用户要求不显示额外的空白消息提示。未知协议支持保留模板并复用模型详情提示。
 
 ## Related decisions
 
