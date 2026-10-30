@@ -573,7 +573,7 @@ const AccountPlayground = ({ owner }) => {
           generating={generating}
           disabled={!canSend || editingMessageId !== null}
           onInputChange={handleInputChange}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => isMobile && setShowSettings(true)}
           customRequestMode={customRequestMode}
         />
       </PlaygroundWorkspace>

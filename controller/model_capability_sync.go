@@ -39,9 +39,13 @@ type capabilityProvider struct {
 }
 
 type capabilityModel struct {
-	ID          string          `json:"id"`
-	ReleaseDate json.RawMessage `json:"release_date"`
-	Limit       struct {
+	ID               string          `json:"id"`
+	Reasoning        json.RawMessage `json:"reasoning"`
+	ToolCall         json.RawMessage `json:"tool_call"`
+	StructuredOutput json.RawMessage `json:"structured_output"`
+	ReleaseDate      json.RawMessage `json:"release_date"`
+	Limit            struct {
+		Output  json.RawMessage `json:"output"`
 		Context json.RawMessage `json:"context"`
 	} `json:"limit"`
 	Modalities struct {
@@ -97,18 +101,30 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 			if common.Unmarshal(upstream.Limit.Context, &contextLength) != nil || contextLength < 0 || contextLength > 9007199254740991 {
 				contextLength = 0
 			}
+			var maxOutput int64
+			if common.Unmarshal(upstream.Limit.Output, &maxOutput) != nil || maxOutput < 0 || maxOutput > 9007199254740991 {
+				maxOutput = 0
+			}
+			flags := model.ModelCapabilities{}
+			for key, raw := range map[string]json.RawMessage{"reasoning": upstream.Reasoning, "function_calling": upstream.ToolCall, "structured_output": upstream.StructuredOutput} {
+				var value *bool
+				if common.Unmarshal(raw, &value) == nil && value != nil {
+					flags[key] = *value
+				}
+			}
 			var releaseDate string
 			if common.Unmarshal(upstream.ReleaseDate, &releaseDate) != nil || !model.ValidModelReleaseDate(releaseDate) {
 				releaseDate = ""
 			}
 			entry := model.ModelCapabilityMetadata{
-				ReleaseDate:      releaseDate,
-				ContextLength:    contextLength,
+				ReleaseDate:     releaseDate,
+				ContextLength:   contextLength,
+				MaxOutputTokens: maxOutput, Capabilities: flags,
 				InputModalities:  decodeCapabilityModalities(upstream.Modalities.Input),
 				OutputModalities: decodeCapabilityModalities(upstream.Modalities.Output),
 				Provider:         providerID,
 			}
-			if entry.ReleaseDate == "" && entry.ContextLength == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
+			if entry.ReleaseDate == "" && entry.ContextLength == 0 && entry.MaxOutputTokens == 0 && len(entry.Capabilities) == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
 				continue
 			}
 			if previous, exists := priorities[id]; exists && previous >= provider.Billing.Priority {
@@ -165,11 +181,38 @@ func runModelCapabilitySync(parent context.Context) (model.ModelCapabilitySyncRe
 	ctx, cancel := context.WithTimeout(parent, time.Duration(timeout)*time.Second)
 	defer cancel()
 	source := modelCapabilitySourceURL()
-	entries, err := fetchModelCapabilities(ctx, source)
-	if err != nil {
-		return model.ModelCapabilitySyncResult{}, err
+	var entries, official map[string]model.ModelCapabilityMetadata
+	var communityErr, officialErr error
+	var warnings []string
+	var fetches sync.WaitGroup
+	fetches.Add(2)
+	go func() { defer fetches.Done(); entries, communityErr = fetchModelCapabilities(ctx, source) }()
+	go func() { defer fetches.Done(); official, warnings, officialErr = fetchOfficialModelAttributes(ctx) }()
+	fetches.Wait()
+	if entries == nil {
+		entries = map[string]model.ModelCapabilityMetadata{}
 	}
-	result, err := model.ApplyModelCapabilityMetadata(ctx, entries, source)
+	for id, entry := range official {
+		entries[id] = mergeOfficialAttributes(entries[id], entry)
+	}
+	if len(entries) == 0 && communityErr != nil {
+		return model.ModelCapabilitySyncResult{}, communityErr
+	}
+	if officialErr != nil {
+		return model.ModelCapabilitySyncResult{}, officialErr
+	}
+	if communityErr != nil {
+		warnings = append(warnings, "Community metadata unavailable")
+	}
+	// Network timeouts must not prevent applying independently successful sources.
+	applyCtx, applyCancel := context.WithTimeout(parent, 30*time.Second)
+	defer applyCancel()
+	result, err := model.ApplyModelCapabilityMetadata(applyCtx, entries, source)
+	result.SourceFailures = len(warnings)
+	if len(warnings) > 0 {
+		common.SysError(fmt.Sprintf("model metadata sources incomplete: %d unavailable requests; prior official values retained", len(warnings)))
+	}
+
 	// An interrupted batch may still have applied earlier rows.
 	if result.Updated > 0 || result.Created > 0 {
 		model.RefreshPricing()

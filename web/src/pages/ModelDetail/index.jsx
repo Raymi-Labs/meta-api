@@ -21,17 +21,7 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Select, Spin } from '@douyinfe/semi-ui';
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  AudioLines,
-  Copy,
-  FileText,
-  Image as ImageIcon,
-  SlidersHorizontal,
-  Type,
-  Video,
-} from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Copy, SlidersHorizontal } from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
@@ -43,25 +33,13 @@ import {
 import ModelGroupRows from './ModelGroupRows';
 import ModelAnalytics from './ModelAnalytics';
 import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
-import {
-  MODEL_MODALITY_LABELS,
-  formatModelContext,
-  formatModelContextExact,
-} from '../../helpers/modelPresentation';
+import ModelAttributes from './ModelAttributes';
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
-
-const MODEL_MODALITY_ICONS = {
-  text: Type,
-  image: ImageIcon,
-  audio: AudioLines,
-  video: Video,
-  file: FileText,
-};
 
 export default function ModelDetail() {
   const location = useLocation();
@@ -183,7 +161,7 @@ export default function ModelDetail() {
   const sections = [
     ['official-pricing', '官方参考价'],
     ['pricing', '分组价格'],
-    ['capabilities', '模型能力'],
+    ['capabilities', '模型属性'],
     ['quick-start', '快速开始'],
     ['performance', '性能对比'],
     ['usage', '分组用量'],
@@ -374,69 +352,8 @@ export default function ModelDetail() {
               data={data}
               health={health}
             />
-            <section
-              id='capabilities'
-              className='model-detail-modalities'
-              aria-label={t('模型能力')}
-            >
-              <div className='model-detail-metadata'>
-                <span>{model.vendor_name || t('未知供应商')}</span>
-                <span aria-hidden='true'>·</span>
-                <span>
-                  {t(
-                    priceData.isDynamicPricing
-                      ? '动态计费'
-                      : model.quota_type === 2
-                        ? '按小时计费'
-                        : model.quota_type === 1
-                          ? '按次计费'
-                          : '按量计费',
-                  )}
-                </span>
-                <span aria-hidden='true'>·</span>
-                <span title={formatModelContextExact(model.context_length)}>
-                  {t('上下文长度')}:{' '}
-                  {formatModelContext(model.context_length) === '—'
-                    ? t('未配置')
-                    : formatModelContext(model.context_length)}
-                </span>
-                {tags.length > 0 && (
-                  <div className='model-detail-tags'>
-                    {tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className='model-capability-grid'>
-                {[
-                  ['input_modalities', '输入模态'],
-                  ['output_modalities', '输出模态'],
-                ].map(([field, label]) => (
-                  <div key={field}>
-                    <h2>{t(label)}</h2>
-                    {Array.isArray(model[field]) && model[field].length ? (
-                      <ul>
-                        {model[field]
-                          .filter((value) => MODEL_MODALITY_LABELS[value])
-                          .map((value) => {
-                            const ModalityIcon = MODEL_MODALITY_ICONS[value];
-                            return (
-                              <li key={value}>
-                                <ModalityIcon size={18} aria-hidden='true' />
-                                <span>{t(MODEL_MODALITY_LABELS[value])}</span>
-                              </li>
-                            );
-                          })}
-                      </ul>
-                    ) : (
-                      <p>{t('未配置')}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
           </section>
+          <ModelAttributes model={model} tags={tags} />
           <section
             id='quick-start'
             tabIndex={-1}

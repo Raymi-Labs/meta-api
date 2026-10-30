@@ -16,12 +16,14 @@ import (
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
 	model.Model
-	OfficialPricing  *model.OfficialPricing `json:"official_pricing"`
-	DisplayName      *string                `json:"display_name"`
-	ReleaseDate      *string                `json:"release_date"`
-	ContextLength    *int64                 `json:"context_length"`
-	InputModalities  *model.ModelModalities `json:"input_modalities"`
-	OutputModalities *model.ModelModalities `json:"output_modalities"`
+	OfficialPricing  *model.OfficialPricing   `json:"official_pricing"`
+	DisplayName      *string                  `json:"display_name"`
+	ReleaseDate      *string                  `json:"release_date"`
+	MaxOutputTokens  *int64                   `json:"max_output_tokens"`
+	Capabilities     *model.ModelCapabilities `json:"capabilities"`
+	ContextLength    *int64                   `json:"context_length"`
+	InputModalities  *model.ModelModalities   `json:"input_modalities"`
+	OutputModalities *model.ModelModalities   `json:"output_modalities"`
 }
 
 func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
@@ -30,6 +32,8 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 		m.OfficialPricing = existing.OfficialPricing
 		m.DisplayName = existing.DisplayName
 		m.ReleaseDate = existing.ReleaseDate
+		m.MaxOutputTokens = existing.MaxOutputTokens
+		m.Capabilities = existing.Capabilities.Clone()
 		m.ContextLength = existing.ContextLength
 		m.InputModalities = existing.InputModalities
 		m.OutputModalities = existing.OutputModalities
@@ -42,6 +46,12 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 	}
 	if request.ReleaseDate != nil {
 		m.ReleaseDate = *request.ReleaseDate
+	}
+	if request.MaxOutputTokens != nil {
+		m.MaxOutputTokens = *request.MaxOutputTokens
+	}
+	if request.Capabilities != nil {
+		m.Capabilities = request.Capabilities.Clone()
 	}
 	if request.ContextLength != nil {
 		m.ContextLength = *request.ContextLength
@@ -222,6 +232,11 @@ func DeleteModelMeta(c *gin.Context) {
 
 // enrichModels 批量填充附加信息：端点、渠道、分组、计费类型，避免 N+1 查询
 func enrichModels(models []*model.Model) {
+	for _, m := range models {
+		if m != nil {
+			m.AttributeSources = m.DisplayAttributeSources()
+		}
+	}
 	if len(models) == 0 {
 		return
 	}
