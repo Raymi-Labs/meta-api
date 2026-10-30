@@ -67,6 +67,7 @@ const ParameterControl = ({
                 <X size={10} />
               )
             }
+            aria-label={`${t('参数')} temperature`}
             onClick={() => onParameterToggle('temperature')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}
@@ -77,8 +78,8 @@ const ParameterControl = ({
         </Typography.Text>
         <Slider
           step={0.1}
-          min={0.1}
-          max={1}
+          min={0}
+          max={2}
           value={inputs.temperature}
           onChange={(value) => onInputChange('temperature', value)}
           className='mt-2'
@@ -107,6 +108,7 @@ const ParameterControl = ({
             icon={
               parameterEnabled.top_p ? <Check size={10} /> : <X size={10} />
             }
+            aria-label={`${t('参数')} top_p`}
             onClick={() => onParameterToggle('top_p')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}
@@ -117,7 +119,7 @@ const ParameterControl = ({
         </Typography.Text>
         <Slider
           step={0.1}
-          min={0.1}
+          min={0}
           max={1}
           value={inputs.top_p}
           onChange={(value) => onInputChange('top_p', value)}
@@ -151,6 +153,7 @@ const ParameterControl = ({
                 <X size={10} />
               )
             }
+            aria-label={`${t('参数')} frequency_penalty`}
             onClick={() => onParameterToggle('frequency_penalty')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}
@@ -195,6 +198,7 @@ const ParameterControl = ({
                 <X size={10} />
               )
             }
+            aria-label={`${t('参数')} presence_penalty`}
             onClick={() => onParameterToggle('presence_penalty')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}
@@ -236,6 +240,7 @@ const ParameterControl = ({
                 <X size={10} />
               )
             }
+            aria-label={`${t('参数')} max_tokens`}
             onClick={() => onParameterToggle('max_tokens')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}
@@ -273,6 +278,7 @@ const ParameterControl = ({
             type={parameterEnabled.seed ? 'primary' : 'tertiary'}
             size='small'
             icon={parameterEnabled.seed ? <Check size={10} /> : <X size={10} />}
+            aria-label={`${t('参数')} seed`}
             onClick={() => onParameterToggle('seed')}
             className='!rounded-full !w-4 !h-4 !p-0 !min-w-0'
             disabled={disabled}

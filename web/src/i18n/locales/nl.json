@@ -6666,6 +6666,18 @@
     "本站首档：{{tier}}": "Eerste siteniveau: {{tier}}",
     "官方对比档位": "Officieel vergelijkingsniveau",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Prijzen omvatten groepsfactoren. Kosten hangen af van gebruik en factureringsregels.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Elke prijs wordt vergeleken met het gekozen officiële niveau. Dynamische prijzen tonen het eerste siteniveau, geen korting op het hele verzoek."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Elke prijs wordt vergeleken met het gekozen officiële niveau. Dynamische prijzen tonen het eerste siteniveau, geen korting op het hele verzoek.",
+    "点击设置系统提示词": "Klik om de systeemprompt in te stellen",
+    "自动保存": "Automatisch opgeslagen",
+    "请求代码": "Verzoekcode",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "De code gebruikt een API-token. Kies een token voor de geselecteerde groep.",
+    "调整参数、测试提示词，将请求复制为代码。": "Pas parameters aan, test prompts en kopieer het verzoek als code.",
+    "解释一个概念": "Leg een begrip uit",
+    "比较两个方案": "Vergelijk twee opties",
+    "编写一段代码": "Schrijf code",
+    "清空对话": "Gesprek wissen",
+    "停止生成": "Genereren stoppen",
+    "发送": "Verzenden",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Bij het wisselen van model blijft het gesprek behouden. Elk verzoek gebruikt alleen het geselecteerde model."
   }
 }

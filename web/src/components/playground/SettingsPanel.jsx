@@ -58,36 +58,25 @@ const SettingsPanel = ({
 
   return (
     <Card
-      className='h-full flex flex-col'
+      className='pg-settings-card h-full flex flex-col'
       bordered={false}
       bodyStyle={{
-        padding: styleState.isMobile ? '16px' : '24px',
+        padding: '18px',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* 标题区域 - 与调试面板保持一致 */}
-      <div className='flex items-center justify-between mb-6 flex-shrink-0'>
-        <div className='flex items-center'>
-          <div className='w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-3'>
-            <Settings size={20} className='text-white' />
-          </div>
-          <Typography.Title heading={5} className='mb-0'>
-            {t('模型配置')}
-          </Typography.Title>
+      <div className='pg-panel-heading'>
+        <Settings size={18} />
+        <h2>{t('参数')}</h2>
+      </div>
+      <div className='pg-selected-model'>
+        <Sparkles size={22} />
+        <div>
+          <span>{t('模型')}</span>
+          <strong>{inputs.model || t('请选择模型')}</strong>
         </div>
-
-        {styleState.isMobile && onCloseSettings && (
-          <Button
-            icon={<X size={16} />}
-            onClick={onCloseSettings}
-            theme='borderless'
-            type='tertiary'
-            size='small'
-            className='!rounded-lg'
-          />
-        )}
       </div>
 
       {/* 移动端配置管理 */}
@@ -104,15 +93,6 @@ const SettingsPanel = ({
       )}
 
       <div className='space-y-6 overflow-y-auto flex-1 pr-2 model-settings-scroll'>
-        {/* 自定义请求体编辑器 */}
-        <CustomRequestEditor
-          customRequestMode={customRequestMode}
-          customRequestBody={customRequestBody}
-          onCustomRequestModeChange={onCustomRequestModeChange}
-          onCustomRequestBodyChange={onCustomRequestBodyChange}
-          defaultPayload={previewPayload}
-        />
-
         {/* 分组选择 */}
         <div className={customRequestMode ? 'opacity-50' : ''}>
           <div className='flex items-center gap-2 mb-2'>
@@ -138,37 +118,6 @@ const SettingsPanel = ({
             autoComplete='new-password'
             optionList={groups}
             renderOptionItem={renderGroupOption}
-            style={{ width: '100%' }}
-            dropdownStyle={{ width: '100%', maxWidth: '100%' }}
-            className='!rounded-lg'
-            disabled={customRequestMode}
-          />
-        </div>
-
-        {/* 模型选择 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <div className='flex items-center gap-2 mb-2'>
-            <Sparkles size={16} className='text-gray-500' />
-            <Typography.Text strong className='text-sm'>
-              {t('模型')}
-            </Typography.Text>
-            {customRequestMode && (
-              <Typography.Text className='text-xs text-orange-600'>
-                ({t('已在自定义模式中忽略')})
-              </Typography.Text>
-            )}
-          </div>
-          <Select
-            placeholder={t('请选择模型')}
-            name='model'
-            required
-            selection
-            filter={selectFilter}
-            autoClearSearchValue={false}
-            onChange={(value) => onInputChange('model', value)}
-            value={inputs.model}
-            autoComplete='new-password'
-            optionList={models}
             style={{ width: '100%' }}
             dropdownStyle={{ width: '100%', maxWidth: '100%' }}
             className='!rounded-lg'
@@ -224,6 +173,14 @@ const SettingsPanel = ({
             />
           </div>
         </div>
+        {/* 自定义请求体编辑器 */}
+        <CustomRequestEditor
+          customRequestMode={customRequestMode}
+          customRequestBody={customRequestBody}
+          onCustomRequestModeChange={onCustomRequestModeChange}
+          onCustomRequestBodyChange={onCustomRequestBodyChange}
+          defaultPayload={previewPayload}
+        />
       </div>
 
       {/* 桌面端的配置管理放在底部 */}

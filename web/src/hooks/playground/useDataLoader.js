@@ -17,11 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useCallback, useEffect } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { API, processModelsData, processGroupsData } from '../../helpers';
+import {
+  API,
+  processModelsData,
+  processGroupsData,
+  showError,
+} from '../../helpers';
 import { API_ENDPOINTS } from '../../constants/playground.constants';
-import { useLatestRequestGuard } from '../common/useLatestRequestGuard';
 
 export const useDataLoader = (
   userState,
@@ -31,80 +35,72 @@ export const useDataLoader = (
   setGroups,
 ) => {
   const { t } = useTranslation();
-  const modelRequestGuard = useLatestRequestGuard();
-
-  const loadModels = useCallback(async () => {
-    const requestId = modelRequestGuard.createRequestId();
-    try {
-      const res = await API.get(API_ENDPOINTS.USER_MODELS, {
-        params: inputs.group ? { group: inputs.group } : undefined,
-      });
-      if (!modelRequestGuard.isLatestRequest(requestId)) return;
-
-      const { success, message, data } = res.data;
-
-      if (success) {
+  const [retry, setRetry] = useState(0);
+  const [modelState, setModelState] = useState({
+    group: null,
+    loading: true,
+    error: false,
+  });
+  const latestInputs = useRef(inputs);
+  latestInputs.current = inputs;
+  const userId = userState?.user?.id;
+  const userGroup = userState?.user?.group;
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    const group = inputs.group;
+    setModelState({ group, loading: true, error: false });
+    API.get(API_ENDPOINTS.USER_MODELS, {
+      params: group ? { group } : undefined,
+    })
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data.success || !Array.isArray(data.data))
+          throw new Error('models unavailable');
         const { modelOptions, selectedModel } = processModelsData(
-          data,
-          inputs.model,
+          data.data,
+          latestInputs.current.model,
         );
         setModels(modelOptions);
-
-        if (selectedModel !== inputs.model) {
-          handleInputChange('model', selectedModel);
+        if (selectedModel !== latestInputs.current.model)
+          handleInputChange('model', selectedModel || '');
+        setModelState({ group, loading: false, error: false });
+      })
+      .catch(() => {
+        if (active) {
+          setModels([]);
+          setModelState({ group, loading: false, error: true });
         }
-      } else {
-        showError(t(message));
-      }
-    } catch (error) {
-      if (!modelRequestGuard.isLatestRequest(requestId)) return;
-      showError(t('加载模型失败'));
-    }
-  }, [
-    inputs.group,
-    inputs.model,
-    handleInputChange,
-    setModels,
-    t,
-    modelRequestGuard,
-  ]);
-
-  const loadGroups = useCallback(async () => {
-    try {
-      const res = await API.get(API_ENDPOINTS.USER_GROUPS);
-      const { success, message, data } = res.data;
-
-      if (success) {
-        const userGroup =
-          userState?.user?.group ||
-          JSON.parse(localStorage.getItem('user'))?.group;
-        const groupOptions = processGroupsData(data, userGroup);
-        setGroups(groupOptions);
-
-        const hasCurrentGroup = groupOptions.some(
-          (option) => option.value === inputs.group,
-        );
-        if (!hasCurrentGroup) {
-          handleInputChange('group', groupOptions[0]?.value || '');
-        }
-      } else {
-        showError(t(message));
-      }
-    } catch (error) {
-      showError(t('加载分组失败'));
-    }
-  }, [userState, inputs.group, handleInputChange, setGroups, t]);
-
-  // 自动加载数据
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId, inputs.group, retry, setModels, handleInputChange]);
   useEffect(() => {
-    if (userState?.user) {
-      loadModels();
-      loadGroups();
-    }
-  }, [userState?.user, loadModels, loadGroups]);
-
+    if (!userId) return;
+    let active = true;
+    API.get(API_ENDPOINTS.USER_GROUPS)
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data.success) throw new Error('groups unavailable');
+        const options = processGroupsData(data.data, userGroup);
+        setGroups(options);
+        if (
+          !options.some((option) => option.value === latestInputs.current.group)
+        )
+          handleInputChange('group', options[0]?.value || '');
+      })
+      .catch(() => {
+        if (active) showError(t('加载分组失败'));
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId, userGroup, retry, setGroups, handleInputChange, t]);
+  const reloadModels = useCallback(() => setRetry((value) => value + 1), []);
   return {
-    loadModels,
-    loadGroups,
+    modelsLoading: modelState.loading || modelState.group !== inputs.group,
+    modelsError: modelState.error,
+    reloadModels,
   };
 };

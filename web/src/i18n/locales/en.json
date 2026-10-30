@@ -6878,6 +6878,18 @@
     "本站首档：{{tier}}": "Site first tier: {{tier}}",
     "官方对比档位": "Official comparison tier",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Prices include applicable group multipliers. Actual charges depend on usage and billing rules.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Each rate is compared with the selected official tier. Dynamic pricing shows the site’s first tier, not a whole-request discount."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Each rate is compared with the selected official tier. Dynamic pricing shows the site’s first tier, not a whole-request discount.",
+    "点击设置系统提示词": "Click to set a system prompt",
+    "自动保存": "Saved automatically",
+    "请求代码": "Request code",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Code uses an API token. Choose a token for the selected group.",
+    "调整参数、测试提示词，将请求复制为代码。": "Tune parameters, test prompts, and copy the request as code.",
+    "解释一个概念": "Explain a concept",
+    "比较两个方案": "Compare two options",
+    "编写一段代码": "Write some code",
+    "清空对话": "Clear conversation",
+    "停止生成": "Stop generating",
+    "发送": "Send",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Switching models keeps this conversation. Each request uses only the selected model."
   }
 }

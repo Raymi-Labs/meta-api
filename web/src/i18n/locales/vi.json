@@ -7281,6 +7281,17 @@
     "本站首档：{{tier}}": "Mức đầu của trang: {{tier}}",
     "官方对比档位": "Mức giá chính thức để so sánh",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Giá đã gồm hệ số nhóm. Phí thực tế tùy thuộc mức sử dụng và quy tắc tính phí.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "So sánh từng đơn giá với mức chính thức đã chọn. Giá động hiển thị mức đầu của trang, không phải mức giảm cho toàn bộ yêu cầu."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "So sánh từng đơn giá với mức chính thức đã chọn. Giá động hiển thị mức đầu của trang, không phải mức giảm cho toàn bộ yêu cầu.",
+    "点击设置系统提示词": "Nhấn để đặt lời nhắc hệ thống",
+    "自动保存": "Tự động lưu",
+    "请求代码": "Mã yêu cầu",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Mã sử dụng token API. Hãy chọn token thuộc nhóm đang chọn.",
+    "调整参数、测试提示词，将请求复制为代码。": "Điều chỉnh tham số, thử lời nhắc và sao chép yêu cầu thành mã.",
+    "解释一个概念": "Giải thích một khái niệm",
+    "比较两个方案": "So sánh hai phương án",
+    "编写一段代码": "Viết mã",
+    "停止生成": "Dừng tạo",
+    "发送": "Gửi",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Đổi mô hình vẫn giữ cuộc trò chuyện. Mỗi yêu cầu chỉ gửi đến mô hình đã chọn."
   }
 }

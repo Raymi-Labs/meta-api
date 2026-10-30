@@ -6666,6 +6666,18 @@
     "本站首档：{{tier}}": "Erste Website-Stufe: {{tier}}",
     "官方对比档位": "Offizielle Vergleichsstufe",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Die Preise enthalten Gruppenmultiplikatoren. Kosten hängen von Nutzung und Abrechnungsregeln ab.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Jeder Preis wird mit der gewählten offiziellen Stufe verglichen. Dynamische Preise zeigen die erste Website-Stufe, keinen Rabatt für ganze Anfragen."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Jeder Preis wird mit der gewählten offiziellen Stufe verglichen. Dynamische Preise zeigen die erste Website-Stufe, keinen Rabatt für ganze Anfragen.",
+    "点击设置系统提示词": "Systemanweisung festlegen",
+    "自动保存": "Automatisch gespeichert",
+    "请求代码": "Anfragecode",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Der Code verwendet ein API-Token. Wählen Sie ein Token für die aktuelle Gruppe.",
+    "调整参数、测试提示词，将请求复制为代码。": "Parameter anpassen, Prompts testen und die Anfrage als Code kopieren.",
+    "解释一个概念": "Ein Konzept erklären",
+    "比较两个方案": "Zwei Optionen vergleichen",
+    "编写一段代码": "Code schreiben",
+    "清空对话": "Unterhaltung leeren",
+    "停止生成": "Generierung stoppen",
+    "发送": "Senden",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Beim Modellwechsel bleibt die Unterhaltung erhalten. Jede Anfrage geht nur an das gewählte Modell."
   }
 }

@@ -6666,6 +6666,18 @@
     "本站首档：{{tier}}": "Prima fascia del sito: {{tier}}",
     "官方对比档位": "Fascia ufficiale di confronto",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "I prezzi includono i moltiplicatori del gruppo. Il costo dipende dall’uso e dalle regole di fatturazione.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Confronto per tariffa con la fascia ufficiale scelta. I prezzi dinamici mostrano la prima fascia del sito, non uno sconto sull’intera richiesta."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Confronto per tariffa con la fascia ufficiale scelta. I prezzi dinamici mostrano la prima fascia del sito, non uno sconto sull’intera richiesta.",
+    "点击设置系统提示词": "Imposta il prompt di sistema",
+    "自动保存": "Salvataggio automatico",
+    "请求代码": "Codice della richiesta",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Il codice usa un token API. Scegli un token del gruppo selezionato.",
+    "调整参数、测试提示词，将请求复制为代码。": "Regola i parametri, prova i prompt e copia la richiesta come codice.",
+    "解释一个概念": "Spiega un concetto",
+    "比较两个方案": "Confronta due opzioni",
+    "编写一段代码": "Scrivi del codice",
+    "清空对话": "Svuota conversazione",
+    "停止生成": "Interrompi generazione",
+    "发送": "Invia",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Cambiare modello mantiene la conversazione. Ogni richiesta usa solo il modello selezionato."
   }
 }

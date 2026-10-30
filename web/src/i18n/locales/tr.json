@@ -6666,6 +6666,18 @@
     "本站首档：{{tier}}": "Sitenin ilk kademesi: {{tier}}",
     "官方对比档位": "Karşılaştırılacak resmî kademe",
     "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Fiyatlara grup çarpanları dahildir. Gerçek ücretler kullanıma ve faturalandırma kurallarına bağlıdır.",
-    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Her birim fiyat seçilen resmî kademeyle karşılaştırılır. Dinamik fiyat sitenin ilk kademesidir, tüm isteğin indirimi değildir."
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Her birim fiyat seçilen resmî kademeyle karşılaştırılır. Dinamik fiyat sitenin ilk kademesidir, tüm isteğin indirimi değildir.",
+    "点击设置系统提示词": "Sistem istemini ayarlamak için tıklayın",
+    "自动保存": "Otomatik kaydedilir",
+    "请求代码": "İstek kodu",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Kod bir API belirteci kullanır. Seçili gruba uygun bir belirteç seçin.",
+    "调整参数、测试提示词，将请求复制为代码。": "Parametreleri ayarlayın, istemleri deneyin ve isteği kod olarak kopyalayın.",
+    "解释一个概念": "Bir kavramı açıkla",
+    "比较两个方案": "İki seçeneği karşılaştır",
+    "编写一段代码": "Kod yaz",
+    "清空对话": "Sohbeti temizle",
+    "停止生成": "Üretimi durdur",
+    "发送": "Gönder",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Model değiştiğinde sohbet korunur. Her istek yalnızca seçili modele gönderilir."
   }
 }
