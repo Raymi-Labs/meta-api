@@ -22,6 +22,38 @@ import { chartMetricValue } from './modelPresentation';
 export const isLatencyMetric = (metric) =>
   metric === 'avg_ttft_ms' || metric === 'avg_completion_ms';
 
+export const isUsageMetric = (metric) =>
+  metric === 'total_tokens' || metric === 'request_count';
+
+// Locale compact notation can leave long numbers unabridged (for example de).
+// Keep count labels bounded across languages; details retain the full count.
+export function formatCompactUsage(value) {
+  if (value == null || !Number.isFinite(value) || value < 0) return '—';
+  const suffixes = ['', 'K', 'M', 'B', 'T'];
+  let index = 0;
+  while (value >= 1000 ** (index + 1) && index < suffixes.length - 1) index++;
+  let rounded = Math.round((value / 1000 ** index) * 10) / 10;
+  if (rounded >= 1000 && index < suffixes.length - 1) {
+    index++;
+    rounded = Math.round((value / 1000 ** index) * 10) / 10;
+  }
+  if (index === 4 && rounded >= 1000) {
+    return value.toExponential(1).replace('.0e', 'e').replace('e+', 'e');
+  }
+  return String(rounded) + suffixes[index];
+}
+
+export function formatChartDetailValue(value, metric) {
+  if (isUsageMetric(metric)) {
+    return value != null && Number.isFinite(value) && value >= 0
+      ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
+          value,
+        )
+      : '—';
+  }
+  return formatChartValue(value, metric);
+}
+
 export function chartDisplayValue(point, metric) {
   const value = chartMetricValue(point, metric);
   return value == null ? null : isLatencyMetric(metric) ? value / 1000 : value;
@@ -30,6 +62,7 @@ export function chartDisplayValue(point, metric) {
 export function formatChartValue(value, metric, withUnit = true) {
   if (value == null || !Number.isFinite(value)) return '—';
   if (isLatencyMetric(metric)) return value.toFixed(2) + (withUnit ? ' s' : '');
+  if (isUsageMetric(metric)) return formatCompactUsage(value);
   const number = new Intl.NumberFormat(undefined, {
     maximumFractionDigits: metric === 'success_rate' ? 2 : 1,
     notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
@@ -56,10 +89,14 @@ export function chartDomain(values, metric) {
     };
   }
   const peak = Math.max(0, ...values);
-  const rawStep = Math.max((peak || 1) / 4, isLatencyMetric(metric) ? 0.01 : 0);
+  const rawStep = Math.max(
+    (peak || 1) / 4,
+    isLatencyMetric(metric) ? 0.01 : isUsageMetric(metric) ? 1 : 0,
+  );
   const magnitude = 10 ** Math.floor(Math.log10(rawStep));
-  const step =
+  const niceStep =
     [1, 2, 2.5, 5, 10].find((n) => n * magnitude >= rawStep) * magnitude;
+  const step = isUsageMetric(metric) ? Math.ceil(niceStep) : niceStep;
   return { min: 0, max: step * 4, ticks: [0, 1, 2, 3, 4].map((n) => n * step) };
 }
 

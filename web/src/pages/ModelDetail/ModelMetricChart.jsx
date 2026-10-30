@@ -24,6 +24,7 @@ import { healthTone } from '../../components/group-health/healthUtils';
 import {
   chartDisplayValue,
   formatChartValue,
+  formatChartDetailValue,
   chartDomain,
   contiguousChartPoints,
 } from '../../helpers/modelChartDisplay';
@@ -72,8 +73,13 @@ export default function ModelMetricChart({
     )
     .filter((value) => value != null);
   const { min, max, ticks } = chartDomain(nums, metric);
-  const height = expandedView ? 320 : 220,
-    left = 58,
+  const tickLabels = ticks.map((value) =>
+    formatChartValue(value, metric, metric === 'success_rate'),
+  );
+  const height = expandedView ? 320 : bar ? 260 : 220,
+    left = bar
+      ? Math.max(58, ...tickLabels.map((label) => label.length * 7 + 12))
+      : 58,
     right = 12,
     top = 20,
     bottom = 36;
@@ -86,6 +92,7 @@ export default function ModelMetricChart({
     height - bottom - ((value - min) / (max - min)) * (height - top - bottom);
   const hoverIndex = timestamps.indexOf(hover);
   const format = (value) => formatChartValue(value, metric);
+  const detail = (value) => formatChartDetailValue(value, metric);
   const limited = (point) =>
     metric === 'success_rate' &&
     ['empty', 'limited'].includes(healthTone(point));
@@ -131,7 +138,7 @@ export default function ModelMetricChart({
               role='img'
               aria-label={title}
             >
-              {ticks.map((value) => (
+              {ticks.map((value, tickIndex) => (
                 <g key={value}>
                   <line
                     x1={left}
@@ -141,7 +148,7 @@ export default function ModelMetricChart({
                     className='model-chart-grid'
                   />
                   <text x={left - 10} y={y(value) + 4} textAnchor='end'>
-                    {formatChartValue(value, metric, metric === 'success_rate')}
+                    {tickLabels[tickIndex]}
                   </text>
                 </g>
               ))}
@@ -228,7 +235,7 @@ export default function ModelMetricChart({
                   height={height - top - bottom}
                   fill='transparent'
                   onMouseEnter={() => setHover(ts)}
-                  onClick={() => setHover(hover === ts ? null : ts)}
+                  onClick={() => setHover(ts)}
                 >
                   <title>
                     {date(ts) +
@@ -238,7 +245,7 @@ export default function ModelMetricChart({
                           (map, i) =>
                             groups[i].group +
                             ': ' +
-                            format(chartDisplayValue(map.get(ts), metric)),
+                            detail(chartDisplayValue(map.get(ts), metric)),
                         )
                         .join('\n')}
                   </title>
@@ -286,7 +293,7 @@ export default function ModelMetricChart({
                     />
                     <span>{group.group}</span>
                     <strong>
-                      {format(chartDisplayValue(values[i].get(hover), metric))}
+                      {detail(chartDisplayValue(values[i].get(hover), metric))}
                     </strong>
                   </span>
                 ))}
@@ -302,7 +309,9 @@ export default function ModelMetricChart({
           <div key={group.group}>
             <i style={{ background: activeColor(group, i) }} />
             <span title={group.group}>{group.group}</span>
-            <strong>{format(chartDisplayValue(group, metric))}</strong>
+            <strong title={detail(chartDisplayValue(group, metric))}>
+              {format(chartDisplayValue(group, metric))}
+            </strong>
           </div>
         ))}
       </div>
@@ -325,7 +334,7 @@ export default function ModelMetricChart({
                     <th>{date(ts)}</th>
                     {values.map((map, i) => (
                       <td key={i}>
-                        {format(chartDisplayValue(map.get(ts), metric))}
+                        {detail(chartDisplayValue(map.get(ts), metric))}
                       </td>
                     ))}
                   </tr>

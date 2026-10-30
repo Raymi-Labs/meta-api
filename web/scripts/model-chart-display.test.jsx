@@ -1,3 +1,22 @@
+/*
+Copyright (C) 2025 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
 import { describe, test, expect, mock } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +26,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   chartDisplayValue,
   formatChartValue,
+  formatChartDetailValue,
+  formatCompactUsage,
   chartDomain,
   contiguousChartPoints,
 } from '../src/helpers/modelChartDisplay';
@@ -27,6 +48,68 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
     '../src/pages/ModelDetail/ModelMetricChart'
   );
   describe('model chart display units and sample integrity', () => {
+    test('usage abbreviations stay bounded while details retain full counts', () => {
+      for (const [value, expected] of [
+        [0, '0'],
+        [999, '999'],
+        [1000, '1K'],
+        [999950, '1M'],
+        [822800000, '822.8M'],
+        [1050000000, '1.1B'],
+        [1000000000000, '1T'],
+        [1000000000000000, '1e15'],
+      ]) {
+        expect(formatCompactUsage(value)).toBe(expected);
+        for (const metric of ['total_tokens', 'request_count']) {
+          expect(formatChartValue(value, metric)).toBe(expected);
+          expect(formatChartDetailValue(value, metric)).toBe(
+            new Intl.NumberFormat(undefined, {
+              maximumFractionDigits: 0,
+            }).format(value),
+          );
+        }
+      }
+      for (const value of [null, undefined, -1, Infinity, NaN]) {
+        expect(formatCompactUsage(value)).toBe('—');
+        expect(formatChartDetailValue(value, 'total_tokens')).toBe('—');
+      }
+      for (const peak of [0, 1, 3, 9, 99]) {
+        const domain = chartDomain([peak], 'request_count');
+        expect(domain.max).toBeGreaterThanOrEqual(peak);
+        expect(domain.ticks.every(Number.isInteger)).toBe(true);
+        expect(new Set(domain.ticks).size).toBe(domain.ticks.length);
+      }
+    });
+
+    test('usage chart abbreviates summary and axis, but exposes exact hourly and aggregate values', () => {
+      const count = 1234567890123;
+      const exact = formatChartDetailValue(count, 'total_tokens');
+      const html = renderToStaticMarkup(
+        <ModelMetricChart
+          title='Tokens'
+          metric='total_tokens'
+          bar
+          t={(key) => key}
+          groups={[
+            {
+              group: '企业专属',
+              total_tokens: count,
+              series: [
+                { ts: 0, total_tokens: count },
+                { ts: 3600, total_tokens: null },
+                { ts: 7200, total_tokens: 0 },
+              ],
+            },
+          ]}
+        />,
+      );
+      expect(html).toContain(`<strong title="${exact}">1.2T</strong>`);
+      expect(html).toContain(`企业专属: ${exact}`);
+      expect(html).toContain(`<td>${exact}</td>`);
+      expect(html).toContain('<td>—</td>');
+      expect(html).toContain('<td>0</td>');
+      expect(html).toContain('>1.5T</text>');
+    });
     test('both latency metrics convert milliseconds once and always show two decimals', () => {
       for (const metric of ['avg_ttft_ms', 'avg_completion_ms']) {
         for (const [raw, expected] of [
@@ -99,7 +182,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(html).toContain('标准: 6.67 s');
       expect(html).toContain('<td>0.00 s</td>');
       expect(html).toContain('<td>—</td>');
-      expect(html).toContain('<strong>2.50 s</strong>');
+      expect(html).toContain('<strong title="2.50 s">2.50 s</strong>');
       expect(html).not.toContain(' ms');
       // Only the first pair is adjacent; neither the null bucket nor later data bridge it.
       expect((html.match(/stroke-width="1.8"/g) || []).length).toBe(1);
@@ -129,7 +212,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(success).toContain('100%');
       const empty = render('avg_ttft_ms', [{ group: '无样本', series: [] }]);
       expect(empty).toContain('暂无数据');
-      expect(empty).toContain('<strong>—</strong>');
+      expect(empty).toContain('<strong title="—">—</strong>');
       expect(empty).not.toContain('<table>');
       const usage = render(
         'total_tokens',
