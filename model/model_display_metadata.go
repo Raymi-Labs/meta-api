@@ -92,6 +92,9 @@ func ValidModelReleaseDate(value string) bool {
 // NormalizeDisplayMetadata validates presentation only; it does not change
 // model identifiers, routing capabilities, permissions, or billing.
 func (m *Model) NormalizeDisplayMetadata() error {
+	if err := m.OfficialPricing.Normalize(m.NameRule); err != nil {
+		return err
+	}
 	m.DisplayName = strings.TrimSpace(m.DisplayName)
 	if utf8.RuneCountInString(m.DisplayName) > 128 {
 		return fmt.Errorf("显示名称不能超过 128 个字符")

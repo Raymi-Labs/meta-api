@@ -15,6 +15,7 @@ import (
 )
 
 type Pricing struct {
+	OfficialPricing          OfficialPricing         `json:"official_pricing"`
 	ModelName                string                  `json:"model_name"`
 	DisplayName              string                  `json:"display_name"`
 	ReleaseDate              string                  `json:"release_date"`
@@ -319,6 +320,9 @@ func updatePricing() {
 			// 若模型被禁用(status!=1)，则直接跳过，不返回给前端
 			if meta.Status != 1 {
 				continue
+			}
+			if meta.NameRule == NameRuleExact && meta.ModelName == model {
+				pricing.OfficialPricing = meta.OfficialPricing
 			}
 			pricing.Description = meta.Description
 			pricing.DisplayName = meta.DisplayName

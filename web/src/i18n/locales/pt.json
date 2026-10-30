@@ -6647,6 +6647,17 @@
     "Token 用量": "Uso de tokens",
     "每百万 Token 综合单价": "Preço médio por milhão de tokens",
     "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Tokens lidos do cache ÷ todos os tokens de entrada, com base nos registros mantidos para o período selecionado.",
-    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Gasto total ÷ uso de tokens × 1.000.000, com base nos totais do painel; não é uma cotação do modelo."
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Gasto total ÷ uso de tokens × 1.000.000, com base nos totais do painel; não é uma cotação do modelo.",
+    "官方参考价": "Preço oficial de referência",
+    "价格来源": "Fonte dos preços",
+    "官方参考价仅供对照，实际费用以本站分组价格为准。": "Os preços oficiais são indicativos. A cobrança segue os preços de grupo do site.",
+    "暂无官方参考价": "Preços oficiais não configurados",
+    "仅展示，不参与扣费；留空表示未配置，0 表示免费。": "Apenas exibição, sem efeito na cobrança. Em branco: desconhecido; 0: gratuito.",
+    "添加价格档位": "Adicionar faixa de preço",
+    "价格说明": "Notas de preços",
+    "模型介绍": "Apresentação do modelo",
+    "显示在模型详情顶部和模型广场卡片中。": "Exibido no topo dos detalhes e nos cartões do catálogo.",
+    "官方参考价仅支持精确匹配模型": "Os preços oficiais exigem um nome de modelo exato",
+    "本站价格": "Preços do site"
   }
 }

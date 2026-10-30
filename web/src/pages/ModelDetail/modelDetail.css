@@ -1062,3 +1062,170 @@ html.dark .model-metric-chart {
     font-size: 13px;
   }
 }
+
+/* Reference-style identity card; pricing remains in its own sections. */
+.model-detail-hero {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 24px;
+  padding: 24px;
+  border-radius: 32px;
+  box-shadow: 0 2px 18px #0000000a;
+}
+.model-detail-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+}
+.model-detail-title-row {
+  gap: 12px;
+  min-height: 64px;
+}
+.model-detail-title-row h1 {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+.model-detail-model-id {
+  font-size: 16px;
+  padding: 3px 12px;
+  border-radius: 8px;
+}
+.model-detail-model-key {
+  gap: 10px;
+}
+.model-detail-model-key > button {
+  border: 1px solid var(--detail-border);
+  border-radius: 8px;
+}
+.model-detail-identity p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-top: 14px;
+  color: var(--detail-muted);
+}
+.model-detail-vendor {
+  color: var(--semi-color-primary);
+  font-size: 18px;
+  font-weight: 500;
+}
+.model-detail-vendor::before {
+  content: '·';
+  margin-right: 12px;
+  color: var(--detail-muted);
+}
+.model-detail-title-row .model-detail-doc-link {
+  border: 1px solid var(--detail-border);
+  background: var(--detail-soft);
+  font-size: 13px;
+}
+.model-detail-modalities .model-detail-metadata {
+  margin: 0 0 22px;
+}
+.model-official-pricing .model-detail-section-heading a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--semi-color-primary);
+  font-size: 13px;
+}
+.model-official-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--detail-border);
+  border-radius: 14px;
+}
+.model-official-pricing table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+.model-official-pricing th,
+.model-official-pricing td {
+  padding: 16px;
+  border-bottom: 1px solid var(--detail-divider);
+}
+.model-official-pricing thead th {
+  background: var(--detail-soft);
+  color: var(--detail-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.model-official-pricing tbody th {
+  font-weight: 500;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.model-official-pricing td {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.model-official-pricing tr:last-child td,
+.model-official-pricing tr:last-child th {
+  border-bottom: 0;
+}
+.model-official-empty {
+  padding: 20px;
+  background: var(--detail-soft);
+  color: var(--detail-muted);
+  border-radius: 12px;
+  font-size: 14px;
+}
+.model-official-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .model-detail-hero {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+    padding: 20px;
+    border-radius: 24px;
+  }
+  .model-detail-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .model-detail-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+  .model-detail-title-row {
+    min-height: 48px;
+    gap: 10px;
+  }
+  .model-detail-title-row h1 {
+    font-size: 28px;
+    flex-basis: 100%;
+  }
+  .model-detail-model-id {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+  .model-detail-vendor {
+    font-size: 14px;
+  }
+  .model-detail-identity p {
+    font-size: 14px;
+    margin-top: 18px;
+  }
+  .model-detail-model-key {
+    gap: 4px;
+  }
+  .model-official-pricing th,
+  .model-official-pricing td {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .model-detail-identity {
+    display: contents;
+  }
+  .model-detail-title-row {
+    grid-column: 2;
+  }
+  .model-detail-identity p {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}

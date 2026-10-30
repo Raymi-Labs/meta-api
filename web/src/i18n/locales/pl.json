@@ -6647,6 +6647,17 @@
     "Token 用量": "Zużycie tokenów",
     "每百万 Token 综合单价": "Średnia cena za milion tokenów",
     "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Tokeny odczytane z pamięci podręcznej ÷ wszystkie tokeny wejściowe, według zachowanych dzienników z wybranego okresu.",
-    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Łączne wydatki ÷ zużycie tokenów × 1 000 000, według sum panelu; nie jest to cennik modelu."
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Łączne wydatki ÷ zużycie tokenów × 1 000 000, według sum panelu; nie jest to cennik modelu.",
+    "官方参考价": "Oficjalna cena referencyjna",
+    "价格来源": "Źródło cen",
+    "官方参考价仅供对照，实际费用以本站分组价格为准。": "Oficjalne ceny służą do porównania. Opłaty są naliczane według cen grup na stronie.",
+    "暂无官方参考价": "Nie skonfigurowano oficjalnych cen",
+    "仅展示，不参与扣费；留空表示未配置，0 表示免费。": "Tylko wyświetlanie, bez wpływu na opłaty. Puste oznacza brak danych, 0 — bezpłatnie.",
+    "添加价格档位": "Dodaj próg cenowy",
+    "价格说明": "Uwagi o cenach",
+    "模型介绍": "Opis modelu",
+    "显示在模型详情顶部和模型广场卡片中。": "Wyświetlane u góry szczegółów modelu i na kartach katalogu.",
+    "官方参考价仅支持精确匹配模型": "Oficjalne ceny wymagają dokładnej nazwy modelu",
+    "本站价格": "Ceny strony"
   }
 }

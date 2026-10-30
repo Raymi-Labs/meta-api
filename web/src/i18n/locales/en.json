@@ -6859,6 +6859,17 @@
     "Token 用量": "Token usage",
     "每百万 Token 综合单价": "Blended price per million tokens",
     "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Cache-read tokens ÷ all input tokens, based on retained usage logs for the selected period.",
-    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Total spend ÷ token usage × 1,000,000, based on dashboard aggregates; this is not a model price quote."
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Total spend ÷ token usage × 1,000,000, based on dashboard aggregates; this is not a model price quote.",
+    "官方参考价": "Official reference pricing",
+    "价格来源": "Pricing source",
+    "官方参考价仅供对照，实际费用以本站分组价格为准。": "Official prices are for reference. Actual charges follow this site’s group pricing.",
+    "暂无官方参考价": "Official pricing is not configured",
+    "仅展示，不参与扣费；留空表示未配置，0 表示免费。": "For display only, not billing. Leave blank for unknown prices; 0 means free.",
+    "添加价格档位": "Add pricing tier",
+    "价格说明": "Pricing notes",
+    "模型介绍": "Model introduction",
+    "显示在模型详情顶部和模型广场卡片中。": "Shown at the top of model details and on model catalog cards.",
+    "官方参考价仅支持精确匹配模型": "Official prices require an exact model name match",
+    "本站价格": "Site pricing"
   }
 }

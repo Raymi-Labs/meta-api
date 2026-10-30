@@ -51,6 +51,7 @@ import {
 import ModelEndpoints from '../../components/table/model-pricing/modal/components/ModelEndpoints';
 import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelQuickStart from './ModelQuickStart.jsx';
+import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
 
 const MODEL_MODALITY_ICONS = {
@@ -170,7 +171,8 @@ export default function ModelDetail() {
           .slice(0, 6)
       : [];
   const sections = [
-    ['pricing', '价格详情'],
+    ['official-pricing', '官方参考价'],
+    ['pricing', '本站价格'],
     ['capabilities', '模型能力'],
     ['quick-start', '快速开始'],
     ['performance', '性能对比'],
@@ -189,7 +191,7 @@ export default function ModelDetail() {
       <header className='model-detail-hero'>
         <div className='model-detail-icon' aria-hidden='true'>
           {icon
-            ? getLobeHubIcon(icon, 38)
+            ? getLobeHubIcon(icon, 56)
             : model.model_name.slice(0, 2).toUpperCase()}
         </div>
         <div className='model-detail-identity'>
@@ -211,54 +213,14 @@ export default function ModelDetail() {
                 onClick={() => data.copyText(model.model_name)}
               />
             </div>
-          </div>
-          <div className='model-detail-metadata'>
-            <span>{model.vendor_name || t('未知供应商')}</span>
-            <span aria-hidden='true'>·</span>
-            <span>
-              {t(
-                priceData.isDynamicPricing
-                  ? '动态计费'
-                  : model.quota_type === 2
-                    ? '按小时计费'
-                    : model.quota_type === 1
-                      ? '按次计费'
-                      : '按量计费',
-              )}
+            <Link className='model-detail-doc-link' to='/docs/api-examples'>
+              {t('API 文档')}
+            </Link>
+            <span className='model-detail-vendor'>
+              {model.vendor_name || t('未知供应商')}
             </span>
-            <span aria-hidden='true'>·</span>
-            <span title={formatModelContextExact(model.context_length)}>
-              {t('上下文长度')}:{' '}
-              {formatModelContext(model.context_length) === '—'
-                ? t('未配置')
-                : formatModelContext(model.context_length)}
-            </span>
-            {tags.length > 0 && (
-              <div className='model-detail-tags'>
-                {tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            )}
           </div>
           {model.description && <p>{model.description}</p>}
-        </div>
-        <div className='model-detail-actions'>
-          <button
-            className='model-detail-primary'
-            type='button'
-            onClick={() => {
-              const section = pageRef.current?.querySelector('#quick-start');
-              section?.scrollIntoView({ block: 'start' });
-              section?.focus({ preventScroll: true });
-            }}
-          >
-            {t('快速开始')}
-            <ArrowUpRight size={16} aria-hidden='true' />
-          </button>
-          <Link className='model-detail-doc-link' to='/docs/api-examples'>
-            {t('API 文档')}
-          </Link>
         </div>
       </header>
 
@@ -279,9 +241,10 @@ export default function ModelDetail() {
           ))}
         </nav>
         <div className='model-detail-main'>
+          <ModelOfficialPricing pricing={model.official_pricing} t={t} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>
-              <h2>{t('价格详情')}</h2>
+              <h2>{t('本站价格')}</h2>
               <div className='model-detail-price-controls'>
                 <Select
                   aria-label={t('分组')}
@@ -395,6 +358,35 @@ export default function ModelDetail() {
               className='model-detail-modalities'
               aria-label={t('模型能力')}
             >
+              <div className='model-detail-metadata'>
+                <span>{model.vendor_name || t('未知供应商')}</span>
+                <span aria-hidden='true'>·</span>
+                <span>
+                  {t(
+                    priceData.isDynamicPricing
+                      ? '动态计费'
+                      : model.quota_type === 2
+                        ? '按小时计费'
+                        : model.quota_type === 1
+                          ? '按次计费'
+                          : '按量计费',
+                  )}
+                </span>
+                <span aria-hidden='true'>·</span>
+                <span title={formatModelContextExact(model.context_length)}>
+                  {t('上下文长度')}:{' '}
+                  {formatModelContext(model.context_length) === '—'
+                    ? t('未配置')
+                    : formatModelContext(model.context_length)}
+                </span>
+                {tags.length > 0 && (
+                  <div className='model-detail-tags'>
+                    {tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className='model-capability-grid'>
                 {[
                   ['input_modalities', '输入模态'],

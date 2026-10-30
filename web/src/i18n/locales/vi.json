@@ -7262,6 +7262,17 @@
     "Token 用量": "Lượng token sử dụng",
     "每百万 Token 综合单价": "Đơn giá trung bình mỗi triệu token",
     "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Token đọc từ bộ nhớ đệm ÷ tổng token đầu vào, dựa trên nhật ký sử dụng còn lưu trong khoảng thời gian đã chọn.",
-    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Tổng chi phí ÷ lượng token sử dụng × 1.000.000, dựa trên số liệu tổng hợp của bảng điều khiển; đây không phải báo giá mô hình."
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Tổng chi phí ÷ lượng token sử dụng × 1.000.000, dựa trên số liệu tổng hợp của bảng điều khiển; đây không phải báo giá mô hình.",
+    "官方参考价": "Giá tham khảo chính thức",
+    "价格来源": "Nguồn giá",
+    "官方参考价仅供对照，实际费用以本站分组价格为准。": "Giá chính thức chỉ để tham khảo. Phí thực tế theo giá nhóm của trang web.",
+    "暂无官方参考价": "Chưa cấu hình giá chính thức",
+    "仅展示，不参与扣费；留空表示未配置，0 表示免费。": "Chỉ hiển thị, không dùng tính phí. Để trống là chưa cấu hình, 0 là miễn phí.",
+    "添加价格档位": "Thêm mức giá",
+    "价格说明": "Ghi chú giá",
+    "模型介绍": "Giới thiệu mô hình",
+    "显示在模型详情顶部和模型广场卡片中。": "Hiển thị ở đầu trang chi tiết và trên thẻ danh mục mô hình.",
+    "官方参考价仅支持精确匹配模型": "Giá chính thức yêu cầu tên mô hình khớp chính xác",
+    "本站价格": "Giá của trang web"
   }
 }

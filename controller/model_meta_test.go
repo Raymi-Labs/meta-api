@@ -26,7 +26,7 @@ func TestModelMetaRequestDisplayMetadataPresence(t *testing.T) {
 	require.Equal(t, existing.ContextLength, got.ContextLength)
 	require.Equal(t, existing.InputModalities, got.InputModalities)
 	var clear modelMetaRequest
-	require.NoError(t, common.UnmarshalJsonStr(`{"display_name":"","release_date":"","context_length":0,"input_modalities":[],"output_modalities":[]}`, &clear))
+	require.NoError(t, common.UnmarshalJsonStr(`{"official_pricing":{},"display_name":"","release_date":"","context_length":0,"input_modalities":[],"output_modalities":[]}`, &clear))
 	got, err = clear.withDisplayMetadata(&existing)
 	require.NoError(t, err)
 	require.Empty(t, got.DisplayName)
@@ -67,9 +67,11 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 		require.NoError(t, common.Unmarshal(response.Body.Bytes(), &result))
 		return result.Success
 	}
-	require.True(t, invoke(http.MethodPost, "/api/models/", `{"model_name":"metadata-model","description":"Local description","display_name":" Local title ","release_date":"2026-10-24","context_length":256000,"input_modalities":["image","text","text"],"output_modalities":["text"],"status":1,"sync_official":1}`, CreateModelMeta))
+	require.True(t, invoke(http.MethodPost, "/api/models/", `{"official_pricing":{"currency":"USD","tiers":[{"label":"Standard","unit":"million_tokens","input":10,"cache_read":0}]},"model_name":"metadata-model","description":"Local description","display_name":" Local title ","release_date":"2026-10-24","context_length":256000,"input_modalities":["image","text","text"],"output_modalities":["text"],"status":1,"sync_official":1}`, CreateModelMeta))
 	var saved model.Model
 	require.NoError(t, db.Where("model_name = ?", "metadata-model").First(&saved).Error)
+	require.Len(t, saved.OfficialPricing.Tiers, 1)
+	require.Equal(t, float64(10), *saved.OfficialPricing.Tiers[0].Input)
 	require.Equal(t, "Local title", saved.DisplayName)
 	require.Equal(t, "2026-10-24", saved.ReleaseDate)
 	require.Equal(t, model.ModelModalities{"text", "image"}, saved.InputModalities)
@@ -85,6 +87,7 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	// An old full-update payload may edit descriptions without losing the added fields.
 	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","description":"Updated description","status":1,"sync_official":1}`, UpdateModelMeta))
 	require.Equal(t, "Local title", model.GetPricing()[0].DisplayName)
+	require.Equal(t, saved.OfficialPricing, model.GetPricing()[0].OfficialPricing)
 	require.Equal(t, "Updated description", model.GetPricing()[0].Description)
 	require.Equal(t, "2026-10-24", model.GetPricing()[0].ReleaseDate)
 	// Upstream metadata can update its known fields, but cannot overwrite locally
@@ -99,8 +102,9 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	}))
 	t.Cleanup(upstream.Close)
 	t.Setenv("SYNC_UPSTREAM_BASE", upstream.URL)
-	require.True(t, invoke(http.MethodPost, "/api/models/sync_upstream", `{"overwrite":[{"model_name":"metadata-model","fields":["description","display_name","release_date","context_length","input_modalities","output_modalities"]}]}`, SyncUpstreamModels))
+	require.True(t, invoke(http.MethodPost, "/api/models/sync_upstream", `{"overwrite":[{"model_name":"metadata-model","fields":["official_pricing","description","display_name","release_date","context_length","input_modalities","output_modalities"]}]}`, SyncUpstreamModels))
 	pricing = model.GetPricing()
+	require.Equal(t, saved.OfficialPricing, pricing[0].OfficialPricing)
 	require.Equal(t, "Upstream description", pricing[0].Description)
 	require.Equal(t, "Local title", pricing[0].DisplayName)
 	require.Equal(t, "2026-10-24", pricing[0].ReleaseDate)
@@ -121,9 +125,10 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.Empty(t, model.GetPricing(), "disabled metadata remains hidden from public pricing")
 	require.NoError(t, db.First(&saved, 1).Error)
 	require.Equal(t, "Local title", saved.DisplayName)
-	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","display_name":"","release_date":"","context_length":0,"input_modalities":[],"output_modalities":[],"status":1}`, UpdateModelMeta))
+	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","official_pricing":{},"display_name":"","release_date":"","context_length":0,"input_modalities":[],"output_modalities":[],"status":1}`, UpdateModelMeta))
 	pricing = model.GetPricing()
 	require.Len(t, pricing, 1)
+	require.Empty(t, pricing[0].OfficialPricing.Tiers)
 	require.Empty(t, pricing[0].DisplayName)
 	require.Empty(t, pricing[0].ReleaseDate)
 	require.Zero(t, pricing[0].ContextLength)
