@@ -6903,6 +6903,18 @@
     "单位为 Token；0 表示未知，可由同步补齐。": "Measured in tokens. 0 means unknown and can be filled by sync.",
     "未知可自动补齐；人工配置的支持或不支持优先保留。": "Unknown values can be synced. Manual supported or unsupported settings take priority.",
     "关闭后停止属性同步。开启时厂商官方优先，模型库补全；自动值持续更新，人工设置优先保留。": "Disable to stop attribute sync. When enabled, official sources take priority and the catalog fills gaps. Automatic values stay updated; manual settings are preserved.",
-    "部分来源暂不可用，已保留原有属性。": "Some sources are unavailable. Existing attributes have been preserved."
+    "部分来源暂不可用，已保留原有属性。": "Some sources are unavailable. Existing attributes have been preserved.",
+    "点击设置系统提示词": "Click to set a system prompt",
+    "自动保存": "Saved automatically",
+    "请求代码": "Request code",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Code uses an API token. Choose a token for the selected group.",
+    "调整参数、测试提示词，将请求复制为代码。": "Tune parameters, test prompts, and copy the request as code.",
+    "解释一个概念": "Explain a concept",
+    "比较两个方案": "Compare two options",
+    "编写一段代码": "Write some code",
+    "清空对话": "Clear conversation",
+    "停止生成": "Stop generating",
+    "发送": "Send",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Switching models keeps this conversation. Each request uses only the selected model."
   }
 }

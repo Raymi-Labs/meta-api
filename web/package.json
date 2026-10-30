@@ -65,6 +65,7 @@
     "test:cache-semantics": "node --test scripts/cache-semantics.test.mjs",
     "test:upstream-optimizations": "node scripts/upstream-optimizations.test.mjs && node scripts/playground-account-storage.test.mjs",
     "test:playground-sse": "node scripts/playground-sse.test.mjs",
+    "test:playground-workspace": "bun test scripts/playground-workspace.test.mjs && node scripts/playground-account-storage.test.mjs && node scripts/playground-sse.test.mjs",
     "test:ccswitch-config": "node scripts/ccswitch-config.test.mjs",
     "test:runtime-docs": "node --test scripts/runtime-docs.test.mjs",
     "test:desktop-download": "node scripts/desktop-download.test.mjs",

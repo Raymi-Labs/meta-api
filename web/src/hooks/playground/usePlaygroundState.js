@@ -18,10 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  DEFAULT_MESSAGES,
-  getDefaultMessages,
   DEFAULT_CONFIG,
   DEBUG_TABS,
   MESSAGE_STATUS,
@@ -36,7 +33,6 @@ import {
 import { processIncompleteThinkTags } from '../../helpers';
 
 export const usePlaygroundState = (owner) => {
-  const { t } = useTranslation();
   const activeRef = useRef(true);
 
   // 使用惰性初始化，确保只在组件首次挂载时加载配置和消息
@@ -88,17 +84,7 @@ export const usePlaygroundState = (owner) => {
   const [status, setStatus] = useState({});
 
   // 消息相关状态 - 使用加载的消息或默认消息初始化
-  const [message, setMessage] = useState(
-    () => initialMessages || getDefaultMessages(t),
-  );
-
-  // 当语言改变时，如果是默认消息则更新
-  useEffect(() => {
-    // 只在没有保存的消息时才更新默认消息
-    if (!initialMessages) {
-      setMessage(getDefaultMessages(t));
-    }
-  }, [t, initialMessages]); // 当语言改变时
+  const [message, setMessage] = useState(() => initialMessages || []);
 
   // 调试状态
   const [debugData, setDebugData] = useState({
@@ -183,10 +169,10 @@ export const usePlaygroundState = (owner) => {
       if (typeof importedConfig.showDebugPanel === 'boolean') {
         setShowDebugPanel(importedConfig.showDebugPanel);
       }
-      if (importedConfig.customRequestMode) {
+      if (typeof importedConfig.customRequestMode === 'boolean') {
         setCustomRequestMode(importedConfig.customRequestMode);
       }
-      if (importedConfig.customRequestBody) {
+      if (typeof importedConfig.customRequestBody === 'string') {
         setCustomRequestBody(importedConfig.customRequestBody);
       }
       // 如果导入的配置包含消息，也恢复消息
@@ -198,23 +184,25 @@ export const usePlaygroundState = (owner) => {
     [owner],
   );
 
-  const handleConfigReset = useCallback((options = {}) => {
-    const { resetMessages = false } = options;
+  const handleConfigReset = useCallback(
+    (options = {}) => {
+      if (!activeRef.current) return;
+      const { resetMessages = false } = options;
 
-    setInputs(DEFAULT_CONFIG.inputs);
-    setParameterEnabled(DEFAULT_CONFIG.parameterEnabled);
-    setShowDebugPanel(DEFAULT_CONFIG.showDebugPanel);
-    setCustomRequestMode(DEFAULT_CONFIG.customRequestMode);
-    setCustomRequestBody(DEFAULT_CONFIG.customRequestBody);
+      setInputs(DEFAULT_CONFIG.inputs);
+      setParameterEnabled(DEFAULT_CONFIG.parameterEnabled);
+      setShowDebugPanel(DEFAULT_CONFIG.showDebugPanel);
+      setCustomRequestMode(DEFAULT_CONFIG.customRequestMode);
+      setCustomRequestBody(DEFAULT_CONFIG.customRequestBody);
 
-    // 只有在明确指定时才重置消息
-    if (resetMessages) {
-      setMessage([]);
-      setTimeout(() => {
-        setMessage(getDefaultMessages(t));
-      }, 0);
-    }
-  }, []);
+      // 只有在明确指定时才重置消息
+      if (resetMessages) {
+        setMessage([]);
+        saveMessages([], owner);
+      }
+    },
+    [owner],
+  );
 
   // 清理定时器
   useEffect(() => {

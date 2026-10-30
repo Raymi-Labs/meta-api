@@ -27,6 +27,8 @@ import {
   clearConfig,
   hasStoredConfig,
   getConfigTimestamp,
+  saveConfig,
+  getPlaygroundOwner,
 } from './configStorage';
 
 const ConfigManager = ({
@@ -38,18 +40,12 @@ const ConfigManager = ({
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
+  const owner = getPlaygroundOwner();
 
   const handleExport = () => {
     try {
       // 在导出前先保存当前配置，确保导出的是最新内容
-      const configWithTimestamp = {
-        ...currentConfig,
-        timestamp: new Date().toISOString(),
-      };
-      localStorage.setItem(
-        'playground_config',
-        JSON.stringify(configWithTimestamp),
-      );
+      saveConfig(currentConfig, owner);
 
       exportConfig(currentConfig, messages);
       Toast.success({
@@ -114,16 +110,14 @@ const ConfigManager = ({
         // 询问是否同时重置消息
         Modal.confirm({
           title: t('重置选项'),
-          content: t(
-            '是否同时重置对话消息？选择"是"将清空所有对话记录并恢复默认示例；选择"否"将保留当前对话记录。',
-          ),
+          content: `${t('清空对话')}？`,
           okText: t('同时重置消息'),
           cancelText: t('仅重置配置'),
           okButtonProps: {
             type: 'danger',
           },
           onOk: () => {
-            clearConfig();
+            clearConfig(owner);
             onConfigReset({ resetMessages: true });
             Toast.success({
               content: t('配置和消息已全部重置'),
@@ -131,7 +125,7 @@ const ConfigManager = ({
             });
           },
           onCancel: () => {
-            clearConfig();
+            clearConfig(owner);
             onConfigReset({ resetMessages: false });
             Toast.success({
               content: t('配置已重置，对话消息已保留'),
@@ -144,8 +138,8 @@ const ConfigManager = ({
   };
 
   const getConfigStatus = () => {
-    if (hasStoredConfig()) {
-      const timestamp = getConfigTimestamp();
+    if (hasStoredConfig(owner)) {
+      const timestamp = getConfigTimestamp(owner);
       if (timestamp) {
         const date = new Date(timestamp);
         return t('上次保存: ') + date.toLocaleString();

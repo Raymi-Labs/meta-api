@@ -6691,6 +6691,18 @@
     "单位为 Token；0 表示未知，可由同步补齐。": "Einheit: Tokens. 0 bedeutet unbekannt und kann durch Synchronisierung ergänzt werden.",
     "未知可自动补齐；人工配置的支持或不支持优先保留。": "Unbekannte Werte können synchronisiert werden. Manuelle Angaben zur Unterstützung haben Vorrang.",
     "关闭后停止属性同步。开启时厂商官方优先，模型库补全；自动值持续更新，人工设置优先保留。": "Deaktivieren stoppt die Synchronisierung. Offizielle Quellen haben Vorrang, der Katalog ergänzt fehlende Angaben. Automatische Werte werden aktualisiert, manuelle Einstellungen bleiben erhalten.",
-    "部分来源暂不可用，已保留原有属性。": "Einige Quellen sind nicht verfügbar. Bestehende Eigenschaften bleiben erhalten."
+    "部分来源暂不可用，已保留原有属性。": "Einige Quellen sind nicht verfügbar. Bestehende Eigenschaften bleiben erhalten.",
+    "点击设置系统提示词": "Systemanweisung festlegen",
+    "自动保存": "Automatisch gespeichert",
+    "请求代码": "Anfragecode",
+    "代码使用 API 令牌，请选择与当前分组一致的令牌。": "Der Code verwendet ein API-Token. Wählen Sie ein Token für die aktuelle Gruppe.",
+    "调整参数、测试提示词，将请求复制为代码。": "Parameter anpassen, Prompts testen und die Anfrage als Code kopieren.",
+    "解释一个概念": "Ein Konzept erklären",
+    "比较两个方案": "Zwei Optionen vergleichen",
+    "编写一段代码": "Code schreiben",
+    "清空对话": "Unterhaltung leeren",
+    "停止生成": "Generierung stoppen",
+    "发送": "Senden",
+    "切换模型保留当前对话；每次只请求选中的模型。": "Beim Modellwechsel bleibt die Unterhaltung erhalten. Jede Anfrage geht nur an das gewählte Modell."
   }
 }

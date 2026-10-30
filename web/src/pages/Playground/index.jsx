@@ -22,11 +22,12 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  useMemo,
   useState,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Layout, Toast, Modal, Banner, Button } from '@douyinfe/semi-ui';
+import { Toast, Banner, Button } from '@douyinfe/semi-ui';
 
 import { getPlaygroundOwner } from '../../components/playground/configStorage';
 
@@ -38,22 +39,17 @@ import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
 import { useMessageActions } from '../../hooks/playground/useMessageActions';
 import { useApiRequest } from '../../hooks/playground/useApiRequest';
-import { useSyncMessageAndCustomBody } from '../../hooks/playground/useSyncMessageAndCustomBody';
 import { useMessageEdit } from '../../hooks/playground/useMessageEdit';
 import { useDataLoader } from '../../hooks/playground/useDataLoader';
 
 // Constants and utils
-import {
-  MESSAGE_ROLES,
-  ERROR_MESSAGES,
-} from '../../constants/playground.constants';
+import { MESSAGE_ROLES } from '../../constants/playground.constants';
 import {
   getLogo,
   stringToColor,
   buildMessageContent,
   createMessage,
   createLoadingAssistantMessage,
-  getTextContent,
   buildApiPayload,
   encodeToBase64,
 } from '../../helpers';
@@ -61,12 +57,19 @@ import {
 // Components
 import {
   OptimizedSettingsPanel,
-  OptimizedDebugPanel,
   OptimizedMessageContent,
   OptimizedMessageActions,
 } from '../../components/playground/OptimizedComponents';
 import ChatArea from '../../components/playground/ChatArea';
-import FloatingButtons from '../../components/playground/FloatingButtons';
+import { SlidersHorizontal, Code2, RefreshCw } from 'lucide-react';
+import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
+import ModelTabs from '../../components/playground/ModelTabs';
+import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
+import RequestCodePanel from '../../components/playground/RequestCodePanel';
+import {
+  buildPlaygroundPreview,
+  reconcileModelTabs,
+} from '../../helpers/playgroundRequest';
 import { PlaygroundProvider } from '../../contexts/PlaygroundContext';
 
 // 生成头像
@@ -106,7 +109,6 @@ const AccountPlayground = ({ owner }) => {
     message,
     debugData,
     activeDebugTab,
-    previewPayload,
     sseSourceRef,
     chatRef,
     handleInputChange,
@@ -122,11 +124,28 @@ const AccountPlayground = ({ owner }) => {
     setMessage,
     setDebugData,
     setActiveDebugTab,
-    setPreviewPayload,
     setShowDebugPanel,
     setCustomRequestMode,
     setCustomRequestBody,
   } = state;
+
+  const [draft, setDraft] = useState('');
+  const messageRef = useRef(message);
+  messageRef.current = message;
+  const sendingRef = useRef(false);
+  const activeRef = useRef(true);
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+    };
+  }, []);
+  const generating = message.some((item) =>
+    ['loading', 'incomplete'].includes(item.status),
+  );
+  useEffect(() => {
+    if (!generating) sendingRef.current = false;
+  }, [generating]);
 
   // API 请求相关
   const { sendRequest, onStopGenerator } = useApiRequest(
@@ -138,7 +157,40 @@ const AccountPlayground = ({ owner }) => {
   );
 
   // 数据加载
-  useDataLoader(userState, inputs, handleInputChange, setModels, setGroups);
+  const { modelsLoading, modelsError, reloadModels } = useDataLoader(
+    userState,
+    inputs,
+    handleInputChange,
+    setModels,
+    setGroups,
+  );
+  const tabs = reconcileModelTabs(inputs.modelTabs, inputs.model, models);
+  const canSend =
+    !modelsLoading &&
+    !modelsError &&
+    models.some((model) => model.value === inputs.model);
+  useEffect(() => {
+    if (modelsLoading || modelsError) return;
+    if (JSON.stringify(tabs) !== JSON.stringify(inputs.modelTabs))
+      handleInputChange('modelTabs', tabs);
+  }, [
+    modelsLoading,
+    modelsError,
+    JSON.stringify(tabs),
+    inputs.modelTabs,
+    handleInputChange,
+  ]);
+  const selectModel = (model) => {
+    if (generating || customRequestMode) return;
+    handleInputChange('model', model);
+    handleInputChange('modelTabs', [...new Set([...tabs, model])]);
+  };
+  const removeModel = (model) => {
+    if (generating || customRequestMode || tabs.length < 2) return;
+    const remaining = tabs.filter((value) => value !== model);
+    handleInputChange('modelTabs', remaining);
+    if (inputs.model === model) handleInputChange('model', remaining[0]);
+  };
 
   // 消息编辑
   const {
@@ -149,24 +201,11 @@ const AccountPlayground = ({ owner }) => {
     handleEditSave,
     handleEditCancel,
   } = useMessageEdit(
+    message,
     setMessage,
-    inputs,
-    parameterEnabled,
-    sendRequest,
+    onMessageSend,
     saveMessagesImmediately,
   );
-
-  // 消息和自定义请求体同步
-  const { syncMessageToCustomBody, syncCustomBodyToMessage } =
-    useSyncMessageAndCustomBody(
-      customRequestMode,
-      customRequestBody,
-      message,
-      inputs,
-      setCustomRequestBody,
-      setMessage,
-      debouncedSaveConfig,
-    );
 
   // 角色信息
   const roleInfo = {
@@ -192,125 +231,83 @@ const AccountPlayground = ({ owner }) => {
     saveMessagesImmediately,
   );
 
-  // 构建预览请求体
+  // A single payload builder owns the draft, system prompt and enabled parameters.
   const constructPreviewPayload = useCallback(() => {
-    try {
-      // 如果是自定义请求体模式且有自定义内容，直接返回解析后的自定义请求体
-      if (customRequestMode && customRequestBody && customRequestBody.trim()) {
-        try {
-          return JSON.parse(customRequestBody);
-        } catch (parseError) {
-          console.warn('自定义请求体JSON解析失败，回退到默认预览:', parseError);
-        }
-      }
-
-      // 默认预览逻辑
-      let messages = [...message];
-
-      // 如果存在用户消息
-      if (
-        !(
-          messages.length === 0 ||
-          messages.every((msg) => msg.role !== MESSAGE_ROLES.USER)
-        )
-      ) {
-        // 处理最后一个用户消息的图片
-        for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].role === MESSAGE_ROLES.USER) {
-            if (inputs.imageEnabled && inputs.imageUrls) {
-              const validImageUrls = inputs.imageUrls.filter(
-                (url) => url.trim() !== '',
-              );
-              if (validImageUrls.length > 0) {
-                const textContent = getTextContent(messages[i]) || '示例消息';
-                const content = buildMessageContent(
-                  textContent,
-                  validImageUrls,
-                  true,
-                );
-                messages[i] = { ...messages[i], content };
-              }
-            }
-            break;
-          }
-        }
-      }
-
-      return buildApiPayload(messages, null, inputs, parameterEnabled);
-    } catch (error) {
-      console.error('构造预览请求体失败:', error);
-      return null;
-    }
-  }, [inputs, parameterEnabled, message, customRequestMode, customRequestBody]);
-
-  // 发送消息
-  function onMessageSend(content, attachment) {
-    console.log('attachment: ', attachment);
-
-    // 创建用户消息和加载消息
-    const userMessage = createMessage(MESSAGE_ROLES.USER, content);
-    const loadingMessage = createLoadingAssistantMessage();
-
-    // 如果是自定义请求体模式
-    if (customRequestMode && customRequestBody) {
+    if (customRequestMode) {
       try {
-        const customPayload = JSON.parse(customRequestBody);
-
-        setMessage((prevMessage) => {
-          const newMessages = [...prevMessage, userMessage, loadingMessage];
-
-          // 发送自定义请求体
-          sendRequest(customPayload, customPayload.stream !== false);
-
-          // 发送消息后保存，传入新消息列表
-          setTimeout(() => saveMessagesImmediately(newMessages), 0);
-
-          return newMessages;
-        });
-        return;
-      } catch (error) {
-        console.error('自定义请求体JSON解析失败:', error);
-        Toast.error(ERROR_MESSAGES.JSON_PARSE_ERROR);
-        return;
+        const payload = JSON.parse(customRequestBody);
+        return payload &&
+          !Array.isArray(payload) &&
+          Array.isArray(payload.messages)
+          ? payload
+          : null;
+      } catch {
+        return null;
       }
     }
+    return buildPlaygroundPreview(message, draft, inputs, parameterEnabled);
+  }, [
+    message,
+    draft,
+    inputs,
+    parameterEnabled,
+    customRequestMode,
+    customRequestBody,
+  ]);
 
-    // 默认模式
-    const validImageUrls = inputs.imageUrls.filter((url) => url.trim() !== '');
-    const messageContent = buildMessageContent(
-      content,
-      validImageUrls,
-      inputs.imageEnabled,
-    );
-    const userMessageWithImages = createMessage(
-      MESSAGE_ROLES.USER,
-      messageContent,
-    );
+  const previewPayload = useMemo(constructPreviewPayload, [
+    constructPreviewPayload,
+  ]);
 
-    setMessage((prevMessage) => {
-      const newMessages = [...prevMessage, userMessageWithImages];
-
-      const payload = buildApiPayload(
-        newMessages,
-        null,
-        inputs,
-        parameterEnabled,
-      );
-      sendRequest(payload, inputs.stream);
-
-      // 禁用图片模式
-      if (inputs.imageEnabled) {
-        setTimeout(() => {
-          handleInputChange('imageEnabled', false);
-        }, 100);
+  function onMessageSend(content, retryMessages = null) {
+    if (
+      !activeRef.current ||
+      owner !== getPlaygroundOwner() ||
+      sendingRef.current ||
+      generating ||
+      !canSend
+    )
+      return false;
+    let payload;
+    let nextMessages;
+    if (customRequestMode) {
+      try {
+        payload = JSON.parse(customRequestBody);
+        if (
+          !payload?.model ||
+          !Array.isArray(payload.messages) ||
+          !payload.messages.length
+        )
+          throw new Error('Invalid request');
+        nextMessages = payload.messages.map((item) =>
+          createMessage(item.role, item.content),
+        );
+      } catch {
+        Toast.error(t('JSON格式错误'));
+        return false;
       }
-
-      // 发送消息后保存，传入新消息列表（包含用户消息和加载消息）
-      const messagesWithLoading = [...newMessages, loadingMessage];
-      setTimeout(() => saveMessagesImmediately(messagesWithLoading), 0);
-
-      return messagesWithLoading;
-    });
+    } else {
+      if (!retryMessages && !content.trim()) return false;
+      const messageContent = buildMessageContent(
+        content,
+        (inputs.imageUrls || []).filter((url) => url.trim()),
+        inputs.imageEnabled,
+      );
+      nextMessages = retryMessages || [
+        ...messageRef.current,
+        createMessage(MESSAGE_ROLES.USER, messageContent),
+      ];
+      payload = buildApiPayload(nextMessages, null, inputs, parameterEnabled);
+    }
+    sendingRef.current = true;
+    const next = [...nextMessages, createLoadingAssistantMessage()];
+    setMessage(next);
+    saveMessagesImmediately(next);
+    setDraft('');
+    sendRequest(payload, payload.stream !== false);
+    if (!customRequestMode && inputs.imageEnabled)
+      handleInputChange('imageEnabled', false);
+    return true;
   }
 
   // 切换推理展开状态
@@ -360,9 +357,11 @@ const AccountPlayground = ({ owner }) => {
   const renderChatBoxAction = useCallback(
     (props) => {
       const { message: currentMessage } = props;
-      const isAnyMessageGenerating = message.some(
-        (msg) => msg.status === 'loading' || msg.status === 'incomplete',
-      );
+      const isAnyMessageGenerating =
+        customRequestMode ||
+        message.some(
+          (msg) => msg.status === 'loading' || msg.status === 'incomplete',
+        );
       const isCurrentlyEditing = editingMessageId === currentMessage.id;
 
       return (
@@ -379,19 +378,17 @@ const AccountPlayground = ({ owner }) => {
         />
       );
     },
-    [messageActions, styleState, message, editingMessageId, handleMessageEdit],
+    [
+      messageActions,
+      styleState,
+      message,
+      editingMessageId,
+      handleMessageEdit,
+      customRequestMode,
+    ],
   );
 
   // Effects
-
-  // 同步消息和自定义请求体
-  useEffect(() => {
-    syncMessageToCustomBody();
-  }, [message, syncMessageToCustomBody]);
-
-  useEffect(() => {
-    syncCustomBodyToMessage();
-  }, [customRequestBody, syncCustomBodyToMessage]);
 
   // 处理URL参数
   useEffect(() => {
@@ -406,7 +403,6 @@ const AccountPlayground = ({ owner }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       const preview = constructPreviewPayload();
-      setPreviewPayload(preview);
       setDebugData((prev) => ({
         ...prev,
         previewRequest: preview ? JSON.stringify(preview, null, 2) : null,
@@ -422,7 +418,6 @@ const AccountPlayground = ({ owner }) => {
     customRequestMode,
     customRequestBody,
     constructPreviewPayload,
-    setPreviewPayload,
     setDebugData,
   ]);
 
@@ -440,10 +435,11 @@ const AccountPlayground = ({ owner }) => {
 
   // 清空对话的处理函数
   const handleClearMessages = useCallback(() => {
+    if (generating) return;
     setMessage([]);
     // 清空对话后保存，传入空数组
     setTimeout(() => saveMessagesImmediately([]), 0);
-  }, [setMessage, saveMessagesImmediately]);
+  }, [generating, setMessage, saveMessagesImmediately]);
 
   // 处理粘贴图片
   const handlePasteImage = useCallback(
@@ -465,111 +461,122 @@ const AccountPlayground = ({ owner }) => {
     imageEnabled: inputs.imageEnabled || false,
   };
 
+  const settingsPanel = (
+    <div
+      className={`pg-settings-lock ${generating ? 'is-disabled' : ''}`}
+      inert={generating ? '' : undefined}
+      aria-disabled={generating}
+    >
+      <OptimizedSettingsPanel
+        inputs={inputs}
+        parameterEnabled={parameterEnabled}
+        models={models}
+        groups={groups}
+        styleState={{ isMobile: false }}
+        showDebugPanel={showDebugPanel}
+        customRequestMode={customRequestMode}
+        customRequestBody={customRequestBody}
+        onInputChange={handleInputChange}
+        onParameterToggle={handleParameterToggle}
+        onConfigImport={handleConfigImport}
+        onConfigReset={handleConfigReset}
+        onCustomRequestModeChange={setCustomRequestMode}
+        onCustomRequestBodyChange={setCustomRequestBody}
+        previewPayload={previewPayload}
+        messages={message}
+      />
+    </div>
+  );
+  const codePanel = (
+    <RequestCodePanel
+      payload={previewPayload}
+      debugData={debugData}
+      activeDebugTab={activeDebugTab}
+      onActiveDebugTabChange={setActiveDebugTab}
+      customRequestMode={customRequestMode}
+    />
+  );
   return (
     <PlaygroundProvider value={playgroundContextValue}>
-      <div className='h-[calc(100dvh-64px)]'>
-        <Layout className='h-full min-h-0 bg-transparent flex flex-col md:flex-row'>
-          {(showSettings || !isMobile) && (
-            <Layout.Sider
-              className={`
-              bg-transparent border-r-0 flex-shrink-0 overflow-auto
-              ${isMobile ? 'w-full h-auto bg-white shadow-lg' : 'w-80 h-full'}
-            `}
-              style={{
-                position: isMobile ? 'fixed' : 'relative',
-                top: isMobile ? 64 : 'auto',
-                left: isMobile ? 0 : 'auto',
-                right: isMobile ? 0 : 'auto',
-                bottom: isMobile ? 0 : 'auto',
-                zIndex: isMobile ? 1000 : 1,
-              }}
-              width={isMobile ? '100%' : 320}
+      <PlaygroundWorkspace
+        settings={settingsPanel}
+        code={codePanel}
+        showSettings={showSettings}
+        showCode={showDebugPanel}
+        onCloseSettings={() => setShowSettings(false)}
+        onCloseCode={() => setShowDebugPanel(false)}
+      >
+        <div className='pg-workspace-toolbar'>
+          <ModelTabs
+            models={models}
+            tabs={tabs}
+            activeModel={inputs.model}
+            onSelect={selectModel}
+            onRemove={removeModel}
+            disabled={generating || modelsLoading || customRequestMode}
+          />
+          <div className='pg-workspace-actions'>
+            <button
+              className='pg-open-settings'
+              onClick={() => setShowSettings(true)}
+              aria-label={t('参数')}
+              title={t('参数')}
             >
-              <OptimizedSettingsPanel
-                inputs={inputs}
-                parameterEnabled={parameterEnabled}
-                models={models}
-                groups={groups}
-                styleState={styleState}
-                showSettings={showSettings}
-                showDebugPanel={showDebugPanel}
-                customRequestMode={customRequestMode}
-                customRequestBody={customRequestBody}
-                onInputChange={handleInputChange}
-                onParameterToggle={handleParameterToggle}
-                onCloseSettings={() => setShowSettings(false)}
-                onConfigImport={handleConfigImport}
-                onConfigReset={handleConfigReset}
-                onCustomRequestModeChange={setCustomRequestMode}
-                onCustomRequestBodyChange={setCustomRequestBody}
-                previewPayload={previewPayload}
-                messages={message}
-              />
-            </Layout.Sider>
-          )}
-
-          <Layout.Content className='relative flex-1 min-h-0 overflow-hidden'>
-            <div className='overflow-hidden flex flex-col lg:flex-row h-full min-h-0'>
-              <div className='flex-1 min-h-0 flex flex-col'>
-                <ChatArea
-                  chatRef={chatRef}
-                  message={message}
-                  inputs={inputs}
-                  styleState={styleState}
-                  showDebugPanel={showDebugPanel}
-                  roleInfo={roleInfo}
-                  onMessageSend={onMessageSend}
-                  onMessageCopy={messageActions.handleMessageCopy}
-                  onMessageReset={messageActions.handleMessageReset}
-                  onMessageDelete={messageActions.handleMessageDelete}
-                  onStopGenerator={onStopGenerator}
-                  onClearMessages={handleClearMessages}
-                  onToggleDebugPanel={() => setShowDebugPanel(!showDebugPanel)}
-                  renderCustomChatContent={renderCustomChatContent}
-                  renderChatBoxAction={renderChatBoxAction}
-                />
-              </div>
-
-              {/* 调试面板 - 桌面端 */}
-              {showDebugPanel && !isMobile && (
-                <div className='w-96 flex-shrink-0 h-full'>
-                  <OptimizedDebugPanel
-                    debugData={debugData}
-                    activeDebugTab={activeDebugTab}
-                    onActiveDebugTabChange={setActiveDebugTab}
-                    styleState={styleState}
-                    customRequestMode={customRequestMode}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* 调试面板 - 移动端覆盖层 */}
-            {showDebugPanel && isMobile && (
-              <div className='fixed top-0 left-0 right-0 bottom-0 z-[1000] bg-white overflow-auto shadow-lg'>
-                <OptimizedDebugPanel
-                  debugData={debugData}
-                  activeDebugTab={activeDebugTab}
-                  onActiveDebugTabChange={setActiveDebugTab}
-                  styleState={styleState}
-                  showDebugPanel={showDebugPanel}
-                  onCloseDebugPanel={() => setShowDebugPanel(false)}
-                  customRequestMode={customRequestMode}
-                />
-              </div>
+              <SlidersHorizontal size={17} />
+            </button>
+            <button
+              className='pg-open-code'
+              onClick={() => setShowDebugPanel(true)}
+              aria-label={t('请求代码')}
+              title={t('请求代码')}
+            >
+              <Code2 size={18} />
+            </button>
+          </div>
+        </div>
+        <div className='pg-prompt-row'>
+          <SystemPromptEditor
+            value={inputs.systemPrompt}
+            onChange={(value) => handleInputChange('systemPrompt', value)}
+            disabled={generating || customRequestMode}
+          />
+        </div>
+        {(modelsLoading || modelsError || !models.length) && (
+          <div className='pg-load-state' role='status'>
+            <span>
+              {modelsLoading
+                ? t('加载中...')
+                : modelsError
+                  ? t('加载模型失败')
+                  : t('暂无可用模型')}
+            </span>
+            {!modelsLoading && (
+              <button onClick={reloadModels}>
+                <RefreshCw size={13} />
+                {t('重试')}
+              </button>
             )}
-
-            {/* 浮动按钮 */}
-            <FloatingButtons
-              styleState={styleState}
-              showSettings={showSettings}
-              showDebugPanel={showDebugPanel}
-              onToggleSettings={() => setShowSettings(!showSettings)}
-              onToggleDebugPanel={() => setShowDebugPanel(!showDebugPanel)}
-            />
-          </Layout.Content>
-        </Layout>
-      </div>
+          </div>
+        )}
+        <ChatArea
+          chatRef={chatRef}
+          message={message}
+          inputs={inputs}
+          roleInfo={roleInfo}
+          onMessageSend={onMessageSend}
+          onStopGenerator={onStopGenerator}
+          onClearMessages={handleClearMessages}
+          renderCustomChatContent={renderCustomChatContent}
+          renderChatBoxAction={renderChatBoxAction}
+          draft={draft}
+          onDraftChange={setDraft}
+          generating={generating}
+          disabled={!canSend || editingMessageId !== null}
+          onInputChange={handleInputChange}
+          onOpenSettings={() => isMobile && setShowSettings(true)}
+          customRequestMode={customRequestMode}
+        />
+      </PlaygroundWorkspace>
     </PlaygroundProvider>
   );
 };

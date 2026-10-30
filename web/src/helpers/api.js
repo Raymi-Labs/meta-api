@@ -18,63 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { showError } from './toast';
-import { formatMessageForAPI, isValidMessage } from './playgroundUtils';
-import { MESSAGE_ROLES } from '../constants/playground.constants';
 export { API, updateAPI } from './apiCore';
 import { API, updateAPI } from './apiCore';
 import { rememberOAuthLoginRedirect } from './authRedirect';
 
 // playground
 
-// 构建API请求负载
-export const buildApiPayload = (
-  messages,
-  systemPrompt,
-  inputs,
-  parameterEnabled,
-) => {
-  const processedMessages = messages
-    .filter(isValidMessage)
-    .map(formatMessageForAPI)
-    .filter(Boolean);
-
-  // 如果有系统提示，插入到消息开头
-  if (systemPrompt && systemPrompt.trim()) {
-    processedMessages.unshift({
-      role: MESSAGE_ROLES.SYSTEM,
-      content: systemPrompt.trim(),
-    });
-  }
-
-  const payload = {
-    model: inputs.model,
-    group: inputs.group,
-    messages: processedMessages,
-    stream: inputs.stream,
-  };
-
-  // 添加启用的参数
-  const parameterMappings = {
-    temperature: 'temperature',
-    top_p: 'top_p',
-    max_tokens: 'max_tokens',
-    frequency_penalty: 'frequency_penalty',
-    presence_penalty: 'presence_penalty',
-    seed: 'seed',
-  };
-
-  Object.entries(parameterMappings).forEach(([key, param]) => {
-    const enabled = parameterEnabled[key];
-    const value = inputs[param];
-    const hasValue = value !== undefined && value !== null;
-
-    if (enabled && hasValue) {
-      payload[param] = value;
-    }
-  });
-
-  return payload;
-};
+export { buildApiPayload } from './playgroundRequest';
 
 // 处理API错误响应
 export const handleApiError = (error, response = null) => {

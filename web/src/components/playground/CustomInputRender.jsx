@@ -19,17 +19,26 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Toast } from '@douyinfe/semi-ui';
+import { ArrowUp, Square, Trash2, ImagePlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePlayground } from '../../contexts/PlaygroundContext';
 
-const CustomInputRender = (props) => {
+const CustomInputRender = ({
+  draft,
+  onDraftChange,
+  onSend,
+  onStop,
+  onClear,
+  generating,
+  disabled,
+  inputs,
+  onInputChange,
+  onOpenSettings,
+  customRequestMode,
+}) => {
   const { t } = useTranslation();
   const { onPasteImage, imageEnabled } = usePlayground();
-  const { detailProps } = props;
-  const { clearContextNode, uploadNode, inputNode, sendNode, onClick } =
-    detailProps;
   const containerRef = useRef(null);
-
   const handlePaste = useCallback(
     async (e) => {
       const items = e.clipboardData?.items;
@@ -102,54 +111,92 @@ const CustomInputRender = (props) => {
     };
   }, [handlePaste]);
 
-  // 清空按钮
-  const styledClearNode = clearContextNode
-    ? React.cloneElement(clearContextNode, {
-        className: `!rounded-full !bg-gray-100 hover:!bg-red-500 hover:!text-white flex-shrink-0 transition-all ${clearContextNode.props.className || ''}`,
-        style: {
-          ...clearContextNode.props.style,
-          width: '32px',
-          height: '32px',
-          minWidth: '32px',
-          padding: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-      })
-    : null;
-
-  // 发送按钮
-  const styledSendNode = React.cloneElement(sendNode, {
-    className: `!rounded-full !bg-purple-500 hover:!bg-purple-600 flex-shrink-0 transition-all ${sendNode.props.className || ''}`,
-    style: {
-      ...sendNode.props.style,
-      width: '32px',
-      height: '32px',
-      minWidth: '32px',
-      padding: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
-
+  const submit = () => {
+    if (!generating && !disabled && (draft.trim() || customRequestMode))
+      onSend(draft);
+  };
   return (
-    <div className='p-2 sm:p-4' ref={containerRef}>
-      <div
-        className='flex items-center gap-2 sm:gap-3 p-2 bg-gray-50 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-shadow'
-        style={{ border: '1px solid var(--semi-color-border)' }}
-        onClick={onClick}
-        title={t('支持 Ctrl+V 粘贴图片')}
-      >
-        {/* 清空对话按钮 - 左边 */}
-        {styledClearNode}
-        <div className='flex-1'>{inputNode}</div>
-        {/* 发送按钮 - 右边 */}
-        {styledSendNode}
+    <div className='pg-composer-wrap' ref={containerRef}>
+      <div className='pg-composer'>
+        <textarea
+          aria-label={t('请输入您的问题...')}
+          placeholder={t('请输入您的问题...')}
+          value={draft}
+          disabled={customRequestMode}
+          onChange={(event) => onDraftChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (
+              (event.ctrlKey || event.metaKey) &&
+              event.key === 'Enter' &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <div className='pg-composer-tools'>
+          <button
+            aria-label={t('清空对话')}
+            title={t('清空对话')}
+            onClick={onClear}
+            disabled={generating}
+          >
+            <Trash2 size={17} />
+          </button>
+          <button
+            aria-label={t('图片地址')}
+            title={t('图片地址')}
+            aria-pressed={inputs.imageEnabled}
+            disabled={generating || customRequestMode}
+            onClick={() => {
+              onInputChange('imageEnabled', !inputs.imageEnabled);
+              onOpenSettings();
+            }}
+            className={inputs.imageEnabled ? 'is-active' : ''}
+          >
+            <ImagePlus size={18} />
+          </button>
+          <label className='pg-stream-toggle'>
+            <input
+              type='checkbox'
+              checked={inputs.stream}
+              disabled={generating || customRequestMode}
+              onChange={(event) =>
+                onInputChange('stream', event.target.checked)
+              }
+            />
+            <span>{t('流式输出')}</span>
+          </label>
+          {generating ? (
+            <button
+              className='pg-send'
+              onClick={onStop}
+              aria-label={t('停止生成')}
+            >
+              <Square size={15} />
+              <span>{t('停止生成')}</span>
+            </button>
+          ) : (
+            <button
+              className='pg-send'
+              disabled={disabled || (!draft.trim() && !customRequestMode)}
+              onClick={submit}
+              aria-label={t('发送')}
+            >
+              <ArrowUp size={17} />
+              <span>{t('发送')}</span>
+            </button>
+          )}
+        </div>
+      </div>
+      <div className='pg-composer-caption'>
+        {customRequestMode
+          ? t('自定义请求体模式')
+          : t('切换模型保留当前对话；每次只请求选中的模型。')}
+        <span>⌘ / Ctrl + Enter</span>
       </div>
     </div>
   );
 };
-
 export default CustomInputRender;
