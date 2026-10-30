@@ -7355,7 +7355,6 @@
     "API 标准": "Chuẩn API",
     "当前设置无法完整转换，请调整后复制。": "Không thể chuyển đổi đầy đủ các cài đặt này. Hãy điều chỉnh trước khi sao chép.",
     "请先填写工具结果，再生成下一次请求。": "Nhập kết quả công cụ trước khi tạo yêu cầu tiếp theo.",
-    "尚无用户消息，代码使用 Hello! 示例。": "Chưa có tin nhắn người dùng. Mã sử dụng ví dụ Hello!.",
     "Messages 必须设置输出上限，示例使用 4096。": "Messages yêu cầu giới hạn đầu ra. Ví dụ này dùng 4096.",
     "安装与运行": "Cài đặt và chạy",
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Lưu mã thành {{filename}}, thay khóa rồi chạy trong terminal:",

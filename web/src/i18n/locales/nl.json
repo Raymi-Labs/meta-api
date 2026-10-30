@@ -6742,7 +6742,6 @@
     "API 标准": "API-standaard",
     "当前设置无法完整转换，请调整后复制。": "Deze instellingen kunnen niet volledig worden omgezet. Pas ze aan voordat u kopieert.",
     "请先填写工具结果，再生成下一次请求。": "Vul de toolresultaten in voordat u het volgende verzoek genereert.",
-    "尚无用户消息，代码使用 Hello! 示例。": "Nog geen gebruikersbericht. De code gebruikt een Hello!-voorbeeld.",
     "Messages 必须设置输出上限，示例使用 4096。": "Messages vereist een uitvoerlimiet. Dit voorbeeld gebruikt 4096.",
     "安装与运行": "Installeren en uitvoeren",
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Sla de code op als {{filename}}, vervang de sleutel en voer uit in een terminal:",

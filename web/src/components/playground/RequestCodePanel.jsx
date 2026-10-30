@@ -18,7 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { Code2, Copy, Check, ExternalLink, Bug, Terminal } from 'lucide-react';
+import {
+  Code2,
+  Copy,
+  Check,
+  ChevronDown,
+  ExternalLink,
+  Bug,
+  Terminal,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Toast } from '@douyinfe/semi-ui';
 import { Link } from 'react-router-dom';
@@ -129,16 +137,19 @@ export default function RequestCodePanel({
             ))}
           </div>
           <div className='pg-code-tools'>
-            <select
-              aria-label={t('代码语言')}
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-            >
-              <option value='python'>Python</option>
-              <option value='javascript'>JavaScript</option>
-              <option value='curl'>cURL</option>
-              <option value='json'>JSON</option>
-            </select>
+            <div className='pg-code-language'>
+              <select
+                aria-label={t('代码语言')}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+              >
+                <option value='python'>Python</option>
+                <option value='javascript'>JavaScript</option>
+                <option value='curl'>cURL</option>
+                <option value='json'>JSON</option>
+              </select>
+              <ChevronDown size={18} aria-hidden='true' />
+            </div>
             <button
               disabled={!code}
               onClick={() => copyText(code, true)}
@@ -166,16 +177,9 @@ export default function RequestCodePanel({
                     )}
                   </p>
                 )}
-                {converted.notes.length > 0 && (
+                {converted.notes.includes('max_tokens') && (
                   <p className='pg-code-notice'>
-                    {converted.notes.includes('example') && (
-                      <span>{t('尚无用户消息，代码使用 Hello! 示例。')}</span>
-                    )}
-                    {converted.notes.includes('max_tokens') && (
-                      <span>
-                        {t('Messages 必须设置输出上限，示例使用 4096。')}
-                      </span>
-                    )}
+                    {t('Messages 必须设置输出上限，示例使用 4096。')}
                   </p>
                 )}
                 <pre
