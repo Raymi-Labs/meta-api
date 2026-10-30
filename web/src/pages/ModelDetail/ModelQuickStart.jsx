@@ -25,10 +25,18 @@ import {
   MODEL_EXAMPLE_LANGUAGES,
 } from './modelQuickStartExamples';
 
-const ModelQuickStart = ({ modelData, serverAddress, t, copyText }) => {
+const ModelQuickStart = ({
+  modelData,
+  initialEndpoint = '',
+  serverAddress,
+  t,
+  copyText,
+}) => {
   const [selection, setSelection] = useState(null);
   const endpoint =
-    selection?.modelName === modelData.model_name ? selection.endpoint : '';
+    selection?.modelName === modelData.model_name
+      ? selection.endpoint
+      : initialEndpoint;
   const [language, setLanguage] = useState('Python');
   const examples = useMemo(
     () =>
