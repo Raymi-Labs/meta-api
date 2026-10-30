@@ -73,5 +73,18 @@ export function getModelCatalogPricing(options, t) {
     precision,
     t,
   });
-  return { data, items: tier.items };
+  return {
+    data: {
+      ...data,
+      firstTierLabel: tier.firstTier?.label,
+      unitPricesUSD: Object.fromEntries(
+        BILLING_PRICING_VARS.map((variable) => [
+          `tiered-${variable.key}`,
+          (tier.firstTier?.[variable.field] * data.effectiveBillingRatio) /
+            (options.tokenUnit === 'K' ? 1000 : 1),
+        ]),
+      ),
+    },
+    items: tier.items,
+  };
 }

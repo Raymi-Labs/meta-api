@@ -1290,3 +1290,67 @@ html.dark .model-metric-chart {
     margin-top: 0;
   }
 }
+
+.model-group-comparison-controls {
+  margin: 16px 0 20px;
+}
+.model-group-comparison-controls label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.model-group-comparison-controls .semi-select {
+  min-width: 180px;
+  max-width: 100%;
+}
+.model-group-values dd > .model-group-price-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.model-group-price-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+}
+.model-group-price-amounts del,
+.model-group-reference-price {
+  color: var(--detail-muted);
+  font-size: 12px;
+}
+.model-group-price-amounts strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.model-group-discount {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.6;
+  font-weight: 500;
+  background: var(--semi-color-fill-1);
+  color: var(--detail-muted);
+}
+.model-group-discount-lower {
+  background: var(--semi-color-success-light-default);
+  color: var(--semi-color-success);
+}
+.model-group-discount-higher {
+  background: var(--semi-color-warning-light-default);
+  color: var(--semi-color-warning);
+}
+@media (max-width: 600px) {
+  .model-group-comparison-controls label {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .model-group-comparison-controls .semi-select {
+    width: 100%;
+  }
+}

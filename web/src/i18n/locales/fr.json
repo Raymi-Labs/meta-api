@@ -6990,6 +6990,14 @@
     "模型介绍": "Présentation du modèle",
     "显示在模型详情顶部和模型广场卡片中。": "Affiché en haut de la fiche et sur les cartes du catalogue.",
     "官方参考价仅支持精确匹配模型": "Les tarifs officiels exigent un nom de modèle exact",
-    "本站价格": "Tarifs du site"
+    "本站价格": "Tarifs du site",
+    "与官方持平": "Identique au tarif officiel",
+    "高于官方": "Au-dessus du tarif officiel",
+    "较官方低 {{percent}}%": "{{percent}}% sous le tarif officiel",
+    "较官方高 {{percent}}%": "{{percent}}% au-dessus du tarif officiel",
+    "本站首档：{{tier}}": "Premier palier du site : {{tier}}",
+    "官方对比档位": "Palier officiel de comparaison",
+    "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Les tarifs incluent les multiplicateurs de groupe. Le coût dépend de l’usage et des règles de facturation.",
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Comparaison de chaque tarif avec le palier officiel choisi. Le tarif dynamique utilise le premier palier du site, sans remise globale par requête."
   }
 }

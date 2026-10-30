@@ -6658,6 +6658,14 @@
     "模型介绍": "Model tanıtımı",
     "显示在模型详情顶部和模型广场卡片中。": "Model ayrıntılarının üstünde ve katalog kartlarında gösterilir.",
     "官方参考价仅支持精确匹配模型": "Resmî fiyatlar tam model adı eşleşmesi gerektirir",
-    "本站价格": "Site fiyatları"
+    "本站价格": "Site fiyatları",
+    "与官方持平": "Resmî fiyatla aynı",
+    "高于官方": "Resmî fiyatın üzerinde",
+    "较官方低 {{percent}}%": "Resmî fiyattan %{{percent}} düşük",
+    "较官方高 {{percent}}%": "Resmî fiyattan %{{percent}} yüksek",
+    "本站首档：{{tier}}": "Sitenin ilk kademesi: {{tier}}",
+    "官方对比档位": "Karşılaştırılacak resmî kademe",
+    "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Fiyatlara grup çarpanları dahildir. Gerçek ücretler kullanıma ve faturalandırma kurallarına bağlıdır.",
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Her birim fiyat seçilen resmî kademeyle karşılaştırılır. Dinamik fiyat sitenin ilk kademesidir, tüm isteğin indirimi değildir."
   }
 }

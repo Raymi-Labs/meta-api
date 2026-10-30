@@ -7273,6 +7273,14 @@
     "模型介绍": "Giới thiệu mô hình",
     "显示在模型详情顶部和模型广场卡片中。": "Hiển thị ở đầu trang chi tiết và trên thẻ danh mục mô hình.",
     "官方参考价仅支持精确匹配模型": "Giá chính thức yêu cầu tên mô hình khớp chính xác",
-    "本站价格": "Giá của trang web"
+    "本站价格": "Giá của trang web",
+    "与官方持平": "Bằng giá chính thức",
+    "高于官方": "Cao hơn giá chính thức",
+    "较官方低 {{percent}}%": "Thấp hơn giá chính thức {{percent}}%",
+    "较官方高 {{percent}}%": "Cao hơn giá chính thức {{percent}}%",
+    "本站首档：{{tier}}": "Mức đầu của trang: {{tier}}",
+    "官方对比档位": "Mức giá chính thức để so sánh",
+    "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Giá đã gồm hệ số nhóm. Phí thực tế tùy thuộc mức sử dụng và quy tắc tính phí.",
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "So sánh từng đơn giá với mức chính thức đã chọn. Giá động hiển thị mức đầu của trang, không phải mức giảm cho toàn bộ yêu cầu."
   }
 }

@@ -6658,6 +6658,14 @@
     "模型介绍": "Opis modelu",
     "显示在模型详情顶部和模型广场卡片中。": "Wyświetlane u góry szczegółów modelu i na kartach katalogu.",
     "官方参考价仅支持精确匹配模型": "Oficjalne ceny wymagają dokładnej nazwy modelu",
-    "本站价格": "Ceny strony"
+    "本站价格": "Ceny strony",
+    "与官方持平": "Jak cena oficjalna",
+    "高于官方": "Powyżej ceny oficjalnej",
+    "较官方低 {{percent}}%": "O {{percent}}% mniej niż oficjalnie",
+    "较官方高 {{percent}}%": "O {{percent}}% więcej niż oficjalnie",
+    "本站首档：{{tier}}": "Pierwszy próg strony: {{tier}}",
+    "官方对比档位": "Oficjalny próg porównania",
+    "价格已包含各分组适用倍率，实际费用取决于用量及计费规则。": "Ceny uwzględniają mnożniki grup. Koszt zależy od zużycia i zasad naliczania.",
+    "逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。": "Każda stawka jest porównywana z wybranym oficjalnym progiem. Cena dynamiczna pokazuje pierwszy próg strony, nie rabat na całe żądanie."
   }
 }

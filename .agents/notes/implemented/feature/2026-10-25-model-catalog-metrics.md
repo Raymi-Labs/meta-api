@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[分组价与官方价对比](2026-10-30-model-group-official-discount.md)将分组列表前移到官方参考价之后，逐项展示所选官方档位与分组价的差额；完整动态规则仍在快速开始之后，顶层官方表和实际计费不变。
+
 [模型头卡与官方参考价](2026-10-30-model-official-pricing.md)扩展顶部展示，介绍继续复用 description；独立官方参考价置于本站价格之前，本站计费与分组明细保持原口径。
 
 [模型能力自动同步](2026-10-27-model-capability-sync.md)部分扩展本篇的同步边界：上下文和模态允许补空及更新自动拥有的值，人工配置继续优先。
