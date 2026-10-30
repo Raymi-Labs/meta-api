@@ -16,6 +16,8 @@ Status: implemented
 
 能力同步补建的零供应商元数据，由[pricing 统一展示回退](../../implemented/bug-fix/2026-10-28-pricing-vendor-fallback.md)恢复原本可从名称推断的归属。同步仍不写供应商字段，来源 Provider 仍只表示能力来源，不能代替模型厂商。
 
+[模型属性与厂商优先同步](2026-10-30-model-attributes-official-sources.md)部分取代仅社区来源决定；沿用本篇人工所有权与并发保护，新增最大输出、逐键能力和来源展示。
+
 ## Existing notes audit
 
 - [模型展示元数据与分组指标](../../implemented/feature/2026-10-25-model-catalog-metrics.md)：部分重叠。本次仅放宽“同步不写新展示字段”为“可补空和更新自动拥有字段”，人工值保护、价格及性能口径继续有效。

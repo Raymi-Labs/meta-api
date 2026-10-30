@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { API, showError, showSuccess } from '../../helpers';
+import { API, showError, showSuccess, showWarning } from '../../helpers';
 import { ITEMS_PER_PAGE } from '../../constants';
 import { requestModelCapabilitySync } from '../../helpers/modelCapabilitySync';
 import { useTableCompactMode } from '../common/useTableCompactMode';
@@ -266,6 +266,8 @@ export const useModelsData = () => {
     setSyncingCapabilities(true);
     try {
       const result = await requestModelCapabilitySync(API);
+      if (result.sourceFailures)
+        showWarning(t('部分来源暂不可用，已保留原有属性。'));
       showSuccess(
         t('模型能力已同步：新增 {{created}} 个，更新 {{updated}} 个', result),
       );

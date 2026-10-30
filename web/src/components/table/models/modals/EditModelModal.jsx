@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ModelCapabilitiesEditor from './ModelCapabilitiesEditor';
 import OfficialPricingEditor from './OfficialPricingEditor';
 import JSONEditor from '../../../common/ui/JSONEditor';
 import {
@@ -134,6 +135,8 @@ const EditModelModal = (props) => {
     display_name: '',
     release_date: '',
     context_length: 0,
+    max_output_tokens: 0,
+    capabilities: {},
     input_modalities: [],
     output_modalities: [],
     description: '',
@@ -171,6 +174,8 @@ const EditModelModal = (props) => {
           official_pricing: data.official_pricing || {},
           release_date: data.release_date || '',
           context_length: data.context_length || 0,
+          max_output_tokens: data.max_output_tokens || 0,
+          capabilities: data.capabilities || {},
           input_modalities: Array.isArray(data.input_modalities)
             ? data.input_modalities
             : [],
@@ -234,6 +239,8 @@ const EditModelModal = (props) => {
         release_date:
           values.name_rule === 0 ? (values.release_date || '').trim() : '',
         context_length: values.context_length || 0,
+        max_output_tokens: values.max_output_tokens || 0,
+        capabilities: values.capabilities || {},
         input_modalities: values.input_modalities || [],
         output_modalities: values.output_modalities || [],
         tags: Array.isArray(values.tags) ? values.tags.join(',') : values.tags,
@@ -462,7 +469,7 @@ const EditModelModal = (props) => {
                       showClear
                     />
                   </Col>
-                  <Col span={24}>
+                  <Col span={isMobile ? 24 : 12}>
                     <Form.InputNumber
                       field='context_length'
                       label={t('上下文长度')}
@@ -473,6 +480,17 @@ const EditModelModal = (props) => {
                       max={Number.MAX_SAFE_INTEGER}
                       precision={0}
                       style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col span={isMobile ? 24 : 12}>
+                    <Form.InputNumber
+                      field='max_output_tokens'
+                      label={t('最大输出')}
+                      min={0}
+                      max={Number.MAX_SAFE_INTEGER}
+                      precision={0}
+                      style={{ width: '100%' }}
+                      extraText={t('单位为 Token；0 表示未知，可由同步补齐。')}
                     />
                   </Col>
                   <Col span={isMobile ? 24 : 12}>
@@ -501,6 +519,15 @@ const EditModelModal = (props) => {
                         label: t(option.label),
                       }))}
                       style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <ModelCapabilitiesEditor
+                      field='capabilities'
+                      label={t('能力')}
+                      extraText={t(
+                        '未知可自动补齐；人工配置的支持或不支持优先保留。',
+                      )}
                     />
                   </Col>
                   <Col span={24}>
@@ -667,7 +694,7 @@ const EditModelModal = (props) => {
                       field='sync_official'
                       label={t('参与官方同步')}
                       extraText={t(
-                        '关闭后停止模型库同步及后台能力更新。开启时按精确模型 ID 补齐发布日期、上下文和模态，已自动填入的值可继续更新；人工设置优先。',
+                        '关闭后停止属性同步。开启时厂商官方优先，模型库补全；自动值持续更新，人工设置优先保留。',
                       )}
                       size='large'
                     />

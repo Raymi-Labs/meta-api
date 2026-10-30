@@ -51,3 +51,15 @@ test('network failure is propagated and malformed responses cannot report succes
     { created: 0, updated: 0 },
   );
 });
+
+test('partial source failures remain visible alongside applied counts', async () => {
+  const result = await requestModelCapabilitySync({
+    post: async () => ({
+      data: {
+        success: true,
+        data: { created: 1, updated: 2, source_failures: 3 },
+      },
+    }),
+  });
+  assert.deepEqual(result, { created: 1, updated: 2, sourceFailures: 3 });
+});

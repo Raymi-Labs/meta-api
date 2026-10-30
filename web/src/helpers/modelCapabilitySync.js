@@ -28,6 +28,9 @@ export async function requestModelCapabilitySync(api) {
   }
   const data = response.data.data || {};
   return {
+    ...(Number.isSafeInteger(data.source_failures) && data.source_failures > 0
+      ? { sourceFailures: data.source_failures }
+      : {}),
     created:
       Number.isSafeInteger(data.created) && data.created >= 0
         ? data.created
