@@ -23,14 +23,11 @@ html.dark .model-detail-page {
 }
 .model-detail-breadcrumb {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 22px;
   gap: 16px;
-}
-.model-detail-breadcrumb > span {
-  color: var(--detail-muted);
-  font-size: 12px;
 }
 .model-detail-back {
   display: inline-flex;
@@ -1556,15 +1553,21 @@ a.model-attribute-source {
   cursor: pointer;
 }
 .model-sticky-actions,
-.model-hero-actions {
+.model-detail-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
 }
-.model-hero-actions {
-  margin-top: 16px;
+.model-detail-header-actions {
+  margin-left: auto;
+  max-width: 100%;
+  justify-content: flex-end;
   flex-wrap: wrap;
+}
+.model-detail-header-actions a {
+  max-width: 100%;
+  white-space: normal;
 }
 .model-action-secondary,
 .model-action-primary {
