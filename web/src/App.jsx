@@ -67,6 +67,7 @@ const Chat2Link = lazy(() => import('./pages/Chat2Link'));
 const Midjourney = lazy(() => import('./pages/Midjourney'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const ModelDetail = lazy(() => import('./pages/ModelDetail'));
+const ModelCompare = lazy(() => import('./pages/ModelCompare'));
 const Task = lazy(() => import('./pages/Task'));
 const ModelPage = lazy(() => import('./pages/Model'));
 const ModelDeploymentPage = lazy(() => import('./pages/ModelDeployment'));
@@ -470,6 +471,7 @@ function App() {
         {[
           { path: '/pricing', Component: Pricing },
           { path: MODEL_DETAIL_ROUTE, Component: ModelDetail },
+          { path: '/compare', Component: ModelCompare },
         ].map(({ path, Component }) => (
           <Route
             key={path}

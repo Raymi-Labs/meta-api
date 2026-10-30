@@ -32,3 +32,5 @@ Status: implemented
 ## Consequences
 
 每个活动滚动帧会测量现有少量板块，以换取动态布局下的一致位置反馈。位置计算使用现有 scroll-margin-top，避免固定头部遮挡导致错位。ResizeObserver 与滚动共享一次帧任务，状态不变不重复渲染，不增加后端请求或修改权限与计费。
+
+相关扩展：[固定模型栏与跨模型对比](2026-10-31-model-detail-sticky-compare.md)复用本能力，并通过权限校验后的模型体验深链接连接详情、对比和测试。

@@ -6747,6 +6747,27 @@
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Kodu {{filename}} olarak kaydedin, anahtarı değiştirin ve terminalde çalıştırın:",
     "先设置密钥，再粘贴上方 cURL 命令运行。": "Önce anahtarı ayarlayın, ardından yukarıdaki cURL komutunu yapıştırıp çalıştırın.",
     "复制运行命令": "Komutları kopyala",
-    "以上命令适用于 macOS / Linux / WSL。": "Bu komutlar macOS / Linux / WSL içindir."
+    "以上命令适用于 macOS / Linux / WSL。": "Bu komutlar macOS / Linux / WSL içindir.",
+    "当前模型": "Geçerli model",
+    "对比": "Karşılaştır",
+    "在模型体验中测试": "Playground’da test et",
+    "模型对比": "Model karşılaştırması",
+    "选择模型进行对比": "Karşılaştırılacak modelleri seçin",
+    "并排查看模型价格、属性、能力与实际调用表现。": "Model fiyatlarını, özelliklerini, yeteneklerini ve ölçülen performansı yan yana karşılaştırın.",
+    "当前分组不可用": "Bu grupta kullanılamıyor",
+    "费用估算": "Maliyet tahmini",
+    "每日请求数": "Günlük istek sayısı",
+    "每次输入 Token": "İstek başına girdi tokenları",
+    "每次输出 Token": "İstek başına çıktı tokenları",
+    "暂无可用估算": "Tahmin mevcut değil",
+    "按当前分组价格和每天用量估算 30 天文本费用，不含缓存、图片、工具费用及未来价格变化。": "Geçerli grup fiyatlarıyla 30 günlük metin kullanımını tahmin eder. Önbellek, görseller, araçlar ve gelecekteki fiyat değişiklikleri dahil değildir.",
+    "使用当前模型": "Geçerli modeli kullan",
+    "模型链接无效，请重新选择模型": "Geçersiz model bağlantısı. Lütfen yeniden model seçin.",
+    "完成当前请求或工具回合后，将切换到目标模型": "Geçerli istek veya araç turu tamamlandıktan sonra model değiştirilecek.",
+    "目标分组不可用，请选择可用分组": "İstenen grup kullanılamıyor. Kullanılabilir bir grup seçin.",
+    "目标模型在当前分组不可用，请切换分组或选择其他模型": "İstenen model bu grupta kullanılamıyor. Grubu değiştirin veya başka bir model seçin.",
+    "用量": "Kullanım",
+    "价格与规格": "Fiyatlar ve özellikler",
+    "Tokens": "Tokens"
   }
 }

@@ -47,6 +47,7 @@ import {
 } from '../../helpers/playgroundCapabilities';
 import ToolResultsForm from '../../components/playground/ToolResultsForm';
 import { useDataLoader } from '../../hooks/playground/useDataLoader';
+import { usePlaygroundModelLink } from '../../hooks/playground/usePlaygroundModelLink';
 
 // Constants and utils
 import { MESSAGE_ROLES } from '../../constants/playground.constants';
@@ -180,11 +181,22 @@ const AccountPlayground = ({ owner }) => {
     setModels,
     setGroups,
   );
+  const modelLink = usePlaygroundModelLink({
+    searchParams,
+    groups,
+    models,
+    modelsLoading,
+    inputs,
+    onChange: handleInputChange,
+    blocked: generating || pendingCalls.length > 0,
+    setCustomRequestMode,
+  });
   const tabs = reconcileModelTabs(inputs.modelTabs, inputs.model, models);
-  const canSend =
+  const currentModelAvailable =
     !modelsLoading &&
     !modelsError &&
     models.some((model) => model.value === inputs.model);
+  const canSend = currentModelAvailable && !modelLink.pending;
   useEffect(() => {
     if (modelsLoading || modelsError) return;
     if (JSON.stringify(tabs) !== JSON.stringify(inputs.modelTabs))
@@ -198,6 +210,7 @@ const AccountPlayground = ({ owner }) => {
   ]);
   const selectModel = (model) => {
     if (generating || pendingCalls.length || customRequestMode) return;
+    modelLink.dismiss();
     handleInputChange('model', model);
     handleInputChange('modelTabs', [...new Set([...tabs, model])]);
   };
@@ -305,13 +318,23 @@ const AccountPlayground = ({ owner }) => {
     constructPreviewPayload,
   ]);
 
-  function onMessageSend(content, retryMessages = null) {
+  function onMessageSend(
+    content,
+    retryMessages = null,
+    completingTools = false,
+  ) {
     if (
       !activeRef.current ||
       owner !== getPlaygroundOwner() ||
       sendingRef.current ||
       generating ||
-      !canSend
+      (!canSend &&
+        !(
+          completingTools &&
+          pendingCalls.length > 0 &&
+          !customRequestMode &&
+          currentModelAvailable
+        ))
     )
       return false;
     let payload;
@@ -385,7 +408,7 @@ const AccountPlayground = ({ owner }) => {
         createMessage('tool', values[call.id], { tool_call_id: call.id }),
       ),
     ];
-    onMessageSend('', next);
+    onMessageSend('', next, true);
   }
 
   // 切换推理展开状态
@@ -666,6 +689,14 @@ const AccountPlayground = ({ owner }) => {
             disabled={generating || customRequestMode}
           />
         </div>
+        {modelLink.notice && (
+          <div className='pg-load-state' role='status'>
+            <span>
+              {t(modelLink.notice)} · {searchParams.get('model')}
+            </span>
+            <button onClick={modelLink.dismiss}>{t('使用当前模型')}</button>
+          </div>
+        )}
         {(modelsLoading || modelsError || !models.length) && (
           <div className='pg-load-state' role='status'>
             <span>
@@ -711,7 +742,9 @@ const AccountPlayground = ({ owner }) => {
                 values={toolResults}
                 onChange={setToolResults}
                 onSubmit={submitToolResults}
-                disabled={generating || !canSend || !previewPayload}
+                disabled={
+                  generating || !currentModelAvailable || !previewPayload
+                }
               />
             )
           }

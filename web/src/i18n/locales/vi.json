@@ -7360,6 +7360,27 @@
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Lưu mã thành {{filename}}, thay khóa rồi chạy trong terminal:",
     "先设置密钥，再粘贴上方 cURL 命令运行。": "Đặt khóa trước, rồi dán và chạy lệnh cURL ở trên.",
     "复制运行命令": "Sao chép lệnh chạy",
-    "以上命令适用于 macOS / Linux / WSL。": "Các lệnh này dùng cho macOS / Linux / WSL."
+    "以上命令适用于 macOS / Linux / WSL。": "Các lệnh này dùng cho macOS / Linux / WSL.",
+    "当前模型": "Mô hình hiện tại",
+    "对比": "So sánh",
+    "在模型体验中测试": "Thử trong Playground",
+    "模型对比": "So sánh mô hình",
+    "选择模型进行对比": "Chọn mô hình để so sánh",
+    "并排查看模型价格、属性、能力与实际调用表现。": "So sánh giá, thông số, khả năng và hiệu năng thực tế của các mô hình cạnh nhau.",
+    "当前分组不可用": "Không khả dụng trong nhóm này",
+    "费用估算": "Ước tính chi phí",
+    "每日请求数": "Yêu cầu mỗi ngày",
+    "每次输入 Token": "Token đầu vào mỗi yêu cầu",
+    "每次输出 Token": "Token đầu ra mỗi yêu cầu",
+    "暂无可用估算": "Chưa có ước tính",
+    "按当前分组价格和每天用量估算 30 天文本费用，不含缓存、图片、工具费用及未来价格变化。": "Ước tính 30 ngày sử dụng văn bản theo giá nhóm hiện tại. Không gồm bộ nhớ đệm, hình ảnh, công cụ và thay đổi giá trong tương lai.",
+    "使用当前模型": "Dùng mô hình hiện tại",
+    "模型链接无效，请重新选择模型": "Liên kết mô hình không hợp lệ. Vui lòng chọn lại mô hình.",
+    "完成当前请求或工具回合后，将切换到目标模型": "Mô hình sẽ chuyển sau khi yêu cầu hoặc lượt công cụ hiện tại hoàn tất.",
+    "目标分组不可用，请选择可用分组": "Nhóm yêu cầu không khả dụng. Hãy chọn nhóm khả dụng.",
+    "目标模型在当前分组不可用，请切换分组或选择其他模型": "Mô hình yêu cầu không khả dụng trong nhóm này. Hãy đổi nhóm hoặc chọn mô hình khác.",
+    "用量": "Mức sử dụng",
+    "价格与规格": "Giá và thông số",
+    "Tokens": "Tokens"
   }
 }

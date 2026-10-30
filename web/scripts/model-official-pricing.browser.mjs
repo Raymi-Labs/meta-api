@@ -158,6 +158,7 @@ const logRecord = {
 
 let browser;
 let rejectNextSave = false;
+let comparisonFixtures = false;
 const artifacts = fs.mkdtempSync(
   path.join(os.tmpdir(), 'model-official-pricing-'),
 );
@@ -216,6 +217,14 @@ const makePage = async (role = 1, dark = false) => {
   };
   await page.evaluateOnNewDocument(
     (user, status, dark) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            window.copiedText = text;
+          },
+        },
+      });
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('status', JSON.stringify(status));
       localStorage.setItem('i18nextLng', 'zh-CN');
@@ -233,6 +242,21 @@ const makePage = async (role = 1, dark = false) => {
   page.on('request', async (request) => {
     const url = new URL(request.url());
     if (url.origin !== baseURL) return request.abort();
+    if (url.pathname.startsWith('/pg/')) {
+      apiRequests.push(request.method() + ' ' + url.pathname);
+      return request.respond({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          choices: [
+            {
+              message: { role: 'assistant', content: '工具回合完成' },
+              finish_reason: 'stop',
+            },
+          ],
+        }),
+      });
+    }
     if (!url.pathname.startsWith('/api/')) return request.continue();
     apiRequests.push(`${request.method()} ${url.pathname}${url.search}`);
     let body = { success: true, data: [] };
@@ -251,9 +275,51 @@ const makePage = async (role = 1, dark = false) => {
     }
     if (url.pathname === '/api/status') body = { success: true, data: status };
     if (url.pathname === '/api/pricing') body = pricing;
+    if (url.pathname === '/api/user/models')
+      body.data = pricing.data
+        .filter((model) =>
+          model.enable_groups.includes(
+            url.searchParams.get('group') || 'Public',
+          ),
+        )
+        .map((model) => model.model_name);
+    if (url.pathname === '/api/user/self/groups')
+      body.data = Object.fromEntries(
+        Object.keys(pricing.usable_group).map((group) => [
+          group,
+          { ratio: pricing.group_ratio[group], desc: group },
+        ]),
+      );
     if (url.pathname === '/api/user/self') body = { success: true, data: user };
     if (url.pathname === '/api/health/groups')
       body = { success: true, data: { enabled: true, groups: [] } };
+    if (url.pathname === '/api/health/groups' && comparisonFixtures) {
+      const stats = {
+        group: url.searchParams.get('group') || 'Public',
+        observed_count: 100,
+        request_count: 100,
+        success_rate: 98,
+        total_tokens: 123456,
+        avg_ttft_ms:
+          url.searchParams.get('model') === 'same-model' ? 2500 : 1234,
+        avg_output_tps: 30,
+      };
+      body = {
+        success: true,
+        data: {
+          enabled: true,
+          groups: [
+            {
+              ...stats,
+              series: [
+                { ...stats, ts: 1793318400 },
+                { ...stats, ts: 1793322000 },
+              ],
+            },
+          ],
+        },
+      };
+    }
     if (url.pathname === '/api/health/models')
       body = { success: true, data: { enabled: true, models: [] } };
     if (url.pathname === '/api/log/self/' || url.pathname === '/api/log/') {
@@ -342,6 +408,7 @@ const selectOption = async (page, label, text) => {
     官方对比档位: '.model-group-comparison-controls .semi-select',
     价格模式: '.model-detail-settings .semi-select',
     分组: '.model-detail-price-controls .semi-select',
+    对比分组: '[role="combobox"][aria-labelledby="compare-group-label"]',
   }[label];
   await page.click(selector);
   await page.waitForFunction(
@@ -386,6 +453,10 @@ try {
     await page.waitForSelector('#official-pricing table');
     await page.waitForSelector('#faq details');
     await expectActiveSection(page, 'official-pricing');
+    assert.equal(
+      await page.$eval('.model-sticky-bar', (el) => el.hidden),
+      true,
+    );
     const historyBeforeScroll = await page.evaluate(() => history.length);
     const urlBeforeScroll = page.url();
     await clickButton(page, '模型属性');
@@ -393,6 +464,36 @@ try {
     await page.focus('.model-detail-sections button[aria-controls="pricing"]');
     await page.keyboard.press('Enter');
     await expectActiveSection(page, 'pricing');
+    await page.waitForFunction(
+      () => !document.querySelector('.model-sticky-bar').hidden,
+    );
+    assert.ok(
+      await page.$eval('.model-sticky-identity', (el) =>
+        el.textContent.includes('GPT 6 Astra'),
+      ),
+    );
+    assert.equal(
+      await page.$eval('.model-sticky-actions a:first-child', (el) =>
+        new URL(el.href).searchParams.get('model'),
+      ),
+      'friendly-id',
+    );
+    assert.equal(
+      await page.$eval('.model-sticky-actions a:last-child', (el) =>
+        new URL(el.href).searchParams.get('model'),
+      ),
+      'friendly-id',
+    );
+    assert.equal(
+      await page.evaluate(
+        () =>
+          document.querySelector('#pricing').getBoundingClientRect().top >=
+          document.querySelector('.model-sticky-bar').getBoundingClientRect()
+            .bottom -
+            1,
+      ),
+      true,
+    );
     await page.mouse.move(dark ? 200 : 1000, 400);
     await page.mouse.wheel({ deltaY: -300 });
     await expectActiveSection(page, 'capabilities');
@@ -700,6 +801,308 @@ try {
     assert.deepEqual(errors, []);
     await page.close();
   }
+  comparisonFixtures = true;
+  const encodedName = 'vendor/a+b%2F';
+  pricing.data.push({ ...modelDefaults, model_name: encodedName });
+  for (const dark of [false, true]) {
+    const { page, errors, apiRequests } = await makePage(1, dark);
+    await page.goto(`${baseURL}/model/friendly-id`, {
+      waitUntil: 'networkidle0',
+    });
+    await clickButton(page, '分组价格');
+    await page.waitForFunction(
+      () => !document.querySelector('.model-sticky-bar')?.hidden,
+    );
+    await page.click('.model-sticky-copy');
+    assert.equal(await page.evaluate(() => window.copiedText), 'friendly-id');
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      document.querySelector('.app-workspace').scrollTo(0, 0);
+    });
+    await page.waitForFunction(
+      () => document.querySelector('.model-sticky-bar').hidden,
+    );
+    await clickButton(page, '分组价格');
+    await page.waitForFunction(
+      () => !document.querySelector('.model-sticky-bar').hidden,
+    );
+    await page.click('.model-sticky-actions a:first-child');
+    await page.waitForSelector('.model-compare-card');
+    assert.equal(new URL(page.url()).searchParams.get('model'), 'friendly-id');
+    await page.click('.model-compare-chips .semi-select');
+    await page.waitForSelector('.semi-select-option-list');
+    await page.evaluate(() =>
+      [...document.querySelectorAll('.semi-select-option')]
+        .find((el) => el.textContent.trim() === 'same-model')
+        ?.click(),
+    );
+    await page.waitForFunction(
+      () => document.querySelectorAll('.model-compare-card').length === 2,
+    );
+    assert.equal(new URL(page.url()).searchParams.getAll('model').length, 2);
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-table')
+        .textContent.includes('1.23 s'),
+    );
+    assert.ok(
+      (
+        await page.$eval('.model-compare-table', (el) => el.textContent)
+      ).includes('2.50 s'),
+    );
+    const health72 = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === '/api/health/groups' &&
+        url.searchParams.get('hours') === '72' &&
+        url.searchParams.get('model') === 'same-model'
+      );
+    });
+    await page.click(
+      '[role="combobox"][aria-labelledby="compare-hours-label"]',
+    );
+    await page.waitForSelector('.semi-select-option-list');
+    await page.evaluate(() =>
+      [...document.querySelectorAll('.semi-select-option')]
+        .find((el) => el.textContent.includes('72'))
+        ?.click(),
+    );
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-table')
+        .textContent.includes('2.50 s'),
+    );
+    await health72;
+    assert.ok(
+      apiRequests.some(
+        (url) =>
+          url.includes('/api/health/groups?') &&
+          url.includes('hours=72') &&
+          url.includes('model=same-model'),
+      ),
+    );
+    await selectOption(page, '对比分组', 'Equal');
+    await page.waitForFunction(() =>
+      document
+        .querySelectorAll('.model-compare-card')[1]
+        .textContent.includes('当前分组不可用'),
+    );
+    assert.ok(
+      !(
+        await page.$$eval('.model-compare-card', (els) => els[1].textContent)
+      ).includes('$5'),
+    );
+    await selectOption(page, '对比分组', 'Public');
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelectorAll('.model-compare-card')[1]
+          .textContent.includes('当前分组不可用'),
+    );
+
+    assert.ok(
+      await page.$eval('.model-compare-table', (el) =>
+        el.textContent.includes('1.05M tokens'),
+      ),
+    );
+    assert.ok(
+      await page.$eval('.model-compare-table', (el) =>
+        el.textContent.includes('不支持'),
+      ),
+    );
+    assert.ok(
+      await page.$eval('.model-cost-results', (el) =>
+        el.textContent.includes('暂无可用估算'),
+      ),
+    );
+    await page.$eval('input[aria-label="每日请求数"]', (el) =>
+      el.scrollIntoView(),
+    );
+    await page.click('input[aria-label="每日请求数"]', { clickCount: 3 });
+    await page.keyboard.type('0');
+    assert.ok(
+      await page.$eval('.model-cost-results article', (el) =>
+        el.textContent.includes('$0.00'),
+      ),
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 2,
+      ),
+      true,
+    );
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      document.querySelector('.app-workspace').scrollTo(0, 0);
+    });
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'comparison-mobile-dark.png' : 'comparison-desktop.png',
+      ),
+    });
+    const sharedURL = page.url();
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForFunction(
+      () => document.querySelectorAll('.model-compare-card').length === 2,
+    );
+    assert.equal(page.url(), sharedURL);
+    await page.click(
+      '.model-compare-chip button[aria-label="移除 same-model"]',
+    );
+    await page.waitForFunction(
+      () => document.querySelectorAll('.model-compare-card').length === 1,
+    );
+    await page.click('.model-compare-card-actions a:last-child');
+    await page.waitForSelector('.pg-model-tab [aria-selected="true"]');
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('.pg-model-tab [aria-selected="true"]')
+          ?.textContent.trim() === 'friendly-id',
+    );
+    assert.equal(new URL(page.url()).pathname, '/playground');
+    assert.equal(
+      apiRequests.some((request) => request.includes('/pg/')),
+      false,
+    );
+    await page.goto(`${baseURL}/playground?model=not-allowed&group=Public`, {
+      waitUntil: 'networkidle0',
+    });
+    await page.waitForFunction(() =>
+      document.body.innerText.includes('目标模型在当前分组不可用'),
+    );
+    assert.equal(
+      apiRequests.some((request) => request.includes('/pg/')),
+      false,
+    );
+    await page.goto(
+      `${baseURL}/playground?model=friendly-id&group=not-allowed`,
+      { waitUntil: 'networkidle0' },
+    );
+    await page.waitForFunction(() =>
+      document.body.innerText.includes('目标分组不可用'),
+    );
+    assert.equal(
+      apiRequests.some((request) => request.includes('/pg/')),
+      false,
+    );
+    const compareURL = new URL('/compare', baseURL);
+    for (const name of [
+      'friendly-id',
+      'same-model',
+      'no-display-name',
+      encodedName,
+    ])
+      compareURL.searchParams.append('model', name);
+    await page.goto(compareURL.href, { waitUntil: 'networkidle0' });
+    assert.equal(
+      await page.$$eval('.model-compare-card', (els) => els.length),
+      4,
+    );
+    assert.equal(
+      await page.$eval('[aria-labelledby="compare-add-label"]', (el) =>
+        el.getAttribute('aria-disabled'),
+      ),
+      'true',
+    );
+    assert.ok(
+      (
+        await page.$eval('.model-compare-cards', (el) => el.textContent)
+      ).includes(encodedName),
+    );
+    await page.goto(`${baseURL}/compare?model=not-visible`, {
+      waitUntil: 'networkidle0',
+    });
+    assert.equal(await page.$('.model-compare-card'), null);
+    assert.ok(
+      (
+        await page.$eval('.model-compare-warning', (el) => el.textContent)
+      ).includes('该模型不存在或当前不可见'),
+    );
+    if (!dark) {
+      await page.evaluate(() => {
+        localStorage.setItem(
+          'playground_config:user:7',
+          JSON.stringify({
+            inputs: {
+              model: 'same-model',
+              group: 'Public',
+              stream: false,
+              modelTabs: ['same-model'],
+            },
+          }),
+        );
+        localStorage.setItem(
+          'playground_messages:user:7',
+          JSON.stringify({
+            messages: [
+              {
+                id: 'q',
+                role: 'user',
+                content: '保留的原对话',
+                status: 'complete',
+              },
+              {
+                id: 'a',
+                role: 'assistant',
+                content: '',
+                status: 'complete',
+                tool_calls: [
+                  {
+                    id: 'call_one',
+                    type: 'function',
+                    function: { name: 'test_tool', arguments: '{}' },
+                  },
+                ],
+              },
+            ],
+          }),
+        );
+      });
+      await page.goto(`${baseURL}/playground?model=friendly-id&group=Public`, {
+        waitUntil: 'networkidle0',
+      });
+      await page.waitForFunction(() =>
+        document.body.innerText.includes('完成当前请求或工具回合后'),
+      );
+      assert.equal(
+        await page.$eval('.pg-model-tab [aria-selected="true"]', (el) =>
+          el.textContent.trim(),
+        ),
+        'same-model',
+      );
+      assert.ok(
+        (await page.$eval('body', (el) => el.innerText)).includes(
+          '保留的原对话',
+        ),
+      );
+      await page.type('.pg-tool-results textarea', '测试结果');
+      assert.equal(
+        await page.$eval('.pg-tool-results button', (el) => el.disabled),
+        false,
+      );
+      await page.click('.pg-tool-results button');
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector('.pg-model-tab [aria-selected="true"]')
+            ?.textContent.trim() === 'friendly-id',
+      );
+      assert.ok(
+        (await page.$eval('body', (el) => el.innerText)).includes(
+          '保留的原对话',
+        ),
+      );
+      assert.equal(
+        apiRequests.filter((request) => request.includes('/pg/')).length,
+        1,
+      );
+    }
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  comparisonFixtures = false;
   const { page, errors } = await makePage(10);
   await page.goto(`${baseURL}/${fixtureName}.html`, {
     waitUntil: 'networkidle0',
