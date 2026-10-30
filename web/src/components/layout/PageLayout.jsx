@@ -238,7 +238,10 @@ const PageLayout = () => {
             style={{
               flex: '1 0 auto',
               overflowY:
-                isMobile || isDocsRoute || isModelDetailPath(location.pathname)
+                isMobile ||
+                isDocsRoute ||
+                isModelDetailPath(location.pathname) ||
+                location.pathname === '/compare'
                   ? 'visible'
                   : 'hidden',
               WebkitOverflowScrolling: 'touch',

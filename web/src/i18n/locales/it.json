@@ -6747,6 +6747,27 @@
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Salva il codice come {{filename}}, sostituisci la chiave ed esegui nel terminale:",
     "先设置密钥，再粘贴上方 cURL 命令运行。": "Imposta la chiave, poi incolla ed esegui il comando cURL qui sopra.",
     "复制运行命令": "Copia comandi",
-    "以上命令适用于 macOS / Linux / WSL。": "Questi comandi funzionano su macOS / Linux / WSL."
+    "以上命令适用于 macOS / Linux / WSL。": "Questi comandi funzionano su macOS / Linux / WSL.",
+    "当前模型": "Modello attuale",
+    "对比": "Confronta",
+    "在模型体验中测试": "Prova nel Playground",
+    "模型对比": "Confronto modelli",
+    "选择模型进行对比": "Scegli i modelli da confrontare",
+    "并排查看模型价格、属性、能力与实际调用表现。": "Confronta prezzi, specifiche, funzionalità e prestazioni osservate dei modelli.",
+    "当前分组不可用": "Non disponibile in questo gruppo",
+    "费用估算": "Stima dei costi",
+    "每日请求数": "Richieste al giorno",
+    "每次输入 Token": "Token in ingresso per richiesta",
+    "每次输出 Token": "Token in uscita per richiesta",
+    "暂无可用估算": "Stima non disponibile",
+    "按当前分组价格和每天用量估算 30 天文本费用，不含缓存、图片、工具费用及未来价格变化。": "Stima di 30 giorni di testo ai prezzi attuali del gruppo. Esclude cache, immagini, strumenti e future variazioni di prezzo.",
+    "使用当前模型": "Usa il modello attuale",
+    "模型链接无效，请重新选择模型": "Link del modello non valido. Scegli nuovamente un modello.",
+    "完成当前请求或工具回合后，将切换到目标模型": "Il modello cambierà al termine della richiesta o del turno di strumenti corrente.",
+    "目标分组不可用，请选择可用分组": "Il gruppo richiesto non è disponibile. Scegli un gruppo disponibile.",
+    "目标模型在当前分组不可用，请切换分组或选择其他模型": "Il modello richiesto non è disponibile in questo gruppo. Cambia gruppo o scegli un altro modello.",
+    "用量": "Utilizzo",
+    "价格与规格": "Prezzi e specifiche",
+    "Tokens": "Tokens"
   }
 }

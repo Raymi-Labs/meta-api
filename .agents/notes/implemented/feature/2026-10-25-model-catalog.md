@@ -41,3 +41,5 @@ Chrome 本地项目壳使用公开定价快照及隔离模拟接口验证：桌�
 ## Related decision
 
 [独立模型详情](../../implemented/feature/2026-10-25-model-detail-page.md)依据用户新选择取代目录中的分组展示与侧栏详情入口；其余价格、筛选和钱包决定保持原有范围。
+
+相关扩展：[固定模型栏与跨模型对比](2026-10-31-model-detail-sticky-compare.md)复用本能力，并通过权限校验后的模型体验深链接连接详情、对比和测试。

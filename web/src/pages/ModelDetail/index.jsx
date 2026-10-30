@@ -38,6 +38,11 @@ import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/
 import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import ModelSectionNav from './ModelSectionNav.jsx';
+import ModelStickyBar from './ModelStickyBar.jsx';
+import {
+  buildModelComparePath,
+  buildModelPlaygroundPath,
+} from '../../helpers/modelCompare';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
@@ -173,6 +178,11 @@ export default function ModelDetail() {
     ...(model.faq?.length ? [['faq', '常见问题']] : []),
   ];
   const priceMode = data.showWithRecharge ? data.priceConvertMode : 'base';
+  const comparePath = buildModelComparePath([model.model_name]);
+  const playgroundPath = buildModelPlaygroundPath(
+    model.model_name,
+    selectedGroup === 'all' ? groups[0] : selectedGroup,
+  );
 
   return (
     <main className='model-detail-page' ref={pageRef}>
@@ -213,8 +223,27 @@ export default function ModelDetail() {
             </span>
           </div>
           {model.description && <p>{model.description}</p>}
+          <div className='model-hero-actions'>
+            <Link to={comparePath} className='model-action-secondary'>
+              {t('对比')}
+            </Link>
+            <Link to={playgroundPath} className='model-action-primary'>
+              {t('在模型体验中测试')}
+              <ArrowUpRight size={16} aria-hidden='true' />
+            </Link>
+          </div>
         </div>
       </header>
+
+      <ModelStickyBar
+        key={model.model_name}
+        model={model}
+        pageRef={pageRef}
+        copyText={data.copyText}
+        comparePath={comparePath}
+        playgroundPath={playgroundPath}
+        t={t}
+      />
 
       <div className='model-detail-layout'>
         <ModelSectionNav

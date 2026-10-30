@@ -6959,6 +6959,27 @@
     "将代码保存为 {{filename}}，替换密钥后在终端运行：": "Save the code as {{filename}}, replace the key, then run in a terminal:",
     "先设置密钥，再粘贴上方 cURL 命令运行。": "Set your key first, then paste and run the cURL command above.",
     "复制运行命令": "Copy run commands",
-    "以上命令适用于 macOS / Linux / WSL。": "These commands work on macOS / Linux / WSL."
+    "以上命令适用于 macOS / Linux / WSL。": "These commands work on macOS / Linux / WSL.",
+    "当前模型": "Current model",
+    "对比": "Compare",
+    "在模型体验中测试": "Test in Playground",
+    "模型对比": "Model comparison",
+    "选择模型进行对比": "Choose models to compare",
+    "并排查看模型价格、属性、能力与实际调用表现。": "Compare model prices, specifications, capabilities, and observed performance side by side.",
+    "当前分组不可用": "Unavailable in this group",
+    "费用估算": "Cost estimate",
+    "每日请求数": "Requests per day",
+    "每次输入 Token": "Input tokens per request",
+    "每次输出 Token": "Output tokens per request",
+    "暂无可用估算": "Estimate unavailable",
+    "按当前分组价格和每天用量估算 30 天文本费用，不含缓存、图片、工具费用及未来价格变化。": "Estimate 30 days of text usage at current group prices. Excludes cache, images, tools, and future price changes.",
+    "使用当前模型": "Use current model",
+    "模型链接无效，请重新选择模型": "Invalid model link. Please choose a model again.",
+    "完成当前请求或工具回合后，将切换到目标模型": "The model will switch after the current request or tool round is complete.",
+    "目标分组不可用，请选择可用分组": "The requested group is unavailable. Choose an available group.",
+    "目标模型在当前分组不可用，请切换分组或选择其他模型": "The requested model is unavailable in this group. Change groups or choose another model.",
+    "用量": "Usage",
+    "价格与规格": "Pricing and specifications",
+    "Tokens": "Tokens"
   }
 }

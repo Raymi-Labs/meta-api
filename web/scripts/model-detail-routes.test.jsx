@@ -37,6 +37,9 @@ if (process.env.NEWAPI_MODEL_DETAIL_ROUTES_TEST === import.meta.url) {
   mock.module('../src/pages/ModelDetail', () => ({
     default: () => <span>Detail page</span>,
   }));
+  mock.module('../src/pages/ModelCompare', () => ({
+    default: () => <span>Comparison page</span>,
+  }));
   let App;
   beforeAll(async () => {
     ({ default: App } = await import('../src/App'));
@@ -65,6 +68,7 @@ if (process.env.NEWAPI_MODEL_DETAIL_ROUTES_TEST === import.meta.url) {
   test('catalog and encoded model detail routes enforce the same configured authentication', () => {
     for (const path of [
       '/pricing',
+      '/compare?model=vendor%2Fmodel',
       '/model/vendor%2Fmodel',
       '/model/unknown-model',
     ]) {
