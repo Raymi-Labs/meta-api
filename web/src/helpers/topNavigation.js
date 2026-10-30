@@ -47,7 +47,7 @@ export const getTopNavigationLinks = (t, docsLink, headerNavModules) => {
     modules.console && {
       text: t('模型体验'),
       itemKey: 'playground',
-      to: '/console/playground',
+      to: '/playground',
       requireAuth: true,
     },
     {

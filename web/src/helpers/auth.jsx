@@ -56,9 +56,9 @@ export const AuthRedirect = ({ children }) => {
   return children;
 };
 
-function PrivateRoute({ children }) {
+function PrivateRoute({ children, loginPath = '/login' }) {
   if (!localStorage.getItem('user')) {
-    return <Navigate to='/login' state={{ from: history.location }} />;
+    return <Navigate to={loginPath} state={{ from: history.location }} />;
   }
   return children;
 }

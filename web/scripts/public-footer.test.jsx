@@ -85,7 +85,7 @@ test('renders four footer columns with real product, developer, support and poli
     元衡测试: '/',
     模型广场: '/pricing',
     智能路由: loginPath('/console/token'),
-    模型体验: loginPath('/console/playground'),
+    模型体验: loginPath('/playground'),
     'AI 图像创作': loginPath('/console/image-playground'),
     下载客户端: '/download',
     企业定制: '/enterprise',
@@ -118,7 +118,7 @@ test('anonymous protected links preserve their destination while signed-in users
   for (const [label, path] of Object.entries({
     模型广场: '/pricing',
     智能路由: '/console/token',
-    模型体验: '/console/playground',
+    模型体验: '/playground',
     'AI 图像创作': '/console/image-playground',
     控制台: '/console',
   })) {

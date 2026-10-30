@@ -61,8 +61,7 @@ const PageLayout = () => {
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
-    !location.pathname.startsWith('/console/chat') &&
-    location.pathname !== '/console/playground';
+    !location.pathname.startsWith('/console/chat');
 
   const isStandalonePage = location.pathname === '/usage';
   const showSider = isConsoleRoute && (!isMobile || drawerOpen);
