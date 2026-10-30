@@ -420,10 +420,12 @@ try {
     assert.equal(
       await page.evaluate(() => {
         const a = document.querySelector('#capabilities'),
-          p = document.querySelector('#pricing');
+          p = document.querySelector('#pricing'),
+          o = document.querySelector('#official-pricing');
         return (
           !p.contains(a) &&
-          a.getBoundingClientRect().top >= p.getBoundingClientRect().bottom
+          a.getBoundingClientRect().top >= o.getBoundingClientRect().bottom &&
+          p.getBoundingClientRect().top >= a.getBoundingClientRect().bottom
         );
       }),
       true,

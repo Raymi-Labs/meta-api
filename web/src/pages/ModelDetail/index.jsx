@@ -163,8 +163,8 @@ export default function ModelDetail() {
       : [];
   const sections = [
     ['official-pricing', '官方参考价'],
-    ['pricing', '分组价格'],
     ['capabilities', '模型属性'],
+    ['pricing', '分组价格'],
     ['performance', '性能对比'],
     ['usage', '分组用量'],
     ['quick-start', '快速开始'],
@@ -233,6 +233,7 @@ export default function ModelDetail() {
         </nav>
         <div className='model-detail-main'>
           <ModelOfficialPricing pricing={model.official_pricing} t={t} />
+          <ModelAttributes model={model} tags={tags} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>
               <h2>{t('分组价格')}</h2>
@@ -356,7 +357,6 @@ export default function ModelDetail() {
               health={health}
             />
           </section>
-          <ModelAttributes model={model} tags={tags} />
           <section id='billing-details' className='model-detail-section'>
             {priceData.isDynamicPricing && (
               <div className='model-detail-dynamic'>
