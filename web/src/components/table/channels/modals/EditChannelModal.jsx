@@ -4745,7 +4745,7 @@ const EditChannelModal = (props) => {
                         handleChannelSettingsChange('nonstream_response_header_timeout_sec', value ?? 0)
                       }
                       style={{ width: '100%' }}
-                      extraText={t('0 为继承全局；仅非流式文本请求生效，最长 600 秒。流式和生图不变，总超时及反向代理限制仍生效。')}
+                      extraText={t('0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。')}
                     />
                     <Form.Input
                       field='proxy'

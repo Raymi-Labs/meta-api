@@ -6641,6 +6641,7 @@
     "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Çıkış tarihi geçerli bir YYYY-MM-DD veya YYYY-MM olmalı ve 1970 yılından önce olmamalıdır",
     "请选择有效的时间范围": "Geçerli bir zaman aralığı seçin",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filtreler aramadan sonra uygulanır. Yenileme, dışa aktarma ve özetler uygulanan filtreleri kullanır.",
-    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Son 5 ödemeniz. Tüm kayıtlar ve faturalar için faturalandırmayı açın."
+    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Son 5 ödemeniz. Tüm kayıtlar ve faturalar için faturalandırmayı açın.",
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 genel ayarı devralır; akışsız metin ve video gönderimine en fazla 600 saniye uygulanır. Akış, görseller ve arka plan sorguları değişmez; toplam ve proxy zaman sınırları geçerlidir."
   }
 }

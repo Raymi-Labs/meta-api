@@ -2,15 +2,27 @@
 
 视频通常采用先提交、再查询、最后取结果的异步流程。先在[模型广场](https://meta-api.vip/pricing)确认模型支持的视频协议和分组，把 `MODEL_ID` 替换为实际 ID。本站有 OpenAI 兼容视频入口及部分厂商接口，参数和响应不完全相同；不能将所有视频模型统一套入同一请求。
 
+## 一句话生成视频
+
+安装[元衡视频 Skill](https://meta-api.vip/downloads/meta-api-video-skill.zip)到客户端 Skills 目录，配置自己的 `META_API_KEY`，直接描述想要的视频。需要 Python 3.9+；目前支持 Grok 文生视频，默认 1 秒、480p、16:9，生成按模型和分组计费。
+
+脚本只提交一次并自动查询。中断后用 `--resume` 继续原任务；没有任务 ID 时先查日志，不自动重发。
+
 ## 提交与查询
 
-下面适用于支持 `/v1/videos` 协议的模型。`API_KEY` 从环境变量读取。先提交最小文本请求，需要尺寸、秒数等字段时再按模型要求添加。
+下面是 Grok 的 JSON 示例。其他模型须按各自协议选择 JSON 或 multipart，不能通用。
 
 ```bash
 curl --fail-with-body -sS 'https://meta-api.vip/v1/videos' \
   -H "Authorization: Bearer $API_KEY" \
-  -F 'model=MODEL_ID' \
-  -F 'prompt=海边灯塔在晨光中，镜头缓慢向前移动。'
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "grok-imagine-video",
+    "prompt": "海边灯塔在晨光中，镜头缓慢向前移动。",
+    "duration": 1,
+    "resolution": "480p",
+    "aspect_ratio": "16:9"
+  }'
 ```
 
 保存返回的任务 `id`，将下方 `TASK_ID` 替换为该值。任务 ID 表示提交已被接受，不代表视频已经生成成功。
@@ -23,6 +35,8 @@ curl --fail-with-body -sS 'https://meta-api.vip/v1/videos/TASK_ID' \
 该协议的结果包含 `status`，并可能提供 `progress`、`created_at`、`completed_at` 和 `error`。按实际返回判断排队、运行、完成或失败。轮询应使用间隔与退避，切勿通过重复提交新任务来“刷新进度”。
 
 ## 获取成品
+
+Grok 完成后可从 `metadata.url` 获取视频链接。
 
 确认任务完成后，再调用内容接口。结果获取需要鉴权，下载地址与任务结果也不应假设永久保留。
 

@@ -7256,6 +7256,7 @@
     "发布日期必须为有效的 YYYY-MM-DD 或 YYYY-MM，且不早于 1970 年": "Ngày phát hành phải hợp lệ theo định dạng YYYY-MM-DD hoặc YYYY-MM và không trước năm 1970",
     "请选择有效的时间范围": "Chọn khoảng thời gian hợp lệ",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Bộ lọc có hiệu lực sau khi tìm kiếm. Làm mới, xuất và tổng hợp dùng điều kiện đã áp dụng.",
-    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "5 khoản thanh toán gần nhất của bạn. Xem mục hóa đơn để biết đầy đủ lịch sử và hóa đơn."
+    "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "5 khoản thanh toán gần nhất của bạn. Xem mục hóa đơn để biết đầy đủ lịch sử và hóa đơn.",
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 kế thừa cấu hình chung; văn bản không truyền luồng và gửi video tối đa 600 giây. Luồng, ảnh và truy vấn nền không đổi; giới hạn tổng và proxy vẫn áp dụng."
   }
 }

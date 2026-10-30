@@ -492,7 +492,7 @@ func channelNonStreamHeaderTimeout(info *common.RelayInfo) time.Duration {
 		return 0
 	}
 	switch info.RelayMode {
-	case constant.RelayModeChatCompletions, constant.RelayModeCompletions, constant.RelayModeResponses:
+	case constant.RelayModeChatCompletions, constant.RelayModeCompletions, constant.RelayModeResponses, constant.RelayModeVideoSubmit:
 		return time.Duration(seconds) * time.Second
 	}
 	return 0

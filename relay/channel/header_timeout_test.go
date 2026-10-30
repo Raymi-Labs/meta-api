@@ -19,7 +19,7 @@ import (
 
 func TestChannelNonStreamHeaderTimeoutScope(t *testing.T) {
 	require.Zero(t, channelNonStreamHeaderTimeout(nil))
-	for _, mode := range []int{constant.RelayModeChatCompletions, constant.RelayModeCompletions, constant.RelayModeResponses} {
+	for _, mode := range []int{constant.RelayModeChatCompletions, constant.RelayModeCompletions, constant.RelayModeResponses, constant.RelayModeVideoSubmit} {
 		info := &relaycommon.RelayInfo{RelayMode: mode, ChannelMeta: &relaycommon.ChannelMeta{
 			ChannelSetting: dto.ChannelSettings{NonStreamResponseHeaderTimeoutSec: 120},
 		}}
@@ -32,7 +32,7 @@ func TestChannelNonStreamHeaderTimeoutScope(t *testing.T) {
 		info.ChannelSetting.NonStreamResponseHeaderTimeoutSec = 601
 		require.Zero(t, channelNonStreamHeaderTimeout(info))
 	}
-	for _, mode := range []int{constant.RelayModeImagesGenerations, constant.RelayModeImagesEdits, constant.RelayModeEmbeddings, constant.RelayModeAudioSpeech, constant.RelayModeResponsesCompact} {
+	for _, mode := range []int{constant.RelayModeImagesGenerations, constant.RelayModeImagesEdits, constant.RelayModeEmbeddings, constant.RelayModeAudioSpeech, constant.RelayModeResponsesCompact, constant.RelayModeVideoFetchByID} {
 		info := &relaycommon.RelayInfo{RelayMode: mode, ChannelMeta: &relaycommon.ChannelMeta{
 			ChannelSetting: dto.ChannelSettings{NonStreamResponseHeaderTimeoutSec: 120},
 		}}
@@ -62,12 +62,13 @@ func TestChannelHeaderOverrideActualRequest(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	for _, seconds := range []int{0, 2} {
+	for _, tc := range []struct{ mode, seconds int }{{constant.RelayModeChatCompletions, 0}, {constant.RelayModeChatCompletions, 2}, {constant.RelayModeVideoSubmit, 0}, {constant.RelayModeVideoSubmit, 2}} {
+		seconds := tc.seconds
 		c, _ := gin.CreateTestContext(httptest.NewRecorder())
 		c.Request = httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader("{}"))
 		req, err := http.NewRequestWithContext(c.Request.Context(), "POST", server.URL, strings.NewReader("{}"))
 		require.NoError(t, err)
-		info := &relaycommon.RelayInfo{RelayMode: constant.RelayModeChatCompletions, ChannelMeta: &relaycommon.ChannelMeta{
+		info := &relaycommon.RelayInfo{RelayMode: tc.mode, ChannelMeta: &relaycommon.ChannelMeta{
 			ChannelSetting: dto.ChannelSettings{NonStreamResponseHeaderTimeoutSec: seconds},
 		}}
 		resp, err := doRequest(c, req, info)
