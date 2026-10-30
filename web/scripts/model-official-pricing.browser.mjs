@@ -344,7 +344,7 @@ try {
   );
   fs.writeFileSync(
     files[1],
-    `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><App/></BrowserRouter>);`,
+    `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {ThemeProvider} from './src/context/Theme';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><App/></ThemeProvider></BrowserRouter>);`,
   );
   await launchBrowser();
   for (const dark of [false, true]) {
@@ -720,6 +720,9 @@ try {
     waitUntil: 'networkidle0',
   });
   await mobileEditor.waitForSelector('input#model-faq-question-0');
+  await mobileEditor.waitForFunction(
+    () => document.body.getAttribute('theme-mode') === 'dark',
+  );
   await mobileEditor.$eval('.model-faq-editor', (el) =>
     el.scrollIntoView({ block: 'start' }),
   );
