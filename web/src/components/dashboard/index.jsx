@@ -78,11 +78,10 @@ const DashboardContent = () => {
 
   // ========== 统计数据 ==========
   const { groupedStatsData } = useDashboardStats(
-    userState,
     dashboardData.consumeQuota,
     dashboardData.consumeTokens,
     dashboardData.times,
-    dashboardData.performanceMetrics,
+    dashboardData.cacheRate,
     dashboardData.t,
   );
 
@@ -236,12 +235,9 @@ const DashboardContent = () => {
   return (
     <div className='dashboard-overview'>
       <DashboardHeader
-        getGreeting={dashboardData.getGreeting}
+        inputs={dashboardData.inputs}
         rangePreset={dashboardData.rangePreset}
         onRangeChange={dashboardData.selectRangePreset}
-        inputs={dashboardData.inputs}
-        dataExportDefaultTime={dashboardData.dataExportDefaultTime}
-        isAdminUser={dashboardData.isAdminUser}
         showSearchModal={dashboardData.showSearchModal}
         refresh={handleRefresh}
         loading={dashboardData.loading}
@@ -260,13 +256,11 @@ const DashboardContent = () => {
         t={dashboardData.t}
       />
 
-      {(dashboardData.quotaError || dashboardData.accountError) && (
+      {dashboardData.quotaError && (
         <div className='dashboard-load-error' role='alert'>
           <span>
             {dashboardData.t('加载失败，请重试')} ·{' '}
-            {dashboardData.t(
-              dashboardData.quotaError ? '使用统计' : '账户数据',
-            )}
+            {dashboardData.t('使用统计')}
           </span>
           <button type='button' onClick={handleRefresh}>
             {dashboardData.t('重试')}
@@ -277,15 +271,14 @@ const DashboardContent = () => {
         groupedStatsData={groupedStatsData}
         loading={dashboardData.loading}
         quotaError={dashboardData.quotaError}
-        accountLoading={dashboardData.accountLoading}
-        accountError={dashboardData.accountError}
+        cacheLoading={dashboardData.cacheLoading}
+        cacheError={dashboardData.cacheError}
+        retryCache={handleRefresh}
       />
 
-      {/* API信息和图表面板 */}
+      {/* 模型数据分析 */}
       <div className='mb-4'>
-        <div
-          className={`grid grid-cols-1 gap-4 ${dashboardData.hasApiInfoPanel ? 'lg:grid-cols-4' : ''}`}
-        >
+        <div className='grid grid-cols-1 gap-4'>
           <ChartsPanel
             quotaLoading={dashboardData.loading}
             quotaError={dashboardData.quotaError}
@@ -313,10 +306,14 @@ const DashboardContent = () => {
             CARD_PROPS={CARD_PROPS}
             CHART_CONFIG={CHART_CONFIG}
             FLEX_CENTER_GAP2={FLEX_CENTER_GAP2}
-            hasApiInfoPanel={dashboardData.hasApiInfoPanel}
+            hasApiInfoPanel={false}
             t={dashboardData.t}
           />
-
+        </div>
+      </div>
+      {/* API信息、公告、常见问答与服务可用性 */}
+      {(dashboardData.hasApiInfoPanel || dashboardData.hasInfoPanels) && (
+        <div className='dashboard-info-grid mb-4'>
           {dashboardData.hasApiInfoPanel && (
             <ApiInfoPanel
               apiInfoData={apiInfoData}
@@ -328,68 +325,59 @@ const DashboardContent = () => {
               t={dashboardData.t}
             />
           )}
-        </div>
-      </div>
 
-      {/* 系统公告和常见问答卡片 */}
-      {dashboardData.hasInfoPanels && (
-        <div className='mb-4'>
-          <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
-            {/* 公告卡片 */}
-            {dashboardData.announcementsEnabled && (
-              <AnnouncementsPanel
-                announcementData={announcementData}
-                announcementLegendData={ANNOUNCEMENT_LEGEND_DATA.map(
-                  (item) => ({
-                    ...item,
-                    label: dashboardData.t(item.label),
-                  }),
-                )}
-                CARD_PROPS={CARD_PROPS}
-                ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
-                t={dashboardData.t}
-              />
-            )}
+          {/* 公告卡片 */}
+          {dashboardData.announcementsEnabled && (
+            <AnnouncementsPanel
+              announcementData={announcementData}
+              announcementLegendData={ANNOUNCEMENT_LEGEND_DATA.map((item) => ({
+                ...item,
+                label: dashboardData.t(item.label),
+              }))}
+              CARD_PROPS={CARD_PROPS}
+              ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
+              t={dashboardData.t}
+            />
+          )}
 
-            {/* 常见问答卡片 */}
-            {dashboardData.faqEnabled && (
-              <FaqPanel
-                faqData={faqData}
-                CARD_PROPS={CARD_PROPS}
-                FLEX_CENTER_GAP2={FLEX_CENTER_GAP2}
-                ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
-                t={dashboardData.t}
-              />
-            )}
+          {/* 常见问答卡片 */}
+          {dashboardData.faqEnabled && (
+            <FaqPanel
+              faqData={faqData}
+              CARD_PROPS={CARD_PROPS}
+              FLEX_CENTER_GAP2={FLEX_CENTER_GAP2}
+              ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
+              t={dashboardData.t}
+            />
+          )}
 
-            {/* 服务可用性卡片 */}
-            {dashboardData.uptimeEnabled && (
-              <UptimePanel
-                uptimeData={dashboardData.uptimeData}
-                uptimeLoading={dashboardData.uptimeLoading}
-                activeUptimeTab={dashboardData.activeUptimeTab}
-                setActiveUptimeTab={dashboardData.setActiveUptimeTab}
-                loadUptimeData={dashboardData.loadUptimeData}
-                uptimeLegendData={uptimeLegendData}
-                renderMonitorList={(monitors) =>
-                  renderMonitorList(
-                    monitors,
-                    (status) => getUptimeStatusColor(status, UPTIME_STATUS_MAP),
-                    (status) =>
-                      getUptimeStatusText(
-                        status,
-                        UPTIME_STATUS_MAP,
-                        dashboardData.t,
-                      ),
-                    dashboardData.t,
-                  )
-                }
-                CARD_PROPS={CARD_PROPS}
-                ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
-                t={dashboardData.t}
-              />
-            )}
-          </div>
+          {/* 服务可用性卡片 */}
+          {dashboardData.uptimeEnabled && (
+            <UptimePanel
+              uptimeData={dashboardData.uptimeData}
+              uptimeLoading={dashboardData.uptimeLoading}
+              activeUptimeTab={dashboardData.activeUptimeTab}
+              setActiveUptimeTab={dashboardData.setActiveUptimeTab}
+              loadUptimeData={dashboardData.loadUptimeData}
+              uptimeLegendData={uptimeLegendData}
+              renderMonitorList={(monitors) =>
+                renderMonitorList(
+                  monitors,
+                  (status) => getUptimeStatusColor(status, UPTIME_STATUS_MAP),
+                  (status) =>
+                    getUptimeStatusText(
+                      status,
+                      UPTIME_STATUS_MAP,
+                      dashboardData.t,
+                    ),
+                  dashboardData.t,
+                )
+              }
+              CARD_PROPS={CARD_PROPS}
+              ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
+              t={dashboardData.t}
+            />
+          )}
         </div>
       )}
 

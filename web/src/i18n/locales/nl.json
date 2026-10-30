@@ -6642,6 +6642,11 @@
     "请选择有效的时间范围": "Selecteer een geldig tijdsbereik",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filters gelden na het zoeken. Vernieuwen, exporteren en samenvattingen gebruiken de toegepaste filters.",
     "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Uw 5 recentste betalingen. Open facturering voor alle gegevens en facturen.",
-    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 gebruikt de globale instelling; tekst zonder streaming en video-indiening tot 600 seconden. Streaming, afbeeldingen en achtergrondcontroles blijven ongewijzigd; totale en proxy-time-outs blijven gelden."
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 gebruikt de globale instelling; tekst zonder streaming en video-indiening tot 600 seconden. Streaming, afbeeldingen en achtergrondcontroles blijven ongewijzigd; totale en proxy-time-outs blijven gelden.",
+    "总消费": "Totale uitgaven",
+    "Token 用量": "Tokengebruik",
+    "每百万 Token 综合单价": "Gemiddelde prijs per miljoen tokens",
+    "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Uit de cache gelezen tokens ÷ alle invoertokens, op basis van bewaarde gebruikslogboeken voor de geselecteerde periode.",
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Totale uitgaven ÷ tokengebruik × 1.000.000, op basis van dashboardtotalen; dit is geen modeltarief."
   }
 }
