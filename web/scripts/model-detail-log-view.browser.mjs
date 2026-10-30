@@ -201,13 +201,8 @@ try {
     assert.equal(
       await page.evaluate(() => {
         const quickStart = document.querySelector('#quick-start');
-        const billing = document.querySelector('#billing-details');
-        return Boolean(
-          quickStart &&
-            billing &&
-            quickStart.compareDocumentPosition(billing) &
-              Node.DOCUMENT_POSITION_FOLLOWING,
-        );
+        const usage = document.querySelector('#usage');
+        return Boolean(quickStart && usage?.nextElementSibling === quickStart);
       }),
       true,
     );
