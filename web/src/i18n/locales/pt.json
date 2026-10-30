@@ -6703,6 +6703,14 @@
     "清空对话": "Limpar conversa",
     "停止生成": "Parar geração",
     "发送": "Enviar",
-    "切换模型保留当前对话；每次只请求选中的模型。": "Trocar de modelo mantém a conversa. Cada requisição usa apenas o modelo selecionado."
+    "切换模型保留当前对话；每次只请求选中的模型。": "Trocar de modelo mantém a conversa. Cada requisição usa apenas o modelo selecionado.",
+    "显示在模型详情底部；未配置时隐藏，不受自动同步影响。": "Exibido no fim dos detalhes do modelo. Oculto quando vazio; a sincronização automática não o altera.",
+    "最多 20 条；问题限 200 字，答案限 2000 字，支持换行。": "Até 20 entradas; 200 caracteres por pergunta e 2000 por resposta. Aceita quebras de linha.",
+    "添加常见问题": "Adicionar pergunta frequente",
+    "模型 FAQ 最多配置 20 条": "As perguntas frequentes do modelo aceitam até 20 entradas",
+    "FAQ 的问题和答案不能为空": "As perguntas e respostas não podem estar vazias",
+    "FAQ 问题不能超过 200 个字符": "As perguntas não podem exceder 200 caracteres",
+    "FAQ 答案不能超过 2000 个字符": "As respostas não podem exceder 2000 caracteres",
+    "FAQ 内容过长，请减少问题或答案长度": "O conteúdo está muito longo. Encurte as perguntas ou respostas."
   }
 }

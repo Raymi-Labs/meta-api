@@ -15,12 +15,13 @@ import (
 )
 
 func TestModelMetaRequestDisplayMetadataPresence(t *testing.T) {
-	existing := model.Model{DisplayName: "Local title", ReleaseDate: "2025-01", ContextLength: 128000, MaxOutputTokens: 32000, Capabilities: model.ModelCapabilities{"streaming": false},
+	existing := model.Model{FAQ: model.ModelFAQ{{Question: "Question", Answer: "Answer"}}, DisplayName: "Local title", ReleaseDate: "2025-01", ContextLength: 128000, MaxOutputTokens: 32000, Capabilities: model.ModelCapabilities{"streaming": false},
 		InputModalities: model.ModelModalities{"text", "image"}, OutputModalities: model.ModelModalities{"text"}}
 	var omitted modelMetaRequest
 	require.NoError(t, common.UnmarshalJsonStr(`{"id":1,"model_name":"example","description":"new"}`, &omitted))
 	got, err := omitted.withDisplayMetadata(&existing)
 	require.NoError(t, err)
+	require.Equal(t, existing.FAQ, got.FAQ)
 	require.Equal(t, existing.DisplayName, got.DisplayName)
 	require.Equal(t, existing.ReleaseDate, got.ReleaseDate)
 	require.Equal(t, existing.ContextLength, got.ContextLength)
@@ -28,9 +29,10 @@ func TestModelMetaRequestDisplayMetadataPresence(t *testing.T) {
 	require.Equal(t, existing.Capabilities, got.Capabilities)
 	require.Equal(t, existing.InputModalities, got.InputModalities)
 	var clear modelMetaRequest
-	require.NoError(t, common.UnmarshalJsonStr(`{"official_pricing":{},"display_name":"","release_date":"","context_length":0,"max_output_tokens":0,"capabilities":{},"input_modalities":[],"output_modalities":[]}`, &clear))
+	require.NoError(t, common.UnmarshalJsonStr(`{"faq":[],"official_pricing":{},"display_name":"","release_date":"","context_length":0,"max_output_tokens":0,"capabilities":{},"input_modalities":[],"output_modalities":[]}`, &clear))
 	got, err = clear.withDisplayMetadata(&existing)
 	require.NoError(t, err)
+	require.Empty(t, got.FAQ)
 	require.Empty(t, got.DisplayName)
 	require.Empty(t, got.ReleaseDate)
 	require.Zero(t, got.ContextLength)
@@ -38,7 +40,7 @@ func TestModelMetaRequestDisplayMetadataPresence(t *testing.T) {
 	require.Empty(t, got.Capabilities)
 	require.Empty(t, got.InputModalities)
 	require.Empty(t, got.OutputModalities)
-	for _, payload := range []string{`{"max_output_tokens":1.5}`, `{"capabilities":{"streaming":null}}`, `{"capabilities":{"unknown":true}}`, `{"capabilities":{"reasoning":"true"}}`, `{"release_date":1792800000}`, `{"release_date":{}}`, `{"context_length":1.5}`, `{"context_length":"128000"}`, `{"input_modalities":"text"}`, `{"output_modalities":[1]}`} {
+	for _, payload := range []string{`{"faq":"invalid"}`, `{"faq":{}}`, `{"faq":[{"question":123,"answer":"A"}]}`, `{"max_output_tokens":1.5}`, `{"capabilities":{"streaming":null}}`, `{"capabilities":{"unknown":true}}`, `{"capabilities":{"reasoning":"true"}}`, `{"release_date":1792800000}`, `{"release_date":{}}`, `{"context_length":1.5}`, `{"context_length":"128000"}`, `{"input_modalities":"text"}`, `{"output_modalities":[1]}`} {
 		var invalid modelMetaRequest
 		require.Error(t, common.UnmarshalJsonStr(payload, &invalid))
 	}
@@ -71,19 +73,31 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 		require.NoError(t, common.Unmarshal(response.Body.Bytes(), &result))
 		return result.Success
 	}
-	require.True(t, invoke(http.MethodPost, "/api/models/", `{"official_pricing":{"currency":"USD","tiers":[{"label":"Standard","unit":"million_tokens","input":10,"cache_read":0}]},"model_name":"metadata-model","description":"Local description","display_name":" Local title ","release_date":"2026-10-24","context_length":256000,"max_output_tokens":64000,"capabilities":{"reasoning":true,"streaming":false},"input_modalities":["image","text","text"],"output_modalities":["text"],"status":1,"sync_official":1}`, CreateModelMeta))
+	require.True(t, invoke(http.MethodPost, "/api/models/", `{"faq":[{"question":" First? ","answer":"First answer\nNext line"},{"question":"Second?","answer":"Second answer"}],"official_pricing":{"currency":"USD","tiers":[{"label":"Standard","unit":"million_tokens","input":10,"cache_read":0}]},"model_name":"metadata-model","description":"Local description","display_name":" Local title ","release_date":"2026-10-24","context_length":256000,"max_output_tokens":64000,"capabilities":{"reasoning":true,"streaming":false},"input_modalities":["image","text","text"],"output_modalities":["text"],"status":1,"sync_official":1}`, CreateModelMeta))
 	var saved model.Model
 	require.NoError(t, db.Where("model_name = ?", "metadata-model").First(&saved).Error)
 	require.Len(t, saved.OfficialPricing.Tiers, 1)
 	require.Equal(t, float64(10), *saved.OfficialPricing.Tiers[0].Input)
+	require.Equal(t, model.ModelFAQ{{Question: "First?", Answer: "First answer\nNext line"}, {Question: "Second?", Answer: "Second answer"}}, saved.FAQ)
 	require.Equal(t, "Local title", saved.DisplayName)
 	require.Equal(t, "2026-10-24", saved.ReleaseDate)
 	require.Equal(t, model.ModelModalities{"text", "image"}, saved.InputModalities)
 	require.NoError(t, db.Create(&model.Ability{Group: "default", Model: "metadata-model", ChannelId: 1, Enabled: true}).Error)
+	getResponse := httptest.NewRecorder()
+	getCtx, _ := gin.CreateTestContext(getResponse)
+	getCtx.Params = gin.Params{{Key: "id", Value: "1"}}
+	getCtx.Request = httptest.NewRequest(http.MethodGet, "/api/models/1", nil)
+	GetModelMeta(getCtx)
+	var getResult struct {
+		Data model.Model `json:"data"`
+	}
+	require.NoError(t, common.Unmarshal(getResponse.Body.Bytes(), &getResult))
+	require.Equal(t, saved.FAQ, getResult.Data.FAQ)
 	model.RefreshPricing()
 	pricing := model.GetPricing()
 	require.Len(t, pricing, 1)
 	require.Equal(t, "metadata-model", pricing[0].ModelName)
+	require.Equal(t, saved.FAQ, pricing[0].FAQ)
 	require.Equal(t, "Local title", pricing[0].DisplayName)
 	require.Equal(t, "2026-10-24", pricing[0].ReleaseDate)
 	require.EqualValues(t, 256000, pricing[0].ContextLength)
@@ -92,6 +106,9 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.Equal(t, saved.InputModalities, pricing[0].InputModalities)
 	// An old full-update payload may edit descriptions without losing the added fields.
 	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","description":"Updated description","status":1,"sync_official":1}`, UpdateModelMeta))
+	require.Equal(t, saved.FAQ, model.GetPricing()[0].FAQ)
+	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","description":"Updated description","faq":null,"status":1,"sync_official":1}`, UpdateModelMeta))
+	require.Equal(t, saved.FAQ, model.GetPricing()[0].FAQ)
 	require.Equal(t, "Local title", model.GetPricing()[0].DisplayName)
 	require.Equal(t, saved.OfficialPricing, model.GetPricing()[0].OfficialPricing)
 	require.Equal(t, "Updated description", model.GetPricing()[0].Description)
@@ -104,14 +121,28 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 			_, _ = w.Write([]byte(`{"success":true,"data":[]}`))
 			return
 		}
-		_, _ = w.Write([]byte(`{"success":true,"data":[{"model_name":"metadata-model","description":"Upstream description","display_name":"Wrong upstream title","release_date":"2025-01-01","context_length":1,"input_modalities":[],"output_modalities":[]}]}`))
+		_, _ = w.Write([]byte(`{"success":true,"data":[{"model_name":"metadata-model","description":"Upstream description","faq":[{"question":"Upstream question","answer":"Wrong answer"}],"display_name":"Wrong upstream title","release_date":"2025-01-01","context_length":1,"input_modalities":[],"output_modalities":[]}]}`))
 	}))
 	t.Cleanup(upstream.Close)
 	t.Setenv("SYNC_UPSTREAM_BASE", upstream.URL)
+	// Simulate an admin edit after sync has loaded its older model snapshot.
+	concurrentFAQ := model.ModelFAQ{{Question: "Latest question", Answer: "Latest answer"}, {Question: "Second?", Answer: "Second answer"}}
+	editedFAQ := false
+	require.NoError(t, db.Callback().Query().After("gorm:query").Register("test:concurrent-faq", func(tx *gorm.DB) {
+		if local, ok := tx.Statement.Dest.(*model.Model); ok && local.ModelName == "metadata-model" && !editedFAQ {
+			editedFAQ = true
+			require.NoError(t, db.Model(&model.Model{}).Where("id = ?", local.Id).UpdateColumn("faq", concurrentFAQ).Error)
+		}
+	}))
+	t.Cleanup(func() { db.Callback().Query().Remove("test:concurrent-faq") })
 	require.True(t, invoke(http.MethodPost, "/api/models/sync_upstream", `{"overwrite":[{"model_name":"metadata-model","fields":["official_pricing","description","display_name","release_date","context_length","input_modalities","output_modalities"]}]}`, SyncUpstreamModels))
+	require.True(t, editedFAQ)
+	require.NoError(t, db.Callback().Query().Remove("test:concurrent-faq"))
+	saved.FAQ = concurrentFAQ
 	pricing = model.GetPricing()
 	require.Equal(t, saved.OfficialPricing, pricing[0].OfficialPricing)
 	require.Equal(t, "Upstream description", pricing[0].Description)
+	require.Equal(t, saved.FAQ, pricing[0].FAQ)
 	require.Equal(t, "Local title", pricing[0].DisplayName)
 	require.Equal(t, "2026-10-24", pricing[0].ReleaseDate)
 	require.EqualValues(t, 256000, pricing[0].ContextLength)
@@ -120,6 +151,8 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.Equal(t, model.ModelModalities{"text", "image"}, pricing[0].InputModalities)
 	require.Equal(t, model.ModelModalities{"text"}, pricing[0].OutputModalities)
 	for _, body := range []string{
+		`{"id":1,"model_name":"metadata-model","faq":[{"question":" ","answer":"A"}]}`,
+		`{"id":1,"model_name":"metadata-model","faq":[{"question":"Q","answer":""}]}`,
 		`{"id":1,"model_name":"metadata-model","release_date":"2025-02-29"}`,
 		`{"id":1,"model_name":"metadata-model","release_date":"2026-10-24","name_rule":1}`,
 		`{"id":1,"model_name":"metadata-model","max_output_tokens":-1}`,
@@ -134,10 +167,12 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.True(t, invoke(http.MethodPut, "/api/models/?status_only=true", `{"id":1,"status":0}`, UpdateModelMeta))
 	require.Empty(t, model.GetPricing(), "disabled metadata remains hidden from public pricing")
 	require.NoError(t, db.First(&saved, 1).Error)
+	require.Len(t, saved.FAQ, 2, "status changes preserve FAQ")
 	require.Equal(t, "Local title", saved.DisplayName)
-	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","official_pricing":{},"display_name":"","release_date":"","context_length":0,"max_output_tokens":0,"capabilities":{},"input_modalities":[],"output_modalities":[],"status":1}`, UpdateModelMeta))
+	require.True(t, invoke(http.MethodPut, "/api/models/", `{"id":1,"model_name":"metadata-model","faq":[],"official_pricing":{},"display_name":"","release_date":"","context_length":0,"max_output_tokens":0,"capabilities":{},"input_modalities":[],"output_modalities":[],"status":1}`, UpdateModelMeta))
 	pricing = model.GetPricing()
 	require.Len(t, pricing, 1)
+	require.Empty(t, pricing[0].FAQ)
 	require.Empty(t, pricing[0].OfficialPricing.Tiers)
 	require.Empty(t, pricing[0].DisplayName)
 	require.Empty(t, pricing[0].ReleaseDate)
@@ -146,6 +181,7 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.Empty(t, pricing[0].Capabilities)
 	encoded, err := common.Marshal(pricing[0])
 	require.NoError(t, err)
+	require.Contains(t, string(encoded), `"faq":[]`)
 	require.Contains(t, string(encoded), `"release_date":""`)
 	require.Contains(t, string(encoded), `"input_modalities":[]`)
 	require.Contains(t, string(encoded), `"output_modalities":[]`)
@@ -166,7 +202,7 @@ func TestModelReleaseDatePricingDoesNotInheritPatternDates(t *testing.T) {
 	})
 	// Defend even against legacy/imported pattern records bypassing validation.
 	for _, m := range []model.Model{
-		{ModelName: "prefix-", NameRule: model.NameRulePrefix, ReleaseDate: "2026-10-24", Status: 1},
+		{FAQ: model.ModelFAQ{{Question: "Family question", Answer: "Family answer"}}, ModelName: "prefix-", NameRule: model.NameRulePrefix, ReleaseDate: "2026-10-24", Status: 1},
 		{ModelName: "-suffix", NameRule: model.NameRuleSuffix, ReleaseDate: "2026-10-24", Status: 1},
 		{ModelName: "middle", NameRule: model.NameRuleContains, ReleaseDate: "2026-10-24", Status: 1},
 		{ModelName: "exact", NameRule: model.NameRuleExact, ReleaseDate: "2025-01", Status: 1},
@@ -181,6 +217,11 @@ func TestModelReleaseDatePricingDoesNotInheritPatternDates(t *testing.T) {
 	pricing := model.GetPricing()
 	require.Len(t, pricing, 5)
 	for _, item := range pricing {
+		if item.ModelName == "prefix-child" {
+			require.Equal(t, model.ModelFAQ{{Question: "Family question", Answer: "Family answer"}}, item.FAQ)
+		} else {
+			require.Empty(t, item.FAQ)
+		}
 		if item.ModelName == "exact" {
 			require.Equal(t, "2025-01", item.ReleaseDate)
 		} else {

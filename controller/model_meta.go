@@ -16,6 +16,7 @@ import (
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
 	model.Model
+	FAQ              *model.ModelFAQ          `json:"faq"`
 	OfficialPricing  *model.OfficialPricing   `json:"official_pricing"`
 	DisplayName      *string                  `json:"display_name"`
 	ReleaseDate      *string                  `json:"release_date"`
@@ -29,6 +30,7 @@ type modelMetaRequest struct {
 func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
 	m := request.Model
 	if existing != nil {
+		m.FAQ = existing.FAQ.Clone()
 		m.OfficialPricing = existing.OfficialPricing
 		m.DisplayName = existing.DisplayName
 		m.ReleaseDate = existing.ReleaseDate
@@ -37,6 +39,9 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 		m.ContextLength = existing.ContextLength
 		m.InputModalities = existing.InputModalities
 		m.OutputModalities = existing.OutputModalities
+	}
+	if request.FAQ != nil {
+		m.FAQ = request.FAQ.Clone()
 	}
 	if request.OfficialPricing != nil {
 		m.OfficialPricing = *request.OfficialPricing

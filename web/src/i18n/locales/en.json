@@ -6915,6 +6915,14 @@
     "清空对话": "Clear conversation",
     "停止生成": "Stop generating",
     "发送": "Send",
-    "切换模型保留当前对话；每次只请求选中的模型。": "Switching models keeps this conversation. Each request uses only the selected model."
+    "切换模型保留当前对话；每次只请求选中的模型。": "Switching models keeps this conversation. Each request uses only the selected model.",
+    "显示在模型详情底部；未配置时隐藏，不受自动同步影响。": "Shown at the bottom of model details. Hidden when empty; automatic sync does not change it.",
+    "最多 20 条；问题限 200 字，答案限 2000 字，支持换行。": "Up to 20 entries; 200 characters per question and 2000 per answer. Line breaks are supported.",
+    "添加常见问题": "Add FAQ",
+    "模型 FAQ 最多配置 20 条": "Model FAQ supports up to 20 entries",
+    "FAQ 的问题和答案不能为空": "FAQ questions and answers cannot be empty",
+    "FAQ 问题不能超过 200 个字符": "FAQ questions cannot exceed 200 characters",
+    "FAQ 答案不能超过 2000 个字符": "FAQ answers cannot exceed 2000 characters",
+    "FAQ 内容过长，请减少问题或答案长度": "FAQ content is too long. Shorten the questions or answers."
   }
 }
