@@ -32,6 +32,8 @@ Playwright 使用合成 API 检查 1440px 桌面双栏对齐、390px 手机以�
 
 既有 payment-navigation、payment-record-view、wallet-payment-request、wallet-redemption-request 共12项Node测试通过（跳转包含桌面/手机10条网关路径），paymentCurrency 4项通过。修改JSX的ESLint/Prettier、主站完整Bun构建和Chrome预渲染通过；Bun构建最初因默认Chromium路径不存在跳过预渲染，随后指定本机Chrome独立执行全部5个公开页面成功。保留既有大包、Browserslist及第三方eval构建提示。
 
+合入最新主线的五项看板与紧凑日志更新后，钱包源码无冲突；按已占用版本顺延至 compat.114。再次完成完整Bun构建、5页预渲染、11项钱包/支付记录回归与4项货币测试，笔记门禁通过，保留主线日志样式说明。
+
 ## Consequences
 
 经典卡片恢复用户确认的外观；刷新、未知余额及可创建额度提示使展示比历史截图多保留少量必要信息。交易摘要需打开完整账单查看，减少首页请求；不改变完整记录的筛选、分页或权限。手机采用单栏，原充值、邀请、兑换顺序保持。代码回归与合成API不能证明真实支付到账，发布不等于生产升级。

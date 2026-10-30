@@ -6642,6 +6642,11 @@
     "请选择有效的时间范围": "Geçerli bir zaman aralığı seçin",
     "筛选仅在查询后生效，刷新、导出与汇总沿用已应用条件。": "Filtreler aramadan sonra uygulanır. Yenileme, dışa aktarma ve özetler uygulanan filtreleri kullanır.",
     "仅展示本人最近 5 条支付记录，完整记录与发票请查看账单。": "Son 5 ödemeniz. Tüm kayıtlar ve faturalar için faturalandırmayı açın.",
-    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 genel ayarı devralır; akışsız metin ve video gönderimine en fazla 600 saniye uygulanır. Akış, görseller ve arka plan sorguları değişmez; toplam ve proxy zaman sınırları geçerlidir."
+    "0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。": "0 genel ayarı devralır; akışsız metin ve video gönderimine en fazla 600 saniye uygulanır. Akış, görseller ve arka plan sorguları değişmez; toplam ve proxy zaman sınırları geçerlidir.",
+    "总消费": "Toplam harcama",
+    "Token 用量": "Token kullanımı",
+    "每百万 Token 综合单价": "Milyon token başına ortalama fiyat",
+    "缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。": "Önbellekten okunan tokenlar ÷ tüm girdi tokenları; seçili dönem için saklanan kullanım günlüklerine dayanır.",
+    "总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。": "Toplam harcama ÷ token kullanımı × 1.000.000; pano toplamlarına dayanır, modelin liste fiyatı değildir."
   }
 }

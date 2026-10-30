@@ -3,12 +3,6 @@
   color: var(--semi-color-text-0);
   min-width: 0;
 }
-.usage-logs-heading h1 {
-  margin: 0 0 18px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-}
 .usage-logs-toolbar,
 .usage-logs-tools {
   display: flex;
@@ -22,37 +16,51 @@
 .usage-logs-tools .semi-button {
   border-radius: 8px;
 }
-.usage-logs-hint {
-  color: var(--semi-color-text-2);
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 10px 0;
-}
 .usage-logs-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 32px;
-  padding: 16px 18px;
-  margin-top: 16px;
-  background: var(--semi-color-fill-0);
-  border: 1px solid var(--semi-color-border);
-  border-radius: 12px;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 12px 0 16px;
 }
 .usage-logs-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 110px;
-  padding-right: 24px;
-  border-right: 1px solid var(--semi-color-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 999px;
+  background: var(--semi-color-bg-0);
+  line-height: 18px;
+  white-space: nowrap;
+}
+.usage-logs-metric::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: #38bdf8;
+}
+.usage-logs-metric:nth-child(2)::before {
+  background: #fb7185;
+}
+.usage-logs-metric:nth-child(3)::before {
+  background: #94a3b8;
+}
+.usage-logs-metric:nth-child(4)::before {
+  background: #34d399;
+}
+.usage-logs-metric:nth-child(5)::before {
+  background: #a78bfa;
 }
 .usage-logs-metric > span {
   color: var(--semi-color-text-2);
   font-size: 12px;
 }
 .usage-logs-metric strong {
-  font-size: 18px;
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .usage-logs-stat-error {
@@ -64,24 +72,9 @@
 .usage-logs-filters {
   padding: 16px;
   margin: 14px 0;
-  background: var(--semi-color-fill-0);
+  background: var(--semi-color-bg-0);
   border: 1px solid var(--semi-color-border);
   border-radius: 12px;
-}
-.usage-logs-filters[hidden] {
-  display: none;
-}
-.usage-logs-applied {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  padding: 10px 0 16px;
-  font-size: 12px;
-  color: var(--semi-color-text-2);
-  overflow-wrap: anywhere;
-}
-.usage-logs-applied > span {
-  max-width: 100%;
 }
 .usage-logs-table {
   border: 1px solid var(--semi-color-border);
@@ -126,19 +119,12 @@
   .usage-logs-page {
     padding: 16px 8px;
   }
-  .usage-logs-heading h1 {
-    font-size: 20px;
-    margin-bottom: 14px;
-  }
   .usage-logs-toolbar {
     align-items: flex-start;
     gap: 10px;
   }
   .usage-logs-tools {
     gap: 4px;
-  }
-  .usage-logs-stats {
-    gap: 14px 24px;
   }
   .usage-logs-filters {
     padding: 12px;
@@ -148,27 +134,15 @@
   }
 }
 
-.usage-logs-metric:last-child {
-  border-right: 0;
-  padding-right: 0;
-}
 .usage-logs-tools .semi-button {
   min-height: 32px;
   padding-inline: 12px;
 }
-@media (max-width: 767px) {
-  .usage-logs-stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 14px;
-  }
-  .usage-logs-metric {
-    min-width: 0;
-    padding-right: 0;
-    border-right: 0;
-    overflow-wrap: anywhere;
-  }
-  .usage-logs-stat-error {
-    grid-column: 1 / -1;
-  }
+
+/* The log page owns its spacing instead of adding the shared shell gutter twice. */
+.app-workspace > .semi-layout-content:has(.usage-logs-page) {
+  padding: 0 !important;
+}
+.app-workspace [data-onboarding='usage-log-panel'] {
+  padding-inline: 0;
 }

@@ -32,6 +32,7 @@ import {
   dashboardRates,
   validateDashboardQuery,
 } from '../../helpers/dashboardQuery';
+import { dashboardCacheStatUrl } from '../../helpers/dashboardMetrics';
 import { TIME_OPTIONS } from '../../constants/dashboard.constants';
 import { useIsMobile } from '../common/useIsMobile';
 import { useLatestRequestGuard } from '../common/useLatestRequestGuard';
@@ -42,6 +43,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const quotaRequestGuard = useLatestRequestGuard();
+  const cacheRequestGuard = useLatestRequestGuard();
   const refreshRequestGuard = useLatestRequestGuard();
   const uptimeRequestGuard = useLatestRequestGuard();
   const userQuotaRequestGuard = useLatestRequestGuard();
@@ -52,6 +54,9 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   // ========== 基础状态 ==========
   const [loading, setLoading] = useState(true);
   const [quotaError, setQuotaError] = useState(false);
+  const [cacheRate, setCacheRate] = useState(null);
+  const [cacheLoading, setCacheLoading] = useState(true);
+  const [cacheError, setCacheError] = useState(false);
   const [accountLoading, setAccountLoading] = useState(true);
   const [accountError, setAccountError] = useState(false);
   const accountRequestGuard = useLatestRequestGuard();
@@ -171,10 +176,14 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         return false;
       }
       quotaRequestGuard.createRequestId();
+      cacheRequestGuard.createRequestId();
+      setCacheRate(null);
+      setCacheLoading(true);
+      setCacheError(false);
       refreshRequestGuard.createRequestId();
       setInputs({
         ...draft,
-        username: isAdminUser ? draft.username || '' : '',
+        username: isAdminUser ? (draft.username || '').trim() : '',
       });
       setDataExportDefaultTime(grain);
       setRangePreset(preset);
@@ -189,7 +198,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
       setSearchModalVisible(false);
       return true;
     },
-    [isAdminUser, t, quotaRequestGuard, refreshRequestGuard],
+    [isAdminUser, t, quotaRequestGuard, cacheRequestGuard, refreshRequestGuard],
   );
 
   const showSearchModal = useCallback(() => {
@@ -225,7 +234,41 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   }, []);
 
   // ========== API 调用函数 ==========
+  const loadCacheRate = useCallback(async () => {
+    const requestId = cacheRequestGuard.createRequestId();
+    setCacheLoading(true);
+    setCacheError(false);
+    setCacheRate(null);
+    try {
+      const { data: response } = await API.get(
+        dashboardCacheStatUrl(inputs, isAdminUser),
+        {
+          skipErrorHandler: true,
+          skipGlobalLoading: true,
+          timeout: 15000,
+        },
+      );
+      if (!cacheRequestGuard.isLatestRequest(requestId)) return;
+      const rate = response?.data?.cache_global_rate;
+      if (
+        !response?.success ||
+        typeof rate !== 'number' ||
+        !Number.isFinite(rate) ||
+        rate < 0 ||
+        rate > 1
+      ) {
+        throw new Error('Invalid cache statistics');
+      }
+      setCacheRate(rate);
+    } catch {
+      if (cacheRequestGuard.isLatestRequest(requestId)) setCacheError(true);
+    } finally {
+      if (cacheRequestGuard.isLatestRequest(requestId)) setCacheLoading(false);
+    }
+  }, [cacheRequestGuard, inputs, isAdminUser]);
+
   const loadQuotaData = useCallback(async () => {
+    void loadCacheRate();
     const requestId = quotaRequestGuard.createRequestId();
     setLoading(true);
     setQuotaError(false);
@@ -262,7 +305,13 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         setLoading(false);
       }
     }
-  }, [dataExportDefaultTime, inputs, isAdminUser, quotaRequestGuard]);
+  }, [
+    dataExportDefaultTime,
+    inputs,
+    isAdminUser,
+    quotaRequestGuard,
+    loadCacheRate,
+  ]);
 
   const loadUptimeData = useCallback(async () => {
     const requestId = uptimeRequestGuard.createRequestId();
@@ -464,6 +513,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   useEffect(
     () => () => {
       quotaRequestGuard.createRequestId();
+      cacheRequestGuard.createRequestId();
       refreshRequestGuard.createRequestId();
       accountRequestGuard.createRequestId();
       uptimeRequestGuard.createRequestId();
@@ -474,6 +524,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     },
     [
       quotaRequestGuard,
+      cacheRequestGuard,
       refreshRequestGuard,
       accountRequestGuard,
       uptimeRequestGuard,
@@ -529,6 +580,9 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     // 基础状态
     loading: showLoading,
     quotaError,
+    cacheRate,
+    cacheLoading,
+    cacheError,
     accountLoading,
     accountError,
     queryVersion,
