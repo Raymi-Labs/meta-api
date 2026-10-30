@@ -12,6 +12,8 @@ Status: implemented
 
 系统提示词随 inputs 保存，复用 buildApiPayload，普通发送、编辑重试、预览和代码使用同一来源。新账户从空对话开始，不发送示例聊天。编辑草稿进入代码预览但不会自动请求。代码提供 cURL、Python、JavaScript 和 JSON，以本站公开 `/v1/chat/completions` 和环境变量令牌生成；不输出登录会话或实际密钥，公开调用用令牌确定分组，明确要求选择与当前分组匹配的令牌。自定义请求体继续独立拥有其负载，不与普通系统提示词叠加。
 
+模型信息与能力设置扩展见[信息卡与工具控制](2026-10-30-playground-model-controls.md)：复用目录价格/属性，工具回合可复制和失败重试，但禁止单条编辑/删除破坏协议。
+
 ## Related decisions
 
 - 部分重叠：[企业导航与根路径迁移](../../implemented/feature/2026-10-25-enterprise-navigation.md)，保持 `/playground`、旧地址跳转及登录要求；本次只扩展页面内部。

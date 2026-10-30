@@ -32,6 +32,9 @@ export const OptimizedMessageContent = React.memo(
       prevProps.message.id === nextProps.message.id &&
       prevProps.message.content === nextProps.message.content &&
       prevProps.message.status === nextProps.message.status &&
+      prevProps.message.tool_calls === nextProps.message.tool_calls &&
+      prevProps.message.toolCallsInterrupted ===
+        nextProps.message.toolCallsInterrupted &&
       prevProps.message.role === nextProps.message.role &&
       prevProps.message.reasoningContent ===
         nextProps.message.reasoningContent &&
@@ -59,25 +62,7 @@ export const OptimizedMessageActions = React.memo(
 );
 
 // 优化的设置面板组件
-export const OptimizedSettingsPanel = React.memo(
-  SettingsPanel,
-  (prevProps, nextProps) => {
-    return (
-      JSON.stringify(prevProps.inputs) === JSON.stringify(nextProps.inputs) &&
-      JSON.stringify(prevProps.parameterEnabled) ===
-        JSON.stringify(nextProps.parameterEnabled) &&
-      JSON.stringify(prevProps.models) === JSON.stringify(nextProps.models) &&
-      JSON.stringify(prevProps.groups) === JSON.stringify(nextProps.groups) &&
-      prevProps.customRequestMode === nextProps.customRequestMode &&
-      prevProps.customRequestBody === nextProps.customRequestBody &&
-      prevProps.showDebugPanel === nextProps.showDebugPanel &&
-      prevProps.showSettings === nextProps.showSettings &&
-      JSON.stringify(prevProps.previewPayload) ===
-        JSON.stringify(nextProps.previewPayload) &&
-      JSON.stringify(prevProps.messages) === JSON.stringify(nextProps.messages)
-    );
-  },
-);
+export const OptimizedSettingsPanel = React.memo(SettingsPanel);
 
 // 优化的调试面板组件
 export const OptimizedDebugPanel = React.memo(

@@ -3,7 +3,7 @@
   --pg-surface: var(--semi-color-bg-0);
   --pg-muted: var(--semi-color-text-2);
   display: grid;
-  grid-template-columns: 268px minmax(0, 1fr) 370px;
+  grid-template-columns: 310px minmax(0, 1fr) 350px;
   height: calc(100dvh - 64px);
   min-height: 0;
   background: var(--pg-surface);
@@ -51,10 +51,6 @@
 .pg-settings-lock.is-disabled {
   opacity: 0.6;
 }
-.pg-settings-card {
-  background: transparent !important;
-  border-radius: 0 !important;
-}
 .pg-panel-heading {
   display: flex;
   align-items: center;
@@ -73,32 +69,6 @@
   margin-left: auto;
   font-size: 12px;
   color: var(--pg-accent, #5264e8);
-}
-.pg-selected-model {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  margin-bottom: 22px;
-  background: var(--semi-color-bg-0);
-  border: 1px solid var(--semi-color-border);
-  border-radius: 14px;
-  box-shadow: 0 2px 5px #00000003;
-}
-.pg-selected-model > svg {
-  color: var(--pg-accent, #5264e8);
-  flex: none;
-  margin-top: 6px;
-}
-.pg-selected-model span {
-  display: block;
-  font-size: 11px;
-  color: var(--semi-color-text-2);
-  margin-bottom: 5px;
-}
-.pg-selected-model strong {
-  font-size: 14px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
 }
 .pg-main {
   min-width: 0;
@@ -558,12 +528,12 @@
 }
 @media (min-width: 1600px) {
   .pg-workspace {
-    grid-template-columns: 290px minmax(0, 1fr) 430px;
+    grid-template-columns: 330px minmax(0, 1fr) 410px;
   }
 }
 @media (max-width: 1279px) {
   .pg-workspace {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 300px minmax(0, 1fr);
   }
   .pg-workspace-actions {
     display: flex;
@@ -626,4 +596,338 @@
   .pg-empty-note {
     display: none;
   }
+}
+
+/* The settings rail shares the catalog's model data, with a quieter card layout. */
+.pg-settings-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 14px;
+  scrollbar-width: thin;
+}
+.pg-settings-section {
+  margin: 0 0 12px;
+  padding: 17px;
+  background: var(--semi-color-bg-0);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 18px;
+  box-shadow: 0 3px 12px #00000003;
+}
+.pg-settings-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  margin: 0 0 16px;
+}
+.pg-model-card {
+  padding: 20px 17px 13px;
+}
+.pg-model-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 19px;
+}
+.pg-model-logo {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+.pg-model-identity {
+  min-width: 0;
+  flex: 1;
+}
+.pg-model-identity h2 {
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.pg-model-identity span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+}
+.pg-model-details {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--semi-color-text-2);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pg-model-details:hover {
+  color: var(--semi-color-primary);
+}
+.pg-model-facts {
+  margin: 0;
+}
+.pg-model-facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--semi-color-border);
+  font-size: 12px;
+}
+.pg-model-facts dt {
+  color: var(--semi-color-text-2);
+}
+.pg-model-facts dd {
+  text-align: right;
+  margin: 0;
+  font:
+    600 13px/1.5 'SFMono-Regular',
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.pg-model-facts small {
+  font: inherit;
+  font-size: 11px;
+}
+.pg-model-price-note {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--semi-color-text-2);
+  line-height: 1.5;
+}
+.pg-model-price-note button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  padding: 0;
+  border: 0;
+  color: inherit;
+}
+.pg-group-section {
+  padding: 12px 16px;
+}
+.pg-group-section label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pg-group-section .semi-select {
+  border-radius: 8px;
+}
+.pg-capability-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+}
+.pg-capability-row > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+.pg-capability-row svg {
+  color: var(--semi-color-text-2);
+}
+.pg-capability-row small {
+  color: var(--semi-color-text-2);
+  font-size: 11px;
+}
+.pg-capability-row select,
+.pg-tool-choice select {
+  max-width: 137px;
+  padding: 5px 6px;
+  background: var(--semi-color-fill-0);
+  color: var(--semi-color-text-1);
+  border: 1px solid var(--semi-color-border);
+  border-radius: 7px;
+  font-size: 11px;
+}
+.pg-field-hint {
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--semi-color-text-2);
+  margin: 5px 0 10px;
+}
+.pg-field-error {
+  font-size: 11px;
+  color: var(--semi-color-danger);
+  margin: 6px 0;
+}
+.pg-tool-settings {
+  background: var(--semi-color-fill-0);
+  padding: 10px;
+  border-radius: 10px;
+  margin: 3px -5px 8px;
+}
+.pg-tool-settings summary,
+.pg-advanced > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+.pg-tool-settings summary svg,
+.pg-advanced > summary svg {
+  margin-left: auto;
+}
+.pg-tool-settings details[open] summary,
+.pg-advanced[open] > summary {
+  margin-bottom: 12px;
+}
+.pg-tool-settings textarea {
+  font:
+    11px/1.5 'SFMono-Regular',
+    Consolas,
+    monospace;
+}
+.pg-tool-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 12px;
+  gap: 8px;
+}
+.pg-advanced > div {
+  margin-top: 16px;
+}
+.pg-parameter + .pg-parameter {
+  margin-top: 19px;
+}
+.pg-parameter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pg-parameter-heading label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--semi-color-text-1);
+}
+.pg-parameter-heading label svg {
+  color: var(--semi-color-text-3);
+}
+.pg-parameter-value {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 8px;
+}
+.pg-parameter-value .semi-slider {
+  flex: 1;
+}
+.pg-parameter-value .semi-input-number {
+  width: 100%;
+  border-radius: 7px;
+}
+.pg-parameter-value .semi-slider + .semi-input-number {
+  width: 54px;
+  flex: none;
+}
+.pg-parameter-value .semi-input {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+}
+.pg-tool-calls details {
+  border: 1px solid var(--semi-color-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--semi-color-fill-0);
+}
+.pg-tool-calls summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+}
+.pg-tool-calls code {
+  color: var(--semi-color-text-0);
+  margin-left: 6px;
+}
+.pg-tool-calls pre {
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 10px 0 0;
+}
+.pg-tool-result-label {
+  color: var(--semi-color-text-2);
+}
+.pg-tool-results {
+  flex: none;
+  max-height: 270px;
+  overflow-y: auto;
+  margin: 0 20px 8px;
+  padding: 15px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 14px;
+  background: var(--semi-color-fill-0);
+}
+.pg-tool-results-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.pg-tool-results-heading span {
+  margin-left: auto;
+  color: var(--semi-color-text-2);
+}
+.pg-tool-results p {
+  color: var(--semi-color-text-2);
+  font-size: 11px;
+  margin: 7px 0 12px;
+}
+.pg-tool-result-fields label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.pg-tool-result-fields textarea {
+  display: block;
+  margin-top: 5px;
+  padding: 8px;
+  width: 100%;
+  min-height: 50px;
+  resize: vertical;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 7px;
+  background: var(--semi-color-bg-0);
+  color: var(--semi-color-text-0);
+}
+.pg-primary-button {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 12px;
+  background: var(--semi-color-primary);
+  color: white;
+  font-size: 12px !important;
+}
+
+.pg-tool-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pg-tool-message-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--semi-color-text-2);
+  font-size: 11px;
 }

@@ -25,6 +25,8 @@ import {
 } from './playgroundUtils';
 import { MESSAGE_ROLES } from '../constants/playground.constants';
 
+import { parsePlaygroundTools } from './playgroundCapabilities';
+
 // 构建API请求负载
 export const buildApiPayload = (
   messages,
@@ -33,7 +35,9 @@ export const buildApiPayload = (
   parameterEnabled,
 ) => {
   const processedMessages = messages
-    .filter((message) => !['loading', 'error'].includes(message.status))
+    .filter(
+      (message) => !['loading', 'incomplete', 'error'].includes(message.status),
+    )
     .filter(isValidMessage)
     .map(formatMessageForAPI)
     .filter(Boolean);
@@ -75,6 +79,18 @@ export const buildApiPayload = (
     }
   });
 
+  if (inputs.reasoningEffort) payload.reasoning_effort = inputs.reasoningEffort;
+  if (inputs.toolsEnabled) {
+    const tools = parsePlaygroundTools(inputs.toolsJson);
+    if (!tools) throw new Error('invalid tools');
+    payload.tools = tools;
+    const choice = inputs.toolChoice || 'auto';
+    if (['auto', 'required', 'none'].includes(choice))
+      payload.tool_choice = choice;
+    else if (tools.some((tool) => tool.function.name === choice))
+      payload.tool_choice = { type: 'function', function: { name: choice } };
+    else throw new Error('invalid tool choice');
+  }
   return payload;
 };
 

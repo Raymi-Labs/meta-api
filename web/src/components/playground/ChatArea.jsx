@@ -40,6 +40,7 @@ const ChatArea = ({
   onInputChange,
   onOpenSettings,
   customRequestMode,
+  toolResults,
 }) => {
   const { t } = useTranslation();
   return (
@@ -88,6 +89,7 @@ const ChatArea = ({
           />
         )}
       </div>
+      {toolResults}
       <CustomInputRender
         draft={draft}
         onDraftChange={onDraftChange}

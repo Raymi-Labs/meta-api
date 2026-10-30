@@ -216,6 +216,24 @@ const MessageContent = ({
         />
       )}
 
+      {message.tool_calls?.length > 0 && (
+        <div className='pg-tool-calls'>
+          {message.tool_calls.filter(Boolean).map((call, index) => (
+            <details open key={call.id || index}>
+              <summary>
+                {t('工具调用')} <code>{call.function?.name || '…'}</code>
+              </summary>
+              <pre>{call.function?.arguments || '…'}</pre>
+            </details>
+          ))}
+          {message.toolCallsInterrupted && (
+            <p className='pg-field-hint'>{t('工具调用未完成，请重试。')}</p>
+          )}
+        </div>
+      )}
+      {message.role === 'tool' && (
+        <small className='pg-tool-result-label'>{t('工具结果')}</small>
+      )}
       {isEditing ? (
         <div className='space-y-3'>
           <TextArea

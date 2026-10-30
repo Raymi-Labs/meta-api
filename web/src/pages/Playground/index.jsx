@@ -40,6 +40,12 @@ import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
 import { useMessageActions } from '../../hooks/playground/useMessageActions';
 import { useApiRequest } from '../../hooks/playground/useApiRequest';
 import { useMessageEdit } from '../../hooks/playground/useMessageEdit';
+import { usePlaygroundCatalog } from '../../hooks/playground/usePlaygroundCatalog';
+import {
+  pendingToolCalls,
+  withModelCapabilities,
+} from '../../helpers/playgroundCapabilities';
+import ToolResultsForm from '../../components/playground/ToolResultsForm';
 import { useDataLoader } from '../../hooks/playground/useDataLoader';
 
 // Constants and utils
@@ -61,7 +67,7 @@ import {
   OptimizedMessageActions,
 } from '../../components/playground/OptimizedComponents';
 import ChatArea from '../../components/playground/ChatArea';
-import { SlidersHorizontal, Code2, RefreshCw } from 'lucide-react';
+import { SlidersHorizontal, Code2, RefreshCw, Copy } from 'lucide-react';
 import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
 import ModelTabs from '../../components/playground/ModelTabs';
 import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
@@ -129,7 +135,17 @@ const AccountPlayground = ({ owner }) => {
     setCustomRequestBody,
   } = state;
 
+  const catalogState = usePlaygroundCatalog(owner);
+  const selectedModel = catalogState.catalog?.models.find(
+    (model) => model.model_name === inputs.model,
+  );
+  const effectiveInputs = withModelCapabilities(inputs, selectedModel);
+  const pendingCalls = pendingToolCalls(message);
+  const hasToolHistory = message.some(
+    (item) => item.role === 'tool' || item.tool_calls?.length,
+  );
   const [draft, setDraft] = useState('');
+  const [toolResults, setToolResults] = useState({});
   const messageRef = useRef(message);
   messageRef.current = message;
   const sendingRef = useRef(false);
@@ -181,12 +197,18 @@ const AccountPlayground = ({ owner }) => {
     handleInputChange,
   ]);
   const selectModel = (model) => {
-    if (generating || customRequestMode) return;
+    if (generating || pendingCalls.length || customRequestMode) return;
     handleInputChange('model', model);
     handleInputChange('modelTabs', [...new Set([...tabs, model])]);
   };
   const removeModel = (model) => {
-    if (generating || customRequestMode || tabs.length < 2) return;
+    if (
+      generating ||
+      pendingCalls.length ||
+      customRequestMode ||
+      tabs.length < 2
+    )
+      return;
     const remaining = tabs.filter((value) => value !== model);
     handleInputChange('modelTabs', remaining);
     if (inputs.model === model) handleInputChange('model', remaining[0]);
@@ -217,6 +239,7 @@ const AccountPlayground = ({ owner }) => {
       name: 'Assistant',
       avatar: getLogo(),
     },
+    tool: { name: t('工具结果'), avatar: getLogo() },
     system: {
       name: 'System',
       avatar: getLogo(),
@@ -245,11 +268,34 @@ const AccountPlayground = ({ owner }) => {
         return null;
       }
     }
-    return buildPlaygroundPreview(message, draft, inputs, parameterEnabled);
+    try {
+      const previewMessages =
+        pendingCalls.length &&
+        pendingCalls.every((call) => toolResults[call.id]?.trim())
+          ? [
+              ...message,
+              ...pendingCalls.map((call) => ({
+                role: 'tool',
+                content: toolResults[call.id],
+                tool_call_id: call.id,
+              })),
+            ]
+          : message;
+      return buildPlaygroundPreview(
+        previewMessages,
+        pendingCalls.length ? '' : draft,
+        effectiveInputs,
+        parameterEnabled,
+      );
+    } catch {
+      return null;
+    }
   }, [
     message,
     draft,
     inputs,
+    selectedModel,
+    toolResults,
     parameterEnabled,
     customRequestMode,
     customRequestBody,
@@ -280,14 +326,19 @@ const AccountPlayground = ({ owner }) => {
         )
           throw new Error('Invalid request');
         nextMessages = payload.messages.map((item) =>
-          createMessage(item.role, item.content),
+          createMessage(item.role, item.content, {
+            tool_calls: item.tool_calls,
+            tool_call_id: item.tool_call_id,
+            reasoningContent: item.reasoning_content,
+          }),
         );
       } catch {
         Toast.error(t('JSON格式错误'));
         return false;
       }
     } else {
-      if (!retryMessages && !content.trim()) return false;
+      if (!retryMessages && (!content.trim() || pendingCalls.length))
+        return false;
       const messageContent = buildMessageContent(
         content,
         (inputs.imageUrls || []).filter((url) => url.trim()),
@@ -297,17 +348,44 @@ const AccountPlayground = ({ owner }) => {
         ...messageRef.current,
         createMessage(MESSAGE_ROLES.USER, messageContent),
       ];
-      payload = buildApiPayload(nextMessages, null, inputs, parameterEnabled);
+      try {
+        payload = buildApiPayload(
+          nextMessages,
+          null,
+          effectiveInputs,
+          parameterEnabled,
+        );
+      } catch {
+        Toast.error(t('请检查函数定义与调用策略'));
+        return false;
+      }
     }
     sendingRef.current = true;
     const next = [...nextMessages, createLoadingAssistantMessage()];
     setMessage(next);
     saveMessagesImmediately(next);
     setDraft('');
+    setToolResults({});
     sendRequest(payload, payload.stream !== false);
     if (!customRequestMode && inputs.imageEnabled)
       handleInputChange('imageEnabled', false);
     return true;
+  }
+
+  function submitToolResults(values) {
+    const currentCalls = pendingToolCalls(messageRef.current);
+    if (
+      !currentCalls.length ||
+      currentCalls.some((call) => !values[call.id]?.trim())
+    )
+      return;
+    const next = [
+      ...messageRef.current,
+      ...currentCalls.map((call) =>
+        createMessage('tool', values[call.id], { tool_call_id: call.id }),
+      ),
+    ];
+    onMessageSend('', next);
   }
 
   // 切换推理展开状态
@@ -357,6 +435,41 @@ const AccountPlayground = ({ owner }) => {
   const renderChatBoxAction = useCallback(
     (props) => {
       const { message: currentMessage } = props;
+      // A tool exchange is an indivisible protocol sequence. Clear the conversation
+      // to start over instead of editing/deleting individual protocol messages.
+      if (hasToolHistory) {
+        const index = message.findIndex(
+          (item) => item.id === currentMessage.id,
+        );
+        return (
+          <div className='pg-tool-message-actions'>
+            <button
+              aria-label={t('复制')}
+              onClick={() =>
+                messageActions.handleMessageCopy({
+                  ...currentMessage,
+                  content: currentMessage.tool_calls?.length
+                    ? JSON.stringify(currentMessage.tool_calls, null, 2)
+                    : currentMessage.content,
+                })
+              }
+            >
+              <Copy size={13} />
+            </button>
+            {currentMessage.role === 'assistant' &&
+              (currentMessage.status === 'error' ||
+                currentMessage.toolCallsInterrupted) && (
+                <button
+                  disabled={generating || customRequestMode}
+                  onClick={() => onMessageSend('', message.slice(0, index))}
+                >
+                  <RefreshCw size={13} />
+                  {t('重试')}
+                </button>
+              )}
+          </div>
+        );
+      }
       const isAnyMessageGenerating =
         customRequestMode ||
         message.some(
@@ -380,6 +493,7 @@ const AccountPlayground = ({ owner }) => {
     },
     [
       messageActions,
+      hasToolHistory,
       styleState,
       message,
       editingMessageId,
@@ -437,6 +551,7 @@ const AccountPlayground = ({ owner }) => {
   const handleClearMessages = useCallback(() => {
     if (generating) return;
     setMessage([]);
+    setToolResults({});
     // 清空对话后保存，传入空数组
     setTimeout(() => saveMessagesImmediately([]), 0);
   }, [generating, setMessage, saveMessagesImmediately]);
@@ -463,12 +578,14 @@ const AccountPlayground = ({ owner }) => {
 
   const settingsPanel = (
     <div
-      className={`pg-settings-lock ${generating ? 'is-disabled' : ''}`}
-      inert={generating ? '' : undefined}
-      aria-disabled={generating}
+      className={`pg-settings-lock ${generating || pendingCalls.length ? 'is-disabled' : ''}`}
+      inert={generating || pendingCalls.length ? '' : undefined}
+      aria-disabled={generating || pendingCalls.length > 0}
     >
       <OptimizedSettingsPanel
         inputs={inputs}
+        model={selectedModel}
+        catalogState={catalogState}
         parameterEnabled={parameterEnabled}
         models={models}
         groups={groups}
@@ -513,7 +630,12 @@ const AccountPlayground = ({ owner }) => {
             activeModel={inputs.model}
             onSelect={selectModel}
             onRemove={removeModel}
-            disabled={generating || modelsLoading || customRequestMode}
+            disabled={
+              generating ||
+              pendingCalls.length > 0 ||
+              modelsLoading ||
+              customRequestMode
+            }
           />
           <div className='pg-workspace-actions'>
             <button
@@ -571,7 +693,25 @@ const AccountPlayground = ({ owner }) => {
           draft={draft}
           onDraftChange={setDraft}
           generating={generating}
-          disabled={!canSend || editingMessageId !== null}
+          disabled={
+            !canSend ||
+            editingMessageId !== null ||
+            (!customRequestMode && pendingCalls.length > 0) ||
+            !previewPayload
+          }
+          toolResults={
+            !customRequestMode &&
+            pendingCalls.length > 0 && (
+              <ToolResultsForm
+                key={pendingCalls.map((call) => call.id).join(',')}
+                calls={pendingCalls}
+                values={toolResults}
+                onChange={setToolResults}
+                onSubmit={submitToolResults}
+                disabled={generating || !canSend || !previewPayload}
+              />
+            )
+          }
           onInputChange={handleInputChange}
           onOpenSettings={() => isMobile && setShowSettings(true)}
           customRequestMode={customRequestMode}

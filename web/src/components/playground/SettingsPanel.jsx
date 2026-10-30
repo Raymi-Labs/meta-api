@@ -18,19 +18,20 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Card, Select, Typography, Button, Switch } from '@douyinfe/semi-ui';
-import { Sparkles, Users, ToggleLeft, X, Settings } from 'lucide-react';
+import { Select } from '@douyinfe/semi-ui';
+import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { renderGroupOption, selectFilter } from '../../helpers';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
+import ModelInfoCard from './ModelInfoCard';
+import CapabilitySettings from './CapabilitySettings';
 
 const SettingsPanel = ({
   inputs,
   parameterEnabled,
-  models,
   groups,
   styleState,
   showDebugPanel,
@@ -38,16 +39,16 @@ const SettingsPanel = ({
   customRequestBody,
   onInputChange,
   onParameterToggle,
-  onCloseSettings,
   onConfigImport,
   onConfigReset,
   onCustomRequestModeChange,
   onCustomRequestBodyChange,
   previewPayload,
   messages,
+  model,
+  catalogState,
 }) => {
   const { t } = useTranslation();
-
   const currentConfig = {
     inputs,
     parameterEnabled,
@@ -55,125 +56,63 @@ const SettingsPanel = ({
     customRequestMode,
     customRequestBody,
   };
-
   return (
-    <Card
-      className='pg-settings-card h-full flex flex-col'
-      bordered={false}
-      bodyStyle={{
-        padding: '18px',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div className='pg-panel-heading'>
-        <Settings size={18} />
-        <h2>{t('参数')}</h2>
-      </div>
-      <div className='pg-selected-model'>
-        <Sparkles size={22} />
-        <div>
-          <span>{t('模型')}</span>
-          <strong>{inputs.model || t('请选择模型')}</strong>
-        </div>
-      </div>
-
-      {/* 移动端配置管理 */}
-      {styleState.isMobile && (
-        <div className='mb-4 flex-shrink-0'>
-          <ConfigManager
-            currentConfig={currentConfig}
-            onConfigImport={onConfigImport}
-            onConfigReset={onConfigReset}
-            styleState={{ ...styleState, isMobile: false }}
-            messages={messages}
-          />
-        </div>
-      )}
-
-      <div className='space-y-6 overflow-y-auto flex-1 pr-2 model-settings-scroll'>
-        {/* 分组选择 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <div className='flex items-center gap-2 mb-2'>
-            <Users size={16} className='text-gray-500' />
-            <Typography.Text strong className='text-sm'>
-              {t('分组')}
-            </Typography.Text>
-            {customRequestMode && (
-              <Typography.Text className='text-xs text-orange-600'>
-                ({t('已在自定义模式中忽略')})
-              </Typography.Text>
-            )}
-          </div>
+    <div className='pg-settings-scroll model-settings-scroll'>
+      <ModelInfoCard
+        model={model}
+        modelName={inputs.model}
+        group={inputs.group}
+        catalogState={catalogState}
+      />
+      <section className='pg-settings-section pg-group-section'>
+        <label>
+          {t('分组')}
           <Select
-            placeholder={t('请选择分组')}
-            name='group'
-            required
-            selection
+            aria-label={t('分组')}
             filter={selectFilter}
-            autoClearSearchValue={false}
-            onChange={(value) => onInputChange('group', value)}
             value={inputs.group}
-            autoComplete='new-password'
+            onChange={(value) => onInputChange('group', value)}
             optionList={groups}
             renderOptionItem={renderGroupOption}
+            disabled={customRequestMode}
             style={{ width: '100%' }}
-            dropdownStyle={{ width: '100%', maxWidth: '100%' }}
-            className='!rounded-lg'
-            disabled={customRequestMode}
           />
-        </div>
-
-        {/* 图片URL输入 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <ImageUrlInput
-            imageUrls={inputs.imageUrls}
-            imageEnabled={inputs.imageEnabled}
-            onImageUrlsChange={(urls) => onInputChange('imageUrls', urls)}
-            onImageEnabledChange={(enabled) =>
-              onInputChange('imageEnabled', enabled)
-            }
-            disabled={customRequestMode}
-          />
-        </div>
-
-        {/* 参数控制组件 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <ParameterControl
-            inputs={inputs}
-            parameterEnabled={parameterEnabled}
-            onInputChange={onInputChange}
-            onParameterToggle={onParameterToggle}
-            disabled={customRequestMode}
-          />
-        </div>
-
-        {/* 流式输出开关 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <ToggleLeft size={16} className='text-gray-500' />
-              <Typography.Text strong className='text-sm'>
-                {t('流式输出')}
-              </Typography.Text>
-              {customRequestMode && (
-                <Typography.Text className='text-xs text-orange-600'>
-                  ({t('已在自定义模式中忽略')})
-                </Typography.Text>
-              )}
-            </div>
-            <Switch
-              checked={inputs.stream}
-              onChange={(checked) => onInputChange('stream', checked)}
-              checkedText={t('开')}
-              uncheckedText={t('关')}
-              size='small'
-              disabled={customRequestMode}
-            />
-          </div>
-        </div>
-        {/* 自定义请求体编辑器 */}
+        </label>
+      </section>
+      {customRequestMode && (
+        <p className='pg-field-hint'>{t('已在自定义模式中忽略')}</p>
+      )}
+      <CapabilitySettings
+        inputs={inputs}
+        model={model}
+        onInputChange={onInputChange}
+        disabled={customRequestMode}
+      />
+      <section className='pg-settings-section pg-parameters'>
+        <h3>
+          <SlidersHorizontal size={15} />
+          {t('参数')}
+        </h3>
+        <ParameterControl
+          inputs={inputs}
+          parameterEnabled={parameterEnabled}
+          onInputChange={onInputChange}
+          onParameterToggle={onParameterToggle}
+          disabled={customRequestMode}
+        />
+      </section>
+      <details className='pg-settings-section pg-advanced'>
+        <summary>
+          {t('高级设置')}
+          <ChevronDown size={14} />
+        </summary>
+        <ImageUrlInput
+          imageUrls={inputs.imageUrls}
+          imageEnabled={inputs.imageEnabled}
+          onImageUrlsChange={(urls) => onInputChange('imageUrls', urls)}
+          onImageEnabledChange={(value) => onInputChange('imageEnabled', value)}
+          disabled={customRequestMode}
+        />
         <CustomRequestEditor
           customRequestMode={customRequestMode}
           customRequestBody={customRequestBody}
@@ -181,22 +120,15 @@ const SettingsPanel = ({
           onCustomRequestBodyChange={onCustomRequestBodyChange}
           defaultPayload={previewPayload}
         />
-      </div>
-
-      {/* 桌面端的配置管理放在底部 */}
-      {!styleState.isMobile && (
-        <div className='flex-shrink-0 pt-3'>
-          <ConfigManager
-            currentConfig={currentConfig}
-            onConfigImport={onConfigImport}
-            onConfigReset={onConfigReset}
-            styleState={styleState}
-            messages={messages}
-          />
-        </div>
-      )}
-    </Card>
+      </details>
+      <ConfigManager
+        currentConfig={currentConfig}
+        onConfigImport={onConfigImport}
+        onConfigReset={onConfigReset}
+        styleState={styleState}
+        messages={messages}
+      />
+    </div>
   );
 };
-
 export default SettingsPanel;
