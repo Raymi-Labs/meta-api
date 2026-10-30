@@ -887,11 +887,6 @@ html.dark .model-metric-chart {
   border-bottom: 1px solid var(--detail-border);
   font-weight: 400;
 }
-.model-sample-note {
-  display: block;
-  overflow-wrap: anywhere;
-  margin-top: 5px;
-}
 .model-quickstart-select {
   position: relative;
   display: inline-flex;
@@ -1402,24 +1397,8 @@ html.dark .model-metric-chart {
 .model-capabilities-list li.is-unknown svg {
   opacity: 0.5;
 }
-.model-attribute-source {
-  font-size: 11px;
-  color: var(--semi-color-text-2);
-}
-a.model-attribute-source {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.model-attribute-sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
 .model-attribute-tags {
   margin-top: 18px;
-}
-.model-attribute-note {
-  margin: 20px 0 0;
 }
 @media (max-width: 1150px) {
   .model-attributes-grid {

@@ -47,7 +47,6 @@ import {
 } from '../../helpers/modelPresentation';
 import {
   MODEL_CAPABILITY_LABELS,
-  modelAttributeSource,
   modelCapabilityStatus,
   formatModelTokenLimit,
 } from '../../helpers/modelAttributes';
@@ -79,33 +78,6 @@ const capabilityIcons = {
 
 export default function ModelAttributes({ model, tags = [] }) {
   const { t } = useTranslation();
-  const source = (field, configured) =>
-    modelAttributeSource(model, field, configured);
-  const sourceLabel = (field, configured) => {
-    const value = source(field, configured);
-    return value.url ? (
-      <a
-        className='model-attribute-source'
-        href={value.url}
-        target='_blank'
-        rel='noreferrer'
-      >
-        {t(value.label)}
-      </a>
-    ) : (
-      <span className='model-attribute-source'>{t(value.label)}</span>
-    );
-  };
-  const capabilitySources = [
-    ...new Map(
-      Object.keys(MODEL_CAPABILITY_LABELS)
-        .filter((key) => typeof model.capabilities?.[key] === 'boolean')
-        .map((key) => {
-          const value = source(`capabilities.${key}`, true);
-          return [`${value.label}:${value.url || ''}`, value];
-        }),
-    ).values(),
-  ];
   return (
     <section
       id='capabilities'
@@ -139,7 +111,6 @@ export default function ModelAttributes({ model, tags = [] }) {
               ) : (
                 <p className='model-attribute-unknown'>—</p>
               )}
-              {sourceLabel(field, values.length > 0)}
             </div>
           );
         })}
@@ -155,7 +126,6 @@ export default function ModelAttributes({ model, tags = [] }) {
             >
               {formatModelTokenLimit(model[field])}
             </p>
-            {sourceLabel(field, Number(model[field]) > 0)}
           </div>
         ))}
         <div className='model-attribute-column model-attribute-capabilities'>
@@ -164,10 +134,6 @@ export default function ModelAttributes({ model, tags = [] }) {
             {Object.entries(MODEL_CAPABILITY_LABELS).map(([key, label]) => {
               const value = model.capabilities?.[key];
               const status = modelCapabilityStatus(value);
-              const origin = source(
-                `capabilities.${key}`,
-                typeof value === 'boolean',
-              );
               const Icon = capabilityIcons[key];
               return (
                 <li
@@ -181,8 +147,8 @@ export default function ModelAttributes({ model, tags = [] }) {
                         ? 'is-unsupported'
                         : 'is-unknown'
                   }
-                  title={`${t(label)} · ${t(status)} · ${t(origin.label)}`}
-                  aria-label={`${t(label)}：${t(status)}；${t(origin.label)}`}
+                  title={`${t(label)} · ${t(status)}`}
+                  aria-label={`${t(label)}：${t(status)}`}
                 >
                   <Icon size={19} aria-hidden='true' />
                   <span>{t(label)}</span>
@@ -191,25 +157,6 @@ export default function ModelAttributes({ model, tags = [] }) {
               );
             })}
           </ul>
-          <div className='model-attribute-sources'>
-            {capabilitySources.map((value) =>
-              value.url ? (
-                <a
-                  className='model-attribute-source'
-                  href={value.url}
-                  target='_blank'
-                  rel='noreferrer'
-                  key={`${value.label}:${value.url}`}
-                >
-                  {t(value.label)}
-                </a>
-              ) : (
-                <span className='model-attribute-source' key={value.label}>
-                  {t(value.label)}
-                </span>
-              ),
-            )}
-          </div>
         </div>
       </div>
       {tags.length > 0 && (
@@ -219,9 +166,6 @@ export default function ModelAttributes({ model, tags = [] }) {
           ))}
         </div>
       )}
-      <p className='model-detail-caption model-attribute-note'>
-        {t('模型属性仅供参考，实际可用能力以所选分组和接口为准。')}
-      </p>
     </section>
   );
 }
