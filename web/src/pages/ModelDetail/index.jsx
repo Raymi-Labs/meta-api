@@ -162,9 +162,9 @@ export default function ModelDetail() {
     ['official-pricing', '官方参考价'],
     ['pricing', '分组价格'],
     ['capabilities', '模型属性'],
-    ['quick-start', '快速开始'],
     ['performance', '性能对比'],
     ['usage', '分组用量'],
+    ['quick-start', '快速开始'],
     ['endpoints', 'API端点'],
     ...(related.length ? [['related', '同厂商模型']] : []),
   ];
@@ -354,19 +354,6 @@ export default function ModelDetail() {
             />
           </section>
           <ModelAttributes model={model} tags={tags} />
-          <section
-            id='quick-start'
-            tabIndex={-1}
-            className='model-detail-section'
-          >
-            <h2>{t('快速开始')}</h2>
-            <ModelQuickStart
-              modelData={model}
-              serverAddress={data.statusState?.status?.server_address}
-              t={t}
-              copyText={data.copyText}
-            />
-          </section>
           <section id='billing-details' className='model-detail-section'>
             {priceData.isDynamicPricing && (
               <div className='model-detail-dynamic'>
@@ -394,6 +381,19 @@ export default function ModelDetail() {
             hours={hours}
             setHours={setHours}
           />
+          <section
+            id='quick-start'
+            tabIndex={-1}
+            className='model-detail-section'
+          >
+            <h2>{t('快速开始')}</h2>
+            <ModelQuickStart
+              modelData={model}
+              serverAddress={data.statusState?.status?.server_address}
+              t={t}
+              copyText={data.copyText}
+            />
+          </section>
           <section id='endpoints' className='model-detail-section'>
             <ModelEndpoints
               modelData={model}
