@@ -234,6 +234,7 @@ export const usePlaygroundState = (owner) => {
       const fixedLastMsg = {
         ...lastMsg,
         status: MESSAGE_STATUS.COMPLETE,
+        toolCallsInterrupted: Boolean(lastMsg.tool_calls?.length),
         content: processed.content,
         reasoningContent: processed.reasoningContent || null,
         isThinkingComplete: true,

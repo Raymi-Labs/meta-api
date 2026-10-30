@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  mergeToolCallDeltas,
+  toolCallsAreComplete,
+} from '../../helpers/playgroundCapabilities';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SSE } from 'sse.js';
@@ -76,7 +80,15 @@ export const useApiRequest = (
         ) {
           let newMessage = { ...lastMessage };
 
-          if (type === 'reasoning') {
+          if (type === 'finish') {
+            newMessage.finishReason = textChunk;
+          } else if (type === 'tools') {
+            newMessage.tool_calls = mergeToolCallDeltas(
+              lastMessage.tool_calls,
+              textChunk,
+            );
+            newMessage.status = MESSAGE_STATUS.INCOMPLETE;
+          } else if (type === 'reasoning') {
             newMessage = {
               ...newMessage,
               reasoningContent:
@@ -156,6 +168,13 @@ export const useApiRequest = (
           {
             ...lastMessage,
             status: status,
+            toolCallsInterrupted:
+              Boolean(lastMessage.tool_calls?.length) &&
+              (status !== MESSAGE_STATUS.COMPLETE ||
+                ['length', 'content_filter'].includes(
+                  lastMessage.finishReason,
+                ) ||
+                !toolCallsAreComplete(lastMessage.tool_calls)),
             ...autoCollapseState,
           },
         ];
@@ -263,6 +282,13 @@ export const useApiRequest = (
 
               newMessages[newMessages.length - 1] = {
                 ...lastMessage,
+                tool_calls: choice.message.tool_calls,
+                toolCallsInterrupted:
+                  Boolean(choice.message.tool_calls?.length) &&
+                  (!toolCallsAreComplete(choice.message.tool_calls) ||
+                    ['length', 'content_filter'].includes(
+                      choice.finish_reason,
+                    )),
                 content: processed.content,
                 reasoningContent: processed.reasoningContent,
                 status: MESSAGE_STATUS.COMPLETE,
@@ -429,8 +455,12 @@ export const useApiRequest = (
           sseMessages: [...(prev.sseMessages || []), e.data],
         }));
 
+        const finishReason = payload?.choices?.[0]?.finish_reason;
+        if (finishReason) streamMessageUpdate(finishReason, 'finish');
         const delta = payload?.choices?.[0]?.delta;
         if (delta) {
+          if (Array.isArray(delta.tool_calls))
+            streamMessageUpdate(delta.tool_calls, 'tools');
           if (delta.reasoning_content) {
             streamMessageUpdate(delta.reasoning_content, 'reasoning');
           }
@@ -520,7 +550,11 @@ export const useApiRequest = (
           lastMessage.reasoningContent || '',
         );
 
-        if (!processed.content && !processed.reasoningContent) {
+        if (
+          !processed.content &&
+          !processed.reasoningContent &&
+          !lastMessage.tool_calls?.length
+        ) {
           const remaining = prevMessage.slice(0, -1);
           setTimeout(() => saveMessages(remaining), 0);
           return remaining;
@@ -533,6 +567,7 @@ export const useApiRequest = (
           {
             ...lastMessage,
             status: MESSAGE_STATUS.COMPLETE,
+            toolCallsInterrupted: Boolean(lastMessage.tool_calls?.length),
             reasoningContent: processed.reasoningContent || null,
             content: processed.content,
             ...autoCollapseState,

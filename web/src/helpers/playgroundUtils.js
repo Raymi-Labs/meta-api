@@ -24,7 +24,7 @@ import {
 
 // 生成唯一ID
 let messageId = 4;
-export const generateMessageId = () => `${messageId++}`;
+export const generateMessageId = () => `${Date.now()}-${messageId++}`;
 
 // 提取消息中的文本内容
 export const getTextContent = (message) => {
@@ -159,12 +159,29 @@ export const formatMessageForAPI = (message) => {
   return {
     role: message.role,
     content: message.content,
+    ...(message.role === 'assistant' &&
+    message.tool_calls?.length &&
+    !message.toolCallsInterrupted
+      ? { tool_calls: message.tool_calls }
+      : {}),
+    ...(message.role === 'tool' ? { tool_call_id: message.tool_call_id } : {}),
+    ...(message.role === 'assistant' &&
+    message.tool_calls?.length &&
+    !message.toolCallsInterrupted &&
+    message.reasoningContent
+      ? { reasoning_content: message.reasoningContent }
+      : {}),
   };
 };
 
 // 验证消息是否有效
 export const isValidMessage = (message) => {
-  return message && message.role && (message.content || message.content === '');
+  if (message?.toolCallsInterrupted && !message.content) return false;
+  return (
+    message &&
+    message.role &&
+    (message.content || message.content === '' || message.tool_calls?.length)
+  );
 };
 
 // 获取最后一条用户消息

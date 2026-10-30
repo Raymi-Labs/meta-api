@@ -155,3 +155,170 @@ test('exported cURL, Python and JavaScript send the exact public payload in both
     await new Promise((resolve) => server.close(resolve));
   }
 }, 30000);
+
+import {
+  DEFAULT_TOOL_DEFINITIONS,
+  parsePlaygroundTools,
+  withModelCapabilities,
+  mergeToolCallDeltas,
+  pendingToolCalls,
+  toolCallsAreComplete,
+} from '../src/helpers/playgroundCapabilities';
+
+const toolInputs = {
+  ...inputs,
+  toolsEnabled: true,
+  toolsJson: DEFAULT_TOOL_DEFINITIONS,
+  toolChoice: 'auto',
+  reasoningEffort: 'medium',
+};
+
+test('capability controls produce real request fields and reject invalid tool definitions/choice', () => {
+  const payload = buildApiPayload([], null, toolInputs, enabled);
+  assert.equal(payload.reasoning_effort, 'medium');
+  assert.equal(payload.tools[0].function.name, 'get_current_time');
+  assert.equal(payload.tool_choice, 'auto');
+  assert.deepEqual(
+    buildApiPayload(
+      [],
+      null,
+      { ...toolInputs, toolChoice: 'get_current_time' },
+      enabled,
+    ).tool_choice,
+    { type: 'function', function: { name: 'get_current_time' } },
+  );
+  assert.equal(
+    buildApiPayload(
+      [],
+      null,
+      { ...toolInputs, reasoningEffort: 'none', toolChoice: 'required' },
+      enabled,
+    ).reasoning_effort,
+    'none',
+  );
+  assert.throws(() =>
+    buildApiPayload([], null, { ...toolInputs, toolsJson: '{}' }, enabled),
+  );
+  assert.throws(() =>
+    buildApiPayload(
+      [],
+      null,
+      { ...toolInputs, toolChoice: 'missing_function' },
+      enabled,
+    ),
+  );
+  for (const invalid of [
+    '[]',
+    '[null]',
+    '[{}]',
+    '{',
+    JSON.stringify([...payload.tools, ...payload.tools]),
+  ])
+    assert.equal(parsePlaygroundTools(invalid), null);
+  const invalidSchema = structuredClone(payload.tools);
+  invalidSchema[0].function.parameters = [];
+  assert.equal(parsePlaygroundTools(JSON.stringify(invalidSchema)), null);
+});
+
+test('known unsupported capabilities suppress parameters without destroying saved preferences', () => {
+  const model = { capabilities: { reasoning: false, function_calling: false } };
+  const effective = withModelCapabilities(toolInputs, model);
+  const payload = buildApiPayload([], null, effective, enabled);
+  assert.equal('reasoning_effort' in payload, false);
+  assert.equal('tools' in payload, false);
+  assert.equal('tool_choice' in payload, false);
+  assert.equal(toolInputs.reasoningEffort, 'medium');
+  assert.equal(toolInputs.toolsEnabled, true);
+  assert.deepEqual(withModelCapabilities(toolInputs, null), toolInputs);
+});
+
+test('interleaved tool stream chunks preserve indexes, names, arguments and previous snapshots', () => {
+  const first = mergeToolCallDeltas(
+    [],
+    [
+      { index: 1, id: 'b', function: { name: 'get_', arguments: '{"b":' } },
+      { index: 0, id: 'a', function: { name: 'one', arguments: '{' } },
+    ],
+  );
+  assert.equal(toolCallsAreComplete(first), false);
+  const calls = mergeToolCallDeltas(first, [
+    { index: 0, function: { arguments: '"a":1}' } },
+    { index: 1, function: { name: 'time', arguments: '2}' } },
+    { index: -1, function: { arguments: 'bad' } },
+    { index: 100000, function: { arguments: 'bad' } },
+  ]);
+  assert.deepEqual(
+    calls.map((call) => [call.id, call.function.name, call.function.arguments]),
+    [
+      ['a', 'one', '{"a":1}'],
+      ['b', 'get_time', '{"b":2}'],
+    ],
+  );
+  assert.equal(first[1].function.name, 'get_');
+  assert.equal(toolCallsAreComplete(calls), true);
+  assert.equal(toolCallsAreComplete([calls[0], calls[0]]), false);
+  assert.equal(toolCallsAreComplete([, calls[0]]), false);
+});
+
+test('multiple tool results retain tool_call_id, assistant calls and reasoning across follow-up payloads', () => {
+  const calls = ['a', 'b'].map((id) => ({
+    id,
+    type: 'function',
+    function: { name: 'get_time', arguments: '{}' },
+  }));
+  const assistant = {
+    role: 'assistant',
+    content: null,
+    tool_calls: calls,
+    reasoningContent: 'checking',
+    status: 'complete',
+  };
+  const messages = [{ role: 'user', content: 'time?' }, assistant];
+  assert.equal(pendingToolCalls(messages).length, 2);
+  messages.push({ role: 'tool', content: 'first', tool_call_id: 'a' });
+  assert.deepEqual(
+    pendingToolCalls(messages).map((call) => call.id),
+    ['b'],
+  );
+  messages.push({ role: 'tool', content: 'second', tool_call_id: 'b' });
+  assert.equal(pendingToolCalls(messages).length, 0);
+  const payload = buildApiPayload(messages, '', toolInputs, enabled);
+  assert.deepEqual(payload.messages[1], {
+    role: 'assistant',
+    content: null,
+    tool_calls: calls,
+    reasoning_content: 'checking',
+  });
+  assert.deepEqual(payload.messages[3], {
+    role: 'tool',
+    content: 'second',
+    tool_call_id: 'b',
+  });
+  assert.deepEqual(
+    buildPlaygroundPreview(messages, '', toolInputs, enabled),
+    buildApiPayload(messages, null, toolInputs, enabled),
+  );
+});
+
+test('stopped, failed and incomplete tool calls never become executable pending calls or leak to next request', () => {
+  const call = {
+    id: 'unfinished',
+    type: 'function',
+    function: { name: 'test', arguments: '{' },
+  };
+  const interrupted = {
+    role: 'assistant',
+    content: '',
+    tool_calls: [call],
+    toolCallsInterrupted: true,
+    status: 'complete',
+  };
+  const messages = [
+    interrupted,
+    { ...interrupted, toolCallsInterrupted: false, status: 'incomplete' },
+    { ...interrupted, status: 'error' },
+  ];
+  assert.deepEqual(pendingToolCalls(messages), []);
+  const payload = buildApiPayload(messages, '', inputs, enabled);
+  assert.deepEqual(payload.messages, []);
+});
