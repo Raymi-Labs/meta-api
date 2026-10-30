@@ -6768,6 +6768,13 @@
     "目标模型在当前分组不可用，请切换分组或选择其他模型": "El modelo solicitado no está disponible en este grupo. Cambia de grupo o elige otro modelo.",
     "用量": "Uso",
     "价格与规格": "Precios y especificaciones",
-    "Tokens": "Tokens"
+    "Tokens": "Tokens",
+    "同步模型资料": "Sincronizar datos de modelos",
+    "部分来源暂不可用，已保留原有资料。": "Algunas fuentes no están disponibles. Se han conservado los datos existentes.",
+    "模型资料已同步：新增 {{created}} 个，更新 {{updated}} 个，其中官方价格 {{pricingUpdated}} 个": "Datos sincronizados: {{created}} creados, {{updated}} actualizados, incluidos {{pricingUpdated}} precios oficiales",
+    "模型资料同步失败，现有数据已保留": "Error al sincronizar los modelos. Se han conservado los datos existentes.",
+    "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Sincroniza a diario por defecto los atributos y los precios oficiales de texto de OpenAI. Los valores manuales tienen prioridad; los errores conservan los valores existentes.",
+    "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Completa automáticamente los atributos y los precios oficiales de texto de OpenAI. Los valores manuales tienen prioridad; bórralos para reanudar la sincronización automática.",
+    "官方价格自动更新于 {{time}}": "Precios oficiales actualizados automáticamente el {{time}}"
   }
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"reflect"
 	"strings"
 	"unicode/utf8"
 
@@ -110,3 +111,6 @@ func (p *OfficialPricing) Normalize(nameRule int) error {
 	}
 	return nil
 }
+
+// Compare values rather than pointer identity or legacy JSON whitespace.
+func (p OfficialPricing) Equal(other OfficialPricing) bool { return reflect.DeepEqual(p, other) }

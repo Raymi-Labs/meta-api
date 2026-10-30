@@ -23,6 +23,7 @@ type ModelCapabilityMetadata struct {
 	InputModalities  ModelModalities
 	OutputModalities ModelModalities
 	Provider         string
+	OfficialPricing  OfficialPricing
 }
 
 // Matched counts eligible exact matches, including missing enabled models.
@@ -31,6 +32,7 @@ type ModelCapabilityMetadata struct {
 // invalid metadata, and optimistic-update conflicts. Unrelated source entries do not count.
 type ModelCapabilitySyncResult struct {
 	SourceFailures int `json:"source_failures,omitempty"`
+	PricingUpdated int `json:"pricing_updated"`
 	Matched        int `json:"matched"`
 	Updated        int `json:"updated"`
 	Created        int `json:"created"`
@@ -38,6 +40,8 @@ type ModelCapabilitySyncResult struct {
 }
 
 type modelCapabilityState struct {
+	OfficialPricing  *OfficialPricing                `json:"official_pricing,omitempty"`
+	PricingSyncedAt  int64                           `json:"pricing_synced_at,omitempty"`
 	Version          int                             `json:"version"`
 	Source           string                          `json:"source"`
 	Provider         string                          `json:"provider,omitempty"`
@@ -54,6 +58,7 @@ type modelCapabilityState struct {
 // Preserve SQL NULL and legacy serialization exactly for optimistic comparisons.
 type modelCapabilitySnapshot struct {
 	Model
+	PricingSnapshot      sql.NullString `gorm:"column:capability_pricing_snapshot"`
 	ReleaseSnapshot      sql.NullString `gorm:"column:capability_release_snapshot"`
 	MaxOutputSnapshot    sql.NullInt64  `gorm:"column:capability_max_output_snapshot"`
 	CapabilitiesSnapshot sql.NullString `gorm:"column:capability_flags_snapshot"`
@@ -98,6 +103,14 @@ func readModelCapabilityState(raw string) modelCapabilityState {
 			return modelCapabilityState{}
 		}
 	}
+	if state.OfficialPricing != nil {
+		copy := *state.OfficialPricing
+		if copy.Normalize(NameRuleExact) != nil || len(copy.Tiers) == 0 || state.FieldSources["official_pricing"].Kind != "official" {
+			state.OfficialPricing = nil
+			state.PricingSyncedAt = 0
+			delete(state.FieldSources, "official_pricing")
+		}
+	}
 	return state
 }
 
@@ -120,6 +133,11 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	}
 	release := func(key string) { delete(state.FieldSources, key); released = true }
 	appliedField := func(key string) { state.FieldSources[key] = incomingSource(key); applied = true }
+	if state.OfficialPricing != nil && !local.OfficialPricing.Equal(*state.OfficialPricing) {
+		state.OfficialPricing = nil
+		state.PricingSyncedAt = 0
+		release("official_pricing")
+	}
 	if state.ReleaseDate != nil && local.ReleaseDate != *state.ReleaseDate {
 		state.ReleaseDate = nil
 		release("release_date")
@@ -208,6 +226,18 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 			changes["capabilities"] = values
 		}
 	}
+	// Only verified official sources may populate prices. Manual edits take
+	// ownership of the entire price sheet, including its notes and currency.
+	price := entry.OfficialPricing
+	priceSource := incomingSource("official_pricing")
+	if len(price.Tiers) > 0 && priceSource.Kind == "official" && price.SourceURL == priceSource.URL && price.SourceURL != "" && price.Normalize(NameRuleExact) == nil && (len(local.OfficialPricing.Tiers) == 0 || state.OfficialPricing != nil) {
+		if !local.OfficialPricing.Equal(price) {
+			changes["official_pricing"] = price
+			state.PricingSyncedAt = common.GetTimestamp()
+		}
+		state.OfficialPricing = &price
+		appliedField("official_pricing")
+	}
 	provenanceChanged := applied && (state.Source != source || state.Provider != entry.Provider || !maps.Equal(previousSources, state.FieldSources))
 	if len(changes) == 0 && !released && !provenanceChanged {
 		return nil, nil
@@ -225,10 +255,10 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	return changes, nil
 }
 
-func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilitySnapshot, entry ModelCapabilityMetadata, source string) (bool, error) {
+func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilitySnapshot, entry ModelCapabilityMetadata, source string) (bool, bool, error) {
 	changes, err := modelCapabilityChanges(snapshot.Model, entry, source)
 	if err != nil || len(changes) == 0 {
-		return false, err
+		return false, false, err
 	}
 	// Compare every capability field plus its ownership snapshot in the same UPDATE.
 	// A concurrent administrator save wins; the next run reads a fresh snapshot.
@@ -239,6 +269,7 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 		"context_length":              snapshot.ContextSnapshot,
 		"max_output_tokens":           snapshot.MaxOutputSnapshot,
 		"capabilities":                snapshot.CapabilitiesSnapshot,
+		"official_pricing":            snapshot.PricingSnapshot,
 		"input_modalities":            snapshot.InputSnapshot,
 		"output_modalities":           snapshot.OutputSnapshot,
 		"model_capability_sync_state": snapshot.StateSnapshot,
@@ -249,6 +280,7 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 		query = query.Where("BINARY model_name = BINARY ?", snapshot.ModelName)
 		for column, value := range map[string]sql.NullString{
 			"release_date":     snapshot.ReleaseSnapshot,
+			"official_pricing": snapshot.PricingSnapshot,
 			"capabilities":     snapshot.CapabilitiesSnapshot,
 			"input_modalities": snapshot.InputSnapshot, "output_modalities": snapshot.OutputSnapshot,
 			"model_capability_sync_state": snapshot.StateSnapshot,
@@ -259,7 +291,8 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 		}
 	}
 	result := query.Updates(changes)
-	return result.RowsAffected > 0, result.Error
+	_, priceChanged := changes["official_pricing"]
+	return result.RowsAffected > 0, result.RowsAffected > 0 && priceChanged, result.Error
 }
 
 func capabilityCoveredByRule(name string, rules []Model) bool {
@@ -302,7 +335,7 @@ func lockModelMetadataCreationAbility(tx *gorm.DB, name string) (bool, error) {
 
 // ApplyModelCapabilityMetadata fills empty display fields and refreshes only fields
 // still equal to their last automatic value. Manual values, IDs, descriptions,
-// prices and abilities are never overwritten. Callers refresh pricing after changes.
+// billing settings and abilities are never overwritten. Callers refresh pricing after changes.
 func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelCapabilityMetadata, source string) (ModelCapabilitySyncResult, error) {
 	var result ModelCapabilitySyncResult
 	source = strings.TrimSpace(source)
@@ -316,7 +349,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		return result, nil
 	}
 	var rows []modelCapabilitySnapshot
-	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
+	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, official_pricing AS capability_pricing_snapshot, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
 	if err != nil {
 		return result, err
 	}
@@ -336,11 +369,14 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			continue
 		}
 		result.Matched++
-		changed, err := applyModelCapabilitySnapshot(ctx, row, entry, source)
+		changed, pricingChanged, err := applyModelCapabilitySnapshot(ctx, row, entry, source)
 		if err != nil {
 			return result, err
 		}
 		if changed {
+			if pricingChanged {
+				result.PricingUpdated++
+			}
 			result.Updated++
 		} else {
 			result.Skipped++
@@ -370,6 +406,9 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		if len(changes) == 0 {
 			result.Skipped++
 			continue
+		}
+		if value, ok := changes["official_pricing"].(OfficialPricing); ok {
+			fresh.OfficialPricing = value
 		}
 		if value, ok := changes["release_date"].(string); ok {
 			fresh.ReleaseDate = value
@@ -426,6 +465,9 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			return result, err
 		}
 		if created {
+			if len(fresh.OfficialPricing.Tiers) > 0 {
+				result.PricingUpdated++
+			}
 			result.Created++
 		} else {
 			result.Skipped++

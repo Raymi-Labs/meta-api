@@ -252,7 +252,11 @@ export default function ModelDetail() {
           t={t}
         />
         <div className='model-detail-main'>
-          <ModelOfficialPricing pricing={model.official_pricing} t={t} />
+          <ModelOfficialPricing
+            pricing={model.official_pricing}
+            provenance={model.attribute_sources?.official_pricing}
+            t={t}
+          />
           <ModelAttributes model={model} tags={tags} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>

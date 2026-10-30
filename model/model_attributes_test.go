@@ -47,14 +47,14 @@ func TestModelAttributesSourcesOwnershipAndDatabaseSafety(t *testing.T) {
 			require.NotContains(t, saved.DisplayAttributeSources(), "capabilities.streaming")
 			// A concurrent save to either new field must invalidate the old snapshot.
 			var snapshot modelCapabilitySnapshot
-			require.NoError(t, db.Model(&Model{}).Select("*, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&Model{}).Select("*, official_pricing AS capability_pricing_snapshot, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
 			require.NoError(t, db.Model(&m).Update("max_output_tokens", 8000).Error)
-			changed, err := applyModelCapabilitySnapshot(context.Background(), snapshot, ModelCapabilityMetadata{ContextLength: 1000}, "source")
+			changed, _, err := applyModelCapabilitySnapshot(context.Background(), snapshot, ModelCapabilityMetadata{ContextLength: 1000}, "source")
 			require.NoError(t, err)
 			require.False(t, changed)
 			require.NoError(t, db.Model(&m).Update("max_output_tokens", snapshot.MaxOutputTokens).Error)
 			require.NoError(t, db.Model(&m).Update("capabilities", ModelCapabilities{"streaming": true}).Error)
-			changed, err = applyModelCapabilitySnapshot(context.Background(), snapshot, ModelCapabilityMetadata{ContextLength: 1000}, "source")
+			changed, _, err = applyModelCapabilitySnapshot(context.Background(), snapshot, ModelCapabilityMetadata{ContextLength: 1000}, "source")
 			require.NoError(t, err)
 			require.False(t, changed)
 		})

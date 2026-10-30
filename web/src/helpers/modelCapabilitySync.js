@@ -31,6 +31,10 @@ export async function requestModelCapabilitySync(api) {
     ...(Number.isSafeInteger(data.source_failures) && data.source_failures > 0
       ? { sourceFailures: data.source_failures }
       : {}),
+    pricingUpdated:
+      Number.isSafeInteger(data.pricing_updated) && data.pricing_updated >= 0
+        ? data.pricing_updated
+        : 0,
     created:
       Number.isSafeInteger(data.created) && data.created >= 0
         ? data.created

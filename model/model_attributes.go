@@ -85,8 +85,9 @@ func (m *ModelCapabilities) Scan(value interface{}) error {
 }
 
 type ModelAttributeSource struct {
-	Kind string `json:"kind"`
-	URL  string `json:"url"`
+	SyncedAt int64  `json:"synced_at,omitempty"`
+	Kind     string `json:"kind"`
+	URL      string `json:"url"`
 }
 
 // Sources are derived from private snapshots, never trusted from an admin payload.
@@ -118,6 +119,11 @@ func (m Model) DisplayAttributeSources() map[string]ModelAttributeSource {
 	for key, value := range s.Capabilities {
 		local, ok := m.Capabilities[key]
 		add("capabilities."+key, ok && local == value)
+	}
+	add("official_pricing", s.OfficialPricing != nil && m.OfficialPricing.Equal(*s.OfficialPricing))
+	if source, ok := out["official_pricing"]; ok {
+		source.SyncedAt = s.PricingSyncedAt
+		out["official_pricing"] = source
 	}
 	return out
 }

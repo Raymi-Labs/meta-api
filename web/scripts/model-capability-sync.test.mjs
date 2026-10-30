@@ -10,13 +10,19 @@ test('sync uses the administrator capability endpoint and reports changed models
       return {
         data: {
           success: true,
-          data: { matched: 8, created: 2, updated: 3, skipped: 3 },
+          data: {
+            matched: 8,
+            created: 2,
+            updated: 3,
+            skipped: 3,
+            pricing_updated: 4,
+          },
         },
       };
     },
   });
   assert.deepEqual(calls, [['/api/models/sync_capabilities']]);
-  assert.deepEqual(result, { created: 2, updated: 3 });
+  assert.deepEqual(result, { created: 2, updated: 3, pricingUpdated: 4 });
 });
 
 test('business failure remains a failure with its server message', async () => {
@@ -45,10 +51,13 @@ test('network failure is propagated and malformed responses cannot report succes
   assert.deepEqual(
     await requestModelCapabilitySync({
       post: async () => ({
-        data: { success: true, data: { created: -1, updated: '9' } },
+        data: {
+          success: true,
+          data: { created: -1, updated: '9', pricing_updated: -1 },
+        },
       }),
     }),
-    { created: 0, updated: 0 },
+    { created: 0, updated: 0, pricingUpdated: 0 },
   );
 });
 
@@ -61,5 +70,10 @@ test('partial source failures remain visible alongside applied counts', async ()
       },
     }),
   });
-  assert.deepEqual(result, { created: 1, updated: 2, sourceFailures: 3 });
+  assert.deepEqual(result, {
+    created: 1,
+    updated: 2,
+    sourceFailures: 3,
+    pricingUpdated: 0,
+  });
 });

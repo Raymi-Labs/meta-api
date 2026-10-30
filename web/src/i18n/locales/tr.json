@@ -6768,6 +6768,13 @@
     "目标模型在当前分组不可用，请切换分组或选择其他模型": "İstenen model bu grupta kullanılamıyor. Grubu değiştirin veya başka bir model seçin.",
     "用量": "Kullanım",
     "价格与规格": "Fiyatlar ve özellikler",
-    "Tokens": "Tokens"
+    "Tokens": "Tokens",
+    "同步模型资料": "Model verilerini eşitle",
+    "部分来源暂不可用，已保留原有资料。": "Bazı kaynaklar kullanılamıyor. Mevcut veriler korundu.",
+    "模型资料已同步：新增 {{created}} 个，更新 {{updated}} 个，其中官方价格 {{pricingUpdated}} 个": "Model verileri eşitlendi: {{created}} oluşturuldu, {{updated}} güncellendi; {{pricingUpdated}} resmî fiyat güncellemesi dahil",
+    "模型资料同步失败，现有数据已保留": "Model verileri eşitlenemedi. Mevcut veriler korundu.",
+    "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Model özelliklerini ve OpenAI resmî metin fiyatlarını varsayılan olarak her gün eşitler. Elle girilen değerler önceliklidir; hatalarda mevcut değerler korunur.",
+    "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Model özelliklerini ve OpenAI resmî metin fiyatlarını otomatik doldurur. Elle girilen değerler önceliklidir; otomatik eşitlemeyi sürdürmek için bunları temizleyin.",
+    "官方价格自动更新于 {{time}}": "Resmî fiyatlar otomatik güncellendi: {{time}}"
   }
 }

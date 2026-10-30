@@ -6980,6 +6980,13 @@
     "目标模型在当前分组不可用，请切换分组或选择其他模型": "The requested model is unavailable in this group. Change groups or choose another model.",
     "用量": "Usage",
     "价格与规格": "Pricing and specifications",
-    "Tokens": "Tokens"
+    "Tokens": "Tokens",
+    "同步模型资料": "Sync model data",
+    "部分来源暂不可用，已保留原有资料。": "Some sources are unavailable. Existing data has been retained.",
+    "模型资料已同步：新增 {{created}} 个，更新 {{updated}} 个，其中官方价格 {{pricingUpdated}} 个": "Model data synced: {{created}} created, {{updated}} updated, including {{pricingUpdated}} official price updates",
+    "模型资料同步失败，现有数据已保留": "Model data sync failed. Existing data has been retained.",
+    "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Sync model attributes and official OpenAI text prices daily by default. Manual values take priority; failures preserve existing values.",
+    "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Automatically fill model attributes and official OpenAI text prices. Manual values take priority; clear them to resume automatic sync.",
+    "官方价格自动更新于 {{time}}": "Official prices automatically updated on {{time}}"
   }
 }
