@@ -125,96 +125,102 @@ export default function ModelGroupRows({
                 onClick={() => data.copyText(model.model_name)}
               />
             </header>
-            <dl className='model-group-values'>
-              <div className='model-group-price-cell'>
-                <dt>{t('价格')}</dt>
-                <dd>
-                  {items.length
-                    ? items
-                        .filter((item) => !isCachePriceItem(item))
-                        .map((item) => (
-                          <ModelGroupPrice
-                            key={item.key}
-                            item={item}
-                            pricing={pricing}
-                            model={model}
-                            officialTier={officialTier}
-                            data={data}
+            <div className='model-group-values'>
+              <dl className='model-group-pricing-values'>
+                <div className='model-group-price-cell'>
+                  <dt>{t('价格')}</dt>
+                  <dd>
+                    {items.length
+                      ? items
+                          .filter((item) => !isCachePriceItem(item))
+                          .map((item) => (
+                            <ModelGroupPrice
+                              key={item.key}
+                              item={item}
+                              pricing={pricing}
+                              model={model}
+                              officialTier={officialTier}
+                              data={data}
+                            />
+                          ))
+                      : t('见价格详情')}
+                    {pricing.isDynamicPricing && (
+                      <small>
+                        {t('本站首档：{{tier}}', {
+                          tier: pricing.firstTierLabel || t('默认'),
+                        })}
+                      </small>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t('缓存')}</dt>
+                  <dd>
+                    {items.filter(isCachePriceItem).map((item) => (
+                      <ModelGroupPrice
+                        key={item.key}
+                        item={item}
+                        pricing={pricing}
+                        model={model}
+                        officialTier={officialTier}
+                        data={data}
+                      />
+                    ))}
+                    {!items.some(isCachePriceItem) && '—'}
+                  </dd>
+                </div>
+              </dl>
+              <dl className='model-group-health-values'>
+                <div>
+                  <dt>
+                    {metric === 'completion' ? t('平均完成') : t('首字均值')}
+                  </dt>
+                  <dd>
+                    {formatHealthLatency(getHealthLatency(stats, metric).value)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t('输出速度')}</dt>
+                  <dd>{formatModelThroughput(stats?.avg_output_tps)}</dd>
+                </div>
+                <div>
+                  <dt>
+                    Uptime <small>· {t('成功率')}</small>
+                  </dt>
+                  <dd>
+                    <button
+                      type='button'
+                      className={`model-group-uptime group-health-text-${healthTone(stats)}`}
+                      disabled={
+                        !stats ||
+                        !!health.error ||
+                        health.data?.enabled === false
+                      }
+                      aria-expanded={open}
+                      aria-label={`${group} · Uptime`}
+                      onClick={() =>
+                        setExpanded(
+                          open
+                            ? expanded.filter((value) => value !== group)
+                            : [...expanded, group],
+                        )
+                      }
+                    >
+                      <span className='model-uptime-spark' aria-hidden='true'>
+                        {[0, 1, 2].map((i) => (
+                          <i
+                            key={i}
+                            className={`group-health-bar-${healthTone(stats)}`}
                           />
-                        ))
-                    : t('见价格详情')}
-                  {pricing.isDynamicPricing && (
-                    <small>
-                      {t('本站首档：{{tier}}', {
-                        tier: pricing.firstTierLabel || t('默认'),
-                      })}
-                    </small>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>{t('缓存')}</dt>
-                <dd>
-                  {items.filter(isCachePriceItem).map((item) => (
-                    <ModelGroupPrice
-                      key={item.key}
-                      item={item}
-                      pricing={pricing}
-                      model={model}
-                      officialTier={officialTier}
-                      data={data}
-                    />
-                  ))}
-                  {!items.some(isCachePriceItem) && '—'}
-                </dd>
-              </div>
-              <div>
-                <dt>
-                  {metric === 'completion' ? t('平均完成') : t('首字均值')}
-                </dt>
-                <dd>
-                  {formatHealthLatency(getHealthLatency(stats, metric).value)}
-                </dd>
-              </div>
-              <div>
-                <dt>{t('输出速度')}</dt>
-                <dd>{formatModelThroughput(stats?.avg_output_tps)}</dd>
-              </div>
-              <div>
-                <dt>
-                  Uptime <small>· {t('成功率')}</small>
-                </dt>
-                <dd>
-                  <button
-                    type='button'
-                    className={`model-group-uptime group-health-text-${healthTone(stats)}`}
-                    disabled={
-                      !stats || !!health.error || health.data?.enabled === false
-                    }
-                    aria-expanded={open}
-                    aria-label={`${group} · Uptime`}
-                    onClick={() =>
-                      setExpanded(
-                        open
-                          ? expanded.filter((value) => value !== group)
-                          : [...expanded, group],
-                      )
-                    }
-                  >
-                    <span className='model-uptime-spark' aria-hidden='true'>
-                      {[0, 1, 2].map((i) => (
-                        <i
-                          key={i}
-                          className={`group-health-bar-${healthTone(stats)}`}
-                        />
-                      ))}
-                    </span>
-                    {formatHealthRate(stats?.success_rate)}
-                    <ChevronDown size={13} />
-                  </button>
-                </dd>
-              </div>
-            </dl>
+                        ))}
+                      </span>
+                      {formatHealthRate(stats?.success_rate)}
+                      <ChevronDown size={13} />
+                    </button>
+                  </dd>
+                </div>
+              </dl>
+            </div>
             {open && stats && !health.error && (
               <GroupHealthPanel
                 stats={stats}

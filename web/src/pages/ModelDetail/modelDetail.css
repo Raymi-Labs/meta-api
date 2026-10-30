@@ -543,8 +543,8 @@ html.dark .model-detail-page {
   min-width: 0;
 }
 .model-group-values {
-  display: grid;
-  grid-template-columns: 1.5fr 1.3fr 1fr 1fr 1.2fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   margin: 0;
   border: 0;
@@ -552,7 +552,22 @@ html.dark .model-detail-page {
   padding: 12px;
   background: var(--detail-soft);
 }
-.model-group-values > div {
+.model-group-pricing-values,
+.model-group-health-values {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+.model-group-pricing-values {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.model-group-health-values {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--detail-border);
+  padding-top: 16px;
+}
+.model-group-pricing-values > div,
+.model-group-health-values > div {
   min-width: 0;
 }
 .model-group-values dt {
@@ -944,9 +959,6 @@ html.dark .model-metric-chart {
   .model-performance-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .model-group-values {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 @media (max-width: 767px) {
   .model-performance-grid {
@@ -954,8 +966,11 @@ html.dark .model-metric-chart {
   }
 }
 @media (max-width: 600px) {
-  .model-group-values {
+  .model-group-health-values {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .model-group-health-values > div:last-child {
+    grid-column: 1 / -1;
   }
   .model-group-row {
     padding: 12px;
