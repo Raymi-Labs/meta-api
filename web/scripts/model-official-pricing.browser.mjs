@@ -306,6 +306,37 @@ const clickButton = async (page, text) => {
   );
 };
 
+const expectActiveSection = async (page, id) => {
+  await page.waitForFunction(
+    (id) => {
+      const active = document.querySelectorAll(
+        '.model-detail-sections button[aria-current="location"]',
+      );
+      return (
+        active.length === 1 && active[0].getAttribute('aria-controls') === id
+      );
+    },
+    {},
+    id,
+  );
+  const weights = await page.$$eval(
+    '.model-detail-sections button',
+    (buttons) =>
+      buttons.map((button) => ({
+        id: button.getAttribute('aria-controls'),
+        active: button.getAttribute('aria-current'),
+        weight: getComputedStyle(button).fontWeight,
+      })),
+  );
+  assert.ok(
+    weights.every(
+      ({ active, weight }) =>
+        weight === (active === 'location' ? '700' : '400'),
+    ),
+    JSON.stringify({ expected: id, url: page.url(), weights }),
+  );
+};
+
 const selectOption = async (page, label, text) => {
   const selector = {
     官方对比档位: '.model-group-comparison-controls .semi-select',
@@ -354,6 +385,36 @@ try {
     });
     await page.waitForSelector('#official-pricing table');
     await page.waitForSelector('#faq details');
+    await expectActiveSection(page, 'official-pricing');
+    const historyBeforeScroll = await page.evaluate(() => history.length);
+    const urlBeforeScroll = page.url();
+    await clickButton(page, '模型属性');
+    await expectActiveSection(page, 'capabilities');
+    await page.focus('.model-detail-sections button[aria-controls="pricing"]');
+    await page.keyboard.press('Enter');
+    await expectActiveSection(page, 'pricing');
+    await page.mouse.move(dark ? 200 : 1000, 400);
+    await page.mouse.wheel({ deltaY: -300 });
+    await expectActiveSection(page, 'capabilities');
+    await page.mouse.wheel({ deltaY: 300 });
+    await expectActiveSection(page, 'pricing');
+    assert.equal(
+      await page.evaluate(
+        (dark) =>
+          dark
+            ? window.scrollY > 0
+            : document.querySelector('.app-workspace').scrollTop > 0,
+        dark,
+      ),
+      true,
+      'exercise window scrolling on mobile and workspace scrolling on desktop',
+    );
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'active-section-mobile.png' : 'active-section-desktop.png',
+      ),
+    });
     assert.equal(
       await page.$eval(
         '#faq',
@@ -363,6 +424,12 @@ try {
     );
     assert.equal(await page.$eval('#faq details', (el) => el.open), false);
     await clickButton(page, '常见问题');
+    await expectActiveSection(page, 'faq');
+    assert.equal(page.url(), urlBeforeScroll);
+    assert.equal(
+      await page.evaluate(() => history.length),
+      historyBeforeScroll,
+    );
     await page.focus('#faq summary');
     await page.keyboard.press('Enter');
     assert.equal(await page.$eval('#faq details', (el) => el.open), true);
@@ -370,6 +437,8 @@ try {
       (await page.$eval('#faq details p', (el) => el.innerText)).includes('\n'),
     );
     await page.click('#faq details:nth-child(2) summary');
+    await page.$eval('#faq', (el) => el.scrollIntoView({ block: 'start' }));
+    await expectActiveSection(page, 'faq');
     assert.equal(
       await page.$('#faq img'),
       null,
@@ -443,6 +512,7 @@ try {
     await page.$eval('#capabilities', (el) =>
       el.scrollIntoView({ block: 'start' }),
     );
+    await expectActiveSection(page, 'capabilities');
     await page.screenshot({
       path: path.join(
         artifacts,
@@ -549,7 +619,10 @@ try {
         '较官方低 100%',
       ),
     );
+    await clickButton(page, '分组价格');
+    await expectActiveSection(page, 'pricing');
     await page.type('input[aria-label="搜索分组"]', 'Extra3');
+    await expectActiveSection(page, 'pricing');
     assert.equal((await page.$$('.model-group-row')).length, 1);
     assert.ok(
       (
@@ -584,12 +657,11 @@ try {
       ),
       true,
     );
-    await page.goto(`${baseURL}/model/same-model`, {
-      waitUntil: 'networkidle0',
-    });
+    await page.click('.model-detail-related a[href="/model/same-model"]');
     await page.waitForSelector(
       '[data-price-key="tiered-p"] .model-group-discount',
     );
+    await expectActiveSection(page, 'official-pricing');
     assert.equal(
       await page.$eval(
         '[data-price-key="tiered-p"] .model-group-discount',
@@ -602,9 +674,17 @@ try {
         '本站首档：base',
       ),
     );
-    await page.goto(`${baseURL}/model/no-display-name`, {
-      waitUntil: 'networkidle0',
-    });
+    await page.click('.model-detail-related a[href="/model/no-display-name"]');
+    await page.waitForFunction(
+      () =>
+        location.pathname === '/model/no-display-name' &&
+        document.querySelector('.model-detail-hero h1')?.textContent ===
+          'no-display-name' &&
+        document
+          .querySelector('#official-pricing')
+          ?.textContent.includes('暂无官方参考价'),
+    );
+    await expectActiveSection(page, 'official-pricing');
     assert.ok(
       (await page.$eval('#official-pricing', (el) => el.textContent)).includes(
         '暂无官方参考价',
