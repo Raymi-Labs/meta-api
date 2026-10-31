@@ -54,7 +54,7 @@ func preferredGroupCandidates(param *RetryParam) ([]*model.Channel, string, erro
 				priorityRetry = 0
 			}
 		}
-		channels, err := model.GetSatisfiedChannelCandidates(groups[index], param.ModelName, priorityRetry,
+		channels, err := model.GetSatisfiedChannelCandidates(groups[index], param.ModelName, param.priorityRetry(index, priorityRetry),
 			param.AllowedChannels, param.ExcludeChannels, buildChannelSelectionFilters(param)...)
 		if err != nil || len(channels) > 0 {
 			return channels, groups[index], err

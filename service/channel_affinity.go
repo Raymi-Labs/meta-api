@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/cachex"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -26,6 +27,7 @@ const (
 	ginKeyChannelAffinityMeta       = "channel_affinity_meta"
 	ginKeyChannelAffinityLogInfo    = "channel_affinity_log_info"
 	ginKeyChannelAffinitySkipRetry  = "channel_affinity_skip_retry_on_failure"
+	ginKeyChannelAffinityRetryIndex = "channel_affinity_retry_group_index"
 
 	channelAffinityCacheNamespace           = "new-api:channel_affinity:v1"
 	channelAffinityUsageCacheStatsNamespace = "new-api:channel_affinity_usage_cache_stats:v1"
@@ -544,6 +546,10 @@ func MarkChannelAffinityUsed(c *gin.Context, selectedGroup string, channelID int
 	meta.AffinityUsed = true
 	setChannelAffinityContext(c, meta)
 	c.Set(ginKeyChannelAffinitySkipRetry, meta.SkipRetry)
+	// The affinity attempt consumes budget, but visits no normal priority tier.
+	// Store index+1 to distinguish the first group from an absent marker. Legacy
+	// auto affinity can bind a later group without advancing normal group selection.
+	c.Set(ginKeyChannelAffinityRetryIndex, common.GetContextKeyInt(c, constant.ContextKeyAutoGroupIndex)+1)
 	info := map[string]interface{}{
 		"reason":         meta.RuleName,
 		"rule_name":      meta.RuleName,
