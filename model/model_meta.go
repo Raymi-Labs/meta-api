@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
 
@@ -37,6 +36,7 @@ type Model struct {
 	Description      string                          `json:"description,omitempty" gorm:"type:text"`
 	Icon             string                          `json:"icon,omitempty" gorm:"type:varchar(128)"`
 	Tags             string                          `json:"tags,omitempty" gorm:"type:varchar(255)"`
+	DisplayVendorID  int                             `json:"display_vendor_id" gorm:"-"`
 	VendorID         int                             `json:"vendor_id,omitempty" gorm:"index"`
 	Endpoints        string                          `json:"endpoints,omitempty" gorm:"type:text"`
 	Status           int                             `json:"status" gorm:"default:1"`
@@ -113,30 +113,6 @@ func (mi *Model) Delete() error {
 	return DB.Delete(mi).Error
 }
 
-func GetVendorModelCounts() (map[int64]int64, error) {
-	var stats []struct {
-		VendorID int64
-		Count    int64
-	}
-	if err := DB.Model(&Model{}).
-		Select("vendor_id as vendor_id, count(*) as count").
-		Group("vendor_id").
-		Scan(&stats).Error; err != nil {
-		return nil, err
-	}
-	m := make(map[int64]int64, len(stats))
-	for _, s := range stats {
-		m[s.VendorID] = s.Count
-	}
-	return m, nil
-}
-
-func GetAllModels(offset int, limit int) ([]*Model, error) {
-	var models []*Model
-	err := DB.Order("id DESC").Offset(offset).Limit(limit).Find(&models).Error
-	return models, err
-}
-
 func GetBoundChannelsByModelsMap(modelNames []string) (map[string][]BoundChannel, error) {
 	result := make(map[string][]BoundChannel)
 	if len(modelNames) == 0 {
@@ -161,28 +137,4 @@ func GetBoundChannelsByModelsMap(modelNames []string) (map[string][]BoundChannel
 		result[r.Model] = append(result[r.Model], BoundChannel{Name: r.Name, Type: r.Type})
 	}
 	return result, nil
-}
-
-func SearchModels(keyword string, vendor string, offset int, limit int) ([]*Model, int64, error) {
-	var models []*Model
-	db := DB.Model(&Model{})
-	if keyword != "" {
-		like := "%" + keyword + "%"
-		db = db.Where("model_name LIKE ? OR display_name LIKE ? OR description LIKE ? OR tags LIKE ?", like, like, like, like)
-	}
-	if vendor != "" {
-		if vid, err := strconv.Atoi(vendor); err == nil {
-			db = db.Where("models.vendor_id = ?", vid)
-		} else {
-			db = db.Joins("JOIN vendors ON vendors.id = models.vendor_id").Where("vendors.name LIKE ?", "%"+vendor+"%")
-		}
-	}
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-	if err := db.Order("models.id DESC").Offset(offset).Limit(limit).Find(&models).Error; err != nil {
-		return nil, 0, err
-	}
-	return models, total, nil
 }

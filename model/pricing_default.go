@@ -127,6 +127,15 @@ func getDefaultVendorID(modelName string, vendorMap map[int]*Vendor) int {
 	return getOrCreateVendor(vendorName, vendorMap)
 }
 
+// Effective display ownership is shared by pricing and model management.
+// A persisted nonzero vendor always wins, including a stale manual reference.
+func modelDisplayVendorID(name string, configured int, vendors map[int]*Vendor) int {
+	if configured != 0 {
+		return configured
+	}
+	return getDefaultVendorID(name, vendors)
+}
+
 // initDefaultVendorMapping 简化的默认供应商映射
 func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vendor, enableAbilities []AbilityWithChannel) {
 	for _, ability := range enableAbilities {
@@ -137,7 +146,7 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 			if meta.VendorID != 0 || vendorName == "" {
 				continue
 			}
-			vendorID := getOrCreateVendor(vendorName, vendorMap)
+			vendorID := modelDisplayVendorID(modelName, meta.VendorID, vendorMap)
 			if vendorID == 0 {
 				continue
 			}
@@ -153,7 +162,7 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 		// 创建模型元数据
 		metaMap[modelName] = &Model{
 			ModelName: modelName,
-			VendorID:  getDefaultVendorID(modelName, vendorMap),
+			VendorID:  modelDisplayVendorID(modelName, 0, vendorMap),
 			Status:    1,
 			NameRule:  NameRuleExact,
 		}

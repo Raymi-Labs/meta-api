@@ -141,6 +141,7 @@ export const useModelsData = () => {
         setModelCount(data.total || newPageData.length);
         setModelFormat(newPageData);
 
+        if (Array.isArray(data.vendors)) setVendors(data.vendors);
         if (data.vendor_counts) {
           const sumAll = Object.values(data.vendor_counts).reduce(
             (acc, v) => acc + v,
@@ -308,6 +309,7 @@ export const useModelsData = () => {
         setActivePage(data.page || 1);
         setModelCount(data.total || newPageData.length);
         setModelFormat(newPageData);
+        if (Array.isArray(data.vendors)) setVendors(data.vendors);
         if (data.vendor_counts) {
           const sumAll = Object.values(data.vendor_counts).reduce(
             (acc, v) => acc + v,
@@ -455,14 +457,6 @@ export const useModelsData = () => {
       showError(t('复制失败'));
     }
   };
-
-  // Initial load
-  useEffect(() => {
-    (async () => {
-      await loadVendors();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return {
     // 数据状态
