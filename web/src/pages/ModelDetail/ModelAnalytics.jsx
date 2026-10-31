@@ -24,7 +24,6 @@ import {
   GroupHealthStatus,
   GroupHealthCollectionNote,
   GroupHealthLegend,
-  GroupUptimeNote,
   selectHealthGroups,
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
@@ -144,7 +143,6 @@ export default function ModelAnalytics({
               />
             )}
             <GroupHealthLegend uptime />
-            <GroupUptimeNote />
           </>
         )}
       </section>

@@ -6795,6 +6795,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Modeltests: {{success}} / {{count}} geslaagd",
     "测试补充 {{count}} 个时段": "Tests vullen {{count}} tijdvakken aan",
     "最近 {{hours}} 个小时段可用率": "Beschikbaarheid in de laatste {{hours}} uurvakken",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests vullen model-/groepsuren zonder geldige verzoeken aan: één geslaagde aanbieder is voldoende, alleen fouten tellen als mislukking, zonder tests blijft de status onbekend. De waarde weegt echte verzoeken en aanvullende tijdvakken. Kleuren bij uitsluitend tests tonen het resultaat, niet ononderbroken beschikbaarheid."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Bij minder dan 30 geldige verzoeken per model-/groepsuur voegen tests één gecombineerde waarneming toe: één geslaagde aanbieder volstaat; alleen fouten tellen als mislukking. Beschikbaarheid behoudt en weegt echte verzoeken. Met aanvullende tests volgt de kleur het resultaat; zonder tests blijft de steekproefdrempel gelden. Dit betekent geen ononderbroken beschikbaarheid."
   }
 }

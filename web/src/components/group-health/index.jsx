@@ -29,7 +29,6 @@ import {
   getHealthCounts,
   getHealthLatency,
   healthTone,
-  isHealthSampleLimited,
   getUptimeRate,
   uptimeTone,
 } from './healthUtils';
@@ -185,7 +184,7 @@ export function GroupHealthSummary({
     counts.request > 0 || (uptime && stats?.probe_bucket_count > 0);
   const tone = uptime ? uptimeTone(stats) : healthTone(stats);
   const rate = uptime ? getUptimeRate(stats) : stats?.success_rate;
-  const limited = isHealthSampleLimited(stats);
+  const limited = tone === 'limited';
   if (compact)
     return (
       <span
@@ -418,14 +417,18 @@ export function GroupHealthLegend({ uptime = false }) {
           {t('样本不足或无有效统计样本')}
         </span>
       </div>
-      <p className='group-health-note'>
-        {t(
-          '计入统计少于 {{count}} 次时显示灰色；达到 {{count}} 次后按实际成功率着色。',
-          {
-            count: HEALTH_MIN_SAMPLES,
-          },
+      <div className='group-health-note'>
+        {uptime ? (
+          <GroupUptimeNote />
+        ) : (
+          t(
+            '计入统计少于 {{count}} 次时显示灰色；达到 {{count}} 次后按实际成功率着色。',
+            {
+              count: HEALTH_MIN_SAMPLES,
+            },
+          )
         )}
-      </p>
+      </div>
     </>
   );
 }
@@ -435,7 +438,7 @@ export function GroupUptimeNote() {
   return (
     <p className='group-health-note'>
       {t(
-        '无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。',
+        '每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。',
       )}
     </p>
   );

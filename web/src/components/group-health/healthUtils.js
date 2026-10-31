@@ -115,17 +115,17 @@ export function healthTone(stats) {
     requestCount <= 0
   )
     return 'empty';
-  const successRate = Number(stats?.success_rate);
-  if (
-    stats?.success_rate == null ||
-    !Number.isFinite(successRate) ||
-    successRate < 0 ||
-    successRate > 100
-  )
+  const tone = healthRateTone(stats?.success_rate);
+  if (tone === 'empty') return tone;
+  return requestCount < HEALTH_MIN_SAMPLES ? 'limited' : tone;
+}
+
+function healthRateTone(rate) {
+  const value = Number(rate);
+  if (rate == null || !Number.isFinite(value) || value < 0 || value > 100)
     return 'empty';
-  if (requestCount < HEALTH_MIN_SAMPLES) return 'limited';
-  if (successRate >= HEALTH_HEALTHY_RATE) return 'healthy';
-  if (successRate >= HEALTH_WARNING_RATE) return 'warning';
+  if (value >= HEALTH_HEALTHY_RATE) return 'healthy';
+  if (value >= HEALTH_WARNING_RATE) return 'warning';
   return 'degraded';
 }
 
@@ -149,9 +149,5 @@ export function getUptimeRate(stats) {
 export function uptimeTone(stats) {
   const probes = healthCount(stats?.probe_bucket_count);
   if (!probes) return healthTone(stats);
-  const request = healthCount(stats?.request_count);
-  return healthTone({
-    request_count: request > 0 ? request : HEALTH_MIN_SAMPLES,
-    success_rate: getUptimeRate(stats),
-  });
+  return healthRateTone(getUptimeRate(stats));
 }

@@ -127,7 +127,7 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 	now := time.Now().Unix() / 3600 * 3600
 	name := "org/model+edition"
 	require.NoError(t, model.SaveGroupHealthSnapshots(context.Background(), []model.GroupHealthMetric{
-		{ID: "public", GroupName: "public", ModelName: name, BucketTs: now, RequestCount: 1, SuccessCount: 1, TTFTCount: 1, TTFTSumMs: 500, InputTokens: 100, OutputTokens: 30, UsageSampleCount: 1, ThroughputOutputTokens: 30, GenerationSumMs: 1000, ThroughputSampleCount: 1},
+		{ID: "public", GroupName: "public", ModelName: name, BucketTs: now, ProbeCount: 2, ProbeSuccessCount: 1, RequestCount: 1, SuccessCount: 1, TTFTCount: 1, TTFTSumMs: 500, InputTokens: 100, OutputTokens: 30, UsageSampleCount: 1, ThroughputOutputTokens: 30, GenerationSumMs: 1000, ThroughputSampleCount: 1},
 		{ID: "probe-now", GroupName: "own", ModelName: name, BucketTs: now, ProbeCount: 10, ProbeSuccessCount: 1},
 		{ID: "probe-old", GroupName: "own", ModelName: name, BucketTs: now - 47*3600, ProbeCount: 9},
 		{ID: "earlier", GroupName: "own", ModelName: name, BucketTs: now - 48*3600, RequestCount: 2, SuccessCount: 2, TTFTCount: 2, TTFTSumMs: 2500},
@@ -158,8 +158,8 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 	require.Len(t, result.Models, 2)
 	require.Equal(t, name, result.Models[0].Model)
 	require.EqualValues(t, 1, result.Models[0].RequestCount)
-	require.EqualValues(t, 10, result.Models[0].ProbeCount)
-	require.EqualValues(t, 1, result.Models[0].ProbeBucketCount)
+	require.EqualValues(t, 12, result.Models[0].ProbeCount)
+	require.EqualValues(t, 2, result.Models[0].ProbeBucketCount)
 	require.Equal(t, 100.0, *result.Models[0].UptimeRate)
 	require.Equal(t, 500.0, *result.Models[0].AvgTTFTMs)
 	require.Equal(t, 30.0, *result.Models[0].AvgOutputTPS)
@@ -170,9 +170,9 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 	result = decode(request(strings.Replace(query, "hours=24", "hours=72", 1), 1, GetModelHealthSummaries))
 	require.Equal(t, 72, result.WindowHours)
 	require.EqualValues(t, 3, result.Models[0].RequestCount)
-	require.EqualValues(t, 19, result.Models[0].ProbeCount)
-	require.EqualValues(t, 2, result.Models[0].ProbeBucketCount)
-	require.Equal(t, 80.0, *result.Models[0].UptimeRate)
+	require.EqualValues(t, 21, result.Models[0].ProbeCount)
+	require.EqualValues(t, 3, result.Models[0].ProbeBucketCount)
+	require.InDelta(t, 500.0/6, *result.Models[0].UptimeRate, 1e-9)
 	require.Equal(t, 1000.0, *result.Models[0].AvgTTFTMs)
 	for _, invalid := range []string{"", "model=", "model=" + strings.Repeat("x", 256), "model=m&hours=1", "model=m&hours=720", "model=m&hours=abc", strings.TrimSuffix(strings.Repeat("model=m&", 101), "&")} {
 		require.Equal(t, http.StatusBadRequest, request(invalid, 1, GetModelHealthSummaries).Code, invalid)
@@ -186,9 +186,14 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 	}
 	require.NoError(t, common.Unmarshal(group.Body.Bytes(), &groupBody))
 	require.Equal(t, 72, groupBody.Data.WindowHours)
+	var samples, probes int64
 	for _, g := range groupBody.Data.Groups {
 		require.Len(t, g.Series, 72)
+		samples += g.UptimeSampleCount
+		probes += g.ProbeBucketCount
 	}
+	require.Equal(t, result.Models[0].UptimeSampleCount, samples)
+	require.Equal(t, result.Models[0].ProbeBucketCount, probes)
 	require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("role", common.RoleAdminUser).Error)
 	admin := decode(request(query, 1, GetModelHealthSummaries))
 	require.Len(t, admin.Models, 3, "current admin can view the hidden model but not private groups")
