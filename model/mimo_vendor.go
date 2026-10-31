@@ -50,6 +50,9 @@ func CanonicalVendorName(name string) string {
 	if isMiMoVendorAlias(trimmed) {
 		return defaultMiMoVendorName
 	}
+	if isAlibabaVendorAlias(trimmed) {
+		return defaultAlibabaVendorName
+	}
 	if isInceptionVendorAlias(trimmed) {
 		return defaultInceptionVendorName
 	}
@@ -58,6 +61,9 @@ func CanonicalVendorName(name string) string {
 
 func vendorNameCandidates(name string) []string {
 	canonicalName := CanonicalVendorName(name)
+	if canonicalName == defaultAlibabaVendorName {
+		return []string{defaultAlibabaVendorName, "Alibaba", "Alibaba (China)"}
+	}
 	if canonicalName == defaultInceptionVendorName {
 		return []string{defaultInceptionVendorName, "Inception Labs", "InceptionLabs"}
 	}
@@ -81,7 +87,7 @@ func findVendorByCanonicalName(db *gorm.DB, name string) (*Vendor, error) {
 	}
 
 	query := db
-	if canonicalName == defaultMiMoVendorName || canonicalName == defaultInceptionVendorName {
+	if canonicalName == defaultMiMoVendorName || canonicalName == defaultInceptionVendorName || canonicalName == defaultAlibabaVendorName {
 		candidates := vendorNameCandidates(canonicalName)
 		for i := range candidates {
 			candidates[i] = strings.ToLower(candidates[i])
@@ -121,6 +127,9 @@ func ResolveVendorNameForModel(modelName string, fallbackVendorName string) stri
 	}
 	if isInceptionModel(modelName) {
 		return defaultInceptionVendorName
+	}
+	if isAlibabaVendorAlias(fallbackVendorName) || isAlibabaPlanVendor(fallbackVendorName) {
+		return AlibabaMetadataVendor(modelName)
 	}
 	return CanonicalVendorName(fallbackVendorName)
 }
