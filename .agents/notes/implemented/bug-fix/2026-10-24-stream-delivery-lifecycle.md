@@ -22,6 +22,8 @@ DeepSeek 官方 Messages 精确历史思考拒绝的纯保活补救由[独立例
 
 ## Existing notes
 
+[Claude HTTP终态](2026-10-31-claude-stream-terminal.md)将实际message_stop交付、错误传播与worker回收扩展到原生Messages及其Chat转换。旧版Claude适配器仍只记录断流状态的缺口由该篇修复；本篇Responses语义保持。
+
 [K3 请求完整性](../../implemented/bug-fix/2026-09-29-kimi-request-stream-integrity.md)、[空输出保护](../../implemented/bug-fix/2026-10-13-responses-empty-output-no-shared-cooldown.md)部分重叠，保留失败退款、工具身份、禁重放及空输出不触发共享冷却；本篇补充完成交接和 worker 生命周期。[分组健康](../../implemented/bug-fix/2026-10-22-group-health-outcome-accounting.md)继续持有健康分类，仅共用实际写入证据，不更改分母或数据库。通知额度、任务计费与其他活跃笔记不持有本决定，无需替换。
 
 ## Alternatives considered

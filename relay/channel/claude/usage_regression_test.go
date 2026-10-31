@@ -113,14 +113,13 @@ func TestClaudeUsageErrorAndTruncatedStreamAreNotSuccess(t *testing.T) {
 		{usageStart, usageText, `{"type":"message_delta","usage":{"output_tokens":20}}`},
 	} {
 		_, err, info, _, _ := runUsageStream(t, types.RelayFormatClaude, events...)
-		require.Nil(t, err)
+		require.NotNil(t, err)
 		require.False(t, info.StreamStatus.IsSuccessful())
 	}
 	u, err, info, _, _ = runUsageStream(t, types.RelayFormatClaude)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.False(t, info.StreamStatus.IsSuccessful())
-	require.Zero(t, u.PromptTokens, "an empty interrupted stream must not charge estimated request tokens")
-	require.Zero(t, u.CompletionTokens)
+	require.Nil(t, u, "an interrupted stream must not provide billable usage")
 }
 
 func TestClaudeNonStreamMissingUsage(t *testing.T) {

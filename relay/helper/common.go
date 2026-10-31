@@ -74,10 +74,22 @@ func ClaudeData(c *gin.Context, resp dto.ClaudeResponse) error {
 	return FlushWriter(c)
 }
 
-func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) {
-	c.Render(-1, common.CustomEvent{Data: fmt.Sprintf("event: %s\n", resp.Type)})
-	c.Render(-1, common.CustomEvent{Data: fmt.Sprintf("data: %s\n", data)})
-	_ = FlushWriter(c)
+func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) error {
+	if c == nil || c.Writer == nil {
+		return errors.New("context or writer is nil")
+	}
+	if c.Request != nil && c.Request.Context().Err() != nil {
+		return c.Request.Context().Err()
+	}
+	// Preserve the raw frame (including unknown/signed fields), but observe
+	// both writes and the flush before claiming that a terminal was delivered.
+	if err := (common.CustomEvent{Data: fmt.Sprintf("event: %s\n", resp.Type)}).Render(c.Writer); err != nil {
+		return err
+	}
+	if err := (common.CustomEvent{Data: fmt.Sprintf("data: %s\n", data)}).Render(c.Writer); err != nil {
+		return err
+	}
+	return FlushWriter(c)
 }
 
 func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data string) error {

@@ -158,6 +158,7 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, m
 	AppendSlowTTFTAdminInfo(ctx, adminInfo)
 	AppendRelayHTTPTimeout(ctx, adminInfo)
 	AppendReasoningAdaptationAdminInfo(ctx, adminInfo)
+	AppendClaudeStreamDiagnostics(ctx, adminInfo)
 	AppendUpstreamRequestIDs(ctx, adminInfo)
 
 	if len(relayInfo.ParamOverrideAudit) > 0 {
