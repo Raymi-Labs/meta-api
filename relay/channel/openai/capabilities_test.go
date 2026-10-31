@@ -26,6 +26,18 @@ func TestChatCapabilitiesPreserveLocalCompatibility(t *testing.T) {
 		{"gpt-6-luna", "none", true, true, true},
 		{"gpt-6-luna", "medium", true, false, true},
 		{"gpt-6-luna-2026-09-30", "", true, true, true},
+		{"gpt-6.1-sol", "", true, false, true},
+		{"gpt-6.1-sol", "none", true, false, true},
+		{"gpt-6.1-sol-high", "", true, false, true},
+		{"gpt-6.1-sol-2026-10-28", "", true, false, true},
+		{"gpt-6.1-terra", "", true, false, true},
+		{"gpt-6.1-terra", "none", true, true, true},
+		{"gpt-6.1-terra", "medium", true, false, true},
+		{"gpt-6.1-terra-none", "high", true, true, true},
+		{"gpt-6.1-terra-2026-10-28", "none", true, true, true},
+		{"gpt-6.1-sol-custom", "", false, true, false},
+		{"gpt-6.1-terra-pro", "", false, true, false},
+		{"gpt-6.1-terra-2026-02-30", "", false, true, false},
 		{"gpt-6-sol-custom", "", false, true, false},
 		{"gpt-6-luna-2026-02-30", "", false, true, false},
 		{"gpt-5.2", "none", true, true, true},
@@ -57,6 +69,43 @@ func TestChatCapabilitiesPreserveLocalCompatibility(t *testing.T) {
 				require.Equal(t, tc.sampling, req.TopLogProbs == 3)
 				require.Equal(t, tc.developer, req.Messages[0].Role == "developer")
 			}
+		})
+	}
+}
+
+func TestGPT61CapabilitiesUseMappedModelAndPreserveExplicitBudget(t *testing.T) {
+	for _, tc := range []struct {
+		requested, upstream string
+		compatible          bool
+	}{
+		{"customer-alias", "gpt-6.1-sol", true},
+		{"customer-alias", "gpt-6.1-terra", true},
+		{"gpt-6.1-sol", "custom-model", false},
+	} {
+		t.Run(tc.requested+"/"+tc.upstream, func(t *testing.T) {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			info := &relaycommon.RelayInfo{OriginModelName: tc.requested, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeOpenAI, UpstreamModelName: tc.upstream}}
+			var req dto.GeneralOpenAIRequest
+			require.NoError(t, common.Unmarshal([]byte(`{"model":"`+tc.upstream+`","messages":[{"role":"system","content":"rules"},{"role":"user","content":"hi"}],"max_tokens":100,"max_completion_tokens":7,"temperature":0.7,"top_p":0.8,"logprobs":true,"top_logprobs":3}`), &req))
+			converted, err := (&Adaptor{}).ConvertOpenAIRequest(c, info, &req)
+			require.NoError(t, err)
+			wire, err := common.Marshal(converted)
+			require.NoError(t, err)
+			var actual map[string]any
+			require.NoError(t, common.Unmarshal(wire, &actual))
+			require.Equal(t, float64(7), actual["max_completion_tokens"])
+			require.Equal(t, tc.upstream, actual["model"])
+			if tc.compatible {
+				for _, key := range []string{"max_tokens", "temperature", "top_p", "logprobs", "top_logprobs"} {
+					require.NotContains(t, actual, key)
+				}
+				require.Equal(t, "developer", req.Messages[0].Role)
+			} else {
+				require.Equal(t, float64(100), actual["max_tokens"])
+				require.Equal(t, "system", req.Messages[0].Role)
+				require.Equal(t, 0.7, actual["temperature"])
+			}
+			require.Equal(t, "hi", req.Messages[1].Content)
 		})
 	}
 }
