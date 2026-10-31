@@ -119,7 +119,7 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.Equal(t, saved.FunctionOverrides, model.GetPricing()[0].FunctionOverrides)
 	require.Equal(t, saved.FAQ, model.GetPricing()[0].FAQ)
 	require.Equal(t, "Local title", model.GetPricing()[0].DisplayName)
-	require.Equal(t, saved.OfficialPricing, model.GetPricing()[0].OfficialPricing)
+	require.Empty(t, model.GetPricing()[0].OfficialPricing.Tiers) // Unattributed manual values remain admin-only.
 	require.Equal(t, "Updated description", model.GetPricing()[0].Description)
 	require.Equal(t, "2026-10-24", model.GetPricing()[0].ReleaseDate)
 	// Upstream metadata can update its known fields, but cannot overwrite locally
@@ -149,7 +149,7 @@ func TestModelMetaDisplayMetadataControllerAndPricing(t *testing.T) {
 	require.NoError(t, db.Callback().Query().Remove("test:concurrent-faq"))
 	saved.FAQ = concurrentFAQ
 	pricing = model.GetPricing()
-	require.Equal(t, saved.OfficialPricing, pricing[0].OfficialPricing)
+	require.Empty(t, pricing[0].OfficialPricing.Tiers)
 	require.Equal(t, "Upstream description", pricing[0].Description)
 	require.Equal(t, saved.FunctionOverrides, pricing[0].FunctionOverrides)
 	require.Equal(t, saved.FAQ, pricing[0].FAQ)

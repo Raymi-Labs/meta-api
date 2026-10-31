@@ -41,6 +41,14 @@ func TestOfficialPricingSyncOwnership(t *testing.T) {
 			candidate.FieldSources["official_pricing"] = ModelAttributeSource{Kind: "community", URL: candidate.OfficialPricing.SourceURL}
 			require.Zero(t, run(candidate).PricingUpdated)
 			require.Equal(t, 11.0, *readCapabilityModel(t, m.Id).OfficialPricing.Tiers[0].Input)
+			// Previously imported OpenRouter values are replaceable only by valid
+			// manufacturer prices, using the same optimistic update on all DBs.
+			legacy := officialPricingEntry(999).OfficialPricing
+			legacy.SourceURL = "https://openrouter.ai/openai/gpt-example"
+			require.NoError(t, db.Model(&m).Update("official_pricing", legacy).Error)
+			require.Empty(t, readCapabilityModel(t, m.Id).ManufacturerOfficialPricing().Tiers)
+			require.Equal(t, 1, run(officialPricingEntry(11)).PricingUpdated)
+			require.Equal(t, 11.0, *readCapabilityModel(t, m.Id).ManufacturerOfficialPricing().Tiers[0].Input)
 			saved = readCapabilityModel(t, m.Id)
 			saved.OfficialPricing = officialPricingEntry(0).OfficialPricing
 			require.NoError(t, saved.Update()) // Real administrator CRUD; zero is a manual price, not empty.

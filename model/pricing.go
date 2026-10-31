@@ -334,7 +334,7 @@ func updatePricing() {
 				continue
 			}
 			if meta.NameRule == NameRuleExact && meta.ModelName == model {
-				pricing.OfficialPricing = meta.OfficialPricing
+				pricing.OfficialPricing = meta.ManufacturerOfficialPricing()
 			}
 			pricing.Description = meta.Description
 			pricing.DescriptionTranslations = meta.DescriptionTranslations.Clone()
@@ -347,6 +347,9 @@ func updatePricing() {
 			pricing.MaxOutputTokens = meta.MaxOutputTokens
 			pricing.Capabilities = meta.Capabilities.Clone()
 			pricing.AttributeSources = meta.DisplayAttributeSources()
+			if len(pricing.OfficialPricing.Tiers) == 0 {
+				delete(pricing.AttributeSources, "official_pricing")
+			}
 			pricing.ContextLength = meta.ContextLength
 			pricing.FunctionOverrides = meta.FunctionOverrides.Clone()
 			pricing.InputModalities = append(ModelModalities{}, meta.InputModalities...)
