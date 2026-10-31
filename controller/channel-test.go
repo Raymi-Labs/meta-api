@@ -119,6 +119,9 @@ func shouldUseAnthropicMessagesPath(channel *model.Channel, modelName string) bo
 }
 
 func resolveTestRequestPath(channel *model.Channel, modelName, endpointType string) (string, string) {
+	if channel != nil && channel.Type == constant.ChannelTypeAli && common.IsAliTTSModel(resolveChannelTestMappedModelName(channel, modelName)) {
+		return "/v1/audio/speech", string(constant.EndpointTypeAudioSpeech)
+	}
 	endpointType = normalizeChannelTestEndpoint(channel, modelName, endpointType)
 	requestPath := "/v1/chat/completions"
 
@@ -279,6 +282,10 @@ func executeChannelStyleTest(
 	isStream bool,
 	options testExecutionOptions,
 ) (result testResult) {
+	if channel != nil && channel.Type == constant.ChannelTypeAli && common.IsAliTTSModel(resolveChannelTestMappedModelName(channel, testModel)) {
+		err := errors.New("阿里云 TTS 需要指定系统或复刻音色，请按语音文档通过 /v1/audio/speech 或 /v1/audio/speech/stream 测试；通用文本测试不适用")
+		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())}
+	}
 	// A dashboard test must never submit a paid asynchronous video job.
 	if channelVideoTest(channel, testModel, endpointType) {
 		err := errors.New("视频测试仅支持本地预检，请通过正式视频接口进行真实生成")

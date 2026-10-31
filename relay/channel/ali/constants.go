@@ -1,6 +1,8 @@
 package ali
 
-var ModelList = []string{
+import "github.com/QuantumNous/new-api/common"
+
+var ModelList = append([]string{
 	"qwen-turbo",
 	"qwen-plus",
 	"qwen-max",
@@ -9,6 +11,6 @@ var ModelList = []string{
 	"qwen3-235b-a22b",
 	"text-embedding-v1",
 	"gte-rerank-v2",
-}
+}, common.AliTTSModels...)
 
 var ChannelName = "ali"

@@ -53,6 +53,13 @@ export const MODEL_PROTOCOLS = Object.freeze([
     path: '/v1/responses/compact',
   },
   { endpoint: 'openai-video', label: 'Videos', path: '/v1/videos' },
+  { endpoint: 'audio-speech', label: 'Speech', path: '/v1/audio/speech' },
+  {
+    endpoint: 'ali-tts-stream',
+    label: 'Ali TTS (WebSocket)',
+    path: '/v1/audio/speech/stream?model={model}',
+    method: 'GET',
+  },
 ]);
 
 const TEXT_PROTOCOLS = ['openai', 'openai-response', 'anthropic'];
@@ -136,6 +143,7 @@ export function getModelEndpointRows(model, endpointMap = {}) {
       (isDeclared &&
         typeof configured?.method === 'string' &&
         configured.method) ||
+      known?.method ||
       'POST';
     return {
       endpoint,

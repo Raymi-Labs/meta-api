@@ -486,6 +486,9 @@ func GenRelayInfoRerank(c *gin.Context, request *dto.RerankRequest) *RelayInfo {
 
 func GenRelayInfoOpenAIAudio(c *gin.Context, request dto.Request) *RelayInfo {
 	info := genBaseRelayInfo(c, request)
+	if common.GetContextKeyInt(c, constant.ContextKeyChannelType) == constant.ChannelTypeAli {
+		info.ForcePreConsume = true
+	}
 	info.RelayFormat = types.RelayFormatOpenAIAudio
 	return info
 }
@@ -660,6 +663,11 @@ func GenRelayInfo(c *gin.Context, relayFormat types.RelayFormat, request dto.Req
 		info = GenRelayInfoImage(c, request)
 	case types.RelayFormatOpenAIRealtime:
 		info = GenRelayInfoWs(c, ws)
+	case types.RelayFormatAliTTS:
+		info = GenRelayInfoWs(c, ws)
+		info.RelayFormat = types.RelayFormatAliTTS
+		info.IsStream = true
+		info.ForcePreConsume = true
 	case types.RelayFormatClaude:
 		info = GenRelayInfoClaude(c, request)
 	case types.RelayFormatRerank:

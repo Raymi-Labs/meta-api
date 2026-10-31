@@ -479,6 +479,11 @@ func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
 			modelRequest.Model = modelName
 		}
 		c.Set("relay_mode", relayMode)
+	} else if c.Request.URL.Path == "/v1/audio/speech/stream" {
+		modelRequest.Model = c.Query("model")
+		if modelRequest.Model == "" {
+			return nil, false, fmt.Errorf("model query parameter is required")
+		}
 	} else if !strings.HasPrefix(c.Request.URL.Path, "/v1/audio/transcriptions") && !strings.Contains(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
 		req, err := getModelFromRequest(c)
 		if err != nil {

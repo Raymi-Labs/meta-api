@@ -20,6 +20,12 @@ curl --fail-with-body -sS 'https://meta-api.vip/v1/audio/speech' \
 
 语音结果通常是音频二进制，不能按 JSON 解析。保存文件前应检查 HTTP 状态和 Content-Type，避免把错误 JSON 当成音频播放。`speed`、`instructions`、流式格式与特定音色的支持由模型决定，不应同时套用不同服务商的参数。
 
+## 阿里云实时语音
+
+已配置的阿里渠道支持 Qwen-Audio-TTS 和 CosyVoice。普通合成使用 `POST /v1/audio/speech`；分段输入使用 `GET /v1/audio/speech/stream?model=MODEL_ID` 建立 WebSocket，接收二进制音频。该入口不使用 OpenAI Realtime 协议。
+
+复刻音色创建成功后复用音色 ID；取消当前任务后可复用连接。配置、计费限制及完整示例见[阿里云 TTS 接入指南](https://github.com/Raymi-Labs/meta-api/blob/main/docs/channel/aliyun-tts.md)。实际可用性取决于部署版本和渠道配置。
+
 ## 语音转文字
 
 准备本地 `sample.wav`，使用 multipart 上传。cURL 自动设置文件上传的 Content-Type 和 boundary。

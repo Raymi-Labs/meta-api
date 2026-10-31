@@ -158,3 +158,22 @@ test('detail examples and endpoint rows share undeclared classification across a
     );
   }
 });
+
+test('Ali TTS exposes POST speech and model-bound GET duplex without chat templates', () => {
+  const input = model(['audio-speech', 'ali-tts-stream'], {
+    model_name: 'voice/中文',
+  });
+  const rows = getModelEndpointRows(input);
+  assert.deepEqual(
+    rows.map(({ method, path }) => ({ method, path })),
+    [
+      { method: 'POST', path: '/v1/audio/speech' },
+      {
+        method: 'GET',
+        path: '/v1/audio/speech/stream?model=voice%2F%E4%B8%AD%E6%96%87',
+      },
+    ],
+  );
+  assert.equal(canOfferTextProtocolExamples(input), false);
+  assert.deepEqual(getModelProtocolOptions(input, true), []);
+});

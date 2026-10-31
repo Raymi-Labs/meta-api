@@ -12,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -434,7 +435,7 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 
 		session := &BillingSession{
 			relayInfo: relayInfo,
-			funding:   &WalletFunding{userId: relayInfo.UserId, requireAvailableQuota: relayInfo.ImageRequestCount > 0 || relayInfo.TaskRelayInfo != nil, requestID: synchronousFundingRequestID(relayInfo)},
+			funding:   &WalletFunding{userId: relayInfo.UserId, requireAvailableQuota: relayInfo.ImageRequestCount > 0 || relayInfo.TaskRelayInfo != nil || relayInfo.RelayFormat == types.RelayFormatAliTTS || (relayInfo.RelayMode == relayconstant.RelayModeAudioSpeech && relayInfo.ForcePreConsume), requestID: synchronousFundingRequestID(relayInfo)},
 		}
 		if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
 			return nil, apiErr

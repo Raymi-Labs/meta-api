@@ -86,6 +86,9 @@ func SetRelayRouter(router *gin.Engine) {
 		wsRouter.GET("/realtime", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatOpenAIRealtime)
 		})
+		wsRouter.GET("/audio/speech/stream", func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatAliTTS)
+		})
 	}
 	{
 		//http router

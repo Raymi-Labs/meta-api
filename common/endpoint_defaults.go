@@ -5,7 +5,6 @@ import "github.com/QuantumNous/new-api/constant"
 // EndpointInfo 描述单个端点的默认请求信息
 // path: 上游路径
 // method: HTTP 请求方式，例如 POST/GET
-// 目前均为 POST，后续可扩展
 //
 // json 标签用于直接序列化到 API 输出
 // 例如：{"path":"/v1/chat/completions","method":"POST"}
@@ -26,6 +25,8 @@ var defaultEndpointInfoMap = map[constant.EndpointType]EndpointInfo{
 	constant.EndpointTypeImageGeneration:       {Path: "/v1/images/generations", Method: "POST"},
 	constant.EndpointTypeOpenAIVideo:           {Path: "/v1/videos", Method: "POST"},
 	constant.EndpointTypeEmbeddings:            {Path: "/v1/embeddings", Method: "POST"},
+	constant.EndpointTypeAudioSpeech:           {Path: "/v1/audio/speech", Method: "POST"},
+	constant.EndpointTypeAliTTS:                {Path: "/v1/audio/speech/stream?model={model}", Method: "GET"},
 }
 
 // GetDefaultEndpointInfo 返回指定端点类型的默认信息以及是否存在
