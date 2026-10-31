@@ -1846,7 +1846,7 @@
     "可用奖励券": "Biglietti premio disponibili",
     "可用数量": "Quantità disponibile",
     "可用模型": "Modelli disponibili",
-    "可用率": "tasso di disponibilità",
+    "可用率": "Disponibilità",
     "可用空间: {{free}} / 总空间: {{total}}": "Gratuito: {{free}} / Totale: {{total}}",
     "可用端点类型": "Tipi di endpoint supportati",
     "可用账号": "Conti disponibili",
@@ -6783,6 +6783,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Tasso di riferimento non disponibile; confronto tra valute sospeso",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "I dati del modello si aggiornano automaticamente, privilegiando le fonti ufficiali. Le modifiche manuali vengono conservate; le informazioni non disponibili restano sconosciute.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Calcolo sull’importo pagato, percentuale attuale {{ratePercent}}%. Liquidazione automatica dopo il pagamento riuscito",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Le commissioni liquidate sono raggruppate per utente anonimo al livello 1 e per ramo di invito diretto al livello 2. Account e registrazioni individuali degli invitati indiretti restano nascosti. La liquidazione segue il pagamento riuscito; la pagina si aggiorna periodicamente."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Le commissioni liquidate sono raggruppate per utente anonimo al livello 1 e per ramo di invito diretto al livello 2. Account e registrazioni individuali degli invitati indiretti restano nascosti. La liquidazione segue il pagamento riuscito; la pagina si aggiorna periodicamente.",
+    "模型测试 {{success}} / {{count}} 次通过": "Test del modello: {{success}} / {{count}} riusciti",
+    "测试补充 {{count}} 个时段": "Test integrativi in {{count}} intervalli",
+    "最近 {{hours}} 个小时段可用率": "Disponibilità negli ultimi {{hours}} intervalli orari",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "I test integrano le ore senza richieste valide per modello e gruppo: basta un fornitore riuscito, solo errori indicano un errore e senza test lo stato è sconosciuto. Il tasso pondera richieste reali e intervalli integrativi. Il colore degli intervalli con soli test indica il risultato, non un servizio continuo."
   }
 }

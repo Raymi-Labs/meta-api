@@ -24,6 +24,7 @@ import {
   GroupHealthStatus,
   GroupHealthCollectionNote,
   GroupHealthLegend,
+  GroupUptimeNote,
   selectHealthGroups,
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
@@ -116,9 +117,9 @@ export default function ModelAnalytics({
           <>
             <div className='model-performance-grid'>
               <ModelMetricChart
-                title={'Uptime · ' + t('成功率')}
+                title={'Uptime · ' + t('可用率')}
                 groups={groups}
-                metric='success_rate'
+                metric='uptime_rate'
                 t={t}
               />
               <ModelMetricChart
@@ -142,7 +143,8 @@ export default function ModelAnalytics({
                 t={t}
               />
             )}
-            <GroupHealthLegend />
+            <GroupHealthLegend uptime />
+            <GroupUptimeNote />
           </>
         )}
       </section>

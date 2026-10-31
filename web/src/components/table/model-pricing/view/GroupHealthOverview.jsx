@@ -126,7 +126,7 @@ const GroupHealthOverview = ({
               {t('分组汇总包含该组全部模型；选择具体模型可比较同模型表现。')}
             </p>
           )}
-          <GroupHealthLegend />
+          <GroupHealthLegend uptime />
           <GroupHealthStatus
             loading={pricingLoading || (loading && !data)}
             error={error}
@@ -142,6 +142,7 @@ const GroupHealthOverview = ({
                 <div className='group-health-grid'>
                   {groups.map((stats) => (
                     <GroupHealthPanel
+                      uptime
                       key={`${modelName}:${stats.group}`}
                       stats={stats}
                       ratio={groupRatio[stats.group]}

@@ -1724,7 +1724,7 @@
     "可用奖励券": "Verfügbare Prämientickets",
     "可用数量": "Verfügbare Menge",
     "可用模型": "Verfügbare Modelle",
-    "可用率": "Verfügbarkeitsrate",
+    "可用率": "Verfügbarkeit",
     "可用空间: {{free}} / 总空间: {{total}}": "Kostenlos: {{free}} / Gesamt: {{total}}",
     "可用端点类型": "Unterstützte Endpunkttypen",
     "可用账号": "Verfügbare Konten",
@@ -6783,6 +6783,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Referenzkurs nicht verfügbar; Preisvergleich zwischen Währungen pausiert",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Modelldaten werden automatisch aktualisiert, bevorzugt aus offiziellen Quellen. Manuelle Änderungen bleiben erhalten; nicht verfügbare Angaben bleiben unbekannt.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Berechnung anhand des gezahlten Betrags, aktueller Satz {{ratePercent}} %. Automatische Abrechnung nach erfolgreicher Zahlung",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Abgerechnete Provisionen werden auf Ebene 1 nach anonymem Nutzer und auf Ebene 2 nach direktem Empfehlungszweig gruppiert. Konten und individuelle Registrierungsdaten indirekter Empfehlungen bleiben verborgen. Die Abrechnung erfolgt nach erfolgreicher Zahlung; die Seite wird regelmäßig aktualisiert."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Abgerechnete Provisionen werden auf Ebene 1 nach anonymem Nutzer und auf Ebene 2 nach direktem Empfehlungszweig gruppiert. Konten und individuelle Registrierungsdaten indirekter Empfehlungen bleiben verborgen. Die Abrechnung erfolgt nach erfolgreicher Zahlung; die Seite wird regelmäßig aktualisiert.",
+    "模型测试 {{success}} / {{count}} 次通过": "Modelltests: {{success}} / {{count}} bestanden",
+    "测试补充 {{count}} 个时段": "Tests ergänzen {{count}} Zeitfenster",
+    "最近 {{hours}} 个小时段可用率": "Verfügbarkeit der letzten {{hours}} Stundenfenster",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests ergänzen Modell-/Gruppenstunden ohne gültige Anfragen: Ein erfolgreicher Anbieter genügt, ausschließlich Fehler zählen als Fehler, ohne Test bleibt der Status unbekannt. Der Wert gewichtet echte Anfragen und ergänzte Zeitfenster. Reine Testfenster werden nach Ergebnis eingefärbt und belegen keinen durchgehenden Betrieb."
   }
 }

@@ -6216,7 +6216,7 @@
     "只统计不高于该额度的钱包兑换码；0 关闭": "only counts wallet redemption codes that are not higher than this limit; 0 close",
     "可以在手机和电脑上使用吗？": "Can I use it on my phone and computer?",
     "可用 / 总数": "Available / Total",
-    "可用率": "availability rate",
+    "可用率": "Availability",
     "可选访问统计": "Optional analytics",
     "各厂商模型、协议地址与可直接复制的调用样例": "Each manufacturer’s model, protocol address and call examples that can be directly copied",
     "合计": "Total",
@@ -6995,6 +6995,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Reference rate unavailable; cross-currency price comparison paused",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Model details update automatically, with official sources preferred. Manual edits are preserved; unavailable information remains unknown.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Calculated from the amount paid, current rate {{ratePercent}}%; automatically settled after successful payment",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Settled commissions are grouped by anonymous user for level 1 and direct referral branch for level 2. Indirect users’ accounts and individual registration details are hidden. Settlement follows successful payment; this page refreshes periodically."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Settled commissions are grouped by anonymous user for level 1 and direct referral branch for level 2. Indirect users’ accounts and individual registration details are hidden. Settlement follows successful payment; this page refreshes periodically.",
+    "模型测试 {{success}} / {{count}} 次通过": "Model tests: {{success}} / {{count}} passed",
+    "测试补充 {{count}} 个时段": "Tests supplement {{count}} time slots",
+    "最近 {{hours}} 个小时段可用率": "Availability over the last {{hours}} hourly slots",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests supplement model/group hours without eligible requests: any upstream passing counts as success, failures only count as failure, and no tests means unknown. Availability weights real requests and supplemental slots; test-only slots are colored by result and do not imply continuous uptime."
   }
 }

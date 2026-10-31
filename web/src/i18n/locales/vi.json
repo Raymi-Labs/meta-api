@@ -6703,7 +6703,7 @@
     "受限证据，不可直接展示": "Bằng chứng hạn chế, không thể hiển thị trực tiếp",
     "只统计不高于该额度的钱包兑换码；0 关闭": "chỉ tính mã đổi ví không cao hơn giới hạn này; 0 đóng",
     "可用 / 总数": "Có sẵn / Tổng số",
-    "可用率": "tỷ lệ sẵn có",
+    "可用率": "Tỷ lệ khả dụng",
     "各厂商模型、协议地址与可直接复制的调用样例": "Mô hình, địa chỉ giao thức và ví dụ cuộc gọi của mỗi nhà sản xuất có thể được sao chép trực tiếp",
     "合计": "Tổng cộng",
     "合计额度": "Tổng hạn ngạch",
@@ -7396,6 +7396,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Tỷ giá tham khảo không khả dụng; tạm dừng so sánh giá khác tiền tệ",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Thông tin mô hình tự động cập nhật, ưu tiên nguồn chính thức. Các chỉnh sửa thủ công được giữ lại; thông tin chưa lấy được vẫn ở trạng thái chưa biết.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Tính theo số tiền thực trả, tỷ lệ hiện tại {{ratePercent}}%. Tự động quyết toán sau khi thanh toán thành công",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Hoa hồng đã quyết toán được tổng hợp theo người dùng ẩn danh ở cấp 1 và nhánh giới thiệu trực tiếp ở cấp 2. Không hiển thị tài khoản và thông tin đăng ký riêng của người được giới thiệu gián tiếp. Tự động quyết toán sau khi thanh toán thành công; trang làm mới định kỳ."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Hoa hồng đã quyết toán được tổng hợp theo người dùng ẩn danh ở cấp 1 và nhánh giới thiệu trực tiếp ở cấp 2. Không hiển thị tài khoản và thông tin đăng ký riêng của người được giới thiệu gián tiếp. Tự động quyết toán sau khi thanh toán thành công; trang làm mới định kỳ.",
+    "模型测试 {{success}} / {{count}} 次通过": "Kiểm thử mô hình: {{success}} / {{count}} lần đạt",
+    "测试补充 {{count}} 个时段": "Kiểm thử bổ sung {{count}} khung giờ",
+    "最近 {{hours}} 个小时段可用率": "Tỷ lệ khả dụng trong {{hours}} khung giờ gần nhất",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Kiểm thử bổ sung các giờ của mô hình và nhóm không có yêu cầu hợp lệ: chỉ cần một nhà cung cấp đạt là thành công, chỉ có lỗi là thất bại, không kiểm thử là chưa rõ. Tỷ lệ được tính theo trọng số yêu cầu thực và khung giờ bổ sung; màu khung giờ chỉ kiểm thử phản ánh kết quả, không chứng minh hoạt động liên tục."
   }
 }

@@ -1846,7 +1846,7 @@
     "可用奖励券": "Beschikbare beloningstickets",
     "可用数量": "Beschikbare hoeveelheid",
     "可用模型": "Beschikbare modellen",
-    "可用率": "beschikbaarheidspercentage",
+    "可用率": "Beschikbaarheid",
     "可用空间: {{free}} / 总空间: {{total}}": "Vrij: {{free}} / Totaal: {{total}}",
     "可用端点类型": "Ondersteunde eindpunttypen",
     "可用账号": "Beschikbare rekeningen",
@@ -6783,6 +6783,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Referentiekoers niet beschikbaar; prijsvergelijking tussen valuta gepauzeerd",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Modelgegevens worden automatisch bijgewerkt, met voorkeur voor officiële bronnen. Handmatige wijzigingen blijven behouden; niet-beschikbare informatie blijft onbekend.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Berekend over het betaalde bedrag, huidig percentage {{ratePercent}}%. Automatische afrekening na geslaagde betaling",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Afgerekende commissies worden op niveau 1 per anonieme gebruiker en op niveau 2 per directe verwijzingstak gegroepeerd. Accounts en individuele registratiegegevens van indirect verwezen gebruikers blijven verborgen. Afrekening volgt na geslaagde betaling; deze pagina wordt regelmatig vernieuwd."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Afgerekende commissies worden op niveau 1 per anonieme gebruiker en op niveau 2 per directe verwijzingstak gegroepeerd. Accounts en individuele registratiegegevens van indirect verwezen gebruikers blijven verborgen. Afrekening volgt na geslaagde betaling; deze pagina wordt regelmatig vernieuwd.",
+    "模型测试 {{success}} / {{count}} 次通过": "Modeltests: {{success}} / {{count}} geslaagd",
+    "测试补充 {{count}} 个时段": "Tests vullen {{count}} tijdvakken aan",
+    "最近 {{hours}} 个小时段可用率": "Beschikbaarheid in de laatste {{hours}} uurvakken",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests vullen model-/groepsuren zonder geldige verzoeken aan: één geslaagde aanbieder is voldoende, alleen fouten tellen als mislukking, zonder tests blijft de status onbekend. De waarde weegt echte verzoeken en aanvullende tijdvakken. Kleuren bij uitsluitend tests tonen het resultaat, niet ononderbroken beschikbaarheid."
   }
 }

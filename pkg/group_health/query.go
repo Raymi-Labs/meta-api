@@ -24,28 +24,34 @@ func IsModelAuthorized(name string, role int) bool {
 }
 
 type Metrics struct {
-	InputTokens            *int64   `json:"input_tokens"`
-	OutputTokens           *int64   `json:"output_tokens"`
-	TotalTokens            *int64   `json:"total_tokens"`
-	UsageSampleCount       int64    `json:"usage_sample_count"`
-	AvgOutputTPS           *float64 `json:"avg_output_tps"`
-	ThroughputSampleCount  int64    `json:"throughput_sample_count"`
-	CacheHitRate           *float64 `json:"cache_hit_rate"`
-	CacheSampleCount       int64    `json:"cache_sample_count"`
-	RequestCount           int64    `json:"request_count"`
-	SuccessCount           int64    `json:"success_count"`
-	FailureCount           int64    `json:"failure_count"`
-	ServiceFailureCount    int64    `json:"service_failure_count"`
-	UnknownFailureCount    int64    `json:"unknown_failure_count"`
-	ClientCanceledCount    int64    `json:"client_canceled_count"`
-	ExcludedUserErrorCount int64    `json:"excluded_user_error_count"`
-	ExcludedCount          int64    `json:"excluded_count"`
-	ObservedCount          int64    `json:"observed_count"`
-	SuccessRate            *float64 `json:"success_rate"`
-	AvgTTFTMs              *float64 `json:"avg_ttft_ms"`
-	TTFTCount              int64    `json:"ttft_count"`
-	AvgCompletionMs        *float64 `json:"avg_completion_ms"`
-	CompletionCount        int64    `json:"completion_count"`
+	ProbeCount              int64    `json:"probe_count"`
+	ProbeSuccessCount       int64    `json:"probe_success_count"`
+	ProbeBucketCount        int64    `json:"probe_bucket_count"`
+	ProbeSuccessBucketCount int64    `json:"probe_success_bucket_count"`
+	UptimeSampleCount       int64    `json:"uptime_sample_count"`
+	UptimeRate              *float64 `json:"uptime_rate"`
+	InputTokens             *int64   `json:"input_tokens"`
+	OutputTokens            *int64   `json:"output_tokens"`
+	TotalTokens             *int64   `json:"total_tokens"`
+	UsageSampleCount        int64    `json:"usage_sample_count"`
+	AvgOutputTPS            *float64 `json:"avg_output_tps"`
+	ThroughputSampleCount   int64    `json:"throughput_sample_count"`
+	CacheHitRate            *float64 `json:"cache_hit_rate"`
+	CacheSampleCount        int64    `json:"cache_sample_count"`
+	RequestCount            int64    `json:"request_count"`
+	SuccessCount            int64    `json:"success_count"`
+	FailureCount            int64    `json:"failure_count"`
+	ServiceFailureCount     int64    `json:"service_failure_count"`
+	UnknownFailureCount     int64    `json:"unknown_failure_count"`
+	ClientCanceledCount     int64    `json:"client_canceled_count"`
+	ExcludedUserErrorCount  int64    `json:"excluded_user_error_count"`
+	ExcludedCount           int64    `json:"excluded_count"`
+	ObservedCount           int64    `json:"observed_count"`
+	SuccessRate             *float64 `json:"success_rate"`
+	AvgTTFTMs               *float64 `json:"avg_ttft_ms"`
+	TTFTCount               int64    `json:"ttft_count"`
+	AvgCompletionMs         *float64 `json:"avg_completion_ms"`
+	CompletionCount         int64    `json:"completion_count"`
 }
 
 type Bucket struct {
@@ -129,7 +135,7 @@ func QueryModels(ctx context.Context, groups, modelNames []string, role, hours i
 		return ModelResult{}, err
 	}
 	totals := make(map[string]model.GroupHealthMetric, len(allowed))
-	for _, row := range rows {
+	for _, row := range withProbeBuckets(rows) {
 		total := totals[row.ModelName]
 		add(&total, row)
 		totals[row.ModelName] = total
@@ -150,7 +156,7 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	for _, group := range groups {
 		byGroup[group] = make(map[int64]model.GroupHealthMetric)
 	}
-	for _, row := range rows {
+	for _, row := range withProbeBuckets(rows) {
 		buckets, allowed := byGroup[row.GroupName]
 		if !allowed || row.BucketTs < start || row.BucketTs > end {
 			continue
@@ -179,7 +185,39 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	return result
 }
 
+// Fold before applying the fallback: a probe from one replica must not hide
+// real failures from another, and N upstreams contribute at most one sample.
+func withProbeBuckets(rows []model.GroupHealthMetric) []model.GroupHealthMetric {
+	merged := make(map[bucketKey]model.GroupHealthMetric)
+	for _, row := range rows {
+		key := bucketKey{group: row.GroupName, model: row.ModelName, ts: row.BucketTs}
+		total := merged[key]
+		add(&total, row)
+		total.GroupName, total.ModelName, total.BucketTs = key.group, key.model, key.ts
+		if row.UpdatedAt > total.UpdatedAt {
+			total.UpdatedAt = row.UpdatedAt
+		}
+		merged[key] = total
+	}
+	result := make([]model.GroupHealthMetric, 0, len(merged))
+	for _, row := range merged {
+		row.ProbeBucketCount, row.ProbeSuccessBucketCount = 0, 0
+		if row.RequestCount == 0 && row.ProbeCount > 0 {
+			row.ProbeBucketCount = 1
+			if row.ProbeSuccessCount > 0 {
+				row.ProbeSuccessBucketCount = 1
+			}
+		}
+		result = append(result, row)
+	}
+	return result
+}
+
 func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
+	dst.ProbeCount += src.ProbeCount
+	dst.ProbeSuccessCount += src.ProbeSuccessCount
+	dst.ProbeBucketCount += src.ProbeBucketCount
+	dst.ProbeSuccessBucketCount += src.ProbeSuccessBucketCount
 	dst.InputTokens += src.InputTokens
 	dst.OutputTokens += src.OutputTokens
 	dst.UsageSampleCount += src.UsageSampleCount
@@ -202,6 +240,13 @@ func add(dst *model.GroupHealthMetric, src model.GroupHealthMetric) {
 
 func summarize(row model.GroupHealthMetric) Metrics {
 	result := Metrics{RequestCount: row.RequestCount, SuccessCount: row.SuccessCount, FailureCount: row.RequestCount - row.SuccessCount, TTFTCount: row.TTFTCount, CompletionCount: row.CompletionCount}
+	result.ProbeCount, result.ProbeSuccessCount = row.ProbeCount, row.ProbeSuccessCount
+	result.ProbeBucketCount, result.ProbeSuccessBucketCount = row.ProbeBucketCount, row.ProbeSuccessBucketCount
+	result.UptimeSampleCount = row.RequestCount + row.ProbeBucketCount
+	if result.UptimeSampleCount > 0 {
+		value := float64(row.SuccessCount+row.ProbeSuccessBucketCount) / float64(result.UptimeSampleCount) * 100
+		result.UptimeRate = &value
+	}
 	result.UsageSampleCount = row.UsageSampleCount
 	result.ThroughputSampleCount = row.ThroughputSampleCount
 	if row.UsageSampleCount > 0 {

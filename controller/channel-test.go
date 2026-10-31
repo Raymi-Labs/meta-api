@@ -21,6 +21,7 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
+	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
 	"github.com/QuantumNous/new-api/relay"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
@@ -505,6 +506,24 @@ func executeChannelStyleTest(
 
 	requestBody := bytes.NewBuffer(jsonData)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonData))
+	// Only actual channel probes reach this point. Local preflight/configuration
+	// errors and billed playground requests must not become availability samples.
+	if options.isChannelTest {
+		groups, groupErr := model.ChannelHealthProbeGroups(c.Request.Context(), channel.Id, relayInfo.OriginModelName)
+		if groupErr != nil {
+			common.SysError("failed to resolve channel health probe groups: " + groupErr.Error())
+		} else {
+			defer func() {
+				outcome := grouphealth.OutcomeSuccess
+				if result.localErr != nil || result.newAPIError != nil {
+					outcome = grouphealth.OutcomeServiceFailure
+				}
+				for _, group := range groups {
+					grouphealth.Record(grouphealth.Sample{Group: group, Model: relayInfo.OriginModelName, Probe: true, Outcome: outcome})
+				}
+			}()
+		}
+	}
 	resp, err := adaptor.DoRequest(c, relayInfo, requestBody)
 	if err != nil {
 		result.context = c

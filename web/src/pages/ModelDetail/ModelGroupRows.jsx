@@ -35,7 +35,8 @@ import {
 import {
   formatHealthLatency,
   formatHealthRate,
-  healthTone,
+  uptimeTone,
+  getUptimeRate,
   resolveGroupHealthMetric,
   getHealthLatency,
 } from '../../components/group-health/healthUtils';
@@ -178,12 +179,12 @@ export default function ModelGroupRows({
                 </div>
                 <div>
                   <dt>
-                    Uptime <small>· {t('成功率')}</small>
+                    Uptime <small>· {t('可用率')}</small>
                   </dt>
                   <dd>
                     <button
                       type='button'
-                      className={`model-group-uptime group-health-text-${healthTone(stats)}`}
+                      className={`model-group-uptime group-health-text-${uptimeTone(stats)}`}
                       disabled={
                         !stats ||
                         !!health.error ||
@@ -203,11 +204,11 @@ export default function ModelGroupRows({
                         {[0, 1, 2].map((i) => (
                           <i
                             key={i}
-                            className={`group-health-bar-${healthTone(stats)}`}
+                            className={`group-health-bar-${uptimeTone(stats)}`}
                           />
                         ))}
                       </span>
-                      {formatHealthRate(stats?.success_rate)}
+                      {formatHealthRate(getUptimeRate(stats))}
                       <ChevronDown size={13} />
                     </button>
                   </dd>
@@ -216,6 +217,7 @@ export default function ModelGroupRows({
             </div>
             {open && stats && !health.error && (
               <GroupHealthPanel
+                uptime
                 stats={stats}
                 metric={metric}
                 showTitle={false}

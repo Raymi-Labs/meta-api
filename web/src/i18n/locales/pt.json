@@ -1846,7 +1846,7 @@
     "可用奖励券": "Bilhetes-prêmio disponíveis",
     "可用数量": "Quantidade disponível",
     "可用模型": "Modelos disponíveis",
-    "可用率": "taxa de disponibilidade",
+    "可用率": "Disponibilidade",
     "可用空间: {{free}} / 总空间: {{total}}": "Grátis: {{free}} / Total: {{total}}",
     "可用端点类型": "Tipos de endpoints compatíveis",
     "可用账号": "Contas disponíveis",
@@ -6783,6 +6783,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Taxa de referência indisponível; comparação entre moedas pausada",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Os dados do modelo são atualizados automaticamente, priorizando fontes oficiais. As alterações manuais são preservadas; informações indisponíveis permanecem desconhecidas.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Calculado sobre o valor pago, taxa atual {{ratePercent}}%. Liquidação automática após pagamento bem-sucedido",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "As comissões liquidadas são agrupadas por utilizador anónimo no nível 1 e por ramo de indicação direta no nível 2. Contas e registos individuais dos indicados indiretos ficam ocultos. A liquidação ocorre após o pagamento bem-sucedido; a página atualiza-se periodicamente."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "As comissões liquidadas são agrupadas por utilizador anónimo no nível 1 e por ramo de indicação direta no nível 2. Contas e registos individuais dos indicados indiretos ficam ocultos. A liquidação ocorre após o pagamento bem-sucedido; a página atualiza-se periodicamente.",
+    "模型测试 {{success}} / {{count}} 次通过": "Testes do modelo: {{success}} / {{count}} aprovados",
+    "测试补充 {{count}} 个时段": "Testes complementam {{count}} intervalos",
+    "最近 {{hours}} 个小时段可用率": "Disponibilidade nos últimos {{hours}} intervalos horários",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Os testes complementam horas sem pedidos válidos por modelo e grupo: basta um fornecedor passar, apenas falhas contam como falha e sem testes o estado é desconhecido. A taxa pondera pedidos reais e intervalos complementares. A cor de intervalos só com testes indica o resultado, não disponibilidade contínua."
   }
 }

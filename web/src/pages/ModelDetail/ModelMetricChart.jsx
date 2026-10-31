@@ -20,7 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Modal } from '@douyinfe/semi-ui';
 import { Maximize2 } from 'lucide-react';
-import { healthTone } from '../../components/group-health/healthUtils';
+import {
+  healthTone,
+  uptimeTone,
+} from '../../components/group-health/healthUtils';
 import {
   chartDisplayValue,
   formatChartValue,
@@ -74,7 +77,11 @@ export default function ModelMetricChart({
     .filter((value) => value != null);
   const { min, max, ticks } = chartDomain(nums, metric);
   const tickLabels = ticks.map((value) =>
-    formatChartValue(value, metric, metric === 'success_rate'),
+    formatChartValue(
+      value,
+      metric,
+      ['success_rate', 'uptime_rate'].includes(metric),
+    ),
   );
   const height = expandedView ? 320 : bar ? 260 : 220,
     left = bar
@@ -94,8 +101,10 @@ export default function ModelMetricChart({
   const format = (value) => formatChartValue(value, metric);
   const detail = (value) => formatChartDetailValue(value, metric);
   const limited = (point) =>
-    metric === 'success_rate' &&
-    ['empty', 'limited'].includes(healthTone(point));
+    ['success_rate', 'uptime_rate'].includes(metric) &&
+    ['empty', 'limited'].includes(
+      metric === 'uptime_rate' ? uptimeTone(point) : healthTone(point),
+    );
   const activeColor = (point, i) =>
     limited(point) ? '#a8aeb9' : GROUP_CHART_COLORS[i];
   const timeLabels = [

@@ -1846,7 +1846,7 @@
     "可用奖励券": "Dostępne bilety-nagrody",
     "可用数量": "Dostępna ilość",
     "可用模型": "Dostępne modele",
-    "可用率": "wskaźnik dostępności",
+    "可用率": "Dostępność",
     "可用空间: {{free}} / 总空间: {{total}}": "Wolne: {{free}} / Razem: {{total}}",
     "可用端点类型": "Obsługiwane typy punktów końcowych",
     "可用账号": "Dostępne konta",
@@ -6783,6 +6783,10 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Kurs referencyjny niedostępny; porównanie cen między walutami wstrzymane",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Dane modelu aktualizują się automatycznie, z pierwszeństwem oficjalnych źródeł. Ręczne zmiany są zachowywane; niedostępne informacje pozostają nieznane.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Obliczane od zapłaconej kwoty, aktualna stawka {{ratePercent}}%. Automatyczne rozliczenie po udanej płatności",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Rozliczone prowizje są grupowane według anonimowych użytkowników na poziomie 1 i gałęzi bezpośrednich poleceń na poziomie 2. Konta i indywidualne dane rejestracji pośrednio poleconych osób są ukryte. Rozliczenie następuje po udanej płatności; strona odświeża się okresowo."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Rozliczone prowizje są grupowane według anonimowych użytkowników na poziomie 1 i gałęzi bezpośrednich poleceń na poziomie 2. Konta i indywidualne dane rejestracji pośrednio poleconych osób są ukryte. Rozliczenie następuje po udanej płatności; strona odświeża się okresowo.",
+    "模型测试 {{success}} / {{count}} 次通过": "Testy modelu: {{success}} / {{count}} udanych",
+    "测试补充 {{count}} 个时段": "Testy uzupełniają {{count}} przedziałów",
+    "最近 {{hours}} 个小时段可用率": "Dostępność w ostatnich {{hours}} przedziałach godzinowych",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Testy uzupełniają godziny modelu i grupy bez prawidłowych żądań: wystarczy sukces jednego dostawcy, same błędy oznaczają niepowodzenie, a brak testów oznacza stan nieznany. Wskaźnik waży rzeczywiste żądania i uzupełnione przedziały. Kolor przedziałów z samymi testami pokazuje wynik, nie ciągłą pracę."
   }
 }
