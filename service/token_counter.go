@@ -204,6 +204,14 @@ func EstimateRequestToken(c *gin.Context, meta *types.TokenCountMeta, info *rela
 		return 0, nil
 	}
 	if !useAudioDurationPrice && (info.RelayMode == constant2.RelayModeAudioTranscription || info.RelayMode == constant2.RelayModeAudioTranslation) {
+		// Native OpenRouter transcription accepts JSON base64. Do not parse it
+		// as multipart or invent a duration-based token count. The price helper
+		// still reserves its minimum quota; the adaptor validates the audio and
+		// settlement requires the upstream's actual input/output token usage.
+		if info.RelayMode == constant2.RelayModeAudioTranscription && c.ContentType() == "application/json" &&
+			common.GetContextKeyInt(c, constant.ContextKeyChannelType) == constant.ChannelTypeOpenRouter {
+			return 0, nil
+		}
 		multiForm, err := common.ParseMultipartFormReusable(c)
 		if err != nil {
 			return 0, fmt.Errorf("error parsing multipart form: %v", err)

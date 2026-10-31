@@ -11,8 +11,8 @@
     "fetched_at": 1793473289,
     "stale": false
   },
-  "channel_status": "paused",
-  "reason": "OpenRouter provider Terms Of Service 403，不能声称真实调用验收成功",
+  "channel_status": "enabled",
+  "reason": "当前账号 19 个非语音型号已恢复；4 个语音等待网关计量验收，6 个价格未通过继续暂停",
   "limitations": [
     "语音不支持上游最低价排序或硬限价；经用户同意每次调用前检查全部服务商报价，仍有报价到扣费的时间差",
     "固定汇率校正为公开 ECB 快照；不是自动每日调价任务",
@@ -24,7 +24,7 @@
       "channel_id": 1638,
       "model": "gemini-4-argon",
       "upstream_model": "google/gemini-4-argon",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -51,9 +51,25 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-4-argon/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000005",
+            "image": "0.000001",
+            "audio": "0.000001",
+            "input_audio_cache": "0.00000005",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000005",
+            "input_cache_read": "0.00000005",
+            "input_cache_write": "0.00000009375",
+            "discount": 0.5
+          }
+        },
         {
           "provider": "google-vertex/global",
           "service_tier": null,
@@ -85,6 +101,54 @@
             "input_cache_write": "0.0000001875",
             "discount": 0.5
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "image": "0.0000022",
+            "audio": "0.0000022",
+            "input_audio_cache": "0.00000011",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000011",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.0000001875",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000036",
+            "completion": "0.000018",
+            "image": "0.0000036",
+            "audio": "0.0000036",
+            "input_audio_cache": "0.00000018",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000018",
+            "input_cache_read": "0.00000018",
+            "input_cache_write": "0.0000003375",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000036",
+            "completion": "0.000018",
+            "image": "0.0000036",
+            "audio": "0.0000036",
+            "input_audio_cache": "0.00000018",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000018",
+            "input_cache_read": "0.00000018",
+            "input_cache_write": "0.0000003375",
+            "discount": 0.5
+          }
         }
       ]
     },
@@ -92,7 +156,7 @@
       "channel_id": 1638,
       "model": "gemini-nano-banana-2.1",
       "upstream_model": "google/gemini-nano-banana-2.1",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -116,7 +180,7 @@
         "text"
       ],
       "context_length": 65536,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-nano-banana-2.1/endpoints",
       "endpoint_quotes": [
         {
@@ -157,7 +221,7 @@
         "transcription"
       ],
       "context_length": 98304,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.5-transcribe/endpoints",
       "endpoint_quotes": [
         {
@@ -197,7 +261,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash-lite-tts/endpoints",
       "endpoint_quotes": [
         {
@@ -246,7 +310,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash-tts/endpoints",
       "endpoint_quotes": [
         {
@@ -273,7 +337,7 @@
       "channel_id": 1638,
       "model": "gemini-3.8-flash",
       "upstream_model": "google/gemini-3.8-flash",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -300,9 +364,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0.5
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -334,6 +430,54 @@
             "input_cache_write": "0.0000000416666666666667",
             "discount": 0.5
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000000825",
+            "completion": "0.000004125",
+            "image": "0.000000825",
+            "audio": "0.000000825",
+            "input_audio_cache": "0.0000000825",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000004125",
+            "input_cache_read": "0.0000000825",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0.5
+          }
         }
       ]
     },
@@ -341,7 +485,7 @@
       "channel_id": 1638,
       "model": "gemini-3.7-flash",
       "upstream_model": "google/gemini-3.7-flash",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -368,9 +512,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.7-flash/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0.5
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -402,6 +578,54 @@
             "input_cache_write": "0.0000000416666666666667",
             "discount": 0.5
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000000825",
+            "completion": "0.000004125",
+            "image": "0.000000825",
+            "audio": "0.000000825",
+            "input_audio_cache": "0.0000000825",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000004125",
+            "input_cache_read": "0.0000000825",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0.5
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0.5
+          }
         }
       ]
     },
@@ -409,7 +633,7 @@
       "channel_id": 1638,
       "model": "gemini-3.6-flash",
       "upstream_model": "google/gemini-3.6-flash",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -436,9 +660,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.6-flash/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000375",
+            "completion": "0.000001875",
+            "image": "0.000000375",
+            "audio": "0.000000375",
+            "input_audio_cache": "0.0000000375",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000001875",
+            "input_cache_read": "0.0000000375",
+            "input_cache_write": "0.0000000208333333333333",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -470,6 +726,54 @@
             "input_cache_write": "0.0000000416666666666667",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000000825",
+            "completion": "0.000004125",
+            "image": "0.000000825",
+            "audio": "0.000000825",
+            "input_audio_cache": "0.0000000825",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000004125",
+            "input_cache_read": "0.0000000825",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000135",
+            "completion": "0.00000675",
+            "image": "0.00000135",
+            "audio": "0.00000135",
+            "input_audio_cache": "0.000000135",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000675",
+            "input_cache_read": "0.000000135",
+            "input_cache_write": "0.000000075",
+            "discount": 0
+          }
         }
       ]
     },
@@ -477,7 +781,7 @@
       "channel_id": 1638,
       "model": "gemini-3.5-flash-lite",
       "upstream_model": "google/gemini-3.5-flash-lite",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -504,9 +808,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.5-flash-lite/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000015",
+            "completion": "0.00000125",
+            "image": "0.00000015",
+            "audio": "0.00000015",
+            "input_audio_cache": "0.000000015",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000125",
+            "input_cache_read": "0.000000015",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000015",
+            "completion": "0.00000125",
+            "image": "0.00000015",
+            "audio": "0.00000015",
+            "input_audio_cache": "0.000000015",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000125",
+            "input_cache_read": "0.000000015",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -538,6 +874,70 @@
             "input_cache_write": "0.0000000833333333333333",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-vertex/eu",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000033",
+            "completion": "0.00000275",
+            "image": "0.00000033",
+            "audio": "0.00000033",
+            "input_audio_cache": "0.000000033",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000275",
+            "input_cache_read": "0.000000033",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000033",
+            "completion": "0.00000275",
+            "image": "0.00000033",
+            "audio": "0.00000033",
+            "input_audio_cache": "0.000000033",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000275",
+            "input_cache_read": "0.000000033",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000054",
+            "completion": "0.0000045",
+            "image": "0.00000054",
+            "audio": "0.00000054",
+            "input_audio_cache": "0.000000054",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000045",
+            "input_cache_read": "0.000000054",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000054",
+            "completion": "0.0000045",
+            "image": "0.00000054",
+            "audio": "0.00000054",
+            "input_audio_cache": "0.000000054",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000045",
+            "input_cache_read": "0.000000054",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
         }
       ]
     },
@@ -545,7 +945,7 @@
       "channel_id": 1638,
       "model": "gemini-3.1-flash-lite-image",
       "upstream_model": "google/gemini-3.1-flash-lite-image",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -570,7 +970,7 @@
         "text"
       ],
       "context_length": 65536,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite-image/endpoints",
       "endpoint_quotes": [
         {
@@ -601,7 +1001,7 @@
       "channel_id": 1638,
       "model": "gemini-3.1-flash-image",
       "upstream_model": "google/gemini-3.1-flash-image",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -626,7 +1026,7 @@
         "text"
       ],
       "context_length": 131072,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-image/endpoints",
       "endpoint_quotes": [
         {
@@ -650,6 +1050,17 @@
             "web_search": "0.014",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000055",
+            "completion": "0.0000033",
+            "image_output": "0.000066",
+            "web_search": "0.014",
+            "discount": 0
+          }
         }
       ]
     },
@@ -657,7 +1068,7 @@
       "channel_id": 1638,
       "model": "gemini-3-pro-image",
       "upstream_model": "google/gemini-3-pro-image",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -682,9 +1093,26 @@
         "text"
       ],
       "context_length": 131072,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/global",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.000012",
+            "image": "0.000002",
+            "image_output": "0.00012",
+            "audio": "0.000002",
+            "input_audio_cache": "0.0000002",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000012",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000000375",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-vertex/global",
           "service_tier": null,
@@ -708,7 +1136,7 @@
       "channel_id": 1638,
       "model": "gemini-embedding-2",
       "upstream_model": "google/gemini-embedding-2",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -737,9 +1165,20 @@
         "embeddings"
       ],
       "context_length": 8192,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-embedding-2/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.0000002",
+            "completion": "0",
+            "image": "0.00000045",
+            "audio": "0.0000065",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-vertex/global",
           "service_tier": null,
@@ -759,6 +1198,17 @@
             "completion": "0",
             "image": "0.00000045",
             "audio": "0.0000065",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/eu",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000022",
+            "completion": "0",
+            "image": "0.000000495",
+            "audio": "0.00000715",
             "discount": 0
           }
         }
@@ -799,6 +1249,38 @@
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.5-flash/endpoints",
       "endpoint_quotes": [
         {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000075",
+            "completion": "0.0000045",
+            "image": "0.00000075",
+            "audio": "0.0000015",
+            "input_audio_cache": "0.00000015",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000045",
+            "input_cache_read": "0.000000075",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000075",
+            "completion": "0.0000045",
+            "image": "0.00000075",
+            "audio": "0.0000015",
+            "input_audio_cache": "0.00000015",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000045",
+            "input_cache_read": "0.000000075",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
           "provider": "google-vertex/global",
           "service_tier": null,
           "pricing": {
@@ -829,6 +1311,54 @@
             "input_cache_write": "0.0000000833333333333333",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000165",
+            "completion": "0.0000099",
+            "image": "0.00000165",
+            "audio": "0.0000033",
+            "input_audio_cache": "0.00000033",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000099",
+            "input_cache_read": "0.000000165",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000027",
+            "completion": "0.0000162",
+            "image": "0.0000027",
+            "audio": "0.0000054",
+            "input_audio_cache": "0.00000054",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000162",
+            "input_cache_read": "0.00000027",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000027",
+            "completion": "0.0000162",
+            "image": "0.0000027",
+            "audio": "0.0000054",
+            "input_audio_cache": "0.00000054",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000162",
+            "input_cache_read": "0.00000027",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
         }
       ]
     },
@@ -836,7 +1366,7 @@
       "channel_id": 1638,
       "model": "gemini-3.1-flash-lite",
       "upstream_model": "google/gemini-3.1-flash-lite",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -864,9 +1394,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000125",
+            "completion": "0.00000075",
+            "image": "0.000000125",
+            "audio": "0.00000025",
+            "input_audio_cache": "0.000000025",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000075",
+            "input_cache_read": "0.0000000125",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000125",
+            "completion": "0.00000075",
+            "image": "0.000000125",
+            "audio": "0.00000025",
+            "input_audio_cache": "0.000000025",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000075",
+            "input_cache_read": "0.0000000125",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -896,6 +1458,70 @@
             "internal_reasoning": "0.0000015",
             "input_cache_read": "0.000000025",
             "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/eu",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000000275",
+            "completion": "0.00000165",
+            "image": "0.000000275",
+            "audio": "0.00000055",
+            "input_audio_cache": "0.000000055",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000165",
+            "input_cache_read": "0.0000000275",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/us",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000000275",
+            "completion": "0.00000165",
+            "image": "0.000000275",
+            "audio": "0.00000055",
+            "input_audio_cache": "0.000000055",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000165",
+            "input_cache_read": "0.0000000275",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000045",
+            "completion": "0.0000027",
+            "image": "0.00000045",
+            "audio": "0.0000009",
+            "input_audio_cache": "0.00000009",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000027",
+            "input_cache_read": "0.000000045",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000045",
+            "completion": "0.0000027",
+            "image": "0.00000045",
+            "audio": "0.0000009",
+            "input_audio_cache": "0.00000009",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000027",
+            "input_cache_read": "0.000000045",
+            "input_cache_write": "0.00000015",
             "discount": 0
           }
         }
@@ -926,7 +1552,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-tts-preview/endpoints",
       "endpoint_quotes": [
         {
@@ -966,7 +1592,19 @@
       "context_length": 8192,
       "reason": "原厂有型号页，但当前公开价格只明确正式版，未确认同价",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-embedding-2-preview/endpoints",
-      "endpoint_quotes": []
+      "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.0000002",
+            "completion": "0",
+            "image": "0.00000045",
+            "audio": "0.0000065",
+            "discount": 0
+          }
+        }
+      ]
     },
     {
       "channel_id": 1638,
@@ -994,7 +1632,56 @@
       "context_length": 1048576,
       "reason": "原厂已关停，当前独立型号报价未核实",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite-preview/endpoints",
-      "endpoint_quotes": []
+      "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000125",
+            "completion": "0.00000075",
+            "image": "0.000000125",
+            "audio": "0.00000025",
+            "input_audio_cache": "0.000000025",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000075",
+            "input_cache_read": "0.0000000125",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000025",
+            "completion": "0.0000015",
+            "image": "0.00000025",
+            "audio": "0.0000005",
+            "input_audio_cache": "0.00000005",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000015",
+            "input_cache_read": "0.000000025",
+            "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000045",
+            "completion": "0.0000027",
+            "image": "0.00000045",
+            "audio": "0.0000009",
+            "input_audio_cache": "0.00000009",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000027",
+            "input_cache_read": "0.000000045",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
+        }
+      ]
     },
     {
       "channel_id": 1638,
@@ -1020,13 +1707,25 @@
       "context_length": 65536,
       "reason": "原厂旧开发指南输入价与当前标准型号不一致，不能直接借用正式版价格",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-image-preview/endpoints",
-      "endpoint_quotes": []
+      "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.0000005",
+            "completion": "0.000003",
+            "image_output": "0.00006",
+            "web_search": "0.014",
+            "discount": 0
+          }
+        }
+      ]
     },
     {
       "channel_id": 1638,
       "model": "gemini-3.1-pro-preview-customtools",
       "upstream_model": "google/gemini-3.1-pro-preview-customtools",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1052,7 +1751,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-pro-preview-customtools/endpoints",
       "endpoint_quotes": [
         {
@@ -1093,7 +1792,7 @@
       "channel_id": 1638,
       "model": "gemini-3.1-pro-preview",
       "upstream_model": "google/gemini-3.1-pro-preview",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1120,9 +1819,61 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-pro-preview/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000006",
+            "image": "0.000001",
+            "audio": "0.000001",
+            "input_audio_cache": "0.0000001",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000006",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000001875",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000002",
+                "completion": "0.000009",
+                "audio": "0.000002",
+                "input_audio_cache": "0.0000002",
+                "input_cache_read": "0.0000002"
+              }
+            ]
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000006",
+            "image": "0.000001",
+            "audio": "0.000001",
+            "input_audio_cache": "0.0000001",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000006",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000001875",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000002",
+                "completion": "0.000009",
+                "audio": "0.000002",
+                "input_audio_cache": "0.0000002",
+                "input_cache_read": "0.0000002"
+              }
+            ]
+          }
+        },
         {
           "provider": "google-vertex/global",
           "service_tier": null,
@@ -1174,6 +1925,58 @@
               }
             ]
           }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000036",
+            "completion": "0.0000216",
+            "image": "0.0000036",
+            "audio": "0.0000036",
+            "input_audio_cache": "0.00000036",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000216",
+            "input_cache_read": "0.00000036",
+            "input_cache_write": "0.000000675",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000072",
+                "completion": "0.0000324",
+                "audio": "0.0000072",
+                "input_audio_cache": "0.00000072",
+                "input_cache_read": "0.00000072"
+              }
+            ]
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000036",
+            "completion": "0.0000216",
+            "image": "0.0000036",
+            "audio": "0.0000036",
+            "input_audio_cache": "0.00000036",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000216",
+            "input_cache_read": "0.00000036",
+            "input_cache_write": "0.000000675",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000072",
+                "completion": "0.0000324",
+                "audio": "0.0000072",
+                "input_audio_cache": "0.00000072",
+                "input_cache_read": "0.00000072"
+              }
+            ]
+          }
         }
       ],
       "long_context": {
@@ -1187,7 +1990,7 @@
       "channel_id": 1638,
       "model": "gemini-3-flash-preview",
       "upstream_model": "google/gemini-3-flash-preview",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1215,9 +2018,41 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3-flash-preview/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000025",
+            "completion": "0.0000015",
+            "image": "0.00000025",
+            "audio": "0.0000005",
+            "input_audio_cache": "0.00000005",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000015",
+            "input_cache_read": "0.000000025",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000025",
+            "completion": "0.0000015",
+            "image": "0.00000025",
+            "audio": "0.0000005",
+            "input_audio_cache": "0.00000005",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000015",
+            "input_cache_read": "0.000000025",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -1247,6 +2082,38 @@
             "internal_reasoning": "0.000003",
             "input_cache_read": "0.00000005",
             "input_cache_write": "0.0000000833333333333333",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-vertex/global/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000009",
+            "completion": "0.0000054",
+            "image": "0.0000009",
+            "audio": "0.0000018",
+            "input_audio_cache": "0.00000018",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000054",
+            "input_cache_read": "0.00000009",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.0000009",
+            "completion": "0.0000054",
+            "image": "0.0000009",
+            "audio": "0.0000018",
+            "input_audio_cache": "0.00000018",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000054",
+            "input_cache_read": "0.00000009",
+            "input_cache_write": "0.00000015",
             "discount": 0
           }
         }
@@ -1276,13 +2143,48 @@
       "context_length": 65536,
       "reason": "当前独立 preview 型号全维度报价未核实",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image-preview/endpoints",
-      "endpoint_quotes": []
+      "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/global/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000006",
+            "image": "0.000001",
+            "image_output": "0.00006",
+            "audio": "0.000001",
+            "input_audio_cache": "0.0000001",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000006",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000001875",
+            "discount": 0
+          }
+        },
+        {
+          "provider": "google-ai-studio/global",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.000012",
+            "image": "0.000002",
+            "image_output": "0.00012",
+            "audio": "0.000002",
+            "input_audio_cache": "0.0000002",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000012",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000000375",
+            "discount": 0
+          }
+        }
+      ]
     },
     {
       "channel_id": 1638,
       "model": "gemini-embedding-001",
       "upstream_model": "google/gemini-embedding-001",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1304,7 +2206,7 @@
         "embeddings"
       ],
       "context_length": 20000,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-embedding-001/endpoints",
       "endpoint_quotes": [
         {
@@ -1333,7 +2235,7 @@
       "channel_id": 1638,
       "model": "gemini-2.5-flash-image",
       "upstream_model": "google/gemini-2.5-flash-image",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1357,7 +2259,7 @@
         "text"
       ],
       "context_length": 32768,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash-image/endpoints",
       "endpoint_quotes": [
         {
@@ -1383,7 +2285,7 @@
       "channel_id": 1638,
       "model": "gemini-2.5-flash-lite",
       "upstream_model": "google/gemini-2.5-flash-lite",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1410,9 +2312,25 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash-lite/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000005",
+            "completion": "0.0000002",
+            "image": "0.00000005",
+            "audio": "0.00000015",
+            "input_audio_cache": "0.000000015",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000002",
+            "input_cache_read": "0.000000005",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -1428,6 +2346,22 @@
             "input_cache_write": "0.0000000833333333333333",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000018",
+            "completion": "0.00000072",
+            "image": "0.00000018",
+            "audio": "0.00000054",
+            "input_audio_cache": "0.000000054",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000072",
+            "input_cache_read": "0.000000018",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
         }
       ]
     },
@@ -1435,7 +2369,7 @@
       "channel_id": 1638,
       "model": "gemini-2.5-flash",
       "upstream_model": "google/gemini-2.5-flash",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1462,9 +2396,25 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.00000015",
+            "completion": "0.00000125",
+            "image": "0.00000015",
+            "audio": "0.0000005",
+            "input_audio_cache": "0.00000005",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00000125",
+            "input_cache_read": "0.000000015",
+            "input_cache_write": "0.0000000416666666666667",
+            "discount": 0
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -1480,6 +2430,22 @@
             "input_cache_write": "0.0000000833333333333333",
             "discount": 0
           }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000054",
+            "completion": "0.0000045",
+            "image": "0.00000054",
+            "audio": "0.0000018",
+            "input_audio_cache": "0.00000018",
+            "web_search": "0.014",
+            "internal_reasoning": "0.0000045",
+            "input_cache_read": "0.000000054",
+            "input_cache_write": "0.00000015",
+            "discount": 0
+          }
         }
       ]
     },
@@ -1487,7 +2453,7 @@
       "channel_id": 1638,
       "model": "gemini-2.5-pro",
       "upstream_model": "google/gemini-2.5-pro",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1513,9 +2479,35 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前渠道同一密钥在语音、文本、向量、图像代表型号均返回 OpenRouter provider Terms Of Service 403；待账号限制解除并重新实测后启用",
+      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-pro/endpoints",
       "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000625",
+            "completion": "0.000005",
+            "image": "0.000000625",
+            "audio": "0.000000625",
+            "input_audio_cache": "0.0000000625",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000005",
+            "input_cache_read": "0.0000000625",
+            "input_cache_write": "0.0000001875",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.00000125",
+                "completion": "0.0000075",
+                "audio": "0.00000125",
+                "input_audio_cache": "0.000000125",
+                "input_cache_read": "0.000000125"
+              }
+            ]
+          }
+        },
         {
           "provider": "google-ai-studio",
           "service_tier": null,
@@ -1538,6 +2530,32 @@
                 "audio": "0.0000025",
                 "input_audio_cache": "0.00000025",
                 "input_cache_read": "0.00000025"
+              }
+            ]
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000225",
+            "completion": "0.000018",
+            "image": "0.00000225",
+            "audio": "0.00000225",
+            "input_audio_cache": "0.000000225",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000018",
+            "input_cache_read": "0.000000225",
+            "input_cache_write": "0.000000675",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000045",
+                "completion": "0.000027",
+                "audio": "0.0000045",
+                "input_audio_cache": "0.00000045",
+                "input_cache_read": "0.00000045"
               }
             ]
           }
@@ -1575,7 +2593,86 @@
       "context_length": 1048576,
       "reason": "OpenRouter 无日期 preview 别名未对应到明确的原厂型号与报价",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-pro-preview/endpoints",
-      "endpoint_quotes": []
+      "endpoint_quotes": [
+        {
+          "provider": "google-ai-studio/flex",
+          "service_tier": "flex",
+          "pricing": {
+            "prompt": "0.000000625",
+            "completion": "0.000005",
+            "image": "0.000000625",
+            "audio": "0.000000625",
+            "input_audio_cache": "0.0000000625",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000005",
+            "input_cache_read": "0.0000000625",
+            "input_cache_write": "0.0000001875",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.00000125",
+                "completion": "0.0000075",
+                "audio": "0.00000125",
+                "input_audio_cache": "0.000000125",
+                "input_cache_read": "0.000000125"
+              }
+            ]
+          }
+        },
+        {
+          "provider": "google-ai-studio",
+          "service_tier": null,
+          "pricing": {
+            "prompt": "0.00000125",
+            "completion": "0.00001",
+            "image": "0.00000125",
+            "audio": "0.00000125",
+            "input_audio_cache": "0.000000125",
+            "web_search": "0.014",
+            "internal_reasoning": "0.00001",
+            "input_cache_read": "0.000000125",
+            "input_cache_write": "0.000000375",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000025",
+                "completion": "0.000015",
+                "audio": "0.0000025",
+                "input_audio_cache": "0.00000025",
+                "input_cache_read": "0.00000025"
+              }
+            ]
+          }
+        },
+        {
+          "provider": "google-ai-studio/priority",
+          "service_tier": "priority",
+          "pricing": {
+            "prompt": "0.00000225",
+            "completion": "0.000018",
+            "image": "0.00000225",
+            "audio": "0.00000225",
+            "input_audio_cache": "0.000000225",
+            "web_search": "0.014",
+            "internal_reasoning": "0.000018",
+            "input_cache_read": "0.000000225",
+            "input_cache_write": "0.000000675",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000045",
+                "completion": "0.000027",
+                "audio": "0.0000045",
+                "input_audio_cache": "0.00000045",
+                "input_cache_read": "0.00000045"
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
   "skipped": [
