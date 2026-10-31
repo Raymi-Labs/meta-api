@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -191,6 +192,32 @@ func TestOpenRouterTranscriptionActualUsageRequired(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOpenRouterSpeechUsageDelayedAndCancelled(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls <= 5 {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = io.WriteString(w, `{"data":{"id":"gen-delayed","native_tokens_prompt":3,"native_tokens_completion":26}}`)
+	}))
+	defer server.Close()
+	u, err := openRouterSpeechUsage(context.Background(), audioInfo(server.URL), "gen-delayed")
+	require.NoError(t, err)
+	require.Equal(t, 3, u.PromptTokensDetails.TextTokens)
+	require.Equal(t, 26, u.CompletionTokenDetails.AudioTokens)
+	require.Equal(t, 6, calls, "usage must remain queryable beyond the old four attempts")
+
+	calls = 0
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	u, err = openRouterSpeechUsage(ctx, audioInfo(server.URL), "gen-delayed")
+	require.Nil(t, u)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Equal(t, 1, calls, "cancel while waiting must stop further metadata requests")
 }
 
 func TestOpenRouterAudioScope(t *testing.T) {

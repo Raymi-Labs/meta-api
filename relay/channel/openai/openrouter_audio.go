@@ -332,10 +332,16 @@ func openRouterSpeechUsage(ctx context.Context, info *relaycommon.RelayInfo, id 
 	if id == "" {
 		return nil, errors.New("OpenRouter speech generation ID is missing")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	// Generation records are eventually consistent: live TTS responses can
+	// precede their actual usage by more than 15 seconds. Poll metadata only;
+	// never synthesize the speech again or substitute estimated token counts.
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	for attempt := 0; attempt < 4; attempt++ {
-		raw, status, err := openRouterAudioGET(ctx, info, "generation?id="+url.QueryEscape(id))
+	delay := 200 * time.Millisecond
+	for attempt := 0; attempt < 32; attempt++ {
+		lookupCtx, lookupCancel := context.WithTimeout(ctx, 8*time.Second)
+		raw, status, err := openRouterAudioGET(lookupCtx, info, "generation?id="+url.QueryEscape(id))
+		lookupCancel()
 		if err != nil {
 			return nil, err
 		}
@@ -360,14 +366,15 @@ func openRouterSpeechUsage(ctx context.Context, info *relaycommon.RelayInfo, id 
 		} else if status != http.StatusNotFound {
 			return nil, errors.New("OpenRouter speech usage lookup failed")
 		}
-		if attempt < 3 {
-			timer := time.NewTimer(time.Duration(1<<attempt) * 200 * time.Millisecond)
+		if attempt < 31 {
+			timer := time.NewTimer(delay)
 			select {
 			case <-ctx.Done():
 				timer.Stop()
 				return nil, ctx.Err()
 			case <-timer.C:
 			}
+			delay = min(delay*2, 2*time.Second)
 		}
 	}
 	return nil, errors.New("OpenRouter speech actual token usage is unavailable; estimated billing is disabled")
