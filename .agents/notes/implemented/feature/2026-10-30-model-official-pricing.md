@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[厂家来源约束](../bug-fix/2026-11-01-manufacturer-official-pricing.md)收紧公开价格来源并允许旧 OpenRouter 资料被厂家取价替换；保留人工厂家价及同步失败保护。
+
 “仅手工维护、来源不抓取”的边界由[官方参考价自动同步](2026-10-31-official-pricing-sync.md)部分取代：固定 OpenAI 官方模型文档可补齐标准文本价格，人工填写的来源 URL 仍不抓取，人工价优先。其余展示、币种与计费隔离规则继续适用。
 
 [分组价与官方价对比](2026-10-30-model-group-official-discount.md)将分组列表前移到官方参考价之后，逐项展示所选官方档位与分组价的差额；完整动态规则仍在快速开始之后，顶层官方表和实际计费不变。

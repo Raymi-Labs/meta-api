@@ -277,7 +277,7 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	// ownership of the entire price sheet, including its notes and currency.
 	price := entry.OfficialPricing
 	priceSource := incomingSource("official_pricing")
-	if len(price.Tiers) > 0 && priceSource.Kind == "official" && price.SourceURL == priceSource.URL && price.SourceURL != "" && price.Normalize(NameRuleExact) == nil && (len(local.OfficialPricing.Tiers) == 0 || state.OfficialPricing != nil) {
+	if len(price.Tiers) > 0 && priceSource.Kind == "official" && price.SourceURL == priceSource.URL && IsManufacturerPriceSource(local.ModelName, price.SourceURL) && price.Normalize(NameRuleExact) == nil && (len(local.OfficialPricing.Tiers) == 0 || state.OfficialPricing != nil || local.OfficialPricing.IsLegacyResellerPrice()) {
 		if !local.OfficialPricing.Equal(price) {
 			changes["official_pricing"] = price
 			state.PricingSyncedAt = common.GetTimestamp()
