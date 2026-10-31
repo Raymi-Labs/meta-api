@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+后续版本命名由 [正式版本号约定](2026-10-31-stable-version-policy.md)取代本篇继续 compat 序列的决定；迁移时保留历史标签的理由与其他约束继续有效。
+
 公司组织级规则及实际发布入口由 [Actions 与 PR 适配](2026-10-27-company-actions-policy.md) 补充；main 的直接推送被拒绝后改用 PR，未发布的 compat.99 标签保留，公司首个完整版本使用 compat.100。
 
 - 按用户选择新建公开公司仓库，复制原远端已有分支和标签及其历史；原个人仓库继续存在，历史 Release 留在原地址。

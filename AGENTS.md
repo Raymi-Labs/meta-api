@@ -2,6 +2,14 @@
 
 本仓库以 **Meta API** 名称由 **Raymi Labs** 维护，主仓库为 `Raymi-Labs/meta-api`。常规提交和新版本发布以该公司仓库为目标；`nanashiwang/new-api` 保留为历史仓库，`QuantumNous/new-api` 继续作为上游。已有上游标识保护规则继续适用。仓库、镜像与本地路径约定见 [Meta API 说明](docs/META_API.md)。
 
+## 应用版本号
+
+- 后续常规应用发布采用正式语义化版本 `vX.Y.Z`，不再新增 `v1.0.0-compat.N`。
+- 修复递增修订号（如 `v1.0.1`）；向后兼容的新功能递增次版本号并归零修订号（如 `v1.1.0`）；不兼容变更递增主版本号（如 `v2.0.0`）。
+- 首次正式版从 `v1.0.0` 开始。发布前同步主分支并核对远端标签和 Release，避免并行任务复用版本号；历史标签及产物不得覆盖或重命名。
+- `alpha`、`beta`、`rc` 后缀仅用于明确的预发布需求；正常维护默认发布正式版。
+- 真正发布应用时同步更新 `VERSION` 与中文更新说明；累计更新记录继续写入 `CHANGELOG.compat.md`，文件名不限制新条目的正式版本号。发布步骤见 [服务端发布产物](docs/installation/release-artifacts.md)。
+
 # AGENTS.md — Project Conventions for new-api
 
 ## Overview
