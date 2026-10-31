@@ -34,7 +34,11 @@ export function ImagePriceReference({ name, t }) {
             <tr key={r.label}>
               <td>{r.label}</td>
               <td className='text-center'>
-                {r.input == null ? t('不单独计费') : `¥${r.input}`}
+                {name === 'z-image-turbo'
+                  ? t('不支持')
+                  : r.input == null
+                    ? t('不单独计费')
+                    : `¥${r.input}`}
               </td>
               <td className='text-center'>¥{r.output}</td>
             </tr>
