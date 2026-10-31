@@ -98,7 +98,6 @@ const PricingPage = () => {
               })}
             </span>
           </div>
-          <p>{pricingData.t('按供应商、功能、标签和输入模态发现模型。')}</p>
         </div>
         <Link to='/docs/api-examples'>
           {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
