@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -50,8 +51,15 @@ func AudioHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 	}
 
 	resp, err := adaptor.DoRequest(c, info, ioReader)
+	// Once speech has been dispatched, a transport/status failure must not
+	// trigger another potentially billable synthesis on a different channel.
+	openRouterGeminiAudio := info.ChannelType == constant.ChannelTypeOpenRouter && strings.HasPrefix(info.UpstreamModelName, "google/gemini-")
 	if err != nil {
-		return types.NewOpenAIError(err, types.ErrorCodeDoRequestFailed, http.StatusInternalServerError)
+		newAPIError = types.NewOpenAIError(err, types.ErrorCodeDoRequestFailed, http.StatusInternalServerError)
+		if openRouterGeminiAudio {
+			types.ErrOptionWithSkipRetry()(newAPIError)
+		}
+		return newAPIError
 	}
 	statusCodeMappingStr := c.GetString("status_code_mapping")
 
@@ -60,6 +68,9 @@ func AudioHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 		httpResp = resp.(*http.Response)
 		if httpResp.StatusCode != http.StatusOK {
 			newAPIError = service.RelayErrorHandler(c.Request.Context(), httpResp, false)
+			if openRouterGeminiAudio {
+				types.ErrOptionWithSkipRetry()(newAPIError)
+			}
 			// reset status code 重置状态码
 			service.ResetStatusCode(newAPIError, statusCodeMappingStr)
 			return newAPIError

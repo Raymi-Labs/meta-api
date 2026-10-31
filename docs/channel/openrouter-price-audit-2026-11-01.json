@@ -1,0 +1,3118 @@
+{
+  "reviewed_at": "2026-11-01",
+  "currency": "USD",
+  "token_unit": 1000000,
+  "scope": "仅变更本清单渠道的上游采购路由，不变更销售价格或其他直连渠道",
+  "routing": {
+    "sort": "price",
+    "allow_fallbacks": true,
+    "service_tier": "default"
+  },
+  "limitations": [
+    "缓存价采用审核时逐服务商核对和限定服务商，OpenRouter max_price 无独立缓存限价字段；需要持续复核价格变更",
+    "可选收费插件/原生托管工具暂不通过此路由；客户端普通 function tools 保留",
+    "分时/长上下文采用已核实的较低档固定上限；未进行昂贵长上下文验收",
+    "原厂价是人工审核快照，未部署自动追价任务；不包含平台充值手续费或税费"
+  ],
+  "models": [
+    {
+      "channel_id": 1592,
+      "channel_name": "OpenRouter · Particle AI",
+      "model": "particle-ai/particle-1",
+      "upstream_model": "particle-ai/particle-1",
+      "official_price": {
+        "prompt": 0.125,
+        "completion": 0.5,
+        "input_cache_read": 0.015,
+        "source": "https://docs.particle.ai/usage-billing",
+        "note": "取较低非高峰标准价作为全天保守上限；高峰 .25/.03/1.00"
+      },
+      "status": "enabled",
+      "providers": [
+        "particle-ai"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.particle.ai/usage-billing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/particle-ai/particle-1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "particle-ai",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.5,
+            "input_cache_read": 0.003
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1593,
+      "channel_name": "OpenRouter · Recursive",
+      "model": "recursive/flint-v1.0:free",
+      "upstream_model": "recursive/flint-v1.0:free",
+      "status": "paused",
+      "reason": "开放权重/免费路由不能代替公开原厂 API 报价；本轮未核实",
+      "sources": [
+        "https://huggingface.co/Recursive"
+      ]
+    },
+    {
+      "channel_id": 1594,
+      "channel_name": "OpenRouter · Elorian",
+      "model": "elorian/glimpse",
+      "upstream_model": "elorian/glimpse",
+      "status": "paused",
+      "reason": "条款说明计费机制，但未核实 Glimpse 公开单价",
+      "sources": [
+        "https://platform.elorian.ai/terms"
+      ]
+    },
+    {
+      "channel_id": 1595,
+      "channel_name": "OpenRouter · XingChen",
+      "model": "xingchen-agi/xing4.0-29b-a4b:free",
+      "upstream_model": "xingchen-agi/xing4.0-29b-a4b:free",
+      "status": "paused",
+      "reason": "开放权重型号；未核实公开原厂 API 价",
+      "sources": [
+        "https://github.com/Tele-AI/TeleChat3"
+      ]
+    },
+    {
+      "channel_id": 1596,
+      "channel_name": "OpenRouter · Reflection",
+      "model": "reflection/beam-1.0-501b-a23b",
+      "upstream_model": "reflection/beam-1.0-501b-a23b",
+      "status": "paused",
+      "reason": "原厂仅公开限额免费 beta；未核实可对应付费生产服务的报价",
+      "sources": [
+        "https://reflection.ai/legal/beta-pricing-information"
+      ]
+    },
+    {
+      "channel_id": 1597,
+      "channel_name": "OpenRouter · Inception",
+      "model": "inception/mercury-3",
+      "upstream_model": "inception/mercury-3",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.35,
+        "input_cache_read": 0.01,
+        "source": "https://www.inceptionlabs.ai/models",
+        "note": "当前 50% 促销价"
+      },
+      "status": "enabled",
+      "providers": [
+        "inception"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.inceptionlabs.ai/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/inception/mercury-3/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "inception",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.35,
+            "input_cache_read": 0.01
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1597,
+      "channel_name": "OpenRouter · Inception",
+      "model": "inception/mercury-2.5",
+      "upstream_model": "inception/mercury-2.5",
+      "official_price": {
+        "prompt": 0.2,
+        "completion": 0.75,
+        "input_cache_read": 0.02,
+        "source": "https://docs.inceptionlabs.ai/get-started/models",
+        "note": "老客户过渡期至 2026-11-15；原厂文档仍列价"
+      },
+      "status": "enabled",
+      "providers": [
+        "inception"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.inceptionlabs.ai/get-started/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/inception/mercury-2.5/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "inception",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.04,
+            "completion": 0.15,
+            "input_cache_read": 0.004
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1597,
+      "channel_name": "OpenRouter · Inception",
+      "model": "inception/mercury-2",
+      "upstream_model": "inception/mercury-2",
+      "official_price": {
+        "prompt": 0.25,
+        "completion": 0.75,
+        "input_cache_read": 0.025,
+        "source": "https://docs.inceptionlabs.ai/get-started/models",
+        "note": "老客户过渡期至 2026-11-15；原厂文档仍列价"
+      },
+      "status": "enabled",
+      "providers": [
+        "inception"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.inceptionlabs.ai/get-started/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/inception/mercury-2/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "inception",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.25,
+            "completion": 0.75,
+            "input_cache_read": 0.025
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1598,
+      "channel_name": "OpenRouter · PrismML",
+      "model": "prism-ml/ternary-bonsai-2-9b",
+      "upstream_model": "prism-ml/ternary-bonsai-2-9b",
+      "status": "paused",
+      "reason": "官网免费指模型权重许可，不是托管 API 单价",
+      "sources": [
+        "https://prismml.com/news/prismml-launches-bonsai-2-27b"
+      ]
+    },
+    {
+      "channel_id": 1598,
+      "channel_name": "OpenRouter · PrismML",
+      "model": "prism-ml/ternary-bonsai-2-27b",
+      "upstream_model": "prism-ml/ternary-bonsai-2-27b",
+      "status": "paused",
+      "reason": "官网免费指模型权重许可，不是托管 API 单价",
+      "sources": [
+        "https://prismml.com/news/prismml-launches-bonsai-2-27b"
+      ]
+    },
+    {
+      "channel_id": 1599,
+      "channel_name": "OpenRouter · Moondream",
+      "model": "moondream/moondream3-preview",
+      "upstream_model": "moondream/moondream3-preview",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 2.5,
+        "input_cache_read": null,
+        "source": "https://moondream.ai/pricing",
+        "note": "实时 API；不使用 Batch 半价"
+      },
+      "status": "enabled",
+      "providers": [
+        "primeintellect/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://moondream.ai/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/moondream/moondream3-preview/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "primeintellect/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 2.5
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1599,
+      "channel_name": "OpenRouter · Moondream",
+      "model": "moondream/moondream3.1-9b-a2b",
+      "upstream_model": "moondream/moondream3.1-9b-a2b",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 1,
+        "input_cache_read": null,
+        "source": "https://moondream.ai/pricing",
+        "note": "实时 API；不使用 Batch 半价"
+      },
+      "status": "paused",
+      "providers": [],
+      "excluded_providers": [
+        {
+          "provider": "primeintellect/fp8",
+          "reason": "completion 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://moondream.ai/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/moondream/moondream3.1-9b-a2b/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "primeintellect/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 2.5
+          }
+        }
+      ],
+      "reason": "当前全部 OpenRouter 服务商超原厂价或含未审核收费项"
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-spark-open",
+      "upstream_model": "meta/muse-spark-open",
+      "status": "paused",
+      "reason": "该开放权重型号不由 Meta Model API 托管，没有可对应的原厂 API 价",
+      "sources": [
+        "https://dev.meta.ai/docs/overview"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-wonder",
+      "upstream_model": "meta/muse-wonder",
+      "official_price": {
+        "prompt": 4,
+        "completion": 20,
+        "input_cache_read": 0.2,
+        "source": "https://dev.meta.ai/docs/pricing-rate-limits",
+        "note": "Standard 模式；不切换允许训练的 Contributor 模式"
+      },
+      "status": "enabled",
+      "providers": [
+        "meta"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/meta/muse-wonder/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "meta",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 4.0,
+            "completion": 20.0,
+            "input_cache_read": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-spark-1.3",
+      "upstream_model": "meta/muse-spark-1.3",
+      "official_price": {
+        "prompt": 1.25,
+        "completion": 4.25,
+        "input_cache_read": 0.15,
+        "source": "https://dev.meta.ai/docs/pricing-rate-limits",
+        "note": "Standard 模式；不切换允许训练的 Contributor 模式"
+      },
+      "status": "enabled",
+      "providers": [
+        "meta"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/meta/muse-spark-1.3/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "meta",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 1.25,
+            "completion": 4.25,
+            "input_cache_read": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-glimmer-30b",
+      "upstream_model": "meta/muse-glimmer-30b",
+      "status": "paused",
+      "reason": "该开放权重型号不由 Meta Model API 托管，没有可对应的原厂 API 价",
+      "sources": [
+        "https://dev.meta.ai/docs/overview"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-spark-1.2",
+      "upstream_model": "meta/muse-spark-1.2",
+      "official_price": {
+        "prompt": 1.25,
+        "completion": 4.25,
+        "input_cache_read": 0.15,
+        "source": "https://dev.meta.ai/docs/pricing-rate-limits",
+        "note": "Standard 模式；不切换允许训练的 Contributor 模式"
+      },
+      "status": "enabled",
+      "providers": [
+        "meta"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/meta/muse-spark-1.2/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "meta",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 1.25,
+            "completion": 4.25,
+            "input_cache_read": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta/muse-spark-1.1",
+      "upstream_model": "meta/muse-spark-1.1",
+      "official_price": {
+        "prompt": 1.25,
+        "completion": 4.25,
+        "input_cache_read": 0.15,
+        "source": "https://dev.meta.ai/docs/pricing-rate-limits",
+        "note": "Standard 模式；不切换允许训练的 Contributor 模式"
+      },
+      "status": "enabled",
+      "providers": [
+        "meta"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/meta/muse-spark-1.1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "meta",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 1.25,
+            "completion": 4.25,
+            "input_cache_read": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-guard-4-12b",
+      "upstream_model": "meta-llama/llama-guard-4-12b",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-4-maverick",
+      "upstream_model": "meta-llama/llama-4-maverick",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-4-scout",
+      "upstream_model": "meta-llama/llama-4-scout",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-3.3-70b-instruct",
+      "upstream_model": "meta-llama/llama-3.3-70b-instruct",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-3.2-1b-instruct",
+      "upstream_model": "meta-llama/llama-3.2-1b-instruct",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-3.2-3b-instruct",
+      "upstream_model": "meta-llama/llama-3.2-3b-instruct",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-3.1-70b-instruct",
+      "upstream_model": "meta-llama/llama-3.1-70b-instruct",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "upstream_model": "meta-llama/llama-3.1-8b-instruct",
+      "status": "paused",
+      "reason": "当前 Meta API 公开价不覆盖该 Llama 型号",
+      "sources": [
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3.5-super-vl",
+      "upstream_model": "nvidia/nemotron-3.5-super-vl",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "upstream_model": "nvidia/nemotron-3.5-super-vl:free",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3.5-lightning",
+      "upstream_model": "nvidia/nemotron-3.5-lightning",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3.5-lightning:free",
+      "upstream_model": "nvidia/nemotron-3.5-lightning:free",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3.5-content-safety",
+      "upstream_model": "nvidia/nemotron-3.5-content-safety",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "upstream_model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "upstream_model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "upstream_model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "upstream_model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "model": "nvidia/nemotron-3-nano-30b-a3b",
+      "upstream_model": "nvidia/nemotron-3-nano-30b-a3b",
+      "status": "paused",
+      "reason": "原厂 API 是试用服务；未核实可对应的生产按 Token 公开价",
+      "sources": [
+        "https://docs.api.nvidia.com/nim/reference/llm-apis"
+      ]
+    },
+    {
+      "channel_id": 1602,
+      "channel_name": "OpenRouter · unbiased",
+      "model": "unbiased/pareto-26.10",
+      "upstream_model": "unbiased/pareto-26.10",
+      "official_price": {
+        "prompt": 0.8,
+        "completion": 3.2,
+        "input_cache_read": 0.03,
+        "source": "https://unbiased.ai/pareto-26-10/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "unbiased"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://unbiased.ai/pareto-26-10/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/unbiased/pareto-26.10/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "unbiased",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 3.2,
+            "input_cache_read": 0.03
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1602,
+      "channel_name": "OpenRouter · unbiased",
+      "model": "unbiased/pareto-26.9",
+      "upstream_model": "unbiased/pareto-26.9",
+      "official_price": {
+        "prompt": 2.5,
+        "completion": 7.5,
+        "input_cache_read": 0.25,
+        "source": "https://unbiased.ai/pareto-26-10/",
+        "note": "官网对比表列出 26.9，changelog 表明仍可显式调用"
+      },
+      "status": "enabled",
+      "providers": [
+        "unbiased"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://unbiased.ai/pareto-26-10/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/unbiased/pareto-26.9/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "unbiased",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 2.5,
+            "completion": 7.5,
+            "input_cache_read": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1603,
+      "channel_name": "OpenRouter · LiquidAI",
+      "model": "liquid/lfm-2.5-24b-a2b",
+      "upstream_model": "liquid/lfm-2.5-24b-a2b",
+      "official_price": {
+        "prompt": 0.05,
+        "completion": 0.7,
+        "input_cache_read": 0.025,
+        "source": "https://www.liquid.ai/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "liquid/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.liquid.ai/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/liquid/lfm-2.5-24b-a2b/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "liquid/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.7,
+            "input_cache_read": 0.025
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1603,
+      "channel_name": "OpenRouter · LiquidAI",
+      "model": "liquid/lfm-2.5-2.6b:free",
+      "upstream_model": "liquid/lfm-2.5-2.6b:free",
+      "status": "paused",
+      "reason": "当前原厂 API 价表未列此型号；免费权重许可不是推理 API 价",
+      "sources": [
+        "https://www.liquid.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1604,
+      "channel_name": "OpenRouter · ScaleDown",
+      "model": "scaledown/summarize",
+      "upstream_model": "scaledown/summarize",
+      "status": "paused",
+      "reason": "已查模型 API 文档，未核实 Summarize/Extract 原厂公开单价",
+      "sources": [
+        "https://docs.scaledown.ai/llms.txt"
+      ]
+    },
+    {
+      "channel_id": 1604,
+      "channel_name": "OpenRouter · ScaleDown",
+      "model": "scaledown/extract",
+      "upstream_model": "scaledown/extract",
+      "status": "paused",
+      "reason": "已查模型 API 文档，未核实 Summarize/Extract 原厂公开单价",
+      "sources": [
+        "https://docs.scaledown.ai/llms.txt"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-large-4-0",
+      "upstream_model": "mistralai/mistral-large-4-0",
+      "official_price": {
+        "prompt": 0.7,
+        "completion": 2.1,
+        "input_cache_read": 0.07,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral/zdr",
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/mistral-large-4-0/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.7,
+            "completion": 2.1,
+            "input_cache_read": 0.07
+          }
+        },
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.7,
+            "completion": 2.1,
+            "input_cache_read": 0.07
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.77,
+            "completion": 2.31,
+            "input_cache_read": 0.077
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-medium-3-5",
+      "upstream_model": "mistralai/mistral-medium-3-5",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-small-2603",
+      "upstream_model": "mistralai/mistral-small-2603",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 0.6,
+        "input_cache_read": 0.015,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral/zdr",
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        },
+        {
+          "provider": "mistral/us",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/mistral-small-2603/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.6,
+            "input_cache_read": 0.015
+          }
+        },
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.6,
+            "input_cache_read": 0.015
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.165,
+            "completion": 0.66,
+            "input_cache_read": 0.0165
+          }
+        },
+        {
+          "provider": "mistral/us",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.165,
+            "completion": 0.66,
+            "input_cache_read": 0.0165
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/devstral-2512",
+      "upstream_model": "mistralai/devstral-2512",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/ministral-14b-2512",
+      "upstream_model": "mistralai/ministral-14b-2512",
+      "official_price": {
+        "prompt": 0.2,
+        "completion": 0.2,
+        "input_cache_read": 0.02,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral/zdr",
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/ministral-14b-2512/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.2,
+            "completion": 0.2,
+            "input_cache_read": 0.02
+          }
+        },
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.2,
+            "completion": 0.2,
+            "input_cache_read": 0.02
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.22,
+            "completion": 0.22,
+            "input_cache_read": 0.022
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/ministral-8b-2512",
+      "upstream_model": "mistralai/ministral-8b-2512",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 0.15,
+        "input_cache_read": 0.015,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral/zdr",
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/ministral-8b-2512/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.15,
+            "input_cache_read": 0.015
+          }
+        },
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.15,
+            "input_cache_read": 0.015
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.165,
+            "completion": 0.165,
+            "input_cache_read": 0.0165
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/ministral-3b-2512",
+      "upstream_model": "mistralai/ministral-3b-2512",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.1,
+        "input_cache_read": 0.01,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral/zdr",
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/ministral-3b-2512/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.1,
+            "input_cache_read": 0.01
+          }
+        },
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.1,
+            "input_cache_read": 0.01
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.11,
+            "completion": 0.11,
+            "input_cache_read": 0.011
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-large-2512",
+      "upstream_model": "mistralai/mistral-large-2512",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/voxtral-small-24b-2507",
+      "upstream_model": "mistralai/voxtral-small-24b-2507",
+      "status": "paused",
+      "reason": "原厂音频输入按分钟计费，OpenRouter 按 Token，未核实等价上限",
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-medium-3.1",
+      "upstream_model": "mistralai/mistral-medium-3.1",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/codestral-2508",
+      "upstream_model": "mistralai/codestral-2508",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 0.9,
+        "input_cache_read": 0.03,
+        "source": "https://docs.mistral.ai/inference/pricing",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "mistral"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "mistral/eu",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://docs.mistral.ai/inference/pricing"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/mistralai/codestral-2508/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "mistral",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 0.9,
+            "input_cache_read": 0.03
+          }
+        },
+        {
+          "provider": "mistral/eu",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.33,
+            "completion": 0.99,
+            "input_cache_read": 0.033
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-small-3.2-24b-instruct",
+      "upstream_model": "mistralai/mistral-small-3.2-24b-instruct",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-medium-3",
+      "upstream_model": "mistralai/mistral-medium-3",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-small-3.1-24b-instruct",
+      "upstream_model": "mistralai/mistral-small-3.1-24b-instruct",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-saba",
+      "upstream_model": "mistralai/mistral-saba",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-small-24b-instruct-2501",
+      "upstream_model": "mistralai/mistral-small-24b-instruct-2501",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-large-2407",
+      "upstream_model": "mistralai/mistral-large-2407",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-nemo",
+      "upstream_model": "mistralai/mistral-nemo",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mixtral-8x22b-instruct",
+      "upstream_model": "mistralai/mixtral-8x22b-instruct",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "model": "mistralai/mistral-large",
+      "upstream_model": "mistralai/mistral-large",
+      "status": "paused",
+      "reason": "型号已列入 deprecated/retired；当前在售价格表无可对应的有效单价，待核实",
+      "sources": [
+        "https://docs.mistral.ai/models"
+      ]
+    },
+    {
+      "channel_id": 1606,
+      "channel_name": "OpenRouter · inclusionAI",
+      "model": "inclusionai/ling-3.1-flash",
+      "upstream_model": "inclusionai/ling-3.1-flash",
+      "status": "paused",
+      "reason": "公开权重与部署文档；未核实可对应的原厂托管 API 单价",
+      "sources": [
+        "https://www.inclusion-ai.org/ubtree/"
+      ]
+    },
+    {
+      "channel_id": 1606,
+      "channel_name": "OpenRouter · inclusionAI",
+      "model": "inclusionai/ling-3.0-flash-vl",
+      "upstream_model": "inclusionai/ling-3.0-flash-vl",
+      "status": "paused",
+      "reason": "公开权重与部署文档；未核实可对应的原厂托管 API 单价",
+      "sources": [
+        "https://www.inclusion-ai.org/ubtree/"
+      ]
+    },
+    {
+      "channel_id": 1606,
+      "channel_name": "OpenRouter · inclusionAI",
+      "model": "inclusionai/ling-3.0-flash",
+      "upstream_model": "inclusionai/ling-3.0-flash",
+      "status": "paused",
+      "reason": "公开权重与部署文档；未核实可对应的原厂托管 API 单价",
+      "sources": [
+        "https://www.inclusion-ai.org/ubtree/"
+      ]
+    },
+    {
+      "channel_id": 1607,
+      "channel_name": "OpenRouter · Perceptron",
+      "model": "perceptron/perceptron-mk1.5",
+      "upstream_model": "perceptron/perceptron-mk1.5",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 1.5,
+        "input_cache_read": 0.0375,
+        "source": "https://www.perceptron.inc/blog/introducing-perceptron-mk1-5",
+        "note": "缓存另见 https://www.perceptron.inc/blog/introducing-perceptron-multilook-api"
+      },
+      "status": "enabled",
+      "providers": [
+        "perceptron"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.perceptron.inc/blog/introducing-perceptron-mk1-5"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/perceptron/perceptron-mk1.5/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "perceptron",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1607,
+      "channel_name": "OpenRouter · Perceptron",
+      "model": "perceptron/perceptron-mk1",
+      "upstream_model": "perceptron/perceptron-mk1",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 1.5,
+        "input_cache_read": 0.0375,
+        "source": "https://www.perceptron.inc/blog/introducing-perceptron-mk1",
+        "note": "缓存另见 https://www.perceptron.inc/blog/introducing-perceptron-multilook-api"
+      },
+      "status": "enabled",
+      "providers": [
+        "perceptron"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.perceptron.inc/blog/introducing-perceptron-mk1"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/perceptron/perceptron-mk1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "perceptron",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1608,
+      "channel_name": "OpenRouter · Fireworks",
+      "model": "fireworks/ember-1",
+      "upstream_model": "fireworks/ember-1",
+      "official_price": {
+        "prompt": 3,
+        "completion": 15,
+        "input_cache_read": 0.3,
+        "source": "https://fireworks.ai/models/fireworks/ember-1",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "fireworks"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://fireworks.ai/models/fireworks/ember-1"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/fireworks/ember-1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "fireworks",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 3.0,
+            "completion": 15.0,
+            "input_cache_read": 0.3
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-3.5-mini",
+      "upstream_model": "aion-labs/aion-3.5-mini",
+      "official_price": {
+        "prompt": 0.7,
+        "completion": 1.4,
+        "input_cache_read": 0.18,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-3.5-mini/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.7,
+            "completion": 1.4,
+            "input_cache_read": 0.18
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-3.5",
+      "upstream_model": "aion-labs/aion-3.5",
+      "official_price": {
+        "prompt": 3,
+        "completion": 6,
+        "input_cache_read": 0.75,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-3.5/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 3.0,
+            "completion": 6.0,
+            "input_cache_read": 0.75
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-3.0-mini",
+      "upstream_model": "aion-labs/aion-3.0-mini",
+      "official_price": {
+        "prompt": 0.7,
+        "completion": 1.4,
+        "input_cache_read": 0.18,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-3.0-mini/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.7,
+            "completion": 1.4,
+            "input_cache_read": 0.18
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-3.0",
+      "upstream_model": "aion-labs/aion-3.0",
+      "official_price": {
+        "prompt": 3,
+        "completion": 6,
+        "input_cache_read": 0.75,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-3.0/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 3.0,
+            "completion": 6.0,
+            "input_cache_read": 0.75
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-2.0",
+      "upstream_model": "aion-labs/aion-2.0",
+      "official_price": {
+        "prompt": 0.8,
+        "completion": 1.6,
+        "input_cache_read": 0.2,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-2.0/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 1.6,
+            "input_cache_read": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "model": "aion-labs/aion-rp-llama-3.1-8b",
+      "upstream_model": "aion-labs/aion-rp-llama-3.1-8b",
+      "official_price": {
+        "prompt": 0.8,
+        "completion": 1.6,
+        "input_cache_read": null,
+        "source": "https://www.aionlabs.ai/docs/models/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "aion-labs"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.aionlabs.ai/docs/models/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/aion-labs/aion-rp-llama-3.1-8b/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "aion-labs",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 1.6
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1610,
+      "channel_name": "OpenRouter · Upstage",
+      "model": "upstage/solar-mini4",
+      "upstream_model": "upstage/solar-mini4",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.4,
+        "input_cache_read": 0.01,
+        "source": "https://www.upstage.ai/pricing/api",
+        "note": "促销已于 10/23 UTC 结束"
+      },
+      "status": "enabled",
+      "providers": [
+        "upstage/zdr",
+        "upstage"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.upstage.ai/pricing/api"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/upstage/solar-mini4/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "upstage/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.2,
+            "input_cache_read": 0.005
+          }
+        },
+        {
+          "provider": "upstage",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.2,
+            "input_cache_read": 0.005
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1610,
+      "channel_name": "OpenRouter · Upstage",
+      "model": "upstage/solar-pro4",
+      "upstream_model": "upstage/solar-pro4",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 0.6,
+        "input_cache_read": 0.03,
+        "source": "https://www.upstage.ai/pricing/api",
+        "note": "页面当前时间段 2026-10-20 起 .15/.03/.60；不是划线标价 .30/.06/1.20"
+      },
+      "status": "enabled",
+      "providers": [
+        "upstage/zdr",
+        "upstage"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.upstage.ai/pricing/api"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/upstage/solar-pro4/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "upstage/zdr",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.6,
+            "input_cache_read": 0.03
+          }
+        },
+        {
+          "provider": "upstage",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.6,
+            "input_cache_read": 0.03
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/command-a-plus",
+      "upstream_model": "cohere/command-a-plus",
+      "status": "paused",
+      "reason": "试用/联系销售模式；未核实该型号公开生产 API 单价",
+      "sources": [
+        "https://docs.cohere.com/docs/command-a-plus"
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/north-mini-code:free",
+      "upstream_model": "cohere/north-mini-code:free",
+      "status": "paused",
+      "reason": "试用/联系销售模式；未核实该型号公开生产 API 单价",
+      "sources": [
+        "https://docs.cohere.com/docs/command-a-plus"
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/command-a",
+      "upstream_model": "cohere/command-a",
+      "official_price": {
+        "prompt": 2.5,
+        "completion": 10,
+        "input_cache_read": null,
+        "source": "https://docs.cohere.com/docs/command-a",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "cohere"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.cohere.com/docs/command-a"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/cohere/command-a/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "cohere",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 2.5,
+            "completion": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/command-r7b-12-2024",
+      "upstream_model": "cohere/command-r7b-12-2024",
+      "official_price": {
+        "prompt": 0.0375,
+        "completion": 0.15,
+        "input_cache_read": null,
+        "source": "https://docs.cohere.com/docs/command-r7b",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "cohere"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.cohere.com/docs/command-r7b"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/cohere/command-r7b-12-2024/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "cohere",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.0375,
+            "completion": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/command-r-08-2024",
+      "upstream_model": "cohere/command-r-08-2024",
+      "official_price": {
+        "prompt": 0.15,
+        "completion": 0.6,
+        "input_cache_read": null,
+        "source": "https://docs.cohere.com/docs/command-r",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "cohere"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.cohere.com/docs/command-r"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/cohere/command-r-08-2024/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "cohere",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.15,
+            "completion": 0.6
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "model": "cohere/command-r-plus-08-2024",
+      "upstream_model": "cohere/command-r-plus-08-2024",
+      "official_price": {
+        "prompt": 2.5,
+        "completion": 10,
+        "input_cache_read": null,
+        "source": "https://docs.cohere.com/docs/command-r-plus",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "cohere"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://docs.cohere.com/docs/command-r-plus"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/cohere/command-r-plus-08-2024/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "cohere",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 2.5,
+            "completion": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1612,
+      "channel_name": "OpenRouter · Inference.net",
+      "model": "inference-net/schematron-v2-turbo",
+      "upstream_model": "inference-net/schematron-v2-turbo",
+      "official_price": {
+        "prompt": 0.03,
+        "completion": 0.15,
+        "input_cache_read": 0.03,
+        "source": "https://inference.net/models/schematron-v2-turbo/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "inference-net/us",
+        "inference-net/bf16"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://inference.net/models/schematron-v2-turbo/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/inference-net/schematron-v2-turbo/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "inference-net/us",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.03,
+            "completion": 0.15,
+            "input_cache_read": 0.03
+          }
+        },
+        {
+          "provider": "inference-net/bf16",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.03,
+            "completion": 0.15,
+            "input_cache_read": 0.03
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1612,
+      "channel_name": "OpenRouter · Inference.net",
+      "model": "inference-net/schematron-v2-small",
+      "upstream_model": "inference-net/schematron-v2-small",
+      "official_price": {
+        "prompt": 0.05,
+        "completion": 0.23,
+        "input_cache_read": 0.05,
+        "source": "https://inference.net/models/schematron-v2-small/",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "inference-net/us",
+        "inference-net/bf16"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://inference.net/models/schematron-v2-small/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/inference-net/schematron-v2-small/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "inference-net/us",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.23,
+            "input_cache_read": 0.05
+          }
+        },
+        {
+          "provider": "inference-net/bf16",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.05,
+            "completion": 0.23,
+            "input_cache_read": 0.05
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1613,
+      "channel_name": "OpenRouter · Sakana",
+      "model": "sakana/fugu-ultra-v2",
+      "upstream_model": "sakana/fugu-ultra-v2",
+      "status": "paused",
+      "reason": "原厂含独立编排 Token 与工具费用，现有 max_price 不能独立限制这些附加项；待核实约束方案",
+      "sources": [
+        "https://console.sakana.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1613,
+      "channel_name": "OpenRouter · Sakana",
+      "model": "sakana/fugu-max",
+      "upstream_model": "sakana/fugu-max",
+      "status": "paused",
+      "reason": "原厂含独立编排 Token 与工具费用，现有 max_price 不能独立限制这些附加项；待核实约束方案",
+      "sources": [
+        "https://console.sakana.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1613,
+      "channel_name": "OpenRouter · Sakana",
+      "model": "sakana/fugu-ultra",
+      "upstream_model": "sakana/fugu-ultra",
+      "status": "paused",
+      "reason": "原厂含独立编排 Token 与工具费用，现有 max_price 不能独立限制这些附加项；待核实约束方案",
+      "sources": [
+        "https://console.sakana.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1614,
+      "channel_name": "OpenRouter · Nex AGI",
+      "model": "nex-agi/nex-n2.5-mini",
+      "upstream_model": "nex-agi/nex-n2.5-mini",
+      "status": "paused",
+      "reason": "公开文档将具体单价指向组织控制台；本轮未核实 N2.5 公开价",
+      "sources": [
+        "https://nex-agi.com/api/model-lineup.html"
+      ]
+    },
+    {
+      "channel_id": 1614,
+      "channel_name": "OpenRouter · Nex AGI",
+      "model": "nex-agi/nex-n2.5-pro",
+      "upstream_model": "nex-agi/nex-n2.5-pro",
+      "status": "paused",
+      "reason": "公开文档将具体单价指向组织控制台；本轮未核实 N2.5 公开价",
+      "sources": [
+        "https://nex-agi.com/api/model-lineup.html"
+      ]
+    },
+    {
+      "channel_id": 1615,
+      "channel_name": "OpenRouter · IBM",
+      "model": "ibm-granite/granite-4.2-8b",
+      "upstream_model": "ibm-granite/granite-4.2-8b",
+      "status": "paused",
+      "reason": "公开模型资料未核实该 4.2 8B 的原厂按 Token API 单价",
+      "sources": [
+        "https://www.ibm.com/granite/docs/"
+      ]
+    },
+    {
+      "channel_id": 1616,
+      "channel_name": "OpenRouter · Dots Studio",
+      "model": "dots-studio/dots-3-note-preview:free",
+      "upstream_model": "dots-studio/dots-3-note-preview:free",
+      "status": "paused",
+      "reason": "本轮未核实该免费入口对应的公开原厂 API 价",
+      "sources": [
+        "https://huggingface.co/dots-studio"
+      ]
+    },
+    {
+      "channel_id": 1618,
+      "channel_name": "OpenRouter · Thinking Machines",
+      "model": "thinkingmachines/inkling-small",
+      "upstream_model": "thinkingmachines/inkling-small",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 1.2,
+        "input_cache_read": 0.06,
+        "source": "https://thinkingmachines.ai/tinker/pricing/",
+        "note": "Serverless inference；不用训练 sampling 价"
+      },
+      "status": "paused",
+      "providers": [],
+      "excluded_providers": [
+        {
+          "provider": "deepinfra/fp8",
+          "reason": "prompt 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://thinkingmachines.ai/tinker/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/thinkingmachines/inkling-small/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "deepinfra/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.45,
+            "completion": 1.2,
+            "input_cache_read": 0.1
+          }
+        }
+      ],
+      "reason": "当前全部 OpenRouter 服务商超原厂价或含未审核收费项"
+    },
+    {
+      "channel_id": 1618,
+      "channel_name": "OpenRouter · Thinking Machines",
+      "model": "thinkingmachines/inkling",
+      "upstream_model": "thinkingmachines/inkling",
+      "official_price": {
+        "prompt": 1,
+        "completion": 4.05,
+        "input_cache_read": 0.17,
+        "source": "https://thinkingmachines.ai/tinker/pricing/",
+        "note": "Serverless inference；不用训练 sampling 价"
+      },
+      "status": "enabled",
+      "providers": [
+        "together"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://thinkingmachines.ai/tinker/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/thinkingmachines/inkling/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "together",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 1.0,
+            "completion": 4.05,
+            "input_cache_read": 0.17
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1619,
+      "channel_name": "OpenRouter · Meituan",
+      "model": "meituan/longcat-2.0",
+      "upstream_model": "meituan/longcat-2.0",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 1.2,
+        "input_cache_read": 0.006,
+        "source": "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0",
+        "note": "官网公开美元促销价"
+      },
+      "status": "enabled",
+      "providers": [
+        "atlas-cloud/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://longcat.chat/platform/docs/zh/pricing/long-cat-2.0"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/meituan/longcat-2.0/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "atlas-cloud/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.006
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1620,
+      "channel_name": "OpenRouter · MiniMax",
+      "model": "MiniMax-M3",
+      "upstream_model": "minimax/minimax-m3",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 1.2,
+        "input_cache_read": 0.06,
+        "source": "https://platform.minimax.io/docs/pricing/overview",
+        "note": "标准服务 ≤512K；>512K 原厂 .6/2.4/.12，暂以较低档作固定上限并审核服务商阶梯"
+      },
+      "status": "enabled",
+      "providers": [
+        "coreweave/fp4",
+        "gmicloud/fp8",
+        "deepinfra/fp8",
+        "streamlake/fp8",
+        "venice/fp8",
+        "together",
+        "parasail/fp8",
+        "atlas-cloud/fp8",
+        "novita/fp8",
+        "minimax"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "deepinfra/fp8/flex",
+          "reason": "非标准服务等级"
+        },
+        {
+          "provider": "modelrun/fp8",
+          "reason": "completion 高于原厂"
+        },
+        {
+          "provider": "mara",
+          "reason": "prompt 高于原厂；completion 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://platform.minimax.io/docs/pricing/overview"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/minimax/minimax-m3/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "deepinfra/fp8/flex",
+          "service_tier": "flex",
+          "usd_per_million_tokens": {
+            "prompt": 0.224,
+            "completion": 0.88,
+            "input_cache_read": 0.0448
+          }
+        },
+        {
+          "provider": "coreweave/fp4",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.23,
+            "completion": 0.96,
+            "input_cache_read": 0.05
+          }
+        },
+        {
+          "provider": "gmicloud/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.24,
+            "completion": 0.96,
+            "input_cache_read": 0.048
+          }
+        },
+        {
+          "provider": "deepinfra/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.28,
+            "completion": 1.1,
+            "input_cache_read": 0.056
+          }
+        },
+        {
+          "provider": "streamlake/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "venice/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "together",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "parasail/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "atlas-cloud/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "novita/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "minimax",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.2,
+            "input_cache_read": 0.06
+          }
+        },
+        {
+          "provider": "modelrun/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 1.3,
+            "input_cache_read": 0.05
+          }
+        },
+        {
+          "provider": "mara",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.6,
+            "completion": 2.4
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1621,
+      "channel_name": "OpenRouter · Xiaomi",
+      "model": "mimo-v2.5-pro",
+      "upstream_model": "xiaomi/mimo-v2.5-pro",
+      "status": "paused",
+      "reason": "原厂已于 2026-10-21 10:00 北京时间停用 V2.5；当前有效价表不再列该型号，暂停而不沿用历史价",
+      "sources": [
+        "https://mimo.mi.com/docs/en-US/price/pay-as-you-go"
+      ]
+    },
+    {
+      "channel_id": 1621,
+      "channel_name": "OpenRouter · Xiaomi",
+      "model": "mimo-v2.5",
+      "upstream_model": "xiaomi/mimo-v2.5",
+      "status": "paused",
+      "reason": "原厂已于 2026-10-21 10:00 北京时间停用 V2.5；当前有效价表不再列该型号，暂停而不沿用历史价",
+      "sources": [
+        "https://mimo.mi.com/docs/en-US/price/pay-as-you-go"
+      ]
+    },
+    {
+      "channel_id": 1621,
+      "channel_name": "OpenRouter · Xiaomi",
+      "model": "mimo-v2.6-pro-ultraspeed",
+      "upstream_model": "xiaomi/mimo-v2.6-pro-ultraspeed",
+      "official_price": {
+        "prompt": 4.35,
+        "completion": 8.7,
+        "input_cache_read": 0.036,
+        "source": "https://mimo.mi.com/docs/en-US/price/pay-as-you-go",
+        "note": "2026-10-21 更新的海外实时 API 价；不使用 Batch 或 Token Plan 价"
+      },
+      "status": "enabled",
+      "providers": [
+        "xiaomi/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://mimo.mi.com/docs/en-US/price/pay-as-you-go"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/xiaomi/mimo-v2.6-pro-ultraspeed/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "xiaomi/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 4.35,
+            "completion": 8.7,
+            "input_cache_read": 0.036
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1621,
+      "channel_name": "OpenRouter · Xiaomi",
+      "model": "mimo-v2.6-flash",
+      "upstream_model": "xiaomi/mimo-v2.6-flash",
+      "official_price": {
+        "prompt": 0.14,
+        "completion": 0.28,
+        "input_cache_read": 0.0028,
+        "source": "https://mimo.mi.com/docs/en-US/price/pay-as-you-go",
+        "note": "2026-10-21 更新的海外实时 API 价；不使用 Batch 或 Token Plan 价"
+      },
+      "status": "enabled",
+      "providers": [
+        "makora/fp8",
+        "gmicloud/bf16",
+        "novita/fp8",
+        "deepinfra/fp8",
+        "xiaomi/fp8"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "relace/fp4",
+          "reason": "input_cache_read 高于原厂"
+        },
+        {
+          "provider": "io-net/fp8",
+          "reason": "input_cache_read 高于原厂"
+        },
+        {
+          "provider": "darkbloom/fp4",
+          "reason": "input_cache_read 高于原厂"
+        },
+        {
+          "provider": "cohere",
+          "reason": "input_cache_read 高于原厂"
+        },
+        {
+          "provider": "venice/fp8",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://mimo.mi.com/docs/en-US/price/pay-as-you-go"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/xiaomi/mimo-v2.6-flash/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "relace/fp4",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.087,
+            "completion": 0.187,
+            "input_cache_read": 0.003
+          }
+        },
+        {
+          "provider": "io-net/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.28,
+            "input_cache_read": 0.003
+          }
+        },
+        {
+          "provider": "darkbloom/fp4",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.28,
+            "input_cache_read": 0.05
+          }
+        },
+        {
+          "provider": "makora/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.11,
+            "completion": 0.28,
+            "input_cache_read": 0.002
+          }
+        },
+        {
+          "provider": "gmicloud/bf16",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.119,
+            "completion": 0.238,
+            "input_cache_read": 0.00255
+          }
+        },
+        {
+          "provider": "cohere",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.14,
+            "completion": 0.28,
+            "input_cache_read": 0.003
+          }
+        },
+        {
+          "provider": "novita/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.14,
+            "completion": 0.28,
+            "input_cache_read": 0.0028
+          }
+        },
+        {
+          "provider": "deepinfra/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.14,
+            "completion": 0.28,
+            "input_cache_read": 0.0028
+          }
+        },
+        {
+          "provider": "xiaomi/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.14,
+            "completion": 0.28,
+            "input_cache_read": 0.0028
+          }
+        },
+        {
+          "provider": "venice/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.175,
+            "completion": 0.35,
+            "input_cache_read": 0.00375
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1621,
+      "channel_name": "OpenRouter · Xiaomi",
+      "model": "mimo-v2.6-pro",
+      "upstream_model": "xiaomi/mimo-v2.6-pro",
+      "official_price": {
+        "prompt": 0.435,
+        "completion": 0.87,
+        "input_cache_read": 0.0036,
+        "source": "https://mimo.mi.com/docs/en-US/price/pay-as-you-go",
+        "note": "2026-10-21 更新的海外实时 API 价；不使用 Batch 或 Token Plan 价"
+      },
+      "status": "enabled",
+      "providers": [
+        "gmicloud/bf16",
+        "deepinfra/fp8",
+        "novita/fp8",
+        "xiaomi/fp8"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "streamlake",
+          "reason": "prompt 高于原厂；completion 高于原厂；input_cache_read 高于原厂"
+        }
+      ],
+      "sources": [
+        "https://mimo.mi.com/docs/en-US/price/pay-as-you-go"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/xiaomi/mimo-v2.6-pro/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "gmicloud/bf16",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.36975,
+            "completion": 0.7395,
+            "input_cache_read": 0.0034
+          }
+        },
+        {
+          "provider": "deepinfra/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.387,
+            "completion": 0.783,
+            "input_cache_read": 0.00324
+          }
+        },
+        {
+          "provider": "novita/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.435,
+            "completion": 0.87,
+            "input_cache_read": 0.0036
+          }
+        },
+        {
+          "provider": "xiaomi/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.435,
+            "completion": 0.87,
+            "input_cache_read": 0.0036
+          }
+        },
+        {
+          "provider": "streamlake",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.522,
+            "completion": 1.044,
+            "input_cache_read": 0.00432
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1622,
+      "channel_name": "OpenRouter · rekaai",
+      "model": "rekaai/reka-edge",
+      "upstream_model": "rekaai/reka-edge",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.1,
+        "input_cache_read": null,
+        "source": "https://developer.reka.ai/models",
+        "note": "对应 reka-edge-2603"
+      },
+      "status": "enabled",
+      "providers": [
+        "reka"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://developer.reka.ai/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/rekaai/reka-edge/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "reka",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.1
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1622,
+      "channel_name": "OpenRouter · rekaai",
+      "model": "rekaai/reka-flash-3",
+      "upstream_model": "rekaai/reka-flash-3",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.2,
+        "input_cache_read": null,
+        "source": "https://developer.reka.ai/models",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "reka"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://developer.reka.ai/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/rekaai/reka-flash-3/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "reka",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.1,
+            "completion": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1623,
+      "channel_name": "OpenRouter · Writer",
+      "model": "writer/palmyra-x5",
+      "upstream_model": "writer/palmyra-x5",
+      "official_price": {
+        "prompt": 0.6,
+        "completion": 6,
+        "input_cache_read": null,
+        "source": "https://dev.writer.com/home/models",
+        "note": "预计 2026-12-14 退役；当前 API 价，不是 Agent 产品价"
+      },
+      "status": "enabled",
+      "providers": [
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://dev.writer.com/home/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/writer/palmyra-x5/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.6,
+            "completion": 6.0
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1624,
+      "channel_name": "OpenRouter · Relace",
+      "model": "relace/relace-search",
+      "upstream_model": "relace/relace-search",
+      "status": "paused",
+      "reason": "当前官网价表只列托管第三方模型，未核实 search/apply-3 当前原厂价",
+      "sources": [
+        "https://relace.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1624,
+      "channel_name": "OpenRouter · Relace",
+      "model": "relace/relace-apply-3",
+      "upstream_model": "relace/relace-apply-3",
+      "status": "paused",
+      "reason": "当前官网价表只列托管第三方模型，未核实 search/apply-3 当前原厂价",
+      "sources": [
+        "https://relace.ai/pricing"
+      ]
+    },
+    {
+      "channel_id": 1625,
+      "channel_name": "OpenRouter · Amazon",
+      "model": "amazon/nova-2-lite-v1",
+      "upstream_model": "amazon/nova-2-lite-v1",
+      "official_price": {
+        "prompt": 0.3,
+        "completion": 2.5,
+        "input_cache_read": 0.075,
+        "source": "https://aws.amazon.com/bedrock/pricing/",
+        "note": "USD 标准按需；动态表数据 https://b0.p.awsstatic.com/pricing/2.0/meteredUnitMaps/bedrock/USD/current/bedrock.json；Nova 2 Lite global 标准，其余 N. Virginia"
+      },
+      "status": "enabled",
+      "providers": [
+        "amazon-bedrock/eu-west-1",
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://aws.amazon.com/bedrock/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/amazon/nova-2-lite-v1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 2.5
+          }
+        },
+        {
+          "provider": "amazon-bedrock",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.3,
+            "completion": 2.5
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1625,
+      "channel_name": "OpenRouter · Amazon",
+      "model": "amazon/nova-lite-v1",
+      "upstream_model": "amazon/nova-lite-v1",
+      "official_price": {
+        "prompt": 0.06,
+        "completion": 0.24,
+        "input_cache_read": 0.015,
+        "source": "https://aws.amazon.com/bedrock/pricing/",
+        "note": "USD 标准按需；动态表数据 https://b0.p.awsstatic.com/pricing/2.0/meteredUnitMaps/bedrock/USD/current/bedrock.json；Nova 2 Lite global 标准，其余 N. Virginia"
+      },
+      "status": "enabled",
+      "providers": [
+        "amazon-bedrock/eu-west-1",
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://aws.amazon.com/bedrock/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/amazon/nova-lite-v1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.06,
+            "completion": 0.24
+          }
+        },
+        {
+          "provider": "amazon-bedrock",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.06,
+            "completion": 0.24
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1625,
+      "channel_name": "OpenRouter · Amazon",
+      "model": "amazon/nova-micro-v1",
+      "upstream_model": "amazon/nova-micro-v1",
+      "official_price": {
+        "prompt": 0.035,
+        "completion": 0.14,
+        "input_cache_read": 0.00875,
+        "source": "https://aws.amazon.com/bedrock/pricing/",
+        "note": "USD 标准按需；动态表数据 https://b0.p.awsstatic.com/pricing/2.0/meteredUnitMaps/bedrock/USD/current/bedrock.json；Nova 2 Lite global 标准，其余 N. Virginia"
+      },
+      "status": "enabled",
+      "providers": [
+        "amazon-bedrock/eu-west-1",
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://aws.amazon.com/bedrock/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/amazon/nova-micro-v1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.035,
+            "completion": 0.14
+          }
+        },
+        {
+          "provider": "amazon-bedrock",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.035,
+            "completion": 0.14
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1625,
+      "channel_name": "OpenRouter · Amazon",
+      "model": "amazon/nova-pro-v1",
+      "upstream_model": "amazon/nova-pro-v1",
+      "official_price": {
+        "prompt": 0.8,
+        "completion": 3.2,
+        "input_cache_read": 0.2,
+        "source": "https://aws.amazon.com/bedrock/pricing/",
+        "note": "USD 标准按需；动态表数据 https://b0.p.awsstatic.com/pricing/2.0/meteredUnitMaps/bedrock/USD/current/bedrock.json；Nova 2 Lite global 标准，其余 N. Virginia"
+      },
+      "status": "enabled",
+      "providers": [
+        "amazon-bedrock/eu-west-1",
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://aws.amazon.com/bedrock/pricing/"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/amazon/nova-pro-v1/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 3.2
+          }
+        },
+        {
+          "provider": "amazon-bedrock",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 3.2
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1626,
+      "channel_name": "OpenRouter · MoonshotAI",
+      "model": "moonshotai/kimi-k2-thinking",
+      "upstream_model": "moonshotai/kimi-k2-thinking",
+      "status": "paused",
+      "reason": "K2 进入存量客户过渡期；本轮未读取到精确旧型号当前有效价",
+      "sources": [
+        "https://platform.kimi.ai/docs/pricing/chat"
+      ]
+    },
+    {
+      "channel_id": 1626,
+      "channel_name": "OpenRouter · MoonshotAI",
+      "model": "moonshotai/kimi-k2-0905",
+      "upstream_model": "moonshotai/kimi-k2-0905",
+      "status": "paused",
+      "reason": "K2 进入存量客户过渡期；本轮未读取到精确旧型号当前有效价",
+      "sources": [
+        "https://platform.kimi.ai/docs/pricing/chat"
+      ]
+    },
+    {
+      "channel_id": 1626,
+      "channel_name": "OpenRouter · MoonshotAI",
+      "model": "moonshotai/kimi-k2",
+      "upstream_model": "moonshotai/kimi-k2",
+      "status": "paused",
+      "reason": "K2 进入存量客户过渡期；本轮未读取到精确旧型号当前有效价",
+      "sources": [
+        "https://platform.kimi.ai/docs/pricing/chat"
+      ]
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "model": "perplexity/sonar-pro-search",
+      "upstream_model": "perplexity/sonar-pro-search",
+      "status": "paused",
+      "reason": "当前页面未列 Sonar 精确费率，且有搜索/独立推理附加项，待核实",
+      "sources": [
+        "https://docs.perplexity.ai/docs/getting-started/pricing"
+      ]
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "model": "perplexity/sonar-reasoning-pro",
+      "upstream_model": "perplexity/sonar-reasoning-pro",
+      "status": "paused",
+      "reason": "当前页面未列 Sonar 精确费率，且有搜索/独立推理附加项，待核实",
+      "sources": [
+        "https://docs.perplexity.ai/docs/getting-started/pricing"
+      ]
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "model": "perplexity/sonar-pro",
+      "upstream_model": "perplexity/sonar-pro",
+      "status": "paused",
+      "reason": "当前页面未列 Sonar 精确费率，且有搜索/独立推理附加项，待核实",
+      "sources": [
+        "https://docs.perplexity.ai/docs/getting-started/pricing"
+      ]
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "model": "perplexity/sonar-deep-research",
+      "upstream_model": "perplexity/sonar-deep-research",
+      "status": "paused",
+      "reason": "当前页面未列 Sonar 精确费率，且有搜索/独立推理附加项，待核实",
+      "sources": [
+        "https://docs.perplexity.ai/docs/getting-started/pricing"
+      ]
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "model": "perplexity/sonar",
+      "upstream_model": "perplexity/sonar",
+      "status": "paused",
+      "reason": "当前页面未列 Sonar 精确费率，且有搜索/独立推理附加项，待核实",
+      "sources": [
+        "https://docs.perplexity.ai/docs/getting-started/pricing"
+      ]
+    },
+    {
+      "channel_id": 1628,
+      "channel_name": "OpenRouter · TheDrummer",
+      "model": "thedrummer/cydonia-24b-v4.1",
+      "upstream_model": "thedrummer/cydonia-24b-v4.1",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/TheDrummer"
+      ]
+    },
+    {
+      "channel_id": 1628,
+      "channel_name": "OpenRouter · TheDrummer",
+      "model": "thedrummer/skyfall-36b-v2",
+      "upstream_model": "thedrummer/skyfall-36b-v2",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/TheDrummer"
+      ]
+    },
+    {
+      "channel_id": 1628,
+      "channel_name": "OpenRouter · TheDrummer",
+      "model": "thedrummer/unslopnemo-12b",
+      "upstream_model": "thedrummer/unslopnemo-12b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/TheDrummer"
+      ]
+    },
+    {
+      "channel_id": 1629,
+      "channel_name": "OpenRouter · Nous",
+      "model": "nousresearch/hermes-4-405b",
+      "upstream_model": "nousresearch/hermes-4-405b",
+      "status": "paused",
+      "reason": "模型门户有计费服务，但本轮未核实这三个型号的直接原厂价",
+      "sources": [
+        "https://portal.nousresearch.com/"
+      ]
+    },
+    {
+      "channel_id": 1629,
+      "channel_name": "OpenRouter · Nous",
+      "model": "nousresearch/hermes-3-llama-3.1-70b",
+      "upstream_model": "nousresearch/hermes-3-llama-3.1-70b",
+      "status": "paused",
+      "reason": "模型门户有计费服务，但本轮未核实这三个型号的直接原厂价",
+      "sources": [
+        "https://portal.nousresearch.com/"
+      ]
+    },
+    {
+      "channel_id": 1629,
+      "channel_name": "OpenRouter · Nous",
+      "model": "nousresearch/hermes-3-llama-3.1-405b",
+      "upstream_model": "nousresearch/hermes-3-llama-3.1-405b",
+      "status": "paused",
+      "reason": "模型门户有计费服务，但本轮未核实这三个型号的直接原厂价",
+      "sources": [
+        "https://portal.nousresearch.com/"
+      ]
+    },
+    {
+      "channel_id": 1630,
+      "channel_name": "OpenRouter · Venice",
+      "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+      "upstream_model": "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+      "status": "paused",
+      "reason": "模型作者与托管商不同；未核实原作者公开 API 价",
+      "sources": [
+        "https://huggingface.co/cognitivecomputations"
+      ]
+    },
+    {
+      "channel_id": 1631,
+      "channel_name": "OpenRouter · Morph",
+      "model": "morph/morph-v3-large",
+      "upstream_model": "morph/morph-v3-large",
+      "official_price": {
+        "prompt": 0.9,
+        "completion": 1.9,
+        "input_cache_read": null,
+        "source": "https://www.morphllm.com/models",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "morph/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.morphllm.com/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/morph/morph-v3-large/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "morph/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.9,
+            "completion": 1.9
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1631,
+      "channel_name": "OpenRouter · Morph",
+      "model": "morph/morph-v3-fast",
+      "upstream_model": "morph/morph-v3-fast",
+      "official_price": {
+        "prompt": 0.8,
+        "completion": 1.2,
+        "input_cache_read": null,
+        "source": "https://www.morphllm.com/models",
+        "note": ""
+      },
+      "status": "enabled",
+      "providers": [
+        "morph/fp8"
+      ],
+      "excluded_providers": [],
+      "sources": [
+        "https://www.morphllm.com/models"
+      ],
+      "openrouter_endpoint_source": "https://openrouter.ai/api/v1/models/morph/morph-v3-fast/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "morph/fp8",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.8,
+            "completion": 1.2
+          }
+        }
+      ]
+    },
+    {
+      "channel_id": 1632,
+      "channel_name": "OpenRouter · Microsoft",
+      "model": "microsoft/phi-4",
+      "upstream_model": "microsoft/phi-4",
+      "status": "paused",
+      "reason": "未核实 Phi-4 的原厂公开按 Token 报价",
+      "sources": [
+        "https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure"
+      ]
+    },
+    {
+      "channel_id": 1633,
+      "channel_name": "OpenRouter · anthracite-org",
+      "model": "anthracite-org/magnum-v4-72b",
+      "upstream_model": "anthracite-org/magnum-v4-72b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/anthracite-org"
+      ]
+    },
+    {
+      "channel_id": 1634,
+      "channel_name": "OpenRouter · Sao10K",
+      "model": "sao10k/l3.1-euryale-70b",
+      "upstream_model": "sao10k/l3.1-euryale-70b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/Sao10K"
+      ]
+    },
+    {
+      "channel_id": 1634,
+      "channel_name": "OpenRouter · Sao10K",
+      "model": "sao10k/l3-lunaris-8b",
+      "upstream_model": "sao10k/l3-lunaris-8b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/Sao10K"
+      ]
+    },
+    {
+      "channel_id": 1635,
+      "channel_name": "OpenRouter · Mancer",
+      "model": "mancer/weaver",
+      "upstream_model": "mancer/weaver",
+      "status": "paused",
+      "reason": "官方模型以 credits 计价，当前 USD 兑换包价格未核实",
+      "sources": [
+        "https://mancer.tech/pricing"
+      ]
+    },
+    {
+      "channel_id": 1636,
+      "channel_name": "OpenRouter · undi95",
+      "model": "undi95/remm-slerp-l2-13b",
+      "upstream_model": "undi95/remm-slerp-l2-13b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/Undi95"
+      ]
+    },
+    {
+      "channel_id": 1637,
+      "channel_name": "OpenRouter · gryphe",
+      "model": "gryphe/mythomax-l2-13b",
+      "upstream_model": "gryphe/mythomax-l2-13b",
+      "status": "paused",
+      "reason": "社区开放权重；未核实开发者直接 API 公开价",
+      "sources": [
+        "https://huggingface.co/Gryphe"
+      ]
+    }
+  ]
+}
