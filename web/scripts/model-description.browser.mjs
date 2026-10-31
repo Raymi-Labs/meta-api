@@ -8,12 +8,45 @@ import { createServer, loadConfigFromFile } from 'vite';
 import { stop as stopEsbuild } from 'esbuild';
 import { SITE_LANGUAGES } from '../src/helpers/localeNormalize.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
+const cases = {
+  astra: {
+    model: 'gpt-6-astra',
+    prefix: 'GPT-6 Astra',
+    vendor: 'OpenAI',
+    icon: 'OpenAI',
+    search: '复杂推理',
+  },
+  kimi: {
+    model: 'kimi-k3.1-pro',
+    prefix: 'Multimodal Kimi',
+    vendor: 'Moonshot',
+    icon: 'Moonshot',
+    search: '多模态',
+  },
+  'kimi-official': {
+    model: 'kimi-k3.1-pro',
+    prefix: 'The first model of the new K3.1',
+    vendor: 'Moonshot',
+    icon: 'Moonshot',
+    search: '旗舰',
+  },
+  terra: {
+    model: 'gpt-6.1-terra',
+    prefix: 'Fast, efficient model',
+    vendor: 'OpenAI',
+    icon: 'OpenAI',
+    search: '视觉推理',
+  },
+};
+const current = cases[process.env.MODEL_DESCRIPTION_CASE || 'astra'];
+assert.ok(current, 'known model fixture');
 const seed = JSON.parse(
   fs.readFileSync(
     path.join(root, '../model/data/model_description_translations.json'),
     'utf8',
   ),
-)[0];
+).find((entry) => entry.source.startsWith(current.prefix));
+assert.ok(seed, 'bundled source');
 const { config } = await loadConfigFromFile(
   { command: 'serve', mode: 'development' },
   path.join(root, 'vite.config.js'),
@@ -36,8 +69,8 @@ const artifacts = fs.mkdtempSync(
 );
 const item = {
   id: 1,
-  model_name: 'gpt-6-astra',
-  display_name: 'GPT-6 Astra',
+  model_name: current.model,
+  display_name: current.model,
   description: seed.source,
   description_translations: seed.translations,
   description_automatic: seed.translations,
@@ -46,7 +79,7 @@ const item = {
   status: 1,
   sync_official: 1,
   vendor_id: 1,
-  icon: 'OpenAI',
+  icon: current.icon,
   quota_type: 0,
   model_ratio: 10,
   completion_ratio: 5,
@@ -57,6 +90,11 @@ const item = {
   input_modalities: ['text', 'image'],
   output_modalities: ['text'],
 };
+if (process.env.MODEL_OFFICIAL_PRICING_FIXTURE) {
+  item.official_pricing = JSON.parse(
+    fs.readFileSync(process.env.MODEL_OFFICIAL_PRICING_FIXTURE, 'utf8'),
+  );
+}
 const status = {
   system_name: '元衡 API',
   server_address: base,
@@ -77,7 +115,7 @@ try {
   );
   fs.writeFileSync(
     files[1],
-    `import React from 'react';import {createRoot} from 'react-dom/client';import {MemoryRouter,Routes,Route,Link} from 'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {UserContext} from './src/context/User';import {StatusContext} from './src/context/Status';import {ThemeProvider} from './src/context/Theme';import {changeSiteLanguage,SITE_LANGUAGES} from './src/helpers/siteLanguage';import {initialLocaleReady} from './src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false);return <><div style={{padding:16,display:'flex',gap:16,flexWrap:'wrap',borderBottom:'1px solid #eee'}}><b>元衡 API · 本地多语言验收</b><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><Link to="/pricing">模型广场</Link><button onClick={()=>setOpen(true)} data-edit>模型管理</button></div><Routes><Route path="/pricing" element={<Pricing/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:'gpt-6-astra'}} handleClose={()=>setOpen(false)} refresh={()=>{}}/></>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><UserContext.Provider value={[{user:{id:8,role:100,username:'fixture',group:'default'}},()=>{}]}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></UserContext.Provider></MemoryRouter>);`,
+    `import React from 'react';import {createRoot} from 'react-dom/client';import {MemoryRouter,Routes,Route,Link} from 'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {UserContext} from './src/context/User';import {StatusContext} from './src/context/Status';import {ThemeProvider} from './src/context/Theme';import {changeSiteLanguage,SITE_LANGUAGES} from './src/helpers/siteLanguage';import {initialLocaleReady} from './src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false);return <><div style={{padding:16,display:'flex',gap:16,flexWrap:'wrap',borderBottom:'1px solid #eee'}}><b>元衡 API · 本地多语言验收</b><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><Link to="/pricing">模型广场</Link><button onClick={()=>setOpen(true)} data-edit>模型管理</button></div><Routes><Route path="/pricing" element={<Pricing/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:${JSON.stringify(current.model)}}} handleClose={()=>setOpen(false)} refresh={()=>{}}/></>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><UserContext.Provider value={[{user:{id:8,role:100,username:'fixture',group:'default'}},()=>{}]}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></UserContext.Provider></MemoryRouter>);`,
   );
   browser = await puppeteer.launch({
     headless: true,
@@ -123,7 +161,7 @@ try {
             },
           },
         ],
-        vendors: [{ id: 1, name: 'OpenAI', icon: 'OpenAI' }],
+        vendors: [{ id: 1, name: current.vendor, icon: current.icon }],
         usable_group: { default: 'default' },
         group_ratio: { default: 1 },
         supported_endpoint: {
@@ -149,7 +187,10 @@ try {
     } else if (u.pathname === '/api/vendors/')
       body = {
         success: true,
-        data: { items: [{ id: 1, name: 'OpenAI', icon: 'OpenAI' }], total: 1 },
+        data: {
+          items: [{ id: 1, name: current.vendor, icon: current.icon }],
+          total: 1,
+        },
       };
     else if (u.pathname.startsWith('/api/health/'))
       body = {
@@ -195,7 +236,7 @@ try {
     '.pricing-search input, input[placeholder="模糊搜索模型名称"]',
   );
   assert.ok(search, 'search input');
-  await search.type('复杂推理');
+  await search.type(current.search);
   await page.waitForSelector('.pricing-model-description');
   assert.equal(
     await page.$$('.pricing-model-description').then((x) => x.length),
@@ -204,7 +245,7 @@ try {
   await page.screenshot({ path: path.join(artifacts, 'catalog-zh.png') });
   await search.click({ clickCount: 3 });
   await page.keyboard.press('Backspace');
-  await page.click('.pricing-model-card a[href="/model/gpt-6-astra"]');
+  await page.click(`.pricing-model-card a[href="/model/${current.model}"]`);
   await page.waitForSelector(
     '.model-detail-title-block p, .model-detail-hero p',
   );
@@ -217,6 +258,19 @@ try {
           ?.textContent.includes(text),
       {},
       seed.translations[locale],
+    );
+  }
+  if (item.official_pricing) {
+    assert.equal(
+      await page.$$eval('#official-pricing tbody tr', (rows) => rows.length),
+      2,
+    );
+    const text = await page.$eval('#official-pricing', (el) => el.textContent);
+    for (const value of ['5m', '1h', '$2', '$10', '$0.2', '$4', 'USD'])
+      assert.ok(text.includes(value), value);
+    assert.equal(
+      await page.$eval('#official-pricing a', (el) => el.href),
+      item.official_pricing.source_url,
     );
   }
   await selectLanguage('ja');
@@ -301,6 +355,8 @@ try {
   console.log(
     JSON.stringify({
       result: 'passed',
+      model: current.model,
+      case: process.env.MODEL_DESCRIPTION_CASE || 'astra',
       locales: SITE_LANGUAGES.length,
       pricingReads,
       external,
