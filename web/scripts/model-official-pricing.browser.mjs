@@ -462,6 +462,76 @@ try {
     `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {ThemeProvider} from './src/context/Theme';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><App/></ThemeProvider></BrowserRouter>);`,
   );
   await launchBrowser();
+  // Opt-in end-to-end rendering of prices parsed from downloaded xAI pages.
+  // Generate these files with TEST_XAI_PRICE_DIR + TestDownloadedXAIPrices.
+  if (process.env.TEST_XAI_PRICE_DIR) {
+    const savedModels = pricing.data;
+    const savedVendors = pricing.vendors;
+    pricing.vendors = [{ id: 2, name: 'xAI', icon: 'Grok' }];
+    try {
+      for (const name of [
+        'grok-4.6',
+        'grok-imagine-image-2.0',
+        'grok-imagine-video-1.5',
+      ]) {
+        const official = JSON.parse(
+          fs.readFileSync(
+            path.join(process.env.TEST_XAI_PRICE_DIR, `${name}-pricing.json`),
+            'utf8',
+          ),
+        );
+        pricing.data = [
+          {
+            ...modelDefaults,
+            model_name: name,
+            vendor_id: 2,
+            icon: 'Grok',
+            official_pricing: official,
+          },
+        ];
+        for (const dark of [false, true]) {
+          const { page, errors } = await makePage(1, dark);
+          await page.goto(`${baseURL}/model/${name}`, {
+            waitUntil: 'networkidle0',
+          });
+          await page.waitForSelector('#official-pricing tbody tr');
+          const rows = await page.$$eval('#official-pricing tbody tr', (els) =>
+            els.map((el) => el.textContent),
+          );
+          assert.equal(rows.length, official.tiers.length);
+          for (const [index, tier] of official.tiers.entries()) {
+            assert.ok(rows[index].includes(tier.label), rows[index]);
+            assert.ok(rows[index].includes('USD'), rows[index]);
+            for (const key of ['input', 'output', 'cache_read']) {
+              if (tier[key] !== undefined)
+                assert.ok(rows[index].includes(`$${tier[key]}`), rows[index]);
+            }
+          }
+          assert.equal(
+            await page.$eval('#official-pricing a', (el) => el.href),
+            official.source_url,
+          );
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          );
+          assert.deepEqual(errors, []);
+          await page.screenshot({
+            path: path.join(
+              artifacts,
+              `${name}-${dark ? 'mobile-dark' : 'desktop'}.png`,
+            ),
+            fullPage: false,
+          });
+          await page.close();
+        }
+      }
+    } finally {
+      pricing.data = savedModels;
+      pricing.vendors = savedVendors;
+    }
+  }
   for (const dark of [false, true]) {
     const { page, errors } = await makePage(1, dark);
     await page.goto(`${baseURL}/model/friendly-id`, {
