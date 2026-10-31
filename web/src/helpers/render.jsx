@@ -480,6 +480,13 @@ export function getLobeHubIcon(iconName, size = 14, fallbackIconName) {
 
   // 解析点号链式属性，形如：key={...}、key='...'、key="..."、key=123、key、key=true/false
   const props = {};
+  // Xiaomi aliases share the brand color; explicit Mono/color settings still win.
+  if (
+    (baseKey === 'Xiaomi' || baseKey === 'XiaomiMiMo') &&
+    (!hasVariant || segments[1] === 'Color')
+  ) {
+    props.color = '#FF6900';
+  }
 
   const parseValue = (raw) => {
     if (raw == null) return true;
