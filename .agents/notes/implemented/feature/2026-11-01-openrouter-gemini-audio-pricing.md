@@ -33,6 +33,8 @@ OpenRouter TTS 使用 X-Generation-Id 查询同账号 generation 的实际输入
 
 既有 133 型号策略 733 项通过；Gemini 审核候选策略 305 项、暂停策略 29 项通过。相关 relay/service/controller/model/billing/setting 测试与前端构建通过；本机无 Chromium，前端构建的 prerender 跳过，依赖既有后端元信息渲染。Python 价格计划测试覆盖分别保留低价组件、音频倍数、图像输出及缓存独立价格和保留旧按次价格。
 
+生产已通过受保护入口从 v1.11.4 更新至正式版 v1.11.9（发布提交 45f77afbf）；在线备份、两轮 MySQL 预检、健康检查和恢复包封存成功。随后经管理 API 写入暂停配置：29 个映射、111 个价格项、4 个图像表达式与 24 个元数据记录；其余 45 个 OpenRouter 渠道、充值价和全局分组倍率不变，线上 199 项价格组件核对通过。真实 Inception 调用的 5 输入（含 1 缓存）和 15 输出 Token 按新倍率只结算一次 94 quota，消费日志与令牌消耗一致，短期测试令牌已删除。该调用证明新售价实际生效，不证明 Gemini 语音可用。详情见[生产验收](../../../../docs/channel/openrouter-gemini.md#生产验收2026-11-01)。
+
 ## Consequences
 
 所有 29 个具体型号保留无前缀配置与映射；10 个 batch 入口跳过。24 个有公开原厂价，其中 3.5 Flash 音频输入在 OpenRouter 高于本次原厂标准口径，不能启用；另 5 个旧 preview 型号报价/身份未核实。不能将旧预览版自动映射成其他正式版。
