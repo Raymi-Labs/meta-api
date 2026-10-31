@@ -37,3 +37,7 @@ Status: implemented
 ## Consequences
 
 未收录且缺少资料的模型保持未分类；新任务需扩展白名单。自定义标签没有可靠译文时原文保留。发布不部署生产。
+
+## Related decision
+
+[目录健康入口收敛](../simplification/2026-11-01-catalog-health-tab-removal.md)取代本文中模型广场分组健康页签的入口关系；广场直接显示模型列表，健康历史从模型详情 Uptime 查看。共享数据、分类及权限规则仍保留。

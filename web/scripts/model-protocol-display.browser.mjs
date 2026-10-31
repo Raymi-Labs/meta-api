@@ -63,7 +63,8 @@ try {
   for (const mobile of [false, true]) {
     const page = await browser.newPage();
     const errors = [],
-      mutations = [];
+      mutations = [],
+      groupHealthRequests = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewport({ width: mobile ? 390 : 1440, height: 1000 });
     await page.evaluateOnNewDocument(
@@ -96,8 +97,33 @@ try {
       if (url.pathname === '/api/pricing') body = pricing;
       if (url.pathname === '/api/user/self')
         body = { success: true, data: user };
-      if (url.pathname === '/api/health/groups')
-        body = { success: true, data: { enabled: true, groups: [] } };
+      if (url.pathname === '/api/health/groups') {
+        groupHealthRequests.push(url.searchParams.get('model'));
+        body = {
+          success: true,
+          data: {
+            enabled: true,
+            groups: [
+              {
+                group: 'Public',
+                request_count: 100,
+                success_count: 99,
+                success_rate: 99,
+                uptime_rate: 99,
+                series: [
+                  {
+                    ts: 1793451600,
+                    request_count: 100,
+                    success_count: 99,
+                    success_rate: 99,
+                    uptime_rate: 99,
+                  },
+                ],
+              },
+            ],
+          },
+        };
+      }
       if (url.pathname === '/api/health/models')
         body = { success: true, data: { enabled: true, models: [] } };
       await req.respond({
@@ -108,6 +134,13 @@ try {
     });
     await page.goto(baseURL + '/pricing');
     await page.waitForSelector('article[aria-label="gpt-chat-fixture"]');
+    assert.equal(await page.$('.pricing-content-body [role="tab"]'), null);
+    assert.equal(await page.$('.group-health-overview'), null);
+    assert.deepEqual(
+      groupHealthRequests,
+      [],
+      'catalog must not load group overview',
+    );
     assert.equal(
       await page.$eval(
         'body',
@@ -208,6 +241,20 @@ try {
     await page.click('article[aria-label="gpt-chat-fixture"]');
     await page.waitForSelector('#quick-start .model-quickstart pre');
     assert.match(page.url(), /\/model\/gpt-chat-fixture$/);
+    await page.waitForSelector('.model-group-uptime:not([disabled])');
+    await page.click('.model-group-uptime');
+    await page.waitForSelector('.model-group-row .group-health-panel');
+    assert.equal(
+      await page.$eval('.model-group-uptime', (el) =>
+        el.getAttribute('aria-expanded'),
+      ),
+      'true',
+    );
+    assert(groupHealthRequests.every((model) => model === 'gpt-chat-fixture'));
+    await page.click('.model-group-uptime');
+    await page.waitForSelector('.model-group-row .group-health-panel', {
+      hidden: true,
+    });
     for (const key of ['cache', 'create-cache', 'create-cache-1h']) {
       assert(await page.$(`.model-group-row [data-price-key="${key}"]`), key);
     }

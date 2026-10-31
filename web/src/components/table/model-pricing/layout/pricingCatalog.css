@@ -260,8 +260,15 @@ html.dark .pricing-page.pricing-catalog {
   scroll-margin-top: 88px;
 }
 .pricing-catalog .pricing-search-header {
-  padding: 0;
+  padding: 0 0 12px;
   position: static;
+  border-bottom: 1px solid var(--catalog-border);
+}
+.pricing-results-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 .pricing-catalog .pricing-view-container {
   padding: 16px 0 0;
