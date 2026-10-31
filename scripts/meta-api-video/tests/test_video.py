@@ -189,17 +189,17 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(args.resolution, resolution)
             self.assertNotIn("duration", payload)
         with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "muse-video", "--duration", "31"))
+            video.payload_for(self.args("--model", "muse-video", "--duration", "181"))
 
     def test_muse_declared_range_preserves_request_and_rejects_invalid_specs(self):
-        for duration in (4, 5, 8, 16, 30):
+        for duration in (4, 5, 8, 16, 30, 31, 60, 180):
             args = self.args("--model", "muse-video", "--duration", str(duration))
             payload = video.payload_for(args)
             self.assertEqual(payload["seconds"], str(duration))
             self.assertEqual(payload["size"], "1280x720")
         portrait = video.payload_for(self.args("--model", "muse-video", "--duration", "8", "--aspect-ratio", "9:16"))
         self.assertEqual(portrait["size"], "720x1280")
-        for options in (("--duration", "3"), ("--duration", "31"), ("--duration", "0"),
+        for options in (("--duration", "3"), ("--duration", "181"), ("--duration", "0"),
                         ("--resolution", "1080p"), ("--resolution", "480p"), ("--aspect-ratio", "1:1")):
             with self.subTest(options=options), self.assertRaises(video.VideoError):
                 self.run_request(self.args("--model", "muse-video", *options), [])
@@ -207,27 +207,23 @@ class VideoTests(unittest.TestCase):
         self.assertFalse(self.state.exists())
 
     def test_muse_long_request_single_submit_and_no_actual_duration_claim(self):
-        args = self.args("--model", "muse-video", "--duration", "30")
+        args = self.args("--model", "muse-video", "--duration", "180")
         code = self.run_request(args, [{"id": "task_fixture"}, {"status": "completed"}])
         self.assertEqual(code, 0)
         posts = [call for call in self.calls if call[1] == "/v1/videos"]
         self.assertEqual(len(posts), 1)
         saved = json.loads(self.state.read_text())
-        self.assertEqual(saved["duration"], 30)
+        self.assertEqual(saved["duration"], 180)
         self.assertNotIn("actual_duration", saved)
 
-    def test_veo_lite_requires_local_png_or_jpeg(self):
-        args = self.args("--model", "flow-video-veo-3.1-lite")
+    def test_retired_veo_rejects_new_generation_but_can_resume(self):
         with self.assertRaises(video.VideoError):
-            video.payload_for(args)
-        image = Path(self.tmp.name) / "reference.png"
-        image.write_bytes(b"\x89PNG\r\n\x1a\nfixture")
-        payload = video.payload_for(self.args("--model", "flow-video-veo-3.1-lite", "--image", str(image)))
-        self.assertEqual(payload["seconds"], "8")
-        self.assertTrue(payload["input_reference"].startswith("data:image/png;base64,"))
-        image.write_text("not an image")
-        with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "flow-video-veo-3.1-lite", "--image", str(image)))
+            self.run_request(self.args("--model", "flow-video-veo-3.1-lite"), [])
+        self.assertEqual(self.calls, [])
+        self.seed()
+        state = json.loads(self.state.read_text()); state["model"] = "flow-video-veo-3.1-lite"
+        video.save_state(self.state, state)
+        self.assertEqual(self.run_request(self.args("--resume"), [{"status": "completed"}]), 0)
 
     def test_muse_completion_exposes_only_same_origin_content_endpoint(self):
         self.seed()
@@ -291,6 +287,133 @@ class VideoTests(unittest.TestCase):
             self.run_request(self.args("--image", str(image)), [])
         self.assertFalse(self.state.exists())
         self.assertEqual(self.calls, [])
+
+    def test_initial_unknown_polls_original_task_without_resubmission(self):
+        code = self.run_request(self.args(), [{"id": "task_fixture"},
+            {"status": "unknown"}, {"status": "in_progress"},
+            {"status": "completed", "metadata": {"url": "https://example.invalid/video.mp4"}}])
+        self.assertEqual(code, 0)
+        self.assertEqual(sum(c[3] is not None for c in self.calls), 1)
+        self.assertIn("initial_status_unknown", self.stdout.getvalue())
+        self.assert_private()
+
+    def test_persistent_unknown_stops_and_preserves_task(self):
+        with self.assertRaisesRegex(video.VideoError, "remained unknown"):
+            self.run_request(self.args("--wait", "30"), [{"id": "task_fixture"}] + [{"status": "unknown"}] * 4)
+        self.assertEqual(sum(c[3] is not None for c in self.calls), 1)
+        self.assertEqual(len(self.calls), 5)
+        self.assertEqual(json.loads(self.state.read_text())["task_id"], "task_fixture")
+
+    def test_muse_four_references_preserve_order_and_hide_data(self):
+        paths = []
+        for i in range(4):
+            image = Path(self.tmp.name) / (str(i) + ".webp")
+            image.write_bytes(b"RIFF" + b"1234" + b"WEBP" + bytes([i]))
+            paths.append(str(image))
+        args = self.args("--model", "muse-video", "--duration", "180", "--images", *paths)
+        payload = video.payload_for(args)
+        self.assertEqual(payload["seconds"], "180")
+        self.assertEqual(len(set(payload["images"])), 4)
+        self.assertTrue(all(v.startswith("data:image/webp;base64,") for v in payload["images"]))
+        self.assertNotIn("input_reference", payload)
+        self.run_request(self.args("--model", "muse-video", "--images", *paths, "--dry-run"), [])
+        self.assertNotIn("data:image", self.stdout.getvalue())
+        self.assertFalse(self.state.exists())
+        self.assertEqual(self.calls, [])
+        for options in [("--images", *paths, paths[0]), ("--image", paths[0], "--images", paths[1]),
+                        ("--prompt", "x" * 4001), ("--duration", "181")]:
+            with self.assertRaises(video.VideoError):
+                video.payload_for(self.args("--model", "muse-video", *options))
+        with self.assertRaises(video.VideoError):
+            video.payload_for(self.args("--model", "grok-imagine-video", "--images", paths[0]))
+
+    def test_muse_image_size_limits(self):
+        image = Path(self.tmp.name) / "large.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 10_000_000)
+        with self.assertRaises(video.VideoError):
+            video.payload_for(self.args("--model", "muse-video", "--image", str(image)))
+        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 8_000_000)
+        with self.assertRaisesRegex(video.VideoError, "24 MB"):
+            video.payload_for(self.args("--model", "muse-video", "--images", str(image), str(image), str(image)))
+        self.assertEqual(self.calls, [])
+
+    def test_muse_long_default_wait_and_resume(self):
+        self.assertEqual(video.effective_wait(video.parser().parse_args(["--model", "muse-video", "--duration", "180"])), 1800)
+        self.assertEqual(video.effective_wait(video.parser().parse_args(["--model", "muse-video", "--duration", "30"])), 420)
+        self.assertEqual(video.effective_wait(video.parser().parse_args(["--model", "muse-video", "--duration", "180", "--wait", "60"])), 60)
+        self.seed()
+        state = json.loads(self.state.read_text()); state.update(model="muse-video", duration=180)
+        video.save_state(self.state, state)
+        self.assertEqual(video.effective_wait(video.parser().parse_args(["--resume", "--state", str(self.state)])), 1800)
+
+    def mp4_fixture(self):
+        import struct
+        def box(kind, payload):
+            return struct.pack(">I4s", len(payload) + 8, kind) + payload
+        mvhd = bytes(12) + struct.pack(">II", 1000, 60000)
+        tkhd = bytes(76) + struct.pack(">II", 1280 * 65536, 720 * 65536)
+        video_track = box(b"trak", box(b"tkhd", tkhd) + box(b"mdia", box(b"hdlr", bytes(8) + b"vide")))
+        audio_track = box(b"trak", box(b"mdia", box(b"hdlr", bytes(8) + b"soun")))
+        return box(b"ftyp", b"isom" + bytes(4)) + box(b"moov", box(b"mvhd", mvhd) + video_track + audio_track)
+
+    def response_for_download(self, data, mime="video/mp4"):
+        from email.message import Message
+        response = io.BytesIO(data)
+        response.status = 200
+        response.headers = Message()
+        response.headers["Content-Type"] = mime
+        response.headers["Content-Length"] = str(len(data))
+        return response
+
+    def test_streamed_download_inspects_media_and_ignores_cdn_url(self):
+        self.seed()
+        state = json.loads(self.state.read_text())
+        state.update(phase="completed", url="https://evil.invalid/steal")
+        args = self.args("--out", str(Path(self.tmp.name) / "video.mp4"))
+        from unittest.mock import Mock
+        opener = Mock()
+        opener.open.return_value = self.response_for_download(self.mp4_fixture())
+        self.assertEqual(video.download_artifact(args, state, KEY, opener=opener), 0)
+        sent = opener.open.call_args.args[0]
+        self.assertEqual(sent.full_url, "https://meta-api.vip/v1/videos/task_fixture/content")
+        self.assertEqual(sent.get_method(), "GET")
+        meta = video.inspect_mp4(Path(args.out))
+        self.assertEqual(meta["duration_seconds"], 60)
+        self.assertEqual((meta["width"], meta["height"], meta["audio_tracks"]), (1280,720,1))
+        self.assertNotIn(KEY, self.stdout.getvalue())
+        self.assertEqual(list(Path(self.tmp.name).glob(".video-download-*")), [])
+        with self.assertRaises(video.VideoError):
+            video.download_artifact(args,state,KEY,opener=opener)
+        self.assertEqual(opener.open.call_count,1)
+
+    def test_failed_download_then_download_only_never_submits(self):
+        from unittest.mock import Mock
+        target = Path(self.tmp.name) / "video.mp4"
+        args = self.args("--model", "muse-video", "--out", str(target))
+        with patch.object(video.urllib.request, "build_opener") as factory:
+            factory.return_value.open.side_effect = video.urllib.error.HTTPError("https://meta-api.vip",502,"bad",{},None)
+            with self.assertRaises(video.VideoError):
+                self.run_request(args,[{"id":"task_fixture"},{"status":"completed"}])
+        self.assertEqual(sum(c[3] is not None for c in self.calls),1)
+        self.assertEqual(json.loads(self.state.read_text())["phase"],"completed")
+        self.assertFalse(target.exists())
+        self.assertEqual(list(Path(self.tmp.name).glob(".video-download-*")), [])
+        self.calls.clear()
+        with patch.object(video.urllib.request,"build_opener") as factory:
+            factory.return_value.open.return_value = self.response_for_download(self.mp4_fixture())
+            self.assertEqual(self.run_request(self.args("--download-only","--out",str(target)),[]),0)
+        self.assertEqual(self.calls,[])
+
+    def test_invalid_content_is_not_published(self):
+        from unittest.mock import Mock
+        self.seed();state=json.loads(self.state.read_text())
+        for data,mime in [(b'{"error":"bad"}',"application/json"),(b"not an mp4","video/mp4"),(self.mp4_fixture()[:-4],"video/mp4")]:
+            target=Path(self.tmp.name)/"bad.mp4";opener=Mock()
+            opener.open.return_value=self.response_for_download(data,mime)
+            with self.assertRaises(video.VideoError):
+                video.download_artifact(self.args("--out",str(target)),state,KEY,opener=opener)
+            self.assertFalse(target.exists())
+            self.assertEqual(list(Path(self.tmp.name).glob(".video-download-*")),[])
 
     def test_invalid_inputs_do_not_submit(self):
         for extra in [("--model", "sora-2"), ("--prompt", " "), ("--duration", "0"),

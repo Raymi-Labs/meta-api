@@ -1,85 +1,60 @@
 ---
 name: meta-api-video
-description: Generate a video through YuanHeng from a description or a reference image, or resume an existing video task. Use for explicit video creation requests through meta-api.vip; supports verified Grok and Snow-compatible video profiles. Does not generate images or treat capability questions as paid generation requests.
+description: Generate YuanHeng videos from text or reference images, resume existing tasks and download completed MP4s without resubmitting. Supports Muse, Grok and verified Omni profiles; questions or installation do not authorize paid generation.
 ---
 
-# YuanHeng Video
+# YuanHeng video
 
-Use `scripts/meta_api_video.py` with Python 3.9+ (standard library only). Keep the conversation model unchanged. The helper submits JSON once, records the task ID, waits with backoff, and returns the completed video URL. Do not replace it with improvised fetch or multipart code.
+Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependencies. Keep the conversation model unchanged. Use the user's YuanHeng origin (default https://meta-api.vip) and `META_API_KEY` from the child process environment. Never put credentials in command arguments, saved state, logs or CDN URLs. No extra permission/quote API lookup is required by this workflow.
 
-## User experience
+## Supported input and acceptance boundaries
 
-Accept a description such as “use Grok to generate a video of waves at sunset.” Use the user's specified origin and API key. Supply the key through the child process environment variable `META_API_KEY`; never put it in command arguments, logs, committed files, or the recovery record. Do not search other apps for a key. If the user already provided one for this task, reuse it without asking again. Otherwise ask for normal credential configuration.
+- Muse `muse-video`: integer requests 4–180 seconds, default 4, 720p, 16:9 or 9:16. One first frame via `--image`, or 1–4 ordered files via `--images`, never both. PNG/JPEG/WebP, at most 10,000,000 bytes each and 24,000,000 total; prompt at most 4000 characters.
+- The first Muse image is the first frame; later images guide subjects, scenery or style, not the final frame. Do not silently resize, omit, combine or replace references.
+- Muse 60-second production acceptance through this YuanHeng workflow completed in 526 seconds, yielding an actual 60-second 1280x720/24fps MP4 with one audio track. Four inputs including WebP were accepted, but later reference elements did not visibly appear in sampled frames. Do not claim reliable four-image adherence. 180 seconds remains supplier-declared, not live-verified here.
+- Muse above 30 seconds is supplier-stitched from shorter segments, not a guaranteed continuous shot. Describe scenes in roughly 30-second sections. Actual durations can round upward; inspect the file rather than treating task seconds/size as output proof.
+- `grok-imagine-video`: 1–15 seconds, 480p/720p, default 1 second/480p/16:9 in this standalone package. The user's installed combined Skill retains its 5-second default. Optional PNG/JPEG `--image` is a first frame; a 1-second production test succeeded, actual 1.042 seconds, 736x400, 24fps.
+- `grok-imagine-video-1.5`: explicit selection, allows 1080p; recent image-to-video attempt returned upstream saturation (429), so do not claim live acceptance for that mode. Grok uses the input image aspect ratio.
+- `flow-video-gemini-omni-flash-1.1`: 4 seconds/720p, text only; full YuanHeng chain verified, actual 4-second 1280x720/24fps.
+- `flow-video-gemini-omni-flash-1.1-1080p`: 4 seconds/1080p, text only; full chain verified, actual about 3.92 seconds/1920x1080/24fps, supplier-upscaled.
+- `snow-grok-imagine-video`: separate supplier alias, text only, 4 seconds/720p.
+- Veo Lite is retired: reject new submissions, retain GET-only recovery of existing tasks. Do not substitute it or reopen unrelated blocked providers.
 
-Supported models are `grok-imagine-video` (default) and `grok-imagine-video-1.5` (select explicitly with `--model`). The 1.5 model has passed a one-second 480p account-level generation test; this does not verify all accounts or YuanHeng pricing/routing. Additional verified supplier profiles are listed below; other models, editing, and extensions are not implemented by this helper. Preserve explicit user choices; explain an unsupported choice rather than silently substituting. Muse and Grok accept optional local references as described below; Veo Lite requires one.
+When a user asks to animate an image without naming a provider, prefer the verified Muse single-image path and state the choice. Preserve explicit model choices. Do not infer broad stability from one successful sample or from an unspecified user report.
 
-If duration/resolution/aspect ratio are unspecified, state the defaults before submission: **1 second, 480p, 16:9**, which have been verified on this route. The CLI accepts 1–15 seconds, 480p/720p (plus 1080p only for the explicitly selected 1.5 model) and 16:9/9:16/1:1 as a limited profile; only the default combination has been live-tested here. Higher settings still depend on the provider and may cost more. Never use paid trials to discover limits.
+## Generate and deliver
 
-Actual generation requests authorize a paid submission; questions, installation, dry runs, and resuming a query do not authorize new paid generation. Follow the host's permission mechanism. Do not switch hosts, keys, proxies, or providers to bypass a denial.
-
-## Generate
-
-Resolve the script path relative to this Skill. Use a distinct recovery file for each user-authorized new video; reuse that file for every continuation of the same request. The folder must be private and writable by the current user.
-
-```bash
-python3 scripts/meta_api_video.py \
-  --base-url https://meta-api.vip \
-  --prompt 'A lighthouse at sunrise, soft ocean waves, a slow continuous camera move.' \
-  --duration 1 --resolution 480p --aspect-ratio 16:9 \
-  --state output/video/lighthouse-task.json
-```
-
-Run in a managed tool session. Do not launch a detached background job. The helper emits progress while waiting; poll the managed session only to collect results. It defaults to a bounded 420-second wait and terminates/reaps its worker on timeout or interruption. Increasing `--wait` changes how long to query, not how many tasks to create.
-
-`--dry-run` validates and prints a plan without credentials, network calls, or state-file writes. A dry run is not proof that the key/model works.
-
-## Resume and uncertainty
+Use a distinct private recovery file and a new output filename for each explicitly authorized video. Include `--out` for normal delivery so a completed status alone is not the final result.
 
 ```bash
-python3 scripts/meta_api_video.py --resume --state output/video/lighthouse-task.json
+python3 scripts/meta_api_video.py --model muse-video --duration 60 \
+  --images first.png character.jpg --resolution 720p --aspect-ratio 16:9 \
+  --prompt 'Two scenes of about 30 seconds each: ...' \
+  --state output/video/task.json --out output/video/result.mp4
 ```
 
-- `accepted`, `queued`, `in_progress`, or `pending`: use the same task ID; never submit again to refresh progress. Resume uses the saved origin and original credential. Expired/rotated keys need explicit reconciliation rather than trying alternatives.
-- `submission_unknown` or interruption without an ID: the request may have reached the server. Inspect the task/usage logs; do not delete the recovery file or pick a new filename to bypass the guard. Obtain explicit authorization before any replacement paid submission.
-- `failed`: report failure without claiming no charge. Do not automatically resubmit.
-- Missing output URL, malformed response, or query errors: preserve the ID and report the actual problem. A completed state without a valid result URL is not a deliverable success.
-- If the process reports an accepted ID but cannot save it, preserve that ID in the conversation and use read-only task queries; do not create another task.
+Only one POST is issued. The task ID is saved before polling. Default wait is 1800 seconds for Muse over 30 seconds, otherwise 420; explicit --wait wins. Run in a managed tool session, never detached. Polling uses bounded backoff; up to three consecutive explicit unknown statuses with a matching ID are tolerated without another POST.
 
-The recovery file contains origin, a credential fingerprint, parameters, status, task ID and possibly a result URL; it contains no key or prompt. Keep it private. It prevents duplicate starts only when the same file is reused, not across unrelated machines or files.
+`--out` streams the authenticated original-origin task content endpoint to a private temporary file, refuses redirects/non-MP4 responses and overwrites, and inspects actual MP4 duration, dimensions and audio-track count before publication. Default download budget is 900 seconds, independent from generation wait; maximum file size is 512 MiB. Metadata does not prove visual quality or audible sound: preview the downloaded media and report material differences. Never regenerate merely because the output differs.
 
-## Deliver
-
-When `phase=completed`, show the video with the host's supported preview tool. If no preview is available, provide a clickable `video_url`. Do not download remote media to bypass host display restrictions. Do not expose the API key in the preview URL. Describe actual returned information; do not invent resolution, duration, audio, cost, or a successful visual inspection.
-
-Exit 0 means completed (or a successful dry run); 2 means bounded waiting/interruption; 1 means an error. Check the reported phase and recovery file rather than relying only on exit status. Confirm the managed process has exited before finishing. A task may continue on the server after the local wait ends; local interruption is not a server-side cancellation.
-
-## Snow-compatible profiles
-
-Use the same YuanHeng origin and credential. No extra permission or quote request is required by this workflow. Respect actual API errors and never retry a paid POST automatically.
-
-- `flow-video-gemini-omni-flash-1.1`: text-to-video, 4 seconds, 720p.
-- `flow-video-gemini-omni-flash-1.1-1080p`: text-to-video, 4 seconds, 1080p (supplier-upscaled output).
-- `muse-video`: text-to-video or optional PNG/JPEG first frame via `--image`; integer requests of 4–30 seconds, 720p, default 4 seconds. The supplier may change actual duration; inspect downloaded media.
-- `flow-video-veo-3.1-lite`: image-to-video, 8 seconds, 720p; requires `--image` with a user-provided PNG/JPEG. Do not invent a reference or silently use paid image generation. Reference bytes are sent to YuanHeng and its selected upstream; do not include unrelated files.
-- `snow-grok-imagine-video`: a distinct Snow upstream alias, 4 seconds, 720p; does not replace the original CPA Grok route.
-
-These profiles default to their verified duration/resolution when omitted and support 16:9 or 9:16. Explicit incompatible settings fail before submission. Other vendor models, editing, and extensions remain unsupported. Gemini/Veo production readiness also requires the channel-scoped video header-wait fix to be deployed; local profile support alone does not prove deployment.
-
-A completed compatible task may provide `content_url` with `requires_authorization=true` instead of a public URL. Fetch that same YuanHeng-origin `/v1/videos/{id}/content` endpoint with the original key using the host's permitted HTTP/file tools, verify HTTP success and video MIME type, save to the current task's output directory, and preview the local file. Never append a key to a URL, send it to a media CDN, or claim a protected link can play without authentication. This fetch retrieves an existing result and does not submit generation. Respect any host restrictions on media display.
-
-
-## Local reference images
-
-For an attached image animation request without a specified provider, use the production-verified Muse profile and state the model. Preserve explicitly selected models. Pass the user's local PNG/JPEG using `--image` (maximum 20 MiB); do not generate an extra image or add permission/quote lookups.
+## Recover without duplicate charges
 
 ```bash
-python3 scripts/meta_api_video.py --model muse-video --image reference.png \
-  --prompt "Preserve the subject and slowly move the camera forward" \
-  --duration 4 --resolution 720p --state work/video/muse-reference.json
+python3 scripts/meta_api_video.py --resume --state output/video/task.json \
+  --out output/video/result.mp4
+
+python3 scripts/meta_api_video.py --download-only --state output/video/task.json \
+  --out output/video/recovered.mp4 --download-timeout 900
 ```
 
-Muse sends `input_reference` as a data URI. Production PNG acceptance on 2026-10-31 confirms matching first-frame shapes, colors and markings plus motion; the four-second request returned five seconds at 1280×720/24fps. JPEG and all duration/aspect combinations are not individually live-tested.
+Resume queries the original task using the original origin/key fingerprint; source images are no longer needed. Download-only requires completed state and performs only a content GET, never a POST or generation poll. A failed download leaves completed state intact. Use a new output path if one already exists.
 
-Grok and Grok 1.5 send the official `image.url` object. This client path requires the 2026-10-31 server fix: production previously rejected image objects. Do not claim deployed Grok image-to-video acceptance until a real output is verified. Grok uses the source image aspect ratio. Other compatible profiles still reject references except Veo Lite, which requires one.
+A submission_unknown state without an ID requires task/log reconciliation before another paid request. Failed/unknown tasks do not prove zero charges. Do not change keys, providers, proxies or origins to bypass errors. Download retries retrieve the original result only; do not use HEAD or rely on Range support. Clean only this invocation's temporary files after verifying its workers exited. User content, credentials and image data are not persisted in recovery state or dry-run output.
 
-Dry-run output hides encoded media. Recovery files omit images and local paths; resume needs only the original credential and task state, not the source image. Use the existing authenticated same-origin download workflow to deliver the finished video.
+`--dry-run` validates without credentials, network, state writes or generation. It is not upstream availability proof. The supervisor terminates and reaps its worker on interruption/deadline; confirm the command itself exited before reporting zero remaining workers.
+
+## Pricing evidence (2026-10-31)
+
+Prices remain server-side. With media group 0.25 and normal recharge RMB0.20/credit, current Muse retail is 3 credits/requested second (RMB0.60): 60 seconds costs 180 credits, 180 seconds 540. Supplier cost is $0.20 balance/requested second and the user reports RMB1 per $1 supplier balance. The prior 60-second acceptance cost 120 credits at the old rate and $12 supplier balance; it is not retrospectively repriced. No per-image supplement was observed.
+
+Omni720p and the separate Snow Grok alias currently cost 0.75 credits/second, Omni1080p 1.5. Do not apply the Snow cash conversion to CPA Grok or other providers. Cash margins also depend on actual recharge discounts, referral payouts and fees. Supplier-rounded durations and every long-video tier are not exhaustively live-verified.

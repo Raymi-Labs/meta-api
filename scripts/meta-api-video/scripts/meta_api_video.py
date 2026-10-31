@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import struct
 import subprocess
 import sys
 import tempfile
@@ -23,7 +24,6 @@ COMPAT_PROFILES = {
     "flow-video-gemini-omni-flash-1.1": (4, "720p", False),
     "flow-video-gemini-omni-flash-1.1-1080p": (4, "1080p", False),
     "muse-video": (4, "720p", False),
-    "flow-video-veo-3.1-lite": (8, "720p", True),
     "snow-grok-imagine-video": (4, "720p", False),
 }
 MODELS.update(COMPAT_PROFILES)
@@ -133,20 +133,26 @@ def request_json(origin, suffix, key, payload=None, timeout=30):
     return body
 
 
-def reference_data_uri(filename):
+def reference_data_uri(filename, max_bytes=20 * 1024 * 1024, allow_webp=False, budget=None):
     try:
         with Path(filename).expanduser().open("rb") as stream:
-            raw = stream.read(20 * 1024 * 1024 + 1)
+            raw = stream.read(max_bytes + 1)
     except OSError:
         raise VideoError("Cannot read reference image.") from None
-    if len(raw) > 20 * 1024 * 1024:
-        raise VideoError("Reference image exceeds 20 MiB.")
+    if len(raw) > max_bytes:
+        raise VideoError("Reference image exceeds the model file-size limit.")
+    if budget is not None:
+        budget[0] -= len(raw)
+        if budget[0] < 0:
+            raise VideoError("Muse reference images exceed 24 MB in total.")
     if raw.startswith(b"\x89PNG\r\n\x1a\n"):
         mime = "image/png"
     elif raw.startswith(b"\xff\xd8\xff"):
         mime = "image/jpeg"
+    elif allow_webp and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        mime = "image/webp"
     else:
-        raise VideoError("Reference must be a PNG or JPEG image.")
+        raise VideoError("Reference must be PNG/JPEG, or WebP for Muse.")
     return "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
 
 
@@ -155,13 +161,17 @@ def payload_for(args):
         raise VideoError("Unsupported video model; use a verified profile.")
     if not args.prompt or not args.prompt.strip():
         raise VideoError("A non-empty prompt is required.")
+    if args.images and args.model != "muse-video":
+        raise VideoError("Multiple references are supported only for Muse.")
+    if args.image and args.images:
+        raise VideoError("Use either --image or --images, not both.")
     profile = COMPAT_PROFILES.get(args.model)
     args.duration = args.duration if args.duration is not None else (profile[0] if profile else 1)
     args.resolution = args.resolution or (profile[1] if profile else "480p")
     if profile:
         if args.model == "muse-video":
-            if not 4 <= args.duration <= 30 or args.resolution != "720p":
-                raise VideoError("Muse accepts integer durations 4-30 seconds at 720p; 1080p output is not verified.")
+            if not 4 <= args.duration <= 180 or args.resolution != "720p":
+                raise VideoError("Muse accepts integer durations 4-180 seconds at 720p; 1080p output is not verified.")
         elif args.duration != profile[0] or args.resolution != profile[1]:
             raise VideoError("This model profile only supports the verified duration and resolution.")
         if args.model != "muse-video" and bool(args.image) != profile[2]:
@@ -172,7 +182,19 @@ def payload_for(args):
         if args.aspect_ratio == "9:16":
             width, height = height, width
         payload = {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration), "size": f"{width}x{height}"}
-        if args.image:
+        if args.model == "muse-video":
+            if len(args.prompt) > 4000:
+                raise VideoError("Muse prompt exceeds 4000 characters.")
+            refs = args.images or ([args.image] if args.image else [])
+            if len(refs) > 4:
+                raise VideoError("Muse accepts at most 4 reference images.")
+            budget = [24_000_000]
+            encoded = [reference_data_uri(f, 10_000_000, True, budget) for f in refs]
+            if args.images:
+                payload["images"] = encoded
+            elif encoded:
+                payload["input_reference"] = encoded[0]
+        elif args.image:
             payload["input_reference"] = reference_data_uri(args.image)
         return payload
     if args.resolution == "1080p" and args.model != "grok-imagine-video-1.5":
@@ -186,9 +208,145 @@ def payload_for(args):
     return payload
 
 
+def inspect_mp4(path):
+    """Read bounded container metadata, not the full video into memory."""
+    size = path.stat().st_size
+    result = {"audio_tracks": 0, "bytes": size}
+    boxes_seen = [0]
+    with path.open("rb") as stream:
+        def boxes(start, end):
+            pos = start
+            while pos + 8 <= end:
+                boxes_seen[0] += 1
+                if boxes_seen[0] > 10000:
+                    raise VideoError("MP4 contains too many boxes.")
+                stream.seek(pos)
+                head = stream.read(8)
+                length, kind = struct.unpack(">I4s", head)
+                header = 8
+                if length == 1:
+                    extra = stream.read(8)
+                    if len(extra) != 8:
+                        raise VideoError("Truncated MP4 box.")
+                    length = struct.unpack(">Q", extra)[0]
+                    header = 16
+                elif length == 0:
+                    length = end - pos
+                if length < header or pos + length > end:
+                    raise VideoError("Invalid or truncated MP4 box.")
+                yield kind, pos + header, pos + length
+                pos += length
+            if pos != end:
+                raise VideoError("Truncated MP4 box header.")
+
+        def prefix(start, end, count=128):
+            stream.seek(start)
+            return stream.read(min(count, end - start))
+
+        def duration(data):
+            version = data[0] if data else -1
+            if version == 0 and len(data) >= 20:
+                scale, ticks = struct.unpack(">II", data[12:20])
+            elif version == 1 and len(data) >= 32:
+                scale = struct.unpack(">I", data[20:24])[0]
+                ticks = struct.unpack(">Q", data[24:32])[0]
+            else:
+                raise VideoError("Invalid MP4 duration metadata.")
+            if not scale or ticks <= 0:
+                raise VideoError("Invalid MP4 timescale or duration.")
+            return ticks / scale
+
+        has_ftyp = False
+        for kind, start, end in boxes(0, size):
+            if kind == b"ftyp":
+                has_ftyp = True
+            if kind != b"moov":
+                continue
+            for child, a, b in boxes(start, end):
+                if child == b"mvhd":
+                    result["duration_seconds"] = duration(prefix(a, b))
+                if child != b"trak":
+                    continue
+                track = {}
+                for field, c, d in boxes(a, b):
+                    if field == b"tkhd":
+                        raw = prefix(c, d)
+                        offset = 88 if raw and raw[0] == 1 else 76
+                        if len(raw) >= offset + 8:
+                            w, h = struct.unpack(">II", raw[offset:offset+8])
+                            track.update(width=w / 65536, height=h / 65536)
+                    if field == b"mdia":
+                        for sub, e, f in boxes(c, d):
+                            if sub == b"hdlr":
+                                raw = prefix(e, f)
+                                track["handler"] = raw[8:12]
+                if track.get("handler") == b"soun":
+                    result["audio_tracks"] += 1
+                if track.get("handler") == b"vide" and track.get("width", 0) > 0 and track.get("height", 0) > 0:
+                    result.update(width=track["width"], height=track["height"])
+        if not has_ftyp or not result.get("duration_seconds") or not result.get("width"):
+            raise VideoError("Downloaded file lacks valid MP4 video metadata.")
+    return result
+
+
+def download_artifact(args, state, key, opener=None):
+    if not args.out:
+        return 0
+    target = Path(args.out).expanduser()
+    if target.exists() or target.is_symlink():
+        raise VideoError("Output already exists; choose a new path. No generation was submitted.")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    origin = normalize_origin(state["origin"])
+    url = origin + "/v1/videos/" + task_id(state["task_id"]) + "/content"
+    request = urllib.request.Request(url, headers={"Authorization": "Bearer " + key,
+        "Accept": "video/mp4", "User-Agent": "yuanheng-video-skill/1.1"})
+    fd, temporary = tempfile.mkstemp(prefix=".video-download-" + str(os.getpid()) + "-", dir=target.parent)
+    deadline = time.monotonic() + args.download_timeout
+    try:
+        opener = opener or urllib.request.build_opener(NoRedirect())
+        with os.fdopen(fd, "wb") as output:
+            with opener.open(request, timeout=args.download_timeout) as response:
+                if response.status != 200 or response.headers.get_content_type() != "video/mp4":
+                    raise VideoError("Content response is not a successful MP4 download.")
+                count = 0
+                while True:
+                    if time.monotonic() >= deadline:
+                        raise VideoError("Download timed out; retry only with --download-only.")
+                    chunk = response.read(65536)
+                    if not chunk:
+                        break
+                    count += len(chunk)
+                    if count > 512 * 1024 * 1024:
+                        raise VideoError("Download exceeds 512 MiB; task preserved.")
+                    output.write(chunk)
+                length = response.headers.get("Content-Length")
+                if length is not None and int(length) != count:
+                    raise VideoError("Truncated video download; task preserved.")
+                output.flush()
+                os.fsync(output.fileno())
+        media = inspect_mp4(Path(temporary))
+        # Hard-link publication is atomic and never overwrites an existing file.
+        os.link(temporary, target)
+        emit(phase="delivered", task_id=state["task_id"], output_file=str(target), media=media,
+             requested_duration=state.get("duration"),
+             visual_verification_required=True)
+        return 0
+    except urllib.error.HTTPError as exc:
+        raise VideoError("Content HTTP " + str(exc.code) + "; retry only with --download-only.") from None
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        raise VideoError("Content download or save failed; keep the task and retry with --download-only.") from None
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
     path = Path(args.state).expanduser()
-    if args.resume:
+    if args.out and (Path(args.out).expanduser().exists() or Path(args.out).expanduser().is_symlink()):
+        raise VideoError("Output already exists; choose a new path before submitting.")
+    if args.download_only and not args.out:
+        raise VideoError("--download-only requires --out.")
+    if args.resume or args.download_only:
         state = load_state(path)
         origin = normalize_origin(state["origin"])
         if args.base_url and normalize_origin(args.base_url) != origin:
@@ -205,16 +363,20 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
                  "phase": "submission_unknown", "duration": args.duration,
                  "resolution": args.resolution, "aspect_ratio": args.aspect_ratio}
     if args.dry_run:
-        emit(mode="resume" if args.resume else "generate", origin=origin,
+        emit(mode="download" if args.download_only else ("resume" if args.resume else "generate"), origin=origin,
              model=state["model"], state_file=str(path), network_requests=0,
-             **({"task_id": identifier} if args.resume else {"parameters": {k: ("[local reference image]" if k in {"input_reference", "image"} else v) for k, v in payload.items()}}))
+             **({"task_id": identifier} if (args.resume or args.download_only) else {"parameters": {k: ("[local reference image]" if k in {"input_reference", "image", "images"} else v) for k, v in payload.items()}}))
         return 0
     key = os.environ.get("META_API_KEY", "").strip()
     if not key or len(key) > 8192 or any(not 33 <= ord(c) <= 126 for c in key):
         raise VideoError("Set META_API_KEY to the user's YuanHeng API key.")
     fingerprint = hashlib.sha256(key.encode()).hexdigest()
-    if args.resume and state.get("credential_fingerprint") != fingerprint:
+    if (args.resume or args.download_only) and state.get("credential_fingerprint") != fingerprint:
         raise VideoError("Resume requires the original credential. No alternate key will be tried.")
+    if args.download_only:
+        if state.get("phase") != "completed":
+            raise VideoError("Task is not recorded as completed; use --resume first.")
+        return download_artifact(args, state, key)
     deadline = clock() + args.wait
     if not args.resume:
         state["credential_fingerprint"] = fingerprint
@@ -233,6 +395,7 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
         state.update(task_id=identifier, phase="queued")
         save_state(path, state)
     interval = 2
+    consecutive_unknown = 0
     while clock() < deadline:
         try:
             response = request(origin, "/v1/videos/" + identifier, key,
@@ -247,12 +410,21 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
             if response.get("id") != identifier:
                 raise VideoError("Task response ID does not match the requested task.")
             status = response.get("status")
+            if status == "unknown":
+                consecutive_unknown += 1
+                if consecutive_unknown > 3:
+                    raise VideoError("Task status remained unknown; keep the task ID and inspect logs.")
+                emit(phase="query_retry", task_id=identifier, error="initial_status_unknown",
+                     attempt=consecutive_unknown)
+                sleep(min(3, max(0, deadline - clock())))
+                continue
+            consecutive_unknown = 0
             if status not in {"queued", "in_progress", "completed", "failed"}:
                 raise VideoError("Unknown task status; keep the task ID and inspect logs.")
             if status == "completed":
                 metadata = response.get("metadata")
                 url = metadata.get("url") if isinstance(metadata, dict) else None
-                if state.get("model") in COMPAT_PROFILES:
+                if state.get("model") in COMPAT_PROFILES or state.get("model") == "flow-video-veo-3.1-lite":
                     url = url or response.get("url") or response.get("video_url")
                     if not url:
                         url = origin + "/v1/videos/" + identifier + "/content"
@@ -260,7 +432,7 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
                         save_state(path, state)
                         emit(phase="completed", task_id=identifier, content_url=url,
                              requires_authorization=True, state_file=str(path))
-                        return 0
+                        return download_artifact(args, state, key)
                 parsed = urllib.parse.urlsplit(url) if isinstance(url, str) else None
                 if (not parsed or parsed.scheme != "https" or not parsed.hostname or
                         parsed.username or parsed.password or any(ord(c) < 32 for c in url)):
@@ -268,7 +440,7 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
                 state.update(phase="completed", url=url)
                 save_state(path, state)
                 emit(phase="completed", task_id=identifier, video_url=url, state_file=str(path))
-                return 0
+                return download_artifact(args, state, key)
             state["phase"] = status
             save_state(path, state)
             emit(phase=status, task_id=identifier)
@@ -288,20 +460,42 @@ def parser():
     p.add_argument("--base-url", help="YuanHeng API origin, optional /v1 suffix")
     p.add_argument("--model", default=MODEL)
     p.add_argument("--prompt")
-    p.add_argument("--image", help="Local PNG/JPEG first frame for Muse or Grok; required for Veo Lite")
+    p.add_argument("--image", help="Local first frame: PNG/JPEG; Muse also accepts WebP")
+    p.add_argument("--images", nargs="+", help="Muse only: 1-4 ordered local PNG/JPEG/WebP references")
     p.add_argument("--duration", type=int, default=None)
     p.add_argument("--aspect-ratio", choices=["16:9", "9:16", "1:1"], default="16:9")
     p.add_argument("--resolution", choices=["480p", "720p", "1080p"], default=None)
     p.add_argument("--state", default="output/video/task.json")
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--out", help="Stream completed MP4 to a new local path and inspect media metadata")
+    p.add_argument("--download-only", action="store_true", help="GET content from completed state; never submit or poll")
+    p.add_argument("--download-timeout", type=int, default=900, help="Download budget in seconds (1-3600)")
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument("--wait", type=int, default=420, help="Maximum wait seconds (1-3600); pending tasks can be resumed")
+    p.add_argument("--wait", type=int, default=None, help="Wait 1-3600 seconds; default 1800 for Muse over 30s, otherwise 420")
     p.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     return p
 
 
+def effective_wait(args):
+    if args.wait is not None:
+        return args.wait
+    model, duration = args.model, args.duration or 0
+    if args.resume or args.download_only:
+        state = load_state(Path(args.state).expanduser())
+        model, duration = state.get("model"), state.get("duration", 0)
+    return 1800 if model == "muse-video" and duration > 30 else 420
+
+
 def main():
     args = parser().parse_args()
+    try:
+        args.wait = effective_wait(args)
+    except (VideoError, OSError, ValueError, KeyError, TypeError):
+        emit(error="Cannot read recovery state for wait selection.", state_file=args.state)
+        return 1
+    if not 1 <= args.download_timeout <= 3600:
+        emit(error="--download-timeout must be between 1 and 3600")
+        return 1
     if not 1 <= args.wait <= 3600:
         emit(error="--wait must be between 1 and 3600 seconds")
         return 1
@@ -311,7 +505,7 @@ def main():
         signal.signal(signal.SIGTERM, interrupted)
         child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), *sys.argv[1:], "--worker"])
         try:
-            return child.wait(timeout=args.wait + 5)
+            return child.wait(timeout=(0 if args.download_only else args.wait) + (args.download_timeout if args.out else 0) + 5)
         except (subprocess.TimeoutExpired, KeyboardInterrupt):
             emit(phase="interrupted", state_file=args.state,
                  action="Do not resubmit. Resume if the record contains a task ID; otherwise check server logs.")
@@ -324,6 +518,13 @@ def main():
                 except subprocess.TimeoutExpired:
                     child.kill()
                     child.wait()
+            if args.out and child.poll() is not None:
+                for partial in Path(args.out).expanduser().parent.glob(".video-download-" + str(child.pid) + "-*"):
+                    try:
+                        partial.unlink()
+                    except OSError:
+                        emit(download_temp_cleanup="unverified")
+            emit(owned_worker_exited=True, residual_owned_workers=0)
     try:
         return run(args)
     except (VideoError, OSError, ValueError, KeyError, TypeError) as exc:
