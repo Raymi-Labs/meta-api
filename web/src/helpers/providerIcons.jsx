@@ -19,8 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { lazy, Suspense } from 'react';
 import {
   createProviderIconRegistry,
+  createLocalProviderIconRegistry,
   resolveProviderIcon,
 } from './providerIconRegistry';
+import { localAssetIconRegistry } from './localProviderIcons';
 
 // Vite enumerates these at build time. There is no arbitrary runtime import path,
 // and a provider's Avatar/UI dependencies are not loaded with its Mono/Color SVG.
@@ -29,6 +31,14 @@ const registry = createProviderIconRegistry(
     '../../node_modules/@lobehub/icons/es/*/components/{Mono,Avatar,Brand,BrandColor,Color,Combine,Text,TextCn,TextColor,Simple,Morden}.js',
   ),
 );
+for (const [key, loader] of [
+  ...createLocalProviderIconRegistry(
+    import.meta.glob('../assets/provider-icons/components/*.jsx'),
+  ),
+  ...localAssetIconRegistry,
+]) {
+  if (!registry.has(key)) registry.set(key, loader);
+}
 const components = new Map();
 
 function IconFallback({ name, size = 16, className, style, ...props }) {

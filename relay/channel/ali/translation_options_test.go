@@ -31,3 +31,22 @@ func TestTranslationOptionsSurviveAliConversion(t *testing.T) {
 		})
 	}
 }
+
+func TestQwenMTTextOptionsAndSampling(t *testing.T) {
+	for _, topP := range []float64{0, 1, 0.5} {
+		var request dto.GeneralOpenAIRequest
+		require.NoError(t, common.Unmarshal([]byte(`{"model":"qwen-mt-flash","messages":[{"role":"user","content":"A model description"}],"translation_options":{"source_lang":"auto","target_lang":"Traditional Chinese","terms":[{"source":"API","target":"API"}]}}`), &request))
+		request.TopP = topP
+		converted, err := (&Adaptor{}).ConvertOpenAIRequest(nil, &relaycommon.RelayInfo{}, &request)
+		require.NoError(t, err)
+		wire, err := common.Marshal(converted)
+		require.NoError(t, err)
+		var actual dto.GeneralOpenAIRequest
+		require.NoError(t, common.Unmarshal(wire, &actual))
+		require.JSONEq(t, string(request.TranslationOptions), string(actual.TranslationOptions))
+		require.Equal(t, topP, actual.TopP)
+		require.Len(t, actual.Messages, 1)
+	}
+	// Ordinary Qwen requests keep the existing sampling compatibility behavior.
+	require.Equal(t, 0.001, requestOpenAI2Ali(dto.GeneralOpenAIRequest{Model: "qwen-plus"}).TopP)
+}

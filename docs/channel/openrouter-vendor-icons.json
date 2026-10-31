@@ -1,0 +1,182 @@
+[
+  {
+    "name": "Particle AI",
+    "icon": "ParticleAI"
+  },
+  {
+    "name": "Recursive",
+    "icon": "Recursive"
+  },
+  {
+    "name": "Elorian",
+    "icon": "Elorian"
+  },
+  {
+    "name": "XingChen",
+    "icon": "XingChen"
+  },
+  {
+    "name": "Reflection",
+    "icon": "Reflection"
+  },
+  {
+    "name": "Inception",
+    "icon": "Inception"
+  },
+  {
+    "name": "PrismML",
+    "icon": "PrismML"
+  },
+  {
+    "name": "Moondream",
+    "icon": "Moondream"
+  },
+  {
+    "name": "Meta",
+    "icon": "Meta"
+  },
+  {
+    "name": "NVIDIA",
+    "icon": "Nvidia"
+  },
+  {
+    "name": "unbiased",
+    "icon": "Unbiased"
+  },
+  {
+    "name": "LiquidAI",
+    "icon": "Liquid"
+  },
+  {
+    "name": "ScaleDown",
+    "icon": "ScaleDown"
+  },
+  {
+    "name": "Mistral",
+    "icon": "Mistral"
+  },
+  {
+    "name": "inclusionAI",
+    "icon": "InclusionAI"
+  },
+  {
+    "name": "Perceptron",
+    "icon": "Perceptron"
+  },
+  {
+    "name": "Fireworks",
+    "icon": "Fireworks"
+  },
+  {
+    "name": "AionLabs",
+    "icon": "AionLabs"
+  },
+  {
+    "name": "Upstage",
+    "icon": "Upstage"
+  },
+  {
+    "name": "Cohere",
+    "icon": "Cohere"
+  },
+  {
+    "name": "Inference.net",
+    "icon": "Inference"
+  },
+  {
+    "name": "Sakana",
+    "icon": "Sakana"
+  },
+  {
+    "name": "Nex AGI",
+    "icon": "NexAGI"
+  },
+  {
+    "name": "IBM",
+    "icon": "IBM"
+  },
+  {
+    "name": "Dots Studio",
+    "icon": "DotsStudio"
+  },
+  {
+    "name": "Thinking Machines",
+    "icon": "ThinkingMachines"
+  },
+  {
+    "name": "Meituan",
+    "icon": "Meituan"
+  },
+  {
+    "name": "Xiaomi",
+    "icon": "Xiaomi"
+  },
+  {
+    "name": "rekaai",
+    "icon": "Reka"
+  },
+  {
+    "name": "Writer",
+    "icon": "Writer"
+  },
+  {
+    "name": "Relace",
+    "icon": "Relace"
+  },
+  {
+    "name": "Amazon",
+    "icon": "Aws"
+  },
+  {
+    "name": "MoonshotAI",
+    "icon": "Moonshot"
+  },
+  {
+    "name": "Perplexity",
+    "icon": "Perplexity"
+  },
+  {
+    "name": "TheDrummer",
+    "icon": "TheDrummer"
+  },
+  {
+    "name": "Nous",
+    "icon": "NousResearch"
+  },
+  {
+    "name": "Venice",
+    "icon": "Venice"
+  },
+  {
+    "name": "Morph",
+    "icon": "Morph"
+  },
+  {
+    "name": "Microsoft",
+    "icon": "Microsoft"
+  },
+  {
+    "name": "anthracite-org",
+    "icon": "Anthracite"
+  },
+  {
+    "name": "Sao10K",
+    "icon": "Sao10K"
+  },
+  {
+    "name": "Mancer",
+    "icon": "Mancer"
+  },
+  {
+    "name": "undi95",
+    "icon": "Undi95"
+  },
+  {
+    "name": "gryphe",
+    "icon": "Gryphe"
+  },
+  {
+    "name": "Z.AI",
+    "icon": "ZAI"
+  }
+]

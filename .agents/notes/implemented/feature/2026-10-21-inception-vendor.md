@@ -14,7 +14,7 @@ Inception 的 Mercury 模型使用兼容 Chat Completions 的接口，但渠道�
 
 模型广场复用默认供应商映射，为实际可用的 Mercury 模型补充 Inception 名称、图标标识与简介；仅填补无归属元数据，不覆盖管理员非零 vendor_id。共享名称规则须复制后应用展示回退；复用 Inception / Inception Labs / InceptionLabs 已有供应商，保留自定义图标和简介，不新增启动迁移。官方同步使用同一名称规则。令牌分组、渠道关联分组及使用日志统一识别 Inception/Mercury 别名，不改变组标识或权限。
 
-不新增渠道类型、定价、模型路由、密钥或可用模型。不把 Decide、Edit 或扩散过程可视化视为已适配的聊天接口。当前图标库无 Inception，沿用既有首字母图标回退，不冒用小米图标或升级整个依赖。
+不新增渠道类型、定价、模型路由、密钥或可用模型。不把 Decide、Edit 或扩散过程可视化视为已适配的聊天接口。初始图标库无 Inception，曾沿用首字母图标回退；此显示妥协由[厂商 Logo 补齐](../bug-fix/2026-10-31-openrouter-vendor-logos.md)取代，现使用本地真实品牌组件，分类与协议决定保持不变。
 
 [渠道思考适配](2026-10-25-channel-reasoning-profiles.md)在显式启用 auto 时复用厂商归属选择精确模型模板；单独更改展示分类仍不改变选渠与协议，旧渠道缺省保留原行为。
 

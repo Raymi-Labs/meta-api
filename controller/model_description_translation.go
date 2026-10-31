@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -18,22 +15,18 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/google/uuid"
 	"gorm.io/gorm/clause"
 )
 
-const descriptionTranslationURL = "https://translate.googleapis.com/translate_a/single"
-
 var descriptionTaskOnce sync.Once
-var descriptionHTTPClient = &http.Client{Timeout: 35 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
 // Keep code, identifiers, URLs, variables, and numeric specifications opaque.
 var descriptionProtected = regexp.MustCompile("(?s)```.*?```|`[^`]*`|https?://[^\\s<>]+|\\{\\{[^}]*\\}\\}|\\$\\{[^}]*\\}|\\b[A-Za-z][A-Za-z0-9]*[-_][A-Za-z0-9_.:/-]+\\b|\\b(?:OpenAI|ChatGPT|GPT|Claude|Anthropic|Gemini|DeepSeek|Qwen|Grok|Kimi|MiMo|MiniMax|Moonshot|API|SDK|JSON|Python|TypeScript)\\b|[0-9]+(?:[.,][0-9]+)*(?:[KMBkmb])?")
 var descriptionMarker = regexp.MustCompile(`ZXV([0-9]{5})ZXV`)
 
-type descriptionContentError string
-
-func (e descriptionContentError) Error() string { return string(e) }
+type descriptionContentError = service.SystemTranslationContentError
 
 type descriptionPart struct {
 	Text   string
@@ -125,69 +118,18 @@ func restoreDescriptionPart(value string, part descriptionPart) (string, error) 
 	return leading + strings.TrimSpace(restored) + trailing, nil
 }
 
-type descriptionTranslateError struct {
-	status  int
-	retryAt int64
-}
+type descriptionTranslateError = service.SystemTranslationHTTPError
 
-func (e *descriptionTranslateError) Error() string {
-	return fmt.Sprintf("description translation HTTP %d", e.status)
-}
 func translateDescriptionPart(ctx context.Context, part descriptionPart, locale string) (string, error) {
-	// Code-only fragments do not need a third-party request.
+	// Code-only fragments do not require a paid translation request.
 	if strings.TrimSpace(descriptionMarker.ReplaceAllString(part.Text, "")) == "" {
 		return restoreDescriptionPart(part.Text, part)
 	}
-	query := url.Values{"client": {"gtx"}, "sl": {"auto"}, "tl": {locale}, "dt": {"t"}, "q": {part.Text}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, descriptionTranslationURL+"?"+query.Encode(), nil)
+	value, err := service.TranslateSystemText(ctx, part.Text, locale)
 	if err != nil {
 		return "", err
 	}
-	res, err := descriptionHTTPClient.Do(req)
-	if err != nil {
-		return "", errors.New("description translation unavailable")
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		retry := int64(0)
-		if seconds, err := strconv.ParseInt(res.Header.Get("Retry-After"), 10, 64); err == nil && seconds > 0 && seconds < 31536000 {
-			retry = time.Now().Unix() + seconds
-		} else if date, err := http.ParseTime(res.Header.Get("Retry-After")); err == nil {
-			retry = date.Unix()
-		}
-		return "", &descriptionTranslateError{status: res.StatusCode, retryAt: retry}
-	}
-	body, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
-	if err != nil {
-		return "", err
-	}
-	var envelope []interface{}
-	if common.Unmarshal(body, &envelope) != nil || len(envelope) == 0 {
-		return "", descriptionContentError("invalid translation response")
-	}
-	rows, ok := envelope[0].([]interface{})
-	if !ok {
-		return "", descriptionContentError("invalid translation segments")
-	}
-	var out strings.Builder
-	for _, raw := range rows {
-		row, ok := raw.([]interface{})
-		if !ok || len(row) == 0 {
-			return "", descriptionContentError("invalid translation segment")
-		}
-		s, ok := row[0].(string)
-		if !ok {
-			return "", descriptionContentError("invalid translation text")
-		}
-		out.WriteString(s)
-	}
-	if len(envelope) > 2 {
-		detected, _ := envelope[2].(string)
-		if strings.TrimSpace(out.String()) == strings.TrimSpace(part.Text) && detected != "" && !strings.EqualFold(detected, locale) && !(strings.HasPrefix(detected, "zh") && strings.HasPrefix(locale, "zh")) {
-			return "", descriptionContentError("translation returned unchanged source language")
-		}
-	}
-	return restoreDescriptionPart(out.String(), part)
+	return restoreDescriptionPart(value, part)
 }
 
 // Returns one unpublished chunk. Ordering favors zh-CN then English and all
@@ -231,6 +173,7 @@ func nextDescriptionTranslation(ctx context.Context, now int64) (*model.ModelDes
 			if !needed[key] {
 				continue
 			}
+			key = model.SystemTranslationModel + ":" + key
 			row := cache[key]
 			if row.Completed || row.NextAttemptAt > now {
 				continue
@@ -257,6 +200,9 @@ func descriptionBackoff(failures int, limited bool) time.Duration {
 	return min(base*time.Duration(1<<min(max(failures-1, 0), 5)), capDelay)
 }
 func runDescriptionTranslationStep(ctx context.Context) error {
+	if model.SystemTranslationTokenID() == 0 {
+		return nil
+	}
 	now := time.Now().Unix()
 	lease := uuid.NewString()
 	state, claimed, err := model.ClaimModelDescriptionWorker(ctx, now, lease)
@@ -270,6 +216,12 @@ func runDescriptionTranslationStep(ctx context.Context) error {
 		defer cancel()
 		_ = model.FinishModelDescriptionWorker(finishCtx, lease, next, failures)
 	}()
+	// Configuration failures affect the worker, never an individual source/locale.
+	if _, err := model.ValidateSystemTranslationToken(ctx, model.SystemTranslationTokenID(), 0); err != nil {
+		failures++
+		next = time.Now().Add(descriptionBackoff(failures, false)).Unix()
+		return err
+	}
 	row, parts, err := nextDescriptionTranslation(ctx, now)
 	if err != nil {
 		return err
@@ -288,16 +240,16 @@ func runDescriptionTranslationStep(ctx context.Context) error {
 		limited := false
 		var httpErr *descriptionTranslateError
 		if errors.As(err, &httpErr) {
-			limited = httpErr.status == 403 || httpErr.status == 429
+			limited = httpErr.Status == 401 || httpErr.Status == 402 || httpErr.Status == 403 || httpErr.Status == 429
 		}
 		failures++
 		next = time.Now().Add(descriptionBackoff(failures, limited)).Unix()
 		if httpErr != nil {
-			next = max(next, httpErr.retryAt)
+			next = max(next, httpErr.RetryAt)
 		}
 		row.NextAttemptAt = next
 		var contentErr descriptionContentError
-		if errors.As(err, &contentErr) || (httpErr != nil && httpErr.status >= 400 && httpErr.status < 500 && !limited) {
+		if errors.As(err, &contentErr) || (httpErr != nil && httpErr.Status >= 400 && httpErr.Status < 500 && !limited) {
 			// A malformed translation must not starve every other model/language.
 			row.NextAttemptAt = time.Now().Add(24 * time.Hour).Unix()
 			next = time.Now().Unix() + 5
