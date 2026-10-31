@@ -7396,6 +7396,14 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Tỷ giá tham khảo không khả dụng; tạm dừng so sánh giá khác tiền tệ",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Thông tin mô hình tự động cập nhật, ưu tiên nguồn chính thức. Các chỉnh sửa thủ công được giữ lại; thông tin chưa lấy được vẫn ở trạng thái chưa biết.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Tính theo số tiền thực trả, tỷ lệ hiện tại {{ratePercent}}%. Tự động quyết toán sau khi thanh toán thành công",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Hoa hồng đã quyết toán được tổng hợp theo người dùng ẩn danh ở cấp 1 và nhánh giới thiệu trực tiếp ở cấp 2. Không hiển thị tài khoản và thông tin đăng ký riêng của người được giới thiệu gián tiếp. Tự động quyết toán sau khi thanh toán thành công; trang làm mới định kỳ."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Hoa hồng đã quyết toán được tổng hợp theo người dùng ẩn danh ở cấp 1 và nhánh giới thiệu trực tiếp ở cấp 2. Không hiển thị tài khoản và thông tin đăng ký riêng của người được giới thiệu gián tiếp. Tự động quyết toán sau khi thanh toán thành công; trang làm mới định kỳ.",
+    "介绍语言": "Ngôn ngữ mô tả",
+    "自动翻译": "Bản dịch tự động",
+    "等待翻译": "Đang chờ dịch",
+    "恢复自动": "Khôi phục tự động",
+    "多语言介绍": "Mô tả đa ngôn ngữ",
+    "介绍原文": "Mô tả gốc",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Mô tả thay đổi theo ngôn ngữ trang web. Chỉnh sửa thủ công được ưu tiên; xóa để khôi phục bản dịch tự động.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Bản gốc được dùng để tạo mô tả bằng mọi ngôn ngữ của trang web, không quyết định ngôn ngữ khách truy cập nhìn thấy."
   }
 }

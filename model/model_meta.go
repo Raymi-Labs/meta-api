@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 
@@ -22,29 +23,32 @@ type BoundChannel struct {
 }
 
 type Model struct {
-	FAQ              ModelFAQ                        `json:"faq" gorm:"type:text"`
-	OfficialPricing  OfficialPricing                 `json:"official_pricing" gorm:"type:text"`
-	Id               int                             `json:"id"`
-	ModelName        string                          `json:"model_name" gorm:"size:128;not null;uniqueIndex:uk_model_name_delete_at,priority:1"`
-	DisplayName      string                          `json:"display_name" gorm:"type:varchar(128)"`
-	ReleaseDate      string                          `json:"release_date" gorm:"type:varchar(10);default:''"`
-	MaxOutputTokens  int64                           `json:"max_output_tokens" gorm:"type:bigint;default:0"`
-	Capabilities     ModelCapabilities               `json:"capabilities" gorm:"type:text"`
-	AttributeSources map[string]ModelAttributeSource `json:"attribute_sources,omitempty" gorm:"-"`
-	ContextLength    int64                           `json:"context_length" gorm:"type:bigint;default:0"`
-	InputModalities  ModelModalities                 `json:"input_modalities" gorm:"type:text"`
-	OutputModalities ModelModalities                 `json:"output_modalities" gorm:"type:text"`
-	Description      string                          `json:"description,omitempty" gorm:"type:text"`
-	Icon             string                          `json:"icon,omitempty" gorm:"type:varchar(128)"`
-	Tags             string                          `json:"tags,omitempty" gorm:"type:varchar(255)"`
-	DisplayVendorID  int                             `json:"display_vendor_id" gorm:"-"`
-	VendorID         int                             `json:"vendor_id,omitempty" gorm:"index"`
-	Endpoints        string                          `json:"endpoints,omitempty" gorm:"type:text"`
-	Status           int                             `json:"status" gorm:"default:1"`
-	SyncOfficial     int                             `json:"sync_official" gorm:"default:1"`
-	CreatedTime      int64                           `json:"created_time" gorm:"bigint"`
-	UpdatedTime      int64                           `json:"updated_time" gorm:"bigint"`
-	DeletedAt        gorm.DeletedAt                  `json:"-" gorm:"index;uniqueIndex:uk_model_name_delete_at,priority:2"`
+	DescriptionAutomatic    ModelDescriptions               `json:"description_automatic,omitempty" gorm:"-"`
+	DescriptionOverrides    ModelDescriptions               `json:"description_overrides,omitempty" gorm:"type:text"`
+	DescriptionTranslations ModelDescriptions               `json:"description_translations,omitempty" gorm:"-"`
+	FAQ                     ModelFAQ                        `json:"faq" gorm:"type:text"`
+	OfficialPricing         OfficialPricing                 `json:"official_pricing" gorm:"type:text"`
+	Id                      int                             `json:"id"`
+	ModelName               string                          `json:"model_name" gorm:"size:128;not null;uniqueIndex:uk_model_name_delete_at,priority:1"`
+	DisplayName             string                          `json:"display_name" gorm:"type:varchar(128)"`
+	ReleaseDate             string                          `json:"release_date" gorm:"type:varchar(10);default:''"`
+	MaxOutputTokens         int64                           `json:"max_output_tokens" gorm:"type:bigint;default:0"`
+	Capabilities            ModelCapabilities               `json:"capabilities" gorm:"type:text"`
+	AttributeSources        map[string]ModelAttributeSource `json:"attribute_sources,omitempty" gorm:"-"`
+	ContextLength           int64                           `json:"context_length" gorm:"type:bigint;default:0"`
+	InputModalities         ModelModalities                 `json:"input_modalities" gorm:"type:text"`
+	OutputModalities        ModelModalities                 `json:"output_modalities" gorm:"type:text"`
+	Description             string                          `json:"description,omitempty" gorm:"type:text"`
+	Icon                    string                          `json:"icon,omitempty" gorm:"type:varchar(128)"`
+	Tags                    string                          `json:"tags,omitempty" gorm:"type:varchar(255)"`
+	DisplayVendorID         int                             `json:"display_vendor_id" gorm:"-"`
+	VendorID                int                             `json:"vendor_id,omitempty" gorm:"index"`
+	Endpoints               string                          `json:"endpoints,omitempty" gorm:"type:text"`
+	Status                  int                             `json:"status" gorm:"default:1"`
+	SyncOfficial            int                             `json:"sync_official" gorm:"default:1"`
+	CreatedTime             int64                           `json:"created_time" gorm:"bigint"`
+	UpdatedTime             int64                           `json:"updated_time" gorm:"bigint"`
+	DeletedAt               gorm.DeletedAt                  `json:"-" gorm:"index;uniqueIndex:uk_model_name_delete_at,priority:2"`
 
 	ModelCapabilitySyncState string `json:"-" gorm:"type:text"`
 
@@ -109,7 +113,14 @@ func (mi *Model) UpdateOmittingMetadata(omitted []string) error {
 }
 
 func (mi *Model) UpdateWithMetadataOverrides(omitted []string, overrides map[string]*bool) error {
-	if len(overrides) > 0 {
+	return mi.UpdateWithLocalizedMetadata(omitted, overrides, nil)
+}
+
+func (mi *Model) UpdateWithLocalizedMetadata(omitted []string, overrides map[string]*bool, descriptions map[string]*string) error {
+	if err := ValidateDescriptionOverrides(descriptions); err != nil {
+		return err
+	}
+	if len(overrides) > 0 || len(descriptions) > 0 {
 		keys := ModelCapabilities{}
 		for key := range overrides {
 			keys[key] = false
@@ -119,12 +130,23 @@ func (mi *Model) UpdateWithMetadataOverrides(omitted []string, overrides map[str
 		}
 		return DB.Transaction(func(tx *gorm.DB) error {
 			var current Model
-			query := tx.Select("id", "capabilities")
+			query := tx.Select("id", "capabilities", "description_overrides")
 			if tx.Dialector.Name() != "sqlite" {
 				query = query.Clauses(clause.Locking{Strength: "UPDATE"})
 			}
 			if err := query.First(&current, mi.Id).Error; err != nil {
 				return err
+			}
+			mi.DescriptionOverrides = current.DescriptionOverrides.Clone()
+			if mi.DescriptionOverrides == nil {
+				mi.DescriptionOverrides = ModelDescriptions{}
+			}
+			for locale, value := range descriptions {
+				if value == nil || strings.TrimSpace(*value) == "" {
+					delete(mi.DescriptionOverrides, locale)
+				} else {
+					mi.DescriptionOverrides[locale] = strings.TrimSpace(*value)
+				}
 			}
 			mi.Capabilities = current.Capabilities.Clone()
 			if mi.Capabilities == nil {
@@ -147,7 +169,7 @@ func (mi *Model) updateMetadata(db *gorm.DB, omitted []string) error {
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return db.Model(&Model{}).Where("id = ?", mi.Id).
-		Select("faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
+		Select("description_overrides", "faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
 		Omit(omitted...).Updates(mi).Error
 }
 

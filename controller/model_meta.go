@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,10 +16,11 @@ import (
 // Keep added fields presence-aware so older full-update clients do not erase
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
-	CapabilityOverrides map[string]*bool `json:"capability_overrides"`
-	Description         *string          `json:"description"`
-	Tags                *string          `json:"tags"`
-	VendorID            *int             `json:"vendor_id"`
+	DescriptionOverrides map[string]*string `json:"description_overrides"`
+	CapabilityOverrides  map[string]*bool   `json:"capability_overrides"`
+	Description          *string            `json:"description"`
+	Tags                 *string            `json:"tags"`
+	VendorID             *int               `json:"vendor_id"`
 	model.Model
 	FAQ              *model.ModelFAQ          `json:"faq"`
 	OfficialPricing  *model.OfficialPricing   `json:"official_pricing"`
@@ -33,8 +35,10 @@ type modelMetaRequest struct {
 
 func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
 	m := request.Model
+	m.DescriptionOverrides = nil
 	if existing != nil {
 		m.Description, m.Tags, m.VendorID = existing.Description, existing.Tags, existing.VendorID
+		m.DescriptionOverrides = existing.DescriptionOverrides.Clone()
 		m.FAQ = existing.FAQ.Clone()
 		m.OfficialPricing = existing.OfficialPricing
 		m.DisplayName = existing.DisplayName
@@ -44,6 +48,19 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 		m.ContextLength = existing.ContextLength
 		m.InputModalities = existing.InputModalities
 		m.OutputModalities = existing.OutputModalities
+	}
+	if err := model.ValidateDescriptionOverrides(request.DescriptionOverrides); err != nil {
+		return m, err
+	}
+	if m.DescriptionOverrides == nil {
+		m.DescriptionOverrides = model.ModelDescriptions{}
+	}
+	for locale, text := range request.DescriptionOverrides {
+		if text == nil || strings.TrimSpace(*text) == "" {
+			delete(m.DescriptionOverrides, locale)
+		} else {
+			m.DescriptionOverrides[locale] = strings.TrimSpace(*text)
+		}
 	}
 	if request.Description != nil {
 		m.Description = *request.Description
@@ -112,6 +129,7 @@ func (request modelMetaRequest) omittedMetadataFields() []string {
 		name    string
 		omitted bool
 	}{
+		{"description_overrides", len(request.DescriptionOverrides) == 0},
 		{"description", request.Description == nil}, {"tags", request.Tags == nil}, {"vendor_id", request.VendorID == nil},
 		{"official_pricing", request.OfficialPricing == nil}, {"release_date", request.ReleaseDate == nil},
 		{"context_length", request.ContextLength == nil}, {"max_output_tokens", request.MaxOutputTokens == nil},
@@ -253,7 +271,7 @@ func UpdateModelMeta(c *gin.Context) {
 			return
 		}
 
-		if err := m.UpdateWithMetadataOverrides(request.omittedMetadataFields(), request.CapabilityOverrides); err != nil {
+		if err := m.UpdateWithLocalizedMetadata(request.omittedMetadataFields(), request.CapabilityOverrides, request.DescriptionOverrides); err != nil {
 			common.ApiError(c, err)
 			return
 		}
@@ -286,6 +304,7 @@ func DeleteModelMeta(c *gin.Context) {
 
 // enrichModels 批量填充附加信息：端点、渠道、分组、计费类型，避免 N+1 查询
 func enrichModels(models []*model.Model) {
+	_ = model.FillModelDescriptionTranslations(context.Background(), models)
 	for _, m := range models {
 		if m != nil {
 			m.AttributeSources = m.DisplayAttributeSources()

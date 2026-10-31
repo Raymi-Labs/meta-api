@@ -74,7 +74,7 @@ const SyncWizardModal = ({ visible, onClose, onConfirm, loading, t }) => {
       <div className='mb-3'>
         <Steps type='basic' current={step} size='small'>
           <Steps.Step title={t('选择方式')} description={t('选择同步来源')} />
-          <Steps.Step title={t('选择语言')} description={t('选择同步语言')} />
+          <Steps.Step title={t('选择语言')} description={t('介绍原文')} />
         </Steps>
       </div>
 
@@ -101,7 +101,7 @@ const SyncWizardModal = ({ visible, onClose, onConfirm, loading, t }) => {
       {step === 1 && (
         <div className='mt-2'>
           <div className='mb-2 text-[var(--semi-color-text-2)]'>
-            {t('请选择同步语言')}
+            {t('原文用于自动生成全站语言的介绍，不决定用户看到的语言。')}
           </div>
           <div className='flex justify-center'>
             <RadioGroup

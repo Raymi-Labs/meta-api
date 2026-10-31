@@ -62,6 +62,8 @@
     "test:video-preflight": "node scripts/video-preflight.test.mjs",
     "test:rich-content-security": "node scripts/rich-content-security.browser.mjs",
     "test:image-playground-static": "node scripts/image-playground-static-guard.test.mjs",
+    "test:model-descriptions": "bun test scripts/model-description.test.mjs scripts/model-metadata-patch.test.mjs",
+    "test:model-description-browser": "node scripts/model-description.browser.mjs",
     "test:model-pricing-currency": "node scripts/model-pricing-currency.test.mjs",
     "test:tiered-billing-display": "node scripts/tiered-billing-display.test.mjs",
     "test:cache-semantics": "node --test scripts/cache-semantics.test.mjs",

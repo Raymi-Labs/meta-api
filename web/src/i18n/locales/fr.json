@@ -7115,6 +7115,14 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Taux de référence indisponible ; comparaison entre devises suspendue",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Les informations du modèle sont mises à jour automatiquement, en privilégiant les sources officielles. Les modifications manuelles sont conservées ; les informations indisponibles restent inconnues.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Calcul sur le montant payé, taux actuel {{ratePercent}} %. Règlement automatique après paiement réussi",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Les commissions réglées sont regroupées par utilisateur anonyme au niveau 1 et par branche de parrainage direct au niveau 2. Les comptes et inscriptions individuels des filleuls indirects restent masqués. Le règlement suit le paiement réussi ; cette page s’actualise périodiquement."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Les commissions réglées sont regroupées par utilisateur anonyme au niveau 1 et par branche de parrainage direct au niveau 2. Les comptes et inscriptions individuels des filleuls indirects restent masqués. Le règlement suit le paiement réussi ; cette page s’actualise périodiquement.",
+    "介绍语言": "Langue de la description",
+    "自动翻译": "Traduction automatique",
+    "等待翻译": "Traduction en attente",
+    "恢复自动": "Rétablir le mode automatique",
+    "多语言介绍": "Descriptions multilingues",
+    "介绍原文": "Description originale",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Les descriptions suivent la langue du site. Les modifications manuelles sont prioritaires ; effacez-les pour rétablir la traduction automatique.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Le texte original sert à générer les descriptions dans toutes les langues du site ; il ne détermine pas la langue affichée aux visiteurs."
   }
 }

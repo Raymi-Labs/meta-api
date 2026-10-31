@@ -6783,6 +6783,14 @@
     "参考汇率暂不可用，暂停跨币种价格对比": "Kurs referencyjny niedostępny; porównanie cen między walutami wstrzymane",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Dane modelu aktualizują się automatycznie, z pierwszeństwem oficjalnych źródeł. Ręczne zmiany są zachowywane; niedostępne informacje pozostają nieznane.",
     "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Obliczane od zapłaconej kwoty, aktualna stawka {{ratePercent}}%. Automatyczne rozliczenie po udanej płatności",
-    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Rozliczone prowizje są grupowane według anonimowych użytkowników na poziomie 1 i gałęzi bezpośrednich poleceń na poziomie 2. Konta i indywidualne dane rejestracji pośrednio poleconych osób są ukryte. Rozliczenie następuje po udanej płatności; strona odświeża się okresowo."
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Rozliczone prowizje są grupowane według anonimowych użytkowników na poziomie 1 i gałęzi bezpośrednich poleceń na poziomie 2. Konta i indywidualne dane rejestracji pośrednio poleconych osób są ukryte. Rozliczenie następuje po udanej płatności; strona odświeża się okresowo.",
+    "介绍语言": "Język opisu",
+    "自动翻译": "Tłumaczenie automatyczne",
+    "等待翻译": "Oczekiwanie na tłumaczenie",
+    "恢复自动": "Przywróć automatyczne",
+    "多语言介绍": "Opisy wielojęzyczne",
+    "介绍原文": "Oryginalny opis",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Opisy są wyświetlane w języku witryny. Ręczne zmiany mają pierwszeństwo; usuń je, aby przywrócić tłumaczenie automatyczne.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Oryginał służy do generowania opisów we wszystkich językach witryny; nie określa języka wyświetlanego odwiedzającym."
   }
 }

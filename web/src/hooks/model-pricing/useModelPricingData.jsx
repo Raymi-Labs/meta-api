@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { localizeModelDescription } from '../../helpers/modelDescription';
 import { sortPricingModels } from '../../helpers/modelPriceSorting';
 import { groupForPricingVendor } from '../../helpers/pricingVendorSelection';
 import { calculateModelPrice } from '../../helpers/utils';
@@ -129,7 +130,7 @@ const computePackageEffectiveRate = (plan, quotaPerUnit, usdExchangeRate) => {
 };
 
 export const useModelPricingData = (initialState) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [initialCatalogState] = useState(() =>
     sanitizeModelCatalogSnapshot(initialState),
   );
@@ -168,7 +169,14 @@ export const useModelPricingData = (initialState) => {
     initialCatalogState.showWithRecharge,
   );
   const [tokenUnit, setTokenUnit] = useState(initialCatalogState.tokenUnit);
-  const [models, setModels] = useState([]);
+  const [rawModels, setModels] = useState([]);
+  const models = useMemo(
+    () =>
+      rawModels.map((model) =>
+        localizeModelDescription(model, i18n.resolvedLanguage || i18n.language),
+      ),
+    [rawModels, i18n.resolvedLanguage, i18n.language],
+  );
   const [vendorsMap, setVendorsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -357,6 +365,8 @@ export const useModelPricingData = (initialState) => {
             model.display_name.toLowerCase().includes(searchTerm)) ||
           (model.description &&
             model.description.toLowerCase().includes(searchTerm)) ||
+          (model.description_original &&
+            model.description_original.toLowerCase().includes(searchTerm)) ||
           (model.tags && model.tags.toLowerCase().includes(searchTerm)) ||
           (model.vendor_name &&
             model.vendor_name.toLowerCase().includes(searchTerm)),
@@ -693,7 +703,12 @@ export const useModelPricingData = (initialState) => {
     setSelectedGroup,
     showModelDetail,
     setShowModelDetail,
-    selectedModel: hasCurrentIdentity ? selectedModel : null,
+    selectedModel: hasCurrentIdentity
+      ? localizeModelDescription(
+          selectedModel,
+          i18n.resolvedLanguage || i18n.language,
+        )
+      : null,
     setSelectedModel,
     filterGroup,
     setFilterGroup,
