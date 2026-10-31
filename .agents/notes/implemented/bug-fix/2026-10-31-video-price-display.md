@@ -23,3 +23,5 @@ Targeted frontend tests cover linear rates, ranges, expression-wide arithmetic f
 ## Consequences
 
 Rate ranges describe priced branches, not availability. Historical missing parameters cannot be reconstructed. New snapshots require deployment.
+
+Known H3 and generic second-price templates now retain resolution/duration rows under [resolution prices](2026-11-01-video-resolution-prices.md); generic range fallback and task-log decisions remain unchanged.

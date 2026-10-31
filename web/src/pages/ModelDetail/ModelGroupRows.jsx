@@ -129,7 +129,9 @@ export default function ModelGroupRows({
               />
             </header>
             <div className='model-group-values'>
-              <div className='model-group-pricing-values'>
+              <div
+                className={`model-group-pricing-values${pricing.videoPricing ? ' model-group-video-prices' : ''}`}
+              >
                 <div className='model-group-price-cell model-group-price-items'>
                   {items.length
                     ? items
@@ -146,6 +148,15 @@ export default function ModelGroupRows({
                         ))
                     : t('见价格详情')}
                 </div>
+                {pricing.videoPricing && (
+                  <p className='model-detail-caption model-video-price-note'>
+                    {t(
+                      '按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。',
+                    )}
+                    {items.some((item) => item.multiple) &&
+                      ` ${t('多份生成按份数累加。')}`}
+                  </p>
+                )}
                 <div className='model-group-price-items'>
                   {items.filter(isCachePriceItem).map((item) => (
                     <ModelGroupPrice
@@ -157,7 +168,9 @@ export default function ModelGroupRows({
                       data={data}
                     />
                   ))}
-                  {!items.some(isCachePriceItem) && '—'}
+                  {!pricing.videoPricing &&
+                    !items.some(isCachePriceItem) &&
+                    '—'}
                 </div>
               </div>
               <dl className='model-group-health-values'>

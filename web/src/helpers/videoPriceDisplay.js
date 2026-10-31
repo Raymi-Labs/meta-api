@@ -1,9 +1,82 @@
+/*
+Copyright (C) 2025 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
 import { formatModelPricingUnitPrice } from './modelPricingCurrency.js';
+import { buildH3SecondsExpression, h3VideoProfiles } from './h3VideoPricing.js';
+import { buildVideoPricingTemplate } from './videoPricingTemplate.js';
+
+// Keep quoted values intact. Only known, complete generated templates may be
+// labelled by resolution: partial matches could omit charges or request rules.
+const compactExpression = (expression) =>
+  expression.replace(/"(?:[^"\\]|\\.)*"|\s+/g, (part) =>
+    part.startsWith('"') ? part : '',
+  );
+
+export function videoResolutionRates(expression = '') {
+  if (typeof expression !== 'string' || expression.length > 100000) return [];
+  const source = compactExpression(expression.replace(/^v1:/, ''));
+  const number = '(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)';
+  const h3Pattern = new RegExp(
+    'param\\("resolution"\\)=="([^"]+)"\\?tier\\("video_[^"]+",param\\("duration"\\)\\*' +
+      number +
+      '\\)',
+    'g',
+  );
+  const rates = Object.fromEntries(
+    [...source.matchAll(h3Pattern)].map((m) => [m[1], Number(m[2]) / 1e6]),
+  );
+  for (const [model, profile] of Object.entries(h3VideoProfiles)) {
+    const rebuilt = buildH3SecondsExpression(model, rates);
+    if (rebuilt && compactExpression(rebuilt) === source)
+      return profile.resolutions.map((resolution) => ({
+        resolution,
+        min: profile.min,
+        max: profile.max,
+        rate: rates[resolution],
+        multiple: false,
+      }));
+  }
+  const rowPattern = new RegExp(
+    'param\\("resolution"\\)=="([^"]+)"&&param\\("duration"\\)>=(\\d+)&&param\\("duration"\\)<=(\\d+)\\?tier\\("video_\\d+",param\\("duration"\\)\\*' +
+      number +
+      '\\*\\(param\\("sampleCount"\\)\\?\\?1\\)\\)',
+    'g',
+  );
+  // The generator nests the last configured row first.
+  const rows = [...source.matchAll(rowPattern)].reverse().map((m) => ({
+    resolution: m[1],
+    min: Number(m[2]),
+    max: Number(m[3]),
+    rate: Number(m[4]) / 1e6,
+    multiple: true,
+  }));
+  const rebuilt = rows.length <= 100 && buildVideoPricingTemplate(rows);
+  return rebuilt && compactExpression(rebuilt) === source ? rows : [];
+}
 
 // Do not evaluate arbitrary billing expressions in the browser. Recognize only
 // linear duration tiers and retain the existing fallback for everything else.
 export function videoSecondRates(expression = '') {
-  if (expression.length > 100000) return [];
+  if (typeof expression !== 'string' || expression.length > 100000) return [];
+  const rows = videoResolutionRates(expression);
+  if (rows.length)
+    return [...new Set(rows.map((row) => row.rate))].sort((a, b) => a - b);
   const rates = [];
   function scan(text) {
     let depth = 0,
@@ -81,8 +154,33 @@ export function videoSecondRates(expression = '') {
 }
 
 export function videoPriceItems(expression, ratio, displayPrice, t = (s) => s) {
+  if (ratio == null || !Number.isFinite(Number(ratio)) || Number(ratio) < 0)
+    return [];
+  const rows = videoResolutionRates(expression);
+  if (rows.length)
+    return rows.map((row, index) => {
+      const unitPriceUSD = row.rate * Number(ratio);
+      const value = formatModelPricingUnitPrice(unitPriceUSD, displayPrice, 4);
+      const amount = displayPrice?.toAmount?.(unitPriceUSD) ?? unitPriceUSD;
+      const duration = `${row.min === row.max ? row.min : `${row.min}–${row.max}`} ${t('秒')}`;
+      const repeated =
+        rows.filter((other) => other.resolution === row.resolution).length > 1;
+      return {
+        key: `video-resolution-${index}`,
+        label: row.resolution + (repeated ? ` · ${duration}` : ''),
+        value:
+          amount > 0 && Number(amount.toFixed(4)) === 0
+            ? `<${displayPrice?.currencySymbol || '$'}0.0001`
+            : value,
+        suffix: ` / ${t('秒')}`,
+        duration,
+        multiple: row.multiple,
+        unitPriceUSD,
+        isDynamic: false,
+      };
+    });
   const rates = videoSecondRates(expression);
-  if (!rates.length || !Number.isFinite(Number(ratio))) return [];
+  if (!rates.length) return [];
   const values = rates.map((rate) =>
     formatModelPricingUnitPrice(rate * Number(ratio), displayPrice, 4),
   );

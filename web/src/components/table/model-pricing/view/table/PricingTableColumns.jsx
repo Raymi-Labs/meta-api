@@ -17,9 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import {
-  isImagePriceExpression,
-} from '../../../../../helpers/imagePricing';
+import { isImagePriceExpression } from '../../../../../helpers/imagePricing';
 
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
@@ -68,6 +66,21 @@ export const getPricingTableColumns = ({
   };
   const renderPrice = (record, keys, includeFixed = false) => {
     const { data, items } = pricing(record);
+    const videoItems = items.filter((item) => item.key.startsWith('video-'));
+    if (videoItems.length) {
+      if (!includeFixed) return '—';
+      return (
+        <div className='flex flex-col gap-1'>
+          {videoItems.map((item) => (
+            <div key={item.key}>
+              <span className='pricing-group-description'>{item.label} </span>
+              <strong>{item.value}</strong>
+              <span>{item.suffix}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
     const item = items.find(
       (item) =>
         keys.includes(item.key) ||
@@ -159,16 +172,17 @@ export const getPricingTableColumns = ({
         const { data } = pricing(record);
         return (
           <div>
-            {record.quota_type === 0 && (
-              <>
-                <div>
-                  {t('模型倍率')}：{record.model_ratio ?? '—'}
-                </div>
-                <div>
-                  {t('补全倍率')}：{record.completion_ratio ?? '—'}
-                </div>
-              </>
-            )}
+            {record.quota_type === 0 &&
+              !isVideoPriceExpression(record.billing_expr) && (
+                <>
+                  <div>
+                    {t('模型倍率')}：{record.model_ratio ?? '—'}
+                  </div>
+                  <div>
+                    {t('补全倍率')}：{record.completion_ratio ?? '—'}
+                  </div>
+                </>
+              )}
             <div>
               {t('分组倍率')}：{data.usedGroupRatio}×
             </div>

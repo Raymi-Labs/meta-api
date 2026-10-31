@@ -7208,6 +7208,8 @@
     "已选条件": "Filtres sélectionnés",
     "功能": "Fonctions",
     "按供应商、功能、标签和输入模态发现模型。": "Découvrez les modèles par fournisseur, fonction, étiquette et modalité d’entrée.",
-    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Utilise automatiquement les métadonnées. Les inclusions et exclusions manuelles sont conservées lors de la synchronisation."
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Utilise automatiquement les métadonnées. Les inclusions et exclusions manuelles sont conservées lors de la synchronisation.",
+    "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "Facturation selon la durée vidéo demandée. Les prix incluent les multiplicateurs de groupe et de temps et utilisent le mode de prix choisi.",
+    "多份生成按份数累加。": "Chaque vidéo générée est facturée séparément."
   }
 }

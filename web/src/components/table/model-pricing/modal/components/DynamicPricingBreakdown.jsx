@@ -171,12 +171,13 @@ export default function DynamicPricingBreakdown({
               t,
             ).map((item) => (
               <div key={item.key}>
-                {t('基础价格')}：<strong>{item.value}</strong>
+                {item.label}：<strong>{item.value}</strong>
                 {item.suffix}
+                {item.duration && <small> · {item.duration}</small>}
               </div>
             ))
           ) : isVideoPriceExpression(billingExpr) ? (
-            t('见价格详情')
+            t('价格根据用量档位和请求条件动态调整')
           ) : (
             <code style={{ fontSize: 12, wordBreak: 'break-all' }}>
               {billingExpr}

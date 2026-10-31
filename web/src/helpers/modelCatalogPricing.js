@@ -90,14 +90,26 @@ export function getModelCatalogPricing(options, t) {
       options.displayPrice,
       t,
     );
-    if (videoItems.length) return { data, items: videoItems };
+    if (videoItems.length)
+      return {
+        data: {
+          ...data,
+          videoPricing: videoItems.some((item) => item.duration),
+          unitPricesUSD: Object.fromEntries(
+            videoItems
+              .filter((item) => item.unitPriceUSD != null)
+              .map((item) => [item.key, item.unitPriceUSD]),
+          ),
+        },
+        items: videoItems,
+      };
     return {
       data,
       items: [
         {
           key: 'video-parameters',
           label: t('视频按秒 / 表达式'),
-          value: t('见价格详情'),
+          value: t('动态计费'),
           suffix: '',
           isDynamic: true,
         },

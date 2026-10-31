@@ -6876,6 +6876,8 @@
     "已选条件": "Seçili filtreler",
     "功能": "İşlevler",
     "按供应商、功能、标签和输入模态发现模型。": "Sağlayıcı, işlev, etiket ve girdi türüne göre modelleri keşfedin.",
-    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Model meta verileri otomatik kullanılır. Elle dahil etme veya hariç tutma ayarları eşitleme sırasında korunur."
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Model meta verileri otomatik kullanılır. Elle dahil etme veya hariç tutma ayarları eşitleme sırasında korunur.",
+    "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "İstenen video süresine göre ücretlendirilir. Fiyatlar grup ve zaman çarpanlarını içerir ve seçilen fiyat moduna göre dönüştürülür.",
+    "多份生成按份数累加。": "Oluşturulan her video ayrı ücretlendirilir."
   }
 }

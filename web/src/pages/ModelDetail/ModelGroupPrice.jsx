@@ -85,6 +85,7 @@ export default function ModelGroupPrice({
         </strong>
         <small>{item.suffix}</small>
       </span>
+      {item.duration && <small>{item.duration}</small>}
       {comparison && (
         <span
           className={`model-group-discount model-group-discount-${comparison.kind}`}
