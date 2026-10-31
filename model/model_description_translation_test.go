@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -101,8 +102,10 @@ func TestDescriptionBundledTranslationsRequireExactSource(t *testing.T) {
 		require.Len(t, entry.Translations, len(ModelDescriptionLocales))
 		for _, locale := range ModelDescriptionLocales {
 			require.NotEmpty(t, entry.Translations[locale])
-			require.Contains(t, entry.Translations[locale], "GPT-6 Astra")
-			require.Contains(t, entry.Translations[locale], "OpenAI")
+
+			for _, token := range regexp.MustCompile(`GPT-6 Astra|OpenAI|Kimi|K3\.1|3T|1M|3D`).FindAllString(entry.Source, -1) {
+				require.Contains(t, entry.Translations[locale], token, locale)
+			}
 		}
 		require.Equal(t, entry.Source, entry.Translations["en"])
 		require.NotContains(t, bundledModelDescriptions, ModelDescriptionHash(entry.Source+" Changed."))

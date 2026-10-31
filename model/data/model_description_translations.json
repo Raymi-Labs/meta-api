@@ -20,5 +20,71 @@
       "uk": "GPT-6 Astra — найпотужніша модель OpenAI для складних міркувань, програмування, роботи з комп’ютером, досліджень і створення документів.",
       "bg": "GPT-6 Astra е най-способният модел на OpenAI за сложни разсъждения, програмиране, работа с компютър, изследвания и създаване на документи."
     }
+  },
+  {
+    "source": "Multimodal Kimi model with 1M context and always-on reasoning for coding, 3D creation, financial research, and agentic work",
+    "translations": {
+      "en": "Multimodal Kimi model with 1M context and always-on reasoning for coding, 3D creation, financial research, and agentic work",
+      "zh-CN": "多模态 Kimi 模型，支持 1M 上下文和始终开启的推理，适用于编程、3D 创作、金融研究及智能体任务。",
+      "zh-TW": "多模態 Kimi 模型，支援 1M 上下文與持續啟用的推理，適用於程式設計、3D 創作、金融研究及智慧代理任務。",
+      "ja": "1M のコンテキストと常時有効な推論を備えたマルチモーダル Kimi モデル。コーディング、3D 制作、金融調査、エージェントのタスクに対応します。",
+      "ko": "1M 컨텍스트와 상시 추론을 지원하는 멀티모달 Kimi 모델로, 코딩, 3D 제작, 금융 연구 및 에이전트 작업에 적합합니다.",
+      "de": "Multimodales Kimi-Modell mit 1M Kontext und stets aktivem Schlussfolgern für Programmierung, 3D-Gestaltung, Finanzrecherche und Agentenaufgaben.",
+      "es": "Modelo multimodal Kimi con contexto de 1M y razonamiento siempre activo para programación, creación 3D, investigación financiera y tareas de agentes.",
+      "fr": "Modèle multimodal Kimi avec un contexte de 1M et un raisonnement toujours actif pour la programmation, la création 3D, la recherche financière et les tâches d’agents.",
+      "pt": "Modelo multimodal Kimi com contexto de 1M e raciocínio sempre ativo para programação, criação 3D, pesquisa financeira e tarefas de agentes.",
+      "ru": "Мультимодальная модель Kimi с контекстом 1M и постоянно активным рассуждением для программирования, создания 3D-контента, финансовых исследований и агентных задач.",
+      "tr": "Kodlama, 3D üretimi, finansal araştırma ve ajan görevleri için 1M bağlama ve sürekli etkin akıl yürütmeye sahip çok modlu Kimi modeli.",
+      "pl": "Multimodalny model Kimi z kontekstem 1M i stale aktywnym rozumowaniem do programowania, tworzenia 3D, badań finansowych i zadań agentowych.",
+      "nl": "Multimodaal Kimi-model met 1M context en altijd actief redeneren voor programmeren, 3D-creatie, financieel onderzoek en agenttaken.",
+      "it": "Modello multimodale Kimi con contesto di 1M e ragionamento sempre attivo per programmazione, creazione 3D, ricerca finanziaria e attività degli agenti.",
+      "vi": "Mô hình đa phương thức Kimi với ngữ cảnh 1M và suy luận luôn bật, dành cho lập trình, sáng tạo 3D, nghiên cứu tài chính và tác vụ của tác nhân.",
+      "uk": "Мультимодальна модель Kimi з контекстом 1M і постійно активним міркуванням для програмування, створення 3D-контенту, фінансових досліджень та агентних завдань.",
+      "bg": "Мултимодален модел Kimi с контекст 1M и постоянно активно разсъждение за програмиране, 3D създаване, финансови изследвания и задачи на агенти."
+    }
+  },
+  {
+    "source": "Fast, efficient model for visual reasoning, precise computer use, and clear, natural writing.",
+    "translations": {
+      "en": "Fast, efficient model for visual reasoning, precise computer use, and clear, natural writing.",
+      "zh-CN": "快速、高效的模型，适用于视觉推理、精准计算机操作，以及清晰、自然的写作。",
+      "zh-TW": "快速、高效的模型，適用於視覺推理、精準電腦操作，以及清晰、自然的寫作。",
+      "ja": "視覚的推論、正確なコンピューター操作、明瞭で自然な文章作成に対応する、高速で効率的なモデルです。",
+      "ko": "시각적 추론, 정밀한 컴퓨터 조작, 명확하고 자연스러운 글쓰기를 위한 빠르고 효율적인 모델입니다.",
+      "de": "Schnelles, effizientes Modell für visuelles Schlussfolgern, präzise Computerbedienung und klares, natürliches Schreiben.",
+      "es": "Modelo rápido y eficiente para razonamiento visual, uso preciso de computadoras y escritura clara y natural.",
+      "fr": "Modèle rapide et efficace pour le raisonnement visuel, l’utilisation précise d’ordinateurs et une rédaction claire et naturelle.",
+      "pt": "Modelo rápido e eficiente para raciocínio visual, uso preciso de computadores e escrita clara e natural.",
+      "ru": "Быстрая и эффективная модель для визуального рассуждения, точной работы с компьютером и создания ясных, естественных текстов.",
+      "tr": "Görsel akıl yürütme, hassas bilgisayar kullanımı ve açık, doğal yazım için hızlı ve verimli model.",
+      "pl": "Szybki i wydajny model do rozumowania wizualnego, precyzyjnej obsługi komputera oraz jasnego, naturalnego pisania.",
+      "nl": "Snel, efficiënt model voor visueel redeneren, nauwkeurige computerbediening en helder, natuurlijk schrijven.",
+      "it": "Modello veloce ed efficiente per ragionamento visivo, uso preciso del computer e scrittura chiara e naturale.",
+      "vi": "Mô hình nhanh và hiệu quả cho suy luận thị giác, thao tác máy tính chính xác và viết rõ ràng, tự nhiên.",
+      "uk": "Швидка й ефективна модель для візуального міркування, точної роботи з комп’ютером і створення зрозумілих, природних текстів.",
+      "bg": "Бърз и ефективен модел за визуално разсъждение, прецизна работа с компютър и ясно, естествено писане."
+    }
+  },
+  {
+    "source": "The first model of the new K3.1 series and Kimi's most capable flagship to date: a 3T-class model with native visual understanding and a 1M-token context window, delivering substantial improvements in coding, 3D creation, and financial research and modeling.",
+    "translations": {
+      "en": "The first model of the new K3.1 series and Kimi's most capable flagship to date: a 3T-class model with native visual understanding and a 1M-token context window, delivering substantial improvements in coding, 3D creation, and financial research and modeling.",
+      "zh-CN": "全新 K3.1 系列的首款模型，也是 Kimi 迄今能力最强的旗舰：3T 级模型，具备原生视觉理解和 1M token 上下文窗口，在编程、3D 创作、金融研究与建模方面显著提升。",
+      "zh-TW": "全新 K3.1 系列的首款模型，也是 Kimi 迄今能力最強的旗艦：3T 級模型，具備原生視覺理解與 1M token 上下文視窗，在程式設計、3D 創作、金融研究與建模方面顯著提升。",
+      "ja": "新しい K3.1 シリーズ初のモデルであり、Kimi 史上最も高性能なフラッグシップです。ネイティブな視覚理解と 1M トークンのコンテキストウィンドウを備えた 3T クラスのモデルで、コーディング、3D 制作、金融調査とモデリングが大幅に向上しています。",
+      "ko": "새로운 K3.1 시리즈의 첫 모델이자 현재까지 가장 강력한 Kimi 플래그십입니다. 네이티브 시각 이해와 1M 토큰 컨텍스트 창을 갖춘 3T급 모델로, 코딩, 3D 제작, 금융 연구 및 모델링 성능이 크게 향상되었습니다.",
+      "de": "Das erste Modell der neuen K3.1-Serie und das bislang leistungsfähigste Flaggschiff von Kimi: ein Modell der 3T-Klasse mit nativem Bildverständnis und einem Kontextfenster von 1M Token, mit deutlichen Verbesserungen bei Programmierung, 3D-Gestaltung sowie Finanzrecherche und -modellierung.",
+      "es": "El primer modelo de la nueva serie K3.1 y el buque insignia más capaz de Kimi hasta la fecha: un modelo de clase 3T con comprensión visual nativa y una ventana de contexto de 1M tokens, con mejoras sustanciales en programación, creación 3D e investigación y modelado financiero.",
+      "fr": "Premier modèle de la nouvelle série K3.1 et modèle phare le plus performant de Kimi à ce jour : un modèle de classe 3T avec compréhension visuelle native et une fenêtre de contexte de 1M tokens, apportant des améliorations majeures en programmation, création 3D, recherche et modélisation financières.",
+      "pt": "O primeiro modelo da nova série K3.1 e o modelo principal mais capaz da Kimi até hoje: um modelo de classe 3T com compreensão visual nativa e janela de contexto de 1M tokens, com melhorias substanciais em programação, criação 3D, pesquisa e modelagem financeira.",
+      "ru": "Первая модель новой серии K3.1 и самый мощный флагман Kimi на сегодняшний день: модель класса 3T с нативным визуальным пониманием и контекстным окном 1M токенов, со значительными улучшениями в программировании, создании 3D-контента, финансовых исследованиях и моделировании.",
+      "tr": "Yeni K3.1 serisinin ilk modeli ve Kimi’nin bugüne kadarki en yetenekli amiral gemisi: yerleşik görsel anlama ve 1M token bağlam penceresine sahip 3T sınıfı bir model; kodlama, 3D üretimi, finansal araştırma ve modellemede önemli gelişmeler sunar.",
+      "pl": "Pierwszy model nowej serii K3.1 i najbardziej zaawansowany dotąd flagowy model Kimi: model klasy 3T z natywnym rozumieniem obrazu i oknem kontekstowym 1M tokenów, ze znacznymi usprawnieniami w programowaniu, tworzeniu 3D oraz badaniach i modelowaniu finansowym.",
+      "nl": "Het eerste model in de nieuwe K3.1-serie en het krachtigste vlaggenschip van Kimi tot nu toe: een model in de 3T-klasse met native beeldbegrip en een contextvenster van 1M tokens, met aanzienlijke verbeteringen in programmeren, 3D-creatie, financieel onderzoek en financiële modellering.",
+      "it": "Il primo modello della nuova serie K3.1 e il modello di punta più capace di Kimi finora: un modello di classe 3T con comprensione visiva nativa e una finestra di contesto di 1M token, con miglioramenti sostanziali nella programmazione, nella creazione 3D e nella ricerca e modellazione finanziaria.",
+      "vi": "Mô hình đầu tiên của dòng K3.1 mới và là mô hình chủ lực mạnh nhất của Kimi tính đến nay: mô hình cấp 3T với khả năng hiểu hình ảnh tích hợp và cửa sổ ngữ cảnh 1M token, cải thiện đáng kể về lập trình, sáng tạo 3D, nghiên cứu và mô hình hóa tài chính.",
+      "uk": "Перша модель нової серії K3.1 і найпотужніший флагман Kimi на сьогодні: модель класу 3T із вбудованим візуальним розумінням та контекстним вікном 1M токенів, зі значними покращеннями у програмуванні, створенні 3D-контенту, фінансових дослідженнях і моделюванні.",
+      "bg": "Първият модел от новата серия K3.1 и най-мощният флагман на Kimi досега: модел от клас 3T с вградено визуално разбиране и контекстен прозорец от 1M токена, със значителни подобрения в програмирането, 3D създаването, финансовите изследвания и моделирането."
+    }
   }
 ]
