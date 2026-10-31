@@ -33,3 +33,7 @@ Status: implemented
 示例可见仍不等于可调用，必须持续显示未声明和分组确认提示；不改变运行时转发与价格，不把此前 Responses 审查缺陷算作修复。合入最新main保留已提交的钱包、日志、发布日期排序和缓存价格改动；提交合并不等于生产部署。
 
 [接入信息合并](../simplification/2026-10-30-model-detail-quickstart-only.md)移除独立详情的重复端点区；广场 Responses 示例改到快速开始并预选模板，旧 #endpoints 兼容跳转；声明元数据与筛选语义不变。
+
+## Related decision
+
+[卡片摘要](../simplification/2026-10-31-model-card-summary.md)部分取代本篇的卡片展示决定：目录隐藏协议、厂商计费副行、缓存分项和阶梯提示。共享价格数据、详情、表格及筛选语义仍遵循原规则。
