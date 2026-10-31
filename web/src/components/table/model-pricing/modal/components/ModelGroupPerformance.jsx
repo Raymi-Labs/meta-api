@@ -20,7 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useState } from 'react';
 import { Button, Tabs, TabPane } from '@douyinfe/semi-ui';
 import { Link } from 'react-router-dom';
-import { useGroupHealth } from '../../../../../hooks/group-health/useGroupHealth';
+import {
+  useGroupHealth,
+  UPTIME_WINDOW_HOURS,
+} from '../../../../../hooks/group-health/useGroupHealth';
 import {
   GroupHealthLegend,
   GroupHealthCollectionNote,
@@ -38,6 +41,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
   const [activeTab, setActiveTab] = useState('pricing');
   const modelName = modelData?.model_name || modelData?.modelName;
   const { data, loading, error, refresh, isAuthenticated } = useGroupHealth({
+    hours: UPTIME_WINDOW_HOURS,
     model: modelName,
     enabled: enabled && Boolean(modelName),
   });
@@ -69,7 +73,9 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
       {!error && data && data.enabled !== false && (
         <>
           <div className='group-health-caption' style={{ marginBottom: 10 }}>
-            {modelName} · {t('最近 24 个小时段 · 每分钟更新')}
+            {modelName} ·{' '}
+            {t('最近 {{hours}} 小时', { hours: UPTIME_WINDOW_HOURS })} ·{' '}
+            {t('每分钟更新')}
           </div>
           <GroupHealthLegend uptime />
           <div className='group-health-stack'>
@@ -82,6 +88,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
                 metric={resolveGroupHealthMetric(
                   stats,
                   `${stats.group} ${modelName}`,
+                  true,
                 )}
               />
             ))}
@@ -91,7 +98,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
               {t('当前模型没有可用分组')}
             </div>
           )}
-          <GroupHealthScopeNote />
+          <GroupHealthScopeNote uptime />
         </>
       )}
     </>
@@ -107,7 +114,8 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
           <div className='group-health-price-summary'>
             <div className='group-health-price-summary-heading'>
               <span>
-                {t('该模型的分组表现')} · {t('最近 24 个小时段')}
+                {t('该模型的分组表现')} ·{' '}
+                {t('最近 {{hours}} 小时', { hours: UPTIME_WINDOW_HOURS })}
               </span>
               <Button
                 size='small'
@@ -140,6 +148,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
                     metric={resolveGroupHealthMetric(
                       stats,
                       `${stats.group} ${modelName}`,
+                      true,
                     )}
                     compact
                   />

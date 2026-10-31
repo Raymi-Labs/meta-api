@@ -23,9 +23,11 @@ import { Maximize2 } from 'lucide-react';
 import {
   healthTone,
   uptimeTone,
+  formatHealthReference,
 } from '../../components/group-health/healthUtils';
 import {
   chartDisplayValue,
+  chartMeasurement,
   formatChartValue,
   formatChartDetailValue,
   chartDomain,
@@ -100,6 +102,13 @@ export default function ModelMetricChart({
   const hoverIndex = timestamps.indexOf(hover);
   const format = (value) => formatChartValue(value, metric);
   const detail = (value) => formatChartDetailValue(value, metric);
+  const pointDetail = (point) =>
+    [
+      detail(chartDisplayValue(point, metric)),
+      formatHealthReference(chartMeasurement(point, metric), t),
+    ]
+      .filter(Boolean)
+      .join(' · ');
   const limited = (point) =>
     ['success_rate', 'uptime_rate'].includes(metric) &&
     ['empty', 'limited'].includes(
@@ -252,9 +261,7 @@ export default function ModelMetricChart({
                       values
                         .map(
                           (map, i) =>
-                            groups[i].group +
-                            ': ' +
-                            detail(chartDisplayValue(map.get(ts), metric)),
+                            groups[i].group + ': ' + pointDetail(map.get(ts)),
                         )
                         .join('\n')}
                   </title>
@@ -301,9 +308,7 @@ export default function ModelMetricChart({
                       }}
                     />
                     <span>{group.group}</span>
-                    <strong>
-                      {detail(chartDisplayValue(values[i].get(hover), metric))}
-                    </strong>
+                    <strong>{pointDetail(values[i].get(hover))}</strong>
                   </span>
                 ))}
               </div>
@@ -318,8 +323,11 @@ export default function ModelMetricChart({
           <div key={group.group}>
             <i style={{ background: activeColor(group, i) }} />
             <span title={group.group}>{group.group}</span>
-            <strong title={detail(chartDisplayValue(group, metric))}>
+            <strong title={pointDetail(group)}>
               {format(chartDisplayValue(group, metric))}
+              {chartMeasurement(group, metric)?.referenceTs && (
+                <small> · {t('沿用最近有效值')}</small>
+              )}
             </strong>
           </div>
         ))}
@@ -342,9 +350,7 @@ export default function ModelMetricChart({
                   <tr key={ts}>
                     <th>{date(ts)}</th>
                     {values.map((map, i) => (
-                      <td key={i}>
-                        {detail(chartDisplayValue(map.get(ts), metric))}
-                      </td>
+                      <td key={i}>{pointDetail(map.get(ts))}</td>
                     ))}
                   </tr>
                 ))}

@@ -27,6 +27,7 @@ import { UserContext } from '../../context/User';
 import { API } from '../../helpers/apiCore';
 
 const REFRESH_MS = 60000;
+export const UPTIME_WINDOW_HOURS = 72;
 const EMPTY = { data: null, loading: false, error: null };
 const sessions = new WeakMap();
 const entries = new Map();
