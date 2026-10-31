@@ -71,7 +71,8 @@ export const getPricingTableColumns = ({
     const item = items.find(
       (item) =>
         keys.includes(item.key) ||
-        (includeFixed && ['fixed', 'audio-duration'].includes(item.key)),
+        (includeFixed &&
+          ['fixed', 'audio-duration', 'video-second'].includes(item.key)),
     );
     if (!item) return data.isDynamicPricing ? t('见价格详情') : '—';
     return (

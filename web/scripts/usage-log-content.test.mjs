@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import {
+  isVideoConsumption,
+  videoLogSegments,
+} from '../src/helpers/videoPriceDisplay.js';
 import { transformSync } from 'esbuild';
 
 // Execute the real formatter so summary-column changes cannot silently remove
@@ -19,6 +23,12 @@ function format(rows, admin = false) {
   const env = {
     t: (value) => value,
     isAdminUser: admin,
+    isVideoConsumption,
+    videoLogSegments,
+    renderQuota: (value) => `Q${value}`,
+    billingDisplayMode: 'price',
+    requestConversionDisplayValue: () => 'native',
+    getResponseModelInfo: () => null,
     timestamp2string: (value) => String(value),
     getLogOther: (value) => JSON.parse(value || '{}'),
     promptTokensExcludeCache: () => false,
@@ -71,4 +81,24 @@ test('administrator record retains content and existing diagnostic details', () 
   );
   assert.equal(result[1].filter((item) => item.key === '详情').length, 1);
   assert.ok(result[1].some((item) => item.key === '计费模式'));
+});
+
+test('historical charged video omits invented zero price and upstream attribution', () => {
+  const result = format(
+    [
+      {
+        id: 99,
+        type: 2,
+        quota: 120,
+        content: 'generate',
+        created_at: 1,
+        other: JSON.stringify({ request_path: '/v1/videos', model_price: 0 }),
+      },
+    ],
+    true,
+  );
+  const rendered = JSON.stringify(result[99]);
+  assert.ok(rendered.includes('Q120'));
+  assert.ok(!rendered.includes('上游返回'));
+  assert.ok(!rendered.includes('模型价格'));
 });

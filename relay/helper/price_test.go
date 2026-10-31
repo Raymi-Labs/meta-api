@@ -182,3 +182,25 @@ func TestImagePricePreviewIgnoresClientDimensionsAndRejectsWrongRoute(t *testing
 	_, err = modelPriceHelperTiered(c, info, expr, 1, &types.TokenCountMeta{}, types.GroupRatioInfo{GroupRatio: 1}, types.TimeRatioInfo{})
 	require.Error(t, err)
 }
+
+func TestVideoTaskBillingLogSnapshotDoesNotAffectSettlement(t *testing.T) {
+	saved := billing_setting.TieredBundle{BillingMode: billing_setting.GetBillingModeCopy(), BillingExpr: billing_setting.GetBillingExprCopy()}
+	t.Cleanup(func() { billing_setting.ReplaceBundle(saved) })
+	billing_setting.ReplaceBundle(billing_setting.TieredBundle{BillingMode: map[string]string{"video-log-test": "tiered_expr"}, BillingExpr: map[string]string{"video-log-test": `tier("muse", param("duration") * 12000000)`}})
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("group", "default")
+	info := &relaycommon.RelayInfo{OriginModelName: "video-log-test", UsingGroup: "default", UserGroup: "default", ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeSora}, BillingRequestInput: &billingexpr.RequestInput{Body: []byte(`{"duration":60,"prompt":"private","images":["secret-reference"]}`)}}
+	price, err := ModelPriceHelperTask(c, info)
+	require.NoError(t, err)
+	require.Nil(t, info.TieredBillingSnapshot)
+	require.Equal(t, float64(60), info.TaskBillingLogInfo["requested_seconds"])
+	require.Equal(t, price.Quota, info.TaskBillingLogInfo["charged_quota"])
+	require.Equal(t, float64(720), info.TaskBillingLogInfo["base_cost"])
+	encoded, err := common.Marshal(info.TaskBillingLogInfo)
+	require.NoError(t, err)
+	require.NotContains(t, string(encoded), "private")
+	require.NotContains(t, string(encoded), "secret-reference")
+	// Later edits do not rewrite the captured evidence.
+	billing_setting.ReplaceBundle(billing_setting.TieredBundle{})
+	require.Equal(t, float64(720), info.TaskBillingLogInfo["base_cost"])
+}

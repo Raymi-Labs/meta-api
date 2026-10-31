@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isVideoConsumption,
+  videoLogSegments,
+} from '../../../helpers/videoPriceDisplay';
 import React from 'react';
 import {
   Avatar,
@@ -447,6 +451,8 @@ function getUsageLogDetailSummary(record, text, billingDisplayMode, t) {
     return null;
   }
 
+  if (isVideoConsumption(record, other))
+    return { segments: videoLogSegments(record, other, renderQuota, t) };
   const timeRatioText = formatTimeRatioLogSummary(other, t);
   const timeRatioSegment = timeRatioText
     ? { text: timeRatioText, tone: 'secondary' }

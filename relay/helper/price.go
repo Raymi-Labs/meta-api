@@ -358,6 +358,7 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	if info == nil {
 		return types.PriceData{}, fmt.Errorf("relay info is nil")
 	}
+	info.TaskBillingLogInfo = nil
 	exprStr, ok := billing_setting.GetTieredExpr(info.OriginModelName)
 	if !ok {
 		price := ModelPriceHelperPerCall(c, info)
@@ -369,7 +370,7 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	if err != nil {
 		return types.PriceData{}, err
 	}
-	rawCost, _, err := billingexpr.RunExprWithRequest(exprStr, billingexpr.TokenParams{}, requestInput)
+	rawCost, trace, err := billingexpr.RunExprWithRequest(exprStr, billingexpr.TokenParams{}, requestInput)
 	if err != nil {
 		return types.PriceData{}, fmt.Errorf("model %s tiered task expr run failed: %w", info.OriginModelName, err)
 	}
@@ -389,6 +390,19 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 		OtherRatios:                   map[string]float64{},
 	}
 	info.BillingRequestInput = &requestInput
+	if info.ChannelMeta != nil && common.IsVideoTaskChannel(info.ChannelType) {
+		info.TaskBillingLogInfo = map[string]interface{}{
+			"kind": "video_expression", "matched_tier": trace.MatchedTier,
+			"base_cost": rawCost / 1_000_000, "base_quota": quotaBeforeGroup, "charged_quota": quota,
+			"group_ratio": groupRatioInfo.GroupRatio, "time_ratio": timeRatioInfo.EffectiveRatio(),
+		}
+		var fields map[string]interface{}
+		if common.Unmarshal(requestInput.Body, &fields) == nil {
+			if duration, ok := fields["duration"].(float64); ok && duration > 0 {
+				info.TaskBillingLogInfo["requested_seconds"] = duration
+			}
+		}
+	}
 	info.PriceData = priceData
 	return priceData, nil
 }
