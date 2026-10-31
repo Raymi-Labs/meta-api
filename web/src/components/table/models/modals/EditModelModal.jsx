@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { omitUnchangedModelMetadata } from '../../../../helpers/modelMetadataPatch';
+import ModelDescriptionEditor from './ModelDescriptionEditor';
 import ModelFAQEditor from './ModelFAQEditor';
 import ModelCapabilitiesEditor from './ModelCapabilitiesEditor';
 import OfficialPricingEditor from './OfficialPricingEditor';
@@ -150,6 +151,7 @@ const EditModelModal = (props) => {
     input_modalities: [],
     output_modalities: [],
     description: '',
+    description_overrides: {},
     faq: [],
     official_pricing: {},
     icon: '',
@@ -297,9 +299,13 @@ const EditModelModal = (props) => {
           showError(t(message));
         }
       } else {
-        const res = await API.post('/api/models/', submitData, {
-          skipErrorHandler: true,
-        });
+        const res = await API.post(
+          '/api/models/',
+          omitUnchangedModelMetadata(submitData, values),
+          {
+            skipErrorHandler: true,
+          },
+        );
         const { success, message } = res.data;
         if (success) refreshRef.current();
         if (session !== sessionRef.current) return;
@@ -477,11 +483,23 @@ const EditModelModal = (props) => {
                   <Col span={24}>
                     <Form.TextArea
                       field='description'
-                      label={t('模型介绍')}
+                      label={t('介绍原文')}
                       placeholder={t('请输入模型描述')}
-                      extraText={t('显示在模型详情顶部和模型广场卡片中。')}
+                      extraText={t(
+                        '原文用于自动生成全站语言的介绍，不决定用户看到的语言。',
+                      )}
                       rows={5}
                       showClear
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <ModelDescriptionEditor
+                      field='description_overrides'
+                      label={t('多语言介绍')}
+                      automatic={
+                        formValuesRef.current?.values?.description_automatic ||
+                        {}
+                      }
                     />
                   </Col>
                   <Col span={24}>

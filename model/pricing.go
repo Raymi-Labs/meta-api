@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 )
 
 type Pricing struct {
+	DescriptionTranslations  ModelDescriptions               `json:"description_translations,omitempty"`
 	FAQ                      ModelFAQ                        `json:"faq"`
 	OfficialPricing          OfficialPricing                 `json:"official_pricing"`
 	ModelName                string                          `json:"model_name"`
@@ -142,6 +144,11 @@ func updatePricing() {
 	// 预加载模型元数据与供应商一次，避免循环查询
 	var allMeta []Model
 	_ = DB.Find(&allMeta).Error
+	descriptionModels := make([]*Model, 0, len(allMeta))
+	for i := range allMeta {
+		descriptionModels = append(descriptionModels, &allMeta[i])
+	}
+	_ = FillModelDescriptionTranslations(context.Background(), descriptionModels)
 	metaMap := make(map[string]*Model)
 	prefixList := make([]*Model, 0)
 	suffixList := make([]*Model, 0)
@@ -329,6 +336,7 @@ func updatePricing() {
 				pricing.OfficialPricing = meta.OfficialPricing
 			}
 			pricing.Description = meta.Description
+			pricing.DescriptionTranslations = meta.DescriptionTranslations.Clone()
 			pricing.FAQ = meta.FAQ.Clone()
 			pricing.DisplayName = meta.DisplayName
 			// Release dates belong to exact model IDs, never whole name patterns.
