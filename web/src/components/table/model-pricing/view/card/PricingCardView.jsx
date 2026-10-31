@@ -56,6 +56,7 @@ import {
   formatModelContext,
   formatModelContextExact,
   formatModelThroughput,
+  formatModelCardPrice,
   shouldNavigateModelCard,
 } from '../../../../../helpers/modelPresentation';
 
@@ -192,6 +193,19 @@ const PricingCardView = ({
                       : isOutput
                         ? FileOutput
                         : null;
+                    const usdAmount = data.unitPricesUSD?.[item.key];
+                    const amount =
+                      usdAmount != null && displayPrice?.toAmount
+                        ? displayPrice.toAmount(usdAmount)
+                        : null;
+                    const cardPrice = formatModelCardPrice(
+                      amount,
+                      displayPrice?.currencySymbol,
+                    );
+                    const exactPrice =
+                      cardPrice != null
+                        ? `${displayPrice.currencySymbol}${Number(amount.toPrecision(12))}${item.suffix}`
+                        : undefined;
                     return (
                       <div key={item.key}>
                         <dt>
@@ -205,7 +219,9 @@ const PricingCardView = ({
                               : item.label}
                         </dt>
                         <dd>
-                          <strong>{item.value}</strong>
+                          <strong title={exactPrice}>
+                            {cardPrice ?? item.value}
+                          </strong>
                           <span title={item.suffix} aria-label={item.suffix}>
                             {item.suffix?.replace(
                               /^\s*\/ 1([MK]) Tokens$/,

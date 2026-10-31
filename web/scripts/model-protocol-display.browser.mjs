@@ -36,8 +36,8 @@ const pricing = {
     vendor_id: 1,
     enable_groups: ['Public'],
     quota_type: 0,
-    model_ratio: 1,
-    completion_ratio: 2,
+    model_ratio: model_name === 'gpt-chat-fixture' ? 0.15 : 1,
+    completion_ratio: model_name === 'gpt-chat-fixture' ? 6 : 2,
     supports_cache_read: true,
     cache_ratio: 0.1,
     supports_cache_creation: true,
@@ -166,15 +166,84 @@ try {
         'article[aria-label="gpt-chat-fixture"] .pricing-card-prices strong',
         (els) => els.map((el) => el.textContent),
       ),
-      ['¥2.0000', '¥4.0000'],
+      ['¥0.30', '¥1.80'],
     );
     assert.deepEqual(
       await page.$$eval(
         'article[aria-label="responses-fixture"] .pricing-card-prices strong',
         (els) => els.map((el) => el.textContent),
       ),
-      ['¥4.0000', '¥20.0000'],
+      ['¥4.00', '¥20.00'],
     );
+    if (!mobile) {
+      for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+        await page.setViewport({ width, height: 1000 });
+        const layout = await page.$eval(
+          'article[aria-label="gpt-chat-fixture"]',
+          (card) => {
+            const center = (el) => {
+              const rect = el.getBoundingClientRect();
+              return rect.top + rect.height / 2;
+            };
+            const prices = [
+              ...card.querySelectorAll('.pricing-card-prices > div'),
+            ];
+            const metrics = [
+              ...card.querySelectorAll('.pricing-card-performance dd'),
+            ];
+            return {
+              priceOffsets: prices.map((el) =>
+                Math.abs(
+                  center(el.querySelector('dt')) -
+                    center(el.querySelector('dd')),
+                ),
+              ),
+              columnWidths: prices.map(
+                (el) => el.getBoundingClientRect().width,
+              ),
+              metricCenters: metrics.map(center),
+              headerCenters: [
+                '.pricing-model-icon',
+                '.pricing-model-identity',
+                '.pricing-model-card-header > button',
+              ].map((selector) => center(card.querySelector(selector))),
+              overflow: card.scrollWidth > card.clientWidth + 1,
+            };
+          },
+        );
+        assert(
+          layout.priceOffsets.every((offset) => offset < 1),
+          JSON.stringify({ width, layout }),
+        );
+        assert(Math.abs(layout.columnWidths[0] - layout.columnWidths[1]) < 1);
+        assert(
+          Math.max(...layout.metricCenters) -
+            Math.min(...layout.metricCenters) <
+            1,
+        );
+        assert(
+          Math.max(...layout.headerCenters) -
+            Math.min(...layout.headerCenters) <
+            1,
+        );
+        assert.equal(layout.overflow, false);
+      }
+      await page.click('.pricing-unit-toggle');
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            'article[aria-label="gpt-chat-fixture"] .pricing-card-prices strong',
+          )?.textContent === '<¥0.01',
+      );
+      assert.equal(
+        await page.$eval(
+          'article[aria-label="gpt-chat-fixture"] .pricing-card-prices strong',
+          (el) => el.title,
+        ),
+        '¥0.0003 / 1K Tokens',
+      );
+      await page.click('.pricing-unit-toggle');
+    }
     await page.click('button[aria-label="复制模型名称: gpt-chat-fixture"]');
     await page.waitForFunction(
       () => window.__protocolCopy === 'gpt-chat-fixture',

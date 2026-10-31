@@ -308,7 +308,7 @@ html.dark .pricing-page.pricing-catalog {
 }
 .pricing-model-card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
@@ -330,7 +330,7 @@ html.dark .pricing-page.pricing-catalog {
   min-width: 0;
 }
 .pricing-model-identity h2 {
-  margin: 0 0 3px;
+  margin: 0;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.45;
@@ -348,11 +348,11 @@ html.dark .pricing-page.pricing-catalog {
 }
 .pricing-model-card-header > .semi-checkbox {
   flex-shrink: 0;
-  margin-top: 4px;
+  margin: 0;
 }
 .pricing-card-prices {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 12px;
   margin: 12px 0 0;
   padding: 9px 10px;
@@ -362,12 +362,14 @@ html.dark .pricing-page.pricing-catalog {
 }
 .pricing-card-prices > div {
   display: flex;
-  align-items: baseline;
-  flex: 1 1 auto;
+  align-items: center;
   flex-wrap: wrap;
   gap: 4px;
   min-width: 0;
   max-width: 100%;
+}
+.pricing-card-prices > div:only-child {
+  grid-column: 1 / -1;
 }
 .pricing-card-prices dt {
   display: inline-flex;
@@ -375,7 +377,7 @@ html.dark .pricing-page.pricing-catalog {
   gap: 5px;
   color: var(--catalog-muted);
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 20px;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -386,12 +388,12 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-card-prices dd {
   margin: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   min-width: 0;
   gap: 3px;
   color: var(--catalog-ink);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 20px;
 }
 .pricing-card-prices strong {
   font-size: 13px;
@@ -415,6 +417,9 @@ html.dark .pricing-page.pricing-catalog {
   background: var(--catalog-soft);
 }
 .pricing-card-performance > div {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 4px;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -422,14 +427,18 @@ html.dark .pricing-page.pricing-catalog {
   grid-column: span 2;
 }
 .pricing-card-performance dt {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
   color: var(--catalog-muted);
+  min-height: 20px;
+  line-height: 20px;
+  margin: 0;
 }
 .pricing-card-performance dd {
-  margin: 3px 0 0;
+  margin: 0;
+  line-height: 20px;
   font-size: 11px;
   font-weight: 500;
   color: var(--catalog-ink);

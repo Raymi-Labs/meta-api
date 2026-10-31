@@ -3,12 +3,25 @@ import {
   formatModelContext,
   formatModelContextExact,
   formatModelThroughput,
+  formatModelCardPrice,
   shouldNavigateModelCard,
   selectComparisonGroups,
   chartMetricValue,
 } from '../src/helpers/modelPresentation.js';
 
 describe('model presentation interactions and missing metrics', () => {
+  test('card money uses two decimals without double rounding or hiding a nonzero rate', () => {
+    expect(formatModelCardPrice(0.3, '¥')).toBe('¥0.30');
+    expect(formatModelCardPrice(1.8, '¥')).toBe('¥1.80');
+    expect(formatModelCardPrice(1.23496, '$')).toBe('$1.23');
+    expect(formatModelCardPrice(1.235, '$')).toBe('$1.24');
+    expect(formatModelCardPrice(1.005, '€')).toBe('€1.01');
+    expect(formatModelCardPrice(0, '¥')).toBe('¥0.00');
+    expect(formatModelCardPrice(0.0003, '¥')).toBe('<¥0.01');
+    expect(formatModelCardPrice(null)).toBeNull();
+    expect(formatModelCardPrice(NaN)).toBeNull();
+    expect(formatModelCardPrice(-1)).toBeNull();
+  });
   test('context is compact without inflating capacity and retains an exact tooltip', () => {
     expect(formatModelContext(1_050_000)).toBe('1M');
     expect(formatModelContext(1_500_000)).toBe('1.5M');

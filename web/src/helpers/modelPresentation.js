@@ -46,6 +46,19 @@ export function formatModelThroughput(value) {
     : '—';
 }
 
+// Round the original converted amount, not an already rounded price string.
+export function formatModelCardPrice(amount, symbol = '$') {
+  if (amount == null || !Number.isFinite(amount) || amount < 0) return null;
+  const value = new Intl.NumberFormat('en-US', {
+    useGrouping: false,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return amount > 0 && value === '0.00'
+    ? `<${symbol}0.01`
+    : `${symbol}${value}`;
+}
+
 // Nested controls and text selection retain their own interactions.
 export function shouldNavigateModelCard(event, selection = '') {
   return (
