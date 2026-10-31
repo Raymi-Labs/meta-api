@@ -133,20 +133,20 @@ func TestModelCatalogBackgroundDiscoversAndEnrichesNewModels(t *testing.T) {
 	done := make(chan struct{})
 	go func() { defer close(done); runModelCatalogSyncTask(ctx, ticks, 24*time.Hour) }()
 	defer func() { cancel(); <-done }()
-	// The normal local tick can run without issuing a remote request.
+	// The first tick refreshes existing models even when the local inventory is unchanged.
 	ticks <- time.Now()
 	ticks <- time.Now()
-	require.Zero(t, requests.Load())
+	require.EqualValues(t, 1, requests.Load())
 	require.NoError(t, db.Create(&model.Ability{Group: "default", Model: "exact-model", ChannelId: 1, Enabled: true}).Error)
 	ticks <- time.Now()
 	// Receiving the next tick proves the previous iteration completed.
 	ticks <- time.Now()
-	require.EqualValues(t, 1, requests.Load())
+	require.EqualValues(t, 2, requests.Load())
 	var row model.Model
 	require.NoError(t, db.Where("model_name = ?", "exact-model").First(&row).Error)
 	require.EqualValues(t, 128000, row.ContextLength)
 	ticks <- time.Now()
-	require.EqualValues(t, 1, requests.Load(), "unchanged inventory must not fetch every minute")
+	require.EqualValues(t, 2, requests.Load(), "unchanged inventory must not fetch every minute")
 }
 
 func TestModelManagementVendorResponseIncludesDiscoveredModels(t *testing.T) {

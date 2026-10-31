@@ -15,6 +15,10 @@ import (
 // Keep added fields presence-aware so older full-update clients do not erase
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
+	CapabilityOverrides map[string]*bool `json:"capability_overrides"`
+	Description         *string          `json:"description"`
+	Tags                *string          `json:"tags"`
+	VendorID            *int             `json:"vendor_id"`
 	model.Model
 	FAQ              *model.ModelFAQ          `json:"faq"`
 	OfficialPricing  *model.OfficialPricing   `json:"official_pricing"`
@@ -30,6 +34,7 @@ type modelMetaRequest struct {
 func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
 	m := request.Model
 	if existing != nil {
+		m.Description, m.Tags, m.VendorID = existing.Description, existing.Tags, existing.VendorID
 		m.FAQ = existing.FAQ.Clone()
 		m.OfficialPricing = existing.OfficialPricing
 		m.DisplayName = existing.DisplayName
@@ -39,6 +44,15 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 		m.ContextLength = existing.ContextLength
 		m.InputModalities = existing.InputModalities
 		m.OutputModalities = existing.OutputModalities
+	}
+	if request.Description != nil {
+		m.Description = *request.Description
+	}
+	if request.Tags != nil {
+		m.Tags = *request.Tags
+	}
+	if request.VendorID != nil {
+		m.VendorID = *request.VendorID
 	}
 	if request.FAQ != nil {
 		m.FAQ = request.FAQ.Clone()
@@ -67,8 +81,48 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 	if request.OutputModalities != nil {
 		m.OutputModalities = *request.OutputModalities
 	}
+	if len(request.CapabilityOverrides) > 0 {
+		if m.Capabilities == nil {
+			m.Capabilities = model.ModelCapabilities{}
+		}
+		for key, value := range request.CapabilityOverrides {
+			if value == nil {
+				delete(m.Capabilities, key)
+			} else {
+				m.Capabilities[key] = *value
+			}
+		}
+		keys := model.ModelCapabilities{}
+		for key := range request.CapabilityOverrides {
+			keys[key] = false
+		}
+		if err := keys.Validate(); err != nil {
+			return m, err
+		}
+	}
 	err := m.NormalizeDisplayMetadata()
 	return m, err
+}
+
+// Omitted automatic fields are excluded from the UPDATE itself, so a sync
+// completing after the handler's read cannot be replaced by an old form value.
+func (request modelMetaRequest) omittedMetadataFields() []string {
+	var out []string
+	for _, field := range []struct {
+		name    string
+		omitted bool
+	}{
+		{"description", request.Description == nil}, {"tags", request.Tags == nil}, {"vendor_id", request.VendorID == nil},
+		{"official_pricing", request.OfficialPricing == nil}, {"release_date", request.ReleaseDate == nil},
+		{"context_length", request.ContextLength == nil}, {"max_output_tokens", request.MaxOutputTokens == nil},
+		{"capabilities", request.Capabilities == nil && len(request.CapabilityOverrides) == 0}, {"input_modalities", request.InputModalities == nil}, {"output_modalities", request.OutputModalities == nil},
+		{"faq", request.FAQ == nil}, {"display_name", request.DisplayName == nil},
+	} {
+		if field.omitted {
+			out = append(out, field.name)
+		}
+	}
+	return out
 }
 
 // GetAllModelsMeta 获取模型列表（分页）
@@ -111,6 +165,9 @@ func GetModelMeta(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if c.Query("refresh_metadata") == "true" {
+		refreshModelMetadataForEditor(c.Request.Context(), &m)
+	}
 	enrichModels([]*model.Model{&m})
 	common.ApiSuccess(c, &m)
 }
@@ -145,12 +202,17 @@ func CreateModelMeta(c *gin.Context) {
 		return
 	}
 	model.RefreshPricing()
+	select {
+	case modelCatalogChanged <- struct{}{}:
+	default:
+	}
 	common.ApiSuccess(c, &m)
 }
 
 // UpdateModelMeta 更新模型
 func UpdateModelMeta(c *gin.Context) {
 	statusOnly := c.Query("status_only") == "true"
+	refreshMetadata := false
 
 	var request modelMetaRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -177,6 +239,7 @@ func UpdateModelMeta(c *gin.Context) {
 		}
 		var err error
 		m, err = request.withDisplayMetadata(&existing)
+		refreshMetadata = m.SyncOfficial == 1 && (existing.SyncOfficial == 0 || m.ModelName != existing.ModelName)
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -190,12 +253,18 @@ func UpdateModelMeta(c *gin.Context) {
 			return
 		}
 
-		if err := m.Update(); err != nil {
+		if err := m.UpdateWithMetadataOverrides(request.omittedMetadataFields(), request.CapabilityOverrides); err != nil {
 			common.ApiError(c, err)
 			return
 		}
 	}
 	model.RefreshPricing()
+	if refreshMetadata {
+		select {
+		case modelCatalogChanged <- struct{}{}:
+		default:
+		}
+	}
 	common.ApiSuccess(c, &m)
 }
 

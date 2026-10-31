@@ -51,7 +51,7 @@ func TestOfficialPricingSyncOwnership(t *testing.T) {
 			require.Equal(t, 1, run(officialPricingEntry(12)).PricingUpdated)
 			// Compare the raw serialized column: a concurrent manual save wins on every database.
 			var snapshot modelCapabilitySnapshot
-			require.NoError(t, db.Model(&Model{}).Select("*, official_pricing AS capability_pricing_snapshot, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").First(&snapshot, m.Id).Error)
+			require.NoError(t, db.Model(&Model{}).Select(modelCapabilitySnapshotColumns).First(&snapshot, m.Id).Error)
 			manual := officialPricingEntry(12).OfficialPricing
 			manual.Notes = "Manual"
 			require.NoError(t, db.Model(&m).Update("official_pricing", manual).Error)
