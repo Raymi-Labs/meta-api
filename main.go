@@ -137,6 +137,7 @@ func main() {
 	controller.StartChannelUpstreamModelUpdateTask()
 	// 模型展示能力元数据自动补齐（不改变路由、计费或渠道能力）。
 	controller.StartModelCapabilitySyncTask()
+	controller.StartModelDescriptionTranslationTask()
 	// 日志保留期清理任务（默认关闭，由 LOG_RETENTION_DAYS 启用）。
 	service.StartLogRetentionTask()
 	service.StartPulseBenefitLogTask()

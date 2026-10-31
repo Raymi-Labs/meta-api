@@ -6781,6 +6781,14 @@
     "暂用最近有效汇率": "Son geçerli kur kullanılıyor",
     "正在获取参考汇率…": "Referans kur alınıyor…",
     "参考汇率暂不可用，暂停跨币种价格对比": "Referans kur kullanılamıyor; para birimleri arası fiyat karşılaştırması duraklatıldı",
-    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Model bilgileri resmi kaynaklara öncelik verilerek otomatik güncellenir. Manuel değişiklikler korunur; alınamayan bilgiler bilinmiyor olarak kalır."
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Model bilgileri resmi kaynaklara öncelik verilerek otomatik güncellenir. Manuel değişiklikler korunur; alınamayan bilgiler bilinmiyor olarak kalır.",
+    "介绍语言": "Açıklama dili",
+    "自动翻译": "Otomatik çeviri",
+    "等待翻译": "Çeviri bekleniyor",
+    "恢复自动": "Otomatiğe dön",
+    "多语言介绍": "Çok dilli açıklamalar",
+    "介绍原文": "Özgün açıklama",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Açıklamalar site dilini izler. Elle yapılan düzenlemeler önceliklidir; otomatik çeviriye dönmek için bunları temizleyin.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Özgün metin, sitenin tüm dillerinde açıklama oluşturmak için kullanılır; ziyaretçilerin gördüğü dili belirlemez."
   }
 }

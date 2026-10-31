@@ -7113,6 +7113,14 @@
     "暂用最近有效汇率": "Dernier taux valide utilisé",
     "正在获取参考汇率…": "Chargement du taux de référence…",
     "参考汇率暂不可用，暂停跨币种价格对比": "Taux de référence indisponible ; comparaison entre devises suspendue",
-    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Les informations du modèle sont mises à jour automatiquement, en privilégiant les sources officielles. Les modifications manuelles sont conservées ; les informations indisponibles restent inconnues."
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Les informations du modèle sont mises à jour automatiquement, en privilégiant les sources officielles. Les modifications manuelles sont conservées ; les informations indisponibles restent inconnues.",
+    "介绍语言": "Langue de la description",
+    "自动翻译": "Traduction automatique",
+    "等待翻译": "Traduction en attente",
+    "恢复自动": "Rétablir le mode automatique",
+    "多语言介绍": "Descriptions multilingues",
+    "介绍原文": "Description originale",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Les descriptions suivent la langue du site. Les modifications manuelles sont prioritaires ; effacez-les pour rétablir la traduction automatique.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Le texte original sert à générer les descriptions dans toutes les langues du site ; il ne détermine pas la langue affichée aux visiteurs."
   }
 }

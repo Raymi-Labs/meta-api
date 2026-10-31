@@ -6781,6 +6781,14 @@
     "暂用最近有效汇率": "Se usa el último tipo válido",
     "正在获取参考汇率…": "Obteniendo tipo de referencia…",
     "参考汇率暂不可用，暂停跨币种价格对比": "Tipo de referencia no disponible; comparación entre monedas en pausa",
-    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Los datos del modelo se actualizan automáticamente, dando prioridad a las fuentes oficiales. Se conservan los cambios manuales; la información no disponible sigue siendo desconocida."
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Los datos del modelo se actualizan automáticamente, dando prioridad a las fuentes oficiales. Se conservan los cambios manuales; la información no disponible sigue siendo desconocida.",
+    "介绍语言": "Idioma de la descripción",
+    "自动翻译": "Traducción automática",
+    "等待翻译": "Traducción pendiente",
+    "恢复自动": "Restaurar automática",
+    "多语言介绍": "Descripciones multilingües",
+    "介绍原文": "Descripción original",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Las descripciones siguen el idioma del sitio. Las ediciones manuales tienen prioridad; bórralas para restaurar la traducción automática.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "El original se usa para generar descripciones en todos los idiomas del sitio; no determina el idioma que ven los visitantes."
   }
 }

@@ -6993,6 +6993,14 @@
     "暂用最近有效汇率": "Using the last valid rate",
     "正在获取参考汇率…": "Fetching reference rate…",
     "参考汇率暂不可用，暂停跨币种价格对比": "Reference rate unavailable; cross-currency price comparison paused",
-    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Model details update automatically, with official sources preferred. Manual edits are preserved; unavailable information remains unknown."
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Model details update automatically, with official sources preferred. Manual edits are preserved; unavailable information remains unknown.",
+    "介绍语言": "Description language",
+    "自动翻译": "Automatic translation",
+    "等待翻译": "Awaiting translation",
+    "恢复自动": "Restore automatic",
+    "多语言介绍": "Multilingual descriptions",
+    "介绍原文": "Original description",
+    "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Descriptions follow the site language. Manual edits take priority; clear them to restore automatic translation.",
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "The original is used to generate descriptions in all site languages; it does not determine the language visitors see."
   }
 }
