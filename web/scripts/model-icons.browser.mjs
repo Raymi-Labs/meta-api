@@ -22,9 +22,10 @@ const model = {
   enable_groups: ['Public'],
   supported_endpoint_types: ['openai'],
 };
+const asrModel = { ...model, model_name: 'mimo-v2.5-asr', icon: null };
 const pricing = {
   success: true,
-  data: [model],
+  data: [model, asrModel],
   vendors: [vendor],
   group_ratio: { Public: 1 },
   usable_group: { Public: 'Public' },
@@ -41,7 +42,7 @@ try {
   fs.writeFileSync(
     files[1],
     `import React from 'react';import {createRoot} from 'react-dom/client';import {getLobeHubIcon} from './src/helpers/render';import ModelHeader from './src/components/table/model-pricing/modal/components/ModelHeader';import {getModelsColumns} from './src/components/table/models/ModelsColumnDefs';import './src/i18n/i18n';import './src/index.css';
-    const cases=[['mimo','XiaomiMiMo',32],['variant',"XiaomiMiMo.Color.color='#FF6900'.size=40",20],['vendor','FutureUnsupported',24,"Xiaomi.color='#FF6900'"],['missing','',24,'Xiaomi'],['unknown','UnknownModel',24,'UnknownVendor'],['valid','OpenAI',24,'Xiaomi'],['legacy',"Xiaomi.color='#FF6900'",24]];
+    const cases=[['mimo','XiaomiMiMo',32],['brand','Xiaomi',24],['color','XiaomiMiMo.Color',24],['custom',"XiaomiMiMo.color='#336699'",24],['mono','XiaomiMiMo.Mono',24],['inherit',"XiaomiMiMo.color='currentColor'",24],['variant',"XiaomiMiMo.Color.color='#FF6900'.size=40",20],['vendor','FutureUnsupported',24,"Xiaomi.color='#FF6900'"],['missing','',24,'Xiaomi'],['unknown','UnknownModel',24,'UnknownVendor'],['valid','OpenAI',24,'Xiaomi'],['legacy',"Xiaomi.color='#FF6900'",24]];
     const record={model_name:'mimo-v2.6-pro',icon:'FutureUnsupported',vendor_icon:"Xiaomi.color='#FF6900'",vendor_id:20};const iconColumn=getModelsColumns({t:text=>text,vendorMap:{20:{icon:record.vendor_icon}}})[0];createRoot(document.getElementById('root')).render(<main>{cases.map(([id,...args])=><div id={id} key={id}>{getLobeHubIcon(...args)}</div>)}<div id='sheet'><ModelHeader modelData={record} t={text=>text}/></div><div id='admin'>{iconColumn.render(null,record)}</div></main>);`,
   );
   const { config } = await loadConfigFromFile(
@@ -109,6 +110,39 @@ try {
     await page.$eval('#variant svg', (el) => getComputedStyle(el).color),
     'rgb(255, 105, 0)',
   );
+  for (const id of [
+    'mimo',
+    'brand',
+    'color',
+    'missing',
+    'vendor',
+    'legacy',
+    'sheet',
+    'admin',
+  ]) {
+    assert.equal(
+      await page.$eval(`#${id} svg`, (el) => getComputedStyle(el).color),
+      'rgb(255, 105, 0)',
+      `${id} uses the brand default`,
+    );
+  }
+  assert.equal(
+    await page.$eval('#custom svg', (el) => getComputedStyle(el).color),
+    'rgb(51, 102, 153)',
+    'explicit color wins',
+  );
+  for (const id of ['mono', 'inherit']) {
+    assert.equal(
+      await page.$eval(
+        `#${id}`,
+        (el) =>
+          getComputedStyle(el.querySelector('svg')).color ===
+          getComputedStyle(el).color,
+      ),
+      true,
+      `${id} preserves explicit monochrome`,
+    );
+  }
   assert.equal(await page.$eval('#unknown', (el) => el.textContent), 'U');
 
   await page.evaluateOnNewDocument(() => {
@@ -153,13 +187,27 @@ try {
     ),
     paths.legacy,
   );
+  assert.deepEqual(
+    await page.$$eval('.pricing-model-icon svg', (icons) =>
+      icons.map((el) => getComputedStyle(el).color),
+    ),
+    ['rgb(255, 105, 0)', 'rgb(255, 105, 0)'],
+    'synchronized and vendor-fallback cards agree',
+  );
   await page.screenshot({
     path: path.join(artifacts, 'catalog.png'),
     fullPage: true,
   });
-  await page.click('.pricing-model-card h2 a');
+  await page.click('.pricing-model-card h2 a[href="/model/mimo-v2.6-pro"]');
   await page.waitForSelector('.model-detail-hero .model-detail-icon svg');
   assert.ok(page.url().includes('/model/mimo-v2.6-pro'));
+  assert.equal(
+    await page.$eval(
+      '.model-detail-icon svg',
+      (el) => getComputedStyle(el).color,
+    ),
+    'rgb(255, 105, 0)',
+  );
   assert.equal(
     await page.$eval('.model-detail-icon svg path', (el) =>
       el.getAttribute('d'),
@@ -180,6 +228,13 @@ try {
     ),
     paths.legacy,
   );
+  assert.equal(
+    await page.$eval(
+      '.model-sticky-icon svg',
+      (el) => getComputedStyle(el).color,
+    ),
+    'rgb(255, 105, 0)',
+  );
   await page.goto(`${base}/compare?model=mimo-v2.6-pro`);
   await page.waitForSelector('.model-compare-logo svg');
   assert.equal(
@@ -187,6 +242,14 @@ try {
       el.getAttribute('d'),
     ),
     paths.legacy,
+  );
+
+  assert.equal(
+    await page.$eval(
+      '.model-compare-logo svg',
+      (el) => getComputedStyle(el).color,
+    ),
+    'rgb(255, 105, 0)',
   );
 
   // Unknown model icons still use the supplied vendor; no production metadata edits.
@@ -208,6 +271,12 @@ try {
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
+  );
+  assert.deepEqual(
+    await page.$$eval('.pricing-model-icon svg', (icons) =>
+      icons.map((el) => getComputedStyle(el).color),
+    ),
+    ['rgb(255, 105, 0)', 'rgb(255, 105, 0)'],
   );
   await page.screenshot({
     path: path.join(artifacts, 'mobile-dark.png'),
