@@ -7036,6 +7036,9 @@
     "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "For Qwen Image 3.0 on Ali channels. Output pixel area ≤ 2250000 uses 1K, otherwise 2K. Auto size reserves the higher cost and settles actual usage after success.",
     "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Ali channels bill successful output images; prompt rewriting doubles this unit price.",
     "阿里云渠道按成功输出的图片张数计费。": "Ali channels bill the number of successfully generated images.",
-    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Choose image input / output pricing to set separate input and output image prices."
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Choose image input / output pricing to set separate input and output image prices.",
+    "沿用最近有效值": "Using latest valid value",
+    "沿用 {{time}} 的有效值": "Using the valid value from {{time}}",
+    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Missing measurements use the latest valid value with its source time shown, without increasing current sample counts."
   }
 }

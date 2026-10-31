@@ -39,6 +39,7 @@ import {
   getUptimeRate,
   resolveGroupHealthMetric,
   getHealthLatency,
+  formatHealthReference,
 } from '../../components/group-health/healthUtils';
 
 export default function ModelGroupRows({
@@ -110,7 +111,8 @@ export default function ModelGroupRows({
           t,
         );
         const stats = health.error ? undefined : statsByGroup.get(group);
-        const metric = resolveGroupHealthMetric(stats, group);
+        const metric = resolveGroupHealthMetric(stats, group, true);
+        const latency = getHealthLatency(stats, metric, true);
         const open = expanded.includes(group);
         return (
           <article className='model-group-row' key={group}>
@@ -163,8 +165,11 @@ export default function ModelGroupRows({
                   <dt>
                     {metric === 'completion' ? t('平均完成') : t('首字均值')}
                   </dt>
-                  <dd>
-                    {formatHealthLatency(getHealthLatency(stats, metric).value)}
+                  <dd title={formatHealthReference(latency, t)}>
+                    {formatHealthLatency(latency.value)}
+                    {latency.referenceTs && (
+                      <small> · {t('沿用最近有效值')}</small>
+                    )}
                   </dd>
                 </div>
                 <div>

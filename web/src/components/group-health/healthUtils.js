@@ -35,10 +35,16 @@ export function formatHealthRate(value) {
     : `${Number(value).toFixed(2)}%`;
 }
 
-export function resolveGroupHealthMetric(stats, group = '') {
+export function resolveGroupHealthMetric(
+  stats,
+  group = '',
+  useReference = false,
+) {
   if (/(?:image|生图|图像)/i.test(group)) return 'completion';
   if (Number(stats?.ttft_count) > 0) return 'ttft';
   if (Number(stats?.completion_count) > 0) return 'completion';
+  if (useReference && stats?.last_valid?.ttft) return 'ttft';
+  if (useReference && stats?.last_valid?.completion) return 'completion';
   return 'ttft';
 }
 
@@ -133,10 +139,52 @@ export function isHealthSampleLimited(stats) {
   return healthTone(stats) === 'limited';
 }
 
-export function getHealthLatency(stats, metric = 'ttft') {
-  return metric === 'completion'
-    ? { value: stats?.avg_completion_ms, count: stats?.completion_count || 0 }
-    : { value: stats?.avg_ttft_ms, count: stats?.ttft_count || 0 };
+export function getHealthMeasurement(stats, metric, useReference = false) {
+  const fields = {
+    ttft: ['avg_ttft_ms', 'ttft_count'],
+    completion: ['avg_completion_ms', 'completion_count'],
+    cache: ['cache_hit_rate', 'cache_sample_count'],
+  };
+  const [valueKey, countKey] = fields[metric];
+  const value = stats?.[valueKey];
+  const count = stats?.[countKey] || 0;
+  const valid = (candidate) =>
+    candidate != null &&
+    Number.isFinite(Number(candidate)) &&
+    Number(candidate) >= 0 &&
+    (metric !== 'cache' || Number(candidate) <= 100);
+  if (!useReference || valid(value)) return { value, count };
+  const reference = stats?.last_valid?.[metric];
+  if (
+    valid(reference?.value) &&
+    Number.isFinite(reference?.ts) &&
+    reference.ts > 0 &&
+    (stats?.ts == null || reference.ts <= stats.ts)
+  ) {
+    return { value: reference.value, count, referenceTs: reference.ts };
+  }
+  return { value, count };
+}
+
+export function getHealthLatency(stats, metric = 'ttft', useReference = false) {
+  return getHealthMeasurement(
+    stats,
+    metric === 'completion' ? 'completion' : 'ttft',
+    useReference,
+  );
+}
+
+export function formatHealthReference(measurement, t) {
+  if (!measurement?.referenceTs) return '';
+  return t('沿用 {{time}} 的有效值', {
+    time: new Date(measurement.referenceTs * 1000).toLocaleString(undefined, {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+  });
 }
 
 // Keep request health intact; Uptime consumers explicitly select probe fallback.
