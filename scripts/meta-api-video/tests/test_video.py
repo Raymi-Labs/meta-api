@@ -189,7 +189,32 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(args.resolution, resolution)
             self.assertNotIn("duration", payload)
         with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "muse-video", "--duration", "5"))
+            video.payload_for(self.args("--model", "muse-video", "--duration", "31"))
+
+    def test_muse_declared_range_preserves_request_and_rejects_invalid_specs(self):
+        for duration in (4, 5, 8, 16, 30):
+            args = self.args("--model", "muse-video", "--duration", str(duration))
+            payload = video.payload_for(args)
+            self.assertEqual(payload["seconds"], str(duration))
+            self.assertEqual(payload["size"], "1280x720")
+        portrait = video.payload_for(self.args("--model", "muse-video", "--duration", "8", "--aspect-ratio", "9:16"))
+        self.assertEqual(portrait["size"], "720x1280")
+        for options in (("--duration", "3"), ("--duration", "31"), ("--duration", "0"),
+                        ("--resolution", "1080p"), ("--resolution", "480p"), ("--aspect-ratio", "1:1")):
+            with self.subTest(options=options), self.assertRaises(video.VideoError):
+                self.run_request(self.args("--model", "muse-video", *options), [])
+        self.assertEqual(self.calls, [])
+        self.assertFalse(self.state.exists())
+
+    def test_muse_long_request_single_submit_and_no_actual_duration_claim(self):
+        args = self.args("--model", "muse-video", "--duration", "30")
+        code = self.run_request(args, [{"id": "task_fixture"}, {"status": "completed"}])
+        self.assertEqual(code, 0)
+        posts = [call for call in self.calls if call[1] == "/v1/videos"]
+        self.assertEqual(len(posts), 1)
+        saved = json.loads(self.state.read_text())
+        self.assertEqual(saved["duration"], 30)
+        self.assertNotIn("actual_duration", saved)
 
     def test_veo_lite_requires_local_png_or_jpeg(self):
         args = self.args("--model", "flow-video-veo-3.1-lite")
@@ -215,6 +240,57 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(saved["url"], "https://meta-api.vip/v1/videos/task_fixture/content")
         self.assertTrue(saved["authenticated_content"])
         self.assert_private()
+
+    def test_reference_payloads_are_not_text_only(self):
+        image = Path(self.tmp.name) / "reference.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\nfixture-distinctive-image")
+        for model in ("muse-video", "grok-imagine-video", "grok-imagine-video-1.5"):
+            with self.subTest(model=model):
+                payload = video.payload_for(self.args("--model", model, "--image", str(image)))
+                encoded = payload["input_reference"] if model == "muse-video" else payload["image"]["url"]
+                self.assertTrue(encoded.startswith("data:image/png;base64,"))
+                self.assertNotIn(str(image), json.dumps(payload))
+                if model == "muse-video":
+                    self.assertEqual(payload["seconds"], "4")
+                else:
+                    self.assertNotIn("input_reference", payload)
+
+    def test_reference_dry_run_does_not_disclose_image_bytes(self):
+        image = Path(self.tmp.name) / "reference.jpg"
+        image.write_bytes(b"\xff\xd8\xffprivate-fixture-image")
+        for model in ("muse-video", "grok-imagine-video"):
+            payload = video.payload_for(self.args("--model", model, "--image", str(image)))
+            encoded = payload.get("input_reference") or payload["image"]["url"]
+            self.run_request(self.args("--model", model, "--image", str(image), "--dry-run"), [])
+            self.assertNotIn(encoded, self.stdout.getvalue())
+        self.assertFalse(self.state.exists())
+        self.assertEqual(self.calls, [])
+
+    def test_reference_submit_once_resume_without_source_image(self):
+        image = Path(self.tmp.name) / "reference.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\nprivate-reference")
+        args = self.args("--model", "muse-video", "--image", str(image))
+        self.run_request(args, [{"id": "task_fixture"}, {"status": "completed"}])
+        self.assertEqual(sum(call[3] is not None for call in self.calls), 1)
+        data = self.state.read_text() + self.stdout.getvalue()
+        self.assertNotIn("data:image/", data)
+        self.assertNotIn(str(image), data)
+        image.unlink()
+        self.calls.clear()
+        self.run_request(self.args("--resume"), [{"status": "completed"}])
+        self.assertTrue(all(call[3] is None for call in self.calls))
+
+    def test_bad_reference_rejected_before_submission(self):
+        image = Path(self.tmp.name) / "reference.png"
+        for data in (b"not-an-image", b"\x89PNG\r\n\x1a\n" + b"x" * (20 * 1024 * 1024)):
+            image.write_bytes(data)
+            with self.assertRaises(video.VideoError):
+                self.run_request(self.args("--model", "muse-video", "--image", str(image)), [])
+        image.unlink()
+        with self.assertRaisesRegex(video.VideoError, "Cannot read reference"):
+            self.run_request(self.args("--image", str(image)), [])
+        self.assertFalse(self.state.exists())
+        self.assertEqual(self.calls, [])
 
     def test_invalid_inputs_do_not_submit(self):
         for extra in [("--model", "sora-2"), ("--prompt", " "), ("--duration", "0"),

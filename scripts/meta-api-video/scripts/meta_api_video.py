@@ -133,6 +133,23 @@ def request_json(origin, suffix, key, payload=None, timeout=30):
     return body
 
 
+def reference_data_uri(filename):
+    try:
+        with Path(filename).expanduser().open("rb") as stream:
+            raw = stream.read(20 * 1024 * 1024 + 1)
+    except OSError:
+        raise VideoError("Cannot read reference image.") from None
+    if len(raw) > 20 * 1024 * 1024:
+        raise VideoError("Reference image exceeds 20 MiB.")
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        mime = "image/png"
+    elif raw.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    else:
+        raise VideoError("Reference must be a PNG or JPEG image.")
+    return "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
+
+
 def payload_for(args):
     if args.model not in MODELS:
         raise VideoError("Unsupported video model; use a verified profile.")
@@ -142,9 +159,12 @@ def payload_for(args):
     args.duration = args.duration if args.duration is not None else (profile[0] if profile else 1)
     args.resolution = args.resolution or (profile[1] if profile else "480p")
     if profile:
-        if args.duration != profile[0] or args.resolution != profile[1]:
+        if args.model == "muse-video":
+            if not 4 <= args.duration <= 30 or args.resolution != "720p":
+                raise VideoError("Muse accepts integer durations 4-30 seconds at 720p; 1080p output is not verified.")
+        elif args.duration != profile[0] or args.resolution != profile[1]:
             raise VideoError("This model profile only supports the verified duration and resolution.")
-        if bool(args.image) != profile[2]:
+        if args.model != "muse-video" and bool(args.image) != profile[2]:
             raise VideoError("This profile requires --image." if profile[2] else "This profile does not accept reference images.")
         if args.aspect_ratio not in {"16:9", "9:16"}:
             raise VideoError("This profile requires 16:9 or 9:16.")
@@ -153,26 +173,17 @@ def payload_for(args):
             width, height = height, width
         payload = {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration), "size": f"{width}x{height}"}
         if args.image:
-            with Path(args.image).expanduser().open("rb") as stream:
-                raw = stream.read(20 * 1024 * 1024 + 1)
-            if len(raw) > 20 * 1024 * 1024:
-                raise VideoError("Reference image exceeds 20 MiB.")
-            if raw.startswith(b"\x89PNG\r\n\x1a\n"):
-                mime = "image/png"
-            elif raw.startswith(b"\xff\xd8\xff"):
-                mime = "image/jpeg"
-            else:
-                raise VideoError("Reference must be a PNG or JPEG image.")
-            payload["input_reference"] = "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
+            payload["input_reference"] = reference_data_uri(args.image)
         return payload
-    if args.image:
-        raise VideoError("Grok profiles currently support text-to-video only.")
     if args.resolution == "1080p" and args.model != "grok-imagine-video-1.5":
         raise VideoError("1080p requires grok-imagine-video-1.5.")
     if not 1 <= args.duration <= 15:
         raise VideoError("Duration must be between 1 and 15 seconds; provider limits still apply.")
-    return {"model": args.model, "prompt": args.prompt.strip(), "duration": args.duration,
-            "aspect_ratio": args.aspect_ratio, "resolution": args.resolution}
+    payload = {"model": args.model, "prompt": args.prompt.strip(), "duration": args.duration,
+               "aspect_ratio": args.aspect_ratio, "resolution": args.resolution}
+    if args.image:
+        payload["image"] = {"url": reference_data_uri(args.image)}
+    return payload
 
 
 def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
@@ -186,13 +197,17 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
     else:
         origin = normalize_origin(args.base_url or "https://meta-api.vip")
         payload = payload_for(args)
+        if args.model == "muse-video":
+            emit(warning="muse_actual_output_may_differ", requested_duration=args.duration,
+                 requested_resolution=args.resolution,
+                 detail="Supplier may normalize duration. Verify the media; task seconds/size are request echoes, not output proof.")
         state = {"version": 1, "origin": origin, "model": args.model,
                  "phase": "submission_unknown", "duration": args.duration,
                  "resolution": args.resolution, "aspect_ratio": args.aspect_ratio}
     if args.dry_run:
         emit(mode="resume" if args.resume else "generate", origin=origin,
              model=state["model"], state_file=str(path), network_requests=0,
-             **({"task_id": identifier} if args.resume else {"parameters": {k: ("[local reference image]" if k == "input_reference" else v) for k, v in payload.items()}}))
+             **({"task_id": identifier} if args.resume else {"parameters": {k: ("[local reference image]" if k in {"input_reference", "image"} else v) for k, v in payload.items()}}))
         return 0
     key = os.environ.get("META_API_KEY", "").strip()
     if not key or len(key) > 8192 or any(not 33 <= ord(c) <= 126 for c in key):
@@ -273,7 +288,7 @@ def parser():
     p.add_argument("--base-url", help="YuanHeng API origin, optional /v1 suffix")
     p.add_argument("--model", default=MODEL)
     p.add_argument("--prompt")
-    p.add_argument("--image", help="PNG/JPEG reference, only for the verified Veo Lite profile")
+    p.add_argument("--image", help="Local PNG/JPEG first frame for Muse or Grok; required for Veo Lite")
     p.add_argument("--duration", type=int, default=None)
     p.add_argument("--aspect-ratio", choices=["16:9", "9:16", "1:1"], default="16:9")
     p.add_argument("--resolution", choices=["480p", "720p", "1080p"], default=None)
