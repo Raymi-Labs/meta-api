@@ -1848,12 +1848,6 @@ body[theme-mode='dark'] .pricing-page {
   color: var(--semi-color-text-2);
   overflow-wrap: anywhere;
 }
-.pricing-price-context {
-  color: var(--semi-color-text-2);
-  font-size: 12px;
-  margin: 12px 0;
-}
-
 .pricing-section-heading {
   display: flex;
   align-items: center;
