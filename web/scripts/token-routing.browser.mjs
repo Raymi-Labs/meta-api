@@ -88,9 +88,14 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
       extra = {};
     if (url.pathname === '/api/user/self/groups')
       data = {
-        default: { desc: 'Primary', ratio: 1 },
-        vip: { desc: 'Backup', ratio: 3 },
-        team: { desc: 'Third', ratio: 5 },
+        default: { desc: 'Primary 主线路说明', ratio: 1 },
+        vip: { desc: 'Backup 备用线路说明', ratio: 3 },
+        team: { desc: '', ratio: 5 },
+        企业专属: { desc: '企业专属的后台注释', ratio: 5.5 },
+        企业级: { desc: '企业级的后台注释', ratio: 1 },
+        优选: { desc: '优选的后台注释', ratio: 0.8 },
+        free: { desc: '<b>纯文本说明</b>' + '长说明'.repeat(45), ratio: 0 },
+        unknown: { desc: '未返回倍率的说明' },
         auto: { desc: 'Auto', ratio: 'auto' },
       };
     else if (url.pathname === '/api/token/models') {
@@ -158,10 +163,60 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   };
   const groupSelect = () =>
     page.getByLabel('可用分组（可多选，按选择顺序路由）', { exact: true });
-  await select(groupSelect(), 'default');
+  await groupSelect().click();
+  for (const name of ['企业专属', '企业级', '优选']) {
+    const option = page.getByRole('option').filter({ hasText: `${name} ·` });
+    assert.ok((await option.innerText()).includes(`${name}的后台注释`));
+  }
+  assert.equal(
+    await page.getByRole('option').filter({ hasText: 'team ·' }).innerText(),
+    'team · 5x',
+  );
+  assert.match(
+    await page.getByRole('option').filter({ hasText: 'free ·' }).innerText(),
+    /free · 0x/,
+  );
+  assert.equal(
+    await page
+      .getByRole('option')
+      .filter({ hasText: 'free ·' })
+      .locator('b')
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page.getByRole('option').filter({ hasText: 'unknown' }).innerText(),
+    'unknown\n未返回倍率的说明',
+  );
+  assert.equal(
+    await page.getByRole('option').filter({ hasText: 'Auto' }).count(),
+    0,
+  );
+  await page.screenshot({
+    path: path.join(artifacts, 'group-descriptions.png'),
+    fullPage: true,
+  });
+  await groupSelect().locator('input').fill('主线路说明');
+  await page.waitForTimeout(200);
+  assert.equal(await page.getByRole('option').count(), 1);
+  await groupSelect().locator('input').press('ArrowDown');
+  await groupSelect().locator('input').press('Enter');
+  await page.locator('.semi-modal-title:visible').click();
+  assert.match(await groupSelect().innerText(), /default · 1x/);
+  assert.doesNotMatch(await groupSelect().innerText(), /主线路说明/);
   await select(groupSelect(), 'vip');
   await select(page.locator('#model_limits'), 'model-a');
   await select(page.locator('#model_limits'), 'model-b');
+  await page.getByLabel('model-a 可用分组', { exact: true }).click();
+  assert.match(
+    await page.getByRole('option').filter({ hasText: 'default' }).innerText(),
+    /Primary 主线路说明/,
+  );
+  assert.equal(
+    await page.getByRole('option').filter({ hasText: '企业级' }).count(),
+    0,
+  );
+  await page.locator('.semi-modal-title:visible').click();
   await select(page.getByLabel('model-a 可用分组', { exact: true }), 'default');
   await select(page.getByLabel('model-b 可用分组', { exact: true }), 'vip');
   await page.locator('#name').fill('multi-model-key');
@@ -265,6 +320,26 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     path: path.join(artifacts, 'mobile-dark.png'),
     fullPage: true,
   });
+  await groupSelect().click();
+  await groupSelect().locator('input').fill('纯文本说明');
+  const longOption = page.getByRole('option').filter({ hasText: 'free ·' });
+  await longOption.waitFor();
+  const longBounds = await longOption.boundingBox();
+  assert.ok(
+    longBounds.x >= -1 && longBounds.x + longBounds.width <= 391,
+    JSON.stringify(longBounds),
+  );
+  assert.equal(
+    await longOption.evaluate(
+      (element) => element.scrollWidth > element.clientWidth,
+    ),
+    false,
+  );
+  await page.screenshot({
+    path: path.join(artifacts, 'mobile-description.png'),
+    fullPage: true,
+  });
+  await page.locator('.semi-sidesheet-title:visible').click();
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,

@@ -21,6 +21,16 @@ import { Select, Typography } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { readTokenRouting } from './tokenRouting';
 
+const filterGroupOption = (input, option) =>
+  String(option.searchText || option.value)
+    .toLocaleLowerCase()
+    .includes(input.toLocaleLowerCase());
+
+const renderSelectedGroup = (option) => ({
+  isRenderInTag: true,
+  content: option.summary || option.value,
+});
+
 export default function TokenRoutingEditor({
   value,
   groups,
@@ -34,10 +44,36 @@ export default function TokenRoutingEditor({
   const config = readTokenRouting(value);
   const options = groups
     .filter(({ value }) => value !== 'auto')
-    .map((group) => ({
-      value: group.value,
-      label: `${group.value}${Number.isFinite(group.ratio) ? ` · ${group.ratio}x` : ''}`,
-    }));
+    .map((group) => {
+      const summary = `${group.value}${Number.isFinite(group.ratio) ? ` · ${group.ratio}x` : ''}`;
+      const description =
+        typeof group.label === 'string' ? group.label.trim() : '';
+      return {
+        value: group.value,
+        summary,
+        searchText: `${summary} ${description}`,
+        label: (
+          <div
+            style={{
+              minWidth: 0,
+              flex: 1,
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+            }}
+          >
+            <div>{summary}</div>
+            {description && (
+              <div style={{ color: 'var(--semi-color-text-2)', fontSize: 12 }}>
+                {description}
+              </div>
+            )}
+          </div>
+        ),
+      };
+    });
+  const optionsByGroup = new Map(
+    options.map((option) => [option.value, option]),
+  );
   const update = (next) => onChange(JSON.stringify(next));
   return (
     <div className='flex flex-col gap-3' data-testid='token-routing-editor'>
@@ -47,7 +83,9 @@ export default function TokenRoutingEditor({
       <Select
         aria-labelledby={labelId}
         multiple
-        filter
+        filter={filterGroupOption}
+        renderSelectedItem={renderSelectedGroup}
+        dropdownStyle={{ width: 'min-content', maxWidth: 'calc(100vw - 32px)' }}
         optionList={options}
         value={config.groups}
         disabled={disabled}
@@ -78,7 +116,12 @@ export default function TokenRoutingEditor({
           <Select
             aria-labelledby={`${labelId}-${name}`}
             multiple
-            filter
+            filter={filterGroupOption}
+            renderSelectedItem={renderSelectedGroup}
+            dropdownStyle={{
+              width: 'min-content',
+              maxWidth: 'calc(100vw - 32px)',
+            }}
             showClear
             placeholder={t('继承此 Key 的全部可用分组')}
             value={config.model_groups[name] ?? []}
@@ -87,10 +130,13 @@ export default function TokenRoutingEditor({
                 (group) =>
                   !modelGroups?.[name] || modelGroups[name].includes(group),
               )
-              .map((group) => ({
-                value: group,
-                label: group,
-              }))}
+              .map(
+                (group) =>
+                  optionsByGroup.get(group) || {
+                    value: group,
+                    label: group,
+                  },
+              )}
             style={{ width: '100%' }}
             disabled={disabled}
             onChange={(selected) => {
