@@ -178,7 +178,7 @@ try {
             success_rate: 99,
           })),
           series: [],
-          models: {},
+          models: [],
           interval: 3600,
         },
       };
@@ -247,8 +247,25 @@ try {
     await page.$$eval('.pricing-model-card', (els) => els.length),
     20,
   );
+  await page.click('[aria-label="Next"]');
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.pricing-model-card[aria-label]').length === 7,
+  );
+  await page.click('.pricing-model-card a');
+  await page.waitForSelector('.model-detail-hero');
+  await page.click('a[href="/pricing"]');
+  await count(27);
+  assert.equal(
+    await page.$$eval('.pricing-model-card[aria-label]', (els) => els.length),
+    7,
+  );
   await facet('vendor', 'OpenAI');
   await count(25);
+  assert.equal(
+    await page.$$eval('.pricing-model-card[aria-label]', (els) => els.length),
+    20,
+  );
   await facet('vendor', 'Google');
   await count(26);
   await facet('function', '文生图');
