@@ -269,7 +269,14 @@ const makePage = async (role = 1, dark = false) => {
         body = { success: false, message: 'FAQ 保存失败（验收）' };
       } else {
         writes.push(saved);
-        Object.assign(fixtureModel, saved);
+        const { capability_overrides, ...savedFields } = saved;
+        Object.assign(fixtureModel, savedFields);
+        for (const [key, value] of Object.entries(
+          saved.capability_overrides || {},
+        )) {
+          if (value === null) delete fixtureModel.capabilities[key];
+          else fixtureModel.capabilities[key] = value;
+        }
         body = { success: true, data: fixtureModel };
       }
     }
@@ -813,7 +820,11 @@ try {
     await page.waitForFunction(
       () => !document.querySelector('.model-sticky-bar')?.hidden,
     );
-    await page.click('.model-sticky-copy');
+    // Exercise keyboard activation of the sticky controls after navigation;
+    // avoid pointer coordinates changing across the scroll boundary.
+    await page.focus('.model-sticky-copy');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.copiedText === 'friendly-id');
     assert.equal(await page.evaluate(() => window.copiedText), 'friendly-id');
     await page.evaluate(() => {
       window.scrollTo(0, 0);
@@ -826,7 +837,8 @@ try {
     await page.waitForFunction(
       () => !document.querySelector('.model-sticky-bar').hidden,
     );
-    await page.click('.model-sticky-actions a:first-child');
+    await page.focus('.model-sticky-actions a:first-child');
+    await page.keyboard.press('Enter');
     await page.waitForSelector('.model-compare-card');
     assert.equal(new URL(page.url()).searchParams.get('model'), 'friendly-id');
     await page.click('.model-compare-chips .semi-select');
@@ -1181,7 +1193,17 @@ try {
   ]);
   assert.equal(writes[0].description, '后台保存后的完整介绍');
   assert.equal(writes[0].max_output_tokens, 64000);
-  assert.equal(writes[0].capabilities.streaming, false);
+  assert.equal(
+    'context_length' in writes[0],
+    false,
+    'unchanged automatic limits must not become manual overrides',
+  );
+  assert.equal(
+    'vendor_id' in writes[0],
+    false,
+    'unchanged vendor keeps automatic ownership',
+  );
+  assert.equal(writes[0].capability_overrides.streaming, false);
   await page.goto(`${baseURL}/model/friendly-id`, {
     waitUntil: 'networkidle0',
   });
@@ -1258,7 +1280,7 @@ try {
   assert.equal(writes.at(-1).official_pricing.tiers.length, 0);
   assert.deepEqual(writes.at(-1).faq, []);
   assert.equal(writes.at(-1).max_output_tokens, 0);
-  assert.ok(!('streaming' in writes.at(-1).capabilities));
+  assert.equal(writes.at(-1).capability_overrides.streaming, null);
   await page.goto(`${baseURL}/model/friendly-id`, {
     waitUntil: 'networkidle0',
   });

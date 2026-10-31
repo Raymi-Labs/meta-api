@@ -6,6 +6,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -101,12 +102,53 @@ func IsModelNameDuplicated(id int, name string) (bool, error) {
 	return cnt > 0, err
 }
 
-func (mi *Model) Update() error {
+func (mi *Model) Update() error { return mi.UpdateOmittingMetadata(nil) }
+
+func (mi *Model) UpdateOmittingMetadata(omitted []string) error {
+	return mi.UpdateWithMetadataOverrides(omitted, nil)
+}
+
+func (mi *Model) UpdateWithMetadataOverrides(omitted []string, overrides map[string]*bool) error {
+	if len(overrides) > 0 {
+		keys := ModelCapabilities{}
+		for key := range overrides {
+			keys[key] = false
+		}
+		if err := keys.Validate(); err != nil {
+			return err
+		}
+		return DB.Transaction(func(tx *gorm.DB) error {
+			var current Model
+			query := tx.Select("id", "capabilities")
+			if tx.Dialector.Name() != "sqlite" {
+				query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+			}
+			if err := query.First(&current, mi.Id).Error; err != nil {
+				return err
+			}
+			mi.Capabilities = current.Capabilities.Clone()
+			if mi.Capabilities == nil {
+				mi.Capabilities = ModelCapabilities{}
+			}
+			for key, value := range overrides {
+				if value == nil {
+					delete(mi.Capabilities, key)
+				} else {
+					mi.Capabilities[key] = *value
+				}
+			}
+			return mi.updateMetadata(tx, omitted)
+		})
+	}
+	return mi.updateMetadata(DB, omitted)
+}
+
+func (mi *Model) updateMetadata(db *gorm.DB, omitted []string) error {
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
-	return DB.Model(&Model{}).Where("id = ?", mi.Id).
+	return db.Model(&Model{}).Where("id = ?", mi.Id).
 		Select("faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
-		Updates(mi).Error
+		Omit(omitted...).Updates(mi).Error
 }
 
 func (mi *Model) Delete() error {

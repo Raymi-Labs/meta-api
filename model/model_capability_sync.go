@@ -7,6 +7,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/QuantumNous/new-api/common"
 	"gorm.io/gorm"
@@ -15,6 +16,10 @@ import (
 
 // ModelCapabilityMetadata contains display metadata, never routing or billing settings.
 type ModelCapabilityMetadata struct {
+	Description      string
+	Tags             string
+	VendorName       string
+	VendorID         int
 	ReleaseDate      string
 	ContextLength    int64
 	MaxOutputTokens  int64
@@ -40,6 +45,9 @@ type ModelCapabilitySyncResult struct {
 }
 
 type modelCapabilityState struct {
+	Description      *string                         `json:"description,omitempty"`
+	Tags             *string                         `json:"tags,omitempty"`
+	VendorID         *int                            `json:"vendor_id,omitempty"`
 	OfficialPricing  *OfficialPricing                `json:"official_pricing,omitempty"`
 	PricingSyncedAt  int64                           `json:"pricing_synced_at,omitempty"`
 	Version          int                             `json:"version"`
@@ -58,6 +66,9 @@ type modelCapabilityState struct {
 // Preserve SQL NULL and legacy serialization exactly for optimistic comparisons.
 type modelCapabilitySnapshot struct {
 	Model
+	DescriptionSnapshot  sql.NullString `gorm:"column:capability_description_snapshot"`
+	TagsSnapshot         sql.NullString `gorm:"column:capability_tags_snapshot"`
+	VendorSnapshot       sql.NullInt64  `gorm:"column:capability_vendor_snapshot"`
 	PricingSnapshot      sql.NullString `gorm:"column:capability_pricing_snapshot"`
 	ReleaseSnapshot      sql.NullString `gorm:"column:capability_release_snapshot"`
 	MaxOutputSnapshot    sql.NullInt64  `gorm:"column:capability_max_output_snapshot"`
@@ -67,6 +78,8 @@ type modelCapabilitySnapshot struct {
 	OutputSnapshot       sql.NullString `gorm:"column:capability_output_snapshot"`
 	StateSnapshot        sql.NullString `gorm:"column:capability_state_snapshot"`
 }
+
+const modelCapabilitySnapshotColumns = "*, description AS capability_description_snapshot, tags AS capability_tags_snapshot, vendor_id AS capability_vendor_snapshot, official_pricing AS capability_pricing_snapshot, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot"
 
 func validCapabilityContext(value int64) bool { return value > 0 && value <= 9007199254740991 }
 
@@ -133,6 +146,40 @@ func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source s
 	}
 	release := func(key string) { delete(state.FieldSources, key); released = true }
 	appliedField := func(key string) { state.FieldSources[key] = incomingSource(key); applied = true }
+	for _, field := range []struct {
+		key               string
+		current, incoming string
+		owned             **string
+		max               int
+	}{
+		{"description", local.Description, entry.Description, &state.Description, 16000},
+		{"tags", local.Tags, entry.Tags, &state.Tags, 255},
+	} {
+		if *field.owned != nil && field.current != **field.owned {
+			*field.owned = nil
+			release(field.key)
+		}
+		value := strings.TrimSpace(field.incoming)
+		if value != "" && utf8.RuneCountInString(value) <= field.max && (field.current == "" || *field.owned != nil) && allowed(field.key) {
+			if field.current != value {
+				changes[field.key] = value
+			}
+			*field.owned = &value
+			appliedField(field.key)
+		}
+	}
+	if state.VendorID != nil && local.VendorID != *state.VendorID {
+		state.VendorID = nil
+		release("vendor_id")
+	}
+	if entry.VendorID > 0 && (local.VendorID == 0 || state.VendorID != nil) && allowed("vendor_id") {
+		if local.VendorID != entry.VendorID {
+			changes["vendor_id"] = entry.VendorID
+		}
+		value := entry.VendorID
+		state.VendorID = &value
+		appliedField("vendor_id")
+	}
 	if state.OfficialPricing != nil && !local.OfficialPricing.Equal(*state.OfficialPricing) {
 		state.OfficialPricing = nil
 		state.PricingSyncedAt = 0
@@ -265,6 +312,9 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 	query := DB.WithContext(ctx).Model(&Model{}).Where(map[string]interface{}{
 		"id": snapshot.Id, "model_name": snapshot.ModelName,
 		"sync_official": snapshot.SyncOfficial, "name_rule": NameRuleExact,
+		"description":                 snapshot.DescriptionSnapshot,
+		"tags":                        snapshot.TagsSnapshot,
+		"vendor_id":                   snapshot.VendorSnapshot,
 		"release_date":                snapshot.ReleaseSnapshot,
 		"context_length":              snapshot.ContextSnapshot,
 		"max_output_tokens":           snapshot.MaxOutputSnapshot,
@@ -279,6 +329,8 @@ func applyModelCapabilitySnapshot(ctx context.Context, snapshot modelCapabilityS
 	if DB.Dialector.Name() == "mysql" {
 		query = query.Where("BINARY model_name = BINARY ?", snapshot.ModelName)
 		for column, value := range map[string]sql.NullString{
+			"description":      snapshot.DescriptionSnapshot,
+			"tags":             snapshot.TagsSnapshot,
 			"release_date":     snapshot.ReleaseSnapshot,
 			"official_pricing": snapshot.PricingSnapshot,
 			"capabilities":     snapshot.CapabilitiesSnapshot,
@@ -334,7 +386,7 @@ func lockModelMetadataCreationAbility(tx *gorm.DB, name string) (bool, error) {
 }
 
 // ApplyModelCapabilityMetadata fills empty display fields and refreshes only fields
-// still equal to their last automatic value. Manual values, IDs, descriptions,
+// still equal to their last automatic value. Manual values, IDs,
 // billing settings and abilities are never overwritten. Callers refresh pricing after changes.
 func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelCapabilityMetadata, source string) (ModelCapabilitySyncResult, error) {
 	var result ModelCapabilitySyncResult
@@ -349,9 +401,34 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		return result, nil
 	}
 	var rows []modelCapabilitySnapshot
-	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select("*, official_pricing AS capability_pricing_snapshot, release_date AS capability_release_snapshot, context_length AS capability_context_snapshot, max_output_tokens AS capability_max_output_snapshot, capabilities AS capability_flags_snapshot, input_modalities AS capability_input_snapshot, output_modalities AS capability_output_snapshot, model_capability_sync_state AS capability_state_snapshot").Find(&rows).Error
+	err := DB.WithContext(ctx).Unscoped().Model(&Model{}).Select(modelCapabilitySnapshotColumns).Find(&rows).Error
 	if err != nil {
 		return result, err
+	}
+	// Resolve source-confirmed vendors only for locally eligible models. Reuse
+	// the catalog's canonical names/icons without promoting inferred display IDs.
+	vendorIDs := map[string]int{}
+	resolveVendor := func(entry ModelCapabilityMetadata) (ModelCapabilityMetadata, error) {
+		if entry.VendorName == "" {
+			return entry, nil
+		}
+		if id, ok := vendorIDs[entry.VendorName]; ok {
+			entry.VendorID = id
+			return entry, nil
+		}
+		var vendor Vendor
+		name := CanonicalVendorName(entry.VendorName)
+		err := DB.WithContext(ctx).Where("name = ?", name).Order("id").First(&vendor).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			vendor = Vendor{Name: name, Icon: getDefaultVendorIcon(name), Status: 1, CreatedTime: common.GetTimestamp(), UpdatedTime: common.GetTimestamp()}
+			err = DB.WithContext(ctx).Create(&vendor).Error
+		}
+		if err != nil {
+			return entry, err
+		}
+		vendorIDs[entry.VendorName] = vendor.Id
+		entry.VendorID = vendor.Id
+		return entry, nil
 	}
 	existing := make(map[string]bool, len(rows))
 	rules := make([]Model, 0)
@@ -367,6 +444,10 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		if row.DeletedAt.Valid || row.SyncOfficial == 0 || row.NameRule != NameRuleExact {
 			result.Skipped++
 			continue
+		}
+		entry, err = resolveVendor(entry)
+		if err != nil {
+			return result, err
 		}
 		result.Matched++
 		changed, pricingChanged, err := applyModelCapabilitySnapshot(ctx, row, entry, source)
@@ -397,6 +478,10 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			result.Skipped++
 			continue
 		}
+		entry, err = resolveVendor(entry)
+		if err != nil {
+			return result, err
+		}
 		result.Matched++
 		fresh := Model{ModelName: name, Status: 1, SyncOfficial: 1, NameRule: NameRuleExact}
 		changes, err := modelCapabilityChanges(fresh, entry, source)
@@ -406,6 +491,15 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 		if len(changes) == 0 {
 			result.Skipped++
 			continue
+		}
+		if value, ok := changes["description"].(string); ok {
+			fresh.Description = value
+		}
+		if value, ok := changes["tags"].(string); ok {
+			fresh.Tags = value
+		}
+		if value, ok := changes["vendor_id"].(int); ok {
+			fresh.VendorID = value
 		}
 		if value, ok := changes["official_pricing"].(OfficialPricing); ok {
 			fresh.OfficialPricing = value

@@ -6776,6 +6776,7 @@
     "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Synchronisiert Modellattribute und offizielle OpenAI-Textpreise standardmäßig täglich. Manuelle Werte haben Vorrang; bei Fehlern bleiben bestehende Werte erhalten.",
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Ergänzt Modellattribute und offizielle OpenAI-Textpreise automatisch. Manuelle Werte haben Vorrang; zum Fortsetzen der automatischen Synchronisierung löschen.",
     "官方价格自动更新于 {{time}}": "Offizielle Preise automatisch aktualisiert am {{time}}",
-    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Modelle aus dem Marktplatz werden automatisch ergänzt. Attribute bevorzugen offizielle Anbieterquellen; Katalogdaten ergänzen fehlende Angaben. Manuelle Einstellungen bleiben erhalten."
+    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Modelle aus dem Marktplatz werden automatisch ergänzt. Attribute bevorzugen offizielle Anbieterquellen; Katalogdaten ergänzen fehlende Angaben. Manuelle Einstellungen bleiben erhalten.",
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Modelldaten werden automatisch aktualisiert, bevorzugt aus offiziellen Quellen. Manuelle Änderungen bleiben erhalten; nicht verfügbare Angaben bleiben unbekannt."
   }
 }

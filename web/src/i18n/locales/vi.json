@@ -7389,6 +7389,7 @@
     "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Mặc định đồng bộ thuộc tính mô hình và giá văn bản chính thức của OpenAI hằng ngày. Ưu tiên giá trị nhập thủ công; giữ nguyên giá trị cũ khi xảy ra lỗi.",
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Tự động bổ sung thuộc tính mô hình và giá văn bản chính thức của OpenAI. Ưu tiên giá trị nhập thủ công; xóa để tiếp tục đồng bộ tự động.",
     "官方价格自动更新于 {{time}}": "Giá chính thức được tự động cập nhật lúc {{time}}",
-    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Tự động thêm mô hình từ danh mục. Thuộc tính ưu tiên nguồn chính thức của nhà cung cấp, bổ sung thông tin còn thiếu từ kho mô hình và giữ nguyên cấu hình thủ công."
+    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Tự động thêm mô hình từ danh mục. Thuộc tính ưu tiên nguồn chính thức của nhà cung cấp, bổ sung thông tin còn thiếu từ kho mô hình và giữ nguyên cấu hình thủ công.",
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Thông tin mô hình tự động cập nhật, ưu tiên nguồn chính thức. Các chỉnh sửa thủ công được giữ lại; thông tin chưa lấy được vẫn ở trạng thái chưa biết."
   }
 }
