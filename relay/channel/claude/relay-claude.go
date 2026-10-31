@@ -87,6 +87,25 @@ func functionParametersToClaudeInputSchema(parameters any) any {
 	return schema
 }
 
+func parseClaudeStopSequences(stop any) []string {
+	switch stop := stop.(type) {
+	case string:
+		return []string{stop}
+	case []string:
+		return stop
+	case []any:
+		sequences := make([]string, 0, len(stop))
+		for _, item := range stop {
+			if sequence, ok := item.(string); ok {
+				sequences = append(sequences, sequence)
+			}
+		}
+		return sequences
+	default:
+		return nil
+	}
+}
+
 func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRequest) (*dto.ClaudeRequest, error) {
 	for _, message := range textRequest.Messages {
 		if len(message.Tools) > 0 {
@@ -257,19 +276,7 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 		}
 	}
 
-	if textRequest.Stop != nil {
-		// stop maybe string/array string, convert to array string
-		switch textRequest.Stop.(type) {
-		case string:
-			claudeRequest.StopSequences = []string{textRequest.Stop.(string)}
-		case []interface{}:
-			stopSequences := make([]string, 0)
-			for _, stop := range textRequest.Stop.([]interface{}) {
-				stopSequences = append(stopSequences, stop.(string))
-			}
-			claudeRequest.StopSequences = stopSequences
-		}
-	}
+	claudeRequest.StopSequences = parseClaudeStopSequences(textRequest.Stop)
 	formatMessages := make([]dto.Message, 0)
 	lastMessage := dto.Message{
 		Role: "tool",
