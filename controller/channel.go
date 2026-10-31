@@ -1116,6 +1116,11 @@ func applyChannelQuotaPolicyAnchor(channel *model.Channel, origin *model.Channel
 	if channel == nil {
 		return
 	}
+	// A partial update must not materialize omitted settings into a destructive default write.
+	// Keep the pointer nil so the database update also avoids rewriting a stale snapshot.
+	if origin != nil && channel.Setting == nil {
+		return
+	}
 	setting := channel.GetSetting()
 	policy := setting.QuotaPolicy
 	if !policy.Enabled {
