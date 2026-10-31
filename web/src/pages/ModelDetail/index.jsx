@@ -30,7 +30,10 @@ import {
 } from '../../helpers/modelDetailNavigation';
 import ModelGroupRows from './ModelGroupRows';
 import ModelAnalytics from './ModelAnalytics';
-import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
+import {
+  useGroupHealth,
+  UPTIME_WINDOW_HOURS,
+} from '../../hooks/group-health/useGroupHealth';
 import ModelAttributes from './ModelAttributes';
 import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
@@ -69,6 +72,11 @@ export default function ModelDetail() {
   const health = useGroupHealth({
     model: modelName,
     hours,
+    enabled: !!model && !data.loading,
+  });
+  const uptimeHealth = useGroupHealth({
+    model: modelName,
+    hours: UPTIME_WINDOW_HOURS,
     enabled: !!model && !data.loading,
   });
   const pageRef = useRef(null);
@@ -379,7 +387,7 @@ export default function ModelDetail() {
               selectedGroup={selectedGroup}
               officialTier={officialTier}
               data={data}
-              health={health}
+              health={uptimeHealth}
             />
           </section>
           <ModelAnalytics

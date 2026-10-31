@@ -16,6 +16,9 @@ const WindowScope = "current_hour_and_previous_23_hours"
 // Keep this threshold aligned with the request-health UI sample minimum.
 const MinUptimeRequestSamples = int64(30)
 
+// Matches aggregate retention; older observations must not live on indefinitely.
+const MeasurementLookbackHours = 7 * 24
+
 // A normalized billing family must never erase a restriction on the exact
 // model ID exposed by pricing. Require both names when they differ.
 func IsModelAuthorized(name string, role int) bool {
@@ -27,34 +30,35 @@ func IsModelAuthorized(name string, role int) bool {
 }
 
 type Metrics struct {
-	ProbeCount              int64    `json:"probe_count"`
-	ProbeSuccessCount       int64    `json:"probe_success_count"`
-	ProbeBucketCount        int64    `json:"probe_bucket_count"`
-	ProbeSuccessBucketCount int64    `json:"probe_success_bucket_count"`
-	UptimeSampleCount       int64    `json:"uptime_sample_count"`
-	UptimeRate              *float64 `json:"uptime_rate"`
-	InputTokens             *int64   `json:"input_tokens"`
-	OutputTokens            *int64   `json:"output_tokens"`
-	TotalTokens             *int64   `json:"total_tokens"`
-	UsageSampleCount        int64    `json:"usage_sample_count"`
-	AvgOutputTPS            *float64 `json:"avg_output_tps"`
-	ThroughputSampleCount   int64    `json:"throughput_sample_count"`
-	CacheHitRate            *float64 `json:"cache_hit_rate"`
-	CacheSampleCount        int64    `json:"cache_sample_count"`
-	RequestCount            int64    `json:"request_count"`
-	SuccessCount            int64    `json:"success_count"`
-	FailureCount            int64    `json:"failure_count"`
-	ServiceFailureCount     int64    `json:"service_failure_count"`
-	UnknownFailureCount     int64    `json:"unknown_failure_count"`
-	ClientCanceledCount     int64    `json:"client_canceled_count"`
-	ExcludedUserErrorCount  int64    `json:"excluded_user_error_count"`
-	ExcludedCount           int64    `json:"excluded_count"`
-	ObservedCount           int64    `json:"observed_count"`
-	SuccessRate             *float64 `json:"success_rate"`
-	AvgTTFTMs               *float64 `json:"avg_ttft_ms"`
-	TTFTCount               int64    `json:"ttft_count"`
-	AvgCompletionMs         *float64 `json:"avg_completion_ms"`
-	CompletionCount         int64    `json:"completion_count"`
+	LastValid               *MeasurementReferences `json:"last_valid,omitempty"`
+	ProbeCount              int64                  `json:"probe_count"`
+	ProbeSuccessCount       int64                  `json:"probe_success_count"`
+	ProbeBucketCount        int64                  `json:"probe_bucket_count"`
+	ProbeSuccessBucketCount int64                  `json:"probe_success_bucket_count"`
+	UptimeSampleCount       int64                  `json:"uptime_sample_count"`
+	UptimeRate              *float64               `json:"uptime_rate"`
+	InputTokens             *int64                 `json:"input_tokens"`
+	OutputTokens            *int64                 `json:"output_tokens"`
+	TotalTokens             *int64                 `json:"total_tokens"`
+	UsageSampleCount        int64                  `json:"usage_sample_count"`
+	AvgOutputTPS            *float64               `json:"avg_output_tps"`
+	ThroughputSampleCount   int64                  `json:"throughput_sample_count"`
+	CacheHitRate            *float64               `json:"cache_hit_rate"`
+	CacheSampleCount        int64                  `json:"cache_sample_count"`
+	RequestCount            int64                  `json:"request_count"`
+	SuccessCount            int64                  `json:"success_count"`
+	FailureCount            int64                  `json:"failure_count"`
+	ServiceFailureCount     int64                  `json:"service_failure_count"`
+	UnknownFailureCount     int64                  `json:"unknown_failure_count"`
+	ClientCanceledCount     int64                  `json:"client_canceled_count"`
+	ExcludedUserErrorCount  int64                  `json:"excluded_user_error_count"`
+	ExcludedCount           int64                  `json:"excluded_count"`
+	ObservedCount           int64                  `json:"observed_count"`
+	SuccessRate             *float64               `json:"success_rate"`
+	AvgTTFTMs               *float64               `json:"avg_ttft_ms"`
+	TTFTCount               int64                  `json:"ttft_count"`
+	AvgCompletionMs         *float64               `json:"avg_completion_ms"`
+	CompletionCount         int64                  `json:"completion_count"`
 }
 
 type Bucket struct {
@@ -88,7 +92,7 @@ func Query(ctx context.Context, groups []string, modelName string, role int, now
 	}
 	end := now.Unix()
 	start := end/BucketSeconds*BucketSeconds - int64(hours-1)*BucketSeconds
-	rows, err := model.QueryGroupHealthMetrics(ctx, groups, modelName, start, end)
+	rows, err := model.QueryGroupHealthMetrics(ctx, groups, modelName, measurementStart(end), end)
 	if err != nil {
 		return Result{}, err
 	}
@@ -133,21 +137,36 @@ func QueryModels(ctx context.Context, groups, modelNames []string, role, hours i
 			allowed = append(allowed, name)
 		}
 	}
-	rows, err := model.QueryGroupHealthMetricsForModels(ctx, groups, allowed, start, end)
+	rows, err := model.QueryGroupHealthMetricsForModels(ctx, groups, allowed, measurementStart(end), end)
 	if err != nil {
 		return ModelResult{}, err
 	}
 	totals := make(map[string]model.GroupHealthMetric, len(allowed))
+	measured := make(map[string]map[int64]model.GroupHealthMetric, len(allowed))
 	for _, row := range withProbeBuckets(rows) {
-		total := totals[row.ModelName]
-		add(&total, row)
-		totals[row.ModelName] = total
+		if measured[row.ModelName] == nil {
+			measured[row.ModelName] = make(map[int64]model.GroupHealthMetric)
+		}
+		hour := measured[row.ModelName][row.BucketTs]
+		add(&hour, row)
+		measured[row.ModelName][row.BucketTs] = hour
+		if row.BucketTs >= start {
+			total := totals[row.ModelName]
+			add(&total, row)
+			totals[row.ModelName] = total
+		}
 		if row.UpdatedAt > result.UpdatedAt {
 			result.UpdatedAt = row.UpdatedAt
 		}
 	}
 	for _, name := range allowed {
-		result.Models = append(result.Models, ModelSummary{Model: name, Metrics: summarize(totals[name])})
+		var latest MeasurementReferences
+		for ts, row := range measured[name] {
+			latest.observe(row, ts)
+		}
+		metrics := summarize(totals[name])
+		metrics.LastValid = latest.snapshot()
+		result.Models = append(result.Models, ModelSummary{Model: name, Metrics: metrics})
 	}
 	return result, nil
 }
@@ -161,7 +180,7 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	}
 	for _, row := range withProbeBuckets(rows) {
 		buckets, allowed := byGroup[row.GroupName]
-		if !allowed || row.BucketTs < start || row.BucketTs > end {
+		if !allowed || row.BucketTs < measurementStart(end) || row.BucketTs > end {
 			continue
 		}
 		aggregate := buckets[row.BucketTs]
@@ -176,13 +195,20 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	for _, name := range ordered {
 		group := Group{Group: name, Series: make([]Bucket, 0, hours)}
 		var total model.GroupHealthMetric
-		for i := int64(0); i < int64(hours); i++ {
-			ts := start + i*BucketSeconds
+		var latest MeasurementReferences
+		for ts := measurementStart(end); ts <= end; ts += BucketSeconds {
 			row := byGroup[name][ts]
+			latest.observe(row, ts)
+			if ts < start {
+				continue
+			}
 			add(&total, row)
-			group.Series = append(group.Series, Bucket{Ts: ts, Metrics: summarize(row)})
+			metrics := summarize(row)
+			metrics.LastValid = latest.snapshot()
+			group.Series = append(group.Series, Bucket{Ts: ts, Metrics: metrics})
 		}
 		group.Metrics = summarize(total)
+		group.LastValid = latest.snapshot()
 		result.Groups = append(result.Groups, group)
 	}
 	return result

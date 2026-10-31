@@ -8,6 +8,8 @@ import {
   uptimeTone,
   healthTone,
   selectHealthGroups,
+  getHealthLatency,
+  getHealthMeasurement,
 } from '../src/components/group-health/healthUtils';
 import {
   chartDisplayValue,
@@ -38,6 +40,77 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
     uptime_rate: 100,
   };
   describe('model uptime evidence', () => {
+    test('72 hours carry reference measurements without inventing sample counts', () => {
+      const ts = 1800000000;
+      const stats = {
+        ...passing,
+        avg_ttft_ms: null,
+        ttft_count: 0,
+        cache_hit_rate: null,
+        cache_sample_count: 0,
+        last_valid: {
+          ttft: { value: 1140, ts: ts - 3600 },
+          cache: { value: 0, ts: ts - 7200 },
+        },
+      };
+      expect(getHealthLatency(stats, 'ttft', true)).toEqual({
+        value: 1140,
+        count: 0,
+        referenceTs: ts - 3600,
+      });
+      expect(getHealthLatency(stats).value).toBeNull();
+      expect(getHealthMeasurement(stats, 'cache', true).value).toBe(0);
+      const html = renderToStaticMarkup(
+        <GroupHealthPanel
+          uptime
+          stats={{
+            ...stats,
+            group: 'g',
+            series: Array.from({ length: 72 }, (_, i) => ({
+              ...stats,
+              ts: ts + i * 3600,
+            })),
+          }}
+        />,
+      );
+      expect(html).toContain('最近 72 个小时段可用率');
+      expect((html.match(/aria-controls=/g) || []).length).toBe(72);
+      expect(html).toContain('1.14 s');
+      expect(html).toContain('0.00%');
+      expect(html).toContain('沿用 ');
+      expect(html).not.toContain('0 个有效样本');
+      expect(chartDisplayValue(stats, 'avg_ttft_ms')).toBe(1.14);
+      const actual = {
+        ...stats,
+        avg_ttft_ms: 0,
+        ttft_count: 1,
+        cache_hit_rate: 0,
+        cache_sample_count: 1,
+      };
+      expect(getHealthLatency(actual, 'ttft', true)).toEqual({
+        value: 0,
+        count: 1,
+      });
+      expect(getHealthMeasurement(actual, 'cache', true)).toEqual({
+        value: 0,
+        count: 1,
+      });
+      expect(
+        getHealthLatency({ ...stats, ts: ts - 7200 }, 'ttft', true).value,
+      ).toBeNull();
+      expect(
+        getHealthLatency(
+          { ...stats, last_valid: { ttft: { value: -1, ts } } },
+          'ttft',
+          true,
+        ).value,
+      ).toBeNull();
+      const raw = renderToStaticMarkup(
+        <GroupHealthPanel stats={{ ...stats, series: [] }} />,
+      );
+      expect(raw).not.toContain('1.14 s');
+      expect(raw).not.toContain('沿用 ');
+    });
     test('probe-only rows show availability and source without inventing traffic', () => {
       expect(healthTone(passing)).toBe('empty');
       expect(uptimeTone(passing)).toBe('healthy');
