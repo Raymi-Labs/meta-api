@@ -31,7 +31,7 @@ func TestVolcEngineUpstreamModelsEndpoint(t *testing.T) {
 }
 
 func TestChannelTestUsesModelCapabilities(t *testing.T) {
-	for _, name := range []string{"gpt-5.2", "gpt-6-astra", "gpt-6-astra-2026-09-03", "gpt-6-sol", "gpt-6-luna", "gpt-6-sol-2026-09-30", "o3"} {
+	for _, name := range []string{"gpt-5.2", "gpt-6-astra", "gpt-6-astra-2026-09-03", "gpt-6-sol", "gpt-6-luna", "gpt-6-sol-2026-09-30", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6.1-terra-2026-10-28", "o3"} {
 		t.Run(name, func(t *testing.T) {
 			req := buildTestRequest(name, "", &model.Channel{Type: constant.ChannelTypeOpenAI}, false).(*dto.GeneralOpenAIRequest)
 			require.Equal(t, uint(16), req.MaxCompletionTokens)

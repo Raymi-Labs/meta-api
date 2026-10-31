@@ -13,7 +13,7 @@
     "axios": "1.13.5",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.11",
-    "dompurify": "3.4.11",
+    "dompurify": "3.4.17",
     "highlight.js": "11.11.1",
     "history": "^5.3.0",
     "i18next": "^23.16.8",
@@ -60,6 +60,7 @@
     "i18n:lint": "bunx i18next-cli lint",
     "i18n:audit": "node scripts/i18n-audit.mjs",
     "test:video-preflight": "node scripts/video-preflight.test.mjs",
+    "test:rich-content-security": "node scripts/rich-content-security.browser.mjs",
     "test:image-playground-static": "node scripts/image-playground-static-guard.test.mjs",
     "test:model-pricing-currency": "node scripts/model-pricing-currency.test.mjs",
     "test:tiered-billing-display": "node scripts/tiered-billing-display.test.mjs",
@@ -104,6 +105,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "dompurify": "3.4.17"
   },
   "devDependencies": {
     "@douyinfe/vite-plugin-semi": "^2.74.0-alpha.6",
