@@ -209,6 +209,14 @@ func RelayTTS(c *gin.Context, info *relaycommon.RelayInfo, request *dto.AudioReq
 		if err := state.acceptClient(&e, info.OriginModelName, info.UpstreamModelName); err != nil {
 			return invalid(err)
 		}
+		if e.Header.Action == "run-task" {
+			voice, _ := e.Payload.Parameters["voice"].(string)
+			resolved, err := service.ResolveSpeechVoice(c, info, voice)
+			if err != nil {
+				return invalid(err)
+			}
+			e.Payload.Parameters["voice"] = resolved
+		}
 		if err := reserveCurrent(); err != nil {
 			return err
 		}

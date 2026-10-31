@@ -52,6 +52,15 @@ func selectChannelWithConcurrency(
 	info *relaycommon.RelayInfo,
 	retryParam *service.RetryParam,
 ) (*model.Channel, func(), *types.NewAPIError, bool) {
+	if _, ok := c.Get(service.AudioVoiceContext); ok {
+		ch, err := middleware.SelectAudioVoiceChannel(c, retryParam.ModelName, retryParam.TokenGroup, service.DetectClient(c))
+		if err != nil {
+			return nil, nil, err, false
+		}
+		info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+		release, capacityErr := acquireFixedChannelCapacityWithWait(c, ch)
+		return ch, release, capacityErr, capacityErr != nil
+	}
 	if !middleware.ChannelConcurrencyEnabled() {
 		channel, apiErr := getChannel(c, info, retryParam)
 		return channel, nil, apiErr, false

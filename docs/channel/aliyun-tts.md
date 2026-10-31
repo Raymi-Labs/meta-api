@@ -1,8 +1,8 @@
 # 阿里云实时语音合成接入
 
-Meta API 的阿里通义千问渠道支持 Qwen-Audio-TTS、CosyVoice 的实时语音合成。客户端使用 Meta API 令牌，上游百炼 API Key 只保存在服务端渠道中。支持预先创建的复刻音色；每次合成传入保存的音色 ID，无需重新上传录音。
+Meta API 的阿里通义千问渠道支持 Qwen-Audio-TTS、CosyVoice 的实时语音合成。客户端使用 Meta API 令牌，上游百炼 API Key 只保存在服务端渠道中。用户可以通过本站 API 上传录音、创建复刻音色，再传入保存的音色 ID 合成新文本，无需登录阿里云或重复上传录音。
 
-此功能从 v1.5.0 起提供。代码支持不表示线上已部署或模型已开放。管理员部署包含此功能的版本、配置渠道及价格后，用户才能调用。
+语音合成从 v1.5.0 起提供，上传录音和音色管理从 v1.10.0 起提供。代码支持不表示线上已部署或模型已开放。管理员部署包含对应功能的版本、配置渠道及价格后，用户才能调用。
 
 ## 支持范围
 
@@ -76,6 +76,78 @@ data: {"type":"speech.audio.done","usage":{"prompt_tokens":10,"completion_tokens
 
 SSE 的 `audio` 是该次音频块的 Base64。按块解码后交给播放器；只有收到 `speech.audio.done` 才算完整结束。错误使用 SSE 错误事件。二进制响应开始后无法改写 HTTP 状态，异常会截断音频并写入失败日志，不会把错误 JSON 拼到音频末尾；HTTP 200 本身不证明完整成功。
 
+## 用户音色：上传、查询与删除
+
+此组接口从 **v1.10.0** 起提供，使用 **Meta API 令牌**，不是百炼 Key。管理员须先部署包含音色管理的版本；现有 TTS 版本并不自动拥有这些接口。复用令牌的模型权限、分组、渠道白名单和限流。首版只接入 API，没有控制台上传页面。
+
+| 操作 | 接口 | 返回 |
+| --- | --- | --- |
+| 上传并创建 | `POST /v1/audio/voices` | 音色对象，首次创建 HTTP 201，幂等重放 HTTP 200 |
+| 列出我的音色 | `GET /v1/audio/voices?limit=20&offset=0` | `data`、`has_more`、`limit`、`offset` |
+| 刷新状态 | `GET /v1/audio/voices/{id}` | 音色对象及最新 `status` |
+| 删除 | `DELETE /v1/audio/voices/{id}` | `{"id":"meta-voice-…","deleted":true}` |
+
+创建使用 multipart 字段：`model` 为之后合成时使用的公开模型名；`name` 为1–64字符的音色名称；`file` 为本地录音。支持 WAV、MP3、M4A，最大10 MiB，时长5–60秒，推荐10–20秒。推荐24 kHz及以上清晰人声；采样率等供应商音质要求仍由阿里校验；仅改文件扩展名不能转换音频。本站不接收录音 URL，不长期保存录音，文件会编码后发送到管理员配置的阿里渠道。
+
+```bash
+export META_API_KEY='本站令牌'
+# 每次有意创建新音色使用新键；网络错误后的重试必须保留原键。
+export VOICE_REQUEST_KEY='myvoice-20261031-001'
+curl --fail-with-body -sS 'https://meta-api.com/v1/audio/voices' \
+  -H "Authorization: Bearer $META_API_KEY" \
+  -H "Idempotency-Key: $VOICE_REQUEST_KEY" \
+  -F 'model=qwen-audio-3.1-tts-flash' \
+  -F 'name=我的声音' \
+  -F 'file=@sample.wav'
+```
+
+`Idempotency-Key` 必填，为8–128位字母、数字、点、下划线、冒号或连字符。同一归属范围下，相同键和相同内容返回原记录，不再次创建；相同键配不同录音、模型或名称返回409。删除后旧键仍返回已删除记录，重新创建需换新键。**不要在超时后换键重试**。
+
+返回对象示例（ID仅为占位符）：
+
+```json
+{"id":"meta-voice-0123456789abcdef0123456789abcdef","name":"我的声音","model":"qwen-audio-3.1-tts-flash","status":"processing","created_at":1793404800,"updated_at":1793404800}
+```
+
+保存 `id`，查询到 `ready` 后才可合成：
+
+```bash
+export VOICE_ID='替换为返回的meta-voice-ID'
+curl --fail-with-body -sS "https://meta-api.com/v1/audio/voices/$VOICE_ID" \
+  -H "Authorization: Bearer $META_API_KEY"
+
+# model 必须与创建时相同；响应为音频，先检查命令退出状态再播放。
+curl --fail --no-buffer -sS 'https://meta-api.com/v1/audio/speech' \
+  -H "Authorization: Bearer $META_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d "{\"model\":\"qwen-audio-3.1-tts-flash\",\"input\":\"你好，这是我的复刻声音。\",\"voice\":\"$VOICE_ID\",\"response_format\":\"mp3\"}" \
+  --output speech.mp3
+
+curl --fail-with-body -sS -X DELETE "https://meta-api.com/v1/audio/voices/$VOICE_ID" \
+  -H "Authorization: Bearer $META_API_KEY"
+```
+
+| status | 含义与操作 |
+| --- | --- |
+| `creating` | 创建中，保留 ID，稍后查询 |
+| `processing` | 上游已接受，等待处理/审核；稍后查询 |
+| `ready` | 可以合成 |
+| `rejected` | 上游审核未通过，可删除后更换样本 |
+| `failed` | 上游明确拒绝创建；可删除记录 |
+| `unknown` | 上游结果未确认；查询会按该请求的唯一前缀寻找已创建音色，不自动重复创建 |
+| `deleting` / `delete_failed` | 删除中或删除未确认，不能再合成；稍后查询或重试 DELETE |
+| `deleted` | 已删除，不能再合成 |
+
+创建失败响应可能含 `voice` 对象，务必保留其中的 ID；如果连接中断未收到 ID，用同一个幂等键重试或从列表找回。长时间 `unknown` 且无法找回时联系管理员核对上游，不能把查询暂时为空当作创建未发生。删除失败不释放配额，重试删除不会重新创建。阿里明确返回音色不存在时视为已删除，其他错误不能当作删除成功。
+
+普通令牌按所属用户共享音色；可售令牌按令牌独立隔离，不能读取发行者或其他买家的音色。每个归属范围最多20条未删除记录（包括失败/未知记录），删除后释放名额；阿里账号自身的共享配额仍适用。列表不包含删除记录，`limit` 为1–100，`offset` 为0–100000，`has_more` 指示是否还有下一页。
+
+音色创建和管理不另扣本站额度；合成按当前模型及实际路由分组计费。音色绑定创建时的公开模型、映射后模型、渠道及凭据摘要，后续调用仍须有该模型与渠道的访问权限。首版要求单 Key 阿里渠道，不支持多 Key 轮询池。禁用渠道、撤销分组权限、修改模型映射、变更渠道 Key 或业务空间会使合成失败；不会自动跨账号转发。凭据轮换需管理员核实音色归属，不能直接替换成另一个账号继续使用。
+
+本站 ID 以 `meta-voice-` 开头；上游创建使用保留的 `mv` 加8位十六进制前缀，禁止下游直接使用这类上游音色 ID。原有系统音色与其他外部预创建音色的用法保持不变。
+
+供应商依据：[声音复刻 HTTP API](https://help.aliyun.com/zh/model-studio/voice-clone-design-http-api)、[录音要求和绑定规则](https://help.aliyun.com/zh/model-studio/voice-cloning-user-guide)。
+
 ## 实时聊天：双向 WebSocket
 
 连接：
@@ -86,6 +158,8 @@ Authorization: Bearer <META_API_KEY>
 ```
 
 该入口使用百炼任务事件和二进制帧，不是 OpenAI `/v1/realtime` 协议，也不能只替换官方 SDK 的 Base URL（本站还要求 `model` 查询参数）。服务端应用可设置 Authorization；浏览器可沿用本站 `realtime` 与 `openai-insecure-api-key.<META_API_KEY>` 子协议鉴权，使用受限的本站令牌，不能把百炼 Key 发给浏览器。
+
+使用本站创建的 `meta-voice-…` 音色时，连接URL还须添加 `&voice=音色ID`，用于在握手前固定到创建音色的渠道。每轮 `run-task.parameters.voice` 必须与查询参数一致；想换另一个音色需建立新连接。删除音色后，原连接的新任务也会被拒绝。下面代码自动为本站音色添加此参数。
 
 依次发送 `run-task`，等待 `task-started`，再把大模型生成的文本分段送入 `continue-task`。文本结束时发送 `finish-task`。同时持续接收消息：文本帧是任务状态/用量，二进制帧是音频。
 
@@ -103,7 +177,10 @@ import websocket
 
 model = "qwen-audio-3.1-tts-flash"
 voice = os.environ.get("TTS_VOICE", "longanhuan_v3.1")
-url = "wss://meta-api.com/v1/audio/speech/stream?" + urlencode({"model": model})
+query = {"model": model}
+if voice.startswith("meta-voice-"):
+    query["voice"] = voice
+url = "wss://meta-api.com/v1/audio/speech/stream?" + urlencode(query)
 ws = websocket.create_connection(
     url, header=["Authorization: Bearer " + os.environ["META_API_KEY"]], timeout=30
 )

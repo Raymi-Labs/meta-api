@@ -271,6 +271,10 @@ func ResolveAffinityChannelForRelay(c *gin.Context, modelName string, usingGroup
 }
 
 func selectChannelForRequest(c *gin.Context, modelName string, usingGroup string, clientID string, specificChannelID *int) (*model.Channel, string, *types.NewAPIError) {
+	if _, ok := c.Get(service.AudioVoiceContext); ok {
+		ch, err := SelectAudioVoiceChannel(c, modelName, usingGroup, clientID)
+		return ch, common.GetContextKeyString(c, constant.ContextKeyUsingGroup), err
+	}
 	allowedChannels := GetAllowedTokenChannelIDs(c)
 	excludeChannels := make([]int, 0, 4)
 
@@ -386,6 +390,10 @@ func getModelFromRequest(c *gin.Context) (*ModelRequest, error) {
 }
 
 func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
+	if value, ok := c.Get(service.AudioVoiceModelContext); ok {
+		name, _ := value.(string)
+		return &ModelRequest{Model: name}, true, nil
+	}
 	var modelRequest ModelRequest
 	shouldSelectChannel := true
 	var err error
