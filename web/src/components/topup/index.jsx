@@ -74,6 +74,7 @@ import {
   meetsAffWithdrawalMinimum,
 } from '../../constants';
 
+import { useVisibleRefresh } from '../../hooks/common/useVisibleRefresh';
 import RechargeCard from './RechargeCard';
 import WalletOverview from './WalletOverview';
 import './wallet.css';
@@ -567,11 +568,13 @@ const TopUpContent = () => {
     }
   };
 
-  const getUserQuota = async () => {
-    if (!aliveRef.current) return;
+  const getUserQuota = async (silent = false) => {
+    if (!aliveRef.current || (silent && balanceLoading)) return;
     const request = ++quotaRequestRef.current;
-    setBalanceLoading(true);
-    setBalanceError(false);
+    if (!silent) {
+      setBalanceLoading(true);
+      setBalanceError(false);
+    }
     try {
       const res = await API.get('/api/user/self', {
         disableDuplicate: true,
@@ -580,6 +583,7 @@ const TopUpContent = () => {
       if (!aliveRef.current || request !== quotaRequestRef.current) return;
       if (!res.data?.success || !res.data.data)
         throw new Error('Missing account');
+      setBalanceError(false);
       userDispatch({ type: 'login', payload: res.data.data });
       setUserData(res.data.data);
     } catch {
@@ -590,6 +594,8 @@ const TopUpContent = () => {
         setBalanceLoading(false);
     }
   };
+  useVisibleRefresh(() => getUserQuota(true));
+
   const refreshWallet = () => {
     getUserQuota();
     getSubscriptionSelf();

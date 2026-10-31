@@ -43,3 +43,5 @@ SQLite实际执行通过；MySQL/PostgreSQL upsert SQL生成检查通过，不�
 ## Related notes
 
 [蓝白品牌角色](2026-10-22-invite-brand-character.md)以用户提供的角色与站内蓝色风格替代本篇的墨绿视觉及无图片素材约束；其余短链统计、权限、注册绑定和HTML安全规则不变。
+
+[返佣及时到账](2026-10-31-invite-realtime-settlement.md)将既有日批发放扩展为事务内待办、提交后结算与定时补偿；本篇推广素材、绑定和点击统计规则继续保持。

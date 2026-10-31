@@ -353,13 +353,14 @@ func RechargeWithPaymentDetails(referenceId string, customerId string, callerIp 
 			return err
 		}
 
-		return nil
+		return EnqueueInviteCommissionFromTopUpTx(tx, topUp)
 	})
 
 	if err != nil {
 		common.SysError("topup failed: " + err.Error())
 		return errors.New("充值失败，请稍后重试")
 	}
+	NotifyInviteCommissionSettlement()
 	if alreadyCompleted {
 		return nil
 	}
@@ -370,12 +371,6 @@ func RechargeWithPaymentDetails(referenceId string, customerId string, callerIp 
 	RecordTopupLog(topUp.UserId,
 		fmt.Sprintf("使用在线充值成功，充值金额: %v，支付金额：%s", logger.FormatQuota(int(quota)), formatTopUpPaymentAmount(topUp)),
 		callerIp, topUp.PaymentMethod, "stripe", nil)
-	// 返佣采用 T+1 日批结算：
-	// 1) 此处只入返佣台账（pending），不直接发放；
-	// 2) 真正发放由定时任务统一处理，避免支付回调路径里出现复杂并发问题。
-	if enqueueErr := EnqueueInviteCommissionFromTopUp(topUp); enqueueErr != nil {
-		common.SysError("enqueue invite commission failed: " + enqueueErr.Error())
-	}
 
 	return nil
 }
@@ -638,12 +633,13 @@ func CompleteTopUpByTradeNoWithPayment(tradeNo string, source string, callerIp s
 		userId = topUp.UserId
 		payMoney = topUp.Money
 		paymentMethod = topUp.PaymentMethod
-		return nil
+		return EnqueueInviteCommissionFromTopUpTx(tx, topUp)
 	})
 
 	if err != nil {
 		return err
 	}
+	NotifyInviteCommissionSettlement()
 	if alreadyCompleted {
 		return nil
 	}
@@ -657,15 +653,6 @@ func CompleteTopUpByTradeNoWithPayment(tradeNo string, source string, callerIp s
 	}
 	RecordTopupLog(userId, logMessage, callerIp, paymentMethod, source, adminExtras)
 
-	if topUp := GetTopUpByTradeNo(tradeNo); topUp != nil {
-		if enqueueErr := EnqueueInviteCommissionFromTopUp(topUp); enqueueErr != nil {
-			context := source
-			if context == "" {
-				context = "topup"
-			}
-			common.SysError("enqueue invite commission (" + context + ") failed: " + enqueueErr.Error())
-		}
-	}
 	return nil
 }
 
@@ -757,13 +744,14 @@ func RechargeCreem(referenceId string, customerEmail string, customerName string
 			return err
 		}
 
-		return nil
+		return EnqueueInviteCommissionFromTopUpTx(tx, topUp)
 	})
 
 	if err != nil {
 		common.SysError("creem topup failed: " + err.Error())
 		return errors.New("充值失败，请稍后重试")
 	}
+	NotifyInviteCommissionSettlement()
 	if alreadyCompleted {
 		return nil
 	}
@@ -774,9 +762,6 @@ func RechargeCreem(referenceId string, customerEmail string, customerName string
 	RecordTopupLog(topUp.UserId,
 		fmt.Sprintf("使用Creem充值成功，充值额度: %v，支付金额：%.2f", quota, topUp.Money),
 		callerIp, topUp.PaymentMethod, "creem", nil)
-	if enqueueErr := EnqueueInviteCommissionFromTopUp(topUp); enqueueErr != nil {
-		common.SysError("enqueue invite commission (creem) failed: " + enqueueErr.Error())
-	}
 
 	return nil
 }

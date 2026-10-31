@@ -25,30 +25,30 @@ var (
 
 func StartInviteCommissionSettlementTask() {
 	inviteCommissionSettlementOnce.Do(func() {
-		if !common.IsMasterNode {
-			return
-		}
-
 		gopool.Go(func() {
-			// 统一按“自然日 00:00”触发 T+1 结算：
-			// - 不是“充值后 +24 小时”
-			// - 而是进入次日后，在本地时区午夜执行上一自然日及以前的待结算台账。
-			logger.LogInfo(context.Background(), "invite commission settlement task started: schedule=00:00 local time")
-			for {
-				wait := durationUntilNextLocalMidnight(time.Now())
-				logger.LogDebug(context.Background(), "invite commission settlement next run in %s", wait)
-				timer := time.NewTimer(wait)
-				<-timer.C
-				timer.Stop()
-				runInviteCommissionSettlementOnce()
-			}
+			// Every instance can receive a payment; database transactions prevent
+			// duplicate payouts. Wakeups coalesce and the sweep recovers lost signals.
+			logger.LogInfo(context.Background(), "invite commission settlement task started: immediate + 30s recovery")
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+			runInviteCommissionSettlementLoop(context.Background(), model.InviteCommissionSettlementWakeups(), ticker.C, runInviteCommissionSettlementOnce)
 		})
 	})
 }
 
-func durationUntilNextLocalMidnight(now time.Time) time.Duration {
-	next := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1)
-	return next.Sub(now)
+// Kept separate from process startup so recovery triggers can be tested without
+// a permanent worker or a wall-clock sleep.
+func runInviteCommissionSettlementLoop(ctx context.Context, wakeups <-chan struct{}, ticks <-chan time.Time, run func()) {
+	run()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-wakeups:
+		case <-ticks:
+		}
+		run()
+	}
 }
 
 func runInviteCommissionSettlementOnce() {
@@ -58,12 +58,12 @@ func runInviteCommissionSettlementOnce() {
 	}
 	defer inviteCommissionSettlementRunning.Store(false)
 
-	if !common.InviteCommissionConfigured() {
+	if !common.InviterCommissionEnabled {
 		return
 	}
 
-	// T+1 结算：每次只处理“昨天及以前”的 pending 台账，任务可重复执行且不会重复入账。
-	targetDate := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	// 包含当天待办；旧pending保留原业务日及日限额，不重复发放已结算记录。
+	targetDate := time.Now().Format("2006-01-02")
 
 	totalSettled := 0
 	totalSkipped := 0
