@@ -31,6 +31,7 @@ export default function CapabilitySettings({
   model,
   onInputChange,
   disabled,
+  textOnly = false,
 }) {
   const { t } = useTranslation();
   const noReasoning = model?.capabilities?.reasoning === false;
@@ -67,28 +68,30 @@ export default function CapabilitySettings({
           {t('通过 reasoning_effort 请求，支持的档位由模型与渠道决定。')}
         </p>
       )}
-      <div className='pg-capability-row'>
-        <span>
-          <Wrench size={17} />
-          {t('工具调用')}
-        </span>
-        {noTools ? (
-          <small>{t('不支持')}</small>
-        ) : (
-          <Switch
-            aria-label={t('工具调用')}
-            size='small'
-            checked={Boolean(toolsEnabled)}
-            disabled={disabled}
-            onChange={(checked) => {
-              onInputChange('toolsEnabled', checked);
-              if (checked && !inputs.toolsJson)
-                onInputChange('toolsJson', DEFAULT_TOOL_DEFINITIONS);
-            }}
-          />
-        )}
-      </div>
-      {toolsEnabled && (
+      {!textOnly && (
+        <div className='pg-capability-row'>
+          <span>
+            <Wrench size={17} />
+            {t('工具调用')}
+          </span>
+          {noTools ? (
+            <small>{t('不支持')}</small>
+          ) : (
+            <Switch
+              aria-label={t('工具调用')}
+              size='small'
+              checked={Boolean(toolsEnabled)}
+              disabled={disabled}
+              onChange={(checked) => {
+                onInputChange('toolsEnabled', checked);
+                if (checked && !inputs.toolsJson)
+                  onInputChange('toolsJson', DEFAULT_TOOL_DEFINITIONS);
+              }}
+            />
+          )}
+        </div>
+      )}
+      {!textOnly && toolsEnabled && (
         <div className='pg-tool-settings'>
           <p className='pg-field-hint'>
             {t('定义函数供模型调用，返回后手动填入执行结果。')}

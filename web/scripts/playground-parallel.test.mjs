@@ -7,7 +7,50 @@ import {
   isTextComparisonModel,
   canUseParallelReply,
   recoverParallelReplies,
+  comparisonSections,
+  comparisonModelNames,
+  comparisonReplyState,
 } from '../src/helpers/playgroundParallel.js';
+
+test('comparison selection respects live group permissions and rounds keep chosen history immutable', () => {
+  const catalog = {
+    models: [
+      { model_name: 'a', supported_endpoint_types: ['openai'] },
+      { model_name: 'b', supported_endpoint_types: ['openai'] },
+    ],
+  };
+  assert.deepEqual(
+    comparisonModelNames(['b', 'a', 'b'], [{ value: 'a' }], catalog),
+    ['a'],
+  );
+  const history = [
+    { id: 'q', role: 'user', content: 'q' },
+    {
+      id: 'a',
+      parallelRound: 'q',
+      parallelChosen: true,
+      status: 'complete',
+      content: 'answer',
+    },
+    { id: 'b', parallelRound: 'q', status: 'error' },
+    { id: 'q2', role: 'user', content: 'q2' },
+  ];
+  const before = JSON.stringify(history);
+  const sections = comparisonSections(history);
+  assert.equal(sections.length, 3);
+  assert.equal(sections[1].replies.length, 2);
+  assert.equal(comparisonReplyState(history[1]), '已完成');
+  assert.equal(comparisonReplyState(history[2]), '失败');
+  assert.equal(
+    comparisonReplyState({ ...history[1], parallelStopped: true }),
+    '已停止',
+  );
+  assert.equal(
+    comparisonReplyState({ ...history[1], status: 'loading' }),
+    '生成中',
+  );
+  assert.equal(JSON.stringify(history), before);
+});
 
 test('reload and import interrupt every in-flight branch without changing complete replies', () => {
   const done = {
