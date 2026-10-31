@@ -618,6 +618,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 		{"deepseek", "https://api-docs.deepseek.com/quick_start/pricing/"},
 		{"xiaomi", "https://mimo.mi.com/static/docs/quick-start/summary/model.md"},
 		{"moonshotai", "https://platform.kimi.ai/docs/models.md"},
+		{"moonshotai", kimiPricingURL},
 		{"minimax", "https://platform.minimax.io/docs/guides/text-generation.md"},
 		{"alibaba", "https://help.aliyun.com/zh/model-studio/text-generation-model"},
 		{"alibaba", "https://help.aliyun.com/zh/model-studio/vision-model"},
@@ -660,6 +661,12 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 						addDeepSeekPrices(data, entries, j.url)
 					}
 					switch j.url {
+					case kimiPricingURL:
+						entries, err = parseKimiPricing(data, groups[j.provider])
+						if err != nil {
+							results[index].warning = "moonshotai pricing"
+							continue
+						}
 					case "https://ai.google.dev/gemini-api/docs/pricing":
 						entries = parseGeminiPricing(data, groups[j.provider], j.url)
 					case "https://mimo.mi.com/static/docs/price/pay-as-you-go.md":

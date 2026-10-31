@@ -39,7 +39,7 @@
 | Google | [模型文档](https://ai.google.dev/gemini-api/docs/models)、[价格](https://ai.google.dev/gemini-api/docs/pricing) | 精确 model code、目录介绍、Token 限制、模态、能力矩阵及可识别 Standard 价格 |
 | DeepSeek | [模型与价格](https://api-docs.deepseek.com/quick_start/pricing/) | 文档表格明确列出的模型、限制、函数/结构化输出、峰谷价格及 UTC 时间条件 |
 | 小米 MiMo | [模型](https://mimo.mi.com/static/docs/quick-start/summary/model.md)、[价格](https://mimo.mi.com/static/docs/price/pay-as-you-go.md) | 跨行表格的模型限制和明确能力、海外 token/ASR 价格；国内人民币价不混入 USD 档位 |
-| Kimi | [模型列表](https://platform.kimi.ai/docs/models.md) | 精确模型介绍和厂商；其他规格继续从模型库补缺 |
+| Kimi | [模型列表](https://platform.kimi.ai/docs/models.md)、[官方价格](https://platform.kimi.ai/docs/pricing/chat) | 精确模型介绍和厂商；HTML DocTable 静态数据中的 USD / MTok 输入、输出、缓存读取价格，以及明确的5分钟/1小时缓存创建独立档位；Markdown 空表格不作为价格来源，其他规格继续从模型库补缺 |
 | 千问 | [文本模型](https://help.aliyun.com/zh/model-studio/text-generation-model)、[视觉模型](https://help.aliyun.com/zh/model-studio/vision-model)、[图像模型](https://help.aliyun.com/zh/model-studio/image-model) | 当前及历史表格明确列出的 ID、上下文和支持状态；只接受千问条目，不把代售模型归为阿里 |
 | MiniMax | [文本模型](https://platform.minimax.io/docs/guides/text-generation.md) | 模型目录介绍和上下文；大小写或私有别名不猜测映射 |
 | xAI | [模型](https://docs.x.ai/developers/models) | 精确 Model name、介绍、上下文、模态及能力；复杂地区/上下文价格未识别时保留已有值 |
@@ -53,7 +53,7 @@
 
 `description` 保留原文，公开接口增加只读 `description_translations`。译文按完整原文的 SHA-256 与目标语言缓存，同样原文共享结果；原文更新自动选择新缓存，旧译文不应用到新内容。缺失或失败时显示当前原文；生成后刷新页面可获取新译文，不在访客请求中等待翻译。
 
-模型管理新增“多语言介绍”：可查看每种语言的自动译文、已覆盖语言数，并分别人工校正。`description_overrides` 按语言合并保存，空值或 null 恢复自动；其他管理员同时编辑不同语言不会互相覆盖，旧客户端省略字段也不清空译文。人工版本优先于自动结果，原文自动同步不覆盖人工译文。自动译文不是厂商官方提供的译文；当前 GPT-6 Astra 英文介绍随版本提供校对后的17语言资源，仅在原文完整匹配时使用。
+模型管理新增“多语言介绍”：可查看每种语言的自动译文、已覆盖语言数，并分别人工校正。`description_overrides` 按语言合并保存，空值或 null 恢复自动；其他管理员同时编辑不同语言不会互相覆盖，旧客户端省略字段也不清空译文。人工版本优先于自动结果，原文自动同步不覆盖人工译文。自动译文不是厂商官方提供的译文；当前 GPT-6 Astra、GPT-6.1 Terra 及 Kimi K3.1 Pro 的已核对英文介绍随版本提供17语言资源（Kimi同时包含当前历史原文和官方新原文），仅在原文完整匹配时使用；不代表全部目录已完成翻译。
 
 主节点默认自动处理当前已发布模型的介绍，使用既有固定免费 Google 翻译端点 `https://translate.googleapis.com/translate_a/single`，无需付费接口或密钥。仅发送公开介绍，模型名、品牌、数字规格、URL、代码与变量先保护再恢复校验。单段请求超时35秒，串行至少间隔5秒；长介绍按段保存，完整校验后才公开。原文最多16000字符，译文总量不超过64000字节以兼容各数据库的 TEXT 存储。
 
