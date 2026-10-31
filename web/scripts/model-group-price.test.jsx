@@ -105,3 +105,35 @@ test('unavailable comparison keeps the existing price item', () => {
   assert.ok(html.includes('<strong>原价格</strong>'), html);
   assert.ok(!html.includes('model-group-discount'), html);
 });
+
+test('video resolution price keeps recharge amount, seconds and duration apart from official token prices', () => {
+  const html = renderToStaticMarkup(
+    <ModelGroupPrice
+      item={{
+        key: 'video-resolution-0',
+        label: '768P',
+        value: '¥0.4000',
+        suffix: ' / 秒',
+        duration: '4–15 秒',
+      }}
+      pricing={{ unitPricesUSD: { 'video-resolution-0': 2 } }}
+      model={{
+        billing_mode: 'tiered_expr',
+        official_pricing: { currency: 'USD' },
+      }}
+      officialTier={{ unit: 'million_tokens', input: 50, output: 100 }}
+      data={{
+        t: (text) => text,
+        currency: 'CNY',
+        displayPrice: { toAmount: (n) => n * 0.2 },
+        tokenUnit: 'M',
+      }}
+    />,
+  );
+  assert.ok(html.includes('768P'));
+  assert.ok(html.includes('¥0.4000'));
+  assert.ok(html.includes(' / 秒'));
+  assert.ok(html.includes('4–15 秒'));
+  assert.ok(!html.includes('较官方'));
+  assert.ok(!html.includes('<del'));
+});

@@ -1641,3 +1641,13 @@ html.dark .model-metric-chart {
 .model-official-exchange-rate {
   overflow-wrap: anywhere;
 }
+
+.model-group-pricing-values.model-group-video-prices {
+  grid-template-columns: minmax(0, 1fr);
+}
+.model-group-video-prices > .model-group-price-items:empty {
+  display: none;
+}
+.model-video-price-note {
+  margin: 0;
+}

@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { test } from 'node:test';
+import { videoPriceItems } from '../src/helpers/videoPriceDisplay.js';
+import { buildH3SecondsExpression } from '../src/helpers/h3VideoPricing.js';
 import {
   BILLING_PRICING_VARS,
   BILLING_VAR_REGEX,
@@ -63,6 +65,7 @@ const { getModelCatalogPricing, isCachePriceItem } = vm.runInNewContext(
   source,
   {
     getModelSortPrices,
+    videoPriceItems,
     BILLING_PRICING_VARS,
     BILLING_VAR_REGEX,
     BILLING_VAR_KEY_TO_FIELD,
@@ -335,4 +338,56 @@ test('unrounded comparison amounts share the actual pricing calculation', () => 
     ],
     3,
   );
+});
+
+test('video resolution prices share actual recharge/group/time conversion across M and K', () => {
+  const record = {
+    model_name: 'MiniMax-H3',
+    billing_mode: 'tiered_expr',
+    billing_expr: buildH3SecondsExpression('MiniMax-H3', {
+      '768P': 2.5,
+      '2K': 4,
+    }),
+    enable_groups: ['standard', 'discount'],
+  };
+  for (const tokenUnit of ['M', 'K']) {
+    const result = pricing(record, {
+      tokenUnit,
+      selectedGroup: 'all',
+      groupRatio: { standard: 1, discount: 0.8 },
+      currency: 'CNY',
+      displayPrice: money('¥', 0.2),
+    });
+    assert.deepEqual(
+      Array.from(result.items, (i) => [i.label, i.value, i.suffix]),
+      [
+        ['768P', '¥0.4000', ' / 秒'],
+        ['2K', '¥0.6400', ' / 秒'],
+      ],
+    );
+    assert.equal(result.data.usedGroup, 'discount');
+    assert.equal(result.data.videoPricing, true);
+    assert.equal(result.data.unitPricesUSD['video-resolution-1'], 3.2);
+  }
+  const timed = pricing(record, {
+    groupRatio: { standard: 0.8 },
+    timeRatioMap: { 'MiniMax-H3': { standard: { ratio: 1.5, matched: true } } },
+    displayPrice: money('¥', 0.2),
+  });
+  assert.equal(timed.items[0].value, '¥0.6000');
+  const free = pricing(record, {
+    groupRatio: { standard: 0 },
+    displayPrice: money('¥', 0.2),
+  });
+  assert.equal(free.items[0].value, '¥0.0000');
+  const base = pricing(record, { displayPrice: money('⚡', 1) });
+  assert.equal(base.items[0].value, '⚡2.5000');
+  const subscription = pricing(record, { displayPrice: money('¥', 0.1) });
+  assert.equal(subscription.items[0].value, '¥0.2500');
+  const dynamic = pricing({
+    ...record,
+    billing_expr: '(' + record.billing_expr + ') * 2',
+  });
+  assert.equal(dynamic.items[0].value, '动态计费');
+  assert.ok(!dynamic.data.unitPricesUSD);
 });
