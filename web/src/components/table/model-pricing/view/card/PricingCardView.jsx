@@ -29,7 +29,14 @@ import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTempl
 import { Link, useNavigate } from 'react-router-dom';
 import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigation';
 import { Checkbox, Pagination, Button } from '@douyinfe/semi-ui';
-import { Copy, ScanText, Timer, Gauge } from 'lucide-react';
+import {
+  Copy,
+  FileInput,
+  FileOutput,
+  ScanText,
+  Timer,
+  Gauge,
+} from 'lucide-react';
 import { getLobeHubIcon, formatTimeRatioValue } from '../../../../../helpers';
 import {
   getModelCatalogPricing,
@@ -175,15 +182,40 @@ const PricingCardView = ({
               </div>
               <dl className='pricing-card-prices'>
                 {cardPriceItems.length ? (
-                  cardPriceItems.map((item) => (
-                    <div key={item.key}>
-                      <dt>{item.label}</dt>
-                      <dd>
-                        <strong>{item.value}</strong>
-                        <span>{item.suffix}</span>
-                      </dd>
-                    </div>
-                  ))
+                  cardPriceItems.map((item) => {
+                    const isInput = ['input', 'tiered-p'].includes(item.key);
+                    const isOutput = ['completion', 'tiered-c'].includes(
+                      item.key,
+                    );
+                    const PriceIcon = isInput
+                      ? FileInput
+                      : isOutput
+                        ? FileOutput
+                        : null;
+                    return (
+                      <div key={item.key}>
+                        <dt>
+                          {PriceIcon && (
+                            <PriceIcon size={15} aria-hidden='true' />
+                          )}
+                          {isInput
+                            ? t('输入')
+                            : isOutput
+                              ? t('输出')
+                              : item.label}
+                        </dt>
+                        <dd>
+                          <strong>{item.value}</strong>
+                          <span title={item.suffix} aria-label={item.suffix}>
+                            {item.suffix?.replace(
+                              /^\s*\/ 1([MK]) Tokens$/,
+                              '/$1',
+                            )}
+                          </span>
+                        </dd>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div>
                     <dt>{t('动态计费')}</dt>
