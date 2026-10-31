@@ -52,7 +52,7 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
         />,
       );
       expect(html).toContain('100.00%');
-      expect(html).toContain('模型测试 1 / 12 次通过');
+      expect(html).toContain('上游测试 1 / 12 次通过');
       expect(html).toContain('测试补充 1 个时段');
       expect(html).toContain('group-health-bar-healthy');
       expect(html).not.toContain('该时段暂无调用记录');

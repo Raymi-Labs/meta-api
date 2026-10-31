@@ -7416,9 +7416,10 @@
     "介绍原文": "Mô tả gốc",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Mô tả thay đổi theo ngôn ngữ trang web. Chỉnh sửa thủ công được ưu tiên; xóa để khôi phục bản dịch tự động.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Bản gốc được dùng để tạo mô tả bằng mọi ngôn ngữ của trang web, không quyết định ngôn ngữ khách truy cập nhìn thấy.",
-    "模型测试 {{success}} / {{count}} 次通过": "Kiểm thử mô hình: {{success}} / {{count}} lần đạt",
     "测试补充 {{count}} 个时段": "Kiểm thử bổ sung {{count}} khung giờ",
     "最近 {{hours}} 个小时段可用率": "Tỷ lệ khả dụng trong {{hours}} khung giờ gần nhất",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Nếu mỗi giờ của mô hình/nhóm có dưới 30 yêu cầu hợp lệ, các kiểm thử được gộp thành một mẫu bổ sung: chỉ cần một nhà cung cấp đạt là thành công; chỉ có lỗi là thất bại. Tỷ lệ khả dụng giữ nguyên và tính trọng số yêu cầu thực. Có kiểm thử bổ sung thì màu theo kết quả; không có kiểm thử thì vẫn áp dụng ngưỡng mẫu. Điều này không chứng minh hoạt động liên tục."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Khi có dưới 30 yêu cầu hợp lệ, kiểm tra các kênh upstream tương ứng bổ sung độ khả dụng: chỉ cần một lần đạt là thành công, kể cả kiểm tra mô hình khác trên cùng kênh; nếu chỉ có thất bại thì tính là thất bại. Mỗi giờ bổ sung tối đa một mẫu, giữ trọng số yêu cầu thực và ngưỡng mẫu khi không có kiểm tra. Kiểm tra thành công trong lịch sử bổ sung bằng chứng theo giờ, không chứng minh mô hình này được kiểm tra trực tiếp hay luôn trực tuyến.",
+    "上游测试": "Kiểm tra upstream",
+    "上游测试 {{success}} / {{count}} 次通过": "Kiểm tra upstream: {{success}} / {{count}} lần đạt"
   }
 }

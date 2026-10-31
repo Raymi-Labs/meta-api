@@ -6803,9 +6803,10 @@
     "介绍原文": "Originalbeschreibung",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Beschreibungen folgen der Website-Sprache. Manuelle Änderungen haben Vorrang; löschen Sie diese, um die automatische Übersetzung wiederherzustellen.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Aus dem Original werden Beschreibungen in allen Website-Sprachen erstellt. Es bestimmt nicht die Sprache, die Besucher sehen.",
-    "模型测试 {{success}} / {{count}} 次通过": "Modelltests: {{success}} / {{count}} bestanden",
     "测试补充 {{count}} 个时段": "Tests ergänzen {{count}} Zeitfenster",
     "最近 {{hours}} 个小时段可用率": "Verfügbarkeit der letzten {{hours}} Stundenfenster",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Bei weniger als 30 gültigen Anfragen je Modell-/Gruppenstunde ergänzen Tests eine zusammengefasste Stichprobe: Ein erfolgreicher Anbieter genügt, ausschließlich Fehler zählen als Fehler. Echte Anfragen bleiben gewichtet enthalten. Mit ergänzenden Tests richtet sich die Farbe nach dem Ergebnis, sonst gilt die Stichprobenschwelle. Dies belegt keinen durchgehenden Betrieb."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Bei weniger als 30 gültigen Anfragen ergänzen Tests der zugehörigen Upstream-Kanäle die Verfügbarkeit. Jeder bestandene Test zählt als Erfolg, auch für andere Modelle desselben Kanals; nur fehlgeschlagene Tests zählen als Fehler. Pro Stunde wird höchstens eine Stichprobe ergänzt. Reale Anfragen behalten ihr Gewicht, ohne Tests gilt die Stichprobenschwelle. Historische Erfolge liefern stündliche Belege, keinen Nachweis eines direkten Tests dieses Modells oder dauernder Verfügbarkeit.",
+    "上游测试": "Upstream-Tests",
+    "上游测试 {{success}} / {{count}} 次通过": "Upstream-Tests: {{success}} / {{count}} erfolgreich"
   }
 }

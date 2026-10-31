@@ -3,11 +3,52 @@ package grouphealth
 import (
 	"context"
 	"errors"
-	"github.com/QuantumNous/new-api/model"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
+	"github.com/glebarez/sqlite"
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
+
+func TestHistoricalChannelPassSupplementsDifferentModel(t *testing.T) {
+	oldDB, oldLogDB := model.DB, model.LOG_DB
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	model.DB, model.LOG_DB = db, db
+	model.InvalidateModelPermissionCache()
+	t.Cleanup(func() { model.DB, model.LOG_DB = oldDB, oldLogDB; model.InvalidateModelPermissionCache() })
+	require.NoError(t, db.AutoMigrate(&model.Ability{}, &model.Log{}, &model.GroupHealthMetric{}, &model.ModelPermission{}))
+	now := time.Now()
+	hour := now.Unix()/3600*3600 - 3600
+	require.NoError(t, db.Create(&model.Ability{ChannelId: 1465, Group: "public", Model: "gpt-6-astra"}).Error)
+	require.NoError(t, db.Create(&model.Log{ChannelId: 1465, Group: "admin", ModelName: "gpt-6.1-sol", CreatedAt: hour + 10, Type: model.LogTypeConsume, TokenName: "模型测试", Content: "模型测试"}).Error)
+	require.NoError(t, db.Create(&model.GroupHealthMetric{ID: "real", GroupName: "public", ModelName: "gpt-6-astra", BucketTs: hour, RequestCount: 1, SuccessCount: 1}).Error)
+	count, err := model.BackfillGroupHealthProbeHistory(context.Background(), now)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	for _, hours := range []int{24, 72} {
+		detail, err := Query(context.Background(), []string{"public", "private"}, "gpt-6-astra", common.RoleCommonUser, now, hours)
+		require.NoError(t, err)
+		public, private := detail.Groups[1], detail.Groups[0]
+		require.Equal(t, "public", public.Group)
+		require.EqualValues(t, 1, public.RequestCount)
+		require.EqualValues(t, 1, public.ProbeBucketCount)
+		require.EqualValues(t, 2, public.UptimeSampleCount)
+		require.Equal(t, 100.0, *public.UptimeRate)
+		require.Zero(t, private.ProbeBucketCount)
+		require.Nil(t, private.UptimeRate)
+		bucket := public.Series[hours-2]
+		require.EqualValues(t, hour, bucket.Ts)
+		require.EqualValues(t, 1, bucket.ProbeSuccessBucketCount)
+		require.Equal(t, 100.0, *bucket.UptimeRate)
+		batch, err := QueryModels(context.Background(), []string{"public"}, []string{"gpt-6-astra"}, common.RoleCommonUser, hours, now)
+		require.NoError(t, err)
+		require.Equal(t, public.Metrics, batch.Models[0].Metrics)
+	}
+}
 
 func TestProbeFallbackFoldsUpstreamsAndReplicasBeforeWeighting(t *testing.T) {
 	const ts = int64(1800000000)

@@ -7135,9 +7135,10 @@
     "介绍原文": "Description originale",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Les descriptions suivent la langue du site. Les modifications manuelles sont prioritaires ; effacez-les pour rétablir la traduction automatique.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Le texte original sert à générer les descriptions dans toutes les langues du site ; il ne détermine pas la langue affichée aux visiteurs.",
-    "模型测试 {{success}} / {{count}} 次通过": "Tests du modèle : {{success}} / {{count}} réussis",
     "测试补充 {{count}} 个时段": "Tests complémentaires sur {{count}} créneaux",
     "最近 {{hours}} 个小时段可用率": "Disponibilité sur les {{hours}} derniers créneaux horaires",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Pour chaque heure de modèle/groupe avec moins de 30 requêtes admissibles, les tests ajoutent un seul échantillon : un fournisseur réussi suffit, uniquement des échecs comptent comme échec. Le taux conserve et pondère les requêtes réelles. Avec des tests complémentaires, la couleur suit le résultat ; sans test, le seuil reste applicable. Cela ne garantit pas une disponibilité continue."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Avec moins de 30 requêtes admissibles, les tests des canaux amont correspondants complètent la disponibilité : toute réussite compte, y compris un test d’un autre modèle du même canal ; uniquement des échecs donnent un échec. Un échantillon au plus est ajouté par heure, en conservant le poids des requêtes réelles et le seuil en l’absence de tests. Les réussites historiques apportent des preuves horaires, sans attester un test direct de ce modèle ni une disponibilité continue.",
+    "上游测试": "Tests amont",
+    "上游测试 {{success}} / {{count}} 次通过": "Tests amont : {{success}} / {{count}} réussis"
   }
 }
