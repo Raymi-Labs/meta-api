@@ -49,3 +49,5 @@ Status: implemented
 [Gemini 语音、映射与汇率校正](2026-11-01-openrouter-gemini-audio-pricing.md)接管渠道 1638 和本批已核价型号的销售汇率修正；其他渠道命名及上游限价策略保持原决定。语音采用用户接受的调用前核价，不能宣传为上游硬限价。
 
 账号归属按用户要求迁移，见[当前账号密钥迁移](../process/2026-11-01-openrouter-account-key-migration.md)；厂商分组与未审核暂停规则继续适用。
+
+[Claude 企业级接入](../process/2026-11-01-openrouter-claude-enterprise.md)按用户后续明确要求扩展此前排除的 Anthropic，单独配置渠道 1639，保留 14 个已有售价，仅新增 Opus 4.1 采用原厂美元价 ×33。其余厂商排除、batch 跳过和采购限价决定保持。

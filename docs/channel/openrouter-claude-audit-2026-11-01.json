@@ -1,0 +1,3506 @@
+{
+  "reviewed_at": "2026-11-01",
+  "channel_id": 1639,
+  "group": "企业级",
+  "factor_for_new_models": 33,
+  "models": [
+    {
+      "channel_id": 1639,
+      "model": "claude-haiku-5-5",
+      "upstream_model": "anthropic/claude-haiku-5.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.5,
+        "input_cache_read": 0.01,
+        "input_cache_write": 0.125,
+        "input_cache_write_1h": 0.2
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "google-vertex/global",
+        "claude-on-aws",
+        "azure/global",
+        "anthropic",
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.0000001",
+            "completion": "0.0000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000001",
+            "input_cache_write": "0.000000125",
+            "input_cache_write_1h": "0.0000002",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.0000005",
+                "completion": "0.0000025",
+                "input_cache_read": "0.00000005",
+                "input_cache_write": "0.000000625",
+                "input_cache_write_1h": "0.000001"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.0000001",
+            "completion": "0.0000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000001",
+            "input_cache_write": "0.000000125",
+            "input_cache_write_1h": "0.0000002",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.0000005",
+                "completion": "0.0000025",
+                "input_cache_read": "0.00000005",
+                "input_cache_write": "0.000000625",
+                "input_cache_write_1h": "0.000001"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.0000001",
+            "completion": "0.0000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000001",
+            "input_cache_write": "0.000000125",
+            "input_cache_write_1h": "0.0000002",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.0000005",
+                "completion": "0.0000025",
+                "input_cache_read": "0.00000005",
+                "input_cache_write": "0.000000625",
+                "input_cache_write_1h": "0.000001"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.0000001",
+            "completion": "0.0000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000001",
+            "input_cache_write": "0.000000125",
+            "input_cache_write_1h": "0.0000002",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.0000005",
+                "completion": "0.0000025",
+                "input_cache_read": "0.00000005",
+                "input_cache_write": "0.000000625",
+                "input_cache_write_1h": "0.000001"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.0000001",
+            "completion": "0.0000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000001",
+            "input_cache_write": "0.000000125",
+            "input_cache_write_1h": "0.0000002",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.0000005",
+                "completion": "0.0000025",
+                "input_cache_read": "0.00000005",
+                "input_cache_write": "0.000000625",
+                "input_cache_write_1h": "0.000001"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.00000011",
+            "completion": "0.00000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.000000011",
+            "input_cache_write": "0.0000001375",
+            "input_cache_write_1h": "0.00000022",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.00000055",
+                "completion": "0.00000275",
+                "input_cache_read": "0.000000055",
+                "input_cache_write": "0.0000006875",
+                "input_cache_write_1h": "0.0000011"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.00000011",
+            "completion": "0.00000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.000000011",
+            "input_cache_write": "0.0000001375",
+            "input_cache_write_1h": "0.00000022",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.00000055",
+                "completion": "0.00000275",
+                "input_cache_read": "0.000000055",
+                "input_cache_write": "0.0000006875",
+                "input_cache_write_1h": "0.0000011"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.00000011",
+            "completion": "0.00000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.000000011",
+            "input_cache_write": "0.0000001375",
+            "input_cache_write_1h": "0.00000022",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.00000055",
+                "completion": "0.00000275",
+                "input_cache_read": "0.000000055",
+                "input_cache_write": "0.0000006875",
+                "input_cache_write_1h": "0.0000011"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "pricing": {
+            "prompt": "0.00000011",
+            "completion": "0.00000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.000000011",
+            "input_cache_write": "0.0000001375",
+            "input_cache_write_1h": "0.00000022",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.00000055",
+                "completion": "0.00000275",
+                "input_cache_read": "0.000000055",
+                "input_cache_write": "0.0000006875",
+                "input_cache_write_1h": "0.0000011"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.00000011",
+            "completion": "0.00000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.000000011",
+            "input_cache_write": "0.0000001375",
+            "input_cache_write_1h": "0.00000022",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 100000,
+                "prompt": "0.00000055",
+                "completion": "0.00000275",
+                "input_cache_read": "0.000000055",
+                "input_cache_write": "0.0000006875",
+                "input_cache_write_1h": "0.0000011"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-sonnet-5-5",
+      "upstream_model": "anthropic/claude-sonnet-5.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 2,
+        "completion": 10,
+        "input_cache_read": 0.1,
+        "input_cache_write": 2.5,
+        "input_cache_write_1h": 4
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "google-vertex/global",
+        "amazon-bedrock",
+        "azure/global",
+        "claude-on-aws",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-5-5",
+      "upstream_model": "anthropic/claude-opus-5.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 4,
+        "completion": 20,
+        "input_cache_read": 0.2,
+        "input_cache_write": 5,
+        "input_cache_write_1h": 8
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "amazon-bedrock",
+        "azure/global",
+        "google-vertex/global",
+        "claude-on-aws",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000004",
+            "completion": "0.00002",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000005",
+            "input_cache_write_1h": "0.000008",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000004",
+            "completion": "0.00002",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000005",
+            "input_cache_write_1h": "0.000008",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000004",
+            "completion": "0.00002",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000005",
+            "input_cache_write_1h": "0.000008",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000004",
+            "completion": "0.00002",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000005",
+            "input_cache_write_1h": "0.000008",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000004",
+            "completion": "0.00002",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.000005",
+            "input_cache_write_1h": "0.000008",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000044",
+            "completion": "0.000022",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.0000055",
+            "input_cache_write_1h": "0.0000088",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "pricing": {
+            "prompt": "0.0000044",
+            "completion": "0.000022",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.0000055",
+            "input_cache_write_1h": "0.0000088",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.0000044",
+            "completion": "0.000022",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.0000055",
+            "input_cache_write_1h": "0.0000088",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000044",
+            "completion": "0.000022",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.0000055",
+            "input_cache_write_1h": "0.0000088",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000044",
+            "completion": "0.000022",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.0000055",
+            "input_cache_write_1h": "0.0000088",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "pricing": {
+            "prompt": "0.000008",
+            "completion": "0.00004",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000004",
+            "input_cache_write": "0.00001",
+            "input_cache_write_1h": "0.000016",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-fable-5-1",
+      "upstream_model": "anthropic/claude-fable-5.1",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 10,
+        "completion": 50,
+        "input_cache_read": 0.25,
+        "input_cache_write": 12.5,
+        "input_cache_write_1h": 20
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "azure",
+        "anthropic",
+        "amazon-bedrock",
+        "google-vertex/global"
+      ],
+      "excluded_providers": [],
+      "endpoint_quotes": [
+        {
+          "provider": "azure",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000025",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000025",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000025",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000025",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-5",
+      "upstream_model": "anthropic/claude-opus-5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 5,
+        "completion": 25,
+        "input_cache_read": 0.5,
+        "input_cache_write": 6.25,
+        "input_cache_write_1h": 10
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "google-vertex/global",
+        "amazon-bedrock",
+        "azure/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-sonnet-5",
+      "upstream_model": "anthropic/claude-sonnet-5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 2,
+        "completion": 10,
+        "input_cache_read": 0.2,
+        "input_cache_write": 2.5,
+        "input_cache_write_1h": 4
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "google-vertex/global",
+        "amazon-bedrock/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/global",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000002",
+            "completion": "0.00001",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000002",
+            "input_cache_write": "0.0000025",
+            "input_cache_write_1h": "0.000004",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us-east-1",
+          "pricing": {
+            "prompt": "0.0000022",
+            "completion": "0.000011",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000022",
+            "input_cache_write": "0.00000275",
+            "input_cache_write_1h": "0.0000044",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-fable-5",
+      "upstream_model": "anthropic/claude-fable-5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 10,
+        "completion": 50,
+        "input_cache_read": 1,
+        "input_cache_write": 12.5,
+        "input_cache_write_1h": 20
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure",
+        "amazon-bedrock",
+        "google-vertex/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.000011",
+            "completion": "0.000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000011",
+            "input_cache_write": "0.00001375",
+            "input_cache_write_1h": "0.000022",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-4-8",
+      "upstream_model": "anthropic/claude-opus-4.8",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 5,
+        "completion": 25,
+        "input_cache_read": 0.5,
+        "input_cache_write": 6.25,
+        "input_cache_write_1h": 10
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "amazon-bedrock",
+        "google-vertex/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "azure/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "anthropic/fast",
+          "pricing": {
+            "prompt": "0.00001",
+            "completion": "0.00005",
+            "web_search": "0.01",
+            "input_cache_read": "0.000001",
+            "input_cache_write": "0.0000125",
+            "input_cache_write_1h": "0.00002",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "non-standard service tier",
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-4-7",
+      "upstream_model": "anthropic/claude-opus-4.7",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 5,
+        "completion": 25,
+        "input_cache_read": 0.5,
+        "input_cache_write": 6.25,
+        "input_cache_write_1h": 10
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "google-vertex/global",
+        "amazon-bedrock/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "google-vertex/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/us",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-sonnet-4-6",
+      "upstream_model": "anthropic/claude-sonnet-4.6",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 3,
+        "completion": 15,
+        "input_cache_read": 0.3,
+        "input_cache_write": 3.75,
+        "input_cache_write_1h": 6
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "anthropic",
+        "amazon-bedrock/global",
+        "google-vertex/global"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/global",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/us",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-4-6",
+      "upstream_model": "anthropic/claude-opus-4.6",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 5,
+        "completion": 25,
+        "input_cache_read": 0.5,
+        "input_cache_write": 6.25,
+        "input_cache_write_1h": 10
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "google-vertex/global",
+        "amazon-bedrock",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-4-5",
+      "upstream_model": "anthropic/claude-opus-4.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 5,
+        "completion": 25,
+        "input_cache_read": 0.5,
+        "input_cache_write": 6.25,
+        "input_cache_write_1h": 10
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "google-vertex/global",
+        "amazon-bedrock",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000005",
+            "completion": "0.000025",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000005",
+            "input_cache_write": "0.00000625",
+            "input_cache_write_1h": "0.00001",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000055",
+            "completion": "0.0000275",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000055",
+            "input_cache_write": "0.000006875",
+            "input_cache_write_1h": "0.000011",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 200000,
+      "input_modalities": [
+        "file",
+        "image",
+        "text"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-haiku-4-5",
+      "upstream_model": "anthropic/claude-haiku-4.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 1,
+        "completion": 5,
+        "input_cache_read": 0.1,
+        "input_cache_write": 1.25,
+        "input_cache_write_1h": 2
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "azure/global",
+        "amazon-bedrock/global",
+        "google-vertex/global",
+        "anthropic"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/us",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.00000125",
+            "input_cache_write_1h": "0.000002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/global",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.00000125",
+            "input_cache_write_1h": "0.000002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.00000125",
+            "input_cache_write_1h": "0.000002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000001",
+            "completion": "0.000005",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000001",
+            "input_cache_write": "0.00000125",
+            "input_cache_write_1h": "0.000002",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/us",
+          "pricing": {
+            "prompt": "0.0000011",
+            "completion": "0.0000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.000001375",
+            "input_cache_write_1h": "0.0000022",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "pricing": {
+            "prompt": "0.0000011",
+            "completion": "0.0000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.000001375",
+            "input_cache_write_1h": "0.0000022",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000011",
+            "completion": "0.0000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.000001375",
+            "input_cache_write_1h": "0.0000022",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        },
+        {
+          "provider": "google-vertex/europe",
+          "pricing": {
+            "prompt": "0.0000011",
+            "completion": "0.0000055",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000011",
+            "input_cache_write": "0.000001375",
+            "input_cache_write_1h": "0.0000022",
+            "discount": 0
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 200000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-sonnet-4-5",
+      "upstream_model": "anthropic/claude-sonnet-4.5",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 3,
+        "completion": 15,
+        "input_cache_read": 0.3,
+        "input_cache_write": 3.75,
+        "input_cache_write_1h": 6
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "claude-on-aws",
+        "azure/global",
+        "amazon-bedrock",
+        "anthropic",
+        "google-vertex/global"
+      ],
+      "excluded_providers": [
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        }
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "claude-on-aws",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000006",
+                "completion": "0.0000225",
+                "input_cache_read": "0.0000006",
+                "input_cache_write": "0.0000075",
+                "input_cache_write_1h": "0.000012"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "azure/global",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000006",
+                "completion": "0.0000225",
+                "input_cache_read": "0.0000006",
+                "input_cache_write": "0.0000075",
+                "input_cache_write_1h": "0.000012"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "anthropic",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000006",
+                "completion": "0.0000225",
+                "input_cache_read": "0.0000006",
+                "input_cache_write": "0.0000075",
+                "input_cache_write_1h": "0.000012"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "google-vertex/global",
+          "pricing": {
+            "prompt": "0.000003",
+            "completion": "0.000015",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000003",
+            "input_cache_write": "0.00000375",
+            "input_cache_write_1h": "0.000006",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.000006",
+                "completion": "0.0000225",
+                "input_cache_read": "0.0000006",
+                "input_cache_write": "0.0000075",
+                "input_cache_write_1h": "0.000012"
+              }
+            ]
+          },
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "provider": "amazon-bedrock/eu-west-1",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000066",
+                "completion": "0.00002475",
+                "input_cache_read": "0.00000066",
+                "input_cache_write": "0.00000825",
+                "input_cache_write_1h": "0.0000132"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        },
+        {
+          "provider": "google-vertex/us-east5",
+          "pricing": {
+            "prompt": "0.0000033",
+            "completion": "0.0000165",
+            "web_search": "0.01",
+            "input_cache_read": "0.00000033",
+            "input_cache_write": "0.000004125",
+            "input_cache_write_1h": "0.0000066",
+            "discount": 0,
+            "overrides": [
+              {
+                "min_prompt_tokens": 200000,
+                "prompt": "0.0000066",
+                "completion": "0.00002475",
+                "input_cache_read": "0.00000066",
+                "input_cache_write": "0.00000825",
+                "input_cache_write_1h": "0.0000132"
+              }
+            ]
+          },
+          "eligible": false,
+          "reasons": [
+            "over official prompt",
+            "over official completion",
+            "over official input_cache_read",
+            "over official input_cache_write",
+            "over official input_cache_write_1h",
+            "unreviewed tier quote"
+          ]
+        }
+      ],
+      "existing_price": true,
+      "context_length": 1000000,
+      "input_modalities": [
+        "text",
+        "image",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    {
+      "channel_id": 1639,
+      "model": "claude-opus-4-1-20250805",
+      "upstream_model": "anthropic/claude-opus-4.1",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 15,
+        "completion": 75,
+        "input_cache_read": 1.5,
+        "input_cache_write": 18.75,
+        "input_cache_write_1h": 30
+      },
+      "sources": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ],
+      "providers": [
+        "amazon-bedrock"
+      ],
+      "excluded_providers": [],
+      "endpoint_quotes": [
+        {
+          "provider": "amazon-bedrock",
+          "pricing": {
+            "prompt": "0.000015",
+            "completion": "0.000075",
+            "web_search": "0.01",
+            "input_cache_read": "0.0000015",
+            "input_cache_write": "0.00001875",
+            "input_cache_write_1h": "0.00003",
+            "discount": 0
+          },
+          "eligible": true,
+          "reasons": []
+        }
+      ],
+      "existing_price": false,
+      "context_length": 200000,
+      "input_modalities": [
+        "image",
+        "text",
+        "file"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    }
+  ],
+  "skipped_special": [
+    "anthropic/claude-haiku-5.5:batch",
+    "anthropic/claude-sonnet-5.5:batch",
+    "anthropic/claude-opus-5.5:batch",
+    "anthropic/claude-fable-5.1:batch",
+    "anthropic/claude-opus-5:batch"
+  ],
+  "option_changes": {
+    "ModelRatio": {
+      "claude-opus-4-1-20250805": {
+        "before": null,
+        "after": 247.5
+      }
+    },
+    "CompletionRatio": {
+      "claude-opus-4-1-20250805": {
+        "before": null,
+        "after": 5.0
+      }
+    }
+  },
+  "verification": {
+    "wire_policy_checks": 195,
+    "new_price_component_checks": 18,
+    "direct_successful_models": 15,
+    "direct_prices_within_manufacturer_caps": true,
+    "gateway_successful_requests": 17,
+    "search_denied_without_charge": 1,
+    "temporary_tokens_remaining": 0,
+    "existing_prices_unchanged": 14,
+    "direct_results": [
+      {
+        "model": "claude-haiku-5-5",
+        "status": 200,
+        "provider": "Google",
+        "cost_usd": 3.5e-06
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "status": 200,
+        "provider": "Google",
+        "cost_usd": 7e-05
+      },
+      {
+        "model": "claude-opus-5-5",
+        "status": 200,
+        "provider": "Amazon Bedrock",
+        "cost_usd": 0.00014
+      },
+      {
+        "model": "claude-fable-5-1",
+        "status": 200,
+        "provider": "Azure",
+        "cost_usd": 0.00035
+      },
+      {
+        "model": "claude-opus-5",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.000565
+      },
+      {
+        "model": "claude-sonnet-5",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 6.6e-05
+      },
+      {
+        "model": "claude-fable-5",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.00093
+      },
+      {
+        "model": "claude-opus-4-8",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.000165
+      },
+      {
+        "model": "claude-opus-4-7",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.00024
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 9.3e-05
+      },
+      {
+        "model": "claude-opus-4-6",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.000155
+      },
+      {
+        "model": "claude-opus-4-5",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 0.000155
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "status": 200,
+        "provider": "Azure",
+        "cost_usd": 3.1e-05
+      },
+      {
+        "model": "claude-sonnet-4-5",
+        "status": 200,
+        "provider": "Claude Platform on AWS",
+        "cost_usd": 9.3e-05
+      },
+      {
+        "model": "claude-opus-4-1-20250805",
+        "status": 200,
+        "provider": "Amazon Bedrock",
+        "cost_usd": 0.000465
+      }
+    ],
+    "gateway_results": [
+      {
+        "model": "claude-haiku-5-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.71,
+        "input_tokens": 15,
+        "output_tokens": 4,
+        "quota": 58,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.94,
+        "input_tokens": 15,
+        "output_tokens": 4,
+        "quota": 1155,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-5-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 1.17,
+        "input_tokens": 15,
+        "output_tokens": 4,
+        "quota": 2310,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-fable-5-1",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 2.99,
+        "input_tokens": 15,
+        "output_tokens": 4,
+        "quota": 6930,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 2.16,
+        "input_tokens": 13,
+        "output_tokens": 26,
+        "quota": 14157,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-sonnet-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 1.34,
+        "input_tokens": 13,
+        "output_tokens": 4,
+        "quota": 1089,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-fable-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 2.91,
+        "input_tokens": 13,
+        "output_tokens": 14,
+        "quota": 16434,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-8",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.87,
+        "input_tokens": 13,
+        "output_tokens": 4,
+        "quota": 3267,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-7",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.86,
+        "input_tokens": 18,
+        "output_tokens": 6,
+        "quota": 4752,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.75,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 1841,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-6",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 1.44,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 3069,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 1.17,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 7673,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.85,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 7673,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-sonnet-4-5",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 0.98,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 7673,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-1-20250805",
+        "kind": "chat",
+        "status": 200,
+        "seconds": 3.43,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 7673,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "kind": "stream",
+        "status": 200,
+        "seconds": 0.96,
+        "input_tokens": 15,
+        "output_tokens": 4,
+        "quota": 1155,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-4-1-20250805",
+        "kind": "messages",
+        "status": 200,
+        "seconds": 2.97,
+        "input_tokens": 11,
+        "output_tokens": 4,
+        "quota": 7672,
+        "channel_id": 1639,
+        "group": "企业级",
+        "single_charge": true
+      },
+      {
+        "model": "claude-opus-5-5",
+        "kind": "deny",
+        "status": 400,
+        "blocked_with_zero_charge": true
+      }
+    ]
+  }
+}
