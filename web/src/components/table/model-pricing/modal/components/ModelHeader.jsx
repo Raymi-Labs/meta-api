@@ -37,7 +37,7 @@ const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
       return (
         <div className={CARD_STYLES.container}>
           <div className={CARD_STYLES.icon}>
-            {getLobeHubIcon(modelData.icon, 32)}
+            {getLobeHubIcon(modelData.icon, 32, modelData.vendor_icon)}
           </div>
         </div>
       );

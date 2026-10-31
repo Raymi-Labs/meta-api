@@ -247,7 +247,11 @@ export default function ModelCompare() {
                 <div className='model-compare-card-title'>
                   <span className='model-compare-logo' aria-hidden='true'>
                     {model.icon || model.vendor_icon
-                      ? getLobeHubIcon(model.icon || model.vendor_icon, 32)
+                      ? getLobeHubIcon(
+                          model.icon || model.vendor_icon,
+                          32,
+                          model.vendor_icon,
+                        )
                       : model.model_name.slice(0, 2).toUpperCase()}
                   </span>
                   <div>

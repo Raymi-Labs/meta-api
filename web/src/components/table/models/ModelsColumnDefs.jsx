@@ -45,13 +45,13 @@ function renderTimestamp(timestamp) {
 
 // Render model icon column: prefer model.icon, then fallback to vendor icon
 const renderModelIconCol = (record, vendorMap) => {
-  const iconKey =
-    record?.icon ||
+  const vendorIcon =
     vendorMap[record?.display_vendor_id ?? record?.vendor_id]?.icon;
+  const iconKey = record?.icon || vendorIcon;
   if (!iconKey) return '-';
   return (
     <div className='flex items-center justify-center'>
-      {getLobeHubIcon(iconKey, 20)}
+      {getLobeHubIcon(iconKey, 20, vendorIcon)}
     </div>
   );
 };

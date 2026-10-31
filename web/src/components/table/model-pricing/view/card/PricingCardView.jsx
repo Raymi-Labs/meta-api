@@ -126,7 +126,7 @@ const PricingCardView = ({
               <div className='pricing-model-card-header'>
                 <div className='pricing-model-icon' aria-hidden='true'>
                   {icon
-                    ? getLobeHubIcon(icon, 24)
+                    ? getLobeHubIcon(icon, 24, model.vendor_icon)
                     : model.model_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className='pricing-model-identity'>

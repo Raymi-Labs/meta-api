@@ -189,7 +189,7 @@ export default function ModelDetail() {
       <header className='model-detail-hero'>
         <div className='model-detail-icon' aria-hidden='true'>
           {icon
-            ? getLobeHubIcon(icon, 56)
+            ? getLobeHubIcon(icon, 56, model.vendor_icon)
             : model.model_name.slice(0, 2).toUpperCase()}
         </div>
         <div className='model-detail-identity'>

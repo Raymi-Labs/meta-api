@@ -69,7 +69,7 @@ export default function ModelStickyBar({
         <div className='model-sticky-identity'>
           <span className='model-sticky-icon' aria-hidden='true'>
             {icon
-              ? getLobeHubIcon(icon, 26)
+              ? getLobeHubIcon(icon, 26, model.vendor_icon)
               : model.model_name.slice(0, 2).toUpperCase()}
           </span>
           <strong title={model.display_name || model.model_name}>
