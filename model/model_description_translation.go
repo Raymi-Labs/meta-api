@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// Reviewed translations can ship without a dependency on free-service availability.
+// Reviewed translations can ship without a dependency on translation-service availability.
 // They are matched by exact canonical source, never by model name.
 //
 //go:embed data/model_description_translations.json
@@ -103,6 +103,9 @@ type ModelDescriptionTranslation struct {
 	Failures      int
 }
 
+// A distinct generation avoids inheriting the retired Google provider's cooldown.
+const ModelDescriptionWorkerID = 2
+
 // A durable global lease/cooldown prevents duplicate workers and restart bypasses.
 type ModelDescriptionWorker struct {
 	ID         int    `gorm:"primaryKey;autoIncrement:false"`
@@ -149,7 +152,7 @@ func FillModelDescriptionTranslations(ctx context.Context, models []*Model) erro
 	for start := 0; start < len(hashes); start += 100 {
 		end := min(start+100, len(hashes))
 		var rows []ModelDescriptionTranslation
-		if err := DB.WithContext(ctx).Where("source_hash IN ? AND completed = ?", hashes[start:end], true).Find(&rows).Error; err != nil {
+		if err := DB.WithContext(ctx).Where("source_hash IN ? AND completed = ?", hashes[start:end], true).Order("cache_key ASC").Find(&rows).Error; err != nil {
 			return err
 		}
 		for _, r := range rows {
@@ -159,7 +162,11 @@ func FillModelDescriptionTranslations(ctx context.Context, models []*Model) erro
 			if cache[r.SourceHash] == nil {
 				cache[r.SourceHash] = ModelDescriptions{}
 			}
-			cache[r.SourceHash][r.Locale] = r.Text
+			// Legacy keys start with a hex hash; the qwen prefix sorts after them.
+			// Explicit preference also makes mixed-version rolling deployments safe.
+			if _, exists := cache[r.SourceHash][r.Locale]; !exists || strings.HasPrefix(r.CacheKey, SystemTranslationModel+":") {
+				cache[r.SourceHash][r.Locale] = r.Text
+			}
 		}
 	}
 	for _, m := range models {
@@ -180,18 +187,18 @@ func FillModelDescriptionTranslations(ctx context.Context, models []*Model) erro
 }
 
 func ClaimModelDescriptionWorker(ctx context.Context, now int64, lease string) (ModelDescriptionWorker, bool, error) {
-	state := ModelDescriptionWorker{ID: 1}
+	state := ModelDescriptionWorker{ID: ModelDescriptionWorkerID}
 	db := DB.WithContext(ctx)
 	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&state).Error; err != nil {
 		return state, false, err
 	}
-	result := db.Model(&ModelDescriptionWorker{}).Where("id = ? AND lease_until <= ? AND next_run_at <= ?", 1, now, now).Updates(map[string]interface{}{"lease": lease, "lease_until": now + 120})
+	result := db.Model(&ModelDescriptionWorker{}).Where("id = ? AND lease_until <= ? AND next_run_at <= ?", ModelDescriptionWorkerID, now, now).Updates(map[string]interface{}{"lease": lease, "lease_until": now + 120})
 	if result.Error != nil || result.RowsAffected == 0 {
 		return state, false, result.Error
 	}
-	err := db.First(&state, 1).Error
+	err := db.First(&state, ModelDescriptionWorkerID).Error
 	return state, err == nil, err
 }
 func FinishModelDescriptionWorker(ctx context.Context, lease string, next int64, failures int) error {
-	return DB.WithContext(ctx).Model(&ModelDescriptionWorker{}).Where("id = ? AND lease = ?", 1, lease).Updates(map[string]interface{}{"lease_until": 0, "next_run_at": next, "failures": failures}).Error
+	return DB.WithContext(ctx).Model(&ModelDescriptionWorker{}).Where("id = ? AND lease = ?", ModelDescriptionWorkerID, lease).Updates(map[string]interface{}{"lease_until": 0, "next_run_at": next, "failures": failures}).Error
 }

@@ -36,6 +36,11 @@ func TestDescriptionCacheOwnershipAndLease(t *testing.T) {
 			require.NoError(t, FillModelDescriptionTranslations(ctx, []*Model{&m}))
 			require.Len(t, m.DescriptionTranslations, 17)
 			require.Equal(t, original, m.Description)
+			qwen := ModelDescriptionTranslation{CacheKey: SystemTranslationModel + ":" + DescriptionCacheKey(original, "en"), SourceHash: ModelDescriptionHash(original), Locale: "en", Text: "Qwen completed translation", Completed: true}
+			require.NoError(t, db.Create(&qwen).Error)
+			require.NoError(t, FillModelDescriptionTranslations(ctx, []*Model{&m}))
+			require.Equal(t, "Qwen completed translation", m.DescriptionTranslations["en"])
+
 			zh := "人工中文"
 			ja := "手動の日本語"
 			// Two stale editor sessions change independent locales without lost updates.
@@ -82,7 +87,7 @@ func TestDescriptionCacheOwnershipAndLease(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, claimed)
 			require.NoError(t, FinishModelDescriptionWorker(ctx, "b", 0, 0))
-			require.NoError(t, db.First(&state, 1).Error)
+			require.NoError(t, db.First(&state, ModelDescriptionWorkerID).Error)
 			require.Equal(t, "c", state.Lease)
 			encoded, err := common.Marshal(saved)
 			require.NoError(t, err)

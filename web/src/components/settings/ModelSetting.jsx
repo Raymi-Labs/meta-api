@@ -26,6 +26,7 @@ import SettingGeminiModel from '../../pages/Setting/Model/SettingGeminiModel';
 import SettingClaudeModel from '../../pages/Setting/Model/SettingClaudeModel';
 import SettingGlobalModel from '../../pages/Setting/Model/SettingGlobalModel';
 import SettingGrokModel from '../../pages/Setting/Model/SettingGrokModel';
+import SettingModelTranslation from '../../pages/Setting/Model/SettingModelTranslation';
 import SettingsChannelAffinity from '../../pages/Setting/Operation/SettingsChannelAffinity';
 import SettingsSlowTTFTGuard from '../../pages/Setting/Operation/SettingsSlowTTFTGuard';
 
@@ -122,6 +123,9 @@ const ModelSetting = () => {
         {/* OpenAI */}
         <Card style={{ marginTop: '10px' }}>
           <SettingGlobalModel options={inputs} refresh={onRefresh} />
+        </Card>
+        <Card style={{ marginTop: '10px' }}>
+          <SettingModelTranslation />
         </Card>
         {/* Channel affinity */}
         <Card style={{ marginTop: '10px' }}>

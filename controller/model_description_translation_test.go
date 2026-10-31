@@ -2,16 +2,14 @@ package controller
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -19,61 +17,98 @@ import (
 
 func descriptionTestDB(t *testing.T) {
 	db := catalogControllerDB(t)
-	require.NoError(t, db.AutoMigrate(&model.ModelDescriptionTranslation{}, &model.ModelDescriptionWorker{}))
+	require.NoError(t, db.AutoMigrate(&model.ModelDescriptionTranslation{}, &model.ModelDescriptionWorker{}, &model.Token{}, &model.User{}, &model.Option{}))
+	require.NoError(t, db.Create(&model.User{Id: 100, Username: "translation-root", Role: common.RoleRootUser, Status: common.UserStatusEnabled}).Error)
+	require.NoError(t, db.Create(&model.Token{Id: 100, UserId: 100, Name: "System translation", Key: "testsystemtranslation", Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true, ModelLimitsEnabled: true, ModelLimits: model.SystemTranslationModel}).Error)
+	common.OptionMapRWMutex.Lock()
+	if common.OptionMap == nil {
+		common.OptionMap = map[string]string{}
+	}
+	previous := common.OptionMap[model.SystemTranslationTokenOption]
+	common.OptionMap[model.SystemTranslationTokenOption] = "100"
+	common.OptionMapRWMutex.Unlock()
+	t.Cleanup(func() {
+		common.OptionMapRWMutex.Lock()
+		common.OptionMap[model.SystemTranslationTokenOption] = previous
+		common.OptionMapRWMutex.Unlock()
+	})
 	m := model.Model{ModelName: "gpt-description", Description: "A model with 128K context and JSON output.", Status: 1}
 	require.NoError(t, db.Create(&m).Error)
 	require.NoError(t, db.Create(&model.Ability{Group: "default", Model: m.ModelName, ChannelId: 1, Enabled: true}).Error)
 	model.RefreshPricing()
 }
+
+// Exercise the real loopback HTTP boundary without invoking a paid provider.
+func descriptionMockRelay(t *testing.T, handler http.HandlerFunc) {
+	t.Helper()
+	server := httptest.NewServer(handler)
+	t.Cleanup(server.Close)
+	t.Setenv("PORT", strings.TrimPrefix(server.URL, "http://127.0.0.1:"))
+}
+func descriptionRequest(t *testing.T, r *http.Request) (string, string) {
+	t.Helper()
+	require.Equal(t, "POST", r.Method)
+	require.Equal(t, "/v1/chat/completions", r.URL.Path)
+	require.Equal(t, "Bearer sk-testsystemtranslation", r.Header.Get("Authorization"))
+	require.Empty(t, r.Header.Get("Cookie"))
+	var request dto.GeneralOpenAIRequest
+	require.NoError(t, common.DecodeJson(r.Body, &request))
+	require.Equal(t, model.SystemTranslationModel, request.Model)
+	require.False(t, request.Stream)
+	require.Len(t, request.Messages, 1)
+	require.Equal(t, "user", request.Messages[0].Role)
+	var options map[string]string
+	require.NoError(t, common.Unmarshal(request.TranslationOptions, &options))
+	require.Equal(t, "auto", options["source_lang"])
+	return request.Messages[0].StringContent(), options["target_lang"]
+}
+func descriptionResponse(w http.ResponseWriter, value string) {
+	body, _ := common.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"role": "assistant", "content": value}, "finish_reason": "stop"}}})
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(body)
+}
 func TestDescriptionTranslationAllLocalesAndNoRequestOnRead(t *testing.T) {
 	descriptionTestDB(t)
-	old := descriptionHTTPClient
-	t.Cleanup(func() { descriptionHTTPClient = old })
 	calls := 0
-	descriptionHTTPClient = &http.Client{Transport: attributeTransport(func(r *http.Request) (*http.Response, error) {
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		require.Equal(t, "translate.googleapis.com", r.URL.Host)
-		require.Empty(t, r.Header.Get("Authorization"))
-		require.Empty(t, r.Header.Get("Cookie"))
-		require.Equal(t, "auto", r.URL.Query().Get("sl"))
-		query := r.URL.Query().Get("q")
+		query, target := descriptionRequest(t, r)
 		require.NotContains(t, query, "128K")
 		require.NotContains(t, query, "JSON")
-		body, _ := common.Marshal([]interface{}{[][]interface{}{{r.URL.Query().Get("tl") + ": " + query}}, nil, "en"})
-		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(body)))}, nil
-	})}
+		descriptionResponse(w, target+": "+query)
+	})
 	for range model.ModelDescriptionLocales {
-		require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", 1).Update("next_run_at", 0).Error)
+		require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", model.ModelDescriptionWorkerID).Update("next_run_at", 0).Error)
 		require.NoError(t, runDescriptionTranslationStep(context.Background()))
 	}
 	require.Equal(t, 17, calls)
 	models := model.GetPricing()
 	require.Len(t, models, 1)
 	require.Len(t, models[0].DescriptionTranslations, 17)
+	targets := map[string]string{"en": "English", "zh-CN": "Chinese", "zh-TW": "Traditional Chinese", "ja": "Japanese", "ko": "Korean", "de": "German", "es": "Spanish", "fr": "French", "pt": "Portuguese", "ru": "Russian", "tr": "Turkish", "pl": "Polish", "nl": "Dutch", "it": "Italian", "vi": "Vietnamese", "uk": "Ukrainian", "bg": "Bulgarian"}
 	for _, locale := range model.ModelDescriptionLocales {
-		require.Equal(t, locale+": A model with 128K context and JSON output.", models[0].DescriptionTranslations[locale])
+		require.Equal(t, targets[locale]+": A model with 128K context and JSON output.", models[0].DescriptionTranslations[locale])
 	}
 	// Public reads use stored translations and never trigger a translator.
 	for range 3 {
 		model.GetPricing()
 	}
 	require.Equal(t, 17, calls)
-	require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", 1).Update("next_run_at", 0).Error)
+	require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", model.ModelDescriptionWorkerID).Update("next_run_at", 0).Error)
 	require.NoError(t, runDescriptionTranslationStep(context.Background()))
 	require.Equal(t, 17, calls)
 }
 func TestDescriptionTranslationRateLimitPersistsAndHonorsRetryAfter(t *testing.T) {
 	descriptionTestDB(t)
-	old := descriptionHTTPClient
-	t.Cleanup(func() { descriptionHTTPClient = old })
 	calls := 0
-	descriptionHTTPClient = &http.Client{Transport: attributeTransport(func(r *http.Request) (*http.Response, error) {
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		return &http.Response{StatusCode: 429, Header: http.Header{"Retry-After": []string{"7200"}}, Body: io.NopCloser(strings.NewReader("limited"))}, nil
-	})}
+		w.Header().Set("Retry-After", "7200")
+		w.WriteHeader(http.StatusTooManyRequests)
+	})
 	require.Error(t, runDescriptionTranslationStep(context.Background()))
 	var state model.ModelDescriptionWorker
-	require.NoError(t, model.DB.First(&state, 1).Error)
+	require.NoError(t, model.DB.First(&state, model.ModelDescriptionWorkerID).Error)
 	require.GreaterOrEqual(t, state.NextRunAt, time.Now().Unix()+7198)
 	require.Zero(t, state.LeaseUntil)
 	require.NoError(t, runDescriptionTranslationStep(context.Background()))
@@ -101,11 +136,7 @@ func TestDescriptionProtectedTokensChunkingAndRejection(t *testing.T) {
 
 func TestDescriptionMalformedTranslationDoesNotStarveOtherLocales(t *testing.T) {
 	descriptionTestDB(t)
-	old := descriptionHTTPClient
-	t.Cleanup(func() { descriptionHTTPClient = old })
-	descriptionHTTPClient = &http.Client{Transport: attributeTransport(func(r *http.Request) (*http.Response, error) {
-		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`[[["lost protected numbers"]],null,"en"]`))}, nil
-	})}
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) { descriptionResponse(w, "lost protected numbers") })
 	require.Error(t, runDescriptionTranslationStep(context.Background()))
 	var row model.ModelDescriptionTranslation
 	require.NoError(t, model.DB.First(&row).Error)
@@ -123,18 +154,16 @@ func TestDescriptionPartialTranslationResumesWithoutPublishingIncompleteText(t *
 	source := strings.Repeat("A detailed model description. ", 80) + "128K JSON"
 	require.NoError(t, model.DB.Model(&model.Model{}).Where("id = ?", 1).Update("description", source).Error)
 	model.RefreshPricing()
-	old := descriptionHTTPClient
-	t.Cleanup(func() { descriptionHTTPClient = old })
 	calls := 0
-	descriptionHTTPClient = &http.Client{Transport: attributeTransport(func(r *http.Request) (*http.Response, error) {
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		body, _ := common.Marshal([]interface{}{[][]interface{}{{r.URL.Query().Get("q")}}, nil, "zh-CN"})
-		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(body)))}, nil
-	})}
+		text, _ := descriptionRequest(t, r)
+		descriptionResponse(w, text)
+	})
 	parts := descriptionParts(source)
 	require.Greater(t, len(parts), 1)
 	for index := range parts {
-		require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", 1).Update("next_run_at", 0).Error)
+		require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", model.ModelDescriptionWorkerID).Update("next_run_at", 0).Error)
 		require.NoError(t, runDescriptionTranslationStep(context.Background()))
 		var row model.ModelDescriptionTranslation
 		require.NoError(t, model.DB.Where("locale = ?", "zh-CN").First(&row).Error)
@@ -173,29 +202,48 @@ func TestDescriptionAdminPatchValidationAndLegacyPreservation(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Explicit opt-in smoke test: one public sample, fixed existing free endpoint,
-// sequential 5s pacing. A rate limit immediately ends the run (no alternate host).
-func TestDescriptionTranslationLive(t *testing.T) {
-	sourcePath := os.Getenv("TEST_DESCRIPTION_LIVE_SOURCE")
-	if sourcePath == "" {
-		t.Skip("live free-service smoke test is opt-in")
-	}
-	source, err := os.ReadFile(sourcePath)
-	require.NoError(t, err)
-	translated := map[string]string{}
-	parts := descriptionParts(strings.TrimSpace(string(source)))
-	for _, locale := range model.ModelDescriptionLocales {
-		var out strings.Builder
-		for _, part := range parts {
-			value, err := translateDescriptionPart(context.Background(), part, locale)
-			require.NoError(t, err)
-			out.WriteString(value)
-			time.Sleep(5 * time.Second)
-		}
-		translated[locale] = out.String()
-		t.Log("translated", locale)
-	}
-	body, err := common.Marshal(translated)
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(filepath.Dir(sourcePath), "translations.json"), body, 0600))
+func TestDescriptionTranslationIsolatesLegacyPartialAndCooldown(t *testing.T) {
+	descriptionTestDB(t)
+	source := model.GetPricing()[0].Description
+	legacy := model.ModelDescriptionTranslation{CacheKey: model.DescriptionCacheKey(source, "zh-CN"), SourceHash: model.ModelDescriptionHash(source), Locale: "zh-CN", Text: "old partial", Chunk: 1, NextAttemptAt: time.Now().Unix() + 86400}
+	require.NoError(t, model.DB.Create(&legacy).Error)
+	require.NoError(t, model.DB.Create(&model.ModelDescriptionWorker{ID: 1, NextRunAt: time.Now().Unix() + 86400, Failures: 5}).Error)
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) {
+		text, _ := descriptionRequest(t, r)
+		descriptionResponse(w, "new "+text)
+	})
+	require.NoError(t, runDescriptionTranslationStep(context.Background()))
+	require.Equal(t, "new "+source, model.GetPricing()[0].DescriptionTranslations["zh-CN"])
+	require.NoError(t, model.DB.First(&legacy, "cache_key = ?", legacy.CacheKey).Error)
+	require.Equal(t, "old partial", legacy.Text)
+}
+
+func TestDescriptionTranslationUnconfiguredAndInvalidTokenDoNotCallRelay(t *testing.T) {
+	descriptionTestDB(t)
+	calls := 0
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(500) })
+	require.NoError(t, model.UpdateOption(model.SystemTranslationTokenOption, "0"))
+	require.NoError(t, runDescriptionTranslationStep(context.Background()))
+	require.NoError(t, model.UpdateOption(model.SystemTranslationTokenOption, "100"))
+	require.NoError(t, model.DB.Model(&model.Token{}).Where("id = ?", 100).Update("status", common.TokenStatusDisabled).Error)
+	require.Error(t, runDescriptionTranslationStep(context.Background()))
+	require.Zero(t, calls)
+	var count int64
+	require.NoError(t, model.DB.Model(&model.ModelDescriptionTranslation{}).Count(&count).Error)
+	require.Zero(t, count)
+	var worker model.ModelDescriptionWorker
+	require.NoError(t, model.DB.First(&worker, model.ModelDescriptionWorkerID).Error)
+	require.Greater(t, worker.NextRunAt, time.Now().Unix()+290)
+}
+
+func TestDescriptionTranslationAuthFailureBacksOffGlobally(t *testing.T) {
+	descriptionTestDB(t)
+	calls := 0
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(401) })
+	require.Error(t, runDescriptionTranslationStep(context.Background()))
+	require.NoError(t, runDescriptionTranslationStep(context.Background()))
+	require.Equal(t, 1, calls)
+	var worker model.ModelDescriptionWorker
+	require.NoError(t, model.DB.First(&worker, model.ModelDescriptionWorkerID).Error)
+	require.Greater(t, worker.NextRunAt, time.Now().Unix()+1700)
 }

@@ -1,5 +1,13 @@
 {
   "translation": {
+    "令牌不可用": "Token non disponibile",
+    "稍后重试": "Riprova più tardi",
+    "环境变量已关闭翻译": "Traduzione disattivata da variabile di ambiente",
+    "模型介绍自动翻译": "Traduzione automatica delle descrizioni dei modelli",
+    "暂停自动翻译": "Sospendi traduzione automatica",
+    "翻译专用令牌": "Token per la traduzione",
+    "使用 qwen-mt-flash 和专用令牌，按现有渠道计费；已完成译文会缓存复用。": "Usa qwen-mt-flash e un token dedicato, con addebito tramite i canali esistenti. Le traduzioni completate vengono memorizzate nella cache e riutilizzate.",
+    "先在令牌管理中创建仅允许 qwen-mt-flash 的令牌，再在此选择。": "Crea nella gestione token un token limitato a qwen-mt-flash, quindi selezionalo qui.",
     "多模型同时回答": "Risposte di più modelli",
     "单模型回答": "Risposta di un modello",
     "选择文本模型（最多5个）": "Scegli modelli di testo (massimo 5)",

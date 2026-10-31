@@ -149,6 +149,19 @@ func UpdateOption(c *gin.Context) {
 	default:
 		option.Value = fmt.Sprintf("%v", option.Value)
 	}
+	if option.Key == model.SystemTranslationTokenOption {
+		id, parseErr := strconv.Atoi(option.Value.(string))
+		if parseErr != nil || id < 0 {
+			common.ApiError(c, fmt.Errorf("无效的翻译令牌 ID"))
+			return
+		}
+		if id > 0 {
+			if _, err := model.ValidateSystemTranslationToken(c.Request.Context(), id, c.GetInt("id")); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+	}
 	if option.Key == billing_setting.TieredBundleOptionKey {
 		if err = model.UpdateTieredBillingOptions(option.Value.(string)); err != nil {
 			c.JSON(http.StatusOK, gin.H{
