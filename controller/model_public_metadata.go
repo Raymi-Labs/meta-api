@@ -15,7 +15,7 @@ import (
 )
 
 func metadataVendorName(provider string) string {
-	return map[string]string{"openai": "OpenAI", "anthropic": "Anthropic", "google": "Google", "deepseek": "DeepSeek", "xai": "xAI", "alibaba": "阿里巴巴", "alibaba-cn": "阿里巴巴", "moonshotai": "Moonshot", "moonshotai-cn": "Moonshot", "xiaomi": "小米 MiMo", "minimax": "MiniMax", "minimax-cn": "MiniMax", "zai": "智谱", "zhipuai": "智谱", "mistral": "Mistral", "inception": "Inception"}[provider]
+	return map[string]string{"openai": "OpenAI", "anthropic": "Anthropic", "google": "Google", "deepseek": "DeepSeek", "xai": "xAI", "alibaba": "阿里巴巴", "alibaba-cn": "阿里巴巴", "moonshotai": "Moonshot", "moonshotai-cn": "Moonshot", "xiaomi": "小米 MiMo", "minimax": "MiniMax", "minimax-cn": "MiniMax", "zai": "智谱", "zhipuai": "智谱", "mistral": "Mistral", "inception": "Inception", "cohere": "Cohere"}[provider]
 }
 
 // A reseller catalog can have a higher metadata priority than the original
@@ -586,6 +586,10 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			continue
 		}
 		provider := ""
+		if ref, ok := coherePriceModels[id]; ok {
+			jobs = append(jobs, job{"https://docs.cohere.com/v2/docs/" + ref.slug, id, "cohere", parseCoherePricing})
+			continue
+		}
 		switch {
 		case strings.HasPrefix(id, "claude-"):
 			provider = "anthropic"

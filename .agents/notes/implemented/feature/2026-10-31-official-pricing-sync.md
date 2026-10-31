@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[厂家来源约束](../bug-fix/2026-11-01-manufacturer-official-pricing.md)收紧公开价格来源并允许旧 OpenRouter 资料被厂家取价替换；保留人工厂家价及同步失败保护。
+
 [自动资料默认值](2026-10-31-model-official-defaults.md)扩展公开厂商来源、介绍/标签/供应商和自动更新入口；其新规则取代下文旧的字段范围与失败等待周期，人工保护及来源语义继续有效。
 
 扩展现有模型元数据同步，无新增定时任务或公开写接口。复用启动立即执行、默认每天以及编辑过期资料触发的同步任务和管理员 POST /api/models/sync_capabilities；从同一次 OpenAI 官方模型文档请求解析文本 token 的 USD / 1M 价格。校验精确模型身份、价格区块、单位及数值；明确的长上下文门槛和倍率生成独立档位，保留官方条件说明，不使用 Batch/Flex/Fast 价格替代 Standard。不从本站倍率反算，不把社区价格冒充官方数据；其他厂商/无法识别的费目暂保留人工配置。

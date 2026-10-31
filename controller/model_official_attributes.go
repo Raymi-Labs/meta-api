@@ -416,6 +416,17 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 }
 
 func fetchOfficialModelAttributesFor(ctx context.Context, names map[string]bool) (map[string]model.ModelCapabilityMetadata, []string, error) {
+	// Resolve only known manufacturer namespaces. Exact provider-native IDs still
+	// pass each source's identity check; arbitrary aliases and :free stay unknown.
+	originalNames := names
+	names = map[string]bool{}
+	aliases := map[string]string{}
+	for name := range originalNames {
+		native := model.ManufacturerNativeModel(name)
+		names[native] = true
+		aliases[name] = native
+	}
+
 	entries := map[string]model.ModelCapabilityMetadata{}
 	var warnings []string
 	var mu sync.Mutex
@@ -513,5 +524,15 @@ dispatch:
 		merge(values)
 	}
 	sort.Strings(warnings)
-	return entries, warnings, nil
+	resolved := map[string]model.ModelCapabilityMetadata{}
+	for name, native := range aliases {
+		if value, ok := entries[native]; ok {
+			// A misleading namespace must not acquire another maker's price.
+			if len(value.OfficialPricing.Tiers) > 0 && !model.IsManufacturerPriceSource(name, value.OfficialPricing.SourceURL) {
+				value.OfficialPricing = model.OfficialPricing{}
+			}
+			resolved[name] = value
+		}
+	}
+	return resolved, warnings, nil
 }
