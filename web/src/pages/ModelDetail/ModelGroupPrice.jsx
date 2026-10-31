@@ -78,7 +78,9 @@ export default function ModelGroupPrice({
           ))}
         <strong>
           {comparison
-            ? formatOfficialPrice(comparison.group, data.currency)
+            ? // Computed prices need fewer significant digits to hide ratio/FX
+              // rounding tails while preserving tiny nonzero token prices.
+              formatOfficialPrice(comparison.group, data.currency, 12)
             : item.value}
         </strong>
         <small>{item.suffix}</small>
