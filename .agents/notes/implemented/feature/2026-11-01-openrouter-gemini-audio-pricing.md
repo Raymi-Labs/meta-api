@@ -37,6 +37,8 @@ OpenRouter TTS 使用 X-Generation-Id 查询同账号 generation 的实际输入
 
 ## 当前账号与延迟用量
 
+生产实际开启 CountToken 后，JSON 转录在进入适配器前被旧 multipart 时长预估拒绝，说明仅适配器单测和关闭计数的控制器测试不足以覆盖完整流程。OpenRouter 的 JSON transcription 前置估算返回未知值 0，既有价格助手仍执行最小预扣；不虚构音频 Token、不提前消费 JSON body，之后适配器继续验证输入、每次核价、按实际 usage 结算。其他厂商、translation 和 multipart 保留原路径。完整控制器回归打开 CountToken，验证别名映射、29 音频输入和 2 文本输出仅扣 41 quota；非法 base64 不发上游且退款。
+
 用户明确授权[47 个渠道切换到当前账号](../process/2026-11-01-openrouter-account-key-migration.md)。新账号的 23 个审核候选全部完成真实上游请求，包括 3 个 TTS 的实际原生 Token 和 1 个 STT 的响应 usage。下文 403 证据属于旧账号，不能推断旧账号限制已解除。
 
 实际 TTS generation 记录在音频返回后约 6–16 秒出现。仅查询用量的等待总上限采用 60 秒、单次查询至多 8 秒、间隔至多 2 秒、最多 32 次，取消立即中止。核价门禁和缺 usage 不估算收费不变，绝不重发语音。延迟超过旧 4 次限制、等待中取消均有回归；生产部署与网关消费另行验收。

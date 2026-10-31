@@ -6,9 +6,9 @@
 
 用户已授权将 47 个 OpenRouter 渠道统一迁移到当前浏览器账号的专用密钥，逐一读回确认成功。新账号的 23 个审核候选全部通过最新报价复核和真实请求，包含 3 个 TTS 与 1 个 STT；下述 403 证据属于旧账号。TTS 用量记录延迟约 6–16 秒，程序已补足仅查询元数据的等待逻辑，启用仍以正式发布、受保护更新和网关结算验收为门禁。见[迁移记录](../../.agents/notes/implemented/process/2026-11-01-openrouter-account-key-migration.md)。
 
-当前密钥对 4 个语音型号以及文本、向量、图像代表型号均返回 OpenRouter `403 provider Terms Of Service`。渠道保持暂停，并设置请求拒绝规则。**发布了适配代码不代表上游已经可用**；上游恢复访问后仍须重新核价、验证实际 usage 和消费日志，再按审核结果逐个恢复，不能一键启用所有配置型号。
+当前渠道已恢复 19 个文本、图像和向量型号，保留全部 29 个名称映射；生产网关代表请求及实际消费一致。4 个语音型号单独等待适配修复部署与结算验收，不再为语音等待而暂停已经可用的普通模型。
 
-1638 的本地拒绝使用 `503 / openrouter_gemini_upstream_restricted`，提示上游 Gemini 请求被 OpenRouter 以 403 服务条款限制拒绝。此前误用的 `openrouter_price_unverified` 文案已修正；该本地 503 与直接请求 OpenRouter 得到的 403 是两层错误。现有密钥直接调用 `google/gemini-2.5-flash-lite` 的最小文本请求复测仍为 403，具体是账号、地区还是提供商策略不能仅凭此响应确定。不能将它解释成全部 Gemini 原厂价未核实，也不能直接认定账号已封禁。
+旧账号的真实请求曾返回 `403 provider Terms Of Service`，本地暂停规则随后使用 `503 / openrouter_gemini_upstream_restricted`。新账号可用后保留该规则会造成过时提示，现已移除；旧账号限制的具体原因仍未知。语音未完成验收单独使用 `openrouter_speech_verification_pending`，价格未通过的型号仍由审核策略拒绝，不能混用三个原因。
 
 24 个型号有公开原厂价；Gemini 3.5 Flash 的 OpenRouter 音频输入高于当前原厂标准价，保持暂停；另 5 个旧 preview 型号仍需确认型号身份与当前原厂报价。所有未核实型号均不能调用。
 
@@ -16,6 +16,7 @@
 
 - `/v1/audio/speech` 支持普通文本、voice、instructions 和原始 PCM；不支持 MP3、SSE 或非 1 倍语速。保留请求的数据隐私偏好。
 - `/v1/audio/transcriptions` 接受 JSON base64 或单个上传文件，转为上游 JSON；支持 json/verbose_json，文件不超过 25 MiB。
+- 开启 Token 预估时，OpenRouter JSON 转录不再被误读为 multipart；未知音频 Token 返回 0 仅用于前置估算，既有最小预扣仍执行，最终严格按上游实际 usage 结算。其他厂商、translation 和 multipart 路径不变。
 - OpenRouter 原生语音接口不执行聊天的 `sort/only/max_price`。经用户确认，本网关在**每次调用前**查询该模型全部 endpoint。允许列表外的服务商、超价、非标准服务档位、新增非零费用或核价失败都会阻止发送。不会缓存“允许调用”的核价结果。
 - 这是调用前核价，不是上游硬限价，不能消除报价与实际收费之间的调价窗口，也不能保证语音选择最低价服务商。
 - TTS 根据 `X-Generation-Id` 查询原生输入/输出 Token，输出归为音频；STT 使用上游明确提供的 input/output tokens。缺少实际 usage 返回错误，不用音频文件大小或其他模型的时长系数估算。语音已经发出后不自动重试。
