@@ -20,6 +20,7 @@ import React, { useId } from 'react';
 import { Select, Typography } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { readTokenRouting } from './tokenRouting';
+import { prioritizeTokenGroups } from './tokenGroupUtils';
 
 const filterGroupOption = (input, option) =>
   String(option.searchText || option.value)
@@ -42,7 +43,7 @@ export default function TokenRoutingEditor({
   const { t } = useTranslation();
   const labelId = useId();
   const config = readTokenRouting(value);
-  const options = groups
+  const options = prioritizeTokenGroups(groups)
     .filter(({ value }) => value !== 'auto')
     .map((group) => {
       const summary = `${group.value}${Number.isFinite(group.ratio) ? ` · ${group.ratio}x` : ''}`;

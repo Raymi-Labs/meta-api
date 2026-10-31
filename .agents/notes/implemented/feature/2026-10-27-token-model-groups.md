@@ -14,6 +14,8 @@ Status: implemented
 
 全局分组与逐模型分组下拉共用 `/api/user/self/groups` 的名称、本人适用倍率及 `desc`（表单中的 `label`）。说明在选项第二行按纯文本完整换行，空说明不占位；搜索匹配名称、倍率和说明，已选标签只保留名称与倍率。旧编辑值缺少元数据时保留原名，不推断倍率或说明；路由载荷仍只保存原始分组名称。
 
+全局候选应用[通用分组置顶](../bug-fix/2026-11-01-token-group-priority.md)：企业级、优选、福利优先，其余沿用目录顺序；已选择的全局和逐模型路由顺序保持原值。
+
 ## Existing capability review
 
 - 创建/编辑、列表及测试 → token controller → Token；TokenAuth → Distribute → channel_select → ability；实际 group 进入既有计费和日志。
