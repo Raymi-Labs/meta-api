@@ -1,0 +1,816 @@
+{
+  "factor": 6.6,
+  "scope": "all_configured_OpenAI_models",
+  "models": [
+    {
+      "model": "GPT-5.3-Codex-Spark",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "ada",
+      "active": false,
+      "kind": "ratio",
+      "before": 10,
+      "after": 66.0
+    },
+    {
+      "model": "babbage",
+      "active": false,
+      "kind": "ratio",
+      "before": 10,
+      "after": 66.0
+    },
+    {
+      "model": "babbage-002",
+      "active": false,
+      "kind": "ratio",
+      "before": 0.2,
+      "after": 1.32
+    },
+    {
+      "model": "chatgpt-4o-latest",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.5,
+      "after": 16.5
+    },
+    {
+      "model": "code-davinci-edit-001",
+      "active": false,
+      "kind": "ratio",
+      "before": 10,
+      "after": 66.0
+    },
+    {
+      "model": "codex-auto-review",
+      "active": true,
+      "kind": "alias",
+      "price_source": "gpt-5.3-codex",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "codex-auto-review ",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "curie",
+      "active": false,
+      "kind": "ratio",
+      "before": 10,
+      "after": 66.0
+    },
+    {
+      "model": "dall-e-3",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.04,
+      "after": 0.264
+    },
+    {
+      "model": "davinci",
+      "active": false,
+      "kind": "ratio",
+      "before": 10,
+      "after": 66.0
+    },
+    {
+      "model": "davinci-002",
+      "active": false,
+      "kind": "ratio",
+      "before": 1,
+      "after": 6.6
+    },
+    {
+      "model": "gpt-4-gizmo-*",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.1,
+      "after": 0.66
+    },
+    {
+      "model": "gpt-4o-mini",
+      "active": false,
+      "kind": "ratio",
+      "before": 5,
+      "after": 33.0
+    },
+    {
+      "model": "gpt-4o-mini-tts",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.3,
+      "after": 1.98
+    },
+    {
+      "model": "gpt-5",
+      "active": false,
+      "kind": "ratio",
+      "before": 2,
+      "after": 13.2
+    },
+    {
+      "model": "gpt-5-4-t-mini",
+      "active": false,
+      "kind": "ratio",
+      "before": 15,
+      "after": 99.0
+    },
+    {
+      "model": "gpt-5-5-instant",
+      "active": false,
+      "kind": "ratio",
+      "before": 4.3,
+      "after": 28.38
+    },
+    {
+      "model": "gpt-5-5-pro",
+      "active": false,
+      "kind": "fixed",
+      "before": 2,
+      "after": 13.2
+    },
+    {
+      "model": "gpt-5-5-thinking",
+      "active": false,
+      "kind": "ratio",
+      "before": 4.5,
+      "after": 29.7
+    },
+    {
+      "model": "gpt-5-codex",
+      "active": false,
+      "kind": "ratio",
+      "before": 0.825,
+      "after": 5.445
+    },
+    {
+      "model": "gpt-5.1",
+      "active": false,
+      "kind": "ratio",
+      "before": 2,
+      "after": 13.2
+    },
+    {
+      "model": "gpt-5.1-codex",
+      "active": false,
+      "kind": "ratio",
+      "before": 2,
+      "after": 13.2
+    },
+    {
+      "model": "gpt-5.1-codex-max",
+      "active": false,
+      "kind": "ratio",
+      "before": 2,
+      "after": 13.2
+    },
+    {
+      "model": "gpt-5.1-codex-mini",
+      "active": false,
+      "kind": "ratio",
+      "before": 0.4,
+      "after": 2.64
+    },
+    {
+      "model": "gpt-5.2",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "gpt-5.2-codex",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "gpt-5.3-codex",
+      "active": false,
+      "kind": "ratio",
+      "before": 2.8,
+      "after": 18.48
+    },
+    {
+      "model": "gpt-5.3-codex-spark",
+      "active": false,
+      "kind": "ratio",
+      "before": 1.25,
+      "after": 8.25
+    },
+    {
+      "model": "gpt-5.4",
+      "active": false,
+      "kind": "ratio",
+      "before": 6.25,
+      "after": 41.25
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "active": false,
+      "kind": "ratio",
+      "before": 1.875,
+      "after": 12.375
+    },
+    {
+      "model": "gpt-5.4-pro",
+      "active": false,
+      "kind": "ratio",
+      "before": 75,
+      "after": 495.0
+    },
+    {
+      "model": "gpt-5.5",
+      "active": false,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 25 + c * 150 + cr * 2.5 + cc * 31.25) : tier(\"第2档\", p * 50 + c * 225 + cr * 5 + cc * 62.5)",
+      "after": "len <= 272000 ? tier(\"base\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 206.250) : tier(\"第2档\", p * 330.0 + c * 1485.0 + cr * 33.0 + cc * 412.50)"
+    },
+    {
+      "model": "gpt-5.5-codex-auto-review",
+      "active": false,
+      "kind": "ratio",
+      "before": 12.5,
+      "after": 82.5
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 45) : tier(\"第2档\", p * 20 + c * 120 + cr * 2 + cc * 90)",
+      "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 297.0) : tier(\"第2档\", p * 132.0 + c * 792.0 + cr * 13.2 + cc * 594.0)"
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 25 + c * 150 + cr * 2.5 + cc * 31.25) : tier(\"第2档\", p * 50 + c * 225 + cr * 5 + cc * 62.5)",
+      "after": "len <= 272000 ? tier(\"base\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 206.250) : tier(\"第2档\", p * 330.0 + c * 1485.0 + cr * 33.0 + cc * 412.50)"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 12.5) : tier(\"第2档\", p * 20 + c * 90 + cr * 2 + cc * 25)",
+      "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 82.50) : tier(\"第2档\", p * 132.0 + c * 594.0 + cr * 13.2 + cc * 165.0)"
+    },
+    {
+      "model": "gpt-6",
+      "active": false,
+      "kind": "ratio",
+      "before": 50,
+      "after": 330.0
+    },
+    {
+      "model": "gpt-6-astra",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000\n? tier(\"标准上下文\", p * 50 + c * 250 + cr * 5 + cc * 62.5)\n: tier(\"长上下文\", p * 100 + c * 375 + cr * 10 + cc * 125)",
+      "after": "len <= 272000\n? tier(\"标准上下文\", p * 330.0 + c * 1650.0 + cr * 33.0 + cc * 412.50)\n: tier(\"长上下文\", p * 660.0 + c * 2475.0 + cr * 66.0 + cc * 825.0)"
+    },
+    {
+      "model": "gpt-6-luna",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 2 + c * 10 + cr * 0.2 + cc * 2.5) : tier(\"第2档\", p * 4 + c * 20 + cr * 0.4 + cc * 5)",
+      "after": "len <= 272000 ? tier(\"base\", p * 13.2 + c * 66.0 + cr * 1.32 + cc * 16.50) : tier(\"第2档\", p * 26.4 + c * 132.0 + cr * 2.64 + cc * 33.0)"
+    },
+    {
+      "model": "gpt-6-sol",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 12.5 + c * 75 + cr * 1.25 + cc * 15) : tier(\"第2档\", p * 25 + c * 150 + cr * 2.5 + cc * 30)",
+      "after": "len <= 272000 ? tier(\"base\", p * 82.50 + c * 495.0 + cr * 8.250 + cc * 99.0) : tier(\"第2档\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 198.0)"
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "active": true,
+      "kind": "ratio",
+      "before": 7.5,
+      "after": 49.5
+    },
+    {
+      "model": "gpt-6.1-terra",
+      "active": true,
+      "kind": "tiered_expr",
+      "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 12.5) : tier(\"第2档\", p * 20 + c * 90 + cr * 2 + cc * 25)",
+      "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 82.50) : tier(\"第2档\", p * 132.0 + c * 594.0 + cr * 13.2 + cc * 165.0)"
+    },
+    {
+      "model": "gpt-image-1.5",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.8,
+      "after": 5.28
+    },
+    {
+      "model": "gpt-image-2",
+      "active": true,
+      "kind": "fixed",
+      "before": 1.5,
+      "after": 9.9
+    },
+    {
+      "model": "gpt-image-2.5-flare",
+      "active": true,
+      "kind": "fixed",
+      "before": 1.5,
+      "after": 9.9
+    },
+    {
+      "model": "gpt-image-2.5-sunburst",
+      "active": true,
+      "kind": "fixed",
+      "before": 1.5,
+      "after": 9.9
+    },
+    {
+      "model": "sora-2",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.3,
+      "after": 1.98
+    },
+    {
+      "model": "sora-2-pro",
+      "active": false,
+      "kind": "fixed",
+      "before": 0.5,
+      "after": 3.3
+    }
+  ],
+  "option_changes": {
+    "ModelRatio": {
+      "GPT-5.3-Codex-Spark": {
+        "before": 2.8,
+        "after": 18.48
+      },
+      "ada": {
+        "before": 10,
+        "after": 66.0
+      },
+      "babbage": {
+        "before": 10,
+        "after": 66.0
+      },
+      "babbage-002": {
+        "before": 0.2,
+        "after": 1.32
+      },
+      "chatgpt-4o-latest": {
+        "before": 2.5,
+        "after": 16.5
+      },
+      "code-davinci-edit-001": {
+        "before": 10,
+        "after": 66.0
+      },
+      "codex-auto-review ": {
+        "before": 2.8,
+        "after": 18.48
+      },
+      "curie": {
+        "before": 10,
+        "after": 66.0
+      },
+      "davinci": {
+        "before": 10,
+        "after": 66.0
+      },
+      "davinci-002": {
+        "before": 1,
+        "after": 6.6
+      },
+      "gpt-4o-mini": {
+        "before": 5,
+        "after": 33.0
+      },
+      "gpt-5": {
+        "before": 2,
+        "after": 13.2
+      },
+      "gpt-5-4-t-mini": {
+        "before": 15,
+        "after": 99.0
+      },
+      "gpt-5-5-instant": {
+        "before": 4.3,
+        "after": 28.38
+      },
+      "gpt-5-5-thinking": {
+        "before": 4.5,
+        "after": 29.7
+      },
+      "gpt-5-codex": {
+        "before": 0.825,
+        "after": 5.445
+      },
+      "gpt-5.1": {
+        "before": 2,
+        "after": 13.2
+      },
+      "gpt-5.1-codex": {
+        "before": 2,
+        "after": 13.2
+      },
+      "gpt-5.1-codex-max": {
+        "before": 2,
+        "after": 13.2
+      },
+      "gpt-5.1-codex-mini": {
+        "before": 0.4,
+        "after": 2.64
+      },
+      "gpt-5.2": {
+        "before": 2.8,
+        "after": 18.48
+      },
+      "gpt-5.2-codex": {
+        "before": 2.8,
+        "after": 18.48
+      },
+      "gpt-5.3-codex": {
+        "before": 2.8,
+        "after": 18.48
+      },
+      "gpt-5.3-codex-spark": {
+        "before": 1.25,
+        "after": 8.25
+      },
+      "gpt-5.4": {
+        "before": 6.25,
+        "after": 41.25
+      },
+      "gpt-5.4-mini": {
+        "before": 1.875,
+        "after": 12.375
+      },
+      "gpt-5.4-pro": {
+        "before": 75,
+        "after": 495.0
+      },
+      "gpt-5.5-codex-auto-review": {
+        "before": 12.5,
+        "after": 82.5
+      },
+      "gpt-6": {
+        "before": 50,
+        "after": 330.0
+      },
+      "gpt-6.1-sol": {
+        "before": 7.5,
+        "after": 49.5
+      }
+    },
+    "ModelPrice": {
+      "dall-e-3": {
+        "before": 0.04,
+        "after": 0.264
+      },
+      "gpt-4-gizmo-*": {
+        "before": 0.1,
+        "after": 0.66
+      },
+      "gpt-4o-mini-tts": {
+        "before": 0.3,
+        "after": 1.98
+      },
+      "gpt-5-5-pro": {
+        "before": 2,
+        "after": 13.2
+      },
+      "gpt-image-1.5": {
+        "before": 0.8,
+        "after": 5.28
+      },
+      "gpt-image-2": {
+        "before": 1.5,
+        "after": 9.9
+      },
+      "gpt-image-2.5-flare": {
+        "before": 1.5,
+        "after": 9.9
+      },
+      "gpt-image-2.5-sunburst": {
+        "before": 1.5,
+        "after": 9.9
+      },
+      "sora-2": {
+        "before": 0.3,
+        "after": 1.98
+      },
+      "sora-2-pro": {
+        "before": 0.5,
+        "after": 3.3
+      }
+    },
+    "billing_setting.billing_expr": {
+      "gpt-5.5": {
+        "before": "len <= 272000 ? tier(\"base\", p * 25 + c * 150 + cr * 2.5 + cc * 31.25) : tier(\"第2档\", p * 50 + c * 225 + cr * 5 + cc * 62.5)",
+        "after": "len <= 272000 ? tier(\"base\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 206.250) : tier(\"第2档\", p * 330.0 + c * 1485.0 + cr * 33.0 + cc * 412.50)"
+      },
+      "gpt-5.6-luna": {
+        "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 45) : tier(\"第2档\", p * 20 + c * 120 + cr * 2 + cc * 90)",
+        "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 297.0) : tier(\"第2档\", p * 132.0 + c * 792.0 + cr * 13.2 + cc * 594.0)"
+      },
+      "gpt-5.6-sol": {
+        "before": "len <= 272000 ? tier(\"base\", p * 25 + c * 150 + cr * 2.5 + cc * 31.25) : tier(\"第2档\", p * 50 + c * 225 + cr * 5 + cc * 62.5)",
+        "after": "len <= 272000 ? tier(\"base\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 206.250) : tier(\"第2档\", p * 330.0 + c * 1485.0 + cr * 33.0 + cc * 412.50)"
+      },
+      "gpt-5.6-terra": {
+        "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 12.5) : tier(\"第2档\", p * 20 + c * 90 + cr * 2 + cc * 25)",
+        "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 82.50) : tier(\"第2档\", p * 132.0 + c * 594.0 + cr * 13.2 + cc * 165.0)"
+      },
+      "gpt-6-astra": {
+        "before": "len <= 272000\n? tier(\"标准上下文\", p * 50 + c * 250 + cr * 5 + cc * 62.5)\n: tier(\"长上下文\", p * 100 + c * 375 + cr * 10 + cc * 125)",
+        "after": "len <= 272000\n? tier(\"标准上下文\", p * 330.0 + c * 1650.0 + cr * 33.0 + cc * 412.50)\n: tier(\"长上下文\", p * 660.0 + c * 2475.0 + cr * 66.0 + cc * 825.0)"
+      },
+      "gpt-6-luna": {
+        "before": "len <= 272000 ? tier(\"base\", p * 2 + c * 10 + cr * 0.2 + cc * 2.5) : tier(\"第2档\", p * 4 + c * 20 + cr * 0.4 + cc * 5)",
+        "after": "len <= 272000 ? tier(\"base\", p * 13.2 + c * 66.0 + cr * 1.32 + cc * 16.50) : tier(\"第2档\", p * 26.4 + c * 132.0 + cr * 2.64 + cc * 33.0)"
+      },
+      "gpt-6-sol": {
+        "before": "len <= 272000 ? tier(\"base\", p * 12.5 + c * 75 + cr * 1.25 + cc * 15) : tier(\"第2档\", p * 25 + c * 150 + cr * 2.5 + cc * 30)",
+        "after": "len <= 272000 ? tier(\"base\", p * 82.50 + c * 495.0 + cr * 8.250 + cc * 99.0) : tier(\"第2档\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 198.0)"
+      },
+      "gpt-6.1-terra": {
+        "before": "len <= 272000 ? tier(\"base\", p * 10 + c * 60 + cr * 1 + cc * 12.5) : tier(\"第2档\", p * 20 + c * 90 + cr * 2 + cc * 25)",
+        "after": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 82.50) : tier(\"第2档\", p * 132.0 + c * 594.0 + cr * 13.2 + cc * 165.0)"
+      }
+    }
+  },
+  "relative_only_unpriced_names": [
+    "gpt-4",
+    "gpt-4-all",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4.5-preview",
+    "gpt-4.5-preview-2025-02-27",
+    "gpt-4o",
+    "gpt-4o-2024-08-06",
+    "gpt-4o-2024-11-20",
+    "gpt-4o-audio-preview",
+    "gpt-4o-gizmo-*",
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4o-mini-audio-preview",
+    "gpt-4o-mini-realtime",
+    "gpt-4o-mini-realtime-preview",
+    "gpt-4o-realtime",
+    "gpt-4o-realtime-preview",
+    "gpt-5-codex-mini",
+    "gpt-image-1",
+    "o1",
+    "o1-2024-12-17",
+    "o1-mini",
+    "o1-mini-2024-09-12",
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o3-mini",
+    "o3-mini-2025-01-31",
+    "tts-1",
+    "tts-1-1106",
+    "tts-1-hd",
+    "tts-1-hd-1106"
+  ],
+  "verification": {
+    "verified": true,
+    "time": 1793490412,
+    "application": {
+      "models": 49,
+      "active_models": 12,
+      "factor": 6.6,
+      "ratio_entries": 30,
+      "fixed_entries": 10,
+      "tiered_entries": 8,
+      "inherited_aliases": 1,
+      "version": "v1.11.12",
+      "verified": true,
+      "public_active_models_verified": 12,
+      "channels_unchanged": true,
+      "unrelated_options_unchanged": true,
+      "relative_ratios_unchanged": true,
+      "official_references_unchanged": true,
+      "tool_prices_unchanged": true,
+      "time": 1793490161
+    },
+    "gateway": {
+      "verified": true,
+      "results": [
+        {
+          "model": "gpt-6.1-sol",
+          "channel_id": 1555,
+          "group": "OpenAI · 优质",
+          "kind": "ratio",
+          "status": 200,
+          "response_status": "completed",
+          "content_returned": true,
+          "model_ratio": 49.5,
+          "cache_tokens": 5342,
+          "verified": true,
+          "seconds": 2.74,
+          "input_tokens": 5345,
+          "output_tokens": 5,
+          "quota": 6573,
+          "single_charge": true,
+          "token_used_quota": 6573
+        },
+        {
+          "model": "gpt-6-astra",
+          "channel_id": 1567,
+          "group": "OpenAI · 优质",
+          "kind": "tiered_expr",
+          "status": 200,
+          "response_status": "completed",
+          "content_returned": true,
+          "matched_tier": "标准上下文",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 6,
+            "cc": 0,
+            "cc1h": 0,
+            "cr": 5157,
+            "img": 0,
+            "img_o": 0,
+            "len": 6074,
+            "p": 917
+          },
+          "verified": true,
+          "seconds": 1.28,
+          "input_tokens": 6074,
+          "output_tokens": 6,
+          "quota": 108605,
+          "single_charge": true,
+          "token_used_quota": 108605
+        },
+        {
+          "model": "codex-auto-review",
+          "channel_id": 1495,
+          "group": "OpenAI · 鹈鹕王",
+          "kind": "alias",
+          "status": 403,
+          "error_code": "",
+          "verified": false
+        },
+        {
+          "model": "gpt-image-2",
+          "channel_id": 1490,
+          "group": "生图和视频",
+          "kind": "fixed",
+          "status": 200,
+          "image_returned": true,
+          "verified": true,
+          "seconds": 12.46,
+          "input_tokens": 1,
+          "output_tokens": 0,
+          "quota": 1237500,
+          "single_charge": true,
+          "token_used_quota": 1237500
+        },
+        {
+          "model": "codex-auto-review",
+          "channel_id": 1555,
+          "group": "OpenAI · 优质",
+          "kind": "alias",
+          "status": 403,
+          "error_code": "",
+          "verified": false
+        },
+        {
+          "model": "codex-auto-review",
+          "channel_id": 1555,
+          "group": "OpenAI · 优质",
+          "kind": "alias",
+          "status": 200,
+          "response_status": "completed",
+          "content_returned": true,
+          "model_ratio": 18.48,
+          "cache_tokens": 5342,
+          "verified": true,
+          "seconds": 2.28,
+          "input_tokens": 5345,
+          "output_tokens": 5,
+          "quota": 44782,
+          "single_charge": true,
+          "token_used_quota": 44782
+        }
+      ],
+      "temporary_tokens_deleted": true,
+      "time": 1793490262
+    },
+    "final_checks": {
+      "all_target_prices_match": true,
+      "non_group_options_unchanged": true,
+      "concurrent_group_ratio_change": true,
+      "channel_configuration_unchanged_at_final": false,
+      "model_metadata_and_official_prices_unchanged": true,
+      "abilities_unchanged_at_final": false,
+      "tokens": {
+        "unused": 2,
+        "charged": 4,
+        "created": 6,
+        "undeleted": 0,
+        "total_quota": 1397460
+      },
+      "version": "v1.11.12"
+    }
+  },
+  "engine_checks": 1050,
+  "frontend_tier_comparisons": 8,
+  "concurrent_changes": {
+    "option_changes": {
+      "GroupRatio": {
+        "OpenAI · 鹈鹕王": {
+          "before": 0.55,
+          "after": 0.084
+        },
+        "OpenAI · 企业专属": {
+          "before": 5.5,
+          "after": null
+        },
+        "OpenAI · 优质": {
+          "before": 0.45,
+          "after": 0.068
+        },
+        "OpenAI · 独享账号": {
+          "before": 0.55,
+          "after": 0.084
+        },
+        "OpenAI ·  福利": {
+          "before": 0.15,
+          "after": 0.023
+        },
+        "企业专属": {
+          "before": 5.5,
+          "after": 0.8
+        }
+      }
+    },
+    "route_changes": [
+      {
+        "id": 1385,
+        "changes": {
+          "group": {
+            "before": "企业专属,OpenAI · 企业专属,优选",
+            "after": "优选"
+          }
+        }
+      },
+      {
+        "id": 1425,
+        "changes": {
+          "group": {
+            "before": "企业专属,生图和视频,OpenAI · 优质,优选",
+            "after": "生图和视频,OpenAI · 优质,优选"
+          }
+        }
+      },
+      {
+        "id": 1441,
+        "changes": {
+          "group": {
+            "before": "OpenAI · 企业专属,企业专属,优选",
+            "after": "优选"
+          }
+        }
+      },
+      {
+        "id": 1490,
+        "changes": {
+          "group": {
+            "before": "生图和视频,OpenAI · 优质（第三方）,OpenAI · 企业专属",
+            "after": "生图和视频,OpenAI · 优质（第三方）,优选"
+          }
+        }
+      },
+      {
+        "id": 1557,
+        "changes": {
+          "group": {
+            "before": "OpenAI · 企业专属,企业专属,优选",
+            "after": "优选"
+          }
+        }
+      },
+      {
+        "id": 1579,
+        "changes": {
+          "group": {
+            "before": "企业专属,OpenAI · 企业专属,优选",
+            "after": "优选"
+          }
+        }
+      }
+    ],
+    "current_channel_count": "218"
+  }
+}
