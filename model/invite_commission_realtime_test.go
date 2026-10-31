@@ -242,3 +242,17 @@ func TestInviteRealtimeRewardCanBeUsedImmediately(t *testing.T) {
 	require.Equal(t, 49000, inviter.AffQuota)
 	require.Equal(t, 1000, inviter.Quota)
 }
+
+func TestInviteRealtimeLegacySubscriptionWithoutPaymentMirror(t *testing.T) {
+	setupInviteCommissionTopUpTest(t)
+	order := &SubscriptionOrder{TradeNo: "legacy_subscription_no_mirror", UserId: 1, Status: common.TopUpStatusSuccess}
+	require.NoError(t, DB.Create(order).Error)
+	require.NoError(t, DB.Transaction(func(tx *gorm.DB) error {
+		if err := lockPaymentSourceForRollbackTx(tx, BenefitSourceSubscriptionOrder, order.TradeNo); err != nil {
+			return err
+		}
+		return markReversedPaymentSourceTx(tx, BenefitSourceSubscriptionOrder, order.TradeNo)
+	}))
+	require.NoError(t, DB.First(order, order.Id).Error)
+	require.Equal(t, common.TopUpStatusFailed, order.Status)
+}
