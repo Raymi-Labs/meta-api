@@ -1,6 +1,7 @@
 package common
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -47,6 +48,9 @@ func IsOpenAIResponseOnlyModel(modelName string) bool {
 
 func IsImageGenerationModel(modelName string) bool {
 	modelName = strings.ToLower(modelName)
+	if IsWanImageModel(modelName) || strings.HasPrefix(modelName, "qwen-image") || strings.HasPrefix(modelName, "z-image") {
+		return true
+	}
 	for _, m := range ImageGenerationModels {
 		if strings.Contains(modelName, m) {
 			return true
@@ -141,4 +145,20 @@ func isH3EndpointModel(name string) bool {
 	default:
 		return false
 	}
+}
+
+// Known image task tokens take precedence over the conservative Wan video family.
+// Do not exempt ambiguous or video-bearing names from paid-video test protection.
+var wanImageName = regexp.MustCompile(`^wanx?(?:[0-9]+(?:\.[0-9]+)*)?-(?:image(?:-pro)?|t2i|i2i|imageedit)(?:$|-)`)
+
+func IsWanImageModel(name string) bool {
+	parts := strings.Split(strings.ToLower(strings.TrimSpace(name)), "/")
+	name = parts[len(parts)-1]
+	for _, part := range strings.Split(name, "-") {
+		switch part {
+		case "t2v", "i2v", "r2v", "v2v", "s2v", "flf2v", "video", "videoedit":
+			return false
+		}
+	}
+	return wanImageName.MatchString(name)
 }

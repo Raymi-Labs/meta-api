@@ -37,6 +37,8 @@ func TestVideoChannelTestsNeverGenerateOrRotateKeys(t *testing.T) {
 		{"grok-imagine-video", constant.ChannelTypeXai, "", ""},
 		{"sora-2", constant.ChannelTypeOpenAI, "", "openai"},
 		{"wan2.6-t2v", constant.ChannelTypeAli, "", ""},
+		{"wan2.7-image-pro", constant.ChannelTypeAli, `{"wan2.7-image-pro":"wan2.7-t2v"}`, ""},
+		{"wan2.7-image-pro", constant.ChannelTypeAli, "", "openai-video"},
 		{"happyhorse-1.0-t2v", constant.ChannelTypeAli, "", ""},
 		{"seedance-2.0", constant.ChannelTypeVolcEngine, "", ""},
 		{"MiniMax-Hailuo-02", constant.ChannelTypeMiniMax, "", ""},

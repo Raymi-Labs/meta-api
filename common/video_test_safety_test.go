@@ -91,3 +91,22 @@ func TestH3EndpointHintsSurviveLowercaseNormalization(t *testing.T) {
 		}
 	}
 }
+
+func TestWanImagesHaveImageEndpointsWithoutWeakeningVideoGuard(t *testing.T) {
+	for _, name := range []string{"wan2.7-image-pro", "wan2.6-image", "wanx2.1-t2i-turbo", "wan2.5-i2i-preview", "qwen-image-3.0-pro", "z-image-turbo"} {
+		if IsVideoGenerationTest(constant.ChannelTypeAli, name) {
+			t.Errorf("image rejected by video guard: %s", name)
+		}
+		if !IsImageGenerationModel(name) {
+			t.Errorf("missing image endpoint: %s", name)
+		}
+		if !IsVideoGenerationTest(constant.ChannelTypeSora, name) {
+			t.Error("dedicated video channel must remain protected")
+		}
+	}
+	for _, name := range []string{"wan2.7-t2v", "wan2.7-i2v", "wan2.7-image-t2v", "wan2.7-videoedit", "wan2.7-unknown"} {
+		if !IsVideoGenerationTest(constant.ChannelTypeAli, name) {
+			t.Errorf("video guard bypass: %s", name)
+		}
+	}
+}

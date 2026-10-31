@@ -7019,6 +7019,23 @@
     "最近 {{hours}} 个小时段可用率": "Availability over the last {{hours}} hourly slots",
     "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "With fewer than 30 eligible requests, tests of the corresponding upstream channels supplement availability: any pass counts as success, including tests of other models on that channel; failures only count as failure. At most one sample is added per hour, retaining real request weights and the sample threshold when no tests exist. Historical successful tests add hourly evidence, not proof that this model was directly tested or continuously online.",
     "上游测试": "Upstream tests",
-    "上游测试 {{success}} / {{count}} 次通过": "Upstream tests: {{success}} / {{count}} passed"
+    "上游测试 {{success}} / {{count}} 次通过": "Upstream tests: {{success}} / {{count}} passed",
+    "不单独计费": "Not billed separately",
+    "北京": "Beijing",
+    "图片官方参考价": "Official image reference prices",
+    "图片输入 / 输出计费": "Image input / output pricing",
+    "官方定价文档": "Official pricing documentation",
+    "张": "image",
+    "请填写完整的价格后再保存": "Complete all prices before saving",
+    "输入图片": "Input images",
+    "输入图片单价": "Input price per image",
+    "输出图片": "Output images",
+    "输出图片单价": "Output price per image",
+    "参考价仅供对照，不会自动写入本站售价；其他地域请查看官方文档。": "Reference only; local selling prices are not filled automatically. See official documentation for other regions.",
+    "费用 = 输入图片数 × 输入单价 + 输出图片数 × 输出单价。未填写不能保存，免费请填写 0。": "Cost = input images × input price + output images × output price. All fields are required; enter 0 for free.",
+    "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "For Qwen Image 3.0 on Ali channels. Output pixel area ≤ 2250000 uses 1K, otherwise 2K. Auto size reserves the higher cost and settles actual usage after success.",
+    "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Ali channels bill successful output images; prompt rewriting doubles this unit price.",
+    "阿里云渠道按成功输出的图片张数计费。": "Ali channels bill the number of successfully generated images.",
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Choose image input / output pricing to set separate input and output image prices."
   }
 }

@@ -252,6 +252,8 @@ type RelayInfo struct {
 	// Billing 是计费会话，封装了预扣费/结算/退款的统一生命周期。
 	// 免费模型时为 nil。
 	Billing                 BillingSettler
+	ImagePricingInput       *ImagePricingDimensions
+	ImagePricingResult      *ImagePricingDimensions
 	ImageRequestCount       int
 	ImageResponseCount      *int  // nil means the adapter did not report an actual payload count
 	PerformanceOutputTokens int64 // observed usage only; samples are recorded once at request completion

@@ -6807,6 +6807,23 @@
     "最近 {{hours}} 个小时段可用率": "Dostępność w ostatnich {{hours}} przedziałach godzinowych",
     "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Przy mniej niż 30 uwzględnianych żądaniach dostępność uzupełniają testy odpowiednich kanałów dostawcy. Każdy udany test oznacza sukces, także dla innych modeli tego samego kanału; same nieudane testy oznaczają awarię. Dodawana jest najwyżej jedna próbka na godzinę, z zachowaniem wagi rzeczywistych żądań i progu przy braku testów. Historyczne sukcesy stanowią dowody godzinowe, nie potwierdzają bezpośredniego testu tego modelu ani ciągłej dostępności.",
     "上游测试": "Testy kanałów dostawcy",
-    "上游测试 {{success}} / {{count}} 次通过": "Testy kanałów: {{success}} / {{count}} udanych"
+    "上游测试 {{success}} / {{count}} 次通过": "Testy kanałów: {{success}} / {{count}} udanych",
+    "不单独计费": "Bez osobnej opłaty",
+    "北京": "Pekin",
+    "图片官方参考价": "Oficjalne ceny referencyjne obrazów",
+    "图片输入 / 输出计费": "Ceny obrazów wejściowych / wyjściowych",
+    "官方定价文档": "Oficjalna dokumentacja cen",
+    "张": "obraz",
+    "请填写完整的价格后再保存": "Uzupełnij wszystkie ceny przed zapisaniem",
+    "输入图片": "Obrazy wejściowe",
+    "输入图片单价": "Cena obrazu wejściowego",
+    "输出图片": "Obrazy wyjściowe",
+    "输出图片单价": "Cena obrazu wyjściowego",
+    "参考价仅供对照，不会自动写入本站售价；其他地域请查看官方文档。": "Tylko informacyjnie; ceny sprzedaży nie są wypełniane automatycznie. Inne regiony opisano w oficjalnej dokumentacji.",
+    "费用 = 输入图片数 × 输入单价 + 输出图片数 × 输出单价。未填写不能保存，免费请填写 0。": "Koszt = obrazy wejściowe × cena wejściowa + obrazy wyjściowe × cena wyjściowa. Wszystkie pola są wymagane; dla bezpłatnych wpisz 0.",
+    "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Dla Qwen Image 3.0 w kanałach Ali. Powierzchnia wyjściowa ≤ 2250000 pikseli: 1K, inaczej 2K. Rozmiar automatyczny rezerwuje wyższy koszt i rozlicza faktyczne użycie po sukcesie.",
+    "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Kanały Ali naliczają opłatę za poprawnie utworzone obrazy; przepisanie promptu podwaja tę cenę jednostkową.",
+    "阿里云渠道按成功输出的图片张数计费。": "Kanały Ali naliczają opłatę za liczbę poprawnie utworzonych obrazów.",
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Wybierz ceny wejścia / wyjścia, aby ustawić je osobno dla obrazów."
   }
 }

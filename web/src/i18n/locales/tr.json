@@ -6807,6 +6807,23 @@
     "最近 {{hours}} 个小时段可用率": "Son {{hours}} saatlik dilimde kullanılabilirlik",
     "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "30’dan az geçerli istek olduğunda ilgili üst sağlayıcı kanallarının testleri kullanılabilirliği tamamlar. Aynı kanaldaki diğer modellerin testleri de dahil, herhangi bir başarı yeterlidir; yalnızca başarısız testler varsa başarısız sayılır. Gerçek isteklerin ağırlığı korunarak saatte en fazla bir örnek eklenir; test yoksa örnek eşiği uygulanır. Geçmiş başarılı testler saatlik kanıt sağlar, bu modelin doğrudan test edildiğini veya sürekli çevrimiçi olduğunu göstermez.",
     "上游测试": "Üst sağlayıcı testleri",
-    "上游测试 {{success}} / {{count}} 次通过": "Üst sağlayıcı testleri: {{success}} / {{count}} başarılı"
+    "上游测试 {{success}} / {{count}} 次通过": "Üst sağlayıcı testleri: {{success}} / {{count}} başarılı",
+    "不单独计费": "Ayrı ücretlendirilmez",
+    "北京": "Pekin",
+    "图片官方参考价": "Resmî görsel referans fiyatları",
+    "图片输入 / 输出计费": "Girdi / çıktı görsel fiyatları",
+    "官方定价文档": "Resmî fiyat belgeleri",
+    "张": "görsel",
+    "请填写完整的价格后再保存": "Kaydetmeden önce tüm fiyatları doldurun",
+    "输入图片": "Girdi görselleri",
+    "输入图片单价": "Girdi görseli birim fiyatı",
+    "输出图片": "Çıktı görselleri",
+    "输出图片单价": "Çıktı görseli birim fiyatı",
+    "参考价仅供对照，不会自动写入本站售价；其他地域请查看官方文档。": "Yalnızca referanstır; satış fiyatları otomatik doldurulmaz. Diğer bölgeler için resmî belgelere bakın.",
+    "费用 = 输入图片数 × 输入单价 + 输出图片数 × 输出单价。未填写不能保存，免费请填写 0。": "Maliyet = girdi sayısı × girdi fiyatı + çıktı sayısı × çıktı fiyatı. Tüm alanlar zorunludur; ücretsiz için 0 girin.",
+    "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Ali kanallarındaki Qwen Image 3.0 içindir. Çıktı alanı ≤ 2250000 piksel: 1K, aksi hâlde 2K. Otomatik boyut yüksek tutarı ayırır; başarıdan sonra gerçek kullanım hesaplanır.",
+    "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Ali kanalları başarılı çıktıları ücretlendirir; istem yeniden yazımı bu birim fiyatı ikiye katlar.",
+    "阿里云渠道按成功输出的图片张数计费。": "Ali kanalları başarıyla üretilen görsel sayısını ücretlendirir.",
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Girdi ve çıktı görsellerine ayrı fiyat vermek için girdi / çıktı fiyatlarını seçin."
   }
 }

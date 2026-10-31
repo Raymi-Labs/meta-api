@@ -69,10 +69,15 @@ type AliError struct {
 }
 
 type AliUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
-	TotalTokens  int `json:"total_tokens"`
-	ImageCount   int `json:"image_count,omitempty"`
+	InputImageCount  *int   `json:"input_image_count,omitempty"`
+	OutputImageCount *int   `json:"output_image_count,omitempty"`
+	OutputWidth      int    `json:"output_width,omitempty"`
+	OutputHeight     int    `json:"output_height,omitempty"`
+	OutputImageType  string `json:"output_image_type,omitempty"`
+	InputTokens      int    `json:"input_tokens"`
+	OutputTokens     int    `json:"output_tokens"`
+	TotalTokens      int    `json:"total_tokens"`
+	ImageCount       int    `json:"image_count,omitempty"`
 }
 
 type TaskResult struct {

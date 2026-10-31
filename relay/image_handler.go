@@ -123,6 +123,9 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 		}
 		requestBody = bytes.NewBuffer(jsonData)
 	}
+	if err := service.NormalizeImagePricing(info, jsonData, imageCount); err != nil {
+		return types.NewErrorWithStatusCode(err, types.ErrorCodeModelPriceError, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
+	}
 	if apiErr := service.PrepareImageBilling(c, info, imageCount, promptExtend); apiErr != nil {
 		return apiErr
 	}

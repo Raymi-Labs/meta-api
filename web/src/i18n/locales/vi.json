@@ -7420,6 +7420,23 @@
     "最近 {{hours}} 个小时段可用率": "Tỷ lệ khả dụng trong {{hours}} khung giờ gần nhất",
     "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Khi có dưới 30 yêu cầu hợp lệ, kiểm tra các kênh upstream tương ứng bổ sung độ khả dụng: chỉ cần một lần đạt là thành công, kể cả kiểm tra mô hình khác trên cùng kênh; nếu chỉ có thất bại thì tính là thất bại. Mỗi giờ bổ sung tối đa một mẫu, giữ trọng số yêu cầu thực và ngưỡng mẫu khi không có kiểm tra. Kiểm tra thành công trong lịch sử bổ sung bằng chứng theo giờ, không chứng minh mô hình này được kiểm tra trực tiếp hay luôn trực tuyến.",
     "上游测试": "Kiểm tra upstream",
-    "上游测试 {{success}} / {{count}} 次通过": "Kiểm tra upstream: {{success}} / {{count}} lần đạt"
+    "上游测试 {{success}} / {{count}} 次通过": "Kiểm tra upstream: {{success}} / {{count}} lần đạt",
+    "不单独计费": "Không tính phí riêng",
+    "北京": "Bắc Kinh",
+    "图片官方参考价": "Giá ảnh tham khảo chính thức",
+    "图片输入 / 输出计费": "Giá ảnh đầu vào / đầu ra",
+    "官方定价文档": "Tài liệu giá chính thức",
+    "张": "ảnh",
+    "请填写完整的价格后再保存": "Điền đủ giá trước khi lưu",
+    "输入图片": "Ảnh đầu vào",
+    "输入图片单价": "Đơn giá ảnh đầu vào",
+    "输出图片": "Ảnh đầu ra",
+    "输出图片单价": "Đơn giá ảnh đầu ra",
+    "参考价仅供对照，不会自动写入本站售价；其他地域请查看官方文档。": "Chỉ để tham khảo, không tự điền giá bán. Xem tài liệu chính thức cho khu vực khác.",
+    "费用 = 输入图片数 × 输入单价 + 输出图片数 × 输出单价。未填写不能保存，免费请填写 0。": "Chi phí = số ảnh vào × giá vào + số ảnh ra × giá ra. Phải điền đủ; nhập 0 nếu miễn phí.",
+    "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Dành cho Qwen Image 3.0 trên kênh Ali. Diện tích ảnh ra ≤ 2250000 pixel là 1K, còn lại là 2K. Kích thước tự động giữ trước mức phí cao hơn và quyết toán theo mức dùng thực tế khi thành công.",
+    "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Kênh Ali tính phí theo số ảnh tạo thành công; viết lại prompt có đơn giá gấp đôi.",
+    "阿里云渠道按成功输出的图片张数计费。": "Kênh Ali tính phí theo số ảnh được tạo thành công.",
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Chọn giá ảnh đầu vào / đầu ra để đặt riêng từng đơn giá."
   }
 }
