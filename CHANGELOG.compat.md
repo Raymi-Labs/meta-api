@@ -1,5 +1,13 @@
 # 本地兼容更新
 
+## v1.6.2 — 2026-10-31
+
+- 修复阿里 qwen3-livetranslate-flash 的必填 translation_options 在请求解析时被丢弃，保留调用者指定的源语言与目标语言。
+- 复用原 Chat Completions、音频输入、流式返回与用量链路；普通请求不注入翻译参数，也不固定全渠道语种。
+- 新增 DTO 解码到阿里出站序列化回归，覆盖显式参数与缺省参数。包含 v1.6.1 的 TTS WebSocket 握手修复。
+
+无数据库迁移。文件翻译与 Qwen 3.8 WebSocket 实时翻译是不同协议，本次不新增后者。
+
 ## v1.6.1 — 2026-10-31
 
 - 修复阿里云 TTS 的 WebSocket 握手失败：复用已连接过 HTTP/2 的客户端时，独立克隆 TLS 配置并使用 HTTP/1.1 Upgrade。

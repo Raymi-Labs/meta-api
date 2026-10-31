@@ -93,6 +93,7 @@ type GeneralOpenAIRequest struct {
 	EnableThinking         json.RawMessage `json:"enable_thinking,omitempty"`
 	ChatTemplateKwargs     json.RawMessage `json:"chat_template_kwargs,omitempty"`
 	EnableSearch           json.RawMessage `json:"enable_search,omitempty"`
+	TranslationOptions     json.RawMessage `json:"translation_options,omitempty"`
 	// ollama Params
 	Think json.RawMessage `json:"think,omitempty"`
 	// baidu v2
