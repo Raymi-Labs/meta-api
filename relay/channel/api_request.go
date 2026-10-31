@@ -13,6 +13,7 @@ import (
 	"time"
 
 	common2 "github.com/QuantumNous/new-api/common"
+	appconstant "github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/common"
@@ -426,7 +427,25 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 	if err = applyCPAIdentity(targetHeader, info); err != nil {
 		return nil, err
 	}
-	targetConn, _, err := websocket.DefaultDialer.Dial(fullRequestURL, targetHeader)
+	// Keep the existing OpenAI transport unchanged; Ali TTS uses the configured
+	// channel proxy/TLS transport and request cancellation during the handshake.
+	dialer := *websocket.DefaultDialer
+	if info.RelayFormat == types.RelayFormatAliTTS || (info.ChannelType == appconstant.ChannelTypeAli && info.RelayMode == constant.RelayModeAudioSpeech) {
+		client, clientErr := service.GetHttpClientWithProxy(info.ChannelSetting.Proxy)
+		if clientErr != nil {
+			return nil, clientErr
+		}
+		if transport, ok := client.Transport.(*http.Transport); ok {
+			dialer.Proxy = transport.Proxy
+			dialer.NetDialContext = transport.DialContext
+			dialer.TLSClientConfig = transport.TLSClientConfig
+		}
+		dialer.HandshakeTimeout = 15 * time.Second
+	}
+	targetConn, handshake, err := dialer.DialContext(c.Request.Context(), fullRequestURL, targetHeader)
+	if err != nil && handshake != nil && handshake.Body != nil {
+		_ = handshake.Body.Close()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("dial failed to %s: %w", fullRequestURL, err)
 	}

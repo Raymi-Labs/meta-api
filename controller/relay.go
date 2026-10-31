@@ -79,7 +79,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		ws          *websocket.Conn
 	)
 
-	if relayFormat == types.RelayFormatOpenAIRealtime {
+	if relayFormat.IsWebSocket() {
 		var err error
 		ws, err = upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -106,16 +106,16 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			if !shouldWriteRelayErrorResponse(c) {
 				return
 			}
-			if relayFormat != types.RelayFormatOpenAIRealtime && c.Writer.Written() &&
+			if !relayFormat.IsWebSocket() && c.Writer.Written() &&
 				strings.HasPrefix(c.Writer.Header().Get("Content-Type"), "text/event-stream") {
 				writeRelayStreamError(c, relayFormat, newAPIError)
 				return
 			}
-			if relayFormat != types.RelayFormatOpenAIRealtime {
+			if !relayFormat.IsWebSocket() {
 				c.Header("Content-Type", "application/json; charset=utf-8")
 			}
 			switch relayFormat {
-			case types.RelayFormatOpenAIRealtime:
+			case types.RelayFormatOpenAIRealtime, types.RelayFormatAliTTS:
 				helper.WssError(c, ws, newAPIError.ToOpenAIError())
 			case types.RelayFormatClaude:
 				c.JSON(newAPIError.StatusCode, gin.H{
@@ -339,6 +339,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			switch relayFormat {
 			case types.RelayFormatOpenAIRealtime:
 				newAPIError = relay.WssHelper(c, relayInfo)
+			case types.RelayFormatAliTTS:
+				newAPIError = relay.AliTTSHelper(c, relayInfo, nil)
 			case types.RelayFormatClaude:
 				newAPIError = relay.ClaudeHelper(c, relayInfo)
 			case types.RelayFormatGemini:
@@ -419,6 +421,12 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		lastRelayError = newAPIError
+		// Duplex task input cannot be reconstructed, and HTTP speech may already
+		// have delivered audio. Never enter model/key failover for these requests.
+		if relayFormat == types.RelayFormatAliTTS || (channel.Type == constant.ChannelTypeAli && relayInfo.RelayMode == relayconstant.RelayModeAudioSpeech) {
+			service.AppendRequestFailureAttempt(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, "", channel.GetAutoBan()), newAPIError)
+			break
+		}
 		if service.IsResponsesConversationStateError(newAPIError) {
 			attachUpstreamDiagnosticsFromContext(c, newAPIError)
 			message := fmt.Sprintf(
@@ -485,6 +493,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 }
 
 func shouldWriteRelayErrorResponse(c *gin.Context) bool {
+	// A streamed audio response cannot contain a trailing JSON error. The
+	// failure is still logged; clients detect a truncated stream/absent SSE done.
+	if c.Request.URL.Path == "/v1/audio/speech" && c.Writer.Written() && strings.HasPrefix(c.Writer.Header().Get("Content-Type"), "audio/") {
+		return false
+	}
 	return !common.GetContextKeyBool(c, constant.ContextKeyResponsesStreamErrorWritten)
 }
 

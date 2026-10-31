@@ -89,6 +89,9 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if info.RelayFormat == types.RelayFormatAliTTS || info.RelayMode == constant.RelayModeAudioSpeech {
+		return ttsURL(info.ChannelBaseUrl)
+	}
 	var fullRequestURL string
 	switch info.RelayFormat {
 	case types.RelayFormatClaude:
@@ -132,7 +135,7 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) error {
 	channel.SetupApiRequestHeader(info, c, req)
 	req.Set("Authorization", "Bearer "+info.ApiKey)
-	if info.IsStream {
+	if info.IsStream && info.RelayFormat != types.RelayFormatAliTTS && info.RelayMode != constant.RelayModeAudioSpeech {
 		req.Set("X-DashScope-SSE", "enable")
 	}
 	if c.GetString("plugin") != "" {

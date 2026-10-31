@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/types"
@@ -21,6 +23,9 @@ func AudioHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 	audioReq, ok := info.Request.(*dto.AudioRequest)
 	if !ok {
 		return types.NewError(errors.New("invalid request type"), types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
+	}
+	if info.ChannelType == constant.ChannelTypeAli && info.RelayMode == relayconstant.RelayModeAudioSpeech {
+		return AliTTSHelper(c, info, audioReq)
 	}
 
 	request, err := common.DeepCopy(audioReq)

@@ -11,9 +11,14 @@ const (
 	RelayFormatOpenAIAudio                           = "openai_audio"
 	RelayFormatOpenAIImage                           = "openai_image"
 	RelayFormatOpenAIRealtime                        = "openai_realtime"
+	RelayFormatAliTTS                                = "ali_tts"
 	RelayFormatRerank                                = "rerank"
 	RelayFormatEmbedding                             = "embedding"
 
 	RelayFormatTask    = "task"
 	RelayFormatMjProxy = "mj_proxy"
 )
+
+func (f RelayFormat) IsWebSocket() bool {
+	return f == RelayFormatOpenAIRealtime || f == RelayFormatAliTTS
+}
