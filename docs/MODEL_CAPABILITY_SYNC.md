@@ -42,7 +42,7 @@
 | Kimi | [模型列表](https://platform.kimi.ai/docs/models.md)、[官方价格](https://platform.kimi.ai/docs/pricing/chat) | 精确模型介绍和厂商；HTML DocTable 静态数据中的 USD / MTok 输入、输出、缓存读取价格，以及明确的5分钟/1小时缓存创建独立档位；Markdown 空表格不作为价格来源，其他规格继续从模型库补缺 |
 | 千问 | [文本模型](https://help.aliyun.com/zh/model-studio/text-generation-model)、[视觉模型](https://help.aliyun.com/zh/model-studio/vision-model)、[图像模型](https://help.aliyun.com/zh/model-studio/image-model) | 当前及历史表格明确列出的 ID、上下文和支持状态；只接受千问条目，不把代售模型归为阿里 |
 | MiniMax | [文本模型](https://platform.minimax.io/docs/guides/text-generation.md) | 模型目录介绍和上下文；大小写或私有别名不猜测映射 |
-| xAI | [模型](https://docs.x.ai/developers/models) | 精确 Model name、介绍、上下文、模态及能力；复杂地区/上下文价格未识别时保留已有值 |
+| xAI | [模型](https://docs.x.ai/developers/models) | 精确 Model name、介绍、上下文、模态及能力；标准文本分地区/长上下文/缓存价，图片分辨率/质量每张价、视频分辨率每秒价与额外输入费；结构化数据与可见卡片交叉校验，未知结构保留原值 |
 | Z.AI | [模型](https://docs.z.ai/guides/llm/glm-5.3)、[价格](https://docs.z.ai/guides/overview/pricing) | API 示例的精确模型身份、介绍、明确限制/能力及标准 USD token 价格 |
 
 公开文档仅允许同官方域名的 HTTPS 重定向，凭据 API 一律拒绝重定向。网页结构与访问限制可能造成部分请求失败；自动重试和社区补缺不能冒充已获取官方证据。
@@ -115,6 +115,8 @@ OpenAI 官方页面的标准文本 token 价格通过同一次文档请求同步
 | `MODEL_METADATA_GEMINI_API_KEY` | 空 | Gemini 官方元数据专用凭据，可选 |
 
 手动接口为管理员 `POST /api/models/sync_capabilities`。返回匹配、更新、新建和跳过计数，以及 `pricing_updated`（已写入官方价格的模型数，包含新增记录）和可选 `source_failures`（不可用来源请求数）；部分来源失败时仍应用独立成功的来源，并在管理界面提示，全部失败时返回失败。跳过包含手工保护、禁用、无变化和并发冲突等情形，不能把跳过数当作失败数。后台失败记录日志并有界退避重试，不清空已有值。官方读取并发有界，OpenAI 最多4个、其他公开文档最多6个并发请求；Claude/Gemini 分页上限20页，游标异常中止该来源。后台只在主节点启动，同进程的后台和手动任务互斥。
+
+xAI 价格从同一官方模型页面的公开静态目录读取，按精确 ID、地区、上下文门槛及分辨率/质量保留档位。标准价不混入 Batch 或工具费用；图像/视频的输入费保留各自单位。页面价格、币种单位或数据不一致时保留最近完整价格；没有官方同名证据的别名继续显示未知。
 
 价格同步复用既有 `official_pricing` 与内部 TEXT 状态；介绍翻译的新增存储见上文。多实例应继续遵循现有主节点部署规则。代码发布不等于生产部署；本功能要在升级后的服务上才会运行。
 

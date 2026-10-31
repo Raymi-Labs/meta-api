@@ -538,6 +538,11 @@ func parseXAIModelDocument(data []byte, id, address string) (model.ModelCapabili
 	if !identity {
 		return entry, errors.New("xAI model identity missing")
 	}
+	pricing, err := parseXAIPrices(n, id, address)
+	if err != nil {
+		return markOfficialAttributes(entry, address), err
+	}
+	entry.OfficialPricing = pricing
 	return markOfficialAttributes(entry, address), nil
 }
 
@@ -664,7 +669,11 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 					entry, err := j.parse(data, j.id, j.url)
 					if err != nil {
 						results[index].warning = j.provider + ": " + j.id
-						continue
+						// A malformed price sheet must not block independently
+						// verified xAI attributes or erase the last valid price.
+						if j.provider != "xai" || len(entry.FieldSources) == 0 {
+							continue
+						}
 					}
 					results[index].entries = map[string]model.ModelCapabilityMetadata{j.id: entry}
 				} else {
