@@ -38,7 +38,7 @@ func SanitizeClaudeToolArguments(toolName, raw string) string {
 	}
 
 	var input any
-	if err := common.Unmarshal([]byte(raw), &input); err != nil {
+	if err := common.DecodeJsonUseNumberStrict(strings.NewReader(raw), &input); err != nil {
 		return raw
 	}
 	sanitized, changed := sanitizeClaudeToolInput(toolName, input)

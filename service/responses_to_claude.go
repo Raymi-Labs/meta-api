@@ -220,7 +220,7 @@ func buildClaudeContentsFromResponses(resp *dto.OpenAIResponsesResponse) []dto.C
 			arguments := out.ArgumentsString()
 			var input any = map[string]any{}
 			if arguments != "" {
-				if err := common.Unmarshal([]byte(arguments), &input); err != nil {
+				if err := common.DecodeJsonUseNumberStrict(strings.NewReader(arguments), &input); err != nil {
 					input = arguments
 				}
 			}

@@ -37,6 +37,8 @@ Status: implemented
 
 ## Consequences
 
+[Claude 工具参数数字保真](2026-10-31-claude-tool-number-preservation.md)补充运行时 arguments 的请求、响应和清洗边界；本篇的 Schema 顺序约束继续独立生效。
+
 Schema 的属性顺序和数字不再因 DTO/已覆盖转换链的无关读写丢失，代价是部分 any 字段可能持有 map 或 RawMessage，新增读取方必须兼容两种表示；Gemini 维护 raw 与 map 清洗路径的行为一致性。未来需要统一有序对象模型时再评估替换，而不是在局部适配器随意解码整个 Schema。
 
 不把原本不支持的 Schema 声称为支持：保真不保证供应商执行属性顺序，Gemini 的必要清洗和深度边界仍会有意改变不支持的字段；Ollama 只处理已有 json/json_schema 模式，不新增模型能力。没有调整模型/价格、渠道、数据库、生产服务或用户原有额度提醒改动。
