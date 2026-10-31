@@ -1846,7 +1846,7 @@
     "可用奖励券": "Biglietti premio disponibili",
     "可用数量": "Quantità disponibile",
     "可用模型": "Modelli disponibili",
-    "可用率": "tasso di disponibilità",
+    "可用率": "Disponibilità",
     "可用空间: {{free}} / 总空间: {{total}}": "Gratuito: {{free}} / Totale: {{total}}",
     "可用端点类型": "Tipi di endpoint supportati",
     "可用账号": "Conti disponibili",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Descrizioni multilingue",
     "介绍原文": "Descrizione originale",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Le descrizioni seguono la lingua del sito. Le modifiche manuali hanno la precedenza; cancellale per ripristinare la traduzione automatica.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Il testo originale serve a generare descrizioni in tutte le lingue del sito; non determina la lingua visualizzata dai visitatori."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Il testo originale serve a generare descrizioni in tutte le lingue del sito; non determina la lingua visualizzata dai visitatori.",
+    "模型测试 {{success}} / {{count}} 次通过": "Test del modello: {{success}} / {{count}} riusciti",
+    "测试补充 {{count}} 个时段": "Test integrativi in {{count}} intervalli",
+    "最近 {{hours}} 个小时段可用率": "Disponibilità negli ultimi {{hours}} intervalli orari",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "I test integrano le ore senza richieste valide per modello e gruppo: basta un fornitore riuscito, solo errori indicano un errore e senza test lo stato è sconosciuto. Il tasso pondera richieste reali e intervalli integrativi. Il colore degli intervalli con soli test indica il risultato, non un servizio continuo."
   }
 }

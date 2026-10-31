@@ -1846,7 +1846,7 @@
     "可用奖励券": "Bilhetes-prêmio disponíveis",
     "可用数量": "Quantidade disponível",
     "可用模型": "Modelos disponíveis",
-    "可用率": "taxa de disponibilidade",
+    "可用率": "Disponibilidade",
     "可用空间: {{free}} / 总空间: {{total}}": "Grátis: {{free}} / Total: {{total}}",
     "可用端点类型": "Tipos de endpoints compatíveis",
     "可用账号": "Contas disponíveis",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Descrições multilíngues",
     "介绍原文": "Descrição original",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "As descrições seguem o idioma do site. As edições manuais têm prioridade; apague-as para restaurar a tradução automática.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "O original é usado para gerar descrições em todos os idiomas do site; não determina o idioma exibido aos visitantes."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "O original é usado para gerar descrições em todos os idiomas do site; não determina o idioma exibido aos visitantes.",
+    "模型测试 {{success}} / {{count}} 次通过": "Testes do modelo: {{success}} / {{count}} aprovados",
+    "测试补充 {{count}} 个时段": "Testes complementam {{count}} intervalos",
+    "最近 {{hours}} 个小时段可用率": "Disponibilidade nos últimos {{hours}} intervalos horários",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Os testes complementam horas sem pedidos válidos por modelo e grupo: basta um fornecedor passar, apenas falhas contam como falha e sem testes o estado é desconhecido. A taxa pondera pedidos reais e intervalos complementares. A cor de intervalos só com testes indica o resultado, não disponibilidade contínua."
   }
 }

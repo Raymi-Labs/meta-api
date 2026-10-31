@@ -6412,7 +6412,7 @@
     "受限证据，不可直接展示": "Preuve restreinte, ne peut pas être affichée directement",
     "只统计不高于该额度的钱包兑换码；0 关闭": "ne compte que les codes d'échange de portefeuille qui ne dépassent pas cette limite ; 0 fermer",
     "可用 / 总数": "Disponible / Total",
-    "可用率": "taux de disponibilité",
+    "可用率": "Disponibilité",
     "各厂商模型、协议地址与可直接复制的调用样例": "Modèle de chaque fabricant, adresse de protocole et exemples d’appels directement copiés",
     "合计": "Total",
     "合计额度": "Quota totale",
@@ -7123,6 +7123,10 @@
     "多语言介绍": "Descriptions multilingues",
     "介绍原文": "Description originale",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Les descriptions suivent la langue du site. Les modifications manuelles sont prioritaires ; effacez-les pour rétablir la traduction automatique.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Le texte original sert à générer les descriptions dans toutes les langues du site ; il ne détermine pas la langue affichée aux visiteurs."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Le texte original sert à générer les descriptions dans toutes les langues du site ; il ne détermine pas la langue affichée aux visiteurs.",
+    "模型测试 {{success}} / {{count}} 次通过": "Tests du modèle : {{success}} / {{count}} réussis",
+    "测试补充 {{count}} 个时段": "Tests complémentaires sur {{count}} créneaux",
+    "最近 {{hours}} 个小时段可用率": "Disponibilité sur les {{hours}} derniers créneaux horaires",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Les tests complètent les heures sans requête admissible pour chaque modèle et groupe : un seul fournisseur réussi suffit, des échecs seuls indiquent un échec, et sans test le résultat reste inconnu. Le taux pondère les requêtes réelles et les créneaux complémentaires. La couleur des créneaux testés seuls indique le résultat, pas une disponibilité continue."
   }
 }

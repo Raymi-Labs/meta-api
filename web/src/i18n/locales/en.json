@@ -6216,7 +6216,7 @@
     "只统计不高于该额度的钱包兑换码；0 关闭": "only counts wallet redemption codes that are not higher than this limit; 0 close",
     "可以在手机和电脑上使用吗？": "Can I use it on my phone and computer?",
     "可用 / 总数": "Available / Total",
-    "可用率": "availability rate",
+    "可用率": "Availability",
     "可选访问统计": "Optional analytics",
     "各厂商模型、协议地址与可直接复制的调用样例": "Each manufacturer’s model, protocol address and call examples that can be directly copied",
     "合计": "Total",
@@ -7003,6 +7003,10 @@
     "多语言介绍": "Multilingual descriptions",
     "介绍原文": "Original description",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Descriptions follow the site language. Manual edits take priority; clear them to restore automatic translation.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "The original is used to generate descriptions in all site languages; it does not determine the language visitors see."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "The original is used to generate descriptions in all site languages; it does not determine the language visitors see.",
+    "模型测试 {{success}} / {{count}} 次通过": "Model tests: {{success}} / {{count}} passed",
+    "测试补充 {{count}} 个时段": "Tests supplement {{count}} time slots",
+    "最近 {{hours}} 个小时段可用率": "Availability over the last {{hours}} hourly slots",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests supplement model/group hours without eligible requests: any upstream passing counts as success, failures only count as failure, and no tests means unknown. Availability weights real requests and supplemental slots; test-only slots are colored by result and do not imply continuous uptime."
   }
 }

@@ -36,6 +36,7 @@ const (
 
 type Sample struct {
 	Group, Model string
+	Probe        bool
 	Outcome      Outcome
 	TTFTMs       *int64
 	CompletionMs *int64
@@ -97,7 +98,12 @@ func (c *collector) record(sample Sample) {
 		}
 		row = model.GroupHealthMetric{ID: uuid.NewString(), GroupName: sample.Group, ModelName: sample.Model, BucketTs: key.ts}
 	}
-	if sample.Outcome == OutcomeUserError {
+	if sample.Probe {
+		row.ProbeCount++
+		if sample.Outcome == OutcomeSuccess {
+			row.ProbeSuccessCount++
+		}
+	} else if sample.Outcome == OutcomeUserError {
 		row.ExcludedUserErrorCount++
 	} else {
 		row.RequestCount++
@@ -110,7 +116,7 @@ func (c *collector) record(sample Sample) {
 	}
 	// Unknown or absent outcome values remain unknown failures. Only explicit
 	// success can contribute successful latency or cache measurements.
-	if sample.Outcome == OutcomeSuccess {
+	if !sample.Probe && sample.Outcome == OutcomeSuccess {
 		row.SuccessCount++
 		if usage := sample.TokenUsage; usage != nil && usage.InputTokens > 0 && usage.OutputTokens >= 0 {
 			row.InputTokens += usage.InputTokens
@@ -144,6 +150,10 @@ func observedCount(row model.GroupHealthMetric) int64 {
 	return row.RequestCount + row.ExcludedUserErrorCount
 }
 
+func snapshotCount(row model.GroupHealthMetric) int64 {
+	return observedCount(row) + row.ProbeCount
+}
+
 func (c *collector) markDropped(reason string) {
 	count := c.dropped.Add(1)
 	c.lastDrop.Store(time.Now().Unix())
@@ -158,7 +168,7 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 	c.mu.Lock()
 	rows := make([]model.GroupHealthMetric, 0, len(c.buckets))
 	for key, row := range c.buckets {
-		if c.persisted[key] != observedCount(row) {
+		if c.persisted[key] != snapshotCount(row) {
 			rows = append(rows, row)
 		}
 	}
@@ -173,12 +183,12 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 	defer c.mu.Unlock()
 	for _, saved := range rows {
 		key := bucketKey{group: saved.GroupName, model: saved.ModelName, ts: saved.BucketTs}
-		c.persisted[key] = observedCount(saved)
+		c.persisted[key] = snapshotCount(saved)
 	}
 	for key, current := range c.buckets {
 		// Keep current-hour totals for stable idempotent overwrites. Retire only
 		// fully saved old buckets; a late concurrent sample keeps the same ID.
-		if key.ts < currentBucket && observedCount(current) == c.persisted[key] {
+		if key.ts < currentBucket && snapshotCount(current) == c.persisted[key] {
 			delete(c.buckets, key)
 			delete(c.persisted, key)
 		}

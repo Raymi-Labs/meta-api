@@ -1724,7 +1724,7 @@
     "可用奖励券": "Verfügbare Prämientickets",
     "可用数量": "Verfügbare Menge",
     "可用模型": "Verfügbare Modelle",
-    "可用率": "Verfügbarkeitsrate",
+    "可用率": "Verfügbarkeit",
     "可用空间: {{free}} / 总空间: {{total}}": "Kostenlos: {{free}} / Gesamt: {{total}}",
     "可用端点类型": "Unterstützte Endpunkttypen",
     "可用账号": "Verfügbare Konten",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Mehrsprachige Beschreibungen",
     "介绍原文": "Originalbeschreibung",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Beschreibungen folgen der Website-Sprache. Manuelle Änderungen haben Vorrang; löschen Sie diese, um die automatische Übersetzung wiederherzustellen.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Aus dem Original werden Beschreibungen in allen Website-Sprachen erstellt. Es bestimmt nicht die Sprache, die Besucher sehen."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Aus dem Original werden Beschreibungen in allen Website-Sprachen erstellt. Es bestimmt nicht die Sprache, die Besucher sehen.",
+    "模型测试 {{success}} / {{count}} 次通过": "Modelltests: {{success}} / {{count}} bestanden",
+    "测试补充 {{count}} 个时段": "Tests ergänzen {{count}} Zeitfenster",
+    "最近 {{hours}} 个小时段可用率": "Verfügbarkeit der letzten {{hours}} Stundenfenster",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests ergänzen Modell-/Gruppenstunden ohne gültige Anfragen: Ein erfolgreicher Anbieter genügt, ausschließlich Fehler zählen als Fehler, ohne Test bleibt der Status unbekannt. Der Wert gewichtet echte Anfragen und ergänzte Zeitfenster. Reine Testfenster werden nach Ergebnis eingefärbt und belegen keinen durchgehenden Betrieb."
   }
 }

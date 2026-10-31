@@ -1724,7 +1724,7 @@
     "可用奖励券": "Boletos de recompensa disponibles",
     "可用数量": "Cantidad disponible",
     "可用模型": "Modelos disponibles",
-    "可用率": "tasa de disponibilidad",
+    "可用率": "Disponibilidad",
     "可用空间: {{free}} / 总空间: {{total}}": "Libre: {{free}} / Total: {{total}}",
     "可用端点类型": "Tipos de puntos finales admitidos",
     "可用账号": "Cuentas disponibles",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Descripciones multilingües",
     "介绍原文": "Descripción original",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Las descripciones siguen el idioma del sitio. Las ediciones manuales tienen prioridad; bórralas para restaurar la traducción automática.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "El original se usa para generar descripciones en todos los idiomas del sitio; no determina el idioma que ven los visitantes."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "El original se usa para generar descripciones en todos los idiomas del sitio; no determina el idioma que ven los visitantes.",
+    "模型测试 {{success}} / {{count}} 次通过": "Pruebas del modelo: {{success}} / {{count}} correctas",
+    "测试补充 {{count}} 个时段": "Pruebas complementarias en {{count}} intervalos",
+    "最近 {{hours}} 个小时段可用率": "Disponibilidad en los últimos {{hours}} intervalos horarios",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Las pruebas completan las horas sin solicitudes válidas de cada modelo y grupo: basta un proveedor correcto, solo fallos indican fallo y sin pruebas el estado es desconocido. La tasa pondera solicitudes reales e intervalos complementarios. El color de intervalos con solo pruebas indica su resultado, no disponibilidad continua."
   }
 }

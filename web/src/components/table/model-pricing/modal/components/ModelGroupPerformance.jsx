@@ -71,10 +71,11 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
           <div className='group-health-caption' style={{ marginBottom: 10 }}>
             {modelName} · {t('最近 24 个小时段 · 每分钟更新')}
           </div>
-          <GroupHealthLegend />
+          <GroupHealthLegend uptime />
           <div className='group-health-stack'>
             {groups.map((stats) => (
               <GroupHealthPanel
+                uptime
                 key={`${modelName}:${stats.group}`}
                 stats={stats}
                 ratio={groupRatio?.[stats.group]}
@@ -134,6 +135,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
                 <div className='group-health-price-row' key={stats.group}>
                   <span>{stats.group}</span>
                   <GroupHealthSummary
+                    uptime
                     stats={stats}
                     metric={resolveGroupHealthMetric(
                       stats,

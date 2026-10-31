@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { chartMetricValue } from './modelPresentation';
+import { getUptimeRate } from '../components/group-health/healthUtils';
 
 export const isLatencyMetric = (metric) =>
   metric === 'avg_ttft_ms' || metric === 'avg_completion_ms';
@@ -55,7 +56,10 @@ export function formatChartDetailValue(value, metric) {
 }
 
 export function chartDisplayValue(point, metric) {
-  const value = chartMetricValue(point, metric);
+  const value =
+    metric === 'uptime_rate'
+      ? chartMetricValue({ uptime_rate: getUptimeRate(point) }, metric)
+      : chartMetricValue(point, metric);
   return value == null ? null : isLatencyMetric(metric) ? value / 1000 : value;
 }
 
@@ -64,20 +68,21 @@ export function formatChartValue(value, metric, withUnit = true) {
   if (isLatencyMetric(metric)) return value.toFixed(2) + (withUnit ? ' s' : '');
   if (isUsageMetric(metric)) return formatCompactUsage(value);
   const number = new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: metric === 'success_rate' ? 2 : 1,
+    maximumFractionDigits: ['success_rate', 'uptime_rate'].includes(metric)
+      ? 2
+      : 1,
     notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
   }).format(value);
-  const unit =
-    metric === 'success_rate'
-      ? '%'
-      : metric === 'avg_output_tps'
-        ? ' tok/s'
-        : '';
+  const unit = ['success_rate', 'uptime_rate'].includes(metric)
+    ? '%'
+    : metric === 'avg_output_tps'
+      ? ' tok/s'
+      : '';
   return number + (withUnit ? unit : '');
 }
 
 export function chartDomain(values, metric) {
-  if (metric === 'success_rate') {
+  if (['success_rate', 'uptime_rate'].includes(metric)) {
     const minimum = Math.min(100, ...values);
     // Show small changes near 100%, with explicit ticks and a bounded scale.
     const step = minimum >= 95 ? 1 : minimum >= 80 ? 5 : 25;

@@ -183,7 +183,7 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			recorder := &migrationSQLRecorder{}
 			require.NoError(t, tableDB.Session(&gorm.Session{Logger: recorder}).AutoMigrate(&GroupHealthMetric{}))
 			mutations := recorder.schemaMutations()
-			require.Len(t, mutations, 9, "migration only adds attribution and measured usage counters")
+			require.Len(t, mutations, 11, "migration only adds attribution, measured usage and probe counters")
 			for _, statement := range mutations {
 				require.Contains(t, strings.ToUpper(statement), "ADD")
 				require.NotContains(t, strings.ToUpper(statement), "DROP")
@@ -196,6 +196,8 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			require.NoError(t, tableDB.Where("id = ?", "legacy").First(&legacy).Error)
 			require.EqualValues(t, 10, legacy.RequestCount)
 			require.EqualValues(t, 6, legacy.SuccessCount)
+			require.Zero(t, legacy.ProbeCount)
+			require.Zero(t, legacy.ProbeSuccessCount)
 			require.Zero(t, legacy.ServiceFailureCount)
 			require.Zero(t, legacy.ExcludedUserErrorCount)
 			require.Zero(t, legacy.ClientCanceledCount)
@@ -214,7 +216,7 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			DB = tableDB
 			t.Cleanup(func() { DB = previous })
 			ctx := context.Background()
-			fresh := GroupHealthMetric{ID: "new", GroupName: "g", ModelName: "m", BucketTs: 3600, RequestCount: 5, SuccessCount: 2, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 3, InputTokens: 50, OutputTokens: 20, UsageSampleCount: 1, ThroughputOutputTokens: 20, GenerationSumMs: 1000, ThroughputSampleCount: 1}
+			fresh := GroupHealthMetric{ID: "new", GroupName: "g", ModelName: "m", BucketTs: 3600, ProbeCount: 3, ProbeSuccessCount: 1, RequestCount: 5, SuccessCount: 2, ServiceFailureCount: 1, ClientCanceledCount: 1, ExcludedUserErrorCount: 3, InputTokens: 50, OutputTokens: 20, UsageSampleCount: 1, ThroughputOutputTokens: 20, GenerationSumMs: 1000, ThroughputSampleCount: 1}
 			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}))
 			require.NoError(t, SaveGroupHealthSnapshots(ctx, []GroupHealthMetric{fresh}), "ambiguous commit retries must be idempotent")
 			// Only the excluded count changes in this later absolute snapshot.
@@ -224,6 +226,8 @@ func TestGroupHealthOutcomeMigrationDatabaseMatrix(t *testing.T) {
 			rows, err := QueryGroupHealthMetrics(ctx, []string{"g"}, "m", 3600, 7200)
 			require.NoError(t, err)
 			require.Len(t, rows, 1)
+			require.EqualValues(t, 3, rows[0].ProbeCount)
+			require.EqualValues(t, 1, rows[0].ProbeSuccessCount)
 			require.EqualValues(t, 16, rows[0].RequestCount)
 			require.EqualValues(t, 8, rows[0].SuccessCount)
 			require.EqualValues(t, 1, rows[0].ServiceFailureCount)

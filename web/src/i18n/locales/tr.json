@@ -1846,7 +1846,7 @@
     "可用奖励券": "Mevcut ödül biletleri",
     "可用数量": "Mevcut Adet",
     "可用模型": "Mevcut modeller",
-    "可用率": "kullanılabilirlik oranı",
+    "可用率": "Kullanılabilirlik",
     "可用空间: {{free}} / 总空间: {{total}}": "Ücretsiz: {{free}} / Toplam: {{total}}",
     "可用端点类型": "Desteklenen uç nokta türleri",
     "可用账号": "Mevcut hesaplar",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Çok dilli açıklamalar",
     "介绍原文": "Özgün açıklama",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Açıklamalar site dilini izler. Elle yapılan düzenlemeler önceliklidir; otomatik çeviriye dönmek için bunları temizleyin.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Özgün metin, sitenin tüm dillerinde açıklama oluşturmak için kullanılır; ziyaretçilerin gördüğü dili belirlemez."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Özgün metin, sitenin tüm dillerinde açıklama oluşturmak için kullanılır; ziyaretçilerin gördüğü dili belirlemez.",
+    "模型测试 {{success}} / {{count}} 次通过": "Model testleri: {{success}} / {{count}} başarılı",
+    "测试补充 {{count}} 个时段": "Testler {{count}} zaman dilimini tamamlıyor",
+    "最近 {{hours}} 个小时段可用率": "Son {{hours}} saatlik dilimde kullanılabilirlik",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Testler, geçerli istek olmayan model ve grup saatlerini tamamlar: bir sağlayıcının başarılı olması yeterlidir, yalnızca hatalar başarısızlık sayılır, test yoksa durum bilinmez. Oran gerçek istekler ve ek dilimler üzerinden ağırlıklandırılır. Yalnızca test içeren dilimlerin rengi sonucu gösterir, kesintisiz çalışmayı kanıtlamaz."
   }
 }

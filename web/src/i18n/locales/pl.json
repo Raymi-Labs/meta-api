@@ -1846,7 +1846,7 @@
     "可用奖励券": "Dostępne bilety-nagrody",
     "可用数量": "Dostępna ilość",
     "可用模型": "Dostępne modele",
-    "可用率": "wskaźnik dostępności",
+    "可用率": "Dostępność",
     "可用空间: {{free}} / 总空间: {{total}}": "Wolne: {{free}} / Razem: {{total}}",
     "可用端点类型": "Obsługiwane typy punktów końcowych",
     "可用账号": "Dostępne konta",
@@ -6791,6 +6791,10 @@
     "多语言介绍": "Opisy wielojęzyczne",
     "介绍原文": "Oryginalny opis",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Opisy są wyświetlane w języku witryny. Ręczne zmiany mają pierwszeństwo; usuń je, aby przywrócić tłumaczenie automatyczne.",
-    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Oryginał służy do generowania opisów we wszystkich językach witryny; nie określa języka wyświetlanego odwiedzającym."
+    "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Oryginał służy do generowania opisów we wszystkich językach witryny; nie określa języka wyświetlanego odwiedzającym.",
+    "模型测试 {{success}} / {{count}} 次通过": "Testy modelu: {{success}} / {{count}} udanych",
+    "测试补充 {{count}} 个时段": "Testy uzupełniają {{count}} przedziałów",
+    "最近 {{hours}} 个小时段可用率": "Dostępność w ostatnich {{hours}} przedziałach godzinowych",
+    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Testy uzupełniają godziny modelu i grupy bez prawidłowych żądań: wystarczy sukces jednego dostawcy, same błędy oznaczają niepowodzenie, a brak testów oznacza stan nieznany. Wskaźnik waży rzeczywiste żądania i uzupełnione przedziały. Kolor przedziałów z samymi testami pokazuje wynik, nie ciągłą pracę."
   }
 }

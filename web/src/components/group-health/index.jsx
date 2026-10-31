@@ -30,6 +30,8 @@ import {
   getHealthLatency,
   healthTone,
   isHealthSampleLimited,
+  getUptimeRate,
+  uptimeTone,
 } from './healthUtils';
 import './style.css';
 
@@ -63,10 +65,19 @@ export function formatHealthOutcomeDescription(stats, t) {
     .join(' · ');
 }
 
-export function GroupHealthCountNotice({ stats }) {
+export function GroupHealthCountNotice({ stats, uptime = false }) {
   const { t } = useTranslation();
   const counts = getHealthCounts(stats);
   const notices = [
+    uptime &&
+      stats?.probe_count > 0 &&
+      t('模型测试 {{success}} / {{count}} 次通过', {
+        success: stats.probe_success_count,
+        count: stats.probe_count,
+      }),
+    uptime &&
+      stats?.probe_bucket_count > 0 &&
+      t('测试补充 {{count}} 个时段', { count: stats.probe_bucket_count }),
     counts.unknown > 0 && t('未归因 {{count}} 次', { count: counts.unknown }),
     counts.excluded > 0 && t('已排除 {{count}} 次', { count: counts.excluded }),
   ].filter(Boolean);
@@ -165,11 +176,15 @@ export function GroupHealthSummary({
   stats,
   metric = 'ttft',
   compact = false,
+  uptime = false,
 }) {
   const { t } = useTranslation();
   const latency = getHealthLatency(stats, metric);
   const counts = getHealthCounts(stats);
-  const hasSamples = counts.request > 0;
+  const hasSamples =
+    counts.request > 0 || (uptime && stats?.probe_bucket_count > 0);
+  const tone = uptime ? uptimeTone(stats) : healthTone(stats);
+  const rate = uptime ? getUptimeRate(stats) : stats?.success_rate;
   const limited = isHealthSampleLimited(stats);
   if (compact)
     return (
@@ -182,9 +197,9 @@ export function GroupHealthSummary({
         ) : (
           <>
             <span>
-              {t('成功率')}{' '}
-              <strong className={`group-health-text-${healthTone(stats)}`}>
-                {formatHealthRate(stats.success_rate)}
+              {uptime ? t('可用率') : t('成功率')}{' '}
+              <strong className={`group-health-text-${tone}`}>
+                {formatHealthRate(rate)}
               </strong>
             </span>
             <span>
@@ -201,28 +216,30 @@ export function GroupHealthSummary({
             )}
           </>
         )}
-        <GroupHealthCountNotice stats={stats} />
+        <GroupHealthCountNotice stats={stats} uptime={uptime} />
       </span>
     );
   return (
     <div className='group-health-metrics'>
       <div>
-        <span className='group-health-label'>{t('成功率')}</span>
-        <strong
-          className={`group-health-number group-health-text-${healthTone(stats)}`}
-        >
-          {formatHealthRate(stats?.success_rate)}
+        <span className='group-health-label'>
+          {uptime ? t('可用率') : t('成功率')}
+        </span>
+        <strong className={`group-health-number group-health-text-${tone}`}>
+          {formatHealthRate(rate)}
         </strong>
         <span
           className='group-health-caption'
           title={formatHealthOutcomeDescription(stats, t)}
         >
-          {hasSamples
+          {counts.request > 0
             ? t('计入统计 {{count}} 次', { count: counts.request })
-            : emptyHealthLabel(stats, t)}
+            : uptime && stats?.probe_bucket_count > 0
+              ? t('模型测试')
+              : emptyHealthLabel(stats, t)}
           {limited ? ` · ${t('样本不足')}` : ''}
         </span>
-        <GroupHealthCountNotice stats={stats} />
+        <GroupHealthCountNotice stats={stats} uptime={uptime} />
       </div>
       <div>
         <span className='group-health-label'>
@@ -256,13 +273,16 @@ export function GroupHealthPanel({
   metric = 'ttft',
   showTitle = true,
   ratio,
+  uptime = false,
 }) {
   const { t } = useTranslation();
   const detailsId = useId();
   const [selectedTs, setSelectedTs] = useState(null);
   const series = Array.isArray(stats?.series) ? stats.series : [];
   const selected = series.find((bucket) => bucket.ts === selectedTs);
-  const tone = healthTone(stats);
+  const resolveTone = uptime ? uptimeTone : healthTone;
+  const resolveRate = uptime ? getUptimeRate : (value) => value?.success_rate;
+  const tone = resolveTone(stats);
   const labels = {
     limited: t('样本不足'),
     healthy: t('运行稳定'),
@@ -270,9 +290,11 @@ export function GroupHealthPanel({
     degraded: t('失败较多'),
   };
   const statusLabel = (value) =>
-    healthTone(value) === 'empty'
+    resolveTone(value) === 'empty'
       ? emptyHealthLabel(value, t)
-      : labels[healthTone(value)];
+      : uptime && !value?.request_count && value?.probe_bucket_count > 0
+        ? t('模型测试')
+        : labels[resolveTone(value)];
   return (
     <section className='group-health-panel'>
       {showTitle && (
@@ -292,14 +314,19 @@ export function GroupHealthPanel({
           </div>
         </div>
       )}
-      <GroupHealthSummary stats={stats} metric={metric} />
+      <GroupHealthSummary stats={stats} metric={metric} uptime={uptime} />
+      {uptime && <GroupUptimeNote />}
       <details className='group-health-outcomes'>
         <summary>{t('统计明细')}</summary>
         <GroupHealthOutcomeDetails stats={stats} />
       </details>
       <div className='group-health-trend-heading'>
         <span>
-          {t('最近 {{hours}} 个小时段成功率', { hours: series.length || 24 })}
+          {uptime
+            ? t('最近 {{hours}} 个小时段可用率', { hours: series.length || 24 })
+            : t('最近 {{hours}} 个小时段成功率', {
+                hours: series.length || 24,
+              })}
         </span>
         <span>{t('点击时段查看详情')}</span>
       </div>
@@ -308,9 +335,9 @@ export function GroupHealthPanel({
           <button
             key={bucket.ts}
             type='button'
-            className={`group-health-bar group-health-bar-${healthTone(bucket)}`}
-            aria-label={`${dateLabel(bucket.ts)} · ${t('成功率')} ${formatHealthRate(bucket.success_rate)} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
-            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(bucket.success_rate)} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
+            className={`group-health-bar group-health-bar-${resolveTone(bucket)}`}
+            aria-label={`${dateLabel(bucket.ts)} · ${uptime ? t('可用率') : t('成功率')} ${formatHealthRate(resolveRate(bucket))} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
+            title={`${dateLabel(bucket.ts)} · ${formatHealthRate(resolveRate(bucket))} · ${statusLabel(bucket)} · ${formatHealthOutcomeDescription(bucket, t)}`}
             aria-pressed={selectedTs === bucket.ts}
             aria-controls={detailsId}
             onClick={() =>
@@ -333,7 +360,12 @@ export function GroupHealthPanel({
             </strong>
             <span>{statusLabel(selected)}</span>
           </div>
-          <GroupHealthSummary stats={selected} metric={metric} compact />
+          <GroupHealthSummary
+            stats={selected}
+            metric={metric}
+            compact
+            uptime={uptime}
+          />
           <GroupHealthOutcomeDetails stats={selected} />
           <div className='group-health-caption'>
             {t('{{count}} 个有效样本', {
@@ -345,34 +377,41 @@ export function GroupHealthPanel({
           </div>
         </div>
       )}
-      {!getHealthCounts(stats).observed && (
-        <p className='group-health-note'>
-          {t('该时段暂无调用记录，产生新请求后显示统计。')}
-        </p>
-      )}
+      {!getHealthCounts(stats).observed &&
+        !(uptime && stats?.probe_count > 0) && (
+          <p className='group-health-note'>
+            {t('该时段暂无调用记录，产生新请求后显示统计。')}
+          </p>
+        )}
     </section>
   );
 }
 
-export function GroupHealthLegend() {
+export function GroupHealthLegend({ uptime = false }) {
   const { t } = useTranslation();
   return (
     <>
       <div className='group-health-legend'>
         <span>
           <i className='group-health-bar-healthy' />
-          {t('成功率 ≥ {{rate}}%', { rate: HEALTH_HEALTHY_RATE })}
+          {uptime
+            ? `Uptime ≥ ${HEALTH_HEALTHY_RATE}%`
+            : t('成功率 ≥ {{rate}}%', { rate: HEALTH_HEALTHY_RATE })}
         </span>
         <span>
           <i className='group-health-bar-warning' />
-          {t('{{min}}% ≤ 成功率 < {{max}}%', {
-            min: HEALTH_WARNING_RATE,
-            max: HEALTH_HEALTHY_RATE,
-          })}
+          {uptime
+            ? `${HEALTH_WARNING_RATE}% ≤ Uptime < ${HEALTH_HEALTHY_RATE}%`
+            : t('{{min}}% ≤ 成功率 < {{max}}%', {
+                min: HEALTH_WARNING_RATE,
+                max: HEALTH_HEALTHY_RATE,
+              })}
         </span>
         <span>
           <i className='group-health-bar-degraded' />
-          {t('成功率 < {{rate}}%', { rate: HEALTH_WARNING_RATE })}
+          {uptime
+            ? `Uptime < ${HEALTH_WARNING_RATE}%`
+            : t('成功率 < {{rate}}%', { rate: HEALTH_WARNING_RATE })}
         </span>
         <span>
           <i className='group-health-bar-empty' />
@@ -388,5 +427,16 @@ export function GroupHealthLegend() {
         )}
       </p>
     </>
+  );
+}
+
+export function GroupUptimeNote() {
+  const { t } = useTranslation();
+  return (
+    <p className='group-health-note'>
+      {t(
+        '无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。',
+      )}
+    </p>
   );
 }

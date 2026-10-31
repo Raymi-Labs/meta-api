@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[测试补充 Uptime](2026-10-31-model-uptime-probes.md)部分扩展模型广场与详情的可用性展示：无有效调用的模型分组小时段可由测试补充，真实请求口径与低样本规则继续保留。
+
 [分组价与官方价对比](2026-10-30-model-group-official-discount.md)将分组列表前移到官方参考价之后，逐项展示所选官方档位与分组价的差额；完整动态规则仍在快速开始之后，顶层官方表和实际计费不变。
 
 [模型头卡与官方参考价](2026-10-30-model-official-pricing.md)扩展顶部展示，介绍继续复用 description；独立官方参考价置于本站价格之前，本站计费与分组明细保持原口径。

@@ -100,7 +100,9 @@ export function selectHealthGroups({
       Object.prototype.hasOwnProperty.call(usableGroup || {}, stats.group) &&
       ((!exactModel && !filterByModels) ||
         enabledGroups.has(stats.group) ||
-        (exactModel && getHealthCounts(stats).observed > 0)) &&
+        (exactModel &&
+          (getHealthCounts(stats).observed > 0 ||
+            healthCount(stats.probe_count) > 0))) &&
       (filterGroup === 'all' || stats.group === filterGroup),
   );
 }
@@ -135,4 +137,21 @@ export function getHealthLatency(stats, metric = 'ttft') {
   return metric === 'completion'
     ? { value: stats?.avg_completion_ms, count: stats?.completion_count || 0 }
     : { value: stats?.avg_ttft_ms, count: stats?.ttft_count || 0 };
+}
+
+// Keep request health intact; Uptime consumers explicitly select probe fallback.
+export function getUptimeRate(stats) {
+  return stats?.uptime_sample_count == null
+    ? stats?.success_rate
+    : stats.uptime_rate;
+}
+
+export function uptimeTone(stats) {
+  const probes = healthCount(stats?.probe_bucket_count);
+  if (!probes) return healthTone(stats);
+  const request = healthCount(stats?.request_count);
+  return healthTone({
+    request_count: request > 0 ? request : HEALTH_MIN_SAMPLES,
+    success_rate: getUptimeRate(stats),
+  });
 }
