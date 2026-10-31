@@ -33,6 +33,15 @@ func (p *RetryParam) GetRetry() int {
 	return *p.Retry
 }
 
+// priorityRetry leaves the actual attempt budget intact. Scope the offset to
+// the initial routing group so candidate probes and later groups stay independent.
+func (p *RetryParam) priorityRetry(groupIndex, groupRetry int) int {
+	if p.Ctx != nil && p.Ctx.GetInt(ginKeyChannelAffinityRetryIndex) == groupIndex+1 {
+		groupRetry--
+	}
+	return max(groupRetry, 0)
+}
+
 func (p *RetryParam) SetRetry(retry int) {
 	p.Retry = &retry
 }
@@ -219,7 +228,7 @@ func cacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 			}
 			logger.LogDebug(param.Ctx, "Auto selecting group: %s, priorityRetry: %d", autoGroup, priorityRetry)
 
-			channel, _ = model.GetRandomSatisfiedChannel(autoGroup, param.ModelName, priorityRetry, param.AllowedChannels, param.ExcludeChannels, filters...)
+			channel, _ = model.GetRandomSatisfiedChannel(autoGroup, param.ModelName, param.priorityRetry(i, priorityRetry), param.AllowedChannels, param.ExcludeChannels, filters...)
 			if channel == nil {
 				// Current group has no available channel for this model, try next group
 				// 当前分组没有该模型的可用渠道，尝试下一个分组
@@ -257,7 +266,7 @@ func cacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 			break
 		}
 	} else {
-		channel, err = model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.GetRetry(), param.AllowedChannels, param.ExcludeChannels, filters...)
+		channel, err = model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.priorityRetry(0, param.GetRetry()), param.AllowedChannels, param.ExcludeChannels, filters...)
 		if err != nil {
 			return nil, param.TokenGroup, err
 		}
@@ -283,7 +292,7 @@ func CacheGetSatisfiedChannelCandidates(param *RetryParam) ([]*model.Channel, st
 		channels, err := model.GetSatisfiedChannelCandidates(
 			param.TokenGroup,
 			param.ModelName,
-			param.GetRetry(),
+			param.priorityRetry(0, param.GetRetry()),
 			param.AllowedChannels,
 			param.ExcludeChannels,
 			filters...,
@@ -313,7 +322,7 @@ func CacheGetSatisfiedChannelCandidates(param *RetryParam) ([]*model.Channel, st
 		channels, err := model.GetSatisfiedChannelCandidates(
 			autoGroup,
 			param.ModelName,
-			priorityRetry,
+			param.priorityRetry(i, priorityRetry),
 			param.AllowedChannels,
 			param.ExcludeChannels,
 			filters...,
