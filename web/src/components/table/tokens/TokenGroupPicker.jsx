@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   buildTokenGroupVendorOptions,
+  prioritizeTokenGroups,
   resolveTokenGroupVendor,
   sortTokenGroupsByRatio,
 } from './tokenGroupUtils';
@@ -94,7 +95,10 @@ export default function TokenGroupPicker({
     () => buildTokenGroupVendorOptions(groups, t('多厂商通用')),
     [groups, t],
   );
-  const sortedGroups = useMemo(() => sortTokenGroupsByRatio(groups), [groups]);
+  const sortedGroups = useMemo(
+    () => prioritizeTokenGroups(sortTokenGroupsByRatio(groups)),
+    [groups],
+  );
   const filtered = sortedGroups.filter((group) => {
     const inVendor =
       vendor === '__favorites__'

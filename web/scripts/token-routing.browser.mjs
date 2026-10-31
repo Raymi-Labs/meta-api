@@ -94,6 +94,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
         企业专属: { desc: '企业专属的后台注释', ratio: 5.5 },
         企业级: { desc: '企业级的后台注释', ratio: 1 },
         优选: { desc: '优选的后台注释', ratio: 0.8 },
+        福利: { desc: '福利的后台注释', ratio: 0.1 },
         free: { desc: '<b>纯文本说明</b>' + '长说明'.repeat(45), ratio: 0 },
         unknown: { desc: '未返回倍率的说明' },
         auto: { desc: 'Auto', ratio: 'auto' },
@@ -164,6 +165,22 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   const groupSelect = () =>
     page.getByLabel('可用分组（可多选，按选择顺序路由）', { exact: true });
   await groupSelect().click();
+  assert.deepEqual(
+    (await page.getByRole('option').allInnerTexts()).map(
+      (text) => text.split(' ·')[0].split('\n')[0],
+    ),
+    [
+      '企业级',
+      '优选',
+      '福利',
+      'default',
+      'vip',
+      'team',
+      '企业专属',
+      'free',
+      'unknown',
+    ],
+  );
   for (const name of ['企业专属', '企业级', '优选']) {
     const option = page.getByRole('option').filter({ hasText: `${name} ·` });
     assert.ok((await option.innerText()).includes(`${name}的后台注释`));
@@ -374,6 +391,14 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
         .count(),
       0,
     );
+    assert.deepEqual(
+      (
+        await page
+          .getByRole('radio')
+          .evaluateAll((nodes) => nodes.map((node) => node.value))
+      ).slice(0, 3),
+      ['企业级', '优选', '福利'],
+    );
     await page.locator('.token-editor__submit:visible').click();
     await page.waitForFunction(
       () => !document.querySelector('.semi-sidesheet-inner'),
@@ -383,6 +408,31 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     assert.equal(saves.at(-1).auto_group_fallback, true);
     assert.equal(saves.at(-1).cross_group_retry, true);
   }
+  // Display priority must not rewrite the user's chosen routing order.
+  await page.evaluate(() => window.qa.create());
+  await groupSelect().waitFor();
+  await select(groupSelect(), '福利 ·');
+  await select(groupSelect(), '企业级 ·');
+  await page.locator('#name').fill('chosen-order');
+  await page.locator('.token-editor__submit:visible').click();
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-content'),
+  );
+  assert.deepEqual(JSON.parse(saves.at(-1).routing_config).groups, [
+    '福利',
+    '企业级',
+  ]);
+  assert.equal(saves.at(-1).group, '福利');
+  await page.evaluate(() => window.qa.edit());
+  await groupSelect().waitFor();
+  await page.locator('.token-editor__submit:visible').click();
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-sidesheet-inner'),
+  );
+  assert.deepEqual(JSON.parse(saves.at(-1).routing_config).groups, [
+    '福利',
+    '企业级',
+  ]);
   assert.deepEqual(errors, []);
   console.log(
     `PASS: create, model groups, edit, failed save, delayed save isolation, group test, mobile, legacy fixed/auto compatibility. Screenshots: ${artifacts}`,
