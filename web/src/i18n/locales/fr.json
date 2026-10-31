@@ -7139,6 +7139,23 @@
     "最近 {{hours}} 个小时段可用率": "Disponibilité sur les {{hours}} derniers créneaux horaires",
     "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Avec moins de 30 requêtes admissibles, les tests des canaux amont correspondants complètent la disponibilité : toute réussite compte, y compris un test d’un autre modèle du même canal ; uniquement des échecs donnent un échec. Un échantillon au plus est ajouté par heure, en conservant le poids des requêtes réelles et le seuil en l’absence de tests. Les réussites historiques apportent des preuves horaires, sans attester un test direct de ce modèle ni une disponibilité continue.",
     "上游测试": "Tests amont",
-    "上游测试 {{success}} / {{count}} 次通过": "Tests amont : {{success}} / {{count}} réussis"
+    "上游测试 {{success}} / {{count}} 次通过": "Tests amont : {{success}} / {{count}} réussis",
+    "不单独计费": "Sans facturation séparée",
+    "北京": "Pékin",
+    "图片官方参考价": "Prix officiels indicatifs des images",
+    "图片输入 / 输出计费": "Tarifs des images en entrée / sortie",
+    "官方定价文档": "Documentation officielle des tarifs",
+    "张": "image",
+    "请填写完整的价格后再保存": "Renseignez tous les prix avant de sauvegarder",
+    "输入图片": "Images en entrée",
+    "输入图片单价": "Prix par image en entrée",
+    "输出图片": "Images en sortie",
+    "输出图片单价": "Prix par image en sortie",
+    "参考价仅供对照，不会自动写入本站售价；其他地域请查看官方文档。": "Prix indicatifs uniquement, sans remplissage automatique des prix de vente. Consultez la documentation pour les autres régions.",
+    "费用 = 输入图片数 × 输入单价 + 输出图片数 × 输出单价。未填写不能保存，免费请填写 0。": "Coût = images en entrée × prix en entrée + images en sortie × prix en sortie. Tous les champs sont requis ; saisissez 0 pour la gratuité.",
+    "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Qwen Image 3.0 sur les canaux Ali. Surface de sortie ≤ 2250000 pixels : 1K, sinon 2K. Le mode automatique réserve le coût maximal puis facture l’usage réel après réussite.",
+    "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Les canaux Ali facturent les images produites avec succès ; la réécriture du prompt double ce prix unitaire.",
+    "阿里云渠道按成功输出的图片张数计费。": "Les canaux Ali facturent le nombre d’images générées avec succès.",
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Choisissez les tarifs entrée / sortie pour définir séparément les prix des images en entrée et en sortie."
   }
 }

@@ -17,6 +17,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+export const isWanImageModel = (name = '') => {
+  const model = name.trim().toLowerCase().split('/').pop();
+  return (
+    !model
+      .split('-')
+      .some((part) =>
+        [
+          't2v',
+          'i2v',
+          'r2v',
+          'v2v',
+          's2v',
+          'flf2v',
+          'video',
+          'videoedit',
+        ].includes(part),
+      ) &&
+    /^wanx?(?:[0-9]+(?:\.[0-9]+)*)?-(?:image(?:-pro)?|t2i|i2i|imageedit)(?:$|-)/.test(
+      model,
+    )
+  );
+};
+
 // Conservative UI hints only. The server independently enforces the no-generation test path.
 export const isVideoTestModel = (name = '', channelType = 0, endpoint = '') => {
   if (
@@ -25,6 +48,7 @@ export const isVideoTestModel = (name = '', channelType = 0, endpoint = '') => {
   )
     return true;
   const model = name.trim().toLowerCase().split('/').pop();
+  if (isWanImageModel(model)) return false;
   return (
     /^(?:grok-imagine-video|sora|veo|wanx?|happyhorse|kling|hailuo|minimax-h3|minimax-hailuo|minimax-video|seedance|doubao-seedance|vidu|cogvideox?|jimeng-video|luma|ray-2|ray-3|runway)(?:$|[-.])/.test(
       model,

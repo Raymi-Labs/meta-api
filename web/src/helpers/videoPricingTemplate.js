@@ -17,10 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { isWanImageModel } from './videoTest.js';
+
 // This is a configuration helper for existing protocol families, not a model
 // availability claim. Do not offer it for unsupported vendors detected by the
 // broader safety-only video test matcher.
 export const canUseVideoTemplate = (name = '') =>
+  !isWanImageModel(name) &&
   /^(?:grok-imagine-video(?:[-.]|$)|sora-2(?:[-.]|$)|veo(?:[-.\d]|$)|wanx?\d|kling(?:[-.]|$)|vidu|MiniMax-H3(?:-|$)|MiniMax-Hailuo(?:-|$)|T2V-01|I2V-01|S2V-01|doubao-seedance(?:-|$)|seedance(?:-|$))/i.test(
     name,
   );

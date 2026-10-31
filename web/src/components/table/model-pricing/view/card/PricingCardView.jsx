@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isImagePriceExpression,
+} from '../../../../../helpers/imagePricing';
+
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Link, useNavigate } from 'react-router-dom';
@@ -103,7 +107,8 @@ const PricingCardView = ({
           const showTokenMetrics =
             data.isPerToken ||
             (data.isDynamicPricing &&
-              !isVideoPriceExpression(model.billing_expr));
+              !isVideoPriceExpression(model.billing_expr) &&
+              !isImagePriceExpression(model.billing_expr));
           return (
             <article
               key={key}
@@ -269,9 +274,11 @@ const PricingCardView = ({
                   {data.isDynamicPricing && (
                     <p className='pricing-card-tier-note'>
                       {t(
-                        isVideoPriceExpression(model.billing_expr)
-                          ? '视频按秒 / 表达式'
-                          : '阶梯计费：展示首档参考价，完整规则见详情',
+                        isImagePriceExpression(model.billing_expr)
+                          ? t('图片输入 / 输出计费')
+                          : isVideoPriceExpression(model.billing_expr)
+                            ? '视频按秒 / 表达式'
+                            : '阶梯计费：展示首档参考价，完整规则见详情',
                       )}
                     </p>
                   )}

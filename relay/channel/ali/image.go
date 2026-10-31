@@ -25,19 +25,16 @@ func oaiImage2AliImageRequest(info *relaycommon.RelayInfo, request dto.ImageRequ
 	var imageRequest AliImageRequest
 	imageRequest.Model = request.Model
 	imageRequest.ResponseFormat = request.ResponseFormat
+	imageRequest.Parameters = AliImageParameters{
+		Size: strings.ReplaceAll(request.Size, "x", "*"), N: int(lo.FromPtrOr(request.N, uint(1))), Watermark: request.Watermark,
+	}
 	if request.Extra != nil {
 		if val, ok := request.Extra["parameters"]; ok {
 			err := common.Unmarshal(val, &imageRequest.Parameters)
 			if err != nil {
 				return nil, fmt.Errorf("invalid parameters field: %w", err)
 			}
-		} else {
-			// 兼容没有parameters字段的情况，从openai标准字段中提取参数
-			imageRequest.Parameters = AliImageParameters{
-				Size:      strings.Replace(request.Size, "x", "*", -1),
-				N:         int(lo.FromPtrOr(request.N, uint(1))),
-				Watermark: request.Watermark,
-			}
+
 		}
 		if val, ok := request.Extra["input"]; ok {
 			err := common.Unmarshal(val, &imageRequest.Input)
@@ -55,16 +52,34 @@ func oaiImage2AliImageRequest(info *relaycommon.RelayInfo, request dto.ImageRequ
 
 	// 同步图片模型和异步图片模型请求格式不一样
 	if isSync {
+		if imageRequest.Input != nil && len(request.Image) > 0 {
+			return nil, fmt.Errorf("use either input.messages or image, not both")
+		}
 		if imageRequest.Input == nil {
+			var images []string
+			if len(request.Image) > 0 {
+				var single string
+				if common.Unmarshal(request.Image, &single) == nil && single != "" {
+					images = []string{single}
+				} else if common.Unmarshal(request.Image, &images) != nil || len(images) == 0 {
+					return nil, fmt.Errorf("image must be a non-empty string or array")
+				}
+				for _, image := range images {
+					if strings.TrimSpace(image) == "" {
+						return nil, fmt.Errorf("image must not be empty")
+					}
+				}
+			}
+			content := make([]AliMediaContent, 0, len(images)+1)
+			for _, image := range images {
+				content = append(content, AliMediaContent{Image: image})
+			}
+			content = append(content, AliMediaContent{Text: request.Prompt})
 			imageRequest.Input = AliImageInput{
 				Messages: []AliMessage{
 					{
-						Role: "user",
-						Content: []AliMediaContent{
-							{
-								Text: request.Prompt,
-							},
-						},
+						Role:    "user",
+						Content: content,
 					},
 				},
 			}
@@ -175,6 +190,7 @@ func oaiFormEdit2AliImageEdit(c *gin.Context, info *relaycommon.RelayInfo, reque
 		},
 	}
 	imageRequest.Parameters = AliImageParameters{
+		Size:      strings.ReplaceAll(request.Size, "x", "*"),
 		Watermark: request.Watermark,
 	}
 	count, _, err := request.ImageBillingQuantity(true)
@@ -327,12 +343,21 @@ func aliImageHandler(a *Adaptor, c *gin.Context, resp *http.Response, info *rela
 	}
 
 	imageResponses := responseAli2OpenAIImage(c, aliResponse, originRespBody, info, responseFormat)
-	// 可能生成多张图片，修正计费数量n
-	if aliResponse.Usage.ImageCount != 0 {
-		info.PriceData.AddOtherRatio("n", float64(aliResponse.Usage.ImageCount))
-	} else if len(imageResponses.Data) != 0 {
-		info.PriceData.AddOtherRatio("n", float64(len(imageResponses.Data)))
+	count := 0
+	for _, data := range imageResponses.Data {
+		if data.Url != "" || data.B64Json != "" {
+			count++
+		}
 	}
+	if count == 0 {
+		return types.NewError(errors.New("upstream returned no image payload"), types.ErrorCodeBadResponseBody), nil
+	}
+	info.ImageResponseCount = &count
+	if err := service.SetImagePricingResult(info, aliResponse.Usage.InputImageCount, aliResponse.Usage.OutputImageCount, aliResponse.Usage.OutputWidth, aliResponse.Usage.OutputHeight, aliResponse.Usage.OutputImageType, count); err != nil {
+		return types.NewError(err, types.ErrorCodeBadResponseBody, types.ErrOptionWithSkipRetry()), nil
+	}
+	info.PriceData.AddOtherRatio("n", float64(count))
+
 	jsonResponse, err := common.Marshal(imageResponses)
 	if err != nil {
 		return types.NewError(err, types.ErrorCodeBadResponseBody), nil

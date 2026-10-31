@@ -23,7 +23,7 @@ import (
 // PrepareImageBilling reserves the effective outbound quantity on each attempt.
 // The immutable base prevents a retry from multiplying an earlier reservation.
 // Expressions use actual image quantities without multiplying token totals again.
-func PrepareImageBilling(c *gin.Context, info *relaycommon.RelayInfo, count int, promptExtend bool) *types.NewAPIError {
+func PrepareImageBilling(c *gin.Context, info *relaycommon.RelayInfo, count int, promptExtend bool, reserveQuota ...bool) *types.NewAPIError {
 	if count < 1 || count > dto.MaxImageN {
 		return types.NewErrorWithStatusCode(fmt.Errorf("invalid image count: %d", count), types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 	}
@@ -73,6 +73,15 @@ func PrepareImageBilling(c *gin.Context, info *relaycommon.RelayInfo, count int,
 		if err != nil {
 			return types.NewErrorWithStatusCode(err, types.ErrorCodeModelPriceError, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 		}
+		if common.IsImagePriceExpression(snap.ExprString) {
+			if info.ImagePricingInput == nil {
+				return types.NewError(fmt.Errorf("image pricing dimensions missing"), types.ErrorCodeModelPriceError, types.ErrOptionWithSkipRetry())
+			}
+			input.Body, err = withImagePricing(input.Body, info.ImagePricingInput)
+			if err != nil {
+				return types.NewError(err, types.ErrorCodeModelPriceError, types.ErrOptionWithSkipRetry())
+			}
+		}
 		cost, trace, err := billingexpr.RunExprByHashWithRequest(snap.ExprString, snap.ExprHash, billingexpr.TokenParams{
 			P: float64(snap.EstimatedPromptTokens), C: float64(snap.EstimatedCompletionTokens), Len: float64(snap.EstimatedPromptTokens),
 		}, input)
@@ -111,6 +120,9 @@ func PrepareImageBilling(c *gin.Context, info *relaycommon.RelayInfo, count int,
 		reserve = info.PriceData.ConservativeQuotaToPreConsume
 	}
 	if base.FreeModel && reserve == 0 && info.Billing == nil {
+		return nil
+	}
+	if len(reserveQuota) > 0 && !reserveQuota[0] {
 		return nil
 	}
 	// Quantity is known now: even a normally trusted wallet must cover it.
@@ -155,6 +167,15 @@ func ApplyImageResponseQuantity(info *relaycommon.RelayInfo) (int, error) {
 				if err != nil {
 					return 0, err
 				}
+			}
+		}
+		if common.IsImagePriceExpression(info.TieredBillingSnapshot.ExprString) {
+			if info.ImagePricingResult == nil {
+				return 0, errors.New("image pricing result missing")
+			}
+			body, err = withImagePricing(body, info.ImagePricingResult)
+			if err != nil {
+				return 0, err
 			}
 		}
 		input.Body = body

@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isImagePriceExpression,
+} from '../../../../../helpers/imagePricing';
+
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Avatar, Typography, Table, Tag } from '@douyinfe/semi-ui';
@@ -54,7 +58,12 @@ const ModelPricingTable = ({
   const { billingExpr: baseBillingExpr } = splitBillingExprAndRequestRules(
     modelData?.billing_expr || '',
   );
-  const dynamicTiers = isDynamic && !isVideoPriceExpression(baseBillingExpr) ? parseTiersFromExpr(baseBillingExpr) : [];
+  const dynamicTiers =
+    isDynamic &&
+    !isVideoPriceExpression(baseBillingExpr) &&
+    !isImagePriceExpression(baseBillingExpr)
+      ? parseTiersFromExpr(baseBillingExpr)
+      : [];
   const firstDynamicTier = dynamicTiers[0] || null;
   const renderGroupPriceTable = () => {
     // 仅展示模型可用的分组：模型 enable_groups 与用户可用分组的交集

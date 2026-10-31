@@ -511,6 +511,25 @@ func executeChannelStyleTest(
 		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())}
 	}
 
+	if _, isImage := request.(*dto.ImageRequest); isImage {
+		var outbound dto.ImageRequest
+		err = common.Unmarshal(jsonData, &outbound)
+		count, extend, quantityErr := outbound.ImageBillingQuantity(channel.Type == constant.ChannelTypeAli)
+		if err == nil {
+			err = quantityErr
+		}
+		if err == nil {
+			err = service.NormalizeImagePricing(relayInfo, jsonData, count)
+		}
+		if err != nil {
+			return testResult{context: c, info: relayInfo, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeModelPriceError)}
+		}
+		if apiErr := service.PrepareImageBilling(c, relayInfo, count, extend, options.enableBilling); apiErr != nil {
+			return testResult{context: c, info: relayInfo, localErr: apiErr, newAPIError: apiErr}
+		}
+		priceData = relayInfo.PriceData
+	}
+
 	requestBody := bytes.NewBuffer(jsonData)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonData))
 	// Only actual channel probes reach this point. Local preflight/configuration
@@ -588,6 +607,12 @@ func executeChannelStyleTest(
 		result.localErr = respErr
 		result.newAPIError = respErr
 		return
+	}
+
+	if _, isImage := request.(*dto.ImageRequest); isImage {
+		if _, err := service.ApplyImageResponseQuantity(relayInfo); err != nil {
+			return testResult{context: c, info: relayInfo, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeBadResponseBody)}
+		}
 	}
 
 	usage, usageErr := coerceTestUsage(usageAny, isStream, relayInfo.GetEstimatePromptTokens())

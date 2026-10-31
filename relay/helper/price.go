@@ -2,13 +2,16 @@ package helper
 
 import (
 	"fmt"
+	"github.com/tidwall/sjson"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -413,6 +416,16 @@ func modelPriceHelperTiered(c *gin.Context, info *relaycommon.RelayInfo, exprStr
 	requestInput, err := ResolveIncomingBillingExprRequestInput(c, info)
 	if err != nil {
 		return types.PriceData{}, err
+	}
+
+	if common.IsImagePriceExpression(exprStr) {
+		if info.ChannelType != constant.ChannelTypeAli || (info.RelayMode != relayconstant.RelayModeImagesGenerations && info.RelayMode != relayconstant.RelayModeImagesEdits) {
+			return types.PriceData{}, fmt.Errorf("image input/output pricing requires an Ali image endpoint")
+		}
+		requestInput.Body, err = sjson.DeleteBytes(requestInput.Body, common.ImagePricingField)
+		if err != nil {
+			return types.PriceData{}, err
+		}
 	}
 
 	rawCost, trace, err := billingexpr.RunExprWithRequest(exprStr, billingexpr.TokenParams{
