@@ -55,6 +55,11 @@ func IsTemporaryUpstreamError(err *types.NewAPIError) bool {
 }
 
 func ShouldRetryChannelError(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) bool {
+	if c != nil {
+		if _, bound := c.Get(AudioVoiceContext); bound {
+			return false
+		}
+	}
 	if openaiErr == nil {
 		return false
 	}

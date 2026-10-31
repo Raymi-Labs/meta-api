@@ -267,6 +267,7 @@ func migrateDB() error {
 	migrateSubscriptionPlanPriceAmount()
 	err := DB.AutoMigrate(
 		&Channel{},
+		&AudioVoice{},
 		&Token{},
 		&ChannelTagPolicy{},
 		&ChannelQuotaUsage{},
@@ -389,6 +390,7 @@ func migrateDBFast() error {
 		name  string
 	}{
 		{&Channel{}, "Channel"},
+		{&AudioVoice{}, "AudioVoice"},
 		{&Token{}, "Token"},
 		{&ChannelTagPolicy{}, "ChannelTagPolicy"},
 		{&ChannelQuotaUsage{}, "ChannelQuotaUsage"},
