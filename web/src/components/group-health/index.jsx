@@ -70,7 +70,7 @@ export function GroupHealthCountNotice({ stats, uptime = false }) {
   const notices = [
     uptime &&
       stats?.probe_count > 0 &&
-      t('模型测试 {{success}} / {{count}} 次通过', {
+      t('上游测试 {{success}} / {{count}} 次通过', {
         success: stats.probe_success_count,
         count: stats.probe_count,
       }),
@@ -234,7 +234,7 @@ export function GroupHealthSummary({
           {counts.request > 0
             ? t('计入统计 {{count}} 次', { count: counts.request })
             : uptime && stats?.probe_bucket_count > 0
-              ? t('模型测试')
+              ? t('上游测试')
               : emptyHealthLabel(stats, t)}
           {limited ? ` · ${t('样本不足')}` : ''}
         </span>
@@ -292,7 +292,7 @@ export function GroupHealthPanel({
     resolveTone(value) === 'empty'
       ? emptyHealthLabel(value, t)
       : uptime && !value?.request_count && value?.probe_bucket_count > 0
-        ? t('模型测试')
+        ? t('上游测试')
         : labels[resolveTone(value)];
   return (
     <section className='group-health-panel'>
@@ -438,7 +438,7 @@ export function GroupUptimeNote() {
   return (
     <p className='group-health-note'>
       {t(
-        '每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。',
+        '有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。',
       )}
     </p>
   );

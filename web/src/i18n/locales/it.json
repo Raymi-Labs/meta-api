@@ -6803,9 +6803,10 @@
     "介绍原文": "Descrizione originale",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Le descrizioni seguono la lingua del sito. Le modifiche manuali hanno la precedenza; cancellale per ripristinare la traduzione automatica.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "Il testo originale serve a generare descrizioni in tutte le lingue del sito; non determina la lingua visualizzata dai visitatori.",
-    "模型测试 {{success}} / {{count}} 次通过": "Test del modello: {{success}} / {{count}} riusciti",
     "测试补充 {{count}} 个时段": "Test integrativi in {{count}} intervalli",
     "最近 {{hours}} 个小时段可用率": "Disponibilità negli ultimi {{hours}} intervalli orari",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Con meno di 30 richieste valide per ora di modello/gruppo, i test aggiungono un unico campione: basta un fornitore riuscito; solo errori contano come errore. La disponibilità conserva e pondera le richieste reali. Con test integrativi il colore segue il risultato; senza test resta la soglia dei campioni. Non indica un servizio continuo."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Con meno di 30 richieste valide, i test dei canali upstream corrispondenti integrano la disponibilità: qualsiasi esito positivo vale come successo, anche per altri modelli dello stesso canale; soli esiti negativi valgono come errore. Si aggiunge al massimo un campione ogni ora, mantenendo il peso delle richieste reali e la soglia in assenza di test. I successi storici forniscono prove orarie, senza attestare un test diretto di questo modello o disponibilità continua.",
+    "上游测试": "Test upstream",
+    "上游测试 {{success}} / {{count}} 次通过": "Test upstream: {{success}} / {{count}} superati"
   }
 }

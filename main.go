@@ -118,6 +118,7 @@ func main() {
 	}
 
 	go controller.AutomaticallyTestChannels()
+	model.StartGroupHealthProbeHistoryTask()
 	go controller.AutomaticallyCheckPendingDisableChannels()
 
 	// Codex credential auto-refresh check every 10 minutes, refresh when expires within 1 day

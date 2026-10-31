@@ -509,7 +509,7 @@ func executeChannelStyleTest(
 	// Only actual channel probes reach this point. Local preflight/configuration
 	// errors and billed playground requests must not become availability samples.
 	if options.isChannelTest {
-		groups, groupErr := model.ChannelHealthProbeGroups(c.Request.Context(), channel.Id, relayInfo.OriginModelName)
+		targets, groupErr := model.ChannelHealthProbeTargets(c.Request.Context(), channel.Id)
 		if groupErr != nil {
 			common.SysError("failed to resolve channel health probe groups: " + groupErr.Error())
 		} else {
@@ -518,8 +518,8 @@ func executeChannelStyleTest(
 				if result.localErr != nil || result.newAPIError != nil {
 					outcome = grouphealth.OutcomeServiceFailure
 				}
-				for _, group := range groups {
-					grouphealth.Record(grouphealth.Sample{Group: group, Model: relayInfo.OriginModelName, Probe: true, Outcome: outcome})
+				for _, target := range targets {
+					grouphealth.Record(grouphealth.Sample{Group: target.Group, Model: target.Model, Probe: true, Outcome: outcome})
 				}
 			}()
 		}

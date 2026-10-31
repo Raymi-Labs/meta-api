@@ -102,11 +102,11 @@ func HasConfiguredGroupModel(group, modelName string, allowedChannels []int) boo
 	return query.Limit(1).Count(&count).Error == nil && count > 0
 }
 
-// ChannelHealthProbeGroups uses the exact public model's configured abilities,
-// including disabled routes for recovery probes, never the test user's group.
-func ChannelHealthProbeGroups(ctx context.Context, channelID int, modelName string) ([]string, error) {
-	var groups []string
-	err := DB.WithContext(ctx).Model(&Ability{}).Where("channel_id = ? AND model = ?", channelID, modelName).
-		Distinct(commonGroupCol).Pluck(commonGroupCol, &groups).Error
-	return groups, err
+// ChannelHealthProbeTargets represents upstream availability, including the
+// channel's other configured models and disabled routes, never the tester's group.
+func ChannelHealthProbeTargets(ctx context.Context, channelID int) ([]Ability, error) {
+	var targets []Ability
+	err := DB.WithContext(ctx).Model(&Ability{}).Where("channel_id = ?", channelID).
+		Select(commonGroupCol + ", model, channel_id").Find(&targets).Error
+	return targets, err
 }

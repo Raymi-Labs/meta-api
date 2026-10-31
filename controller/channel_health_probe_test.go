@@ -30,6 +30,7 @@ func TestChannelHealthProbeActualExecution(t *testing.T) {
 		require.NoError(t, db.Create(&model.Ability{Group: g, Model: "probe-model", ChannelId: ch.Id, Enabled: true}).Error)
 	}
 	require.NoError(t, db.Create(&model.Ability{Group: "public", Model: "untested-model", ChannelId: ch.Id, Enabled: true}).Error)
+	require.NoError(t, db.Create(&model.Ability{Group: "private", Model: "untested-model", ChannelId: ch.Id + 1, Enabled: true}).Error)
 	service.InitHttpClient()
 	calls := 0
 	for _, tc := range []struct {
@@ -56,11 +57,14 @@ func TestChannelHealthProbeActualExecution(t *testing.T) {
 	require.NotNil(t, testChannel(ch, 0, "sora-2", "", nil, nil).preflight)
 	require.Error(t, testChannel(ch, 0, "probe-model", "", nil, nil).localErr)
 	require.NoError(t, grouphealth.Flush(context.Background()))
-	rows, err := model.QueryGroupHealthMetrics(context.Background(), []string{"public", "paid", "auto", "admin-group"}, "", time.Now().Add(-time.Hour).Unix(), time.Now().Unix())
+	rows, err := model.QueryGroupHealthMetrics(context.Background(), []string{"public", "paid", "private", "auto", "admin-group"}, "", time.Now().Add(-time.Hour).Unix(), time.Now().Unix())
 	require.NoError(t, err)
-	require.Len(t, rows, 2)
+	require.Len(t, rows, 3)
 	for _, row := range rows {
-		require.Equal(t, "probe-model", row.ModelName)
+		require.Contains(t, []string{"probe-model", "untested-model"}, row.ModelName)
+		if row.ModelName == "untested-model" {
+			require.Equal(t, "public", row.GroupName)
+		}
 		require.Contains(t, []string{"public", "paid"}, row.GroupName)
 		require.EqualValues(t, 3, row.ProbeCount)
 		require.EqualValues(t, 1, row.ProbeSuccessCount)

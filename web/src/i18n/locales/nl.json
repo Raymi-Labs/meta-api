@@ -6803,9 +6803,10 @@
     "介绍原文": "Oorspronkelijke beschrijving",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "Beschrijvingen volgen de taal van de site. Handmatige wijzigingen hebben voorrang; wis ze om de automatische vertaling te herstellen.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "De oorspronkelijke tekst wordt gebruikt om beschrijvingen in alle sitetalen te genereren; deze bepaalt niet welke taal bezoekers zien.",
-    "模型测试 {{success}} / {{count}} 次通过": "Modeltests: {{success}} / {{count}} geslaagd",
     "测试补充 {{count}} 个时段": "Tests vullen {{count}} tijdvakken aan",
     "最近 {{hours}} 个小时段可用率": "Beschikbaarheid in de laatste {{hours}} uurvakken",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Bij minder dan 30 geldige verzoeken per model-/groepsuur voegen tests één gecombineerde waarneming toe: één geslaagde aanbieder volstaat; alleen fouten tellen als mislukking. Beschikbaarheid behoudt en weegt echte verzoeken. Met aanvullende tests volgt de kleur het resultaat; zonder tests blijft de steekproefdrempel gelden. Dit betekent geen ononderbroken beschikbaarheid."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Bij minder dan 30 geldige verzoeken vullen tests van de bijbehorende upstreamkanalen de beschikbaarheid aan. Elke geslaagde test telt als succes, ook voor andere modellen op hetzelfde kanaal; alleen mislukte tests tellen als fout. Per uur wordt maximaal één steekproef toegevoegd, met behoud van het gewicht van echte verzoeken en de drempel als er geen tests zijn. Historische successen leveren bewijs per uur, geen bewijs dat dit model direct is getest of continu online was.",
+    "上游测试": "Upstreamtests",
+    "上游测试 {{success}} / {{count}} 次通过": "Upstreamtests: {{success}} / {{count}} geslaagd"
   }
 }

@@ -6803,9 +6803,10 @@
     "介绍原文": "Descrição original",
     "译文跟随站点语言；人工修改优先，清空后恢复自动翻译。": "As descrições seguem o idioma do site. As edições manuais têm prioridade; apague-as para restaurar a tradução automática.",
     "原文用于自动生成全站语言的介绍，不决定用户看到的语言。": "O original é usado para gerar descrições em todos os idiomas do site; não determina o idioma exibido aos visitantes.",
-    "模型测试 {{success}} / {{count}} 次通过": "Testes do modelo: {{success}} / {{count}} aprovados",
     "测试补充 {{count}} 个时段": "Testes complementam {{count}} intervalos",
     "最近 {{hours}} 个小时段可用率": "Disponibilidade nos últimos {{hours}} intervalos horários",
-    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Com menos de 30 pedidos válidos por hora de modelo/grupo, os testes acrescentam uma amostra conjunta: basta um fornecedor passar; apenas falhas contam como falha. A disponibilidade mantém e pondera os pedidos reais. Com testes complementares, a cor segue o resultado; sem testes, mantém-se o limiar de amostras. Não implica disponibilidade contínua."
+    "有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。": "Com menos de 30 solicitações válidas, testes dos canais de origem correspondentes complementam a disponibilidade: qualquer aprovação conta como sucesso, inclusive de outros modelos do mesmo canal; somente falhas contam como falha. No máximo uma amostra é adicionada por hora, preservando o peso das solicitações reais e o limite quando não há testes. Sucessos históricos fornecem evidências por hora, sem comprovar teste direto deste modelo ou disponibilidade contínua.",
+    "上游测试": "Testes do provedor",
+    "上游测试 {{success}} / {{count}} 次通过": "Testes do provedor: {{success}} / {{count}} aprovados"
   }
 }
