@@ -31,9 +31,11 @@ import { buildModelDetailPath } from '../../../../../helpers/modelDetailNavigati
 import { Checkbox, Pagination, Button } from '@douyinfe/semi-ui';
 import { Copy, ScanText, Timer, Gauge } from 'lucide-react';
 import { getLobeHubIcon, formatTimeRatioValue } from '../../../../../helpers';
-import { getModelCatalogPricing } from '../../../../../helpers/modelCatalogPricing';
+import {
+  getModelCatalogPricing,
+  isCachePriceItem,
+} from '../../../../../helpers/modelCatalogPricing';
 import PricingCardSkeleton from './PricingCardSkeleton';
-import ModelProtocolSummary from '../../ModelProtocolSummary';
 import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoadingTime';
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 
@@ -101,6 +103,9 @@ const PricingCardView = ({
             },
             t,
           );
+          const cardPriceItems = items.filter(
+            (item) => !isCachePriceItem(item) && item.key !== 'time-ratio',
+          );
           const tags = getCatalogTags(model);
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
@@ -144,16 +149,6 @@ const PricingCardView = ({
                       {model.display_name || model.model_name}
                     </Link>
                   </h2>
-                  <span>
-                    {model.vendor_name || t('未知供应商')} ·{' '}
-                    {data.isDynamicPricing
-                      ? t('动态计费')
-                      : model.quota_type === 2
-                        ? t('按小时计费')
-                        : model.quota_type === 1
-                          ? t('按次计费')
-                          : t('按量计费')}
-                  </span>
                 </div>
                 <Button
                   size='small'
@@ -178,14 +173,9 @@ const PricingCardView = ({
                   />
                 )}
               </div>
-              <ModelProtocolSummary
-                model={model}
-                catalogState={catalogState}
-                t={t}
-              />
               <dl className='pricing-card-prices'>
-                {items.length ? (
-                  items.map((item) => (
+                {cardPriceItems.length ? (
+                  cardPriceItems.map((item) => (
                     <div key={item.key}>
                       <dt>{item.label}</dt>
                       <dd>
@@ -275,17 +265,6 @@ const PricingCardView = ({
               </p>
               <div className='pricing-model-card-footer'>
                 <div className='pricing-card-notes'>
-                  {data.isDynamicPricing && (
-                    <p className='pricing-card-tier-note'>
-                      {t(
-                        isImagePriceExpression(model.billing_expr)
-                          ? t('图片输入 / 输出计费')
-                          : isVideoPriceExpression(model.billing_expr)
-                            ? '视频按秒 / 表达式'
-                            : '阶梯计费：展示首档参考价，完整规则见详情',
-                      )}
-                    </p>
-                  )}
                   {showRatio && (
                     <div className='pricing-card-ratios'>
                       {model.quota_type === 0 && (

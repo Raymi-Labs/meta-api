@@ -335,11 +335,6 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-model-identity h2 a:hover {
   color: var(--catalog-accent);
 }
-.pricing-model-identity > span {
-  color: var(--catalog-muted);
-  font-size: 11px;
-  line-height: 1.4;
-}
 .pricing-model-card-header > .semi-button {
   flex-shrink: 0;
   color: var(--catalog-muted);
@@ -456,7 +451,6 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-model-description:empty {
   display: none;
 }
-.pricing-card-tier-note,
 .pricing-card-ratios {
   color: var(--catalog-muted);
   font-size: 11px;
