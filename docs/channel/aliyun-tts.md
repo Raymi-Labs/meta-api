@@ -26,6 +26,22 @@ Meta API 的阿里通义千问渠道支持 Qwen-Audio-TTS、CosyVoice 的实时�
 
 渠道通用「测试」没有音色输入，因此会提示使用下面的语音示例，不会发送默认聊天请求或替你创建复刻音色。真实语音调用可能计费。
 
+## 反向代理的 WebSocket 配置
+
+公网反向代理须为 `/v1/audio/speech/stream` 保留 HTTP/1.1 Upgrade。若直连应用返回 101、公网返回 400，先检查代理是否清空了 Connection。为此路径创建精确 location，复用现有 API 的可信入站、鉴权、维护窗口、真实 IP 和上游设置，在该路径设置：
+
+```nginx
+proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";
+proxy_buffering off;
+proxy_read_timeout 3600;
+proxy_send_timeout 3600;
+proxy_next_upstream off;
+```
+
+这段仅展示升级所需指令，不是完整 server 配置；不要同时保留该路径的 `proxy_set_header Connection ""`。保存备份后执行 `nginx -t`，通过后热重载，再从公网实际发送任务验证。普通 HTTP speech 不需要协议升级。
+
 ## 普通客户端：HTTP speech
 
 使用已有 `POST /v1/audio/speech`。完整文本一次提交，网关收到音频块就立即返回，不等待整个文件完成。

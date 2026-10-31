@@ -433,7 +433,13 @@ func modelPriceHelperTiered(c *gin.Context, info *relaycommon.RelayInfo, exprStr
 	}
 
 	if common.IsImagePriceExpression(exprStr) {
-		if info.ChannelType != constant.ChannelTypeAli || (info.RelayMode != relayconstant.RelayModeImagesGenerations && info.RelayMode != relayconstant.RelayModeImagesEdits) {
+		// Initial pricing precedes InitChannelMeta; the distributor has already
+		// recorded the selected channel type in the request context.
+		channelType := common.GetContextKeyInt(c, constant.ContextKeyChannelType)
+		if info.ChannelMeta != nil {
+			channelType = info.ChannelType
+		}
+		if channelType != constant.ChannelTypeAli || (info.RelayMode != relayconstant.RelayModeImagesGenerations && info.RelayMode != relayconstant.RelayModeImagesEdits) {
 			return types.PriceData{}, fmt.Errorf("image input/output pricing requires an Ali image endpoint")
 		}
 		requestInput.Body, err = sjson.DeleteBytes(requestInput.Body, common.ImagePricingField)
