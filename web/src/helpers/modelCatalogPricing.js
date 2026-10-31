@@ -28,6 +28,7 @@ import { calculateModelPrice, getModelPriceItems } from './utils';
 import { parseTiersFromExpr } from './render';
 import { buildFirstTierGroupPriceItems } from './tieredBillingDisplay';
 import { splitBillingExprAndRequestRules } from '../pages/Setting/Ratio/components/requestRuleExpr';
+import { videoPriceItems } from './videoPriceDisplay';
 import { isVideoPriceExpression } from './videoPricingTemplate';
 
 const cachePriceKeys = new Set([
@@ -83,6 +84,13 @@ export function getModelCatalogPricing(options, t) {
     };
   }
   if (isVideoPriceExpression(options.record.billing_expr)) {
+    const videoItems = videoPriceItems(
+      options.record.billing_expr,
+      data.effectiveBillingRatio,
+      options.displayPrice,
+      t,
+    );
+    if (videoItems.length) return { data, items: videoItems };
     return {
       data,
       items: [

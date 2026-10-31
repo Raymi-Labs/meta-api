@@ -177,3 +177,5 @@
 | Muse长片与多参考图 | [Muse校验](../relay/channel/task/sora/muse_request.go)、[视频客户端](../scripts/meta-api-video/scripts/meta_api_video.py) | Muse JSON支持4–180秒、最多4张PNG/JPEG/WebP、4000字符提示词；数字秒数归一化，长片等待1800秒 | 单张10 MB/合计24 MB的内嵌图片校验；URL由上游检验大小；复用流式内容下载。扩展范围来自上游文档，60秒长片已线上验收；四图受理但效果未通过，180秒未验收。见[决策](../.agents/notes/implemented/feature/2026-10-31-muse-long-reference-video.md) |
 
 | 视频成品下载与恢复 | [客户端](../scripts/meta-api-video/scripts/meta_api_video.py)、[交付决策](../.agents/notes/implemented/feature/2026-10-31-video-artifact-delivery.md) | --out同源鉴权流式下载及MP4实际时长/尺寸/音轨检查；--download-only只GET原结果 | 独立下载期限、拒绝重定向/覆盖，失败保留完成状态；Veo停止新提交；本地/ZIP/网站分别校验，容器元数据不替代画面验收 |
+
+| 视频价格展示与日志快照 | [价格摘要](../web/src/helpers/videoPriceDisplay.js)、[任务定价](../relay/helper/price.go)、[消费日志](../service/task_billing.go) | 线性按秒表达式使用当前分组/货币展示；新任务保存秒数/倍率/原始额度，旧日志仅展示真实扣费 | 未知表达式不执行、不猜价；历史不按现价倒算；独立日志字段不改变结算。见[决策](../.agents/notes/implemented/bug-fix/2026-10-31-video-price-display.md) |

@@ -14,7 +14,7 @@ Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependenci
 - Muse 60-second production acceptance through this YuanHeng workflow completed in 526 seconds, yielding an actual 60-second 1280x720/24fps MP4 with one audio track. Four inputs including WebP were accepted, but later reference elements did not visibly appear in sampled frames. Do not claim reliable four-image adherence. 180 seconds remains supplier-declared, not live-verified here.
 - Muse above 30 seconds is supplier-stitched from shorter segments, not a guaranteed continuous shot. Describe scenes in roughly 30-second sections. Actual durations can round upward; inspect the file rather than treating task seconds/size as output proof.
 - `grok-imagine-video`: 1–15 seconds, 480p/720p, default 1 second/480p/16:9 in this standalone package. The user's installed combined Skill retains its 5-second default. Optional PNG/JPEG `--image` is a first frame; a 1-second production test succeeded, actual 1.042 seconds, 736x400, 24fps.
-- `grok-imagine-video-1.5`: explicit selection, allows 1080p; recent image-to-video attempt returned upstream saturation (429), so do not claim live acceptance for that mode. Grok uses the input image aspect ratio.
+- `grok-imagine-video-1.5`: explicit selection, allows 1080p; single-image 1-second/480p recheck succeeded; other settings remain unverified. Grok uses the input image aspect ratio.
 - `flow-video-gemini-omni-flash-1.1`: 4 seconds/720p, text only; full YuanHeng chain verified, actual 4-second 1280x720/24fps.
 - `flow-video-gemini-omni-flash-1.1-1080p`: 4 seconds/1080p, text only; full chain verified, actual about 3.92 seconds/1920x1080/24fps, supplier-upscaled.
 - `snow-grok-imagine-video`: separate supplier alias, text only, 4 seconds/720p.
@@ -58,3 +58,6 @@ A submission_unknown state without an ID requires task/log reconciliation before
 Prices remain server-side. With media group 0.25 and normal recharge RMB0.20/credit, current Muse retail is 3 credits/requested second (RMB0.60): 60 seconds costs 180 credits, 180 seconds 540. Supplier cost is $0.20 balance/requested second and the user reports RMB1 per $1 supplier balance. The prior 60-second acceptance cost 120 credits at the old rate and $12 supplier balance; it is not retrospectively repriced. No per-image supplement was observed.
 
 Omni720p and the separate Snow Grok alias currently cost 0.75 credits/second, Omni1080p 1.5. Do not apply the Snow cash conversion to CPA Grok or other providers. Cash margins also depend on actual recharge discounts, referral payouts and fees. Supplier-rounded durations and every long-video tier are not exhaustively live-verified.
+
+
+Grok 1.5 single-image recheck on 2026-10-31 succeeded through YuanHeng: one 1-second/480p request, actual 1.042 seconds, 736x400, 24fps and one audio track. Reference shapes, colors and marks persisted; channel 1577 charged 1.5 credits. Other specifications are not implied. Muse 180 seconds is supplier-guaranteed per the user, not independently verified here; multi-image quality remains unresolved.

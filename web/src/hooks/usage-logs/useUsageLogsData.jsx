@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isVideoConsumption,
+  videoLogSegments,
+} from '../../helpers/videoPriceDisplay';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@douyinfe/semi-ui';
@@ -749,7 +753,10 @@ export const useLogsData = (admin = isAdmin()) => {
         });
       }
       if (logs[i].type === 2) {
-        if (other?.billing_mode !== 'tiered_expr') {
+        if (
+          other?.billing_mode !== 'tiered_expr' &&
+          !isVideoConsumption(logs[i], other)
+        ) {
           expandDataLocal.push({
             key: t('日志详情'),
             value: useCachePartitionBilling
@@ -838,7 +845,11 @@ export const useLogsData = (admin = isAdmin()) => {
           Boolean(other?.violation_fee_marker);
 
         let content = '';
-        if (!isViolationFeeLog && other?.billing_mode !== 'tiered_expr') {
+        if (
+          !isViolationFeeLog &&
+          other?.billing_mode !== 'tiered_expr' &&
+          !isVideoConsumption(logs[i], other)
+        ) {
           const logOpts = {
             ...other,
             prompt_tokens: logs[i].prompt_tokens,
@@ -858,6 +869,14 @@ export const useLogsData = (admin = isAdmin()) => {
           expandDataLocal.push({
             key: t('计费过程'),
             value: content,
+          });
+        }
+        if (isVideoConsumption(logs[i], other)) {
+          expandDataLocal.push({
+            key: t('计费过程'),
+            value: videoLogSegments(logs[i], other, renderQuota, t)
+              .map((s) => s.text)
+              .join(' · '),
           });
         }
         if (other?.reasoning_effort) {
@@ -967,7 +986,9 @@ export const useLogsData = (admin = isAdmin()) => {
       }
       if (isAdminUser && logs[i].type !== 6 && logs[i].type !== 5) {
         let localCountMode = '';
-        if (other?.admin_info?.local_count_tokens) {
+        if (isVideoConsumption(logs[i], other)) {
+          localCountMode = other?.task_billing ? t('本地计费') : '—';
+        } else if (other?.admin_info?.local_count_tokens) {
           localCountMode = t('本地计费');
         } else {
           localCountMode = t('上游返回');

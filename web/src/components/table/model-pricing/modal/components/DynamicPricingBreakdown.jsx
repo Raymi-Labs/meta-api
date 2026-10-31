@@ -23,6 +23,7 @@ import {
 } from '../../../../../helpers/imagePricing';
 
 import React from 'react';
+import { videoPriceItems } from '../../../../../helpers/videoPriceDisplay';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Avatar, Tag, Table, Typography } from '@douyinfe/semi-ui';
 import { IconPriceTag } from '@douyinfe/semi-icons';
@@ -104,6 +105,7 @@ export default function DynamicPricingBreakdown({
   billingExpr,
   displayPrice,
   t,
+  effectiveBillingRatio = 1,
 }) {
   const symbol = displayPrice?.currencySymbol || '$';
   const { billingExpr: baseExpr, requestRuleExpr: ruleExpr } =
@@ -160,9 +162,26 @@ export default function DynamicPricingBreakdown({
           </Text>
         </div>
         <div className='text-sm text-gray-500'>
-          <code style={{ fontSize: 12, wordBreak: 'break-all' }}>
-            {billingExpr}
-          </code>
+          {videoPriceItems(billingExpr, effectiveBillingRatio, displayPrice, t)
+            .length ? (
+            videoPriceItems(
+              billingExpr,
+              effectiveBillingRatio,
+              displayPrice,
+              t,
+            ).map((item) => (
+              <div key={item.key}>
+                {t('基础价格')}：<strong>{item.value}</strong>
+                {item.suffix}
+              </div>
+            ))
+          ) : isVideoPriceExpression(billingExpr) ? (
+            t('见价格详情')
+          ) : (
+            <code style={{ fontSize: 12, wordBreak: 'break-all' }}>
+              {billingExpr}
+            </code>
+          )}
         </div>
       </div>
     );
