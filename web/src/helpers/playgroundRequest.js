@@ -26,6 +26,7 @@ import {
 import { MESSAGE_ROLES } from '../constants/playground.constants';
 
 import { parsePlaygroundTools } from './playgroundCapabilities';
+import { sharedConversation } from './playgroundParallel';
 
 // 构建API请求负载
 export const buildApiPayload = (
@@ -34,7 +35,7 @@ export const buildApiPayload = (
   inputs,
   parameterEnabled,
 ) => {
-  const processedMessages = messages
+  const processedMessages = sharedConversation(messages)
     .filter(
       (message) => !['loading', 'incomplete', 'error'].includes(message.status),
     )

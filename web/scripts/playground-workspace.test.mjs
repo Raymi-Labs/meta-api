@@ -74,6 +74,49 @@ test('image preview matches the draft and never rewrites historical messages', (
   );
 });
 
+test('parallel answers never leak unselected branches into preview or single-model calls', () => {
+  const question = { id: 'round', role: 'user', content: 'Question' };
+  const answer = {
+    id: 'answer-a',
+    role: 'assistant',
+    status: 'complete',
+    content: 'Chosen',
+    parallelRound: 'round',
+    parallelChosen: true,
+    parallelModel: 'A',
+  };
+  const other = {
+    ...answer,
+    id: 'answer-b',
+    content: 'Do not include',
+    parallelChosen: false,
+    parallelModel: 'B',
+  };
+  const payload = buildPlaygroundPreview(
+    [question, answer, other],
+    'Follow-up',
+    inputs,
+    enabled,
+  );
+  assert.deepEqual(
+    payload.messages.map((m) => m.content),
+    ['You are helpful.', 'Question', 'Chosen', 'Follow-up'],
+  );
+  assert.ok(
+    payload.messages.every(
+      (m) => !('parallelRound' in m) && !('parallelModel' in m),
+    ),
+  );
+  assert.throws(() =>
+    buildApiPayload(
+      [question, { ...answer, parallelChosen: false }, other],
+      null,
+      inputs,
+      enabled,
+    ),
+  );
+});
+
 test('model tabs follow group permissions, remove duplicates and keep a selected model', () => {
   const models = ['a', 'b', 'c'].map((value) => ({ value }));
   assert.deepEqual(reconcileModelTabs(['b', 'removed', 'b'], 'a', models), [

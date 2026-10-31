@@ -16,6 +16,8 @@ Status: implemented
 
 模型信息与能力设置扩展见[信息卡与工具控制](2026-10-30-playground-model-controls.md)：复用目录价格/属性，工具回合可复制和失败重试，但禁止单条编辑/删除破坏协议。
 
+可选的[多文本模型并发回答](2026-10-31-playground-parallel-text.md)扩展同一会话模式：最多5模型独立请求、同轮相同历史，显式选择一条继续；单模型仍是默认，工具与多媒体不进入并发流程。
+
 ## Related decisions
 
 - 部分重叠：[企业导航与根路径迁移](../../implemented/feature/2026-10-25-enterprise-navigation.md)，保持 `/playground`、旧地址跳转及登录要求；本次只扩展页面内部。

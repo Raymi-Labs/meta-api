@@ -1,5 +1,16 @@
 {
   "translation": {
+    "多模型同时回答": "Birden çok model yanıtı",
+    "单模型回答": "Tek model yanıtı",
+    "选择文本模型（最多5个）": "Metin modelleri seçin (en fazla 5)",
+    "每个模型独立调用和计费；同轮收到相同上下文。": "Her model aynı bağlamla ayrı çağrılır ve ayrı ücretlendirilir.",
+    "多模型模式仅支持纯文本，请关闭图片和工具；已有多媒体或工具历史需新开对话。": "Yalnızca metin: görüntüleri ve araçları kapatın. Geçmişte bunlar varsa yeni sohbet açın.",
+    "请选择一条完整回答作为后续上下文，或撤销本轮。": "Devam etmek için tamamlanmış bir yanıt seçin veya bu turu geri alın.",
+    "回复": "Yanıt",
+    "已选为上下文": "Bağlam olarak seçildi",
+    "用这条继续": "Bununla devam et",
+    "撤销本轮": "Turu geri al",
+    "同时发送": "Modellere gönder",
     "摘要视图": "Özet görünüm",
     "完整视图": "Tam görünüm",
     "已声明协议": "Bildirilen protokoller",
