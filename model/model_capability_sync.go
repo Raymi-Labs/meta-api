@@ -408,7 +408,11 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 	// Resolve source-confirmed vendors only for locally eligible models. Reuse
 	// the catalog's canonical names/icons without promoting inferred display IDs.
 	vendorIDs := map[string]int{}
-	resolveVendor := func(entry ModelCapabilityMetadata) (ModelCapabilityMetadata, error) {
+	resolveVendor := func(name string, entry ModelCapabilityMetadata) (ModelCapabilityMetadata, error) {
+		if entry.VendorName == "" {
+			return entry, nil
+		}
+		entry.VendorName = ResolveVendorNameForModel(name, entry.VendorName)
 		if entry.VendorName == "" {
 			return entry, nil
 		}
@@ -417,8 +421,11 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			return entry, nil
 		}
 		var vendor Vendor
-		name := CanonicalVendorName(entry.VendorName)
-		err := DB.WithContext(ctx).Where("name = ?", name).Order("id").First(&vendor).Error
+		name = CanonicalVendorName(entry.VendorName)
+		found, err := findVendorByCanonicalName(DB.WithContext(ctx), name)
+		if err == nil {
+			vendor = *found
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			vendor = Vendor{Name: name, Icon: getDefaultVendorIcon(name), Status: 1, CreatedTime: common.GetTimestamp(), UpdatedTime: common.GetTimestamp()}
 			err = DB.WithContext(ctx).Create(&vendor).Error
@@ -445,7 +452,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			result.Skipped++
 			continue
 		}
-		entry, err = resolveVendor(entry)
+		entry, err = resolveVendor(row.ModelName, entry)
 		if err != nil {
 			return result, err
 		}
@@ -478,7 +485,7 @@ func ApplyModelCapabilityMetadata(ctx context.Context, entries map[string]ModelC
 			result.Skipped++
 			continue
 		}
-		entry, err = resolveVendor(entry)
+		entry, err = resolveVendor(name, entry)
 		if err != nil {
 			return result, err
 		}

@@ -626,8 +626,9 @@ func SyncUpstreamPreview(c *gin.Context) {
 		}
 		// vendor 对比使用名称
 		localVendor := idToVendorName[local.VendorID]
-		if strings.TrimSpace(localVendor) != strings.TrimSpace(up.VendorName) {
-			fields = append(fields, conflictField{Field: "vendor", Local: localVendor, Upstream: up.VendorName})
+		upstreamVendor := model.ResolveVendorNameForModel(local.ModelName, up.VendorName)
+		if model.CanonicalVendorName(localVendor) != upstreamVendor && upstreamVendor != "" {
+			fields = append(fields, conflictField{Field: "vendor", Local: localVendor, Upstream: upstreamVendor})
 		}
 		if local.NameRule != up.NameRule {
 			fields = append(fields, conflictField{Field: "name_rule", Local: local.NameRule, Upstream: up.NameRule})

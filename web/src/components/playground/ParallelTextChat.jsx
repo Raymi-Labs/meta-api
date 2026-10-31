@@ -33,6 +33,8 @@ import {
   MAX_PARALLEL_MODELS,
   sharedConversation,
   updateParallelReply,
+  comparisonSections,
+  comparisonReplyState,
 } from '../../helpers/playgroundParallel';
 import { getPlaygroundOwner } from './configStorage';
 import MessageContent from './MessageContent';
@@ -106,9 +108,11 @@ export default function ParallelTextChat({
   draft,
   setDraft,
   isMobile,
+  selected,
+  setSelected,
 }) {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState([]);
+  const [layout, setLayout] = useState('grid');
   const [tasks, setTasks] = useState([]);
   const controls = useRef(new Map());
   const snapshots = useRef(new Map());
@@ -255,6 +259,99 @@ export default function ParallelTextChat({
       Toast.error(t('复制失败'));
     }
   };
+  const sections = comparisonSections(messages);
+  const renderReply = (reply) => (
+    <article
+      key={reply.id}
+      className={`pg-parallel-reply ${reply.role === 'user' ? 'is-user' : ''} ${reply.parallelChosen ? 'is-chosen' : ''}`}
+      data-message-id={reply.id}
+      data-model={reply.parallelModel}
+    >
+      <header>
+        <strong>
+          {reply.parallelModel ||
+            (reply.role === 'user' ? t('用户') : t('回复'))}
+        </strong>
+        {reply.parallelModel && (
+          <>
+            <span>{reply.parallelGroup || t('默认分组')}</span>
+            <span className='pg-reply-state'>
+              {t(comparisonReplyState(reply))}
+            </span>
+          </>
+        )}
+        {reply.parallelChosen && (
+          <span className='pg-chosen-badge'>{t('已选为上下文')}</span>
+        )}
+      </header>
+      {reply.role === 'user' ? (
+        <p className='pg-parallel-user-text'>
+          {typeof reply.content === 'string'
+            ? reply.content
+            : reply.content
+                .filter((part) => part.type === 'text')
+                .map((part) => part.text)
+                .join('\n')}
+        </p>
+      ) : reply.status === 'error' ? (
+        <p role='alert'>{reply.content || t('请求发生错误')}</p>
+      ) : (
+        <MessageContent
+          message={reply}
+          styleState={{ isMobile }}
+          onToggleReasoningExpansion={(id) =>
+            setMessages((items) =>
+              items.map((m) =>
+                m.id === id
+                  ? { ...m, isReasoningExpanded: !m.isReasoningExpanded }
+                  : m,
+              ),
+            )
+          }
+        />
+      )}
+      <footer>
+        <Button size='small' onClick={() => copy(reply.content)}>
+          {t('复制')}
+        </Button>
+        {reply.parallelRound &&
+          ['loading', 'incomplete'].includes(reply.status) && (
+            <Button
+              size='small'
+              onClick={() => controls.current.get(reply.id)?.()}
+            >
+              {t('停止生成')}
+            </Button>
+          )}
+        {reply.parallelRound === latestRound && canUseParallelReply(reply) && (
+          <Button
+            size='small'
+            disabled={generating}
+            theme={reply.parallelChosen ? 'solid' : 'light'}
+            onClick={() => choose(reply)}
+          >
+            {t(reply.parallelChosen ? '已选为上下文' : '用这条继续')}
+          </Button>
+        )}
+        {reply.parallelRound === latestRound &&
+          (reply.status === 'error' || reply.parallelStopped) &&
+          snapshots.current.has(reply.id) && (
+            <Button
+              size='small'
+              disabled={
+                generating ||
+                disabled ||
+                inputs.group !== snapshots.current.get(reply.id).group ||
+                !eligible.some((m) => m.value === reply.parallelModel)
+              }
+              onClick={() => retry(reply)}
+            >
+              {t('重试')}
+            </Button>
+          )}
+      </footer>
+    </article>
+  );
   return (
     <section className='pg-parallel' aria-label={t('多模型同时回答')}>
       {tasks.map((task) => (
@@ -267,6 +364,28 @@ export default function ParallelTextChat({
         />
       ))}
       <div className='pg-parallel-selection'>
+        <div className='pg-selection-heading'>
+          <strong>{t('选择文本模型（最多5个）')}</strong>
+          <span>{t('已选 {{count}}/5', { count: chosenModels.length })}</span>
+          <div
+            className='pg-layout-switch'
+            role='group'
+            aria-label={t('回答布局')}
+          >
+            <button
+              aria-pressed={layout === 'grid'}
+              onClick={() => setLayout('grid')}
+            >
+              {t('并排')}
+            </button>
+            <button
+              aria-pressed={layout === 'list'}
+              onClick={() => setLayout('list')}
+            >
+              {t('列表')}
+            </button>
+          </div>
+        </div>
         <Select
           multiple
           maxTagCount={MAX_PARALLEL_MODELS}
@@ -295,99 +414,54 @@ export default function ParallelTextChat({
             )}
           </p>
         )}
-        {!contextReady && (
-          <p role='status'>
-            {t('请选择一条完整回答作为后续上下文，或撤销本轮。')}
-          </p>
-        )}
         {!eligible.length && <p>{t('暂无可用模型')}</p>}
       </div>
       <div className='pg-parallel-messages'>
-        {messages.map((reply) => (
-          <article
-            key={reply.id}
-            className={`pg-parallel-reply ${reply.parallelChosen ? 'is-chosen' : ''}`}
-            data-message-id={reply.id}
-          >
-            <header>
-              <strong>
-                {reply.parallelModel ||
-                  (reply.role === 'user' ? t('用户') : t('回复'))}
-              </strong>
-              {reply.parallelModel && (
-                <span>{reply.parallelGroup || t('默认分组')}</span>
-              )}
-            </header>
-            {reply.role === 'user' ? (
-              <p className='pg-parallel-user-text'>
-                {typeof reply.content === 'string'
-                  ? reply.content
-                  : reply.content
-                      .filter((part) => part.type === 'text')
-                      .map((part) => part.text)
-                      .join('\n')}
-              </p>
-            ) : reply.status === 'error' ? (
-              <p role='alert'>{reply.content || t('请求发生错误')}</p>
-            ) : (
-              <MessageContent
-                message={reply}
-                styleState={{ isMobile }}
-                onToggleReasoningExpansion={(id) =>
-                  setMessages((items) =>
-                    items.map((m) =>
-                      m.id === id
-                        ? { ...m, isReasoningExpanded: !m.isReasoningExpanded }
-                        : m,
-                    ),
-                  )
-                }
-              />
-            )}
-            <footer>
-              <Button size='small' onClick={() => copy(reply.content)}>
-                {t('复制')}
-              </Button>
-              {reply.parallelRound &&
-                ['loading', 'incomplete'].includes(reply.status) && (
-                  <Button
-                    size='small'
-                    onClick={() => controls.current.get(reply.id)?.()}
-                  >
-                    {t('停止生成')}
-                  </Button>
-                )}
-              {reply.parallelStopped && <span>{t('已停止')}</span>}
-              {reply.parallelRound === latestRound &&
-                canUseParallelReply(reply) && (
-                  <Button
-                    size='small'
-                    disabled={generating}
-                    theme={reply.parallelChosen ? 'solid' : 'light'}
-                    onClick={() => choose(reply)}
-                  >
-                    {t(reply.parallelChosen ? '已选为上下文' : '用这条继续')}
-                  </Button>
-                )}
-              {reply.parallelRound === latestRound &&
-                (reply.status === 'error' || reply.parallelStopped) &&
-                snapshots.current.has(reply.id) && (
-                  <Button
-                    size='small'
-                    disabled={
-                      generating ||
-                      disabled ||
-                      inputs.group !== snapshots.current.get(reply.id).group ||
-                      !eligible.some((m) => m.value === reply.parallelModel)
-                    }
-                    onClick={() => retry(reply)}
-                  >
-                    {t('重试')}
-                  </Button>
-                )}
-            </footer>
-          </article>
-        ))}
+        {sections.map((section) =>
+          section.message ? (
+            renderReply(section.message)
+          ) : (
+            <section
+              key={section.key}
+              className='pg-comparison-round'
+              aria-label={t('本轮回答')}
+            >
+              <div className='pg-round-heading' role='status'>
+                <strong>{t('本轮回答')}</strong>
+                <span>
+                  {t('已结束 {{done}}/{{total}}', {
+                    done: section.replies.filter(
+                      (m) => !['loading', 'incomplete'].includes(m.status),
+                    ).length,
+                    total: section.replies.length,
+                  })}
+                </span>
+              </div>
+              <div className={`pg-round-answers is-${layout}`}>
+                {section.replies.map(renderReply)}
+              </div>
+              <div className='pg-round-context' role='status'>
+                {section.replies.some(
+                  (m) => m.parallelChosen && canUseParallelReply(m),
+                )
+                  ? t(
+                      section.round === latestRound
+                        ? '下一轮使用 {{model}} 的回答'
+                        : '本轮已采用 {{model}} 的回答',
+                      {
+                        model: section.replies.find(
+                          (m) => m.parallelChosen && canUseParallelReply(m),
+                        ).parallelModel,
+                      },
+                    )
+                  : section.round === latestRound &&
+                    (generating
+                      ? t('回答生成中，完成后选择一条继续。')
+                      : t('请选择一条完整回答作为后续上下文，或撤销本轮。'))}
+              </div>
+            </section>
+          ),
+        )}
       </div>
       <div className='pg-parallel-composer'>
         <textarea
@@ -442,7 +516,7 @@ export default function ParallelTextChat({
               disabled={!canSend || !draft.trim()}
               onClick={send}
             >
-              {t('同时发送')}
+              {t('发送给 {{count}} 个模型', { count: chosenModels.length })}
             </Button>
           )}
         </div>
