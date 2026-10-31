@@ -18,8 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import {
-  isImagePriceExpression,
-} from '../../../../../helpers/imagePricing';
+  getCatalogTags,
+  catalogTagLabel,
+} from '../../../../../helpers/modelCatalogFacets';
+
+import { isImagePriceExpression } from '../../../../../helpers/imagePricing';
 
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
@@ -94,14 +97,7 @@ const PricingCardView = ({
             },
             t,
           );
-          const tags = [
-            ...new Set(
-              (model.tags || '')
-                .split(/[,;|]+/)
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-            ),
-          ];
+          const tags = getCatalogTags(model);
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
           const showTokenMetrics =
@@ -299,7 +295,7 @@ const PricingCardView = ({
                 </div>
                 <div className='pricing-model-tags'>
                   {tags.slice(0, 3).map((tag) => (
-                    <span key={tag}>{tag}</span>
+                    <span key={tag}>{catalogTagLabel(tag, t, [model])}</span>
                   ))}
                 </div>
               </div>

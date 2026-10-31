@@ -17,9 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { filterValues, catalogVendor } from './modelCatalogFacets.js';
+
 export const matchesPricingVendor = (model, vendor) =>
-  vendor === 'all' ||
-  (vendor === 'unknown' ? !model.vendor_name : model.vendor_name === vendor);
+  !filterValues(vendor).length ||
+  filterValues(vendor).some(
+    (v) => catalogVendor(v) === catalogVendor(model.vendor_name),
+  );
 
 export const groupForPricingVendor = ({
   models,

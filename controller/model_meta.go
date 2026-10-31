@@ -16,11 +16,12 @@ import (
 // Keep added fields presence-aware so older full-update clients do not erase
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
-	DescriptionOverrides map[string]*string `json:"description_overrides"`
-	CapabilityOverrides  map[string]*bool   `json:"capability_overrides"`
-	Description          *string            `json:"description"`
-	Tags                 *string            `json:"tags"`
-	VendorID             *int               `json:"vendor_id"`
+	FunctionOverrides    *model.ModelFunctionOverrides `json:"function_overrides"`
+	DescriptionOverrides map[string]*string            `json:"description_overrides"`
+	CapabilityOverrides  map[string]*bool              `json:"capability_overrides"`
+	Description          *string                       `json:"description"`
+	Tags                 *string                       `json:"tags"`
+	VendorID             *int                          `json:"vendor_id"`
 	model.Model
 	FAQ              *model.ModelFAQ          `json:"faq"`
 	OfficialPricing  *model.OfficialPricing   `json:"official_pricing"`
@@ -40,6 +41,7 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 		m.Description, m.Tags, m.VendorID = existing.Description, existing.Tags, existing.VendorID
 		m.DescriptionOverrides = existing.DescriptionOverrides.Clone()
 		m.FAQ = existing.FAQ.Clone()
+		m.FunctionOverrides = existing.FunctionOverrides.Clone()
 		m.OfficialPricing = existing.OfficialPricing
 		m.DisplayName = existing.DisplayName
 		m.ReleaseDate = existing.ReleaseDate
@@ -70,6 +72,9 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 	}
 	if request.VendorID != nil {
 		m.VendorID = *request.VendorID
+	}
+	if request.FunctionOverrides != nil {
+		m.FunctionOverrides = request.FunctionOverrides.Clone()
 	}
 	if request.FAQ != nil {
 		m.FAQ = request.FAQ.Clone()
@@ -134,6 +139,7 @@ func (request modelMetaRequest) omittedMetadataFields() []string {
 		{"official_pricing", request.OfficialPricing == nil}, {"release_date", request.ReleaseDate == nil},
 		{"context_length", request.ContextLength == nil}, {"max_output_tokens", request.MaxOutputTokens == nil},
 		{"capabilities", request.Capabilities == nil && len(request.CapabilityOverrides) == 0}, {"input_modalities", request.InputModalities == nil}, {"output_modalities", request.OutputModalities == nil},
+		{"function_overrides", request.FunctionOverrides == nil},
 		{"faq", request.FAQ == nil}, {"display_name", request.DisplayName == nil},
 	} {
 		if field.omitted {

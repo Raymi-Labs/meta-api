@@ -6824,6 +6824,27 @@
     "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Ali kanallarındaki Qwen Image 3.0 içindir. Çıktı alanı ≤ 2250000 piksel: 1K, aksi hâlde 2K. Otomatik boyut yüksek tutarı ayırır; başarıdan sonra gerçek kullanım hesaplanır.",
     "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Ali kanalları başarılı çıktıları ücretlendirir; istem yeniden yazımı bu birim fiyatı ikiye katlar.",
     "阿里云渠道按成功输出的图片张数计费。": "Ali kanalları başarıyla üretilen görsel sayısını ücretlendirir.",
-    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Girdi ve çıktı görsellerine ayrı fiyat vermek için girdi / çıktı fiyatlarını seçin."
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Girdi ve çıktı görsellerine ayrı fiyat vermek için girdi / çıktı fiyatlarını seçin.",
+    "文本对话": "Metin sohbeti",
+    "图像理解": "Görsel anlama",
+    "文生图": "Metinden görsele",
+    "图像编辑": "Görsel düzenleme",
+    "语音合成": "Konuşma sentezi",
+    "语音识别": "Konuşma tanıma",
+    "实时语音": "Gerçek zamanlı ses",
+    "视频生成": "Video oluşturma",
+    "向量嵌入": "Vektör gömmeleri",
+    "重排序": "Yeniden sıralama",
+    "开放权重": "Açık ağırlıklar",
+    "编程": "Kodlama",
+    "精选": "Öne çıkanlar",
+    "广场展示预览": "Katalog önizlemesi",
+    "未分类": "Kategorisiz",
+    "广场功能分类": "Katalog işlevleri",
+    "排除": "Hariç tut",
+    "已选条件": "Seçili filtreler",
+    "功能": "İşlevler",
+    "按供应商、功能、标签和输入模态发现模型。": "Sağlayıcı, işlev, etiket ve girdi türüne göre modelleri keşfedin.",
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Model meta verileri otomatik kullanılır. Elle dahil etme veya hariç tutma ayarları eşitleme sırasında korunur."
   }
 }

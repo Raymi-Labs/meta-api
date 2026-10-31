@@ -89,7 +89,9 @@
     "test:site-language": "bun test scripts/site-language.test.mjs scripts/site-language-i18n.test.mjs scripts/api-language.test.mjs scripts/semi-locale.test.mjs scripts/public-language.test.mjs && node --test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun test scripts/channel-monitor-language.test.jsx",
     "check:language-resources": "bun test scripts/site-language-resources.test.mjs scripts/content-language.test.mjs scripts/invoice-template-language.test.mjs && bun apps/image-playground/scripts/check-language.mjs",
     "sync:handbook": "node scripts/sync-handbook.mjs",
-    "test:image-pricing": "bun scripts/image-pricing.test.mjs && node scripts/image-pricing.browser.mjs"
+    "test:image-pricing": "bun scripts/image-pricing.test.mjs && node scripts/image-pricing.browser.mjs",
+    "test:model-catalog-facets": "bun test scripts/model-catalog-facets.test.mjs",
+    "test:model-catalog-facets:browser": "node scripts/model-catalog-facets.browser.mjs"
   },
   "eslintConfig": {
     "extends": [

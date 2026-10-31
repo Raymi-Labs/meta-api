@@ -13,6 +13,12 @@ import { buildFirstTierGroupPriceItems } from '../src/helpers/tieredBillingDispl
 import { splitBillingExprAndRequestRules } from '../src/pages/Setting/Ratio/components/requestRuleExpr.js';
 import { isVideoPriceExpression } from '../src/helpers/videoPricingTemplate.js';
 
+import {
+  parseImagePriceExpression,
+  isImagePriceExpression,
+} from '../src/helpers/imagePricing.js';
+import { formatModelPricingUnitPrice } from '../src/helpers/modelPricingCurrency.js';
+
 // Execute actual pricing code without unrelated browser UI, i18n and toast
 // dependencies. AST extraction fails if an expected declaration disappears.
 const { parse } = createRequire(import.meta.url)('@babel/parser');
@@ -63,6 +69,9 @@ const { getModelCatalogPricing, isCachePriceItem } = vm.runInNewContext(
     buildFirstTierGroupPriceItems,
     splitBillingExprAndRequestRules,
     isVideoPriceExpression,
+    parseImagePriceExpression,
+    isImagePriceExpression,
+    formatModelPricingUnitPrice,
   },
 );
 const t = (key) => key;

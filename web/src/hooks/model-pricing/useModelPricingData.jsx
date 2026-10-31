@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { matchesCatalogFilters } from '../../helpers/modelCatalogFacets';
+
 import { localizeModelDescription } from '../../helpers/modelDescription';
 import { sortPricingModels } from '../../helpers/modelPriceSorting';
 import { groupForPricingVendor } from '../../helpers/pricingVendorSelection';
@@ -160,6 +162,15 @@ export const useModelPricingData = (initialState) => {
     initialCatalogState.filterVendor,
   );
   const [filterTag, setFilterTag] = useState(initialCatalogState.filterTag);
+  const [filterFunctions, setFilterFunctions] = useState(
+    initialCatalogState.filterFunctions,
+  );
+  const [filterInputModalities, setFilterInputModalities] = useState(
+    initialCatalogState.filterInputModalities,
+  );
+  const [filterContextLength, setFilterContextLength] = useState(
+    initialCatalogState.filterContextLength,
+  );
   const [pageSize, setPageSize] = useState(initialCatalogState.pageSize);
   const [currentPage, setCurrentPage] = useState(
     initialCatalogState.currentPage,
@@ -308,70 +319,19 @@ export const useModelPricingData = (initialState) => {
   }, [selectedPlan, usdExchangeRate]);
 
   const filteredModels = useMemo(() => {
-    let result = models;
-
-    // 分组筛选
-    if (filterGroup !== 'all') {
-      result = result.filter((model) =>
-        model.enable_groups.includes(filterGroup),
-      );
-    }
-
-    // 计费类型筛选
-    if (filterQuotaType !== 'all') {
-      result = result.filter((model) => model.quota_type === filterQuotaType);
-    }
-
-    // 端点类型筛选
-    if (filterEndpointType !== 'all') {
-      result = result.filter(
-        (model) =>
-          model.supported_endpoint_types &&
-          model.supported_endpoint_types.includes(filterEndpointType),
-      );
-    }
-
-    // 供应商筛选
-    if (filterVendor !== 'all') {
-      if (filterVendor === 'unknown') {
-        result = result.filter((model) => !model.vendor_name);
-      } else {
-        result = result.filter((model) => model.vendor_name === filterVendor);
-      }
-    }
-
-    // 标签筛选
-    if (filterTag !== 'all') {
-      const tagLower = filterTag.toLowerCase();
-      result = result.filter((model) => {
-        if (!model.tags) return false;
-        const tagsArr = model.tags
-          .toLowerCase()
-          .split(/[,;|]+/)
-          .map((tag) => tag.trim())
-          .filter(Boolean);
-        return tagsArr.includes(tagLower);
-      });
-    }
-
-    // 搜索筛选
-    if (searchValue.length > 0) {
-      const searchTerm = searchValue.toLowerCase();
-      result = result.filter(
-        (model) =>
-          (model.model_name &&
-            model.model_name.toLowerCase().includes(searchTerm)) ||
-          (model.display_name &&
-            model.display_name.toLowerCase().includes(searchTerm)) ||
-          (model.description &&
-            model.description.toLowerCase().includes(searchTerm)) ||
-          (model.description_original &&
-            model.description_original.toLowerCase().includes(searchTerm)) ||
-          (model.tags && model.tags.toLowerCase().includes(searchTerm)) ||
-          (model.vendor_name &&
-            model.vendor_name.toLowerCase().includes(searchTerm)),
-      );
-    }
+    const result = models.filter((model) =>
+      matchesCatalogFilters(model, {
+        filterGroup,
+        filterQuotaType,
+        filterEndpointType,
+        filterVendor,
+        filterTag,
+        filterFunctions,
+        filterInputModalities,
+        filterContextLength,
+        searchValue,
+      }),
+    );
 
     return sortPricingModels(
       result,
@@ -399,6 +359,9 @@ export const useModelPricingData = (initialState) => {
     filterEndpointType,
     filterVendor,
     filterTag,
+    filterFunctions,
+    filterInputModalities,
+    filterContextLength,
   ]);
 
   const rowSelection = useMemo(
@@ -607,6 +570,9 @@ export const useModelPricingData = (initialState) => {
     setFilterQuotaType('all');
     setFilterEndpointType('all');
     setFilterTag('all');
+    setFilterFunctions([]);
+    setFilterInputModalities([]);
+    setFilterContextLength(0);
     handleGroupClick('all');
     setCurrentPage(1);
   };
@@ -672,6 +638,9 @@ export const useModelPricingData = (initialState) => {
     filterEndpointType,
     filterVendor,
     filterTag,
+    filterFunctions,
+    filterInputModalities,
+    filterContextLength,
     searchValue,
   ]);
   const previousFilters = useRef(filtersKey);
@@ -719,7 +688,13 @@ export const useModelPricingData = (initialState) => {
     filterVendor,
     setFilterVendor: handleVendorChange,
     filterTag,
+    filterFunctions,
+    filterInputModalities,
+    filterContextLength,
     setFilterTag,
+    setFilterFunctions,
+    setFilterInputModalities,
+    setFilterContextLength,
     pageSize,
     setPageSize,
     currentPage,

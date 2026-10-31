@@ -6824,6 +6824,27 @@
     "适用于阿里云渠道的 Qwen Image 3.0。档位按输出像素面积划分：不超过 2250000 为 1K，其余为 2K；自动尺寸先预留较高费用，成功后按实际用量结算。": "Dla Qwen Image 3.0 w kanałach Ali. Powierzchnia wyjściowa ≤ 2250000 pikseli: 1K, inaczej 2K. Rozmiar automatyczny rezerwuje wyższy koszt i rozlicza faktyczne użycie po sukcesie.",
     "阿里云渠道按成功输出张数计费；开启提示词改写时按此单价的 2 倍收费。": "Kanały Ali naliczają opłatę za poprawnie utworzone obrazy; przepisanie promptu podwaja tę cenę jednostkową.",
     "阿里云渠道按成功输出的图片张数计费。": "Kanały Ali naliczają opłatę za liczbę poprawnie utworzonych obrazów.",
-    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Wybierz ceny wejścia / wyjścia, aby ustawić je osobno dla obrazów."
+    "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Wybierz ceny wejścia / wyjścia, aby ustawić je osobno dla obrazów.",
+    "文本对话": "Czat tekstowy",
+    "图像理解": "Rozumienie obrazów",
+    "文生图": "Tekst na obraz",
+    "图像编辑": "Edycja obrazów",
+    "语音合成": "Synteza mowy",
+    "语音识别": "Rozpoznawanie mowy",
+    "实时语音": "Dźwięk w czasie rzeczywistym",
+    "视频生成": "Generowanie wideo",
+    "向量嵌入": "Osadzenia wektorowe",
+    "重排序": "Ponowne rankingowanie",
+    "开放权重": "Otwarte wagi",
+    "编程": "Programowanie",
+    "精选": "Polecane",
+    "广场展示预览": "Podgląd katalogu",
+    "未分类": "Bez kategorii",
+    "广场功能分类": "Funkcje katalogu",
+    "排除": "Wyklucz",
+    "已选条件": "Wybrane filtry",
+    "功能": "Funkcje",
+    "按供应商、功能、标签和输入模态发现模型。": "Odkrywaj modele według dostawcy, funkcji, tagu i modalności wejściowej.",
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Automatycznie używa metadanych modelu. Ręczne uwzględnienia i wykluczenia są zachowywane podczas synchronizacji."
   }
 }
