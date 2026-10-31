@@ -48,12 +48,6 @@ html.dark .pricing-page.pricing-catalog {
   font-size: 12px;
   font-weight: 400;
 }
-.pricing-catalog-heading p {
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--catalog-muted);
-}
 .pricing-catalog-heading > a {
   color: var(--catalog-accent);
   font-size: 13px;
@@ -64,6 +58,7 @@ html.dark .pricing-page.pricing-catalog {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  margin-bottom: 14px;
 }
 .pricing-catalog-search {
   flex: 1 1 220px;
@@ -129,26 +124,6 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-catalog .pricing-unit-toggle,
 .pricing-catalog .pricing-reset {
   color: var(--catalog-muted);
-}
-.pricing-catalog-context {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 10px 0 14px;
-}
-.pricing-catalog .pricing-price-context,
-.pricing-price-mode {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--catalog-muted);
-}
-.pricing-price-context {
-  flex: 1 1 380px;
-}
-.pricing-price-mode {
-  flex-shrink: 0;
 }
 /* Real catalog facets only: unknown modality metadata is not inferred. */
 .pricing-catalog-filters {
@@ -577,9 +552,6 @@ html.dark .pricing-page.pricing-catalog {
   .pricing-catalog-heading > a {
     font-size: 12px;
   }
-  .pricing-catalog-heading p {
-    font-size: 12px;
-  }
   .pricing-catalog-search {
     flex-basis: 100%;
   }
@@ -644,16 +616,6 @@ html.dark .pricing-page.pricing-catalog {
     grid-column: 1/-1;
     justify-self: start;
     padding-inline: 10px;
-  }
-  .pricing-catalog-context {
-    display: block;
-  }
-  .pricing-catalog .pricing-price-context,
-  .pricing-price-mode {
-    display: inline;
-  }
-  .pricing-price-mode::before {
-    content: ' · ';
   }
 }
 @media (max-width: 359px) {
