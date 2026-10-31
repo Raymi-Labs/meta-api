@@ -14,6 +14,71 @@ var officialPriceFixture = []string{"Pricing", "Text tokens", "Per 1M tokens", "
 
 const officialPriceAddress = "https://developers.openai.com/api/docs/models/gpt-example"
 
+// Visible text in Terra's official model card, including the two cache-write
+// retention periods. A price-bearing note is part of the standard rate sheet.
+const terraCacheRetention = "Cache-write prices shown use 30-minute retention. Standard cache writes cost $1.25 per million tokens for 30-minute retention and $2.50 for 12-hour retention, before long-context adjustments."
+
+func terraOfficialPriceFixture() []string {
+	return []string{"Pricing", "Text tokens", "Per 1M tokens", "Input", "$1.00", "Cached input", "$0.05", "Cache writes", "$1.25", "Output", "$5.00", terraCacheRetention, officialPriceFixture[11], "Modalities"}
+}
+
+func TestOpenAIOfficialPricingCacheRetention(t *testing.T) {
+	pricing, err := parseOpenAIPriceLines(terraOfficialPriceFixture(), officialPriceAddress)
+	require.NoError(t, err)
+	require.Len(t, pricing.Tiers, 4)
+	var values [][]float64
+	for _, tier := range pricing.Tiers {
+		values = append(values, []float64{*tier.Input, *tier.Output, *tier.CacheRead, *tier.CacheWrite})
+	}
+	require.ElementsMatch(t, [][]float64{{1, 5, 0.05, 1.25}, {1, 5, 0.05, 2.5}, {2, 7.5, 0.1, 2.5}, {2, 7.5, 0.1, 5}}, values)
+	require.Contains(t, pricing.Notes, terraCacheRetention)
+	for _, tier := range pricing.Tiers {
+		require.Contains(t, tier.Label, "272K input tokens")
+		require.Regexp(t, `cache (30m|12h)$`, tier.Label)
+	}
+	withoutContext := terraOfficialPriceFixture()
+	withoutContext = append(withoutContext[:12], "Modalities")
+	pricing, err = parseOpenAIPriceLines(withoutContext, officialPriceAddress)
+	require.NoError(t, err)
+	require.Len(t, pricing.Tiers, 2)
+	for _, tier := range pricing.Tiers {
+		require.NotContains(t, tier.Label, "input tokens")
+	}
+	defaultSecond := terraOfficialPriceFixture()
+	defaultSecond[8] = "$2.50"
+	defaultSecond[11] = strings.Replace(defaultSecond[11], "shown use 30-minute", "shown use 12-hour", 1)
+	pricing, err = parseOpenAIPriceLines(defaultSecond, officialPriceAddress)
+	require.NoError(t, err)
+	require.Contains(t, pricing.Tiers[0].Label, "cache 12h")
+	require.Equal(t, 2.5, *pricing.Tiers[0].CacheWrite)
+	for name, change := range map[string]func([]string) []string{
+		"card mismatch":      func(v []string) []string { v[8] = "$9"; return v },
+		"missing write":      func(v []string) []string { v[8] = "-"; return v },
+		"duplicate rule":     func(v []string) []string { return append(v[:13], terraCacheRetention, "Modalities") },
+		"duplicate duration": func(v []string) []string { v[11] = strings.ReplaceAll(v[11], "12-hour", "30-minute"); return v },
+		"equivalent duration": func(v []string) []string {
+			v[11] = strings.ReplaceAll(strings.ReplaceAll(v[11], "30-minute", "60-minute"), "12-hour", "1-hour")
+			return v
+		},
+		"missing default": func(v []string) []string {
+			v[11] = strings.Replace(v[11], "shown use 30-minute", "shown use 1-hour", 1)
+			return v
+		},
+		"unsupported condition": func(v []string) []string { v[11] += " Additional writes cost $7."; return v },
+		"wrong currency":        func(v []string) []string { v[11] = strings.Replace(v[11], "$2.50", "€2.50", 1); return v },
+		"invalid duration": func(v []string) []string {
+			v[11] = strings.Replace(v[11], "12-hour", "999999999999999999999-hour", 1)
+			return v
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			p, err := parseOpenAIPriceLines(change(terraOfficialPriceFixture()), officialPriceAddress)
+			require.Error(t, err)
+			require.Empty(t, p.Tiers)
+		})
+	}
+}
+
 func TestOpenAIOfficialPricing(t *testing.T) {
 	price, err := parseOpenAIPriceLines(officialPriceFixture, officialPriceAddress)
 	require.NoError(t, err)
@@ -65,7 +130,7 @@ func TestLiveOfficialModelPrices(t *testing.T) {
 	if os.Getenv("TEST_LIVE_OFFICIAL_PRICES") != "1" {
 		t.Skip("explicit live pricing acceptance only")
 	}
-	for _, id := range []string{"gpt-6-astra", "gpt-6.1-sol", "gpt-4o-mini"} {
+	for _, id := range []string{"gpt-6-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-4o-mini"} {
 		t.Run(id, func(t *testing.T) {
 			address := "https://developers.openai.com/api/docs/models/" + id
 			data, err := fetchOfficialAttributeData(context.Background(), address, nil)

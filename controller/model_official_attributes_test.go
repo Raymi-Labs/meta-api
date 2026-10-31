@@ -142,8 +142,9 @@ func TestOfficialAttributesSyncIndependentSourcesAndPricing(t *testing.T) {
 	t.Setenv("MODEL_METADATA_ANTHROPIC_API_KEY", "")
 	t.Setenv("MODEL_METADATA_GEMINI_API_KEY", "")
 	officialDown, communityDown, malformedPricing := false, false, false
+	priceLines := officialPriceFixture
 	client.Transport = attributeTransport(func(r *http.Request) (*http.Response, error) {
-		body := strings.Replace(officialAttributeFixture, "<div>Modalities</div>", "<div>"+strings.Join(officialPriceFixture[:len(officialPriceFixture)-1], "</div><div>")+"</div><div>Modalities</div>", 1)
+		body := strings.Replace(officialAttributeFixture, "<div>Modalities</div>", "<div>"+strings.Join(priceLines[:len(priceLines)-1], "</div><div>")+"</div><div>Modalities</div>", 1)
 		if malformedPricing {
 			body = strings.Replace(body, "$10.00", "$NaN", 1)
 		}
@@ -181,6 +182,19 @@ func TestOfficialAttributesSyncIndependentSourcesAndPricing(t *testing.T) {
 	require.False(t, pricing[0].Capabilities["function_calling"])
 	require.Equal(t, "community", pricing[0].AttributeSources["release_date"].Kind)
 	require.Equal(t, "official", pricing[0].AttributeSources["context_length"].Kind)
+	// Terra-style retention notes flow through fetching, storage and the public
+	// catalog. Refreshing the official sheet replaces all automatic tiers.
+	priceLines = terraOfficialPriceFixture()
+	result = run()
+	require.Zero(t, result.SourceFailures)
+	require.Equal(t, 1, result.PricingUpdated)
+	pricing = model.GetPricing()
+	require.Len(t, pricing[0].OfficialPricing.Tiers, 4)
+	require.Equal(t, 1.0, *pricing[0].OfficialPricing.Tiers[0].Input)
+	require.Equal(t, 5.0, *pricing[0].OfficialPricing.Tiers[3].CacheWrite)
+	require.Equal(t, "official", pricing[0].AttributeSources["official_pricing"].Kind)
+	priceLines = officialPriceFixture
+	require.Equal(t, 1, run().PricingUpdated)
 	malformedPricing = true
 	result = run()
 	require.Equal(t, 1, result.SourceFailures)

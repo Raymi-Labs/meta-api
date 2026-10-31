@@ -18,7 +18,7 @@
 
 | 来源 | 自动读取内容 | 接入条件 |
 | --- | --- | --- |
-| [OpenAI 模型文档](https://developers.openai.com/api/docs/models/gpt-6-astra) | 介绍、厂商、上下文、最大输出、模态、明确列出的推理/流式/函数调用/结构化输出及工具能力；明确缓存输入单价表示提示缓存支持；标准文本 USD / 1M token 输入、输出、缓存读写参考价及明确的长上下文档位 | 公开页面，无需密钥；只请求本地已配置或启用的 OpenAI 风格精确 ID，校验页面模型身份 |
+| [OpenAI 模型文档](https://developers.openai.com/api/docs/models/gpt-6-astra) | 介绍、厂商、上下文、最大输出、模态、明确列出的推理/流式/函数调用/结构化输出及工具能力；明确缓存输入单价表示提示缓存支持；标准文本 USD / 1M token 输入、输出、缓存读写参考价；明确的30分钟/12小时等缓存写入时长与长上下文条件组合为独立档位 | 公开页面，无需密钥；只请求本地已配置或启用的 OpenAI 风格精确 ID，校验页面模型身份 |
 | [Claude Models API](https://platform.claude.com/docs/en/api/models/list) | `max_input_tokens`、`max_tokens`、明确的 thinking/citations/structured_outputs/server_tools.web_search/server_tools.code_execution 支持状态（顶层 code_execution 是程序化工具调用，不冒充代码执行工具） | 配置专用 `MODEL_METADATA_ANTHROPIC_API_KEY`；固定官方端点和 API 版本 `2026-10-21` |
 | [Gemini Models API](https://ai.google.dev/api/models) | `inputTokenLimit`、`outputTokenLimit`、显式 `thinking` 状态 | 配置专用 `MODEL_METADATA_GEMINI_API_KEY`；固定官方端点 |
 | [basellm/llm-metadata](https://github.com/basellm/llm-metadata) `/api/all.json` | 上下文、最大输出、模态、发布日期、reasoning/tool_call/structured_output | 复用 `SYNC_UPSTREAM_BASE`；属于社区模型库，界面标为“模型库补全” |
