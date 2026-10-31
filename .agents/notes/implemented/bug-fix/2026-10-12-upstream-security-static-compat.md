@@ -11,8 +11,16 @@ Status: implemented
 - 升级 go-epay 至 0.0.5，保留签名边界拒绝及只读验签。套餐支付名称中的 ASCII `&` 替换为全角 `＆`，仅处理网关展示名称；套餐标题和订单金额不变。回调 URL 的歧义输入继续失败，不编码绕过。
 - 创建和更新用户在写库前校验已有角色枚举，保留原权限高低规则。
 - 各 HTTP transport 克隆 TLS 配置，包括本地 SOCKS/CRS 客户端；保留原证书验证开关和非流式超时。
-- 在本地 capabilities 扩展准确匹配的 GPT-6 Sol/Luna 及日期快照；原生 Claude 请求保留任意 safeguards JSON。
+- 在本地 capabilities 扩展准确匹配的 GPT-6 Sol/Luna、GPT-6.1 Sol/Terra 及日期快照；原生 Claude 请求保留任意 safeguards JSON。
 - 已存在的非 HTML 构建文件 GET/HEAD 走独立 GS 限流，默认关闭；页面、HTML、目录、未知文件和其他方法仍走 GW。保留 API、预渲染与图片工作台路由。
+
+## GPT-6.1 精确兼容扩展（2026-10-31）
+
+复用能力表、OpenAI/Azure 转换和渠道测试入口，按上游 ad5611282 补 Sol/Terra：两者使用 max_completion_tokens 和 developer；Sol 不保留采样，Terra 仅显式 none 保留。模型后缀继续复用已有解析，显式 max_completion_tokens 不被 max_tokens 覆盖。自定义后缀、非法日期和未知模型不扩大匹配。不修改权限、映射、价格或原生 Responses。
+
+同日只读生产复核：启用渠道中 Sol/Terra 分别有29/11个配置；最近24小时内最新20000条日志有4160条对应成功消费记录，235条错误未含抽查的预算/采样/角色关键词。这证明使用场景存在，不证明这些错误由参数缺口引起。生产为 compat.140，本扩展尚未生产验收。
+
+统一扩展比只修渠道测试更能覆盖真实转发；按 gpt-6.1 前缀一律改写虽然简单，但会误伤自定义兼容型号，因此沿用精确名称与合法日期规则。
 
 ## Existing decisions
 
@@ -31,6 +39,10 @@ Status: implemented
 - 网页与静态限流使用内存及模拟 Redis 分别验证 GS 开/关、GET/HEAD/POST、页面/HTML/目录/缺失文件边界。真实构建后端使用独立临时 SQLite，在页面限额 12/180 秒下连续读取 100 个 JS 均为 200，之后 login/pricing/image-playground 三入口仍为 200；真实 Chromium 系统初始化页加载 63 个静态请求。该实例不含生产数据或真实付款。
 - 限流回归为每次运行分配独立测试 IP，避免进程内重复执行继承上轮配额；定向 `-race -count=10` 通过。只隔离测试数据，不重置生产限流器或新增运行时行为。
 - Bun 构建及 Chromium 五个公开页预渲染、版本化后端构建通过。没有 MySQL/PostgreSQL 实机、真实供应商请求或链上付款测试；本轮无数据库结构/SQL 变化。发布资产与镜像验证结果单独记录在交付报告，不以本地构建代替发布完成。
+
+## GPT-6.1 扩展验证
+
+新增用例先在旧实现复现失败；OpenAI/Azure 覆盖精确模型、有效/无效日期、推理后缀及显式 none/medium，序列化检查预算优先级、映射后型号和未知型号字段保留，渠道测试共用能力表。`go test ./dto ./relay/channel/openai ./controller`、Go 构建、`make verify-notes` 和差异检查通过。没有发送收费上游请求，不将本地转换通过表述为供应商验收。
 
 ## Consequences
 

@@ -204,6 +204,7 @@ func CovertOpenAI2Gemini(c *gin.Context, textRequest dto.GeneralOpenAIRequest, i
 			TopP:            textRequest.TopP,
 			MaxOutputTokens: textRequest.GetMaxTokens(),
 			Seed:            int64(textRequest.Seed),
+			ImageConfig:     textRequest.ImageConfig,
 		},
 	}
 
