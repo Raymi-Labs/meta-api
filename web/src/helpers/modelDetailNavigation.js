@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { filterValues } from './modelCatalogFacets.js';
+
 export const MODEL_DETAIL_ROUTE = '/model/:modelName';
 
 export const buildModelDetailPath = (modelName) => {
@@ -65,8 +67,19 @@ export const sanitizeModelCatalogSnapshot = (value) => {
     filterGroup: 'all',
     filterQuotaType: enumValue(state.filterQuotaType, ['all', 0, 1, 2], 'all'),
     filterEndpointType: filterValue(state.filterEndpointType),
-    filterVendor: filterValue(state.filterVendor),
-    filterTag: filterValue(state.filterTag),
+    filterVendor: Array.isArray(state.filterVendor)
+      ? filterValues(state.filterVendor)
+      : filterValue(state.filterVendor),
+    filterTag: Array.isArray(state.filterTag)
+      ? filterValues(state.filterTag)
+      : filterValue(state.filterTag),
+    filterFunctions: filterValues(state.filterFunctions),
+    filterInputModalities: filterValues(state.filterInputModalities),
+    filterContextLength: [32000, 128000, 256000, 1000000].includes(
+      state.filterContextLength,
+    )
+      ? state.filterContextLength
+      : 0,
     pageSize: enumValue(state.pageSize, [10, 20, 50, 100], 20),
     currentPage:
       Number.isSafeInteger(state.currentPage) && state.currentPage > 0

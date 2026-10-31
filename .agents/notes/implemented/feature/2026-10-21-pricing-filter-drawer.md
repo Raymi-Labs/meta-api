@@ -30,3 +30,7 @@ Status: implemented
 ## Related decision
 
 [独立模型详情](../../implemented/feature/2026-10-25-model-detail-page.md)依据用户新选择取代目录中的分组展示与侧栏详情入口；其余价格、筛选和钱包决定保持原有范围。
+
+## Related decision
+
+2026-10-31 的[四类筛选与管理协同](./2026-10-31-model-catalog-facets.md)补充或部分替代本笔记中的抽屉分类与多选规则；其余既有数据、计费与权限约定继续保留。

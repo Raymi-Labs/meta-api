@@ -16,6 +16,7 @@ import (
 )
 
 type Pricing struct {
+	FunctionOverrides        ModelFunctionOverrides          `json:"function_overrides"`
 	DescriptionTranslations  ModelDescriptions               `json:"description_translations,omitempty"`
 	FAQ                      ModelFAQ                        `json:"faq"`
 	OfficialPricing          OfficialPricing                 `json:"official_pricing"`
@@ -347,6 +348,7 @@ func updatePricing() {
 			pricing.Capabilities = meta.Capabilities.Clone()
 			pricing.AttributeSources = meta.DisplayAttributeSources()
 			pricing.ContextLength = meta.ContextLength
+			pricing.FunctionOverrides = meta.FunctionOverrides.Clone()
 			pricing.InputModalities = append(ModelModalities{}, meta.InputModalities...)
 			pricing.OutputModalities = append(ModelModalities{}, meta.OutputModalities...)
 			pricing.Icon = meta.Icon

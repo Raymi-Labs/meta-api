@@ -6827,6 +6827,27 @@
     "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Wybierz ceny wejścia / wyjścia, aby ustawić je osobno dla obrazów.",
     "沿用最近有效值": "Ostatnia poprawna wartość",
     "沿用 {{time}} 的有效值": "Użyto poprawnej wartości z {{time}}",
-    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Brakujące pomiary wykorzystują ostatnią poprawną wartość z czasem źródłowym, bez zwiększania bieżącej liczby próbek."
+    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Brakujące pomiary wykorzystują ostatnią poprawną wartość z czasem źródłowym, bez zwiększania bieżącej liczby próbek.",
+    "文本对话": "Czat tekstowy",
+    "图像理解": "Rozumienie obrazów",
+    "文生图": "Tekst na obraz",
+    "图像编辑": "Edycja obrazów",
+    "语音合成": "Synteza mowy",
+    "语音识别": "Rozpoznawanie mowy",
+    "实时语音": "Dźwięk w czasie rzeczywistym",
+    "视频生成": "Generowanie wideo",
+    "向量嵌入": "Osadzenia wektorowe",
+    "重排序": "Ponowne rankingowanie",
+    "开放权重": "Otwarte wagi",
+    "编程": "Programowanie",
+    "精选": "Polecane",
+    "广场展示预览": "Podgląd katalogu",
+    "未分类": "Bez kategorii",
+    "广场功能分类": "Funkcje katalogu",
+    "排除": "Wyklucz",
+    "已选条件": "Wybrane filtry",
+    "功能": "Funkcje",
+    "按供应商、功能、标签和输入模态发现模型。": "Odkrywaj modele według dostawcy, funkcji, tagu i modalności wejściowej.",
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Automatycznie używa metadanych modelu. Ręczne uwzględnienia i wykluczenia są zachowywane podczas synchronizacji."
   }
 }

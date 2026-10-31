@@ -23,6 +23,7 @@ type BoundChannel struct {
 }
 
 type Model struct {
+	FunctionOverrides       ModelFunctionOverrides          `json:"function_overrides" gorm:"type:text"`
 	DescriptionAutomatic    ModelDescriptions               `json:"description_automatic,omitempty" gorm:"-"`
 	DescriptionOverrides    ModelDescriptions               `json:"description_overrides,omitempty" gorm:"type:text"`
 	DescriptionTranslations ModelDescriptions               `json:"description_translations,omitempty" gorm:"-"`
@@ -169,7 +170,7 @@ func (mi *Model) updateMetadata(db *gorm.DB, omitted []string) error {
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return db.Model(&Model{}).Where("id = ?", mi.Id).
-		Select("description_overrides", "faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
+		Select("function_overrides", "description_overrides", "faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
 		Omit(omitted...).Updates(mi).Error
 }
 

@@ -17,6 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  getCatalogTags,
+  catalogTagLabel,
+} from '../../../../../helpers/modelCatalogFacets';
+
 import { isImagePriceExpression } from '../../../../../helpers/imagePricing';
 
 import React from 'react';
@@ -96,14 +101,7 @@ const PricingCardView = ({
             },
             t,
           );
-          const tags = [
-            ...new Set(
-              (model.tags || '')
-                .split(/[,;|]+/)
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-            ),
-          ];
+          const tags = getCatalogTags(model);
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
           const latency = getHealthLatency(stats, 'ttft', true);
@@ -305,7 +303,7 @@ const PricingCardView = ({
                 </div>
                 <div className='pricing-model-tags'>
                   {tags.slice(0, 3).map((tag) => (
-                    <span key={tag}>{tag}</span>
+                    <span key={tag}>{catalogTagLabel(tag, t, [model])}</span>
                   ))}
                 </div>
               </div>

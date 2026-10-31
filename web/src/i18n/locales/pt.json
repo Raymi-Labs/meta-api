@@ -6827,6 +6827,27 @@
     "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Escolha preços de entrada / saída para definir separadamente os preços das imagens.",
     "沿用最近有效值": "Último valor válido",
     "沿用 {{time}} 的有效值": "Usando o valor válido de {{time}}",
-    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Medições ausentes usam o último valor válido com seu horário de origem, sem aumentar a contagem atual de amostras."
+    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Medições ausentes usam o último valor válido com seu horário de origem, sem aumentar a contagem atual de amostras.",
+    "文本对话": "Conversa de texto",
+    "图像理解": "Compreensão de imagens",
+    "文生图": "Texto para imagem",
+    "图像编辑": "Edição de imagens",
+    "语音合成": "Síntese de voz",
+    "语音识别": "Reconhecimento de voz",
+    "实时语音": "Áudio em tempo real",
+    "视频生成": "Geração de vídeo",
+    "向量嵌入": "Embeddings",
+    "重排序": "Reordenação",
+    "开放权重": "Pesos abertos",
+    "编程": "Programação",
+    "精选": "Destaques",
+    "广场展示预览": "Prévia do catálogo",
+    "未分类": "Sem categoria",
+    "广场功能分类": "Funções do catálogo",
+    "排除": "Excluir",
+    "已选条件": "Filtros selecionados",
+    "功能": "Funções",
+    "按供应商、功能、标签和输入模态发现模型。": "Descubra modelos por fornecedor, função, etiqueta e modalidade de entrada.",
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Usa os metadados automaticamente. Inclusões e exclusões manuais são preservadas na sincronização."
   }
 }
