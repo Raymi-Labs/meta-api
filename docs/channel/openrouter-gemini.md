@@ -2,7 +2,9 @@
 
 本配置只统一渠道 1638 的 Gemini 模型名：对外 `gemini-…`，内部映射至 `google/gemini-…`。当前目录 39 个条目中，29 个具体型号纳入配置，10 个 batch 特殊入口按用户要求跳过。精确清单及原厂来源见 [审核记录](openrouter-gemini-audit-2026-11-01.json)。
 
-## 当前阻碍
+## 账号迁移与恢复门禁
+
+用户已授权将 47 个 OpenRouter 渠道统一迁移到当前浏览器账号的专用密钥，逐一读回确认成功。新账号的 23 个审核候选全部通过最新报价复核和真实请求，包含 3 个 TTS 与 1 个 STT；下述 403 证据属于旧账号。TTS 用量记录延迟约 6–16 秒，程序已补足仅查询元数据的等待逻辑，启用仍以正式发布、受保护更新和网关结算验收为门禁。见[迁移记录](../../.agents/notes/implemented/process/2026-11-01-openrouter-account-key-migration.md)。
 
 当前密钥对 4 个语音型号以及文本、向量、图像代表型号均返回 OpenRouter `403 provider Terms Of Service`。渠道保持暂停，并设置请求拒绝规则。**发布了适配代码不代表上游已经可用**；上游恢复访问后仍须重新核价、验证实际 usage 和消费日志，再按审核结果逐个恢复，不能一键启用所有配置型号。
 
@@ -17,7 +19,7 @@
 - OpenRouter 原生语音接口不执行聊天的 `sort/only/max_price`。经用户确认，本网关在**每次调用前**查询该模型全部 endpoint。允许列表外的服务商、超价、非标准服务档位、新增非零费用或核价失败都会阻止发送。不会缓存“允许调用”的核价结果。
 - 这是调用前核价，不是上游硬限价，不能消除报价与实际收费之间的调价窗口，也不能保证语音选择最低价服务商。
 - TTS 根据 `X-Generation-Id` 查询原生输入/输出 Token，输出归为音频；STT 使用上游明确提供的 input/output tokens。缺少实际 usage 返回错误，不用音频文件大小或其他模型的时长系数估算。语音已经发出后不自动重试。
-- TTS 为核实完整响应与 usage 会缓存音频（上限 64 MiB）；generation 查询有界等待 8 秒，HTTP 元数据禁止重定向。无法核实 usage 时上游可能已产生费用，但网关不会猜测向用户收费。
+- TTS 为核实完整响应与 usage 会缓存音频（上限 64 MiB）；generation 查询总等待至多 60 秒，单次至多 8 秒、退避间隔至多 2 秒，HTTP 元数据禁止重定向。取消立即停止等待。无法核实 usage 时上游可能已产生费用，但网关不会猜测向用户收费。
 
 原厂价格来源：[Google API](https://ai.google.dev/gemini-api/docs/pricing)、[Google Cloud](https://cloud.google.com/model-garden/pricing)。协议来源：[OpenRouter TTS](https://openrouter.ai/docs/guides/overview/multimodal/tts)、[STT](https://openrouter.ai/docs/guides/overview/multimodal/stt)、[generation usage](https://openrouter.ai/docs/api/api-reference/generations/get-generation)。
 
