@@ -31,6 +31,7 @@ import {
   clearMessages,
 } from '../../components/playground/configStorage';
 import { processIncompleteThinkTags } from '../../helpers';
+import { recoverParallelReplies } from '../../helpers/playgroundParallel';
 
 export const usePlaygroundState = (owner) => {
   const activeRef = useRef(true);
@@ -57,7 +58,8 @@ export const usePlaygroundState = (owner) => {
         return null;
       }
     }
-    return loaded;
+    // Interrupted parallel calls must not remain running or resume on reload.
+    return recoverParallelReplies(loaded);
   });
 
   // 基础配置状态
@@ -177,8 +179,9 @@ export const usePlaygroundState = (owner) => {
       }
       // 如果导入的配置包含消息，也恢复消息
       if (importedConfig.messages && Array.isArray(importedConfig.messages)) {
-        setMessage(importedConfig.messages);
-        saveMessages(importedConfig.messages, owner);
+        const restored = recoverParallelReplies(importedConfig.messages);
+        setMessage(restored);
+        saveMessages(restored, owner);
       }
     },
     [owner],

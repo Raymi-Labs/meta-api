@@ -1,5 +1,16 @@
 {
   "translation": {
+    "多模型同时回答": "Nhiều mô hình trả lời",
+    "单模型回答": "Một mô hình trả lời",
+    "选择文本模型（最多5个）": "Chọn mô hình văn bản (tối đa 5)",
+    "每个模型独立调用和计费；同轮收到相同上下文。": "Mỗi mô hình được gọi và tính phí riêng, với cùng ngữ cảnh.",
+    "多模型模式仅支持纯文本，请关闭图片和工具；已有多媒体或工具历史需新开对话。": "Chỉ văn bản: tắt hình ảnh và công cụ. Bắt đầu cuộc trò chuyện mới nếu lịch sử có các mục này.",
+    "请选择一条完整回答作为后续上下文，或撤销本轮。": "Chọn một câu trả lời hoàn chỉnh để tiếp tục hoặc hoàn tác lượt này.",
+    "回复": "Trả lời",
+    "已选为上下文": "Đã chọn làm ngữ cảnh",
+    "用这条继续": "Tiếp tục với câu này",
+    "撤销本轮": "Hoàn tác lượt này",
+    "同时发送": "Gửi đồng thời",
     "摘要视图": "Chế độ xem tóm tắt",
     "完整视图": "Chế độ xem đầy đủ",
     "已声明协议": "Giao thức đã khai báo",

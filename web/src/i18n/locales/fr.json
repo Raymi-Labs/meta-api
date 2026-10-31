@@ -1,5 +1,16 @@
 {
   "translation": {
+    "多模型同时回答": "Réponses de plusieurs modèles",
+    "单模型回答": "Réponse d’un modèle",
+    "选择文本模型（最多5个）": "Choisir des modèles texte (5 max.)",
+    "每个模型独立调用和计费；同轮收到相同上下文。": "Chaque modèle est appelé et facturé séparément, avec le même contexte.",
+    "多模型模式仅支持纯文本，请关闭图片和工具；已有多媒体或工具历史需新开对话。": "Texte uniquement : désactivez images et outils. Créez une discussion si l’historique en contient.",
+    "请选择一条完整回答作为后续上下文，或撤销本轮。": "Choisissez une réponse complète pour continuer ou annulez ce tour.",
+    "回复": "Réponse",
+    "已选为上下文": "Choisie comme contexte",
+    "用这条继续": "Continuer avec ceci",
+    "撤销本轮": "Annuler ce tour",
+    "同时发送": "Envoyer aux modèles",
     "摘要视图": "Vue résumée",
     "完整视图": "Vue complète",
     "已声明协议": "Protocoles déclarés",

@@ -71,6 +71,7 @@ import ChatArea from '../../components/playground/ChatArea';
 import { SlidersHorizontal, Code2, RefreshCw, Copy } from 'lucide-react';
 import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
 import ModelTabs from '../../components/playground/ModelTabs';
+import ParallelTextChat from '../../components/playground/ParallelTextChat';
 import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
 import RequestCodePanel from '../../components/playground/RequestCodePanel';
 import {
@@ -103,6 +104,9 @@ const AccountPlayground = ({ owner }) => {
   const [searchParams] = useSearchParams();
 
   const state = usePlaygroundState(owner);
+  const [parallelMode, setParallelMode] = useState(() =>
+    state.message.some((item) => item.parallelRound),
+  );
   const {
     inputs,
     parameterEnabled,
@@ -145,6 +149,7 @@ const AccountPlayground = ({ owner }) => {
   const hasToolHistory = message.some(
     (item) => item.role === 'tool' || item.tool_calls?.length,
   );
+  const hasParallelHistory = message.some((item) => item.parallelRound);
   const [draft, setDraft] = useState('');
   const [toolResults, setToolResults] = useState({});
   const messageRef = useRef(message);
@@ -431,17 +436,24 @@ const AccountPlayground = ({ owner }) => {
       const isCurrentlyEditing = editingMessageId === message.id;
 
       return (
-        <OptimizedMessageContent
-          message={message}
-          className={className}
-          styleState={styleState}
-          onToggleReasoningExpansion={toggleReasoningExpansion}
-          isEditing={isCurrentlyEditing}
-          onEditSave={handleEditSave}
-          onEditCancel={handleEditCancel}
-          editValue={editValue}
-          onEditValueChange={setEditValue}
-        />
+        <div>
+          {message.parallelModel && (
+            <strong>
+              {message.parallelModel} · {message.parallelGroup}
+            </strong>
+          )}
+          <OptimizedMessageContent
+            message={message}
+            className={className}
+            styleState={styleState}
+            onToggleReasoningExpansion={toggleReasoningExpansion}
+            isEditing={isCurrentlyEditing}
+            onEditSave={handleEditSave}
+            onEditCancel={handleEditCancel}
+            editValue={editValue}
+            onEditValueChange={setEditValue}
+          />
+        </div>
       );
     },
     [
@@ -460,7 +472,7 @@ const AccountPlayground = ({ owner }) => {
       const { message: currentMessage } = props;
       // A tool exchange is an indivisible protocol sequence. Clear the conversation
       // to start over instead of editing/deleting individual protocol messages.
-      if (hasToolHistory) {
+      if (hasToolHistory || hasParallelHistory) {
         const index = message.findIndex(
           (item) => item.id === currentMessage.id,
         );
@@ -479,7 +491,8 @@ const AccountPlayground = ({ owner }) => {
             >
               <Copy size={13} />
             </button>
-            {currentMessage.role === 'assistant' &&
+            {!hasParallelHistory &&
+              currentMessage.role === 'assistant' &&
               (currentMessage.status === 'error' ||
                 currentMessage.toolCallsInterrupted) && (
                 <button
@@ -517,6 +530,7 @@ const AccountPlayground = ({ owner }) => {
     [
       messageActions,
       hasToolHistory,
+      hasParallelHistory,
       styleState,
       message,
       editingMessageId,
@@ -627,18 +641,23 @@ const AccountPlayground = ({ owner }) => {
       />
     </div>
   );
-  const codePanel = (
-    <RequestCodePanel
-      payload={previewPayload}
-      model={catalogState.catalog?.models.find(
-        (item) => item.model_name === previewPayload?.model,
-      )}
-      debugData={debugData}
-      activeDebugTab={activeDebugTab}
-      onActiveDebugTabChange={setActiveDebugTab}
-      customRequestMode={customRequestMode}
-    />
-  );
+  const codePanel =
+    parallelMode && !previewPayload ? (
+      <div className='pg-parallel-selection' role='status'>
+        <p>{t('请选择一条完整回答作为后续上下文，或撤销本轮。')}</p>
+      </div>
+    ) : (
+      <RequestCodePanel
+        payload={previewPayload}
+        model={catalogState.catalog?.models.find(
+          (item) => item.model_name === previewPayload?.model,
+        )}
+        debugData={debugData}
+        activeDebugTab={activeDebugTab}
+        onActiveDebugTabChange={setActiveDebugTab}
+        customRequestMode={customRequestMode}
+      />
+    );
   return (
     <PlaygroundProvider value={playgroundContextValue}>
       <PlaygroundWorkspace
@@ -663,6 +682,19 @@ const AccountPlayground = ({ owner }) => {
               customRequestMode
             }
           />
+          <button
+            className='pg-parallel-toggle'
+            aria-pressed={parallelMode}
+            disabled={
+              generating || pendingCalls.length > 0 || customRequestMode
+            }
+            onClick={() => {
+              setParallelMode((value) => !value);
+              setShowDebugPanel(false);
+            }}
+          >
+            {t(parallelMode ? '单模型回答' : '多模型同时回答')}
+          </button>
           <div className='pg-workspace-actions'>
             <button
               className='pg-open-settings'
@@ -714,44 +746,75 @@ const AccountPlayground = ({ owner }) => {
             )}
           </div>
         )}
-        <ChatArea
-          chatRef={chatRef}
-          message={message}
-          inputs={inputs}
-          roleInfo={roleInfo}
-          onMessageSend={onMessageSend}
-          onStopGenerator={onStopGenerator}
-          onClearMessages={handleClearMessages}
-          renderCustomChatContent={renderCustomChatContent}
-          renderChatBoxAction={renderChatBoxAction}
-          draft={draft}
-          onDraftChange={setDraft}
-          generating={generating}
-          disabled={
-            !canSend ||
-            editingMessageId !== null ||
-            (!customRequestMode && pendingCalls.length > 0) ||
-            !previewPayload
-          }
-          toolResults={
-            !customRequestMode &&
-            pendingCalls.length > 0 && (
-              <ToolResultsForm
-                key={pendingCalls.map((call) => call.id).join(',')}
-                calls={pendingCalls}
-                values={toolResults}
-                onChange={setToolResults}
-                onSubmit={submitToolResults}
-                disabled={
-                  generating || !currentModelAvailable || !previewPayload
-                }
-              />
-            )
-          }
-          onInputChange={handleInputChange}
-          onOpenSettings={() => isMobile && setShowSettings(true)}
-          customRequestMode={customRequestMode}
-        />
+        {!parallelMode &&
+          hasParallelHistory &&
+          !previewPayload &&
+          !generating && (
+            <div className='pg-load-state' role='status'>
+              {t('请选择一条完整回答作为后续上下文，或撤销本轮。')}
+            </div>
+          )}
+        {parallelMode ? (
+          <ParallelTextChat
+            owner={owner}
+            messages={message}
+            setMessages={setMessage}
+            saveMessages={saveMessagesImmediately}
+            models={models}
+            catalog={catalogState.catalog}
+            inputs={inputs}
+            parameterEnabled={parameterEnabled}
+            disabled={
+              modelsLoading ||
+              modelsError ||
+              customRequestMode ||
+              modelLink.pending ||
+              editingMessageId !== null
+            }
+            draft={draft}
+            setDraft={setDraft}
+            isMobile={isMobile}
+          />
+        ) : (
+          <ChatArea
+            chatRef={chatRef}
+            message={message}
+            inputs={inputs}
+            roleInfo={roleInfo}
+            onMessageSend={onMessageSend}
+            onStopGenerator={onStopGenerator}
+            onClearMessages={handleClearMessages}
+            renderCustomChatContent={renderCustomChatContent}
+            renderChatBoxAction={renderChatBoxAction}
+            draft={draft}
+            onDraftChange={setDraft}
+            generating={generating}
+            disabled={
+              !canSend ||
+              editingMessageId !== null ||
+              (!customRequestMode && pendingCalls.length > 0) ||
+              !previewPayload
+            }
+            toolResults={
+              !customRequestMode &&
+              pendingCalls.length > 0 && (
+                <ToolResultsForm
+                  key={pendingCalls.map((call) => call.id).join(',')}
+                  calls={pendingCalls}
+                  values={toolResults}
+                  onChange={setToolResults}
+                  onSubmit={submitToolResults}
+                  disabled={
+                    generating || !currentModelAvailable || !previewPayload
+                  }
+                />
+              )
+            }
+            onInputChange={handleInputChange}
+            onOpenSettings={() => isMobile && setShowSettings(true)}
+            customRequestMode={customRequestMode}
+          />
+        )}
       </PlaygroundWorkspace>
     </PlaygroundProvider>
   );

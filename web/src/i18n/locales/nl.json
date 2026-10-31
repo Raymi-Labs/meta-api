@@ -1,5 +1,16 @@
 {
   "translation": {
+    "多模型同时回答": "Antwoorden van meerdere modellen",
+    "单模型回答": "Antwoord van één model",
+    "选择文本模型（最多5个）": "Kies tekstmodellen (maximaal 5)",
+    "每个模型独立调用和计费；同轮收到相同上下文。": "Elk model wordt apart aangeroepen en gefactureerd, met dezelfde context.",
+    "多模型模式仅支持纯文本，请关闭图片和工具；已有多媒体或工具历史需新开对话。": "Alleen tekst: schakel afbeeldingen en tools uit. Begin een nieuwe chat als ze in de geschiedenis staan.",
+    "请选择一条完整回答作为后续上下文，或撤销本轮。": "Kies een volledig antwoord om verder te gaan of maak deze ronde ongedaan.",
+    "回复": "Antwoord",
+    "已选为上下文": "Gekozen als context",
+    "用这条继续": "Hiermee doorgaan",
+    "撤销本轮": "Ronde ongedaan maken",
+    "同时发送": "Naar modellen sturen",
     "摘要视图": "Samenvatting",
     "完整视图": "Volledige weergave",
     "已声明协议": "Opgegeven protocollen",
