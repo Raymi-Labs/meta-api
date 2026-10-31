@@ -6795,6 +6795,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Testy modelu: {{success}} / {{count}} udanych",
     "测试补充 {{count}} 个时段": "Testy uzupełniają {{count}} przedziałów",
     "最近 {{hours}} 个小时段可用率": "Dostępność w ostatnich {{hours}} przedziałach godzinowych",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Testy uzupełniają godziny modelu i grupy bez prawidłowych żądań: wystarczy sukces jednego dostawcy, same błędy oznaczają niepowodzenie, a brak testów oznacza stan nieznany. Wskaźnik waży rzeczywiste żądania i uzupełnione przedziały. Kolor przedziałów z samymi testami pokazuje wynik, nie ciągłą pracę."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Przy mniej niż 30 prawidłowych żądaniach na godzinę modelu/grupy testy dodają jedną łączną próbkę: wystarczy sukces jednego dostawcy; same błędy oznaczają niepowodzenie. Dostępność zachowuje rzeczywiste żądania z ich wagą. Z testami uzupełniającymi kolor zależy od wyniku; bez testów obowiązuje próg próbek. Nie oznacza to ciągłej pracy."
   }
 }

@@ -13,6 +13,9 @@ import (
 const MetricScope = "per_request_per_group_final_outcome"
 const WindowScope = "current_hour_and_previous_23_hours"
 
+// Keep this threshold aligned with the request-health UI sample minimum.
+const MinUptimeRequestSamples = int64(30)
+
 // A normalized billing family must never erase a restriction on the exact
 // model ID exposed by pricing. Require both names when they differ.
 func IsModelAuthorized(name string, role int) bool {
@@ -185,8 +188,9 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	return result
 }
 
-// Fold before applying the fallback: a probe from one replica must not hide
-// real failures from another, and N upstreams contribute at most one sample.
+// Fold before applying the low-sample threshold so replicas share one request
+// count. N upstreams contribute at most one supplemental sample; real outcomes
+// retain their original weight.
 func withProbeBuckets(rows []model.GroupHealthMetric) []model.GroupHealthMetric {
 	merged := make(map[bucketKey]model.GroupHealthMetric)
 	for _, row := range rows {
@@ -202,7 +206,7 @@ func withProbeBuckets(rows []model.GroupHealthMetric) []model.GroupHealthMetric 
 	result := make([]model.GroupHealthMetric, 0, len(merged))
 	for _, row := range merged {
 		row.ProbeBucketCount, row.ProbeSuccessBucketCount = 0, 0
-		if row.RequestCount == 0 && row.ProbeCount > 0 {
+		if row.RequestCount < MinUptimeRequestSamples && row.ProbeCount > 0 {
 			row.ProbeBucketCount = 1
 			if row.ProbeSuccessCount > 0 {
 				row.ProbeSuccessBucketCount = 1

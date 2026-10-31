@@ -6795,6 +6795,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Model testleri: {{success}} / {{count}} başarılı",
     "测试补充 {{count}} 个时段": "Testler {{count}} zaman dilimini tamamlıyor",
     "最近 {{hours}} 个小时段可用率": "Son {{hours}} saatlik dilimde kullanılabilirlik",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Testler, geçerli istek olmayan model ve grup saatlerini tamamlar: bir sağlayıcının başarılı olması yeterlidir, yalnızca hatalar başarısızlık sayılır, test yoksa durum bilinmez. Oran gerçek istekler ve ek dilimler üzerinden ağırlıklandırılır. Yalnızca test içeren dilimlerin rengi sonucu gösterir, kesintisiz çalışmayı kanıtlamaz."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Model/grup saati başına 30’dan az geçerli istek varsa testler tek bir birleşik örnek ekler: bir sağlayıcının başarılı olması yeterlidir; yalnızca hatalar başarısızlık sayılır. Kullanılabilirlik gerçek istekleri ağırlıklarıyla korur. Ek test varsa renk sonuca göre belirlenir; yoksa örnek eşiği geçerlidir. Bu, kesintisiz çalışmayı göstermez."
   }
 }

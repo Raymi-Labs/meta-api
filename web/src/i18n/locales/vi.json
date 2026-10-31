@@ -7408,6 +7408,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Kiểm thử mô hình: {{success}} / {{count}} lần đạt",
     "测试补充 {{count}} 个时段": "Kiểm thử bổ sung {{count}} khung giờ",
     "最近 {{hours}} 个小时段可用率": "Tỷ lệ khả dụng trong {{hours}} khung giờ gần nhất",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Kiểm thử bổ sung các giờ của mô hình và nhóm không có yêu cầu hợp lệ: chỉ cần một nhà cung cấp đạt là thành công, chỉ có lỗi là thất bại, không kiểm thử là chưa rõ. Tỷ lệ được tính theo trọng số yêu cầu thực và khung giờ bổ sung; màu khung giờ chỉ kiểm thử phản ánh kết quả, không chứng minh hoạt động liên tục."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Nếu mỗi giờ của mô hình/nhóm có dưới 30 yêu cầu hợp lệ, các kiểm thử được gộp thành một mẫu bổ sung: chỉ cần một nhà cung cấp đạt là thành công; chỉ có lỗi là thất bại. Tỷ lệ khả dụng giữ nguyên và tính trọng số yêu cầu thực. Có kiểm thử bổ sung thì màu theo kết quả; không có kiểm thử thì vẫn áp dụng ngưỡng mẫu. Điều này không chứng minh hoạt động liên tục."
   }
 }

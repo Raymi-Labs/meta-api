@@ -81,7 +81,7 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
           success_rate: 0,
           uptime_rate: 33.333,
         }),
-      ).toBe('limited');
+      ).toBe('degraded');
       expect(
         uptimeTone({
           request_count: 30,
@@ -93,6 +93,47 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
       ).toBe('degraded');
       expect(getUptimeRate({ request_count: 30, success_rate: 90 })).toBe(90);
       expect(getUptimeRate({ ...passing, uptime_rate: null })).toBeNull();
+    });
+    test('1 to 29 real samples with probe evidence use the calculated tone in summary and hours', () => {
+      for (const count of [1, 29]) {
+        const stats = {
+          ...passing,
+          request_count: count,
+          success_count: count,
+          success_rate: 100,
+          uptime_sample_count: count + 1,
+        };
+        expect(healthTone(stats)).toBe('limited');
+        expect(uptimeTone(stats)).toBe('healthy');
+        expect(uptimeTone({ ...stats, probe_bucket_count: 0 })).toBe('limited');
+        const html = renderToStaticMarkup(
+          <GroupHealthPanel
+            uptime
+            stats={{
+              ...stats,
+              group: 'g',
+              series: [{ ...stats, ts: 1800000000 }],
+            }}
+          />,
+        );
+        expect(html).toContain('group-health-bar-healthy');
+        expect(html).toContain('100.00%');
+        expect(html).toContain(`计入统计 ${count} 次`);
+        expect(html).toContain('测试补充 1 个时段');
+        expect(html).not.toContain('· 样本不足');
+        expect(html).not.toContain('group-health-badge-limited');
+      }
+      expect(
+        uptimeTone({
+          request_count: 30,
+          success_rate: 90,
+          uptime_rate: 90,
+          probe_bucket_count: 0,
+        }),
+      ).toBe('warning');
+      expect(
+        uptimeTone({ ...passing, request_count: 1, uptime_rate: null }),
+      ).toBe('empty');
     });
     test('chart uses the same metric, units and missing-hour gaps', () => {
       expect(chartDisplayValue(passing, 'uptime_rate')).toBe(100);

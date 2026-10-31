@@ -6795,6 +6795,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Pruebas del modelo: {{success}} / {{count}} correctas",
     "测试补充 {{count}} 个时段": "Pruebas complementarias en {{count}} intervalos",
     "最近 {{hours}} 个小时段可用率": "Disponibilidad en los últimos {{hours}} intervalos horarios",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Las pruebas completan las horas sin solicitudes válidas de cada modelo y grupo: basta un proveedor correcto, solo fallos indican fallo y sin pruebas el estado es desconocido. La tasa pondera solicitudes reales e intervalos complementarios. El color de intervalos con solo pruebas indica su resultado, no disponibilidad continua."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "Con menos de 30 solicitudes válidas por hora de modelo/grupo, las pruebas añaden una muestra conjunta: basta un proveedor correcto; solo fallos cuentan como fallo. La disponibilidad conserva y pondera las solicitudes reales. Con pruebas complementarias, el color refleja el resultado; sin ellas se mantiene el umbral de muestras. No implica disponibilidad continua."
   }
 }

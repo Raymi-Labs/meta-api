@@ -7007,6 +7007,6 @@
     "模型测试 {{success}} / {{count}} 次通过": "Model tests: {{success}} / {{count}} passed",
     "测试补充 {{count}} 个时段": "Tests supplement {{count}} time slots",
     "最近 {{hours}} 个小时段可用率": "Availability over the last {{hours}} hourly slots",
-    "无有效调用的模型分组小时段由测试补充：任一上游通过即成功，仅有失败即失败，无测试保持未知。可用率按真实请求与补充时段加权；纯测试按结果着色，不代表持续在线。": "Tests supplement model/group hours without eligible requests: any upstream passing counts as success, failures only count as failure, and no tests means unknown. Availability weights real requests and supplemental slots; test-only slots are colored by result and do not imply continuous uptime."
+    "每个模型分组小时段有效调用不足30次时，测试合并补充一个样本：任一上游通过即成功，仅有失败即失败。可用率保留真实调用并加权；有测试补充时按结果着色，无测试沿用样本门槛，不代表持续在线。": "For each model/group hour with fewer than 30 eligible requests, tests add one combined sample: any upstream passing counts as success; failures only count as failure. Availability retains and weights real requests. Supplemental tests enable result-based colors; without tests the sample threshold still applies. This does not imply continuous uptime."
   }
 }
