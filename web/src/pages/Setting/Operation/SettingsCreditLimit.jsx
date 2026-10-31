@@ -239,7 +239,7 @@ export default function SettingsCreditLimit(props) {
                   min={0}
                   max={1}
                   extraText={t(
-                    '按充值额度计算，当前比例 {{ratePercent}}%，T+1 结算',
+                    '按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算',
                     {
                       ratePercent: inviterCommissionPercent,
                     },
