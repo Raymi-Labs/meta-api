@@ -43,11 +43,15 @@ export function officialPriceColumns(tiers = []) {
     ),
   );
 }
-export function formatOfficialPrice(value, currency) {
+export function formatOfficialPrice(
+  value,
+  currency,
+  maximumSignificantDigits = 15,
+) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
     return '—';
   const symbol = { USD: '$', CNY: '¥', EUR: '€' }[currency];
-  return `${symbol || currency + ' '}${value.toLocaleString('en-US', { maximumSignificantDigits: 15 })}`;
+  return `${symbol || currency + ' '}${value.toLocaleString('en-US', { maximumSignificantDigits })}`;
 }
 export function officialPricingSource(value) {
   try {

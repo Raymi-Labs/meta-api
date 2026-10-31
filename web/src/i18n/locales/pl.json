@@ -6776,6 +6776,10 @@
     "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Domyślnie codziennie synchronizuje atrybuty modeli i oficjalne ceny tekstu OpenAI. Wartości ręczne mają pierwszeństwo; błędy nie usuwają istniejących wartości.",
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Automatycznie uzupełnia atrybuty modeli i oficjalne ceny tekstu OpenAI. Wartości ręczne mają pierwszeństwo; usuń je, aby wznowić automatyczną synchronizację.",
     "官方价格自动更新于 {{time}}": "Ceny oficjalne automatycznie zaktualizowano: {{time}}",
-    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Modele z katalogu są dodawane automatycznie. Atrybuty preferują oficjalne źródła; katalog uzupełnia brakujące dane, a ustawienia ręczne są zachowywane."
+    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Modele z katalogu są dodawane automatycznie. Atrybuty preferują oficjalne źródła; katalog uzupełnia brakujące dane, a ustawienia ręczne są zachowywane.",
+    "参考汇率：1 USD = {{rate}} CNY · {{date}}": "Kurs referencyjny: 1 USD = {{rate}} CNY · {{date}}",
+    "暂用最近有效汇率": "Używany jest ostatni prawidłowy kurs",
+    "正在获取参考汇率…": "Pobieranie kursu referencyjnego…",
+    "参考汇率暂不可用，暂停跨币种价格对比": "Kurs referencyjny niedostępny; porównanie cen między walutami wstrzymane"
   }
 }

@@ -6988,6 +6988,10 @@
     "同步模型属性和 OpenAI 官方文本价格，默认每天检查；人工设置优先，失败保留旧值。": "Sync model attributes and official OpenAI text prices daily by default. Manual values take priority; failures preserve existing values.",
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Automatically fill model attributes and official OpenAI text prices. Manual values take priority; clear them to resume automatic sync.",
     "官方价格自动更新于 {{time}}": "Official prices automatically updated on {{time}}",
-    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Models from the marketplace are added automatically. Attributes prefer official provider sources, with catalog data filling gaps and manual settings preserved."
+    "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Models from the marketplace are added automatically. Attributes prefer official provider sources, with catalog data filling gaps and manual settings preserved.",
+    "参考汇率：1 USD = {{rate}} CNY · {{date}}": "Reference rate: 1 USD = {{rate}} CNY · {{date}}",
+    "暂用最近有效汇率": "Using the last valid rate",
+    "正在获取参考汇率…": "Fetching reference rate…",
+    "参考汇率暂不可用，暂停跨币种价格对比": "Reference rate unavailable; cross-currency price comparison paused"
   }
 }

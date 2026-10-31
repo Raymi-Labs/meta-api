@@ -1608,3 +1608,7 @@ html.dark .model-metric-chart {
     display: inline;
   }
 }
+
+.model-official-exchange-rate {
+  overflow-wrap: anywhere;
+}

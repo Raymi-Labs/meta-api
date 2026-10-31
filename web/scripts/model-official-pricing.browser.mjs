@@ -27,7 +27,7 @@ const status = {
   system_name: 'New API',
   quota_per_unit: 500000,
   quota_display_type: 'USD',
-  usd_exchange_rate: 7,
+  usd_exchange_rate: 1,
   price: 2,
   server_address: baseURL,
   HeaderNavModules: JSON.stringify({
@@ -275,6 +275,16 @@ const makePage = async (role = 1, dark = false) => {
     }
     if (url.pathname === '/api/status') body = { success: true, data: status };
     if (url.pathname === '/api/pricing') body = pricing;
+    if (url.pathname === '/api/pricing/exchange-rate')
+      body = {
+        success: true,
+        data: {
+          usd_cny: 7,
+          date: new Date().toISOString().slice(0, 10),
+          source: 'ECB',
+          stale: false,
+        },
+      };
     if (url.pathname === '/api/user/models')
       body.data = pricing.data
         .filter((model) =>

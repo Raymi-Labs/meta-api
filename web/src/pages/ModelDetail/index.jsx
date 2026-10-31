@@ -43,6 +43,8 @@ import {
   buildModelComparePath,
   buildModelPlaygroundPath,
 } from '../../helpers/modelCompare';
+import { useOfficialExchangeRate } from '../../hooks/model-pricing/useOfficialExchangeRate';
+import ModelExchangeRate from './ModelExchangeRate';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
@@ -52,7 +54,16 @@ export default function ModelDetail() {
   const catalogState = sanitizeModelCatalogSnapshot(
     location.state?.catalogState,
   );
-  const data = useModelPricingData(catalogState);
+  const pricingData = useModelPricingData(catalogState);
+  const sourceModel = pricingData.models.find(
+    (item) => item.model_name === getModelNameFromDetailPath(location.pathname),
+  );
+  const needsExchange =
+    ['USD', 'CNY'].includes(sourceModel?.official_pricing?.currency) &&
+    ['USD', 'CNY'].includes(pricingData.currency) &&
+    sourceModel.official_pricing.currency !== pricingData.currency;
+  const officialExchangeRate = useOfficialExchangeRate(needsExchange);
+  const data = { ...pricingData, officialExchangeRate };
   const { t } = data;
   const modelName = getModelNameFromDetailPath(location.pathname);
   const model = data.models.find((item) => item.model_name === modelName);
@@ -352,6 +363,9 @@ export default function ModelDetail() {
             </p>
             {officialTiers.length > 0 && (
               <div className='model-group-comparison-controls'>
+                {needsExchange && (
+                  <ModelExchangeRate state={officialExchangeRate} t={t} />
+                )}
                 <label>
                   <span id='official-tier-label'>{t('官方对比档位')}</span>
                   <Select

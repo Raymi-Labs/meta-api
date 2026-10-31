@@ -38,7 +38,7 @@ export default function ModelGroupPrice({
     displayPrice: data.displayPrice,
     tokenUnit: data.tokenUnit,
     quotaDisplayType: data.siteDisplayType,
-    usdExchangeRate: data.statusState?.status?.usd_exchange_rate,
+    exchangeQuote: data.officialExchangeRate?.quote,
   });
   const label =
     comparison?.kind === 'equal'
@@ -60,14 +60,14 @@ export default function ModelGroupPrice({
         {comparison &&
           (comparison.kind === 'lower' ? (
             <del aria-label={t('官方参考价')}>
-              {formatOfficialPrice(comparison.official, data.currency)}
+              {formatOfficialPrice(comparison.official, data.currency, 6)}
             </del>
           ) : (
             <span
               className='model-group-reference-price'
               aria-label={t('官方参考价')}
             >
-              {formatOfficialPrice(comparison.official, data.currency)}
+              {formatOfficialPrice(comparison.official, data.currency, 6)}
             </span>
           ))}
         <strong>
