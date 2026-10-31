@@ -115,6 +115,8 @@ import {
 
 const customLobeIconMap = {
   Xiaomi: SiXiaomi,
+  // Metadata may use this newer name before the bundled icon library supports it.
+  XiaomiMiMo: SiXiaomi,
 };
 
 // 获取侧边栏Lucide图标组件
@@ -445,12 +447,14 @@ export function getChannelIcon(channelType) {
  * - 继续兼容第二参数 size；若字符串里有 size=，以字符串为准
  * @param {string} iconName - 图标名称/描述
  * @param {number} size - 图标大小，默认为 14
+ * @param {string} fallbackIconName - 模型图标不可解析时使用的供应商图标
  * @returns {JSX.Element} - 对应的图标组件或 Avatar
  */
-export function getLobeHubIcon(iconName, size = 14) {
+export function getLobeHubIcon(iconName, size = 14, fallbackIconName) {
   if (typeof iconName === 'string') iconName = iconName.trim();
-  // 如果没有图标名称，返回 Avatar
+  // 未配置模型图标时优先使用供应商图标，否则返回 Avatar
   if (!iconName) {
+    if (fallbackIconName) return getLobeHubIcon(fallbackIconName, size);
     return <Avatar size='extra-extra-small'>?</Avatar>;
   }
 
@@ -469,6 +473,7 @@ export function getLobeHubIcon(iconName, size = 14) {
     !IconComponent ||
     (typeof IconComponent !== 'function' && typeof IconComponent !== 'object')
   ) {
+    if (fallbackIconName) return getLobeHubIcon(fallbackIconName, size);
     const firstLetter = String(iconName).charAt(0).toUpperCase();
     return <Avatar size='extra-extra-small'>{firstLetter}</Avatar>;
   }
