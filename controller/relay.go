@@ -1067,7 +1067,12 @@ func RelayTask(c *gin.Context) {
 
 // respondTaskError 统一输出 Task 错误响应（含 429 限流提示改写）
 func respondTaskError(c *gin.Context, taskErr *dto.TaskError) {
-	logErr := types.NewErrorWithStatusCode(fmt.Errorf("%s", taskErr.Message), types.ErrorCode(taskErr.Code), taskErr.StatusCode)
+	cause := error(fmt.Errorf("%s", taskErr.Message))
+	// Keep authoritative local quota facts through the task DTO conversion.
+	if taskErr.LocalError && taskErr.Error != nil {
+		cause = taskErr.Error
+	}
+	logErr := types.NewErrorWithStatusCode(cause, types.ErrorCode(taskErr.Code), taskErr.StatusCode)
 	logErr.UpstreamStatusCode = taskErr.UpstreamStatusCode
 	logErr.RetryAfter = taskErr.RetryAfter
 	service.MarkRequestFailure(c, logErr)

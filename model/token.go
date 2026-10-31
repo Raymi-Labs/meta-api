@@ -17,6 +17,8 @@ import (
 const TokenSourceTypeImagePlayground = "image_playground"
 
 type Token struct {
+	QuotaFailureCount       int            `json:"-" gorm:"not null;default:0"`
+	QuotaFailureVersion     int64          `json:"-" gorm:"not null;default:0"`
 	Id                      int            `json:"id"`
 	UserId                  int            `json:"user_id" gorm:"index"`
 	Key                     string         `json:"key" gorm:"type:varchar(128);uniqueIndex"`
@@ -273,7 +275,18 @@ func ValidateUserToken(key string) (token *Token, err error) {
 		return nil, errors.New("未提供令牌")
 	}
 	token, err = GetTokenByKey(key, false)
+	if err == nil && common.RedisEnabled {
+		// Cached snapshots may be written asynchronously after a disable or re-enable.
+		var state Token
+		err = DB.Select("status", "quota_failure_count", "quota_failure_version").First(&state, token.Id).Error
+		if err == nil {
+			token.Status, token.QuotaFailureCount, token.QuotaFailureVersion = state.Status, state.QuotaFailureCount, state.QuotaFailureVersion
+		}
+	}
 	if err == nil {
+		if token.Status == common.TokenStatusDisabled && token.QuotaFailureCount >= TokenQuotaFailureThreshold {
+			return token, errors.New("该令牌因连续三次额度不足已自动禁用，请补充额度后在令牌管理中手动启用")
+		}
 		if token.Status == common.TokenStatusExhausted {
 			keyPrefix := key[:3]
 			keySuffix := key[len(key)-3:]
@@ -404,8 +417,9 @@ func GetTokenByKey(key string, fromDB bool) (token *Token, err error) {
 	defer func() {
 		// Update Redis cache asynchronously on successful DB read
 		if shouldUpdateRedis(fromDB, err) && token != nil {
+			snapshot := *token
 			gopool.Go(func() {
-				if err := cacheSetToken(*token); err != nil {
+				if err := cacheSetToken(snapshot); err != nil {
 					common.SysLog("failed to update user status cache: " + err.Error())
 				}
 			})
@@ -464,12 +478,19 @@ func (token *Token) Update() (err error) {
 			})
 		}
 	}()
-	err = DB.Model(token).Select("name", "status", "source_type", "billing_mode",
-		"sellable_token_product_id", "sellable_token_issuance_id", "expired_time", "remain_quota",
-		"unlimited_quota", "model_limits_enabled", "model_limits", "channel_limits_enabled", "channel_limits", "allow_ips", "group",
-		"cross_group_retry", "auto_group_fallback", "routing_config", "max_concurrency", "window_request_limit", "window_seconds",
-		"package_enabled", "package_limit_quota", "package_period", "package_custom_seconds",
-		"package_used_quota", "package_next_reset_time", "package_period_mode").Updates(token).Error
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(token).Select("name", "status", "source_type", "billing_mode",
+			"sellable_token_product_id", "sellable_token_issuance_id", "expired_time", "remain_quota",
+			"unlimited_quota", "model_limits_enabled", "model_limits", "channel_limits_enabled", "channel_limits", "allow_ips", "group",
+			"cross_group_retry", "auto_group_fallback", "routing_config", "max_concurrency", "window_request_limit", "window_seconds",
+			"package_enabled", "package_limit_quota", "package_period", "package_custom_seconds",
+			"package_used_quota", "package_next_reset_time", "package_period_mode").Updates(token).Error; err != nil {
+			return err
+		}
+		return tx.Model(token).UpdateColumns(map[string]interface{}{
+			"quota_failure_count": 0, "quota_failure_version": gorm.Expr("quota_failure_version + 1"),
+		}).Error
+	})
 	return err
 }
 
@@ -485,7 +506,7 @@ func (token *Token) SelectUpdate() (err error) {
 		}
 	}()
 	// This can update zero values
-	return DB.Model(token).Select("accessed_time", "status").Updates(token).Error
+	return DB.Model(token).Where("status = ?", common.TokenStatusEnabled).Select("accessed_time", "status").Updates(token).Error
 }
 
 func (token *Token) Delete() (err error) {

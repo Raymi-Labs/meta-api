@@ -79,11 +79,12 @@ func MarkQuotaNoticeSettlement(c *gin.Context, info *relaycommon.RelayInfo) {
 }
 
 // Exhausted tokens fail before normal authorization completes. Check identity,
-// expiry, IP, group and model restrictions before permitting a notification.
+// expiry, IP, group and model restrictions before recording quota outcomes.
+// Automatic disable remains independent of notification preferences.
 // Decode only a bounded model envelope, never retain any prompt or credential.
 func MarkQuotaNoticeAuthRejection(c *gin.Context, token *model.Token, err error) {
 	var rejected *types.QuotaRejection
-	if token == nil || !errors.As(err, &rejected) || c.Request.Method != http.MethodPost {
+	if token == nil || !errors.As(err, &rejected) || !IsTokenQuotaInvocation(c) {
 		return
 	}
 	if token.ExpiredTime != -1 && token.ExpiredTime < common.GetTimestamp() {
@@ -96,10 +97,10 @@ func MarkQuotaNoticeAuthRejection(c *gin.Context, token *model.Token, err error)
 		return
 	}
 	u, e := model.GetUserCache(token.UserId)
-	if e != nil || u.Status != common.UserStatusEnabled || !u.GetSetting().QuotaBlockedNotificationsEnabled() {
+	if e != nil || u.Status != common.UserStatusEnabled {
 		return
 	}
-	if token.Group != "" {
+	if token.Group != "" && token.RoutingConfig == "" {
 		if _, ok := GetUserUsableGroups(u.Group)[token.Group]; !ok {
 			return
 		}
@@ -110,11 +111,22 @@ func MarkQuotaNoticeAuthRejection(c *gin.Context, token *model.Token, err error)
 	if c.Request.Body != nil {
 		_ = common.DecodeJson(io.LimitReader(c.Request.Body, 1<<20), &envelope)
 	}
+	if envelope.Model == "" {
+		path := c.Request.URL.Path
+		if i := strings.Index(path, "/models/"); i >= 0 {
+			envelope.Model = strings.SplitN(path[i+len("/models/"):], ":", 2)[0]
+		}
+	}
 	if token.ModelLimitsEnabled && !token.GetModelLimitsMap()[envelope.Model] {
 		return
 	}
 	// Channel overrides require the same admin privilege as SetupContextForToken.
 	if c.GetString("quota_notice_specific_channel") != "" && !model.IsAdmin(token.UserId) {
+		return
+	}
+	MarkTokenQuotaIdentity(c, token)
+	c.Set("token_quota_auth_rejection", rejected)
+	if !u.GetSetting().QuotaBlockedNotificationsEnabled() {
 		return
 	}
 	c.Set("quota_notice_auth_rejection", rejected)
