@@ -111,6 +111,9 @@ func (m Model) DisplayAttributeSources() map[string]ModelAttributeSource {
 			out[key] = source
 		}
 	}
+	add("description", s.Description != nil && m.Description == *s.Description)
+	add("tags", s.Tags != nil && m.Tags == *s.Tags)
+	add("vendor_id", s.VendorID != nil && m.VendorID == *s.VendorID)
 	add("context_length", s.ContextLength != nil && m.ContextLength == *s.ContextLength)
 	add("max_output_tokens", s.MaxOutputTokens != nil && m.MaxOutputTokens == *s.MaxOutputTokens)
 	add("input_modalities", len(s.InputModalities) > 0 && slices.Equal(s.InputModalities, m.InputModalities))

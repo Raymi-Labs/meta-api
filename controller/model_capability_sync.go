@@ -40,6 +40,9 @@ type capabilityProvider struct {
 }
 
 type capabilityModel struct {
+	Description      string          `json:"description"`
+	Family           string          `json:"family"`
+	Type             string          `json:"type"`
 	ID               string          `json:"id"`
 	Reasoning        json.RawMessage `json:"reasoning"`
 	ToolCall         json.RawMessage `json:"tool_call"`
@@ -118,6 +121,9 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 				releaseDate = ""
 			}
 			entry := model.ModelCapabilityMetadata{
+				Description:     strings.TrimSpace(upstream.Description),
+				Tags:            metadataTags(upstream.Family, upstream.Type),
+				VendorName:      communityMetadataVendor(providerID, id),
 				ReleaseDate:     releaseDate,
 				ContextLength:   contextLength,
 				MaxOutputTokens: maxOutput, Capabilities: flags,
@@ -125,7 +131,7 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 				OutputModalities: decodeCapabilityModalities(upstream.Modalities.Output),
 				Provider:         providerID,
 			}
-			if entry.ReleaseDate == "" && entry.ContextLength == 0 && entry.MaxOutputTokens == 0 && len(entry.Capabilities) == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
+			if entry.Description == "" && entry.ReleaseDate == "" && entry.ContextLength == 0 && entry.MaxOutputTokens == 0 && len(entry.Capabilities) == 0 && len(entry.InputModalities) == 0 && len(entry.OutputModalities) == 0 {
 				continue
 			}
 			if previous, exists := priorities[id]; exists && previous >= provider.Billing.Priority {
@@ -183,11 +189,23 @@ func reconcileModelCatalog(ctx context.Context) (int, error) {
 	return created, err
 }
 
-func runModelCapabilitySync(parent context.Context) (result model.ModelCapabilitySyncResult, syncErr error) {
+func runModelCapabilitySync(parent context.Context) (model.ModelCapabilitySyncResult, error) {
+	return runModelCapabilitySyncFor(parent, nil)
+}
+
+func runModelCapabilitySyncFor(parent context.Context, names map[string]bool) (result model.ModelCapabilitySyncResult, syncErr error) {
 	if !modelCapabilitySyncMutex.TryLock() {
 		return model.ModelCapabilitySyncResult{}, errModelCapabilityBusy
 	}
 	defer modelCapabilitySyncMutex.Unlock()
+	if names == nil {
+		var err error
+		names, err = model.ModelAttributeSyncCandidates(parent)
+		if err != nil {
+			return result, err
+		}
+	}
+	defer func() { rememberModelMetadataAttempt(names, syncErr == nil && result.SourceFailures == 0) }()
 	defer func() {
 		reconcileCtx, cancel := context.WithTimeout(parent, 30*time.Second)
 		defer cancel()
@@ -200,11 +218,21 @@ func runModelCapabilitySync(parent context.Context) (result model.ModelCapabilit
 			model.RefreshPricing()
 		}
 	}()
-	timeout := common.GetEnvOrDefault("SYNC_HTTP_TIMEOUT_SECONDS", 30)
-	if timeout < 1 || timeout > 300 {
-		timeout = 30
+	timeout := common.GetEnvOrDefault("MODEL_METADATA_SYNC_TIMEOUT_SECONDS", 180)
+	if timeout < 1 || timeout > 600 {
+		timeout = 180
 	}
-	ctx, cancel := context.WithTimeout(parent, time.Duration(timeout)*time.Second)
+	networkTimeout := time.Duration(timeout) * time.Second
+	if deadline, ok := parent.Deadline(); ok {
+		remaining := time.Until(deadline) - 2*time.Second
+		if remaining <= 0 {
+			return result, context.DeadlineExceeded
+		}
+		if remaining < networkTimeout {
+			networkTimeout = remaining
+		}
+	}
+	ctx, cancel := context.WithTimeout(parent, networkTimeout)
 	defer cancel()
 	source := modelCapabilitySourceURL()
 	var entries, official map[string]model.ModelCapabilityMetadata
@@ -213,10 +241,18 @@ func runModelCapabilitySync(parent context.Context) (result model.ModelCapabilit
 	var fetches sync.WaitGroup
 	fetches.Add(2)
 	go func() { defer fetches.Done(); entries, communityErr = fetchModelCapabilities(ctx, source) }()
-	go func() { defer fetches.Done(); official, warnings, officialErr = fetchOfficialModelAttributes(ctx) }()
+	go func() {
+		defer fetches.Done()
+		official, warnings, officialErr = fetchOfficialModelAttributesFor(ctx, names)
+	}()
 	fetches.Wait()
 	if entries == nil {
 		entries = map[string]model.ModelCapabilityMetadata{}
+	}
+	for id := range entries {
+		if !names[id] {
+			delete(entries, id)
+		}
 	}
 	for id, entry := range official {
 		entries[id] = mergeOfficialAttributes(entries[id], entry)
@@ -271,6 +307,10 @@ func StartModelCapabilitySyncTask() {
 		}
 		interval := modelCapabilitySyncInterval()
 		go func() {
+			select {
+			case modelCatalogChanged <- struct{}{}:
+			default:
+			}
 			// Local inventory is cheap and independent of the daily network refresh.
 			ticker := time.NewTicker(time.Minute)
 			defer ticker.Stop()
@@ -281,7 +321,8 @@ func StartModelCapabilitySyncTask() {
 
 // A cancellable loop lets lifecycle and cadence be exercised without real timers.
 func runModelCatalogSyncTask(ctx context.Context, ticks <-chan time.Time, interval time.Duration) {
-	nextSync := time.Now().Add(time.Minute)
+	nextSync := time.Now()
+	failures := 0
 	for {
 		changed := false
 		select {
@@ -311,11 +352,90 @@ func runModelCatalogSyncTask(ctx context.Context, ticks <-chan time.Time, interv
 			nextSync = time.Now() // retry the coalesced change on the next local tick
 			continue
 		}
-		nextSync = time.Now().Add(interval)
+		if err != nil || result.SourceFailures > 0 {
+			failures++
+		} else {
+			failures = 0
+		}
+		nextSync = time.Now().Add(modelMetadataRetryDelay(interval, failures))
 		if err != nil {
 			common.SysError("scheduled model capability sync failed: " + err.Error())
 		} else if result.Updated > 0 || result.Created > 0 {
 			common.SysLog(fmt.Sprintf("model capability sync completed: updated=%d created=%d", result.Updated, result.Created))
 		}
+	}
+}
+
+// Network/source failures retry with bounded backoff; a permanent missing ID
+// cannot turn the catalog refresh into a tight loop.
+func modelMetadataRetryDelay(interval time.Duration, failures int) time.Duration {
+	if failures == 0 {
+		return interval
+	}
+	if failures > 5 {
+		failures = 5
+	}
+	delay := 5 * time.Minute * time.Duration(1<<(failures-1))
+	if delay > time.Hour {
+		delay = time.Hour
+	}
+	if delay > interval {
+		delay = interval
+	}
+	return delay
+}
+
+var modelMetadataAttempts = struct {
+	sync.Mutex
+	until map[string]time.Time
+}{until: map[string]time.Time{}}
+
+func rememberModelMetadataAttempt(names map[string]bool, success bool) {
+	delay := 5 * time.Minute
+	if success {
+		delay = modelCapabilitySyncInterval()
+	}
+	modelMetadataAttempts.Lock()
+	defer modelMetadataAttempts.Unlock()
+	now := time.Now()
+	for id, until := range modelMetadataAttempts.until {
+		if until.Before(now) {
+			delete(modelMetadataAttempts.until, id)
+		}
+	}
+	for id := range names {
+		modelMetadataAttempts.until[id] = now.Add(delay)
+	}
+}
+func modelMetadataRecentlyChecked(id string) bool {
+	modelMetadataAttempts.Lock()
+	defer modelMetadataAttempts.Unlock()
+	return time.Now().Before(modelMetadataAttempts.until[id])
+}
+
+// The editor requests this automatically before loading its initial form. The
+// existing per-session frontend guard rejects late responses after switching or
+// closing. Concurrent background syncs are coalesced, and failed reads fall back
+// to the saved values instead of preventing an administrator from editing.
+func refreshModelMetadataForEditor(parent context.Context, m *model.Model) {
+	if m.SyncOfficial == 0 || m.NameRule != model.NameRuleExact || !common.GetEnvOrDefaultBool("MODEL_METADATA_SYNC_ENABLED", true) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	for !modelMetadataRecentlyChecked(m.ModelName) {
+		_, err := runModelCapabilitySyncFor(ctx, map[string]bool{m.ModelName: true})
+		if !errors.Is(err, errModelCapabilityBusy) {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+	var fresh model.Model
+	if model.DB.WithContext(parent).First(&fresh, m.Id).Error == nil {
+		*m = fresh
 	}
 }

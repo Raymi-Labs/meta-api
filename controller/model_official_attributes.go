@@ -32,7 +32,12 @@ func fetchOfficialAttributeData(ctx context.Context, address string, headers map
 		req.Header.Set(key, value)
 	}
 	client := *getHTTPClient()
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	client.CheckRedirect = func(next *http.Request, via []*http.Request) error {
+		if headers["User-Agent"] == "MetaAPI-ModelMetadata/1.0" && headers["Accept"] != "" && headers["Authorization"] == "" && headers["x-goog-api-key"] == "" && len(via) < 3 && next.URL.Scheme == "https" && next.URL.Host == req.URL.Host {
+			return nil
+		}
+		return http.ErrUseLastResponse
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("official metadata request failed: %w", err)
@@ -119,7 +124,14 @@ func parseOpenAIModelAttributes(data []byte, id string) (model.ModelCapabilityMe
 	if err != nil {
 		return model.ModelCapabilityMetadata{}, err
 	}
-	return parseOpenAIAttributeLines(lines)
+	entry, err := parseOpenAIAttributeLines(lines)
+	for i, line := range lines {
+		if line == id && i+1 < len(lines) && i < 5 && len(lines[i+1]) > 15 {
+			entry.Description = lines[i+1]
+			break
+		}
+	}
+	return entry, err
 }
 
 func parseOpenAIAttributeLines(lines []string) (model.ModelCapabilityMetadata, error) {
@@ -192,6 +204,16 @@ func markOfficialAttributes(entry model.ModelCapabilityMetadata, address string)
 	}
 	entry.FieldSources = map[string]model.ModelAttributeSource{}
 	source := model.ModelAttributeSource{Kind: "official", URL: address}
+	entry.VendorName = metadataVendorName(entry.Provider)
+	if entry.Description != "" {
+		entry.FieldSources["description"] = source
+	}
+	if entry.Tags != "" {
+		entry.FieldSources["tags"] = source
+	}
+	if entry.VendorName != "" {
+		entry.FieldSources["vendor_id"] = source
+	}
 	if entry.ContextLength > 0 {
 		entry.FieldSources["context_length"] = source
 	}
@@ -217,6 +239,16 @@ func markOfficialAttributes(entry model.ModelCapabilityMetadata, address string)
 }
 
 func mergeOfficialAttributes(base, official model.ModelCapabilityMetadata) model.ModelCapabilityMetadata {
+	if official.Description != "" {
+		base.Description = official.Description
+	}
+	if official.Tags != "" {
+		base.Tags = official.Tags
+	}
+	if official.VendorName != "" {
+		base.VendorName = official.VendorName
+	}
+
 	if len(official.OfficialPricing.Tiers) > 0 {
 		base.OfficialPricing = official.OfficialPricing
 	}
@@ -247,7 +279,7 @@ func mergeOfficialAttributes(base, official model.ModelCapabilityMetadata) model
 	for key, value := range official.FieldSources {
 		base.FieldSources[key] = value
 	}
-	if base.Provider == "" {
+	if official.Provider != "" {
 		base.Provider = official.Provider
 	}
 	return base
@@ -272,7 +304,10 @@ func fetchClaudeAttributes(ctx context.Context, key string) (map[string]model.Mo
 				MaxInput     int64  `json:"max_input_tokens"`
 				MaxOutput    int64  `json:"max_tokens"`
 				Capabilities map[string]struct {
-					Supported *bool `json:"supported"`
+					Supported     *bool `json:"supported"`
+					CodeExecution *struct {
+						Supported *bool `json:"supported"`
+					} `json:"code_execution"`
 					WebSearch *struct {
 						Supported *bool `json:"supported"`
 					} `json:"web_search"`
@@ -292,13 +327,16 @@ func fetchClaudeAttributes(ctx context.Context, key string) (map[string]model.Mo
 				continue
 			}
 			entry := model.ModelCapabilityMetadata{Provider: "anthropic", ContextLength: m.MaxInput, MaxOutputTokens: m.MaxOutput, Capabilities: model.ModelCapabilities{}}
-			for remote, local := range map[string]string{"thinking": "reasoning", "citations": "citations", "code_execution": "code_interpreter", "structured_outputs": "structured_output"} {
+			for remote, local := range map[string]string{"thinking": "reasoning", "citations": "citations", "structured_outputs": "structured_output"} {
 				if v := m.Capabilities[remote].Supported; v != nil {
 					entry.Capabilities[local] = *v
 				}
 			}
 			if v := m.Capabilities["server_tools"].WebSearch; v != nil && v.Supported != nil {
 				entry.Capabilities["web_search"] = *v.Supported
+			}
+			if v := m.Capabilities["server_tools"].CodeExecution; v != nil && v.Supported != nil {
+				entry.Capabilities["code_interpreter"] = *v.Supported
 			}
 			// This API does not enumerate all modalities. Do not label a partial list as complete.
 			entries[m.ID] = markOfficialAttributes(entry, "https://platform.claude.com/docs/en/api/models/list")
@@ -328,10 +366,11 @@ func fetchGeminiAttributes(ctx context.Context, key string) (map[string]model.Mo
 		}
 		var response struct {
 			Models []struct {
-				Name     string `json:"name"`
-				Input    int64  `json:"inputTokenLimit"`
-				Output   int64  `json:"outputTokenLimit"`
-				Thinking *bool  `json:"thinking"`
+				Name        string `json:"name"`
+				Description string `json:"description"`
+				Input       int64  `json:"inputTokenLimit"`
+				Output      int64  `json:"outputTokenLimit"`
+				Thinking    *bool  `json:"thinking"`
 			} `json:"models"`
 			Next string `json:"nextPageToken"`
 		}
@@ -349,7 +388,7 @@ func fetchGeminiAttributes(ctx context.Context, key string) (map[string]model.Mo
 			if !officialModelID.MatchString(id) {
 				continue
 			}
-			entry := model.ModelCapabilityMetadata{Provider: "google", ContextLength: m.Input, MaxOutputTokens: m.Output, Capabilities: model.ModelCapabilities{}}
+			entry := model.ModelCapabilityMetadata{Provider: "google", Description: m.Description, ContextLength: m.Input, MaxOutputTokens: m.Output, Capabilities: model.ModelCapabilities{}}
 			if m.Thinking != nil {
 				entry.Capabilities["reasoning"] = *m.Thinking
 			}
@@ -373,6 +412,10 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 	if err != nil {
 		return nil, nil, err
 	}
+	return fetchOfficialModelAttributesFor(ctx, names)
+}
+
+func fetchOfficialModelAttributesFor(ctx context.Context, names map[string]bool) (map[string]model.ModelCapabilityMetadata, []string, error) {
 	entries := map[string]model.ModelCapabilityMetadata{}
 	var warnings []string
 	var mu sync.Mutex
@@ -382,12 +425,22 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 		defer mu.Unlock()
 		for id, value := range values {
 			if names[id] {
-				entries[id] = value
+				entries[id] = mergeOfficialAttributes(entries[id], value)
 			}
 		}
 	}
 	warn := func(value string) { mu.Lock(); defer mu.Unlock(); warnings = append(warnings, value) }
-	for _, provider := range []struct {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		values, failures := fetchPublicModelDocuments(ctx, names)
+		merge(values)
+		for _, failure := range failures {
+			warn(failure)
+		}
+	}()
+	apiResults := make([]map[string]model.ModelCapabilityMetadata, 2)
+	for index, provider := range []struct {
 		env, name string
 		fetch     func(context.Context, string) (map[string]model.ModelCapabilityMetadata, error)
 	}{
@@ -402,7 +455,7 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 					warn(provider.name + " official metadata unavailable")
 					return
 				}
-				merge(values)
+				apiResults[index] = values
 			}()
 		}
 	}
@@ -430,7 +483,7 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 					warn("OpenAI: " + id)
 					continue
 				}
-				entry, err := parseOpenAIAttributeLines(lines)
+				entry, err := parseOpenAIModelAttributes(data, id)
 				if err != nil {
 					warn("OpenAI: " + id)
 					continue
@@ -445,18 +498,20 @@ func fetchOfficialModelAttributes(ctx context.Context) (map[string]model.ModelCa
 			}
 		}()
 	}
+dispatch:
 	for _, id := range ids {
 		select {
 		case jobs <- id:
 		case <-ctx.Done():
 			warn("OpenAI official metadata timed out")
-			close(jobs)
-			wg.Wait()
-			return entries, warnings, nil
+			break dispatch
 		}
 	}
 	close(jobs)
 	wg.Wait()
+	for _, values := range apiResults {
+		merge(values)
+	}
 	sort.Strings(warnings)
 	return entries, warnings, nil
 }

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { omitUnchangedModelMetadata } from '../../../../helpers/modelMetadataPatch';
 import ModelFAQEditor from './ModelFAQEditor';
 import ModelCapabilitiesEditor from './ModelCapabilitiesEditor';
 import OfficialPricingEditor from './OfficialPricingEditor';
@@ -88,16 +89,24 @@ const EditModelModal = (props) => {
 
   // 供应商列表
   const [vendors, setVendors] = useState([]);
+  const vendorRequestRef = useRef(0);
 
   // 预填组（标签、端点）
   const [tagGroups, setTagGroups] = useState([]);
   const [endpointGroups, setEndpointGroups] = useState([]);
 
   // 获取供应商列表
-  const fetchVendors = async () => {
+  const fetchVendors = async (session) => {
+    const requestId = ++vendorRequestRef.current;
     try {
-      const res = await API.get('/api/vendors/?page_size=1000'); // 获取全部供应商
-      if (res.data.success) {
+      const res = await API.get('/api/vendors/?page_size=1000', {
+        disableDuplicate: true,
+      }); // 获取全部供应商
+      if (
+        res.data.success &&
+        requestId === vendorRequestRef.current &&
+        (session === undefined || session === sessionRef.current)
+      ) {
         const items = res.data.data.items || res.data.data || [];
         setVendors(Array.isArray(items) ? items : []);
       }
@@ -162,10 +171,13 @@ const EditModelModal = (props) => {
 
   const loadModel = async (session) => {
     try {
-      const res = await API.get(`/api/models/${props.editingModel.id}`, {
-        disableDuplicate: true,
-        skipErrorHandler: true,
-      });
+      const res = await API.get(
+        `/api/models/${props.editingModel.id}?refresh_metadata=true`,
+        {
+          disableDuplicate: true,
+          skipErrorHandler: true,
+        },
+      );
       if (session !== sessionRef.current) return;
       const { success, message, data } = res.data;
       if (success) {
@@ -191,7 +203,12 @@ const EditModelModal = (props) => {
           status: data.status === 1,
           sync_official: (data.sync_official ?? 1) === 1,
         };
-        formValuesRef.current = { key: formKey, values };
+        await fetchVendors(session);
+        if (session !== sessionRef.current) return;
+        formValuesRef.current = {
+          key: formKey,
+          values: structuredClone(values),
+        };
         setReadySession(session);
       } else {
         showError(message);
@@ -259,9 +276,17 @@ const EditModelModal = (props) => {
 
       if (isEdit) {
         submitData.id = props.editingModel.id;
-        const res = await API.put('/api/models/', submitData, {
-          skipErrorHandler: true,
-        });
+        const res = await API.put(
+          '/api/models/',
+          omitUnchangedModelMetadata(
+            submitData,
+            values,
+            formValuesRef.current?.values,
+          ),
+          {
+            skipErrorHandler: true,
+          },
+        );
         const { success, message } = res.data;
         if (success) refreshRef.current();
         if (session !== sessionRef.current) return;
@@ -360,6 +385,16 @@ const EditModelModal = (props) => {
         >
           {({ values }) => (
             <div className='p-2'>
+              {values.sync_official && (
+                <Banner
+                  type='info'
+                  closeIcon={null}
+                  className='mb-3'
+                  description={t(
+                    '模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。',
+                  )}
+                />
+              )}
               {/* 基本信息 */}
               <Card className='!rounded-2xl shadow-sm border-0'>
                 <div className='flex items-center mb-2'>

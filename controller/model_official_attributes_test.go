@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/model"
 	"github.com/glebarez/sqlite"
@@ -108,7 +109,7 @@ func isolateOfficialAttributeRequests(t *testing.T) {
 		transport = http.DefaultTransport
 	}
 	client.Transport = attributeTransport(func(r *http.Request) (*http.Response, error) {
-		if r.URL.Host == "developers.openai.com" || r.URL.Host == "api.anthropic.com" || r.URL.Host == "generativelanguage.googleapis.com" {
+		if r.URL.Host != "127.0.0.1" && r.URL.Hostname() != "127.0.0.1" && r.URL.Hostname() != "localhost" {
 			return &http.Response{StatusCode: 404, Header: http.Header{}, Body: io.NopCloser(strings.NewReader("")), Request: r}, nil
 		}
 		return transport.RoundTrip(r)
@@ -220,4 +221,26 @@ func TestLiveOfficialModelAttributes(t *testing.T) {
 	require.True(t, entry.Capabilities["prompt_caching"])
 	require.True(t, entry.Capabilities["streaming"])
 	require.Equal(t, model.ModelModalities{"text", "image"}, entry.InputModalities)
+}
+
+func TestOfficialAPIResultSurvivesOtherProviderDeadline(t *testing.T) {
+	original := getHTTPClient()
+	client := *original
+	httpClient = &client
+	t.Cleanup(func() { httpClient = original })
+	t.Setenv("MODEL_METADATA_ANTHROPIC_API_KEY", "test-only")
+	t.Setenv("MODEL_METADATA_GEMINI_API_KEY", "")
+	client.Transport = attributeTransport(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Host == "api.anthropic.com" {
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"data":[{"id":"claude-example","max_input_tokens":123456}],"has_more":false}`)), Header: http.Header{}, Request: r}, nil
+		}
+		<-r.Context().Done()
+		return nil, r.Context().Err()
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	entries, warnings, err := fetchOfficialModelAttributesFor(ctx, map[string]bool{"claude-example": true, "gpt-1": true, "gpt-2": true, "gpt-3": true, "gpt-4": true, "gpt-5": true, "gpt-6": true})
+	require.NoError(t, err)
+	require.NotEmpty(t, warnings)
+	require.EqualValues(t, 123456, entries["claude-example"].ContextLength)
 }

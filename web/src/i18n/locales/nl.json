@@ -6780,6 +6780,7 @@
     "参考汇率：1 USD = {{rate}} CNY · {{date}}": "Referentiekoers: 1 USD = {{rate}} CNY · {{date}}",
     "暂用最近有效汇率": "Laatst geldige koers wordt gebruikt",
     "正在获取参考汇率…": "Referentiekoers ophalen…",
-    "参考汇率暂不可用，暂停跨币种价格对比": "Referentiekoers niet beschikbaar; prijsvergelijking tussen valuta gepauzeerd"
+    "参考汇率暂不可用，暂停跨币种价格对比": "Referentiekoers niet beschikbaar; prijsvergelijking tussen valuta gepauzeerd",
+    "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Modelgegevens worden automatisch bijgewerkt, met voorkeur voor officiële bronnen. Handmatige wijzigingen blijven behouden; niet-beschikbare informatie blijft onbekend."
   }
 }
