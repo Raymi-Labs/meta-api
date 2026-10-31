@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compareGroupPrice } from '../src/helpers/modelGroupDiscount.js';
+import {
+  compareGroupPrice,
+  usableOfficialExchangeRate,
+} from '../src/helpers/modelGroupDiscount.js';
 const input = {
   item: { key: 'input' },
   pricing: { unitPricesUSD: { input: 2 } },
@@ -8,7 +11,7 @@ const input = {
   officialTier: { label: 'base', unit: 'million_tokens', input: 10 },
   currency: 'USD',
   displayPrice: { toAmount: (v) => v },
-  usdExchangeRate: 7,
+  exchangeQuote: { usd_cny: 7, date: new Date().toISOString().slice(0, 10) },
   tokenUnit: 'M',
   quotaDisplayType: 'USD',
 };
@@ -102,7 +105,13 @@ test('official FX and recharge/package credit conversion are independent', () =>
   assert.equal(cny.official, 10);
   assert.equal(cny.percent, '80');
   for (const fx of [undefined, 0, NaN, Infinity, -1])
-    assert.equal(compare({ currency: 'CNY', usdExchangeRate: fx }), null);
+    assert.equal(
+      compare({
+        currency: 'CNY',
+        exchangeQuote: { ...input.exchangeQuote, usd_cny: fx },
+      }),
+      null,
+    );
   assert.equal(compare({ currency: 'CUSTOM' }), null);
   assert.equal(
     compare({
@@ -170,4 +179,28 @@ test('dynamic first tier and fixed request/hour compare their respective rate on
       '80',
     );
   }
+});
+
+test('independent reference quote rejects stale data and never uses internal quota FX', () => {
+  const now = Date.parse('2026-10-31T12:00:00Z');
+  assert.equal(
+    usableOfficialExchangeRate({ usd_cny: 7, date: '2026-10-30' }, now),
+    7,
+  );
+  for (const date of ['2026-10-24', '2026-11-01', 'invalid'])
+    assert.equal(usableOfficialExchangeRate({ usd_cny: 7, date }, now), null);
+  assert.equal(
+    compare({ currency: 'CNY', exchangeQuote: null, usdExchangeRate: 1 }),
+    null,
+  );
+  const actual = compare({
+    currency: 'CNY',
+    usdExchangeRate: 1,
+    exchangeQuote: { ...input.exchangeQuote, usd_cny: 7.4326 / 1.1172 },
+    pricing: { unitPricesUSD: { input: 50 } },
+    displayPrice: { toAmount: (v) => v * 0.2 },
+  });
+  assert.equal(actual.group, 10);
+  assert.ok(Math.abs(actual.official - 66.52882205513785) < 1e-8);
+  assert.equal(actual.percent, '85');
 });

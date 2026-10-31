@@ -7390,6 +7390,10 @@
     "开启后自动补齐模型属性和 OpenAI 官方文本价格；人工设置优先，清空后可重新同步。": "Tự động bổ sung thuộc tính mô hình và giá văn bản chính thức của OpenAI. Ưu tiên giá trị nhập thủ công; xóa để tiếp tục đồng bộ tự động.",
     "官方价格自动更新于 {{time}}": "Giá chính thức được tự động cập nhật lúc {{time}}",
     "自动补齐模型广场中的模型；属性优先同步厂商官方资料，模型库补全缺失信息，保留人工配置。": "Tự động thêm mô hình từ danh mục. Thuộc tính ưu tiên nguồn chính thức của nhà cung cấp, bổ sung thông tin còn thiếu từ kho mô hình và giữ nguyên cấu hình thủ công.",
+    "参考汇率：1 USD = {{rate}} CNY · {{date}}": "Tỷ giá tham khảo: 1 USD = {{rate}} CNY · {{date}}",
+    "暂用最近有效汇率": "Đang dùng tỷ giá hợp lệ gần nhất",
+    "正在获取参考汇率…": "Đang lấy tỷ giá tham khảo…",
+    "参考汇率暂不可用，暂停跨币种价格对比": "Tỷ giá tham khảo không khả dụng; tạm dừng so sánh giá khác tiền tệ",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Thông tin mô hình tự động cập nhật, ưu tiên nguồn chính thức. Các chỉnh sửa thủ công được giữ lại; thông tin chưa lấy được vẫn ở trạng thái chưa biết."
   }
 }

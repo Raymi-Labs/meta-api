@@ -17,6 +17,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+// Official reference FX is independent of internal credit and recharge rates.
+export function usableOfficialExchangeRate(quote, now = Date.now()) {
+  const rate = quote?.usd_cny;
+  const date =
+    typeof quote?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(quote.date)
+      ? Date.parse(quote.date + 'T00:00:00Z')
+      : NaN;
+  return typeof rate === 'number' &&
+    Number.isFinite(rate) &&
+    rate > 0 &&
+    Number.isFinite(date) &&
+    new Date(date).toISOString().slice(0, 10) === quote.date &&
+    date <= now &&
+    now - date < 7 * 86400000
+    ? rate
+    : null;
+}
+
 const fieldByKey = {
   input: 'input',
   completion: 'output',
@@ -46,7 +64,7 @@ export function compareGroupPrice({
   officialTier,
   currency,
   displayPrice,
-  usdExchangeRate,
+  exchangeQuote,
   tokenUnit,
   quotaDisplayType,
 }) {
@@ -82,8 +100,8 @@ export function compareGroupPrice({
     return null;
   let rate = 1;
   if (sourceCurrency !== currency) {
-    const fx = Number(usdExchangeRate);
-    if (!Number.isFinite(fx) || fx <= 0) return null;
+    const fx = usableOfficialExchangeRate(exchangeQuote);
+    if (fx == null) return null;
     rate = sourceCurrency === 'USD' ? fx : 1 / fx;
   }
   const official =
