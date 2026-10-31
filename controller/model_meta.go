@@ -73,57 +73,29 @@ func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (mode
 
 // GetAllModelsMeta 获取模型列表（分页）
 func GetAllModelsMeta(c *gin.Context) {
-	if _, err := reconcileModelCatalog(c.Request.Context()); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-
-	pageInfo := common.GetPageQuery(c)
-	modelsMeta, err := model.GetAllModels(pageInfo.GetStartIdx(), pageInfo.GetPageSize())
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	// 批量填充附加字段，提升列表接口性能
-	enrichModels(modelsMeta)
-	var total int64
-	model.DB.Model(&model.Model{}).Count(&total)
-
-	// 统计供应商计数（全部数据，不受分页影响）
-	vendorCounts, _ := model.GetVendorModelCounts()
-
-	pageInfo.SetTotal(int(total))
-	pageInfo.SetItems(modelsMeta)
-	common.ApiSuccess(c, gin.H{
-		"items":         modelsMeta,
-		"total":         total,
-		"page":          pageInfo.GetPage(),
-		"page_size":     pageInfo.GetPageSize(),
-		"vendor_counts": vendorCounts,
-	})
+	getModelsMetaPage(c, "", "")
 }
 
-// SearchModelsMeta 搜索模型列表
 func SearchModelsMeta(c *gin.Context) {
+	getModelsMetaPage(c, c.Query("keyword"), c.Query("vendor"))
+}
+
+func getModelsMetaPage(c *gin.Context, keyword, vendor string) {
 	if _, err := reconcileModelCatalog(c.Request.Context()); err != nil {
 		common.ApiError(c, err)
 		return
 	}
-
-	keyword := c.Query("keyword")
-	vendor := c.Query("vendor")
 	pageInfo := common.GetPageQuery(c)
-
-	modelsMeta, total, err := model.SearchModels(keyword, vendor, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	page, err := model.GetModelManagementPage(c.Request.Context(), keyword, vendor, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	// 批量填充附加字段，提升列表接口性能
-	enrichModels(modelsMeta)
-	pageInfo.SetTotal(int(total))
-	pageInfo.SetItems(modelsMeta)
-	common.ApiSuccess(c, pageInfo)
+	enrichModels(page.Items)
+	common.ApiSuccess(c, gin.H{
+		"items": page.Items, "total": page.Total, "page": pageInfo.GetPage(), "page_size": pageInfo.GetPageSize(),
+		"vendor_counts": page.VendorCounts, "vendors": page.Vendors,
+	})
 }
 
 // GetModelMeta 根据 ID 获取单条模型信息

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -146,4 +147,44 @@ func TestModelCatalogBackgroundDiscoversAndEnrichesNewModels(t *testing.T) {
 	require.EqualValues(t, 128000, row.ContextLength)
 	ticks <- time.Now()
 	require.EqualValues(t, 1, requests.Load(), "unchanged inventory must not fetch every minute")
+}
+
+func TestModelManagementVendorResponseIncludesDiscoveredModels(t *testing.T) {
+	db := catalogControllerDB(t)
+	vendor := model.Vendor{Name: "OpenAI", Icon: "OpenAI", Status: 1}
+	require.NoError(t, vendor.Insert())
+	require.NoError(t, db.Create(&model.Model{ModelName: "gpt-image-2", VendorID: vendor.Id, Status: 1}).Error)
+	for i := 0; i < 11; i++ {
+		require.NoError(t, db.Create(&model.Ability{Group: "default", Model: "gpt-qa-" + strconv.Itoa(i), ChannelId: i + 1, Enabled: true}).Error)
+	}
+	invoke := func(path string, handler gin.HandlerFunc) model.ModelManagementPage {
+		t.Helper()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		handler(c)
+		var response struct {
+			Success bool                      `json:"success"`
+			Data    model.ModelManagementPage `json:"data"`
+		}
+		require.NoError(t, common.Unmarshal(w.Body.Bytes(), &response))
+		require.True(t, response.Success, w.Body.String())
+		return response.Data
+	}
+	page := invoke("/api/models/search?vendor="+strconv.Itoa(vendor.Id)+"&p=1&page_size=10", SearchModelsMeta)
+	require.Equal(t, 12, page.Total)
+	require.Len(t, page.Items, 10)
+	require.Equal(t, 12, page.VendorCounts[vendor.Id])
+	require.Len(t, page.Vendors, 1)
+	require.Equal(t, vendor.Id, page.Vendors[0].Id)
+	for _, row := range page.Items {
+		require.Equal(t, vendor.Id, row.DisplayVendorID)
+		require.Zero(t, row.VendorID, "new catalog entries retain unset ownership")
+	}
+	second := invoke("/api/models/search?vendor="+strconv.Itoa(vendor.Id)+"&p=2&page_size=10", SearchModelsMeta)
+	require.Equal(t, 12, second.Total)
+	require.Len(t, second.Items, 2)
+	all := invoke("/api/models/?p=1&page_size=20", GetAllModelsMeta)
+	require.Equal(t, page.VendorCounts, all.VendorCounts)
+	require.Equal(t, all.Total, len(all.Items))
 }
