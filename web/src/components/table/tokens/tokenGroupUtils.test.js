@@ -25,6 +25,7 @@ import {
   buildTokenGroupVendorOptions,
   filterTokenGroupsByVendor,
   formatTokenGroupSelectedLabel,
+  prioritizeTokenGroups,
   resolveTokenGroupVendor,
   shouldClearTokenGroupForVendor,
   sortTokenGroupOptions,
@@ -32,6 +33,57 @@ import {
 } from './tokenGroupUtils.js';
 
 describe('tokenGroupUtils', () => {
+  test('pins exact priority groups without changing other candidates or input', () => {
+    const groups = Object.freeze(
+      [
+        { value: 'OpenAI · 福利', ratio: 9 },
+        { value: '福利', ratio: 5 },
+        { value: '企业专属', label: '企业级', ratio: 8 },
+        { value: '优选', ratio: 0 },
+        { value: '企业级', ratio: null },
+        { value: 'default', ratio: 1 },
+      ].map(Object.freeze),
+    );
+    assert.deepEqual(prioritizeTokenGroups(groups), [
+      groups[4],
+      groups[3],
+      groups[1],
+      groups[0],
+      groups[2],
+      groups[5],
+    ]);
+    assert.deepEqual(prioritizeTokenGroups(sortTokenGroupsByRatio(groups)), [
+      groups[4],
+      groups[3],
+      groups[1],
+      groups[0],
+      groups[2],
+      groups[5],
+    ]);
+  });
+
+  test('never adds unavailable groups and preserves the rest of each existing order', () => {
+    assert.deepEqual(prioritizeTokenGroups(), []);
+    const groups = [
+      { value: 'auto', ratio: '自动' },
+      { value: 'low', ratio: 0.1 },
+      { value: '福利', ratio: 0 },
+      { value: 'high', ratio: 5 },
+    ];
+    assert.deepEqual(prioritizeTokenGroups(groups), [
+      groups[2],
+      groups[0],
+      groups[1],
+      groups[3],
+    ]);
+    assert.deepEqual(prioritizeTokenGroups(sortTokenGroupsByRatio(groups)), [
+      groups[2],
+      groups[3],
+      groups[1],
+      groups[0],
+    ]);
+  });
+
   test('ratio sort is descending, stable, non-mutating and handles unknown values', () => {
     const groups = [
       { value: 'auto', ratio: 99 },

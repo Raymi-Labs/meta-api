@@ -19,6 +19,17 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const TOKEN_GROUP_OTHER_VENDOR = '__other__';
 
+const TOKEN_GROUP_PRIORITY = ['企业级', '优选', '福利'];
+
+// Candidate display only; selected groups keep the user's routing order.
+export const prioritizeTokenGroups = (groups = []) => {
+  const rank = ({ value }) => {
+    const index = TOKEN_GROUP_PRIORITY.indexOf(value);
+    return index === -1 ? TOKEN_GROUP_PRIORITY.length : index;
+  };
+  return [...groups].sort((left, right) => rank(left) - rank(right));
+};
+
 // Presentation only: no mutation of the permission catalog or routing order.
 export const sortTokenGroupsByRatio = (groups = []) => {
   const validRatio = (group) =>
