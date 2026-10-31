@@ -61,7 +61,31 @@ func (a *TaskAdaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycommon.RelayInfo) *dto.TaskError {
-	return relaycommon.ValidateBasicTaskRequest(c, info, constant.TaskActionTextGenerate)
+	var payload map[string]any
+	if err := common.UnmarshalBodyReusable(c, &payload); err != nil {
+		return referenceRequestError(err)
+	}
+	reference, err := normalizeReferenceImage(payload)
+	if err != nil {
+		return referenceRequestError(err)
+	}
+	// Decode a string only for shared validation; the original request body
+	// remains intact for the xAI outbound representation and billing snapshot.
+	delete(payload, "image")
+	data, err := common.Marshal(payload)
+	if err != nil {
+		return referenceRequestError(err)
+	}
+	var req relaycommon.TaskSubmitReq
+	if err := common.Unmarshal(data, &req); err != nil {
+		return referenceRequestError(err)
+	}
+	req.Image = reference
+	action := constant.TaskActionTextGenerate
+	if reference != "" {
+		action = constant.TaskActionGenerate
+	}
+	return relaycommon.ValidateAndStoreTaskRequest(c, info, action, req)
 }
 
 func (a *TaskAdaptor) BuildRequestURL(info *relaycommon.RelayInfo) (string, error) {
@@ -94,6 +118,9 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	var payload map[string]any
 	if err := common.Unmarshal(body, &payload); err != nil {
 		return nil, errors.Wrap(err, "unmarshal_xai_video_request_failed")
+	}
+	if _, err := normalizeReferenceImage(payload); err != nil {
+		return nil, err
 	}
 	if raw, ok := payload["duration"]; ok {
 		n, valid := numericInt(raw)

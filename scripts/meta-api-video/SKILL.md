@@ -1,6 +1,6 @@
 ---
 name: meta-api-video
-description: Generate a video through YuanHeng from a natural-language description, or resume an existing video task. Use for explicit video creation requests through meta-api.vip; supports verified Grok and Snow-compatible video profiles. Does not generate images or treat capability questions as paid generation requests.
+description: Generate a video through YuanHeng from a description or a reference image, or resume an existing video task. Use for explicit video creation requests through meta-api.vip; supports verified Grok and Snow-compatible video profiles. Does not generate images or treat capability questions as paid generation requests.
 ---
 
 # YuanHeng Video
@@ -11,7 +11,7 @@ Use `scripts/meta_api_video.py` with Python 3.9+ (standard library only). Keep t
 
 Accept a description such as “use Grok to generate a video of waves at sunset.” Use the user's specified origin and API key. Supply the key through the child process environment variable `META_API_KEY`; never put it in command arguments, logs, committed files, or the recovery record. Do not search other apps for a key. If the user already provided one for this task, reuse it without asking again. Otherwise ask for normal credential configuration.
 
-Supported models are `grok-imagine-video` (default) and `grok-imagine-video-1.5` (select explicitly with `--model`). The 1.5 model has passed a one-second 480p account-level generation test; this does not verify all accounts or YuanHeng pricing/routing. Additional verified supplier profiles are listed below; other models, editing, and extensions are not implemented by this helper. Preserve explicit user choices; explain an unsupported choice rather than silently substituting. Only the explicitly listed Veo Lite profile accepts a reference image.
+Supported models are `grok-imagine-video` (default) and `grok-imagine-video-1.5` (select explicitly with `--model`). The 1.5 model has passed a one-second 480p account-level generation test; this does not verify all accounts or YuanHeng pricing/routing. Additional verified supplier profiles are listed below; other models, editing, and extensions are not implemented by this helper. Preserve explicit user choices; explain an unsupported choice rather than silently substituting. Muse and Grok accept optional local references as described below; Veo Lite requires one.
 
 If duration/resolution/aspect ratio are unspecified, state the defaults before submission: **1 second, 480p, 16:9**, which have been verified on this route. The CLI accepts 1–15 seconds, 480p/720p (plus 1080p only for the explicitly selected 1.5 model) and 16:9/9:16/1:1 as a limited profile; only the default combination has been live-tested here. Higher settings still depend on the provider and may cost more. Never use paid trials to discover limits.
 
@@ -59,10 +59,27 @@ Use the same YuanHeng origin and credential. No extra permission or quote reques
 
 - `flow-video-gemini-omni-flash-1.1`: text-to-video, 4 seconds, 720p.
 - `flow-video-gemini-omni-flash-1.1-1080p`: text-to-video, 4 seconds, 1080p (supplier-upscaled output).
-- `muse-video`: text-to-video, 4 seconds, 720p.
+- `muse-video`: text-to-video or optional PNG/JPEG first frame via `--image`; integer requests of 4–30 seconds, 720p, default 4 seconds. The supplier may change actual duration; inspect downloaded media.
 - `flow-video-veo-3.1-lite`: image-to-video, 8 seconds, 720p; requires `--image` with a user-provided PNG/JPEG. Do not invent a reference or silently use paid image generation. Reference bytes are sent to YuanHeng and its selected upstream; do not include unrelated files.
 - `snow-grok-imagine-video`: a distinct Snow upstream alias, 4 seconds, 720p; does not replace the original CPA Grok route.
 
 These profiles default to their verified duration/resolution when omitted and support 16:9 or 9:16. Explicit incompatible settings fail before submission. Other vendor models, editing, and extensions remain unsupported. Gemini/Veo production readiness also requires the channel-scoped video header-wait fix to be deployed; local profile support alone does not prove deployment.
 
 A completed compatible task may provide `content_url` with `requires_authorization=true` instead of a public URL. Fetch that same YuanHeng-origin `/v1/videos/{id}/content` endpoint with the original key using the host's permitted HTTP/file tools, verify HTTP success and video MIME type, save to the current task's output directory, and preview the local file. Never append a key to a URL, send it to a media CDN, or claim a protected link can play without authentication. This fetch retrieves an existing result and does not submit generation. Respect any host restrictions on media display.
+
+
+## Local reference images
+
+For an attached image animation request without a specified provider, use the production-verified Muse profile and state the model. Preserve explicitly selected models. Pass the user's local PNG/JPEG using `--image` (maximum 20 MiB); do not generate an extra image or add permission/quote lookups.
+
+```bash
+python3 scripts/meta_api_video.py --model muse-video --image reference.png \
+  --prompt "Preserve the subject and slowly move the camera forward" \
+  --duration 4 --resolution 720p --state work/video/muse-reference.json
+```
+
+Muse sends `input_reference` as a data URI. Production PNG acceptance on 2026-10-31 confirms matching first-frame shapes, colors and markings plus motion; the four-second request returned five seconds at 1280×720/24fps. JPEG and all duration/aspect combinations are not individually live-tested.
+
+Grok and Grok 1.5 send the official `image.url` object. This client path requires the 2026-10-31 server fix: production previously rejected image objects. Do not claim deployed Grok image-to-video acceptance until a real output is verified. Grok uses the source image aspect ratio. Other compatible profiles still reject references except Veo Lite, which requires one.
+
+Dry-run output hides encoded media. Recovery files omit images and local paths; resume needs only the original credential and task state, not the source image. Use the existing authenticated same-origin download workflow to deliver the finished video.

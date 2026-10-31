@@ -232,3 +232,26 @@ func TestSoraConversionHidesLegacyTaskID(t *testing.T) {
 	require.NotContains(t, string(body), "provider-id")
 	require.Contains(t, string(body), "task_public")
 }
+
+func TestXAIFirstFrameSurvivesValidationAndBillingSnapshot(t *testing.T) {
+	for _, field := range []string{`"image":{"url":"data:image/png;base64,aGVsbG8="}`, `"input_reference":"data:image/png;base64,aGVsbG8="`} {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest("POST", "/v1/videos", strings.NewReader(`{"model":"grok-imagine-video-1.5","prompt":"animate","duration":4,"resolution":"480p",`+field+`}`))
+		c.Request.Header.Set("Content-Type", "application/json")
+		info := &relaycommon.RelayInfo{OriginModelName: "grok-imagine-video-1.5", TaskRelayInfo: &relaycommon.TaskRelayInfo{}, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeXai, UpstreamModelName: "grok-imagine-video-1.5", ChannelBaseUrl: "https://example.test", ApiKey: "fixture-key"}}
+		a := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeXai)))
+		a.Init(info)
+		require.Nil(t, a.ValidateRequestAndSetAction(c, info))
+		require.Equal(t, constant.TaskActionGenerate, info.Action)
+		wire, err := PrepareVideoRequestSnapshot(c, info, a)
+		require.NoError(t, err)
+		var sent map[string]any
+		require.NoError(t, common.Unmarshal(wire, &sent))
+		require.Equal(t, map[string]any{"url": "data:image/png;base64,aGVsbG8="}, sent["image"])
+		require.NotContains(t, sent, "input_reference")
+		cost, _, err := billingexpr.RunExprWithRequest(`tier("video",param("duration") * 100000 * param("sampleCount"))`, billingexpr.TokenParams{}, *info.BillingRequestInput)
+		require.NoError(t, err)
+		require.Equal(t, float64(400000), cost)
+		common.CleanupBodyStorage(c)
+	}
+}

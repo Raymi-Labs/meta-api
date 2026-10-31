@@ -4,7 +4,7 @@
 
 ## 一句话生成视频
 
-安装[元衡视频 Skill](https://meta-api.vip/downloads/meta-api-video-skill.zip)到客户端 Skills 目录，配置自己的 `META_API_KEY`，直接描述想要的视频。需要 Python 3.9+；目前支持 Grok 文生视频，默认 1 秒、480p、16:9，生成按模型和分组计费。
+安装[元衡视频 Skill](https://meta-api.vip/downloads/meta-api-video-skill.zip)到客户端 Skills 目录，配置自己的 `META_API_KEY`，直接描述想要的视频。需要 Python 3.9+；支持 Grok 文生视频（默认 1 秒、480p、16:9）和 Muse 文生/图生视频（默认请求 4 秒、720p），生成按模型和分组计费。
 
 脚本只提交一次并自动查询。中断后用 `--resume` 继续原任务；没有任务 ID 时先查日志，不自动重发。
 
@@ -55,3 +55,26 @@ curl --fail-with-body -sS 'https://meta-api.vip/v1/videos/TASK_ID/content' \
 400 通常是模型、参数或输入文件不匹配；任务失败要读取 `error` 并查询使用日志；查询不到结果应核对任务 ID 和所用协议。超时不等于提交未发生，应用应保存已返回的 ID 并继续查询。费用按实际任务与日志记录处理，不能承诺任意失败都不会产生消耗。
 
 关联：[认证与 API Key](/docs/reference/authentication)、[图片生成](/docs/reference/images)、[模型与协议](/docs/reference/models)、[故障排查](/docs/troubleshooting)。
+
+
+## Muse 图生视频
+
+`muse-video` 已通过元衡线上PNG图生验收。令牌使用“生图和视频”分组，POST `/v1/videos`：
+
+```json
+{
+  "model": "muse-video",
+  "prompt": "保持画面主体，让镜头缓慢向前推进",
+  "seconds": "4",
+  "size": "1280x720",
+  "input_reference": "data:image/png;base64,图片Base64内容"
+}
+```
+
+参数中不能填本地路径；程序读取图片后编码。保存任务ID，沿用上文查询和鉴权下载步骤。Skill支持 `--model muse-video --image reference.png`，自动提交和查询。请求时长支持4–30秒整数，720p；实际时长可能调整，本次4秒请求产出5秒、24fps视频。PNG已线上验证，JPEG参数编码已离线验证。
+
+## Grok 首帧参数兼容
+
+服务端修复支持官方 `"image":{"url":"https://example.com/frame.png"}`，也支持data URI；字符串 `image` 或 `input_reference` 会转换为官方格式。只接受一个明确首帧，冲突、空值、错误对象会在提交前拒绝，其他厂商格式不变。图片决定Grok输出比例。
+
+此兼容需要部署对应版本：2026-10-31线上测试时两个Grok型号仍返回image对象解析错误；本地修复不代表线上已验收。Grok的Skill `--image` 同样依赖此修复，不会失败后自动改成文生视频或换厂商。

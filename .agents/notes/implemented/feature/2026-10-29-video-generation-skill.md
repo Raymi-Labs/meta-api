@@ -43,3 +43,8 @@ The helper also supports Snow-compatible Omni 720p/1080p, Muse, Veo Lite with a 
 Compatible completion can expose a top-level URL or only a same-origin authenticated content endpoint. Never send an API key to a returned CDN. The Skill explains authenticated retrieval and preview using host-approved tools. Invalid profile parameters stop before POST. Submission can wait up to the bounded worker deadline instead of the previous 30-second socket limit, while queries retain bounded backoff. The [video wait fix](../bug-fix/2026-10-30-video-channel-wait.md) is necessary for slow Google-compatible production submissions; no global timeout was changed.
 
 The repository helper passes 25 offline tests and the installed combined Skill passes 29, including compatible payloads, required reference image handling, and protected-content completion. Partial supplier failures (429 saturation, missing media mode, unavailable accounts, authentication errors) do not promote a model to the supported list. New video-only channels use Sora type so automatic tests remain free preflight.
+
+
+## Reference-image extension (2026-10-31)
+
+The [provider-scoped reference decision](../bug-fix/2026-10-31-video-reference-input.md) adds optional Muse/Grok PNG/JPEG input to both clients while preserving the submission/recovery contract. Muse PNG is visually verified in production; Grok requires the corresponding server fix and live acceptance. The standalone Muse duration guard now matches the installed client (integer 4–30 seconds, 720p).

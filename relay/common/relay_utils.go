@@ -217,6 +217,11 @@ func ValidateBasicTaskRequest(c *gin.Context, info *RelayInfo, action string) *d
 		return createTaskError(err, "invalid_request", http.StatusBadRequest, true)
 	}
 
+	return ValidateAndStoreTaskRequest(c, info, action, req)
+}
+
+// ValidateAndStoreTaskRequest applies shared checks after provider-specific decoding.
+func ValidateAndStoreTaskRequest(c *gin.Context, info *RelayInfo, action string, req TaskSubmitReq) *dto.TaskError {
 	if taskErr := validatePrompt(req.Prompt); taskErr != nil {
 		return taskErr
 	}
