@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -438,7 +439,14 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		if transport, ok := client.Transport.(*http.Transport); ok {
 			dialer.Proxy = transport.Proxy
 			dialer.NetDialContext = transport.DialContext
-			dialer.TLSClientConfig = transport.TLSClientConfig
+			// HTTP transports may advertise h2 after their first HTTPS request.
+			// Gorilla uses an HTTP/1.1 Upgrade handshake; keep its ALPN private
+			// without changing the shared client's certificates or HTTP/2 use.
+			dialer.TLSClientConfig = &tls.Config{}
+			if transport.TLSClientConfig != nil {
+				dialer.TLSClientConfig = transport.TLSClientConfig.Clone()
+			}
+			dialer.TLSClientConfig.NextProtos = []string{"http/1.1"}
 		}
 		dialer.HandshakeTimeout = 15 * time.Second
 	}

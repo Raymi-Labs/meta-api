@@ -26,6 +26,8 @@ Status: implemented
 
 ## Testing
 
+线上 v1.5.0 的两款 Qwen-Audio-TTS 在共享 HTTP transport 完成 HTTPS 请求后，WebSocket 会继承 HTTP/2 的 ALPN 并握手失败。TTS 握手现在克隆 TLS 配置并仅声明 http/1.1，保留证书验证、代理及取消上下文，普通 HTTP 客户端继续使用 HTTP/2。没有全局关闭 HTTP/2，也不通过跳过证书验证绕过错误。真实 TLS 上游回归先用旧实现复现同样错误，再验证 HTTP/2 预热、WebSocket 二进制帧、共享配置不变及不可信证书拒绝。
+
 测试使用本地 WebSocket 模拟上游验证分段音频提前到达、任务序列/模型锁定、取消复用、HTTP 二进制与 SSE、异常/断开收尾、累计用量去重、计费与退款边界。18个控制器场景覆盖 HTTP/双向流与钱包/订阅/独立令牌的完整、部分和未知用量；检查日志状态和资金实际变化。Go 相关包回归、专项 race、前端/文档构建通过；公开文档 Chrome 中英切换与指南链接可见。本地独立文档的远端动态模型列表不可用，静态教程仍正常展示。
 
 ## Consequences
