@@ -28,8 +28,9 @@ const (
 const maxLogCount = 1000000
 
 var logCount atomic.Int64
-var setupLogLock sync.RWMutex
+var setupLogLock sync.Mutex
 var setupLogWorking atomic.Bool
+var currentLogFile *os.File // owned by SetupLogger; protected by setupLogLock
 
 func SetupLogger() {
 	if *common.LogDir != "" {
@@ -46,8 +47,17 @@ func SetupLogger() {
 		if err != nil {
 			log.Fatal("failed to open log file")
 		}
+		common.LogWriterMu.Lock()
+		previous := currentLogFile
 		gin.DefaultWriter = io.MultiWriter(os.Stdout, fd)
 		gin.DefaultErrorWriter = io.MultiWriter(os.Stderr, fd)
+		currentLogFile = fd
+		if previous != nil {
+			if err := previous.Close(); err != nil {
+				log.Printf("failed to close previous log file: %v", err)
+			}
+		}
+		common.LogWriterMu.Unlock()
 	}
 }
 
@@ -73,12 +83,10 @@ func LogDebug(ctx context.Context, msg string, args ...any) {
 }
 
 func logHelper(ctx context.Context, level string, msg string) {
-	setupLogLock.RLock()
-	writer := gin.DefaultErrorWriter
+	writer := common.ErrorLogWriter
 	if level == loggerINFO {
-		writer = gin.DefaultWriter
+		writer = common.LogWriter
 	}
-	setupLogLock.RUnlock()
 	id := ctx.Value(common.RequestIdKey)
 	if id == nil {
 		id = "SYSTEM"

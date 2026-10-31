@@ -19,7 +19,7 @@ func RouteTag(tag string) gin.HandlerFunc {
 }
 
 func SetUpLogger(server *gin.Engine) {
-	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+	server.Use(gin.LoggerWithConfig(gin.LoggerConfig{Output: common.LogWriter, Formatter: func(param gin.LogFormatterParams) string {
 		var requestID string
 		if param.Keys != nil {
 			requestID, _ = param.Keys[common.RequestIdKey].(string)
@@ -38,7 +38,7 @@ func SetUpLogger(server *gin.Engine) {
 			param.Method,
 			sanitizeAccessLogPath(param.Path),
 		)
-	}))
+	}}))
 }
 
 // sanitizeAccessLogPath only changes the log value, never the request URL used
