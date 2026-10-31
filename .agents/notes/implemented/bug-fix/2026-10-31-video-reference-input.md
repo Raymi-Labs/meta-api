@@ -25,3 +25,8 @@ Adaptor and shared relay tests pass for native image objects, aliases, invalid s
 Upstream capability and output remain provider-dependent. The Muse four-second request produced five seconds at 720p/24fps. Local tests do not prove deployment or Grok production availability.
 
 This extends the [existing video client lifecycle](../feature/2026-10-29-video-generation-skill.md) without replacing its submission/recovery decisions. The shared string DTO stays unchanged; xAI native file_id objects and arbitrary image-object properties remain unsupported rather than being silently dropped.
+
+
+## Release validation correction
+
+The first merged image build failed during frontend language-resource validation: seven new handbook prose segments lacked translations in all sixteen supported content locales. Backend tests and Go compilation did not cover this frontend gate. The follow-up adds genuine translations with preserved protected placeholders and runs the full frontend build, including language checks, the image playground and prerendering. It does not weaken or skip the completeness check. Future changes to shipped handbook prose must update every content locale and run the frontend build before merge.
