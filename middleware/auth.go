@@ -369,6 +369,7 @@ func TokenAuth() func(c *gin.Context) {
 		if err != nil {
 			return
 		}
+		service.MarkTokenQuotaIdentity(c, token)
 		c.Next()
 	}
 }
