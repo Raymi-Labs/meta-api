@@ -1,0 +1,3347 @@
+{
+  "date": "2026-10-31",
+  "catalog_source": "https://openrouter.ai/api/v1/models",
+  "catalog_count": 452,
+  "excluded_vendors": [
+    "anthropic",
+    "bytedance",
+    "bytedance-seed",
+    "google",
+    "openai",
+    "qwen",
+    "stepfun",
+    "tencent",
+    "x-ai",
+    "z-ai"
+  ],
+  "skip_special_entries": true,
+  "group": "OpenRouter",
+  "group_ratio": 1,
+  "price_editor_multiplier": 34,
+  "price_editor_currency": "CUSTOM energy",
+  "cny_per_energy": 0.2,
+  "counts": {
+    "configured": 153,
+    "enabled": 145,
+    "blocked": 8,
+    "live_verified": 140,
+    "enabled_unverified": 5,
+    "enabled_free": 9,
+    "channels": 46
+  },
+  "channels": [
+    {
+      "id": 1592,
+      "vendor": "particle-ai",
+      "name": "OpenRouter · Particle AI",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "particle-ai/particle-1"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1593,
+      "vendor": "recursive",
+      "name": "OpenRouter · Recursive",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "recursive/flint-v1.0:free"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1594,
+      "vendor": "elorian",
+      "name": "OpenRouter · Elorian",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "elorian/glimpse"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1595,
+      "vendor": "xingchen-agi",
+      "name": "OpenRouter · XingChen",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "xingchen-agi/xing4.0-29b-a4b:free"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1596,
+      "vendor": "reflection",
+      "name": "OpenRouter · Reflection",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "reflection/beam-1.0-501b-a23b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1597,
+      "vendor": "inception",
+      "name": "OpenRouter · Inception",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "inception/mercury-3",
+        "inception/mercury-2.5",
+        "inception/mercury-2"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1598,
+      "vendor": "prism-ml",
+      "name": "OpenRouter · PrismML",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "prism-ml/ternary-bonsai-2-9b",
+        "prism-ml/ternary-bonsai-2-27b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1599,
+      "vendor": "moondream",
+      "name": "OpenRouter · Moondream",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "moondream/moondream3-preview",
+        "moondream/moondream3.1-9b-a2b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1600,
+      "vendor": "meta",
+      "name": "OpenRouter · Meta",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "meta/muse-spark-open",
+        "meta/muse-wonder",
+        "meta/muse-spark-1.3",
+        "meta/muse-glimmer-30b",
+        "meta/muse-spark-1.2",
+        "meta/muse-spark-1.1",
+        "meta-llama/llama-guard-4-12b",
+        "meta-llama/llama-4-maverick",
+        "meta-llama/llama-4-scout",
+        "meta-llama/llama-3.3-70b-instruct",
+        "meta-llama/llama-3.2-1b-instruct",
+        "meta-llama/llama-3.2-3b-instruct",
+        "meta-llama/llama-3.1-70b-instruct",
+        "meta-llama/llama-3.1-8b-instruct"
+      ],
+      "not_enabled_models": [
+        "meta/muse-spark-1.3-contributor",
+        "meta/muse-spark-1.2-contributor"
+      ]
+    },
+    {
+      "id": 1601,
+      "vendor": "nvidia",
+      "name": "OpenRouter · NVIDIA",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "nvidia/nemotron-3.5-super-vl",
+        "nvidia/nemotron-3.5-super-vl:free",
+        "nvidia/nemotron-3.5-lightning",
+        "nvidia/nemotron-3.5-lightning:free",
+        "nvidia/nemotron-3.5-content-safety",
+        "nvidia/nemotron-3-ultra-550b-a55b",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/nemotron-3-nano-30b-a3b"
+      ],
+      "not_enabled_models": [
+        "nvidia/nemotron-3.5-content-safety:free"
+      ]
+    },
+    {
+      "id": 1602,
+      "vendor": "unbiased",
+      "name": "OpenRouter · unbiased",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "unbiased/pareto-26.10",
+        "unbiased/pareto-26.9"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1603,
+      "vendor": "liquid",
+      "name": "OpenRouter · LiquidAI",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "liquid/lfm-2.5-24b-a2b",
+        "liquid/lfm-2.5-2.6b:free"
+      ],
+      "not_enabled_models": [
+        "liquid/lfm-2.5-2.6b"
+      ]
+    },
+    {
+      "id": 1604,
+      "vendor": "scaledown",
+      "name": "OpenRouter · ScaleDown",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "scaledown/summarize",
+        "scaledown/extract"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1605,
+      "vendor": "mistralai",
+      "name": "OpenRouter · Mistral",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "mistralai/mistral-large-4-0",
+        "mistralai/mistral-medium-3-5",
+        "mistralai/mistral-small-2603",
+        "mistralai/devstral-2512",
+        "mistralai/ministral-14b-2512",
+        "mistralai/ministral-8b-2512",
+        "mistralai/ministral-3b-2512",
+        "mistralai/mistral-large-2512",
+        "mistralai/voxtral-small-24b-2507",
+        "mistralai/mistral-medium-3.1",
+        "mistralai/codestral-2508",
+        "mistralai/mistral-small-3.2-24b-instruct",
+        "mistralai/mistral-medium-3",
+        "mistralai/mistral-small-3.1-24b-instruct",
+        "mistralai/mistral-saba",
+        "mistralai/mistral-small-24b-instruct-2501",
+        "mistralai/mistral-large-2407",
+        "mistralai/mistral-nemo",
+        "mistralai/mixtral-8x22b-instruct",
+        "mistralai/mistral-large"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1606,
+      "vendor": "inclusionai",
+      "name": "OpenRouter · inclusionAI",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "inclusionai/ling-3.1-flash",
+        "inclusionai/ling-3.0-flash-vl",
+        "inclusionai/ling-3.0-flash"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1607,
+      "vendor": "perceptron",
+      "name": "OpenRouter · Perceptron",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "perceptron/perceptron-mk1.5",
+        "perceptron/perceptron-mk1"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1608,
+      "vendor": "fireworks",
+      "name": "OpenRouter · Fireworks",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "fireworks/ember-1"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1609,
+      "vendor": "aion-labs",
+      "name": "OpenRouter · AionLabs",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "aion-labs/aion-3.5-mini",
+        "aion-labs/aion-3.5",
+        "aion-labs/aion-3.0-mini",
+        "aion-labs/aion-3.0",
+        "aion-labs/aion-2.0",
+        "aion-labs/aion-rp-llama-3.1-8b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1610,
+      "vendor": "upstage",
+      "name": "OpenRouter · Upstage",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "upstage/solar-mini4",
+        "upstage/solar-pro4"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1611,
+      "vendor": "cohere",
+      "name": "OpenRouter · Cohere",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "cohere/command-a-plus",
+        "cohere/north-mini-code:free",
+        "cohere/command-a",
+        "cohere/command-r7b-12-2024",
+        "cohere/command-r-08-2024",
+        "cohere/command-r-plus-08-2024"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1612,
+      "vendor": "inference-net",
+      "name": "OpenRouter · Inference.net",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "inference-net/schematron-v2-turbo",
+        "inference-net/schematron-v2-small"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1613,
+      "vendor": "sakana",
+      "name": "OpenRouter · Sakana",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "sakana/fugu-ultra-v2",
+        "sakana/fugu-max",
+        "sakana/fugu-ultra"
+      ],
+      "not_enabled_models": [
+        "sakana/sakana-namazu"
+      ]
+    },
+    {
+      "id": 1614,
+      "vendor": "nex-agi",
+      "name": "OpenRouter · Nex AGI",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/nex-n2.5-pro"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1615,
+      "vendor": "ibm-granite",
+      "name": "OpenRouter · IBM",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "ibm-granite/granite-4.2-8b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1616,
+      "vendor": "dots-studio",
+      "name": "OpenRouter · Dots Studio",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "dots-studio/dots-3-note-preview:free"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1617,
+      "vendor": "deepseek",
+      "name": "OpenRouter · DeepSeek",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "deepseek/deepseek-v4-pro-0813",
+        "deepseek/deepseek-v3.2",
+        "deepseek/deepseek-v3.2-exp",
+        "deepseek/deepseek-v3.1-terminus",
+        "deepseek/deepseek-chat-v3.1",
+        "deepseek/deepseek-r1-0528",
+        "deepseek/deepseek-chat-v3-0324",
+        "deepseek/deepseek-chat"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1618,
+      "vendor": "thinkingmachines",
+      "name": "OpenRouter · Thinking Machines",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "thinkingmachines/inkling-small",
+        "thinkingmachines/inkling"
+      ],
+      "not_enabled_models": [
+        "thinkingmachines/inkling-small:free",
+        "thinkingmachines/inkling:free"
+      ]
+    },
+    {
+      "id": 1619,
+      "vendor": "meituan",
+      "name": "OpenRouter · Meituan",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "meituan/longcat-2.0"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1620,
+      "vendor": "minimax",
+      "name": "OpenRouter · MiniMax",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "minimax/minimax-m3",
+        "minimax/minimax-m2.7",
+        "minimax/minimax-m2.5",
+        "minimax/minimax-m2-her",
+        "minimax/minimax-m2.1",
+        "minimax/minimax-m2",
+        "minimax/minimax-m1",
+        "minimax/minimax-01"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1621,
+      "vendor": "xiaomi",
+      "name": "OpenRouter · Xiaomi",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "xiaomi/mimo-v2.5-pro",
+        "xiaomi/mimo-v2.5"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1622,
+      "vendor": "rekaai",
+      "name": "OpenRouter · rekaai",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "rekaai/reka-edge",
+        "rekaai/reka-flash-3"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1623,
+      "vendor": "writer",
+      "name": "OpenRouter · Writer",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "writer/palmyra-x5"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1624,
+      "vendor": "relace",
+      "name": "OpenRouter · Relace",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "relace/relace-search",
+        "relace/relace-apply-3"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1625,
+      "vendor": "amazon",
+      "name": "OpenRouter · Amazon",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "amazon/nova-2-lite-v1",
+        "amazon/nova-lite-v1",
+        "amazon/nova-micro-v1",
+        "amazon/nova-pro-v1"
+      ],
+      "not_enabled_models": [
+        "amazon/nova-premier-v1"
+      ]
+    },
+    {
+      "id": 1626,
+      "vendor": "moonshotai",
+      "name": "OpenRouter · MoonshotAI",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "moonshotai/kimi-k2-thinking",
+        "moonshotai/kimi-k2-0905",
+        "moonshotai/kimi-k2"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1627,
+      "vendor": "perplexity",
+      "name": "OpenRouter · Perplexity",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "perplexity/sonar-pro-search",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity/sonar-pro",
+        "perplexity/sonar-deep-research",
+        "perplexity/sonar"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1628,
+      "vendor": "thedrummer",
+      "name": "OpenRouter · TheDrummer",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "thedrummer/cydonia-24b-v4.1",
+        "thedrummer/skyfall-36b-v2",
+        "thedrummer/unslopnemo-12b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1629,
+      "vendor": "nousresearch",
+      "name": "OpenRouter · Nous",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "nousresearch/hermes-4-405b",
+        "nousresearch/hermes-3-llama-3.1-70b",
+        "nousresearch/hermes-3-llama-3.1-405b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1630,
+      "vendor": "cognitivecomputations",
+      "name": "OpenRouter · Venice",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "cognitivecomputations/dolphin-mistral-24b-venice-edition"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1631,
+      "vendor": "morph",
+      "name": "OpenRouter · Morph",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "morph/morph-v3-large",
+        "morph/morph-v3-fast"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1632,
+      "vendor": "microsoft",
+      "name": "OpenRouter · Microsoft",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "microsoft/phi-4"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1633,
+      "vendor": "anthracite-org",
+      "name": "OpenRouter · anthracite-org",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "anthracite-org/magnum-v4-72b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1634,
+      "vendor": "sao10k",
+      "name": "OpenRouter · Sao10K",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "sao10k/l3.1-euryale-70b",
+        "sao10k/l3-lunaris-8b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1635,
+      "vendor": "mancer",
+      "name": "OpenRouter · Mancer",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "mancer/weaver"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1636,
+      "vendor": "undi95",
+      "name": "OpenRouter · undi95",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "undi95/remm-slerp-l2-13b"
+      ],
+      "not_enabled_models": []
+    },
+    {
+      "id": 1637,
+      "vendor": "gryphe",
+      "name": "OpenRouter · gryphe",
+      "type": 20,
+      "base_url": "https://openrouter.ai/api",
+      "group": "OpenRouter",
+      "enabled_models": [
+        "gryphe/mythomax-l2-13b"
+      ],
+      "not_enabled_models": []
+    }
+  ],
+  "models": [
+    {
+      "id": "particle-ai/particle-1",
+      "channel_id": 1592,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.0000005",
+        "input_cache_read": "0.000000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 17.0,
+        "cache_read": 0.102
+      }
+    },
+    {
+      "id": "recursive/flint-v1.0:free",
+      "channel_id": 1593,
+      "enabled": true,
+      "live_verified": false,
+      "status_note": "上游连续返回 503",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "elorian/glimpse",
+      "channel_id": 1594,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000006",
+        "completion": "0.000003",
+        "input_cache_read": "0.00000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 20.4,
+        "output": 102.0,
+        "cache_read": 2.04
+      }
+    },
+    {
+      "id": "xingchen-agi/xing4.0-29b-a4b:free",
+      "channel_id": 1595,
+      "enabled": true,
+      "live_verified": false,
+      "status_note": "上游连续返回 429",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "reflection/beam-1.0-501b-a23b",
+      "channel_id": 1596,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000025",
+        "completion": "0.000001",
+        "input_cache_read": "0.00000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.5,
+        "output": 34.0,
+        "cache_read": 1.7
+      }
+    },
+    {
+      "id": "inception/mercury-3",
+      "channel_id": 1597,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.00000035",
+        "input_cache_read": "0.00000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 11.9,
+        "cache_read": 0.34
+      }
+    },
+    {
+      "id": "inception/mercury-2.5",
+      "channel_id": 1597,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000004",
+        "completion": "0.00000015",
+        "input_cache_read": "0.000000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.36,
+        "output": 5.1,
+        "cache_read": 0.136
+      }
+    },
+    {
+      "id": "inception/mercury-2",
+      "channel_id": 1597,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000025",
+        "completion": "0.00000075",
+        "input_cache_read": "0.000000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.5,
+        "output": 25.5,
+        "cache_read": 0.85
+      }
+    },
+    {
+      "id": "prism-ml/ternary-bonsai-2-9b",
+      "channel_id": 1598,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000008",
+        "completion": "0.00000013",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.72,
+        "output": 4.42,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "prism-ml/ternary-bonsai-2-27b",
+      "channel_id": 1598,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000075",
+        "completion": "0.0000005",
+        "input_cache_read": "0.0000000375"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.55,
+        "output": 17.0,
+        "cache_read": 1.275
+      }
+    },
+    {
+      "id": "moondream/moondream3-preview",
+      "channel_id": 1599,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 85.0
+      }
+    },
+    {
+      "id": "moondream/moondream3.1-9b-a2b",
+      "channel_id": 1599,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 85.0
+      }
+    },
+    {
+      "id": "meta/muse-spark-open",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000125",
+        "completion": "0.00000425",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 42.5,
+        "output": 144.5,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "meta/muse-wonder",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000004",
+        "completion": "0.00002",
+        "web_search": "0.0025",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 136.0,
+        "output": 680.0,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "meta/muse-spark-1.3-contributor",
+      "channel_id": 1600,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "账号隐私设置拒绝用于训练的付费路由",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000002",
+        "web_search": "0.0025",
+        "input_cache_read": "0.000000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 6.8,
+        "cache_read": 0.068
+      }
+    },
+    {
+      "id": "meta/muse-spark-1.3",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000125",
+        "completion": "0.00000425",
+        "web_search": "0.0025",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 42.5,
+        "output": 144.5,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "meta/muse-spark-1.2-contributor",
+      "channel_id": 1600,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "账号隐私设置拒绝用于训练的付费路由",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000002",
+        "web_search": "0.0025",
+        "input_cache_read": "0.000000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 6.8,
+        "cache_read": 0.068
+      }
+    },
+    {
+      "id": "meta/muse-glimmer-30b",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "meta/muse-spark-1.2",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000125",
+        "completion": "0.00000425",
+        "web_search": "0.0025",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 42.5,
+        "output": 144.5,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "meta/muse-spark-1.1",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000125",
+        "completion": "0.00000425",
+        "web_search": "0.0025",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 42.5,
+        "output": 144.5,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "meta-llama/llama-guard-4-12b",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000018",
+        "completion": "0.00000018"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.12,
+        "output": 6.12
+      }
+    },
+    {
+      "id": "meta-llama/llama-4-maverick",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001875",
+        "completion": "0.0000006525",
+        "input_cache_read": "0.00000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.375,
+        "output": 22.185,
+        "cache_read": 1.7
+      }
+    },
+    {
+      "id": "meta-llama/llama-4-scout",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 10.2
+      }
+    },
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.00000032"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 10.88
+      }
+    },
+    {
+      "id": "meta-llama/llama-3.2-1b-instruct",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000027",
+        "completion": "0.000000201"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.918,
+        "output": 6.834
+      }
+    },
+    {
+      "id": "meta-llama/llama-3.2-3b-instruct",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.00000033"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 11.22
+      }
+    },
+    {
+      "id": "meta-llama/llama-3.1-70b-instruct",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.0000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 13.6
+      }
+    },
+    {
+      "id": "meta-llama/llama-3.1-8b-instruct",
+      "channel_id": 1600,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.00000008",
+        "input_cache_read": "0.000000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 2.72,
+        "cache_read": 0.85
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-super-vl",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000005",
+        "input_cache_read": "0.00000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 17.0,
+        "cache_read": 0.68
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-super-vl:free",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-lightning",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000007",
+        "completion": "0.0000002",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.38,
+        "output": 6.8,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-lightning:free",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-content-safety",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002",
+        "completion": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.8,
+        "output": 6.8
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3.5-content-safety:free",
+      "channel_id": 1601,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "上游 NVIDIA 模型函数不存在，重复返回 404",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-ultra-550b-a55b",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000006",
+        "completion": "0.0000024",
+        "input_cache_read": "0.00000012"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 20.4,
+        "output": 81.6,
+        "cache_read": 4.08
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-super-120b-a12b",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000024",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 81.6,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-nano-30b-a3b",
+      "channel_id": 1601,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000006",
+        "completion": "0.00000024",
+        "input_cache_read": "0.000000012"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.04,
+        "output": 8.16,
+        "cache_read": 0.408
+      }
+    },
+    {
+      "id": "unbiased/pareto-26.10",
+      "channel_id": 1602,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000008",
+        "completion": "0.0000032",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 27.2,
+        "output": 108.8,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "unbiased/pareto-26.9",
+      "channel_id": 1602,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000025",
+        "completion": "0.0000075",
+        "input_cache_read": "0.00000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 85.0,
+        "output": 255.0,
+        "cache_read": 8.5
+      }
+    },
+    {
+      "id": "liquid/lfm-2.5-24b-a2b",
+      "channel_id": 1603,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.0000007",
+        "input_cache_read": "0.000000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 23.8,
+        "cache_read": 0.85
+      }
+    },
+    {
+      "id": "liquid/lfm-2.5-2.6b",
+      "channel_id": 1603,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "账号隐私设置拒绝用于训练的付费路由",
+      "source_pricing_usd": {
+        "prompt": "0.00000035",
+        "completion": "0.0000005",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 11.9,
+        "output": 17.0,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "liquid/lfm-2.5-2.6b:free",
+      "channel_id": 1603,
+      "enabled": true,
+      "live_verified": false,
+      "status_note": "上游连续返回 429",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "scaledown/summarize",
+      "channel_id": 1604,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000004",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.36,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "scaledown/extract",
+      "channel_id": 1604,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000004",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.36,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "mistralai/mistral-large-4-0",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000007",
+        "completion": "0.0000021",
+        "input_cache_read": "0.00000007"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 23.8,
+        "output": 71.4,
+        "cache_read": 2.38
+      }
+    },
+    {
+      "id": "mistralai/mistral-medium-3-5",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000015",
+        "completion": "0.0000075"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 51.0,
+        "output": 255.0
+      }
+    },
+    {
+      "id": "mistralai/mistral-small-2603",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006",
+        "input_cache_read": "0.000000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 20.4,
+        "cache_read": 0.51
+      }
+    },
+    {
+      "id": "mistralai/devstral-2512",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.000002",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 68.0,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "mistralai/ministral-14b-2512",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002",
+        "completion": "0.0000002",
+        "input_cache_read": "0.00000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.8,
+        "output": 6.8,
+        "cache_read": 0.68
+      }
+    },
+    {
+      "id": "mistralai/ministral-8b-2512",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.00000015",
+        "input_cache_read": "0.000000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 5.1,
+        "cache_read": 0.51
+      }
+    },
+    {
+      "id": "mistralai/ministral-3b-2512",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000001",
+        "input_cache_read": "0.00000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 3.4,
+        "cache_read": 0.34
+      }
+    },
+    {
+      "id": "mistralai/mistral-large-2512",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000005",
+        "completion": "0.0000015",
+        "input_cache_read": "0.00000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 17.0,
+        "output": 51.0,
+        "cache_read": 1.7
+      }
+    },
+    {
+      "id": "mistralai/voxtral-small-24b-2507",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000003",
+        "audio": "0.0001",
+        "input_cache_read": "0.00000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 10.2,
+        "cache_read": 0.34,
+        "audio_input": 3400.0
+      }
+    },
+    {
+      "id": "mistralai/mistral-medium-3.1",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.000002",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 68.0,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "mistralai/codestral-2508",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000009",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 30.6,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "mistralai/mistral-small-3.2-24b-instruct",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000075",
+        "completion": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.55,
+        "output": 6.8
+      }
+    },
+    {
+      "id": "mistralai/mistral-medium-3",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.000002",
+        "input_cache_read": "0.00000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 68.0,
+        "cache_read": 1.36
+      }
+    },
+    {
+      "id": "mistralai/mistral-small-3.1-24b-instruct",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000351",
+        "completion": "0.000000555"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 11.934,
+        "output": 18.87
+      }
+    },
+    {
+      "id": "mistralai/mistral-saba",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002",
+        "completion": "0.0000006",
+        "input_cache_read": "0.00000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.8,
+        "output": 20.4,
+        "cache_read": 0.68
+      }
+    },
+    {
+      "id": "mistralai/mistral-small-24b-instruct-2501",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.00000008"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 2.72
+      }
+    },
+    {
+      "id": "mistralai/mistral-large-2407",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000006",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 204.0,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "mistralai/mistral-nemo",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000029",
+        "completion": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.986,
+        "output": 1.02
+      }
+    },
+    {
+      "id": "mistralai/mixtral-8x22b-instruct",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000006",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 204.0,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "mistralai/mistral-large",
+      "channel_id": 1605,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000006",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 204.0,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "inclusionai/ling-3.1-flash",
+      "channel_id": 1606,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000075",
+        "completion": "0.000000225",
+        "input_cache_read": "0.000000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.55,
+        "output": 7.65,
+        "cache_read": 0.51
+      }
+    },
+    {
+      "id": "inclusionai/ling-3.0-flash-vl",
+      "channel_id": 1606,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000006",
+        "completion": "0.00000018",
+        "input_cache_read": "0.000000012"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.04,
+        "output": 6.12,
+        "cache_read": 0.408
+      }
+    },
+    {
+      "id": "inclusionai/ling-3.0-flash",
+      "channel_id": 1606,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000021",
+        "completion": "0.000000063",
+        "input_cache_read": "0.0000000042"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.714,
+        "output": 2.142,
+        "cache_read": 0.1428
+      }
+    },
+    {
+      "id": "perceptron/perceptron-mk1.5",
+      "channel_id": 1607,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 51.0
+      }
+    },
+    {
+      "id": "perceptron/perceptron-mk1",
+      "channel_id": 1607,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 51.0
+      }
+    },
+    {
+      "id": "fireworks/ember-1",
+      "channel_id": 1608,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000003",
+        "completion": "0.000015",
+        "input_cache_read": "0.0000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 102.0,
+        "output": 510.0,
+        "cache_read": 10.2
+      }
+    },
+    {
+      "id": "aion-labs/aion-3.5-mini",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000007",
+        "completion": "0.0000014",
+        "input_cache_read": "0.00000018"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 23.8,
+        "output": 47.6,
+        "cache_read": 6.12
+      }
+    },
+    {
+      "id": "aion-labs/aion-3.5",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000003",
+        "completion": "0.000006",
+        "input_cache_read": "0.00000075"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 102.0,
+        "output": 204.0,
+        "cache_read": 25.5
+      }
+    },
+    {
+      "id": "aion-labs/aion-3.0-mini",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000007",
+        "completion": "0.0000014",
+        "input_cache_read": "0.00000018"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 23.8,
+        "output": 47.6,
+        "cache_read": 6.12
+      }
+    },
+    {
+      "id": "aion-labs/aion-3.0",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000003",
+        "completion": "0.000006",
+        "input_cache_read": "0.00000075"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 102.0,
+        "output": 204.0,
+        "cache_read": 25.5
+      }
+    },
+    {
+      "id": "aion-labs/aion-2.0",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000008",
+        "completion": "0.0000016",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 27.2,
+        "output": 54.4,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "aion-labs/aion-rp-llama-3.1-8b",
+      "channel_id": 1609,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000008",
+        "completion": "0.0000016"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 27.2,
+        "output": 54.4
+      }
+    },
+    {
+      "id": "upstage/solar-mini4",
+      "channel_id": 1610,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.0000002",
+        "input_cache_read": "0.000000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 6.8,
+        "cache_read": 0.17
+      }
+    },
+    {
+      "id": "upstage/solar-pro4",
+      "channel_id": 1610,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 20.4,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "cohere/command-a-plus",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000015",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 51.0,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "cohere/north-mini-code:free",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "cohere/command-a",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000025",
+        "completion": "0.00001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 85.0,
+        "output": 340.0
+      }
+    },
+    {
+      "id": "cohere/command-r7b-12-2024",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000000375",
+        "completion": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.275,
+        "output": 5.1
+      }
+    },
+    {
+      "id": "cohere/command-r-08-2024",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 5.1,
+        "output": 20.4
+      }
+    },
+    {
+      "id": "cohere/command-r-plus-08-2024",
+      "channel_id": 1611,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000025",
+        "completion": "0.00001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 85.0,
+        "output": 340.0
+      }
+    },
+    {
+      "id": "inference-net/schematron-v2-turbo",
+      "channel_id": 1612,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000003",
+        "completion": "0.00000015",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.02,
+        "output": 5.1,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "inference-net/schematron-v2-small",
+      "channel_id": 1612,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000005",
+        "completion": "0.00000023",
+        "input_cache_read": "0.00000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.7,
+        "output": 7.82,
+        "cache_read": 1.7
+      }
+    },
+    {
+      "id": "sakana/fugu-ultra-v2",
+      "channel_id": 1613,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000005",
+        "completion": "0.00003",
+        "web_search": "0.01",
+        "input_cache_read": "0.0000005",
+        "overrides": [
+          {
+            "min_prompt_tokens": 272000,
+            "prompt": "0.00001",
+            "completion": "0.000045",
+            "input_cache_read": "0.000001"
+          }
+        ]
+      },
+      "editor_price_per_million_tokens": {
+        "input": 170.0,
+        "output": 1020.0,
+        "cache_read": 17.0
+      },
+      "billing_expression": "len >= 272000 ? tier(\"long\", p * 340 + c * 1530 + cr * 34) : tier(\"base\", p * 170 + c * 1020 + cr * 17)"
+    },
+    {
+      "id": "sakana/fugu-max",
+      "channel_id": 1613,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000006",
+        "web_search": "0.01",
+        "input_cache_read": "0.00000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 204.0,
+        "cache_read": 8.5
+      }
+    },
+    {
+      "id": "sakana/sakana-namazu",
+      "channel_id": 1613,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "账号隐私设置拒绝用于训练的付费路由",
+      "source_pricing_usd": {
+        "prompt": "0.00000095",
+        "completion": "0.000004",
+        "web_search": "0.007",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 32.3,
+        "output": 136.0,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "sakana/fugu-ultra",
+      "channel_id": 1613,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000005",
+        "completion": "0.00003",
+        "web_search": "0.01",
+        "input_cache_read": "0.0000005",
+        "overrides": [
+          {
+            "min_prompt_tokens": 272000,
+            "prompt": "0.00001",
+            "completion": "0.000045",
+            "input_cache_read": "0.000001"
+          }
+        ]
+      },
+      "editor_price_per_million_tokens": {
+        "input": 170.0,
+        "output": 1020.0,
+        "cache_read": 17.0
+      },
+      "billing_expression": "len >= 272000 ? tier(\"long\", p * 340 + c * 1530 + cr * 34) : tier(\"base\", p * 170 + c * 1020 + cr * 17)"
+    },
+    {
+      "id": "nex-agi/nex-n2.5-mini",
+      "channel_id": 1614,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000025",
+        "completion": "0.0000001",
+        "input_cache_read": "0.0000000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.85,
+        "output": 3.4,
+        "cache_read": 0.085
+      }
+    },
+    {
+      "id": "nex-agi/nex-n2.5-pro",
+      "channel_id": 1614,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000075",
+        "completion": "0.00000025",
+        "input_cache_read": "0.000000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.55,
+        "output": 8.5,
+        "cache_read": 0.51
+      }
+    },
+    {
+      "id": "ibm-granite/granite-4.2-8b",
+      "channel_id": 1615,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000006",
+        "completion": "0.00000015",
+        "input_cache_read": "0.000000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.04,
+        "output": 5.1,
+        "cache_read": 0.51
+      }
+    },
+    {
+      "id": "dots-studio/dots-3-note-preview:free",
+      "channel_id": 1616,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "deepseek/deepseek-v4-pro-0813",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000066",
+        "completion": "0.00000198",
+        "input_cache_read": "0.000000022",
+        "overrides": [
+          {
+            "utc_days": [
+              "saturday",
+              "sunday"
+            ],
+            "prompt": "0.00000066",
+            "completion": "0.00000198",
+            "input_cache_read": "0.000000022"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 0,
+            "utc_end": 100,
+            "prompt": "0.00000066",
+            "completion": "0.00000198",
+            "input_cache_read": "0.000000022"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 100,
+            "utc_end": 400,
+            "prompt": "0.00000132",
+            "completion": "0.00000396",
+            "input_cache_read": "0.000000044"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 400,
+            "utc_end": 600,
+            "prompt": "0.00000066",
+            "completion": "0.00000198",
+            "input_cache_read": "0.000000022"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 600,
+            "utc_end": 1000,
+            "prompt": "0.00000132",
+            "completion": "0.00000396",
+            "input_cache_read": "0.000000044"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 1000,
+            "utc_end": 0,
+            "prompt": "0.00000066",
+            "completion": "0.00000198",
+            "input_cache_read": "0.000000022"
+          }
+        ]
+      },
+      "editor_price_per_million_tokens": {
+        "input": 22.44,
+        "output": 67.32,
+        "cache_read": 0.748
+      },
+      "billing_expression": "(weekday(\"UTC\") >= 1 && weekday(\"UTC\") <= 5 && ((hour(\"UTC\") >= 1 && hour(\"UTC\") < 4) || (hour(\"UTC\") >= 6 && hour(\"UTC\") < 10))) ? tier(\"peak\", p * 44.88 + c * 134.64 + cr * 1.496) : tier(\"off_peak\", p * 22.44 + c * 67.32 + cr * 0.748)"
+    },
+    {
+      "id": "deepseek/deepseek-v3.2",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000026",
+        "completion": "0.00000038",
+        "input_cache_read": "0.00000013"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.84,
+        "output": 12.92,
+        "cache_read": 4.42
+      }
+    },
+    {
+      "id": "deepseek/deepseek-v3.2-exp",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000027",
+        "completion": "0.00000041"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 9.18,
+        "output": 13.94
+      }
+    },
+    {
+      "id": "deepseek/deepseek-v3.1-terminus",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000027",
+        "completion": "0.000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 9.18,
+        "output": 34.0
+      }
+    },
+    {
+      "id": "deepseek/deepseek-chat-v3.1",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000025",
+        "completion": "0.00000095",
+        "input_cache_read": "0.00000013"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.5,
+        "output": 32.3,
+        "cache_read": 4.42
+      }
+    },
+    {
+      "id": "deepseek/deepseek-r1-0528",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000005",
+        "completion": "0.00000215",
+        "input_cache_read": "0.00000035"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 17.0,
+        "output": 73.1,
+        "cache_read": 11.9
+      }
+    },
+    {
+      "id": "deepseek/deepseek-chat-v3-0324",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000029",
+        "completion": "0.00000114",
+        "input_cache_read": "0.00000011"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 9.86,
+        "output": 38.76,
+        "cache_read": 3.74
+      }
+    },
+    {
+      "id": "deepseek/deepseek-chat",
+      "channel_id": 1617,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002574",
+        "completion": "0.0000010287"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.7516,
+        "output": 34.9758
+      }
+    },
+    {
+      "id": "thinkingmachines/inkling-small",
+      "channel_id": 1618,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000045",
+        "completion": "0.0000012",
+        "input_cache_read": "0.0000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 15.3,
+        "output": 40.8,
+        "cache_read": 3.4
+      }
+    },
+    {
+      "id": "thinkingmachines/inkling-small:free",
+      "channel_id": 1618,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "上游仅允许受认可的 agentic harness 应用",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "thinkingmachines/inkling",
+      "channel_id": 1618,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000001",
+        "completion": "0.00000405",
+        "input_cache_read": "0.00000017"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 34.0,
+        "output": 137.7,
+        "cache_read": 5.78
+      }
+    },
+    {
+      "id": "thinkingmachines/inkling:free",
+      "channel_id": 1618,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "上游仅允许受认可的 agentic harness 应用",
+      "source_pricing_usd": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    {
+      "id": "meituan/longcat-2.0",
+      "channel_id": 1619,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.000000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 0.204
+      }
+    },
+    {
+      "id": "minimax/minimax-m3",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 2.04
+      }
+    },
+    {
+      "id": "minimax/minimax-m2.7",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 2.04
+      }
+    },
+    {
+      "id": "minimax/minimax-m2.5",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000027",
+        "completion": "0.00000095",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 9.18,
+        "output": 32.3,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "minimax/minimax-m2-her",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "minimax/minimax-m2.1",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000012",
+        "input_cache_read": "0.00000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 40.8,
+        "cache_read": 1.02
+      }
+    },
+    {
+      "id": "minimax/minimax-m2",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000255",
+        "completion": "0.00000102"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 8.67,
+        "output": 34.68
+      }
+    },
+    {
+      "id": "minimax/minimax-m1",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000055",
+        "completion": "0.0000022"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 18.7,
+        "output": 74.8
+      }
+    },
+    {
+      "id": "minimax/minimax-01",
+      "channel_id": 1620,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002",
+        "completion": "0.0000011"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.8,
+        "output": 37.4
+      }
+    },
+    {
+      "id": "xiaomi/mimo-v2.5-pro",
+      "channel_id": 1621,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000048",
+        "completion": "0.0000018",
+        "input_cache_read": "0.000000096"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 16.32,
+        "output": 61.2,
+        "cache_read": 3.264
+      }
+    },
+    {
+      "id": "xiaomi/mimo-v2.5",
+      "channel_id": 1621,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.000002",
+        "input_cache_read": "0.00000008"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 68.0,
+        "cache_read": 2.72
+      }
+    },
+    {
+      "id": "rekaai/reka-edge",
+      "channel_id": 1622,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 3.4
+      }
+    },
+    {
+      "id": "rekaai/reka-flash-3",
+      "channel_id": 1622,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000001",
+        "completion": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 3.4,
+        "output": 6.8
+      }
+    },
+    {
+      "id": "writer/palmyra-x5",
+      "channel_id": 1623,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000006",
+        "completion": "0.000006"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 20.4,
+        "output": 204.0
+      }
+    },
+    {
+      "id": "relace/relace-search",
+      "channel_id": 1624,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000001",
+        "completion": "0.000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 34.0,
+        "output": 102.0
+      }
+    },
+    {
+      "id": "relace/relace-apply-3",
+      "channel_id": 1624,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000085",
+        "completion": "0.00000125"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 28.9,
+        "output": 42.5
+      }
+    },
+    {
+      "id": "amazon/nova-2-lite-v1",
+      "channel_id": 1625,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 85.0
+      }
+    },
+    {
+      "id": "amazon/nova-premier-v1",
+      "channel_id": 1625,
+      "enabled": false,
+      "live_verified": false,
+      "status_note": "上游确认该模型版本已结束生命周期",
+      "source_pricing_usd": {
+        "prompt": "0.0000025",
+        "completion": "0.0000125",
+        "input_cache_read": "0.000000625"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 85.0,
+        "output": 425.0,
+        "cache_read": 21.25
+      }
+    },
+    {
+      "id": "amazon/nova-lite-v1",
+      "channel_id": 1625,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000006",
+        "completion": "0.00000024"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.04,
+        "output": 8.16
+      }
+    },
+    {
+      "id": "amazon/nova-micro-v1",
+      "channel_id": 1625,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000000035",
+        "completion": "0.00000014"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.19,
+        "output": 4.76
+      }
+    },
+    {
+      "id": "amazon/nova-pro-v1",
+      "channel_id": 1625,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000008",
+        "completion": "0.0000032"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 27.2,
+        "output": 108.8
+      }
+    },
+    {
+      "id": "moonshotai/kimi-k2-thinking",
+      "channel_id": 1626,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000006",
+        "completion": "0.0000025",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 20.4,
+        "output": 85.0,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "moonshotai/kimi-k2-0905",
+      "channel_id": 1626,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000006",
+        "completion": "0.0000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 20.4,
+        "output": 85.0
+      }
+    },
+    {
+      "id": "moonshotai/kimi-k2",
+      "channel_id": 1626,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000057",
+        "completion": "0.0000023"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 19.38,
+        "output": 78.2
+      }
+    },
+    {
+      "id": "perplexity/sonar-pro-search",
+      "channel_id": 1627,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000003",
+        "completion": "0.000015",
+        "web_search": "0.018"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 102.0,
+        "output": 510.0
+      }
+    },
+    {
+      "id": "perplexity/sonar-reasoning-pro",
+      "channel_id": 1627,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000008",
+        "web_search": "0.005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 272.0
+      }
+    },
+    {
+      "id": "perplexity/sonar-pro",
+      "channel_id": 1627,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000003",
+        "completion": "0.000015",
+        "web_search": "0.005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 102.0,
+        "output": 510.0
+      }
+    },
+    {
+      "id": "perplexity/sonar-deep-research",
+      "channel_id": 1627,
+      "enabled": true,
+      "live_verified": false,
+      "status_note": "一次非流式测试超过 100 秒，尚未验证完成结果",
+      "source_pricing_usd": {
+        "prompt": "0.000002",
+        "completion": "0.000008",
+        "web_search": "0.005",
+        "internal_reasoning": "0.000003"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 68.0,
+        "output": 272.0,
+        "reasoning": 102.0
+      }
+    },
+    {
+      "id": "perplexity/sonar",
+      "channel_id": 1627,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000001",
+        "completion": "0.000001",
+        "web_search": "0.005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 34.0,
+        "output": 34.0
+      }
+    },
+    {
+      "id": "thedrummer/cydonia-24b-v4.1",
+      "channel_id": 1628,
+      "enabled": true,
+      "live_verified": false,
+      "status_note": "上游连续返回 429",
+      "source_pricing_usd": {
+        "prompt": "0.0000003",
+        "completion": "0.0000005",
+        "input_cache_read": "0.00000015"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 10.2,
+        "output": 17.0,
+        "cache_read": 5.1
+      }
+    },
+    {
+      "id": "thedrummer/skyfall-36b-v2",
+      "channel_id": 1628,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000055",
+        "completion": "0.0000008",
+        "input_cache_read": "0.00000025"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 18.7,
+        "output": 27.2,
+        "cache_read": 8.5
+      }
+    },
+    {
+      "id": "thedrummer/unslopnemo-12b",
+      "channel_id": 1628,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.0000004"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 13.6
+      }
+    },
+    {
+      "id": "nousresearch/hermes-4-405b",
+      "channel_id": 1629,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000001",
+        "completion": "0.000003",
+        "input_cache_read": "0.0000002"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 34.0,
+        "output": 102.0,
+        "cache_read": 6.8
+      }
+    },
+    {
+      "id": "nousresearch/hermes-3-llama-3.1-70b",
+      "channel_id": 1629,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000007",
+        "completion": "0.0000007"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 23.8,
+        "output": 23.8
+      }
+    },
+    {
+      "id": "nousresearch/hermes-3-llama-3.1-405b",
+      "channel_id": 1629,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.000001",
+        "completion": "0.000001"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 34.0,
+        "output": 34.0
+      }
+    },
+    {
+      "id": "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+      "channel_id": 1630,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000002",
+        "completion": "0.0000009"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 6.8,
+        "output": 30.6
+      }
+    },
+    {
+      "id": "morph/morph-v3-large",
+      "channel_id": 1631,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000009",
+        "completion": "0.0000019"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 30.6,
+        "output": 64.6
+      }
+    },
+    {
+      "id": "morph/morph-v3-fast",
+      "channel_id": 1631,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000008",
+        "completion": "0.0000012"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 27.2,
+        "output": 40.8
+      }
+    },
+    {
+      "id": "microsoft/phi-4",
+      "channel_id": 1632,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000007",
+        "completion": "0.00000014"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.38,
+        "output": 4.76
+      }
+    },
+    {
+      "id": "anthracite-org/magnum-v4-72b",
+      "channel_id": 1633,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000025",
+        "completion": "0.000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 85.0,
+        "output": 170.0
+      }
+    },
+    {
+      "id": "sao10k/l3.1-euryale-70b",
+      "channel_id": 1634,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000085",
+        "completion": "0.00000085"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 28.9,
+        "output": 28.9
+      }
+    },
+    {
+      "id": "sao10k/l3-lunaris-8b",
+      "channel_id": 1634,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000004",
+        "completion": "0.00000005"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 1.36,
+        "output": 1.7
+      }
+    },
+    {
+      "id": "mancer/weaver",
+      "channel_id": 1635,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.0000004",
+        "completion": "0.00000075"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 13.6,
+        "output": 25.5
+      }
+    },
+    {
+      "id": "undi95/remm-slerp-l2-13b",
+      "channel_id": 1636,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000035",
+        "completion": "0.00000065"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 11.9,
+        "output": 22.1
+      }
+    },
+    {
+      "id": "gryphe/mythomax-l2-13b",
+      "channel_id": 1637,
+      "enabled": true,
+      "live_verified": true,
+      "status_note": "实际调用通过（短请求验收，不代表全部能力）",
+      "source_pricing_usd": {
+        "prompt": "0.00000008",
+        "completion": "0.00000011"
+      },
+      "editor_price_per_million_tokens": {
+        "input": 2.72,
+        "output": 3.74
+      }
+    }
+  ],
+  "billing_limits": [
+    {
+      "model": "meta/muse-wonder",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "sakana/fugu-ultra-v2",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "sakana/fugu-max",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "meta/muse-spark-1.3-contributor",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "meta/muse-spark-1.3",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "meta/muse-spark-1.2-contributor",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "sakana/sakana-namazu",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "meta/muse-spark-1.2",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "meta/muse-spark-1.1",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "sakana/fugu-ultra",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "perplexity/sonar-pro-search",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "perplexity/sonar-reasoning-pro",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "perplexity/sonar-pro",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "perplexity/sonar-deep-research",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    },
+    {
+      "model": "perplexity/sonar-deep-research",
+      "issue": "独立 internal_reasoning 单价无法由当前通用 Token 价格单独结算；普通输出与推理子项需后续适配。"
+    },
+    {
+      "model": "perplexity/sonar",
+      "issue": "联网搜索单价已按 ×34 配置，但 OpenRouter 的实际搜索次数不会完整映射到当前网关工具计数；未宣称附加费精确结算。"
+    }
+  ]
+}
