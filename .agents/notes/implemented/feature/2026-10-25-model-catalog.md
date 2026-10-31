@@ -51,3 +51,7 @@ Chrome 本地项目壳使用公开定价快照及隔离模拟接口验证：桌�
 ## Related decision
 
 [卡片摘要](../simplification/2026-10-31-model-card-summary.md)部分取代本篇的卡片展示决定：目录隐藏协议、厂商计费副行、缓存分项和阶梯提示。共享价格数据、详情、表格及筛选语义仍遵循原规则。
+
+## Related decision
+
+[目录健康入口收敛](../simplification/2026-11-01-catalog-health-tab-removal.md)取代本文中模型广场分组健康页签的入口关系；广场直接显示模型列表，健康历史从模型详情 Uptime 查看。共享数据、分类及权限规则仍保留。

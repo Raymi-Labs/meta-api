@@ -307,16 +307,12 @@ try {
   await count(27);
   await facet('function', '语音合成');
   await count(1);
-  await clickText('分组健康', '[role="tab"]');
-  await page.waitForSelector('.group-health-panel');
-  const healthText = await page.$eval(
-    '.group-health-grid',
-    (e) => e.textContent,
+  assert.equal(await page.$('.pricing-content-body [role="tab"]'), null);
+  assert.equal(await page.$('.group-health-overview'), null);
+  assert.equal(
+    await page.$$eval('.pricing-model-card', (cards) => cards.length),
+    1,
   );
-  assert.ok(healthText.includes('speech'));
-  assert.ok(!healthText.includes('chat'));
-  assert.ok(!healthText.includes('image'));
-  await clickText('模型列表 1', '[role="tab"]');
   await clickText('清空');
   await count(27);
   await page.screenshot({ path: path.join(artifacts, 'catalog-desktop.png') });

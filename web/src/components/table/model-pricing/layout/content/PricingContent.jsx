@@ -17,36 +17,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState } from 'react';
-import { Tabs, TabPane, Button, Empty } from '@douyinfe/semi-ui';
+import React from 'react';
+import { Button, Empty } from '@douyinfe/semi-ui';
 import PricingView from './PricingView';
-import GroupHealthOverview from '../../view/GroupHealthOverview';
 
 const PricingContent = ({ isMobile, sidebarProps, resultsRef, ...props }) => {
-  const [activeTab, setActiveTab] = useState('models');
   return (
     <div className='pricing-content-body' ref={resultsRef}>
-      {/* Model and health results share the same filters. */}
       <div className='pricing-search-header'>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          type='line'
-          size='small'
-        >
-          <TabPane
-            tab={
-              <span>
-                {props.t('模型列表')}{' '}
-                <span className='pricing-result-count'>
-                  {props.filteredModels.length}
-                </span>
-              </span>
-            }
-            itemKey='models'
-          />
-          <TabPane tab={props.t('分组健康')} itemKey='health' />
-        </Tabs>
+        <h2 className='pricing-results-title'>
+          {props.t('模型列表')}
+          <span className='pricing-result-count'>
+            {props.filteredModels.length}
+          </span>
+        </h2>
       </div>
 
       {/* Results follow the page scroll. */}
@@ -58,8 +42,6 @@ const PricingContent = ({ isMobile, sidebarProps, resultsRef, ...props }) => {
               {props.t('重试')}
             </Button>
           </div>
-        ) : activeTab === 'health' ? (
-          <GroupHealthOverview {...props} />
         ) : !props.loading && props.filteredModels.length === 0 ? (
           <div className='pricing-catalog-empty'>
             <Empty description={props.t('搜索无结果')} />

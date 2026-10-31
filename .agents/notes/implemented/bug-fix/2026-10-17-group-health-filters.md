@@ -33,3 +33,7 @@ ESLint、Prettier、make verify-notes、controller/model/pkg/group_health 回归
 ## Consequences
 
 筛选汇总仅根据当前可用模型关联显示分组，不能展示已从定价目录移除模型的供应商归属。未筛选概览保留这些故障组；共享组指标仍是整组指标。
+
+## Related decision
+
+[目录健康入口收敛](../simplification/2026-11-01-catalog-health-tab-removal.md)取代本文中模型广场分组健康页签的入口关系；广场直接显示模型列表，健康历史从模型详情 Uptime 查看。共享数据、分类及权限规则仍保留。
