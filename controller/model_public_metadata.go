@@ -21,7 +21,16 @@ func metadataVendorName(provider string) string {
 // A reseller catalog can have a higher metadata priority than the original
 // provider. Do not turn its billing provider into the model's manufacturer.
 func communityMetadataVendor(provider, id string) string {
-	prefixes := map[string][]string{"openai": {"gpt-", "chatgpt-", "o1", "o3", "o4", "whisper", "dall-e", "text-"}, "anthropic": {"claude-"}, "google": {"gemini-", "gemma-", "imagen-", "veo-"}, "deepseek": {"deepseek-"}, "xai": {"grok-"}, "alibaba": {"qwen", "qwq", "qvq"}, "alibaba-cn": {"qwen", "qwq", "qvq"}, "moonshotai": {"kimi-", "moonshot-"}, "moonshotai-cn": {"kimi-", "moonshot-"}, "xiaomi": {"mimo-"}, "minimax": {"minimax-"}, "minimax-cn": {"minimax-"}, "zai": {"glm-"}, "zhipuai": {"glm-"}, "mistral": {"mistral", "codestral", "devstral", "ministral", "pixtral"}, "inception": {"mercury"}}
+	switch provider {
+	case "alibaba-token-plan", "alibaba-token-plan-cn":
+		return model.AlibabaMetadataVendor(id)
+	case "alibaba", "alibaba-cn":
+		if vendor := model.AlibabaMetadataVendor(id); vendor == "阿里巴巴" {
+			return vendor
+		}
+		return ""
+	}
+	prefixes := map[string][]string{"openai": {"gpt-", "chatgpt-", "o1", "o3", "o4", "whisper", "dall-e", "text-"}, "anthropic": {"claude-"}, "google": {"gemini-", "gemma-", "imagen-", "veo-"}, "deepseek": {"deepseek-"}, "xai": {"grok-"}, "moonshotai": {"kimi-", "moonshot-"}, "moonshotai-cn": {"kimi-", "moonshot-"}, "xiaomi": {"mimo-"}, "minimax": {"minimax-"}, "minimax-cn": {"minimax-"}, "zai": {"glm-"}, "zhipuai": {"glm-"}, "mistral": {"mistral", "codestral", "devstral", "ministral", "pixtral"}, "inception": {"mercury"}}
 	for _, prefix := range prefixes[provider] {
 		if strings.HasPrefix(strings.ToLower(id), prefix) {
 			return metadataVendorName(provider)

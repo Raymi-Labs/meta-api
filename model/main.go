@@ -369,6 +369,9 @@ func migrateDB() error {
 	if err := NormalizeMiMoVendorMetadata(); err != nil {
 		return fmt.Errorf("failed to normalize Xiaomi MiMo vendor metadata: %w", err)
 	}
+	if err := NormalizeAlibabaVendorMetadata(); err != nil {
+		return fmt.Errorf("failed to normalize Alibaba vendor metadata: %w", err)
+	}
 	if err := MigrateWalletRedemptionTransferPolicy(); err != nil {
 		return fmt.Errorf("failed to migrate wallet redemption transfer policy: %w", err)
 	}
@@ -505,6 +508,9 @@ func migrateDBFast() error {
 	}
 	if err := NormalizeMiMoVendorMetadata(); err != nil {
 		return fmt.Errorf("failed to normalize Xiaomi MiMo vendor metadata: %w", err)
+	}
+	if err := NormalizeAlibabaVendorMetadata(); err != nil {
+		return fmt.Errorf("failed to normalize Alibaba vendor metadata: %w", err)
 	}
 	if err := MigrateWalletRedemptionTransferPolicy(); err != nil {
 		return fmt.Errorf("failed to migrate wallet redemption transfer policy: %w", err)

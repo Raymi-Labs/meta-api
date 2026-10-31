@@ -17,7 +17,6 @@ var defaultVendorRules = map[string]string{
 	"kimi":     "Moonshot",
 	"chatglm":  "智谱",
 	"glm-":     "智谱",
-	"qwen":     "阿里巴巴",
 	"deepseek": "DeepSeek",
 	"abab":     "MiniMax",
 	"ernie":    "百度",
@@ -89,6 +88,9 @@ func hasModelNameSegment(modelName string, segments ...string) bool {
 }
 
 func getDefaultVendorName(modelName string) string {
+	if isAlibabaModel(modelName) {
+		return defaultAlibabaVendorName
+	}
 	if strings.EqualFold(strings.TrimSpace(modelName), "codex-auto-review") {
 		return "OpenAI"
 	}
@@ -192,6 +194,21 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 		if alias != nil {
 			alias.Name = defaultInceptionVendorName
 			fillInceptionVendorDefaults(alias)
+			return alias.Id
+		}
+	}
+	if vendorName == defaultAlibabaVendorName {
+		var alias *Vendor
+		for id, vendor := range vendorMap {
+			if isAlibabaVendorAlias(vendor.Name) && (alias == nil || id < alias.Id) {
+				alias = vendor
+			}
+		}
+		if alias != nil {
+			alias.Name = defaultAlibabaVendorName
+			if strings.TrimSpace(alias.Icon) == "" {
+				alias.Icon = getDefaultVendorIcon(vendorName)
+			}
 			return alias.Id
 		}
 	}
