@@ -11,12 +11,13 @@ import (
 )
 
 type modelRow struct {
-	ChannelID int                    `json:"channel_id"`
-	Model     string                 `json:"model"`
-	Upstream  string                 `json:"upstream_model"`
-	Status    string                 `json:"status"`
-	Price     map[string]interface{} `json:"official_price"`
-	Providers []string               `json:"providers"`
+	ChannelID         int                    `json:"channel_id"`
+	Model             string                 `json:"model"`
+	Upstream          string                 `json:"upstream_model"`
+	Status            string                 `json:"status"`
+	Price             map[string]interface{} `json:"official_price"`
+	Providers         []string               `json:"providers"`
+	ImageTokenPricing bool                   `json:"image_token_pricing"`
 }
 
 func must(ok bool, message string) {
@@ -94,6 +95,10 @@ func main() {
 				must(gjson.GetBytes(out, "provider.max_price."+key).Float() == want, "wrong cap or stricter cap raised")
 			}
 			for _, key := range []string{"request", "image"} {
+				if key == "image" && row.ImageTokenPricing {
+					must(!gjson.GetBytes(out, "provider.max_price.image").Exists(), "Gemini per-token image quote must not be filtered as zero per-image cost")
+					continue
+				}
 				p := gjson.GetBytes(out, "provider.max_price."+key)
 				must(p.Exists() && p.Float() == 0, "extra fee cap")
 			}

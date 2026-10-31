@@ -62,8 +62,13 @@ def compile_override(rows):
         operations.append(op('set', 'provider.only', row['providers'], [match]))
         # Preserve a caller's stricter limit, including zero. Invalid types fail
         # in the existing numeric comparator before any upstream request.
-        for key, limit in dict(prompt=price['prompt'], completion=price['completion'],
-                               request=0, image=0).items():
+        caps = dict(prompt=price['prompt'], completion=price['completion'], request=0)
+        # Gemini's endpoint image quote is per input token; a zero per-image
+        # filter would discard the audited multimodal endpoints altogether.
+        # The reviewed provider list must cover modality prices separately.
+        if not row.get('image_token_pricing'):
+            caps['image'] = 0
+        for key, limit in caps.items():
             path = 'provider.max_price.' + key
             operations.append(op('set', path, limit, [match,
                 condition(path, limit, mode='gt', pass_missing_key=True)]))
