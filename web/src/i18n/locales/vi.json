@@ -1,5 +1,13 @@
 {
   "translation": {
+    "令牌不可用": "Token không khả dụng",
+    "稍后重试": "Thử lại sau",
+    "环境变量已关闭翻译": "Bản dịch bị tắt bởi biến môi trường",
+    "模型介绍自动翻译": "Tự động dịch mô tả mô hình",
+    "暂停自动翻译": "Tạm dừng dịch tự động",
+    "翻译专用令牌": "Token chuyên dùng để dịch",
+    "使用 qwen-mt-flash 和专用令牌，按现有渠道计费；已完成译文会缓存复用。": "Sử dụng qwen-mt-flash và token riêng, tính phí qua các kênh hiện có. Bản dịch hoàn tất được lưu vào bộ nhớ đệm để tái sử dụng.",
+    "先在令牌管理中创建仅允许 qwen-mt-flash 的令牌，再在此选择。": "Tạo token chỉ cho phép qwen-mt-flash trong phần quản lý token, rồi chọn tại đây.",
     "多模型同时回答": "Nhiều mô hình trả lời",
     "单模型回答": "Một mô hình trả lời",
     "选择文本模型（最多5个）": "Chọn mô hình văn bản (tối đa 5)",
