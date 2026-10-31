@@ -16,6 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+
+import {
+  IMAGE_PRICE_REFERENCES,
+  supportsImagePricing,
+  isImagePriceExpression,
+} from '../../../../helpers/imagePricing';
 import { useEffect, useMemo, useState } from 'react';
 import { API, showError, showSuccess } from '../../../../helpers';
 import { canUseVideoTemplate } from '../../../../helpers/videoPricingTemplate';
@@ -276,7 +282,7 @@ export const buildModelState = (name, sourceMaps) => {
 };
 
 export const isBasePricingUnset = (model) => {
-  if (model.billingMode === 'tiered_expr') return false;
+  if (model.billingMode === 'tiered_expr') return !model.billingExpr?.trim();
   if (model.billingMode === 'per-audio-hour') {
     return !hasValue(model.audioDurationPrice);
   }
@@ -353,7 +359,10 @@ export const buildSummaryText = (model, t) => {
       ? `，${t('请求规则')}`
       : '';
   if (model.billingMode === 'tiered_expr') {
-    if (canUseVideoTemplate(model.name)) return `${t('视频按秒 / 表达式')}${requestRuleSuffix}`;
+    if (isImagePriceExpression(model.billingExpr))
+      return t('图片输入 / 输出计费');
+    if (canUseVideoTemplate(model.name))
+      return `${t('视频按秒 / 表达式')}${requestRuleSuffix}`;
     const expr = model.billingExpr;
     if (!expr) return `${t('表达式计费')}${requestRuleSuffix}`;
     const tierCount = (expr.match(/tier\(/g) || []).length;
@@ -364,7 +373,9 @@ export const buildSummaryText = (model, t) => {
   }
 
   if (model.billingMode === 'per-request' && hasValue(model.fixedPrice)) {
-    return `${t('按次')} $${model.fixedPrice} / ${t('次')}${requestRuleSuffix}`;
+    return IMAGE_PRICE_REFERENCES[model.name]
+      ? `${t('输出图片')} $${model.fixedPrice} / ${t('张')}`
+      : `${t('按次')} $${model.fixedPrice} / ${t('次')}${requestRuleSuffix}`;
   }
 
   if (
@@ -552,7 +563,9 @@ export const buildPreviewRows = (model, t) => {
         key: 'BillingExpr',
         label: 'ModelBillingExpr',
         value:
-          tierCount > 0 && !canUseVideoTemplate(model.name)
+          tierCount > 0 &&
+          !canUseVideoTemplate(model.name) &&
+          !isImagePriceExpression(model.billingExpr)
             ? `${tierCount} ${t('档')} — ${
                 finalBillingExpr.length > 60
                   ? finalBillingExpr.slice(0, 60) + '...'
@@ -976,7 +989,9 @@ export function useModelPricingEditorState({
     upsertModel(selectedModel.name, (model) => {
       const next = { ...model, billingMode: value };
       if (value === 'tiered_expr' && !model.billingExpr) {
-        next.billingExpr = 'tier("base", p * 0 + c * 0)';
+        next.billingExpr = supportsImagePricing(model.name)
+          ? ''
+          : 'tier("base", p * 0 + c * 0)';
       }
       return next;
     });
@@ -1149,6 +1164,10 @@ export function useModelPricingEditorState({
 
       for (const model of models) {
         if (model.billingMode === 'tiered_expr') {
+          if (!model.billingExpr?.trim()) {
+            showError(t('请填写完整的价格后再保存'));
+            return;
+          }
           const finalBillingExpr = combineBillingExpr(
             model.billingExpr,
             model.requestRuleExpr,

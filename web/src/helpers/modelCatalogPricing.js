@@ -17,6 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  parseImagePriceExpression,
+  isImagePriceExpression,
+} from './imagePricing';
+import { formatModelPricingUnitPrice } from './modelPricingCurrency';
+
 import { BILLING_PRICING_VARS } from '../constants/billing.constants';
 import { calculateModelPrice, getModelPriceItems } from './utils';
 import { parseTiersFromExpr } from './render';
@@ -46,6 +52,34 @@ export function getModelCatalogPricing(options, t) {
     return {
       data,
       items: getModelPriceItems(data, t, options.quotaDisplayType),
+    };
+  }
+  if (isImagePriceExpression(options.record.billing_expr)) {
+    const rows = parseImagePriceExpression(options.record.billing_expr);
+    return {
+      data,
+      items: rows
+        ? rows.flatMap((row) =>
+            ['input', 'output'].map((key) => ({
+              key: `image-${row.resolution}-${key}`,
+              label: `${row.resolution} ${t(key === 'input' ? '输入图片' : '输出图片')}`,
+              value: formatModelPricingUnitPrice(
+                row[key] * data.effectiveBillingRatio,
+                options.displayPrice,
+              ),
+              suffix: `/${t('张')}`,
+              isDynamic: true,
+            })),
+          )
+        : [
+            {
+              key: 'image-parameters',
+              label: t('图片输入 / 输出计费'),
+              value: t('见价格详情'),
+              suffix: '',
+              isDynamic: true,
+            },
+          ],
     };
   }
   if (isVideoPriceExpression(options.record.billing_expr)) {

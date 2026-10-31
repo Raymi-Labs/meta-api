@@ -17,6 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import {
+  isImagePriceExpression,
+} from '../../../../../helpers/imagePricing';
+
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
 import { Link } from 'react-router-dom';
@@ -112,9 +116,11 @@ export const getPricingTableColumns = ({
             {record.vendor_name} ·{' '}
             {record.billing_mode === 'tiered_expr'
               ? t(
-                  isVideoPriceExpression(record.billing_expr)
-                    ? '视频按秒 / 表达式'
-                    : '阶梯计费：展示首档参考价，完整规则见详情',
+                  isImagePriceExpression(record.billing_expr)
+                    ? t('图片输入 / 输出计费')
+                    : isVideoPriceExpression(record.billing_expr)
+                      ? '视频按秒 / 表达式'
+                      : '阶梯计费：展示首档参考价，完整规则见详情',
                 )
               : record.quota_type === 0
                 ? t('按量计费')

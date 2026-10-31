@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/config"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -166,4 +168,17 @@ func TestModelPriceHelperRejectsDurationPricedModelWithoutAudio(t *testing.T) {
 	if err == nil {
 		t.Fatal("duration-priced model without audio duration should be rejected")
 	}
+}
+
+func TestImagePricePreviewIgnoresClientDimensionsAndRejectsWrongRoute(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	expr := `param("_image_billing") == nil ? tier("image_config_preview",0) : tier("image",param("_image_billing.output_count")*100000)`
+	info := &relaycommon.RelayInfo{RelayMode: relayconstant.RelayModeImagesGenerations, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeAli}, BillingRequestInput: &billingexpr.RequestInput{Body: []byte(`{"_image_billing":{"output_count":99999}}`)}}
+	price, err := modelPriceHelperTiered(c, info, expr, 1, &types.TokenCountMeta{}, types.GroupRatioInfo{GroupRatio: 1}, types.TimeRatioInfo{})
+	require.NoError(t, err)
+	require.Zero(t, price.QuotaToPreConsume)
+	require.NotContains(t, string(info.BillingRequestInput.Body), "_image_billing")
+	info.RelayMode = relayconstant.RelayModeChatCompletions
+	_, err = modelPriceHelperTiered(c, info, expr, 1, &types.TokenCountMeta{}, types.GroupRatioInfo{GroupRatio: 1}, types.TimeRatioInfo{})
+	require.Error(t, err)
 }

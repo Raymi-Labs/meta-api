@@ -32,6 +32,9 @@ func IsVideoGenerationTest(channelType int, modelName string) bool {
 	case constant.ChannelTypeKling, constant.ChannelTypeVidu, constant.ChannelTypeDoubaoVideo, constant.ChannelTypeSora:
 		return true
 	}
+	if IsWanImageModel(modelName) {
+		return false
+	}
 	name := strings.ToLower(strings.TrimSpace(modelName))
 	// Providers may qualify model IDs with an organisation prefix.
 	parts := strings.Split(name, "/")
