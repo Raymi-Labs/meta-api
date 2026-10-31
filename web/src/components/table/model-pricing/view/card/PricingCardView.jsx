@@ -218,9 +218,6 @@ const PricingCardView = ({
                           {formatHealthLatency(latency.value) === '—'
                             ? t('暂无数据')
                             : formatHealthLatency(latency.value)}
-                          {latency.referenceTs && (
-                            <small> · {t('沿用最近有效值')}</small>
-                          )}
                         </dd>
                       </div>
                       <div>
