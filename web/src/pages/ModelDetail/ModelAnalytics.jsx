@@ -96,10 +96,6 @@ export default function ModelAnalytics({
           </label>
           <span>{t('最多同时对比 4 个分组；价格与健康记录可逐组查看。')}</span>
         </div>
-        <p className='model-detail-caption'>
-          {t('平台分组统计，不限于个人请求。')} {t('当前小时尚未结束')} ·{' '}
-          {t('每分钟更新')}
-        </p>
         <GroupHealthStatus
           loading={health.loading}
           error={health.error}
@@ -149,19 +145,6 @@ export default function ModelAnalytics({
             <GroupHealthLegend />
           </>
         )}
-        <p className='model-detail-caption'>
-          {t(
-            '成功率为成功次数除以计入统计的次数；服务失败和未归因失败均计入，明确的用户错误排除。',
-          )}{' '}
-          {t(
-            '同组重试合并统计；跨组重试分别记录各组结果。首字均值仅统计成功流式请求，含排队和重试等待。',
-          )}
-        </p>
-        <p className='model-detail-caption'>
-          {t(
-            '输出速度按成功流式请求的输出 Token 总量除以首个有效输出至完成的总耗时计算；无有效样本时显示 —。',
-          )}
-        </p>
       </section>
       <section id='usage' className='model-detail-section'>
         <div className='model-detail-section-heading'>
@@ -186,11 +169,6 @@ export default function ModelAnalytics({
             ))}
           </div>
         </div>
-        <p className='model-detail-caption'>
-          {t(
-            '沿用上方分组与时间范围。Token 仅包含已采集的成功请求用量，请求数包含计入健康统计的失败；不是个人账单。',
-          )}
-        </p>
         {ready ? (
           <ModelMetricChart
             title={usageMetric === 'total_tokens' ? 'Tokens' : t('请求次数')}

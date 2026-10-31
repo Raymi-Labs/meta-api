@@ -17,9 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Popover } from '@douyinfe/semi-ui';
-import { ArrowUpRight, Info } from 'lucide-react';
+import React from 'react';
+import { ArrowUpRight } from 'lucide-react';
+import ModelSectionHelp from './ModelSectionHelp';
 import {
   officialPriceColumns,
   OFFICIAL_PRICE_UNITS,
@@ -28,21 +28,6 @@ import {
 } from '../../helpers/modelOfficialPricing';
 
 export default function ModelOfficialPricing({ pricing, provenance, t }) {
-  const [helpVisible, setHelpVisible] = useState(false);
-  const hideTimer = useRef();
-  const showHelp = () => {
-    clearTimeout(hideTimer.current);
-    setHelpVisible(true);
-  };
-  const hideHelp = () => {
-    clearTimeout(hideTimer.current);
-    setHelpVisible(false);
-  };
-  const scheduleHide = () => {
-    clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setHelpVisible(false), 150);
-  };
-  useEffect(() => () => clearTimeout(hideTimer.current), []);
   const tiers = Array.isArray(pricing?.tiers) ? pricing.tiers : [];
   const columns = officialPriceColumns(tiers);
   const source = officialPricingSource(pricing?.source_url);
@@ -52,57 +37,25 @@ export default function ModelOfficialPricing({ pricing, provenance, t }) {
       className='model-detail-section model-official-pricing'
     >
       <div className='model-detail-section-heading'>
-        <h2 className='model-official-title'>
+        <h2 className='model-section-title-with-help'>
           {t('官方参考价')}
-          <Popover
-            trigger='custom'
-            visible={helpVisible}
-            position='bottomLeft'
-            showArrow
-            closeOnEsc
-            guardFocus={false}
-            returnFocusOnClose={false}
-            onEscKeyDown={hideHelp}
-            onClickOutSide={hideHelp}
-            content={
-              <div
-                className='model-official-help-content'
-                onMouseEnter={showHelp}
-                onMouseLeave={scheduleHide}
-              >
-                <p>{t('官方参考价仅供对照，实际费用以本站分组价格为准。')}</p>
-                {tiers.length > 0 &&
-                  provenance?.kind === 'official' &&
-                  provenance?.synced_at > 0 && (
-                    <p>
-                      {t('官方价格自动更新于 {{time}}', {
-                        time: new Date(
-                          provenance.synced_at * 1000,
-                        ).toLocaleString(),
-                      })}
-                    </p>
-                  )}
-                {pricing?.notes && (
-                  <p className='model-official-notes'>{pricing.notes}</p>
-                )}
-              </div>
-            }
-          >
-            <button
-              type='button'
-              className='model-official-help'
-              aria-label={`${t('官方参考价')} · ${t('费用说明')}`}
-              aria-expanded={helpVisible}
-              aria-haspopup='dialog'
-              onMouseEnter={showHelp}
-              onMouseLeave={scheduleHide}
-              onFocus={showHelp}
-              onBlur={scheduleHide}
-              onClick={showHelp}
-            >
-              <Info size={16} aria-hidden='true' />
-            </button>
-          </Popover>
+          <ModelSectionHelp label={`${t('官方参考价')} · ${t('费用说明')}`}>
+            <p>{t('官方参考价仅供对照，实际费用以本站分组价格为准。')}</p>
+            {tiers.length > 0 &&
+              provenance?.kind === 'official' &&
+              provenance?.synced_at > 0 && (
+                <p>
+                  {t('官方价格自动更新于 {{time}}', {
+                    time: new Date(
+                      provenance.synced_at * 1000,
+                    ).toLocaleString(),
+                  })}
+                </p>
+              )}
+            {pricing?.notes && (
+              <p className='model-official-notes'>{pricing.notes}</p>
+            )}
+          </ModelSectionHelp>
         </h2>
         {source && (
           <a href={source} target='_blank' rel='noopener noreferrer'>
