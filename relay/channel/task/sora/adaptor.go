@@ -93,6 +93,33 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 	if info.Action == constant.TaskActionRemix {
 		return validateRemixRequest(c)
 	}
+	if strings.HasPrefix(c.GetHeader("Content-Type"), "application/json") {
+		var body map[string]interface{}
+		if err := common.UnmarshalBodyReusable(c, &body); err != nil {
+			return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+		}
+		if body["model"] == "muse-video" || info.UpstreamModelName == "muse-video" {
+			if err := normalizeMuseRequest(body); err != nil {
+				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+			}
+			data, err := common.Marshal(body)
+			if err != nil {
+				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+			}
+			var req relaycommon.TaskSubmitReq
+			if err := common.Unmarshal(data, &req); err != nil {
+				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+			}
+			if req.InputReference != "" {
+				req.Images = []string{req.InputReference}
+			}
+			action := constant.TaskActionTextGenerate
+			if req.HasImage() {
+				action = constant.TaskActionGenerate
+			}
+			return relaycommon.ValidateAndStoreTaskRequest(c, info, action, req)
+		}
+	}
 	return relaycommon.ValidateMultipartDirect(c, info)
 }
 
@@ -160,6 +187,11 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 		var bodyMap map[string]interface{}
 		if err := common.Unmarshal(cachedBody, &bodyMap); err == nil {
 			bodyMap["model"] = info.UpstreamModelName
+			if info.UpstreamModelName == "muse-video" {
+				if err := normalizeMuseRequest(bodyMap); err != nil {
+					return nil, err
+				}
+			}
 			if info.Action != constant.TaskActionRemix {
 				req, err := relaycommon.GetTaskRequest(c)
 				if err != nil {

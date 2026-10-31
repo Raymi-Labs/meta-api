@@ -255,3 +255,25 @@ func TestXAIFirstFrameSurvivesValidationAndBillingSnapshot(t *testing.T) {
 		common.CleanupBodyStorage(c)
 	}
 }
+
+func TestMuseLongVideoBillingPreservesRequestedSecondsAndReferences(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("POST", "/v1/videos", strings.NewReader(`{"model":"muse-video","prompt":"six scenes","seconds":180,"size":"1280x720","images":["https://example.test/1.png","https://example.test/2.png","https://example.test/3.png","https://example.test/4.png"]}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	defer common.CleanupBodyStorage(c)
+	info := &relaycommon.RelayInfo{OriginModelName: "muse-video", TaskRelayInfo: &relaycommon.TaskRelayInfo{}, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeSora, UpstreamModelName: "muse-video", ChannelBaseUrl: "https://example.test", ApiKey: "fixture"}}
+	a := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora)))
+	a.Init(info)
+	require.Nil(t, a.ValidateRequestAndSetAction(c, info))
+	require.Equal(t, constant.TaskActionGenerate, info.Action)
+	wire, err := PrepareVideoRequestSnapshot(c, info, a)
+	require.NoError(t, err)
+	var sent map[string]interface{}
+	require.NoError(t, common.Unmarshal(wire, &sent))
+	require.Equal(t, "180", sent["seconds"])
+	require.Len(t, sent["images"], 4)
+	expression := `param("duration") >= 4 && param("duration") <= 180 && param("duration") == floor(param("duration")) ? tier("muse",param("duration") * 8000000.0) : tier("unsupported",-1)`
+	cost, _, err := billingexpr.RunExprWithRequest(expression, billingexpr.TokenParams{}, *info.BillingRequestInput)
+	require.NoError(t, err)
+	require.Equal(t, float64(1440000000), cost)
+}
