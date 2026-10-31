@@ -125,8 +125,8 @@ try {
         /已声明协议|Responses · 示例|缓存.*价格|阶梯计费|OpenAI|动态计费|按量计费/,
         name,
       );
-      assert.match(card, /输入价格/);
-      assert.match(card, /补全价格/);
+      assert.match(card, /输入/);
+      assert.match(card, /输出/);
     }
     assert.deepEqual(
       await page.$$eval(

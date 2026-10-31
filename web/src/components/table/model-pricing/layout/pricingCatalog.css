@@ -344,8 +344,8 @@ html.dark .pricing-page.pricing-catalog {
   margin-top: 4px;
 }
 .pricing-card-prices {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px 12px;
   margin: 12px 0 0;
   padding: 9px 10px;
@@ -354,20 +354,33 @@ html.dark .pricing-page.pricing-catalog {
   background: var(--catalog-soft);
 }
 .pricing-card-prices > div {
+  display: flex;
+  align-items: baseline;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
   min-width: 0;
+  max-width: 100%;
 }
 .pricing-card-prices dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--catalog-muted);
   font-size: 11px;
   line-height: 1.5;
-  margin: 0 0 3px;
+  margin: 0;
   overflow-wrap: anywhere;
+}
+.pricing-card-prices dt svg {
+  flex-shrink: 0;
+  align-self: center;
 }
 .pricing-card-prices dd {
   margin: 0;
   display: flex;
   align-items: baseline;
-  flex-wrap: wrap;
+  min-width: 0;
   gap: 3px;
   color: var(--catalog-ink);
   font-size: 12px;
@@ -382,6 +395,7 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-card-prices dd span {
   font-size: 10px;
   color: var(--catalog-muted);
+  white-space: nowrap;
 }
 .pricing-card-performance {
   display: grid;
