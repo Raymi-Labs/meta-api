@@ -28,6 +28,20 @@ export function createProviderIconRegistry(loaders) {
   return registry;
 }
 
+// Only build-time enumerated, checked-in components may extend the package.
+export function createLocalProviderIconRegistry(loaders) {
+  const registry = new Map();
+  for (const [path, loader] of Object.entries(loaders)) {
+    const match = path
+      .replaceAll('\\', '/')
+      .match(
+        /(?:^|\/)assets\/provider-icons\/components\/([A-Za-z][A-Za-z0-9]*)\.jsx$/,
+      );
+    if (match) registry.set(`${match[1]}.Mono`, loader);
+  }
+  return registry;
+}
+
 export function resolveProviderIcon(registry, name, variant = 'Mono') {
   const preferred = `${name}.${variant}`;
   if (registry.has(preferred)) return preferred;
