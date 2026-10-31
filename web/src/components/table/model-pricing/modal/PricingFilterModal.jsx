@@ -25,6 +25,7 @@ import './pricingFilterDrawer.css';
 
 const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
   const handleResetFilters = () => {
+    sidebarProps.resetCatalogFilters();
     sidebarProps.setSortOrder('release-desc');
     resetPricingFilters({
       handleChange: sidebarProps.handleChange,
@@ -55,7 +56,7 @@ const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
         <div>
           <h2 className='pricing-filter-title'>{t('筛选')}</h2>
           <p className='pricing-filter-subtitle'>
-            {t('按供应商、类型、端点和标签发现模型，查看详情与价格。')}
+            {t('按供应商、功能、标签和输入模态发现模型。')}
           </p>
         </div>
       }

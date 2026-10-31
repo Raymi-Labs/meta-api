@@ -35,6 +35,8 @@ import {
   selectHealthGroups,
 } from '../../../group-health';
 
+import { hasCatalogFilters } from '../../../../helpers/modelCatalogFacets';
+
 const GroupHealthOverview = ({
   filteredModels = [],
   usableGroup = {},
@@ -42,6 +44,9 @@ const GroupHealthOverview = ({
   filterGroup = 'all',
   filterVendor = 'all',
   filterTag = 'all',
+  filterFunctions = [],
+  filterInputModalities = [],
+  filterContextLength = 0,
   filterQuotaType = 'all',
   filterEndpointType = 'all',
   searchValue = '',
@@ -66,12 +71,16 @@ const GroupHealthOverview = ({
     usableGroup,
     filterGroup,
     exactModel: Boolean(currentModel),
-    filterByModels:
-      filterVendor !== 'all' ||
-      filterTag !== 'all' ||
-      filterQuotaType !== 'all' ||
-      filterEndpointType !== 'all' ||
-      searchValue.length > 0,
+    filterByModels: hasCatalogFilters({
+      filterVendor,
+      filterTag,
+      filterFunctions,
+      filterInputModalities,
+      filterContextLength,
+      filterQuotaType,
+      filterEndpointType,
+      searchValue,
+    }),
   });
 
   return (

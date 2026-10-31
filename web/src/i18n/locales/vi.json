@@ -7440,6 +7440,27 @@
     "需要分别设置输入图和输出图价格时，请选择图片输入 / 输出计费。": "Chọn giá ảnh đầu vào / đầu ra để đặt riêng từng đơn giá.",
     "沿用最近有效值": "Dùng giá trị hợp lệ gần nhất",
     "沿用 {{time}} 的有效值": "Dùng giá trị hợp lệ từ {{time}}",
-    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Khi thiếu phép đo, dùng giá trị hợp lệ gần nhất kèm thời điểm gốc, không tăng số mẫu hiện tại."
+    "缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。": "Khi thiếu phép đo, dùng giá trị hợp lệ gần nhất kèm thời điểm gốc, không tăng số mẫu hiện tại.",
+    "文本对话": "Trò chuyện văn bản",
+    "图像理解": "Hiểu hình ảnh",
+    "文生图": "Văn bản thành ảnh",
+    "图像编辑": "Chỉnh sửa ảnh",
+    "语音合成": "Tổng hợp giọng nói",
+    "语音识别": "Nhận dạng giọng nói",
+    "实时语音": "Âm thanh thời gian thực",
+    "视频生成": "Tạo video",
+    "向量嵌入": "Nhúng vectơ",
+    "重排序": "Xếp hạng lại",
+    "开放权重": "Trọng số mở",
+    "编程": "Lập trình",
+    "精选": "Nổi bật",
+    "广场展示预览": "Xem trước danh mục",
+    "未分类": "Chưa phân loại",
+    "广场功能分类": "Chức năng trong danh mục",
+    "排除": "Loại trừ",
+    "已选条件": "Bộ lọc đã chọn",
+    "功能": "Chức năng",
+    "按供应商、功能、标签和输入模态发现模型。": "Khám phá mô hình theo nhà cung cấp, chức năng, nhãn và dạng đầu vào.",
+    "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Tự động dùng siêu dữ liệu mô hình. Các thiết lập bao gồm hoặc loại trừ thủ công được giữ lại khi đồng bộ."
   }
 }

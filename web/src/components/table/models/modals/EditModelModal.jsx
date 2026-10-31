@@ -22,6 +22,9 @@ import { omitUnchangedModelMetadata } from '../../../../helpers/modelMetadataPat
 import ModelDescriptionEditor from './ModelDescriptionEditor';
 import ModelFAQEditor from './ModelFAQEditor';
 import ModelCapabilitiesEditor from './ModelCapabilitiesEditor';
+import ModelFunctionsEditor, {
+  ModelFunctionsPreview,
+} from './ModelFunctionsEditor';
 import OfficialPricingEditor from './OfficialPricingEditor';
 import JSONEditor from '../../../common/ui/JSONEditor';
 import {
@@ -148,6 +151,7 @@ const EditModelModal = (props) => {
     context_length: 0,
     max_output_tokens: 0,
     capabilities: {},
+    function_overrides: {},
     input_modalities: [],
     output_modalities: [],
     description: '',
@@ -193,6 +197,7 @@ const EditModelModal = (props) => {
           context_length: data.context_length || 0,
           max_output_tokens: data.max_output_tokens || 0,
           capabilities: data.capabilities || {},
+          function_overrides: data.function_overrides || {},
           input_modalities: Array.isArray(data.input_modalities)
             ? data.input_modalities
             : [],
@@ -267,6 +272,7 @@ const EditModelModal = (props) => {
         context_length: values.context_length || 0,
         max_output_tokens: values.max_output_tokens || 0,
         capabilities: values.capabilities || {},
+        function_overrides: values.function_overrides || {},
         input_modalities: values.input_modalities || [],
         output_modalities: values.output_modalities || [],
         tags: Array.isArray(values.tags) ? values.tags.join(',') : values.tags,
@@ -607,6 +613,16 @@ const EditModelModal = (props) => {
                     />
                   </Col>
                   <Col span={24}>
+                    <ModelFunctionsEditor
+                      field='function_overrides'
+                      label={t('广场功能分类')}
+                      model={{ ...values, tags: (values.tags || []).join(',') }}
+                      extraText={t(
+                        '自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。',
+                      )}
+                    />
+                  </Col>
+                  <Col span={24}>
                     <Form.TagInput
                       field='tags'
                       label={t('标签')}
@@ -662,6 +678,11 @@ const EditModelModal = (props) => {
                           </Space>
                         ),
                       })}
+                    />
+                  </Col>
+                  <Col span={24}>
+                    <ModelFunctionsPreview
+                      model={{ ...values, tags: (values.tags || []).join(',') }}
                     />
                   </Col>
                   <Col span={24}>

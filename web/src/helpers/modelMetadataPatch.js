@@ -21,6 +21,7 @@ import { descriptionOverridePatch } from './modelDescription.js';
 // Only edited display fields become manual overrides. Untouched initial values
 // may have been refreshed by the background worker since the form opened.
 const metadataFields = [
+  'function_overrides',
   'description',
   'tags',
   'vendor_id',
