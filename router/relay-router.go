@@ -79,6 +79,12 @@ func SetRelayRouter(router *gin.Engine) {
 	relayV1Router.Use(middleware.TokenAuth())
 	relayV1Router.Use(middleware.TokenRuntimeLimit())
 	relayV1Router.Use(middleware.ModelRequestRateLimit())
+	relayV1Router.Use(middleware.AudioVoicePrepare())
+	relayV1Router.GET("/audio/voices", controller.ListAudioVoices)
+	voicesRouter := relayV1Router.Group("/audio/voices", middleware.Distribute())
+	voicesRouter.POST("", controller.CreateAudioVoice)
+	voicesRouter.GET("/:voice_id", controller.RetrieveAudioVoice)
+	voicesRouter.DELETE("/:voice_id", controller.DeleteAudioVoice)
 	{
 		// WebSocket 路由（统一到 Relay）
 		wsRouter := relayV1Router.Group("")
