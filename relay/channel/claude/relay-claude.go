@@ -1,7 +1,9 @@
 package claude
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +12,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel/openrouter"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
@@ -697,6 +698,10 @@ type ClaudeResponseInfo struct {
 	HasInputUsage        bool
 	HasFinalOutputUsage  bool
 	Done                 bool
+	MessageStarted       bool
+	MessageStopped       bool
+	RequireMessageStop   bool
+	PendingFinish        *dto.ChatCompletionsStreamResponse
 	ToolCallStreamStates map[int]*ToolCallStreamState
 	NextToolCallIndex    int
 }
@@ -789,6 +794,7 @@ func FormatClaudeResponseInfo(claudeResponse *dto.ClaudeResponse, oaiResponse *d
 	}
 	if claudeResponse.Type == "message_start" {
 		if claudeResponse.Message != nil {
+			claudeInfo.MessageStarted = true
 			claudeInfo.ResponseId = claudeResponse.Message.Id
 			claudeInfo.Model = claudeResponse.Message.Model
 		}
@@ -799,6 +805,9 @@ func FormatClaudeResponseInfo(claudeResponse *dto.ClaudeResponse, oaiResponse *d
 	} else if claudeResponse.Type == "content_block_delta" {
 		appendClaudeUsageText(claudeInfo, claudeResponse.Delta)
 	} else if claudeResponse.Type == "message_delta" || claudeResponse.Type == "message_stop" {
+		if claudeResponse.Type == "message_stop" {
+			claudeInfo.MessageStopped = true
+		}
 		// Some compatible providers attach their final usage to message_stop.
 		mergeClaudeUsage(claudeInfo, claudeResponse.Usage, true)
 		if claudeResponse.Type == "message_stop" ||
@@ -834,6 +843,9 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		logClaudeUpstreamError("stream", claudeError, statusCode)
 		return types.WithClaudeError(*claudeError, statusCode)
 	}
+	if claudeInfo.RequireMessageStop && claudeResponse.Type == "message_stop" && !claudeInfo.MessageStarted {
+		return types.NewErrorWithStatusCode(errors.New("Claude stream message_stop preceded message_start"), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
+	}
 	if claudeResponse.StopReason != "" {
 		maybeMarkClaudeRefusal(c, claudeResponse.StopReason)
 	}
@@ -865,7 +877,9 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 				data = patchClaudeMessageDeltaUsageData(data, buildMessageDeltaPatchUsage(&claudeResponse, claudeInfo))
 			}
 		}
-		helper.ClaudeChunkData(c, claudeResponse, data)
+		if err := helper.ClaudeChunkData(c, claudeResponse, data); err != nil {
+			return newClaudeDeliveryError(c, err)
+		}
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
 		// Account for terminal frames even when they produce no OpenAI chunk.
 		if !FormatClaudeResponseInfo(&claudeResponse, nil, claudeInfo) {
@@ -881,10 +895,16 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		response.Id = claudeInfo.ResponseId
 		response.Created = claudeInfo.Created
 		response.Model = claudeInfo.Model
+		if claudeInfo.RequireMessageStop && claudeResponse.Type == "message_delta" && claudeResponse.Delta != nil && claudeResponse.Delta.StopReason != nil && *claudeResponse.Delta.StopReason != "" {
+			// A Chat finish_reason is a success signal too. Hold it until the
+			// provider sends the actual Messages terminal (and any final usage).
+			claudeInfo.PendingFinish = response
+			return nil
+		}
 
 		err = helper.ObjectData(c, response)
 		if err != nil {
-			logger.LogError(c, "send_stream_response_failed: "+err.Error())
+			return newClaudeDeliveryError(c, err)
 		}
 	}
 	return nil
@@ -900,53 +920,104 @@ func isEffectiveClaudeStreamOutput(response *dto.ClaudeResponse) bool {
 		(delta.PartialJson != nil && strings.TrimSpace(*delta.PartialJson) != "")
 }
 
-func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo) {
+func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo) error {
 	completeClaudeUsage(c, info, claudeInfo)
 
 	if info.RelayFormat == types.RelayFormatClaude {
 		//
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
+		if claudeInfo.PendingFinish != nil {
+			if err := helper.ObjectData(c, claudeInfo.PendingFinish); err != nil {
+				return err
+			}
+			claudeInfo.PendingFinish = nil
+		}
 		if info.ShouldIncludeUsage {
 			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, info.UpstreamModelName, *claudeInfo.Usage)
 			err := helper.ObjectData(c, response)
 			if err != nil {
-				common.SysLog("send final response failed: " + err.Error())
+				return err
 			}
 		}
-		helper.Done(c)
+		return helper.StringData(c, "[DONE]")
 	}
+	return nil
 }
 
 func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (*dto.Usage, *types.NewAPIError) {
 	claudeInfo := &ClaudeResponseInfo{
-		ResponseId:   helper.GetResponseID(c),
-		Created:      common.GetTimestamp(),
-		Model:        info.UpstreamModelName,
-		ResponseText: strings.Builder{},
-		Usage:        &dto.Usage{},
+		ResponseId:         helper.GetResponseID(c),
+		Created:            common.GetTimestamp(),
+		Model:              info.UpstreamModelName,
+		ResponseText:       strings.Builder{},
+		Usage:              &dto.Usage{},
+		RequireMessageStop: true,
 	}
 	var err *types.NewAPIError
 	helper.StreamScannerHandler(c, resp, info, func(data string) bool {
+		info.StreamStatus.RequireTerminal()
 		err = HandleStreamResponseData(c, info, claudeInfo, data, resp.StatusCode)
 		if err != nil {
 			return false
 		}
+		if claudeInfo.MessageStopped {
+			if !claudeInfo.MessageStarted {
+				return false
+			}
+			if writeErr := HandleStreamFinalResponse(c, info, claudeInfo); writeErr != nil {
+				err = newClaudeDeliveryError(c, writeErr)
+				return false
+			}
+			// The scanner stops and joins its reader before returning. Do not wait
+			// for EOF after message_stop or let cleanup cancellation undo delivery.
+			info.StreamStatus.MarkDeliveredCompletion()
+			return false
+		}
 		return true
 	})
+	if info.StreamStatus.HasDeliveredCompletion() {
+		return claudeInfo.Usage, nil
+	}
+	if (err == nil && (c.Request.Context().Err() != nil || info.StreamStatus.EndReason == relaycommon.StreamEndReasonClientGone)) ||
+		(err != nil && types.ClassifyFailure(err) == types.FailureClientCanceled) {
+		// Keep the existing cancellation settlement policy. A client must not
+		// obtain a free partial answer by disconnecting; no completion is sent.
+		info.StreamStatus.RequireTerminal()
+		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeCancelled)
+		info.StreamStatus.RecordError("downstream canceled before complete Claude delivery")
+		completeClaudeUsage(c, info, claudeInfo)
+		service.CaptureClaudeStreamFailure(c, info.StreamStatus, claudeInfo.MessageStopped)
+		return claudeInfo.Usage, nil
+	}
 	if err != nil {
 		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeFailed)
+		service.CaptureClaudeStreamFailure(c, info.StreamStatus, claudeInfo.MessageStopped)
 		return nil, err
 	}
 
-	if !claudeInfo.Done && info.StreamStatus != nil {
-		info.StreamStatus.RecordError("Claude stream ended without a completion marker")
-	}
 	info.StreamStatus.RequireTerminal()
-	if claudeInfo.Done {
-		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeCompleted)
+	info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeIncomplete)
+	info.StreamStatus.RecordError("Claude stream ended without a delivered message_stop")
+	// Retain evidence for support, never use an interrupted snapshot for a
+	// successful charge or send synthetic successful usage/terminal frames.
+	completeClaudeUsage(c, info, claudeInfo)
+	claudeInfo.Usage.InterruptedOutput = true
+	service.CaptureUnbilledRequestUsage(c, claudeInfo.Usage)
+	service.CaptureClaudeStreamFailure(c, info.StreamStatus, claudeInfo.MessageStopped)
+	status := http.StatusBadGateway
+	message := "Claude upstream stream interrupted before message_stop; the response is incomplete"
+	if info.StreamStatus.EndReason == relaycommon.StreamEndReasonTimeout {
+		status = http.StatusGatewayTimeout
+		message = "Claude upstream stream timed out before message_stop; the response is incomplete"
 	}
-	HandleStreamFinalResponse(c, info, claudeInfo)
-	return claudeInfo.Usage, nil
+	return nil, types.NewErrorWithStatusCode(errors.New(message), types.ErrorCodeBadResponseBody, status, types.ErrOptionWithSkipRetry())
+}
+
+func newClaudeDeliveryError(c *gin.Context, err error) *types.NewAPIError {
+	if errors.Is(err, context.Canceled) || (c.Request != nil && errors.Is(c.Request.Context().Err(), context.Canceled)) {
+		return types.NewClientCanceledError()
+	}
+	return types.NewErrorWithStatusCode(errors.New("failed to deliver Claude stream to client"), helper.DownstreamWriteErrorCode, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
 }
 
 func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo, httpResp *http.Response, data []byte) *types.NewAPIError {

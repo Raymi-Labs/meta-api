@@ -141,7 +141,7 @@ func TestClaudeUsageSettlementAndConsumeLog(t *testing.T) {
 			require.NoError(t, err)
 			info.IsStream, info.DisablePing = true, true
 			resp := &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"text/event-stream"}},
-				Body: io.NopCloser(strings.NewReader("data: " + string(terminal) + "\n\n"))}
+				Body: io.NopCloser(strings.NewReader("data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_fixture\",\"model\":\"claude-fixture\"}}\n\ndata: " + string(terminal) + "\n\n"))}
 			u, apiErr := claude.ClaudeStreamHandler(ctx, resp, info)
 			require.Nil(t, apiErr)
 			require.True(t, info.StreamStatus.IsSuccessful())
