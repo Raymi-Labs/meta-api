@@ -18,13 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Select, Spin } from '@douyinfe/semi-ui';
 import { ArrowLeft, ArrowUpRight, Copy, SlidersHorizontal } from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
-import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
 import {
   buildModelDetailPath,
   getModelNameFromDetailPath,
@@ -34,7 +32,6 @@ import ModelGroupRows from './ModelGroupRows';
 import ModelAnalytics from './ModelAnalytics';
 import { useGroupHealth } from '../../hooks/group-health/useGroupHealth';
 import ModelAttributes from './ModelAttributes';
-import DynamicPricingBreakdown from '../../components/table/model-pricing/modal/components/DynamicPricingBreakdown';
 import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import ModelSectionNav from './ModelSectionNav.jsx';
@@ -45,6 +42,7 @@ import {
 } from '../../helpers/modelCompare';
 import { useOfficialExchangeRate } from '../../hooks/model-pricing/useOfficialExchangeRate';
 import ModelExchangeRate from './ModelExchangeRate';
+import ModelSectionHelp from './ModelSectionHelp';
 import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
@@ -137,19 +135,6 @@ export default function ModelDetail() {
       group !== 'auto' && group && model.enable_groups?.includes(group),
   );
   const selectedGroup = groups.includes(priceGroup) ? priceGroup : 'all';
-  const { data: priceData } = getModelCatalogPricing(
-    {
-      record: model,
-      selectedGroup,
-      groupRatio: data.groupRatio,
-      timeRatioMap: data.timeRatioMap,
-      currency: data.currency,
-      quotaDisplayType: data.siteDisplayType,
-      tokenUnit: data.tokenUnit,
-      displayPrice: data.displayPrice,
-    },
-    t,
-  );
   const officialTiers = (model.official_pricing?.tiers || []).filter(
     (tier) => tier.unit === officialComparisonUnit(model),
   );
@@ -158,14 +143,6 @@ export default function ModelDetail() {
     : 0;
   const officialTier = officialTiers[activeOfficialTierIndex];
   const icon = model.icon || model.vendor_icon;
-  const tags = [
-    ...new Set(
-      (model.tags || '')
-        .split(/[,;|]+/)
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    ),
-  ];
   const related =
     model.vendor_id || model.vendor_name
       ? data.models
@@ -268,10 +245,44 @@ export default function ModelDetail() {
             provenance={model.attribute_sources?.official_pricing}
             t={t}
           />
-          <ModelAttributes model={model} tags={tags} />
+          <ModelAttributes model={model} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>
-              <h2>{t('分组价格')}</h2>
+              <h2 className='model-section-title-with-help'>
+                {t('分组价格')}
+                <ModelSectionHelp label={`${t('分组价格')} · ${t('费用说明')}`}>
+                  <p className='model-detail-caption'>
+                    {selectedGroup === 'all'
+                      ? t(
+                          '价格已包含各分组适用倍率，实际费用取决于用量及计费规则。',
+                        )
+                      : t('当前分组：{{group}} · 价格已包含分组倍率', {
+                          group: selectedGroup,
+                        })}
+                    <span>
+                      {' '}
+                      ·{' '}
+                      {priceMode === 'base'
+                        ? data.siteDisplayType === 'CUSTOM'
+                          ? t('自定义货币')
+                          : 'USD'
+                        : t(priceMode === 'package' ? '套餐价格' : '充值价格')}
+                    </span>
+                  </p>
+                  {officialTiers.length > 0 && (
+                    <>
+                      {needsExchange && (
+                        <ModelExchangeRate state={officialExchangeRate} t={t} />
+                      )}
+                      <p className='model-detail-caption'>
+                        {t(
+                          '逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。',
+                        )}
+                      </p>
+                    </>
+                  )}
+                </ModelSectionHelp>
+              </h2>
               <div className='model-detail-price-controls'>
                 <Select
                   aria-label={t('分组')}
@@ -345,27 +356,8 @@ export default function ModelDetail() {
                 )}
               </div>
             )}
-            <p className='model-detail-caption'>
-              {selectedGroup === 'all'
-                ? t('价格已包含各分组适用倍率，实际费用取决于用量及计费规则。')
-                : t('当前分组：{{group}} · 价格已包含分组倍率', {
-                    group: selectedGroup,
-                  })}
-              <span>
-                {' '}
-                ·{' '}
-                {priceMode === 'base'
-                  ? data.siteDisplayType === 'CUSTOM'
-                    ? t('自定义货币')
-                    : 'USD'
-                  : t(priceMode === 'package' ? '套餐价格' : '充值价格')}
-              </span>
-            </p>
             {officialTiers.length > 0 && (
               <div className='model-group-comparison-controls'>
-                {needsExchange && (
-                  <ModelExchangeRate state={officialExchangeRate} t={t} />
-                )}
                 <label>
                   <span id='official-tier-label'>{t('官方对比档位')}</span>
                   <Select
@@ -378,11 +370,6 @@ export default function ModelDetail() {
                     }))}
                   />
                 </label>
-                <p className='model-detail-caption'>
-                  {t(
-                    '逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。',
-                  )}
-                </p>
               </div>
             )}
             <ModelGroupRows
@@ -395,27 +382,8 @@ export default function ModelDetail() {
               health={health}
             />
           </section>
-          <section id='billing-details' className='model-detail-section'>
-            {priceData.isDynamicPricing && (
-              <div className='model-detail-dynamic'>
-                <p className='model-detail-caption'>
-                  {t(
-                    isVideoPriceExpression(model.billing_expr)
-                      ? '视频按秒 / 表达式'
-                      : '阶梯计费：展示首档参考价，完整规则见详情',
-                  )}
-                </p>
-                <h3 className='model-detail-caption'>{t('基础价格')}</h3>
-                <DynamicPricingBreakdown
-                  billingExpr={model.billing_expr}
-                  displayPrice={data.displayPrice}
-                  t={t}
-                />
-              </div>
-            )}
-          </section>
           <ModelAnalytics
-            key={model.model_name}
+            key={`analytics-${model.model_name}`}
             model={model}
             data={data}
             health={health}
@@ -453,7 +421,7 @@ export default function ModelDetail() {
               </div>
             </section>
           )}
-          <ModelFAQ key={model.model_name} items={model.faq} />
+          <ModelFAQ key={`faq-${model.model_name}`} items={model.faq} />
         </div>
       </div>
     </main>

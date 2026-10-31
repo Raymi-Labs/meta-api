@@ -102,20 +102,6 @@ html.dark .model-detail-page {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.model-detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 0;
-}
-.model-detail-tags span {
-  border: 1px solid transparent;
-  color: var(--detail-muted);
-  background: var(--semi-color-fill-0);
-  padding: 2px 7px;
-  font-size: 12px;
-  border-radius: 6px;
-}
 .model-detail-primary {
   min-height: 32px;
   display: inline-flex;
@@ -277,19 +263,13 @@ html.dark .model-detail-page {
   color: var(--detail-muted);
   font-size: 12px;
 }
-.model-detail-dynamic {
-  margin: 20px 0;
-}
-.model-detail-group-prices,
-.model-detail-dynamic {
+.model-detail-group-prices {
   min-width: 0;
 }
-.model-detail-group-prices .semi-table-container,
-.model-detail-dynamic .semi-table-container {
+.model-detail-group-prices .semi-table-container {
   overflow-x: auto;
 }
-.model-detail-group-prices .semi-table,
-.model-detail-dynamic .semi-table {
+.model-detail-group-prices .semi-table {
   min-width: 540px;
 }
 .model-detail-group-prices .semi-table-thead > tr > th {
@@ -1167,12 +1147,12 @@ html.dark .model-metric-chart {
   color: var(--semi-color-primary);
   font-size: 13px;
 }
-.model-official-title {
+.model-section-title-with-help {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
-.model-official-help {
+.model-section-help {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1185,16 +1165,16 @@ html.dark .model-metric-chart {
   color: var(--detail-muted);
   cursor: help;
 }
-.model-official-help:hover,
-.model-official-help:focus-visible {
+.model-section-help:hover,
+.model-section-help:focus-visible {
   color: var(--semi-color-primary);
   background: var(--semi-color-fill-0);
 }
-.model-official-help:focus-visible {
+.model-section-help:focus-visible {
   outline: 2px solid var(--semi-color-primary);
   outline-offset: 2px;
 }
-.model-official-help-content {
+.model-section-help-content {
   box-sizing: border-box;
   width: min(440px, calc(100vw - 32px));
   max-height: min(480px, 70vh);
@@ -1205,11 +1185,17 @@ html.dark .model-metric-chart {
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
-.model-official-help-content p {
+.model-section-help-content p {
   margin: 0;
+  color: inherit;
+  font-size: inherit;
 }
-.model-official-help-content p + p {
+.model-section-help-content p + p {
   margin-top: 10px;
+}
+.model-section-help-content a {
+  color: var(--semi-color-primary);
+  text-decoration: underline;
 }
 .model-official-table-wrap {
   overflow-x: auto;
@@ -1440,9 +1426,6 @@ html.dark .model-metric-chart {
 }
 .model-capabilities-list li.is-unknown svg {
   opacity: 0.5;
-}
-.model-attribute-tags {
-  margin-top: 18px;
 }
 @media (max-width: 1150px) {
   .model-attributes-grid {

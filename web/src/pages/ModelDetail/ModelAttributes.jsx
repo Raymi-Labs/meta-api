@@ -76,7 +76,7 @@ const capabilityIcons = {
   server_side_context: ChevronsRight,
 };
 
-export default function ModelAttributes({ model, tags = [] }) {
+export default function ModelAttributes({ model }) {
   const { t } = useTranslation();
   return (
     <section
@@ -159,13 +159,6 @@ export default function ModelAttributes({ model, tags = [] }) {
           </ul>
         </div>
       </div>
-      {tags.length > 0 && (
-        <div className='model-detail-tags model-attribute-tags'>
-          {tags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
