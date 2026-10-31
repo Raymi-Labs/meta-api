@@ -127,43 +127,37 @@ export default function ModelGroupRows({
               />
             </header>
             <div className='model-group-values'>
-              <dl className='model-group-pricing-values'>
-                <div className='model-group-price-cell'>
-                  <dt>{t('价格')}</dt>
-                  <dd>
-                    {items.length
-                      ? items
-                          .filter((item) => !isCachePriceItem(item))
-                          .map((item) => (
-                            <ModelGroupPrice
-                              key={item.key}
-                              item={item}
-                              pricing={pricing}
-                              model={model}
-                              officialTier={officialTier}
-                              data={data}
-                            />
-                          ))
-                      : t('见价格详情')}
-                  </dd>
+              <div className='model-group-pricing-values'>
+                <div className='model-group-price-cell model-group-price-items'>
+                  {items.length
+                    ? items
+                        .filter((item) => !isCachePriceItem(item))
+                        .map((item) => (
+                          <ModelGroupPrice
+                            key={item.key}
+                            item={item}
+                            pricing={pricing}
+                            model={model}
+                            officialTier={officialTier}
+                            data={data}
+                          />
+                        ))
+                    : t('见价格详情')}
                 </div>
-                <div>
-                  <dt>{t('缓存')}</dt>
-                  <dd>
-                    {items.filter(isCachePriceItem).map((item) => (
-                      <ModelGroupPrice
-                        key={item.key}
-                        item={item}
-                        pricing={pricing}
-                        model={model}
-                        officialTier={officialTier}
-                        data={data}
-                      />
-                    ))}
-                    {!items.some(isCachePriceItem) && '—'}
-                  </dd>
+                <div className='model-group-price-items'>
+                  {items.filter(isCachePriceItem).map((item) => (
+                    <ModelGroupPrice
+                      key={item.key}
+                      item={item}
+                      pricing={pricing}
+                      model={model}
+                      officialTier={officialTier}
+                      data={data}
+                    />
+                  ))}
+                  {!items.some(isCachePriceItem) && '—'}
                 </div>
-              </dl>
+              </div>
               <dl className='model-group-health-values'>
                 <div>
                   <dt>

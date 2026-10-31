@@ -544,12 +544,12 @@ html.dark .model-detail-page {
 .model-group-pricing-values {
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
-.model-group-pricing-values dd {
+.model-group-price-items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 12px 16px;
 }
-.model-group-pricing-values dd > small {
+.model-group-price-items > small {
   grid-column: 1 / -1;
 }
 .model-group-health-values {
@@ -566,7 +566,8 @@ html.dark .model-detail-page {
   font-size: 12px;
   margin-bottom: 8px;
 }
-.model-group-values dd {
+.model-group-values dd,
+.model-group-price-items {
   margin: 0;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
@@ -574,7 +575,8 @@ html.dark .model-detail-page {
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
-.model-group-values dd > span {
+.model-group-values dd > span,
+.model-group-price-items > span {
   display: block;
   margin-bottom: 4px;
 }
@@ -910,7 +912,7 @@ html.dark .model-metric-chart {
   .model-group-pricing-values {
     grid-template-columns: minmax(0, 1fr);
   }
-  .model-group-price-cell dd {
+  .model-group-price-cell {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .model-group-health-values {
