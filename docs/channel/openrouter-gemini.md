@@ -4,7 +4,9 @@
 
 ## 当前阻碍
 
-当前密钥对 4 个语音型号以及文本、向量、图像代表型号均返回 OpenRouter `403 provider Terms Of Service`。渠道保持暂停，并设置请求拒绝规则。**发布了适配代码不代表上游已经可用**；解除账号限制后仍须重新核价、验证实际 usage 和消费日志，再按审核结果逐个恢复，不能一键启用所有配置型号。
+当前密钥对 4 个语音型号以及文本、向量、图像代表型号均返回 OpenRouter `403 provider Terms Of Service`。渠道保持暂停，并设置请求拒绝规则。**发布了适配代码不代表上游已经可用**；上游恢复访问后仍须重新核价、验证实际 usage 和消费日志，再按审核结果逐个恢复，不能一键启用所有配置型号。
+
+1638 的本地拒绝使用 `503 / openrouter_gemini_upstream_restricted`，提示上游 Gemini 请求被 OpenRouter 以 403 服务条款限制拒绝。此前误用的 `openrouter_price_unverified` 文案已修正；该本地 503 与直接请求 OpenRouter 得到的 403 是两层错误。现有密钥直接调用 `google/gemini-2.5-flash-lite` 的最小文本请求复测仍为 403，具体是账号、地区还是提供商策略不能仅凭此响应确定。不能将它解释成全部 Gemini 原厂价未核实，也不能直接认定账号已封禁。
 
 24 个型号有公开原厂价；Gemini 3.5 Flash 的 OpenRouter 音频输入高于当前原厂标准价，保持暂停；另 5 个旧 preview 型号仍需确认型号身份与当前原厂报价。所有未核实型号均不能调用。
 
