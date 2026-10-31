@@ -894,7 +894,7 @@ func renewUserSubscriptionByPlanTx(tx *gorm.DB, userId int, plan *SubscriptionPl
 
 // CompleteSubscriptionOrder 完成在线支付订阅订单（幂等）：
 // - 先稳定落库订单成功态、支付记录镜像和待发放记录
-// - 后续返佣入池、自动发放都走“尽力而为”，失败不再回滚已确认收款的核心结果
+// - 返佣待办同事务保存；返佣结算及套餐自动发放在提交后执行
 // - stack: 新建订阅
 // - renew: 仅续费同 plan 生效订阅；无可续费目标时不回退到叠加
 // - renew_extend: 续费式购买；无生效订阅时先创建 1 条，再按同条顺延
@@ -919,12 +919,12 @@ func CompleteSubscriptionOrderWithPayment(tradeNo string, providerPayload string
 	if err != nil {
 		return err
 	}
+	NotifyInviteCommissionSettlement()
 	if result.AlreadyCompleted {
 		return nil
 	}
 
 	result.AutoIssued, result.IssueSummary = autoIssuePaidSubscriptionOrder(result.TradeNo, result.IssuanceId, result.UserId)
-	enqueueInviteCommissionForSubscriptionOrder(result.TradeNo, result.OrderId)
 
 	if result.UserId > 0 {
 		if result.PurchaseQuantity <= 0 {
@@ -1043,6 +1043,9 @@ func completeSubscriptionOrderCoreTx(tx *gorm.DB, tradeNo string, providerPayloa
 	if err := tx.Save(&order).Error; err != nil {
 		return subscriptionOrderCompletionResult{}, err
 	}
+	if err := EnqueueInviteCommissionFromSubscriptionOrderTx(tx, &order); err != nil {
+		return subscriptionOrderCompletionResult{}, err
+	}
 	result.IssuanceId = issuance.Id
 	return result, nil
 }
@@ -1095,17 +1098,6 @@ func normalizeSubscriptionIssuanceIssueSummary(summary string) string {
 		return string(runes[:255])
 	}
 	return summary
-}
-
-func enqueueInviteCommissionForSubscriptionOrder(tradeNo string, orderId int) {
-	if orderId <= 0 {
-		return
-	}
-	if err := DB.Transaction(func(tx *gorm.DB) error {
-		return EnqueueInviteCommissionFromSubscriptionOrderTx(tx, &SubscriptionOrder{Id: orderId})
-	}); err != nil {
-		common.SysError(fmt.Sprintf("enqueue invite commission for subscription order failed: trade_no=%s, order_id=%d, err=%s", tradeNo, orderId, err.Error()))
-	}
 }
 
 func upsertSubscriptionTopUpTx(tx *gorm.DB, order *SubscriptionOrder) error {

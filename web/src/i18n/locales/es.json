@@ -6782,6 +6782,8 @@
     "正在获取参考汇率…": "Obteniendo tipo de referencia…",
     "参考汇率暂不可用，暂停跨币种价格对比": "Tipo de referencia no disponible; comparación entre monedas en pausa",
     "模型资料自动更新，官方信息优先；人工修改保留，尚未获取的内容保持未知。": "Los datos del modelo se actualizan automáticamente, dando prioridad a las fuentes oficiales. Se conservan los cambios manuales; la información no disponible sigue siendo desconocida.",
+    "按实付金额计算，当前比例 {{ratePercent}}%，支付成功后自动结算": "Calculado sobre el importe pagado, tasa actual {{ratePercent}} %. Liquidación automática tras el pago correcto",
+    "一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。": "Las comisiones liquidadas se agrupan por usuario anónimo en el nivel 1 y por rama de referido directo en el nivel 2. Se ocultan las cuentas y registros individuales de los referidos indirectos. La liquidación sigue al pago correcto; la página se actualiza periódicamente.",
     "介绍语言": "Idioma de la descripción",
     "自动翻译": "Traducción automática",
     "等待翻译": "Traducción pendiente",

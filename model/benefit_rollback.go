@@ -128,7 +128,15 @@ func lockPaymentSourceForRollbackTx(tx *gorm.DB, sourceType string, sourceRef st
 		return lock(tx.Select("id", "status").Where("trade_no = ?", sourceRef)).First(&topUp).Error
 	case BenefitSourceSubscriptionOrder:
 		var order SubscriptionOrder
-		return lock(tx.Select("id", "status").Where("trade_no = ?", sourceRef)).First(&order).Error
+		if err := lock(tx.Select("id", "status").Where("trade_no = ?", sourceRef)).First(&order).Error; err != nil {
+			return err
+		}
+		// Settlement locks the payment mirror before touching inviter funds.
+		// Acquire it before reading pending ledgers so a concurrent payout is reclaimed.
+		var topUp TopUp
+		// Older subscriptions may have no payment mirror. Their order lock still
+		// serializes completion; no valid commission can settle without a mirror.
+		return lock(tx.Select("id", "status").Where("trade_no = ?", sourceRef)).Limit(1).Find(&topUp).Error
 	default:
 		return nil
 	}
