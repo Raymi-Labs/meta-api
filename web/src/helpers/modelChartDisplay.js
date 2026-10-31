@@ -18,7 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { chartMetricValue } from './modelPresentation';
-import { getUptimeRate } from '../components/group-health/healthUtils';
+import {
+  getUptimeRate,
+  getHealthMeasurement,
+} from '../components/group-health/healthUtils';
 
 export const isLatencyMetric = (metric) =>
   metric === 'avg_ttft_ms' || metric === 'avg_completion_ms';
@@ -56,11 +59,23 @@ export function formatChartDetailValue(value, metric) {
 }
 
 export function chartDisplayValue(point, metric) {
+  const measurement = chartMeasurement(point, metric);
   const value =
     metric === 'uptime_rate'
       ? chartMetricValue({ uptime_rate: getUptimeRate(point) }, metric)
-      : chartMetricValue(point, metric);
+      : measurement
+        ? chartMetricValue({ [metric]: measurement.value }, metric)
+        : chartMetricValue(point, metric);
   return value == null ? null : isLatencyMetric(metric) ? value / 1000 : value;
+}
+
+export function chartMeasurement(point, metric) {
+  const key = {
+    avg_ttft_ms: 'ttft',
+    avg_completion_ms: 'completion',
+    cache_hit_rate: 'cache',
+  }[metric];
+  return key ? getHealthMeasurement(point, key, true) : null;
 }
 
 export function formatChartValue(value, metric, withUnit = true) {

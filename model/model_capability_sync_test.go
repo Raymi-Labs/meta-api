@@ -110,7 +110,7 @@ func readCapabilityModel(t *testing.T, id int) Model {
 
 func TestModelCapabilitySyncOwnershipAndIdempotence(t *testing.T) {
 	db := capabilitySyncTestDB(t, "sqlite")
-	m := Model{FAQ: ModelFAQ{{Question: "Manual question", Answer: "Manual answer"}}, ModelName: "example", Status: 1, SyncOfficial: 1, ContextLength: 12000,
+	m := Model{FunctionOverrides: ModelFunctionOverrides{"image_generation": false, "text_chat": true}, FAQ: ModelFAQ{{Question: "Manual question", Answer: "Manual answer"}}, ModelName: "example", Status: 1, SyncOfficial: 1, ContextLength: 12000,
 		OutputModalities: ModelModalities{"audio"}, Description: "curated", DisplayName: "Custom name"}
 	require.NoError(t, db.Create(&m).Error)
 	entries := map[string]ModelCapabilityMetadata{m.ModelName: capabilityEntry(128000)}
@@ -122,6 +122,7 @@ func TestModelCapabilitySyncOwnershipAndIdempotence(t *testing.T) {
 	require.Equal(t, ModelModalities{"audio"}, saved.OutputModalities)
 	require.Equal(t, ModelModalities{"text", "image"}, saved.InputModalities)
 	require.Equal(t, m.Description, saved.Description)
+	require.Equal(t, m.FunctionOverrides, saved.FunctionOverrides)
 	require.Equal(t, m.FAQ, saved.FAQ)
 	require.Equal(t, m.DisplayName, saved.DisplayName)
 	state := readModelCapabilityState(saved.ModelCapabilitySyncState)
@@ -161,6 +162,7 @@ func TestModelCapabilitySyncOwnershipAndIdempotence(t *testing.T) {
 	result, err = ApplyModelCapabilityMetadata(context.Background(), entries, "source-b")
 	require.NoError(t, err)
 	require.Equal(t, 0, result.Updated)
+	require.Equal(t, m.FunctionOverrides, readCapabilityModel(t, m.Id).FunctionOverrides)
 }
 
 func TestModelCapabilitySyncEligibilityAndMissingModels(t *testing.T) {

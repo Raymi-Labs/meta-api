@@ -21,7 +21,10 @@ import React, { useState } from 'react';
 import { Button, Select } from '@douyinfe/semi-ui';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useGroupHealth } from '../../../../hooks/group-health/useGroupHealth';
+import {
+  useGroupHealth,
+  UPTIME_WINDOW_HOURS,
+} from '../../../../hooks/group-health/useGroupHealth';
 import {
   GroupHealthLegend,
   GroupHealthCollectionNote,
@@ -32,6 +35,8 @@ import {
   selectHealthGroups,
 } from '../../../group-health';
 
+import { hasCatalogFilters } from '../../../../helpers/modelCatalogFacets';
+
 const GroupHealthOverview = ({
   filteredModels = [],
   usableGroup = {},
@@ -39,6 +44,9 @@ const GroupHealthOverview = ({
   filterGroup = 'all',
   filterVendor = 'all',
   filterTag = 'all',
+  filterFunctions = [],
+  filterInputModalities = [],
+  filterContextLength = 0,
   filterQuotaType = 'all',
   filterEndpointType = 'all',
   searchValue = '',
@@ -52,6 +60,7 @@ const GroupHealthOverview = ({
   );
   const modelName = currentModel?.model_name || '';
   const { data, loading, error, refresh, isAuthenticated } = useGroupHealth({
+    hours: UPTIME_WINDOW_HOURS,
     model: modelName,
     group: filterGroup === 'all' ? undefined : filterGroup,
     enabled: !pricingLoading && filterGroup !== 'auto',
@@ -62,12 +71,16 @@ const GroupHealthOverview = ({
     usableGroup,
     filterGroup,
     exactModel: Boolean(currentModel),
-    filterByModels:
-      filterVendor !== 'all' ||
-      filterTag !== 'all' ||
-      filterQuotaType !== 'all' ||
-      filterEndpointType !== 'all' ||
-      searchValue.length > 0,
+    filterByModels: hasCatalogFilters({
+      filterVendor,
+      filterTag,
+      filterFunctions,
+      filterInputModalities,
+      filterContextLength,
+      filterQuotaType,
+      filterEndpointType,
+      searchValue,
+    }),
   });
 
   return (
@@ -76,7 +89,8 @@ const GroupHealthOverview = ({
         <div>
           <div className='group-health-toolbar-title'>{t('分组健康')}</div>
           <div className='group-health-caption'>
-            {t('最近 24 个小时段 · 每分钟更新')}
+            {t('最近 {{hours}} 小时', { hours: UPTIME_WINDOW_HOURS })} ·{' '}
+            {t('每分钟更新')}
             {data?.updated_at
               ? ` · ${t('最近采样')} ${new Date(data.updated_at * 1000).toLocaleTimeString(i18n.resolvedLanguage || i18n.language, { hour: '2-digit', minute: '2-digit' })}`
               : ''}
@@ -149,6 +163,7 @@ const GroupHealthOverview = ({
                       metric={resolveGroupHealthMetric(
                         stats,
                         `${stats.group} ${modelName}`,
+                        true,
                       )}
                     />
                   ))}
@@ -158,7 +173,7 @@ const GroupHealthOverview = ({
                   {t('当前筛选下没有可用分组')}
                 </div>
               )}
-              <GroupHealthScopeNote />
+              <GroupHealthScopeNote uptime />
               <p className='group-health-note'>
                 {t('仅展示你可用的分组。灰色表示样本不足或无有效统计样本。')}
               </p>

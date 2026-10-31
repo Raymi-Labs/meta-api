@@ -183,6 +183,29 @@ func TestImagePricePreviewIgnoresClientDimensionsAndRejectsWrongRoute(t *testing
 	require.Error(t, err)
 }
 
+func TestImagePriceBeforeChannelMetaInitialization(t *testing.T) {
+	saved := billing_setting.TieredBundle{BillingMode: billing_setting.GetBillingModeCopy(), BillingExpr: billing_setting.GetBillingExprCopy()}
+	t.Cleanup(func() { billing_setting.ReplaceBundle(saved) })
+	expr := `param("_image_billing") == nil ? tier("image_config_preview",0) : tier("image",param("_image_billing.output_count")*100000)`
+	billing_setting.ReplaceBundle(billing_setting.TieredBundle{BillingMode: map[string]string{"qwen-image-3.0-pro": "tiered_expr"}, BillingExpr: map[string]string{"qwen-image-3.0-pro": expr}})
+	for _, channelType := range []int{constant.ChannelTypeAli, constant.ChannelTypeOpenAI, 0} {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		common.SetContextKey(c, constant.ContextKeyChannelType, channelType)
+		info := &relaycommon.RelayInfo{OriginModelName: "qwen-image-3.0-pro", UsingGroup: "default", UserGroup: "default", RelayMode: relayconstant.RelayModeImagesGenerations, BillingRequestInput: &billingexpr.RequestInput{Body: []byte(`{"model":"qwen-image-3.0-pro","_image_billing":{"output_count":99999}}`)}}
+		// The production controller prices before the attempt initializes ChannelMeta.
+		price, err := ModelPriceHelper(c, info, 1, nil)
+		if channelType == constant.ChannelTypeAli {
+			require.NoError(t, err)
+			require.Zero(t, price.QuotaToPreConsume)
+			require.NotNil(t, info.TieredBillingSnapshot)
+			require.NotContains(t, string(info.BillingRequestInput.Body), "_image_billing")
+		} else {
+			require.Error(t, err)
+		}
+		require.Nil(t, info.ChannelMeta, "pricing must not initialize per-attempt state")
+	}
+}
+
 func TestVideoTaskBillingLogSnapshotDoesNotAffectSettlement(t *testing.T) {
 	saved := billing_setting.TieredBundle{BillingMode: billing_setting.GetBillingModeCopy(), BillingExpr: billing_setting.GetBillingExprCopy()}
 	t.Cleanup(func() { billing_setting.ReplaceBundle(saved) })

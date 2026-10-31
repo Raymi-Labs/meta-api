@@ -92,6 +92,9 @@ func ValidModelReleaseDate(value string) bool {
 // NormalizeDisplayMetadata validates presentation only; it does not change
 // model identifiers, routing capabilities, permissions, or billing.
 func (m *Model) NormalizeDisplayMetadata() error {
+	if err := m.FunctionOverrides.Validate(); err != nil {
+		return err
+	}
 	if err := m.FAQ.Normalize(); err != nil {
 		return err
 	}

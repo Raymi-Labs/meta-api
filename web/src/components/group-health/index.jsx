@@ -28,6 +28,8 @@ import {
   formatHealthRate,
   getHealthCounts,
   getHealthLatency,
+  getHealthMeasurement,
+  formatHealthReference,
   healthTone,
   getUptimeRate,
   uptimeTone,
@@ -141,19 +143,27 @@ export function GroupHealthStatus({ loading, error, onRetry }) {
   return null;
 }
 
-export function GroupHealthScopeNote() {
+export function GroupHealthScopeNote({ uptime = false }) {
   const { t } = useTranslation();
   return (
     <p className='group-health-note'>
       {t('平台分组统计，不限于个人请求。')}{' '}
-      {t('统计覆盖当前小时及此前 23 个完整小时，当前小时尚未结束。')}{' '}
+      {uptime ? (
+        <>
+          {t('最近 {{hours}} 小时', { hours: 72 })} · {t('当前小时尚未结束')}
+        </>
+      ) : (
+        t('统计覆盖当前小时及此前 23 个完整小时，当前小时尚未结束。')
+      )}{' '}
       {t(
         '同组重试合并统计；跨组重试分别记录各组结果。首字均值仅统计成功流式请求，含排队和重试等待。',
       )}{' '}
       {t('生图显示成功同步请求的完成耗时，异步提交不计入完成样本。')}{' '}
-      {t(
-        '缓存命中率为成功请求的缓存读取 Token 总量除以输入 Token 总量，包含未命中请求，缓存写入不算命中；无有效用量时显示 —。',
-      )}
+      {uptime
+        ? t('缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。')
+        : t(
+            '缓存命中率为成功请求的缓存读取 Token 总量除以输入 Token 总量，包含未命中请求，缓存写入不算命中；无有效用量时显示 —。',
+          )}
     </p>
   );
 }
@@ -178,10 +188,15 @@ export function GroupHealthSummary({
   uptime = false,
 }) {
   const { t } = useTranslation();
-  const latency = getHealthLatency(stats, metric);
+  const latency = getHealthLatency(stats, metric, uptime);
+  const cache = getHealthMeasurement(stats, 'cache', uptime);
   const counts = getHealthCounts(stats);
   const hasSamples =
-    counts.request > 0 || (uptime && stats?.probe_bucket_count > 0);
+    counts.request > 0 ||
+    (uptime &&
+      (stats?.probe_bucket_count > 0 ||
+        latency.referenceTs ||
+        cache.referenceTs));
   const tone = uptime ? uptimeTone(stats) : healthTone(stats);
   const rate = uptime ? getUptimeRate(stats) : stats?.success_rate;
   const limited = tone === 'limited';
@@ -201,13 +216,14 @@ export function GroupHealthSummary({
                 {formatHealthRate(rate)}
               </strong>
             </span>
-            <span>
+            <span title={formatHealthReference(latency, t)}>
               {metric === 'completion' ? t('平均完成') : t('首字均值')}{' '}
               <strong>{formatHealthLatency(latency.value)}</strong>
+              {latency.referenceTs && <small> · {t('沿用最近有效值')}</small>}
             </span>
-            <span title={t('缓存命中率')}>
-              {t('缓存')}{' '}
-              <strong>{formatHealthRate(stats.cache_hit_rate)}</strong>
+            <span title={formatHealthReference(cache, t) || t('缓存命中率')}>
+              {t('缓存')} <strong>{formatHealthRate(cache.value)}</strong>
+              {cache.referenceTs && <small> · {t('沿用最近有效值')}</small>}
             </span>
             {(limited ||
               (latency.count > 0 && latency.count < HEALTH_MIN_SAMPLES)) && (
@@ -248,8 +264,11 @@ export function GroupHealthSummary({
           {formatHealthLatency(latency.value)}
         </strong>
         <span className='group-health-caption'>
-          {t('{{count}} 个有效样本', { count: latency.count })}
-          {latency.count > 0 && latency.count < HEALTH_MIN_SAMPLES
+          {formatHealthReference(latency, t) ||
+            t('{{count}} 个有效样本', { count: latency.count })}
+          {!latency.referenceTs &&
+          latency.count > 0 &&
+          latency.count < HEALTH_MIN_SAMPLES
             ? ` · ${t('样本不足')}`
             : ''}
         </span>
@@ -257,10 +276,11 @@ export function GroupHealthSummary({
       <div>
         <span className='group-health-label'>{t('缓存命中率')}</span>
         <strong className='group-health-number'>
-          {formatHealthRate(stats?.cache_hit_rate)}
+          {formatHealthRate(cache.value)}
         </strong>
         <span className='group-health-caption'>
-          {t('{{count}} 个有效样本', { count: stats?.cache_sample_count || 0 })}
+          {formatHealthReference(cache, t) ||
+            t('{{count}} 个有效样本', { count: cache.count })}
         </span>
       </div>
     </div>
@@ -322,14 +342,18 @@ export function GroupHealthPanel({
       <div className='group-health-trend-heading'>
         <span>
           {uptime
-            ? t('最近 {{hours}} 个小时段可用率', { hours: series.length || 24 })
+            ? t('最近 {{hours}} 个小时段可用率', { hours: series.length || 72 })
             : t('最近 {{hours}} 个小时段成功率', {
                 hours: series.length || 24,
               })}
         </span>
         <span>{t('点击时段查看详情')}</span>
       </div>
-      <div className='group-health-bars' aria-label={t('每格代表一小时')}>
+      <div
+        className='group-health-bars'
+        style={{ '--health-hours': series.length || (uptime ? 72 : 24) }}
+        aria-label={t('每格代表一小时')}
+      >
         {series.map((bucket) => (
           <button
             key={bucket.ts}
@@ -367,9 +391,13 @@ export function GroupHealthPanel({
           />
           <GroupHealthOutcomeDetails stats={selected} />
           <div className='group-health-caption'>
-            {t('{{count}} 个有效样本', {
-              count: getHealthLatency(selected, metric).count,
-            })}
+            {formatHealthReference(
+              getHealthLatency(selected, metric, uptime),
+              t,
+            ) ||
+              t('{{count}} 个有效样本', {
+                count: getHealthLatency(selected, metric).count,
+              })}
             {selected.ts === series[series.length - 1]?.ts
               ? ` · ${t('当前小时尚未结束')}`
               : ''}

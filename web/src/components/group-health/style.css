@@ -138,7 +138,7 @@
 }
 .group-health-bars {
   display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--health-hours, 24), minmax(0, 1fr));
   gap: 3px;
 }
 .group-health-bar {
@@ -291,6 +291,11 @@
   gap: 8px;
   font-size: 12px;
   color: var(--semi-color-text-2);
+}
+@container group-health-panel (max-width: 640px) {
+  .group-health-bars {
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+  }
 }
 @container group-health-panel (max-width: 280px) {
   .group-health-metrics {

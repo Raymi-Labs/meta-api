@@ -18,8 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import {
-  isImagePriceExpression,
-} from '../../../../../helpers/imagePricing';
+  getCatalogTags,
+  catalogTagLabel,
+} from '../../../../../helpers/modelCatalogFacets';
+
+import { isImagePriceExpression } from '../../../../../helpers/imagePricing';
 
 import React from 'react';
 import { isVideoPriceExpression } from '../../../../../helpers/videoPricingTemplate';
@@ -35,7 +38,11 @@ import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoa
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 
 import { useModelHealthSummaries } from '../../../../../hooks/group-health/useModelHealthSummaries';
-import { formatHealthLatency } from '../../../../group-health/healthUtils';
+import {
+  formatHealthLatency,
+  getHealthLatency,
+  formatHealthReference,
+} from '../../../../group-health/healthUtils';
 import {
   formatModelContext,
   formatModelContextExact,
@@ -94,16 +101,10 @@ const PricingCardView = ({
             },
             t,
           );
-          const tags = [
-            ...new Set(
-              (model.tags || '')
-                .split(/[,;|]+/)
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-            ),
-          ];
+          const tags = getCatalogTags(model);
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
+          const latency = getHealthLatency(stats, 'ttft', true);
           const showTokenMetrics =
             data.isPerToken ||
             (data.isDynamicPricing &&
@@ -223,10 +224,13 @@ const PricingCardView = ({
                           <Timer size={13} />
                           {t('首字均值')}
                         </dt>
-                        <dd>
-                          {formatHealthLatency(stats?.avg_ttft_ms) === '—'
+                        <dd title={formatHealthReference(latency, t)}>
+                          {formatHealthLatency(latency.value) === '—'
                             ? t('暂无数据')
-                            : formatHealthLatency(stats?.avg_ttft_ms)}
+                            : formatHealthLatency(latency.value)}
+                          {latency.referenceTs && (
+                            <small> · {t('沿用最近有效值')}</small>
+                          )}
                         </dd>
                       </div>
                       <div>
@@ -299,7 +303,7 @@ const PricingCardView = ({
                 </div>
                 <div className='pricing-model-tags'>
                   {tags.slice(0, 3).map((tag) => (
-                    <span key={tag}>{tag}</span>
+                    <span key={tag}>{catalogTagLabel(tag, t, [model])}</span>
                   ))}
                 </div>
               </div>

@@ -18,120 +18,42 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Select } from '@douyinfe/semi-ui';
+import PricingCatalogFilters from '../../layout/header/PricingCatalogFilters';
 import PricingDisplaySettings from '../../filter/PricingDisplaySettings';
 import PricingQuotaTypes from '../../filter/PricingQuotaTypes';
 import PricingEndpointTypes from '../../filter/PricingEndpointTypes';
-import PricingVendors from '../../filter/PricingVendors';
-import PricingTags from '../../filter/PricingTags';
 import { usePricingFilterCounts } from '../../../../../hooks/model-pricing/usePricingFilterCounts';
 
-const FilterModalContent = ({ sidebarProps, t }) => {
-  const {
-    showWithRecharge,
-    setShowWithRecharge,
-    priceConvertMode,
-    setPriceConvertMode,
-    availablePlans,
-    currency,
-    setCurrency,
-    handleChange,
-    setActiveKey,
-    showRatio,
-    setShowRatio,
-    viewMode,
-    setViewMode,
-    filterGroup,
-    setFilterGroup,
-    filterQuotaType,
-    setFilterQuotaType,
-    filterEndpointType,
-    setFilterEndpointType,
-    filterVendor,
-    setFilterVendor,
-    filterTag,
-    setFilterTag,
-    tokenUnit,
-    setTokenUnit,
-    loading,
-    ...categoryProps
-  } = sidebarProps;
-
-  const { quotaTypeModels, endpointTypeModels, vendorModels, tagModels } =
-    usePricingFilterCounts({
-      models: categoryProps.models,
-      filterGroup,
-      filterQuotaType,
-      filterEndpointType,
-      filterVendor,
-      filterTag,
-      searchValue: sidebarProps.searchValue,
-    });
-
+export default function FilterModalContent({ sidebarProps: props, t }) {
+  const { quotaTypeModels, endpointTypeModels } = usePricingFilterCounts(props);
   return (
     <>
-      <PricingVendors
-        pills
-        filterVendor={filterVendor}
-        setFilterVendor={setFilterVendor}
-        models={categoryProps.models}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingTags
-        pills
-        hideUnavailable={filterVendor !== 'all'}
-        filterTag={filterTag}
-        setFilterTag={setFilterTag}
-        models={tagModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-
-      <PricingQuotaTypes
-        pills
-        hideUnavailable={filterVendor !== 'all'}
-        filterQuotaType={filterQuotaType}
-        setFilterQuotaType={setFilterQuotaType}
-        models={quotaTypeModels}
-        loading={loading}
-        t={t}
-      />
-
+      <PricingCatalogFilters {...props} t={t} drawer />
+      <div className='catalog-context-filter'>
+        <label id='catalog-context-label'>{t('上下文长度')}</label>
+        <Select
+          aria-labelledby='catalog-context-label'
+          value={props.filterContextLength || 0}
+          onChange={props.setFilterContextLength}
+          optionList={[
+            { value: 0, label: t('全部') },
+            ...[32000, 128000, 256000, 1000000].map((v) => ({
+              value: v,
+              label: `≥ ${v === 1000000 ? '1M' : v / 1000 + 'K'}`,
+            })),
+          ]}
+        />
+      </div>
+      <PricingQuotaTypes {...props} t={t} models={quotaTypeModels} pills />
       <PricingEndpointTypes
-        pills
-        hideUnavailable={filterVendor !== 'all'}
-        filterEndpointType={filterEndpointType}
-        setFilterEndpointType={setFilterEndpointType}
+        {...props}
+        t={t}
         models={endpointTypeModels}
-        allModels={categoryProps.models}
-        loading={loading}
-        t={t}
-      />
-      <PricingDisplaySettings
+        allModels={props.models}
         pills
-        showWithRecharge={showWithRecharge}
-        setShowWithRecharge={setShowWithRecharge}
-        priceConvertMode={priceConvertMode}
-        setPriceConvertMode={setPriceConvertMode}
-        availablePlans={availablePlans}
-        selectedPlanId={sidebarProps.selectedPlanId}
-        setSelectedPlanId={sidebarProps.setSelectedPlanId}
-        currency={currency}
-        setCurrency={setCurrency}
-        showRatio={showRatio}
-        setShowRatio={setShowRatio}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        tokenUnit={tokenUnit}
-        setTokenUnit={setTokenUnit}
-        loading={loading}
-        t={t}
       />
+      <PricingDisplaySettings {...props} t={t} pills />
     </>
   );
-};
-
-export default FilterModalContent;
+}
