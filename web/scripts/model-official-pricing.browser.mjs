@@ -657,7 +657,7 @@ try {
         '.model-group-row [data-price-key="input"] del',
         (el) => el.textContent,
       ),
-      '¥70',
+      '¥70.00',
     );
     assert.equal(
       await page.$eval(

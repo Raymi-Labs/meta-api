@@ -40,6 +40,14 @@ export default function ModelGroupPrice({
     quotaDisplayType: data.siteDisplayType,
     exchangeQuote: data.officialExchangeRate?.quote,
   });
+  const referencePrice = comparison
+    ? data.currency === 'CNY'
+      ? `¥${comparison.official.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`
+      : formatOfficialPrice(comparison.official, data.currency, 6)
+    : '';
   const label =
     comparison?.kind === 'equal'
       ? t('与官方持平')
@@ -59,15 +67,13 @@ export default function ModelGroupPrice({
       <span className='model-group-price-amounts'>
         {comparison &&
           (comparison.kind === 'lower' ? (
-            <del aria-label={t('官方参考价')}>
-              {formatOfficialPrice(comparison.official, data.currency, 6)}
-            </del>
+            <del aria-label={t('官方参考价')}>{referencePrice}</del>
           ) : (
             <span
               className='model-group-reference-price'
               aria-label={t('官方参考价')}
             >
-              {formatOfficialPrice(comparison.official, data.currency, 6)}
+              {referencePrice}
             </span>
           ))}
         <strong>
