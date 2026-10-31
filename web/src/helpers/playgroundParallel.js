@@ -18,6 +18,45 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const MAX_PARALLEL_MODELS = 5;
 
+export function comparisonModelNames(selected, models, catalog) {
+  const eligible = new Set(
+    models
+      .filter((m) =>
+        isTextComparisonModel(
+          catalog?.models.find((item) => item.model_name === m.value),
+        ),
+      )
+      .map((m) => m.value),
+  );
+  return [...new Set(selected)]
+    .filter((name) => eligible.has(name))
+    .slice(0, MAX_PARALLEL_MODELS);
+}
+
+export function comparisonSections(messages) {
+  const sections = [];
+  for (const message of messages) {
+    if (message.parallelRound) {
+      const last = sections[sections.length - 1];
+      if (last?.round === message.parallelRound) last.replies.push(message);
+      else
+        sections.push({
+          key: message.id,
+          round: message.parallelRound,
+          replies: [message],
+        });
+    } else sections.push({ key: message.id, message });
+  }
+  return sections;
+}
+
+export function comparisonReplyState(message) {
+  if (message.parallelStopped) return '已停止';
+  if (message.status === 'error') return '失败';
+  if (['loading', 'incomplete'].includes(message.status)) return '生成中';
+  return canUseParallelReply(message) ? '已完成' : '未完成';
+}
+
 export function recoverParallelReplies(messages) {
   return messages?.map((item) =>
     item.parallelRound && ['loading', 'incomplete'].includes(item.status)

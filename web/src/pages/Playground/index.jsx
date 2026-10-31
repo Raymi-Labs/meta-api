@@ -72,6 +72,7 @@ import { SlidersHorizontal, Code2, RefreshCw, Copy } from 'lucide-react';
 import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
 import ModelTabs from '../../components/playground/ModelTabs';
 import ParallelTextChat from '../../components/playground/ParallelTextChat';
+import { comparisonModelNames } from '../../helpers/playgroundParallel';
 import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
 import RequestCodePanel from '../../components/playground/RequestCodePanel';
 import {
@@ -107,6 +108,8 @@ const AccountPlayground = ({ owner }) => {
   const [parallelMode, setParallelMode] = useState(() =>
     state.message.some((item) => item.parallelRound),
   );
+  const [parallelModels, setParallelModels] = useState([]);
+  const [inspectedModel, setInspectedModel] = useState('');
   const {
     inputs,
     parameterEnabled,
@@ -145,6 +148,17 @@ const AccountPlayground = ({ owner }) => {
     (model) => model.model_name === inputs.model,
   );
   const effectiveInputs = withModelCapabilities(inputs, selectedModel);
+  const selectedParallelModels = comparisonModelNames(
+    parallelModels,
+    models,
+    catalogState.catalog,
+  );
+  const previewModelName = selectedParallelModels.includes(inspectedModel)
+    ? inspectedModel
+    : selectedParallelModels[0] || '';
+  const comparisonModel = catalogState.catalog?.models.find(
+    (m) => m.model_name === previewModelName,
+  );
   const pendingCalls = pendingToolCalls(message);
   const hasToolHistory = message.some(
     (item) => item.role === 'tool' || item.tool_calls?.length,
@@ -168,6 +182,10 @@ const AccountPlayground = ({ owner }) => {
   useEffect(() => {
     if (!generating) sendingRef.current = false;
   }, [generating]);
+  useEffect(() => {
+    // Imported custom bodies belong to the original single-request editor.
+    if (customRequestMode && !generating) setParallelMode(false);
+  }, [customRequestMode, generating]);
 
   // API 请求相关
   const { sendRequest, onStopGenerator } = useApiRequest(
@@ -202,6 +220,31 @@ const AccountPlayground = ({ owner }) => {
     !modelsError &&
     models.some((model) => model.value === inputs.model);
   const canSend = currentModelAvailable && !modelLink.pending;
+  useEffect(() => {
+    if (
+      !modelsLoading &&
+      !modelsError &&
+      !catalogState.loading &&
+      !catalogState.error
+    )
+      setParallelModels((previous) => {
+        const next = comparisonModelNames(
+          previous,
+          models,
+          catalogState.catalog,
+        );
+        return JSON.stringify(previous) === JSON.stringify(next)
+          ? previous
+          : next;
+      });
+  }, [
+    modelsLoading,
+    modelsError,
+    models,
+    catalogState.catalog,
+    catalogState.loading,
+    catalogState.error,
+  ]);
   useEffect(() => {
     if (modelsLoading || modelsError) return;
     if (JSON.stringify(tabs) !== JSON.stringify(inputs.modelTabs))
@@ -287,6 +330,7 @@ const AccountPlayground = ({ owner }) => {
       }
     }
     try {
+      if (parallelMode && !previewModelName) return null;
       const previewMessages =
         pendingCalls.length &&
         pendingCalls.every((call) => toolResults[call.id]?.trim())
@@ -302,7 +346,17 @@ const AccountPlayground = ({ owner }) => {
       return buildPlaygroundPreview(
         previewMessages,
         pendingCalls.length ? '' : draft,
-        effectiveInputs,
+        parallelMode
+          ? withModelCapabilities(
+              {
+                ...inputs,
+                model: previewModelName,
+                toolsEnabled: false,
+                imageEnabled: false,
+              },
+              comparisonModel,
+            )
+          : effectiveInputs,
         parameterEnabled,
       );
     } catch {
@@ -317,6 +371,9 @@ const AccountPlayground = ({ owner }) => {
     parameterEnabled,
     customRequestMode,
     customRequestBody,
+    parallelMode,
+    previewModelName,
+    comparisonModel,
   ]);
 
   const previewPayload = useMemo(constructPreviewPayload, [
@@ -622,6 +679,16 @@ const AccountPlayground = ({ owner }) => {
       <OptimizedSettingsPanel
         inputs={inputs}
         model={selectedModel}
+        comparison={
+          parallelMode
+            ? {
+                names: selectedParallelModels,
+                inspected: previewModelName,
+                model: comparisonModel,
+                onInspect: setInspectedModel,
+              }
+            : null
+        }
         catalogState={catalogState}
         parameterEnabled={parameterEnabled}
         models={models}
@@ -644,7 +711,13 @@ const AccountPlayground = ({ owner }) => {
   const codePanel =
     parallelMode && !previewPayload ? (
       <div className='pg-parallel-selection' role='status'>
-        <p>{t('请选择一条完整回答作为后续上下文，或撤销本轮。')}</p>
+        <p>
+          {t(
+            previewModelName
+              ? '请选择一条完整回答作为后续上下文，或撤销本轮。'
+              : '选择文本模型（最多5个）',
+          )}
+        </p>
       </div>
     ) : (
       <RequestCodePanel
@@ -669,32 +742,43 @@ const AccountPlayground = ({ owner }) => {
         onCloseCode={() => setShowDebugPanel(false)}
       >
         <div className='pg-workspace-toolbar'>
-          <ModelTabs
-            models={models}
-            tabs={tabs}
-            activeModel={inputs.model}
-            onSelect={selectModel}
-            onRemove={removeModel}
-            disabled={
-              generating ||
-              pendingCalls.length > 0 ||
-              modelsLoading ||
-              customRequestMode
-            }
-          />
-          <button
-            className='pg-parallel-toggle'
-            aria-pressed={parallelMode}
-            disabled={
-              generating || pendingCalls.length > 0 || customRequestMode
-            }
-            onClick={() => {
-              setParallelMode((value) => !value);
-              setShowDebugPanel(false);
-            }}
+          {!parallelMode && (
+            <ModelTabs
+              models={models}
+              tabs={tabs}
+              activeModel={inputs.model}
+              onSelect={selectModel}
+              onRemove={removeModel}
+              disabled={
+                generating ||
+                pendingCalls.length > 0 ||
+                modelsLoading ||
+                customRequestMode
+              }
+            />
+          )}
+          <div
+            className='pg-mode-switch'
+            role='group'
+            aria-label={t('回答模式')}
           >
-            {t(parallelMode ? '单模型回答' : '多模型同时回答')}
-          </button>
+            {[false, true].map((mode) => (
+              <button
+                key={String(mode)}
+                className='pg-parallel-toggle'
+                aria-pressed={parallelMode === mode}
+                disabled={
+                  generating || pendingCalls.length > 0 || customRequestMode
+                }
+                onClick={() => {
+                  setParallelMode(mode);
+                  setShowDebugPanel(false);
+                }}
+              >
+                {t(mode ? '多模型同时回答' : '单模型回答')}
+              </button>
+            ))}
+          </div>
           <div className='pg-workspace-actions'>
             <button
               className='pg-open-settings'
@@ -774,6 +858,8 @@ const AccountPlayground = ({ owner }) => {
             draft={draft}
             setDraft={setDraft}
             isMobile={isMobile}
+            selected={selectedParallelModels}
+            setSelected={setParallelModels}
           />
         ) : (
           <ChatArea

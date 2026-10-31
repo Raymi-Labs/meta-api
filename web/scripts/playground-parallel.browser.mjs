@@ -134,9 +134,15 @@ try {
       };
     if (url.pathname === '/api/user/self') body.data = user;
     if (url.pathname === '/api/user/models')
-      body.data = catalog.map((m) => m.model_name);
+      body.data =
+        url.searchParams.get('group') === 'limited'
+          ? ['model-a']
+          : catalog.map((m) => m.model_name);
     if (url.pathname === '/api/user/self/groups')
-      body.data = { default: { ratio: 1, desc: 'Default' } };
+      body.data = {
+        default: { ratio: 1, desc: 'Default' },
+        limited: { ratio: 1, desc: 'Limited' },
+      };
     if (url.pathname === '/api/pricing')
       body = {
         success: true,
@@ -155,7 +161,10 @@ try {
       ({ text, scope }) => {
         const root = scope ? document.querySelector(scope) : document;
         const el = [...root.querySelectorAll('button')].find(
-          (b) => b.innerText.trim() === text,
+          (b) =>
+            b.innerText.trim() === text ||
+            (text === '同时发送' &&
+              /^发送给 \d+ 个模型$/.test(b.innerText.trim())),
         );
         if (!el) throw Error('Missing ' + text);
         el.click();
@@ -197,6 +206,46 @@ try {
   await clickText('多模型同时回答');
   await page.waitForSelector('.pg-parallel-selection .semi-select');
   await selectModels(['model-a', 'model-b']);
+  assert.equal(await page.$('.pg-model-tabs'), null);
+  assert.equal(
+    await page.$eval(
+      '.pg-mode-switch button[aria-pressed="true"]',
+      (el) => el.innerText,
+    ),
+    '多模型同时回答',
+  );
+  assert.equal(
+    await page
+      .$$eval('.pg-inspector-models button', (els) =>
+        els.map((el) => el.innerText),
+      )
+      .then((names) => names.join(',')),
+    'model-a,model-b',
+  );
+  await clickText('model-b', '.pg-inspector-models');
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.pg-inspector-models button[aria-pressed="true"]')
+        ?.innerText === 'model-b',
+  );
+  await page.click('.pg-inspector-details summary');
+  await page.waitForSelector('.pg-inspector-details[open] .pg-model-card');
+  assert.equal(
+    await page.$eval(
+      '.pg-inspector-details .pg-model-identity h2',
+      (el) => el.innerText,
+    ),
+    'model-b',
+  );
+  assert.equal(requests.length, 0);
+  await clickText('单模型回答', '.pg-mode-switch');
+  await page.waitForSelector('.pg-model-tabs');
+  await clickText('多模型同时回答', '.pg-mode-switch');
+  await page.waitForSelector('.pg-parallel-selection');
+  assert.equal(
+    await page.$$eval('.pg-inspector-models button', (els) => els.length),
+    2,
+  );
   await page.type('.pg-parallel-composer textarea', 'First question');
   await clickText('同时发送');
   await clickText('同时发送').catch(() => {});
@@ -211,6 +260,34 @@ try {
   );
   assert.equal(requests.length, 2);
   assert.deepEqual(requests[0].messages, requests[1].messages);
+  assert.equal(
+    await page.$eval('.pg-round-heading', (el) =>
+      el.innerText.includes('已结束 2/2'),
+    ),
+    true,
+  );
+  assert.equal(
+    await page.$eval('.pg-round-context', (el) =>
+      el.innerText.includes('请选择'),
+    ),
+    true,
+  );
+  assert.equal(await page.$('.pg-parallel-selection [role="status"]'), null);
+  await clickText('列表', '.pg-layout-switch');
+  await page.waitForSelector('.pg-round-answers.is-list');
+  await clickText('并排', '.pg-layout-switch');
+  await page.waitForSelector('.pg-round-answers.is-grid');
+  const pair = await page.$$eval(
+    '.pg-round-answers .pg-parallel-reply',
+    (els) =>
+      els.map((el) => ({
+        x: el.getBoundingClientRect().x,
+        y: el.getBoundingClientRect().y,
+      })),
+  );
+  assert.equal(pair[0].y, pair[1].y);
+  assert.notEqual(pair[0].x, pair[1].x);
+  assert.equal(requests.length, 2);
   failB = false;
   await clickText('重试', '.pg-parallel');
   await page.waitForFunction(() =>
@@ -229,6 +306,14 @@ try {
       .find((b) => b.innerText === '用这条继续')
       .click();
   });
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.pg-round-context')
+      ?.innerText.includes('下一轮使用 model-a 的回答'),
+  );
+  await page.screenshot({
+    path: '/tmp/playground-comparison-selected-desktop.png',
+  });
   await page.type('.pg-parallel-composer textarea', 'Next question');
   await clickText('同时发送');
   await page.waitForFunction(
@@ -243,6 +328,12 @@ try {
   assert.deepEqual(
     requests[3].messages.map((m) => m.content),
     ['Same system', 'First question', 'model-a answer', 'Next question'],
+  );
+  assert.equal(
+    await page.$$eval('.pg-round-context', (els) =>
+      els[0].innerText.includes('本轮已采用 model-a 的回答'),
+    ),
+    true,
   );
   await clickText('清空对话', '.pg-parallel');
   await selectModels(['model-c', 'model-d', 'model-e']);
@@ -267,12 +358,12 @@ try {
   assert.equal(new Set(requests.slice(-5).map((r) => r.model)).size, 5);
   for (const request of requests.slice(-5))
     assert.deepEqual(request.messages, requests.at(-1).messages);
-  await clickText('停止生成', '.pg-parallel-reply:nth-child(2)');
+  await clickText('停止生成', '.pg-parallel-reply[data-model="model-a"]');
   const bIndex = held.findIndex((fn) => fn.model === 'model-b');
   await held.splice(bIndex, 1)[0]();
   await page.waitForFunction(() =>
     document
-      .querySelector('.pg-parallel-reply:nth-child(3)')
+      .querySelector('.pg-parallel-reply[data-model="model-b"]')
       ?.textContent.includes('用这条继续'),
   );
   await clickText('停止生成', '.pg-parallel-composer');
@@ -280,24 +371,34 @@ try {
   hold = false;
   await page.waitForFunction(() =>
     document
-      .querySelector('.pg-parallel-reply:nth-child(4)')
+      .querySelector('.pg-parallel-reply[data-model="model-c"]')
       ?.innerText.includes('已停止'),
   );
   assert.ok(
     !(
       await page.$eval(
-        '.pg-parallel-reply:nth-child(2)',
+        '.pg-parallel-reply[data-model="model-a"]',
         (el) => el.textContent,
       )
     ).includes('model-a answer'),
   );
   assert.equal(
-    await page.$eval('.pg-parallel-reply:nth-child(3)', (el) =>
+    await page.$eval('.pg-parallel-reply[data-model="model-b"]', (el) =>
       el.textContent.includes('已停止'),
     ),
     false,
   );
   await page.setViewport({ width: 390, height: 900 });
+  const mobilePair = await page.$$eval(
+    '.pg-round-answers .pg-parallel-reply',
+    (els) =>
+      els.slice(0, 2).map((el) => ({
+        x: el.getBoundingClientRect().x,
+        y: el.getBoundingClientRect().y,
+      })),
+  );
+  assert.equal(mobilePair[0].x, mobilePair[1].x);
+  assert.notEqual(mobilePair[0].y, mobilePair[1].y);
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth + 1,
@@ -409,6 +510,81 @@ try {
   await page.waitForFunction(
     () => document.querySelectorAll('.pg-parallel-reply').length === 0,
   );
+  // Group permissions prune both the sending list and the independent inspector.
+  await page.setViewport({ width: 1440, height: 1000 });
+  await selectModels(['model-a', 'model-b']);
+  const noNewRequests = requests.length;
+  await clickText('model-b', '.pg-inspector-models');
+  await page.click('.pg-group-section .semi-select');
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.semi-typography')].some(
+      (el) => el.textContent === 'Limited',
+    ),
+  );
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.semi-typography')]
+      .find((el) => el.textContent === 'Limited')
+      ?.click(),
+  );
+  await page.waitForFunction(
+    () => document.querySelectorAll('.pg-inspector-models button').length === 1,
+  );
+  assert.equal(
+    await page.$eval('.pg-inspector-models button', (el) => el.innerText),
+    'model-a',
+  );
+  await page.type('.pg-parallel-composer textarea', 'Must not send');
+  assert.equal(
+    await page.$$eval(
+      '.pg-parallel-composer button',
+      (els) => els.find((el) => el.innerText.startsWith('发送给')).disabled,
+    ),
+    true,
+  );
+  assert.equal(requests.length, noNewRequests);
+  await page.evaluate(() => localStorage.setItem('theme-mode', 'dark'));
+  await page.reload();
+  await page.waitForSelector('.pg-parallel-toggle');
+  await clickText('多模型同时回答', '.pg-mode-switch');
+  await page.waitForSelector('.pg-parallel');
+  await page.screenshot({ path: '/tmp/playground-comparison-dark.png' });
+  await page.evaluate(() => {
+    const key = 'playground_config:user:7';
+    const conf = JSON.parse(localStorage.getItem(key));
+    conf.customRequestMode = true;
+    conf.customRequestBody = JSON.stringify({
+      model: 'model-a',
+      messages: [{ role: 'user', content: 'custom' }],
+      stream: false,
+    });
+    localStorage.setItem(key, JSON.stringify(conf));
+    localStorage.setItem(
+      'playground_messages:user:7',
+      JSON.stringify({
+        messages: [
+          { id: 'q', role: 'user', content: 'q' },
+          {
+            id: 'a',
+            role: 'assistant',
+            parallelRound: 'q',
+            parallelModel: 'model-a',
+            parallelChosen: true,
+            status: 'complete',
+            content: 'done',
+          },
+        ],
+      }),
+    );
+  });
+  const beforeCustom = requests.length;
+  await page.reload();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.pg-mode-switch button[aria-pressed="true"]')
+        ?.innerText === '单模型回答',
+  );
+  assert.equal(await page.$('.pg-parallel'), null);
+  assert.equal(requests.length, beforeCustom);
   assert.deepEqual(errors, []);
   console.log(
     'PASS: concurrent isolated replies, equal snapshots, failure-only retry, chosen continuation, 5 models with sixth disabled, stop/late response, mobile, reload without resending.',
