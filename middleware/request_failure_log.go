@@ -16,6 +16,7 @@ func RequestFailureLog() gin.HandlerFunc {
 		if c.GetString(RouteTagKey) == "relay" {
 			service.RecordFinalRequestFailure(c, time.Since(start))
 			service.ObserveQuotaNoticeOutcome(c)
+			service.ObserveTokenQuotaOutcome(c)
 		}
 	}
 }

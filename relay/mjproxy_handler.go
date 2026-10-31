@@ -233,6 +233,7 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 	}
 
 	if userQuota-priceData.Quota < 0 {
+		service.MarkRequestFailure(c, types.NewErrorWithStatusCode(&types.QuotaRejection{Source: service.BillingSourceWallet, Available: int64(userQuota), Required: int64(priceData.Quota), Known: true, Message: "quota_not_enough"}, types.ErrorCodeInsufficientUserQuota, http.StatusBadRequest))
 		return &dto.MidjourneyResponse{
 			Code:        4,
 			Description: "quota_not_enough",
@@ -543,6 +544,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 	}
 
 	if consumeQuota && userQuota-priceData.Quota < 0 {
+		service.MarkRequestFailure(c, types.NewErrorWithStatusCode(&types.QuotaRejection{Source: service.BillingSourceWallet, Available: int64(userQuota), Required: int64(priceData.Quota), Known: true, Message: "quota_not_enough"}, types.ErrorCodeInsufficientUserQuota, http.StatusBadRequest))
 		return &dto.MidjourneyResponse{
 			Code:        4,
 			Description: "quota_not_enough",
