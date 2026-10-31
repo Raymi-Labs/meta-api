@@ -1,0 +1,123 @@
+{
+  "ParticleAI": {
+    "url": "https://openrouter.ai/images/icons/Particle.svg",
+    "mode": "mono",
+    "file": "Particle.svg",
+    "sha256": "056eba0d5b7368d820696bc96aede16bda47286708507bb0cba5a11b0663b97b"
+  },
+  "Recursive": {
+    "url": "https://openrouter.ai/images/icons/Recursive.svg",
+    "mode": "mono",
+    "file": "Recursive.svg",
+    "sha256": "cd100feb575db41166e6590834c3442167065b8661340ca87dbd774db2844ba4"
+  },
+  "PrismML": {
+    "url": "https://openrouter.ai/images/icons/PrismML.svg",
+    "mode": "mono",
+    "file": "PrismML.svg",
+    "sha256": "8d35fea03d012923c6cc3d0b80a43536938b08a9989433b0d2dcede484232870"
+  },
+  "XingChen": {
+    "url": "https://openrouter.ai/images/icons/XingChen-Shield.png",
+    "mode": "image",
+    "file": "XingChen-Shield.png",
+    "sha256": "aa2677b4117279c147704287f930b5d5a670fab4e28235cfc55c6e5ed8eb82ce"
+  },
+  "NexAGI": {
+    "url": "https://openrouter.ai/images/icons/NexAGI.svg",
+    "mode": "image",
+    "file": "NexAGI.svg",
+    "sha256": "61138e5b098100d98c07cfc7e073a792e6ccbaac7b6fc9362dd34f0515911a8e"
+  },
+  "Unbiased": {
+    "url": "https://openrouter.ai/images/icons/Unbiased.png",
+    "mode": "image",
+    "file": "Unbiased.png",
+    "sha256": "b4c442620230fcc8b487131252c4a32cc1a25a4dccc89150d3837d7d09df80c8"
+  },
+  "TheDrummer": {
+    "url": "https://openrouter.ai/images/icons/TheDrummer.png",
+    "mode": "image",
+    "file": "TheDrummer.png",
+    "sha256": "0acfa4c7ddaf4552f96a0879533e135db0defddb753fcb204b6545d190761ba0"
+  },
+  "Elorian": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Felorian.ai%2Fassets%2Ffavicon.svg&size=256",
+    "mode": "image",
+    "file": "Elorian.png",
+    "site": "https://elorian.ai/assets/favicon.svg",
+    "sha256": "d13662074742e1198ad06701bfbbfc4e6551ad0ea561469d583e087fdd600220"
+  },
+  "Moondream": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Fmoondream.ai&size=256",
+    "mode": "image",
+    "file": "Moondream.png",
+    "site": "https://moondream.ai",
+    "sha256": "1d38a75e2281c515bba153cc44616776e5b7866bf3808369b25e84cc2c842250"
+  },
+  "Reflection": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Freflection.ai%2Ficon.svg&size=256",
+    "mode": "image",
+    "file": "Reflection.png",
+    "site": "https://reflection.ai/icon.svg",
+    "sha256": "a2a4ea573ca6fa402d140cee69cbf223ed9fd8a93801404c2c2ad25c179d40a5"
+  },
+  "ScaleDown": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Fscaledown.ai&size=256",
+    "mode": "image",
+    "file": "ScaleDown.png",
+    "site": "https://scaledown.ai",
+    "sha256": "6bd6d9779e6b916eafd4c7a8a03aaa534212b4dc94d5f9f628861ae4ddecf6f8"
+  },
+  "InclusionAI": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Fwww.inclusion-ai.org%2F&size=256",
+    "mode": "image",
+    "file": "InclusionAI.png",
+    "site": "https://www.inclusion-ai.org/",
+    "sha256": "ec5a076970a6d263487cd262020e9317da7cec3bcd4cd76654bb71cdf1f55b26"
+  },
+  "ThinkingMachines": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Fthinkingmachines.ai%2F&size=256",
+    "mode": "image",
+    "file": "ThinkingMachines.png",
+    "site": "https://thinkingmachines.ai/",
+    "sha256": "8bddaca08009df60601e992a4f7dce88332ca512d2983614dd955c6f7c01d9fc"
+  },
+  "Writer": {
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE%2CSIZE%2CURL&url=https%3A%2F%2Fwriter.com%2F&size=256",
+    "mode": "image",
+    "file": "Writer.png",
+    "site": "https://writer.com/",
+    "sha256": "57fa212ac05b5bf7b49142507f28ff2e4ceac438f9186d342bcf08bd1e1ca492"
+  },
+  "Anthracite": {
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/658a46cbfb9c2bdfae75b3a6/HDYkduzAwQRNHuRl5eYdP.png",
+    "mode": "image",
+    "file": "Anthracite.webp",
+    "sha256": "d3150c773c822a63a79880b199911f6b6a5e2dec945b0af409dfa047a25ffda2"
+  },
+  "Undi95": {
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/63ab1241ad514ca8d1430003/9UwuBl5D-GuIJKIOVHm3Z.png",
+    "mode": "image",
+    "file": "Undi95.webp",
+    "sha256": "77db387b4d9ac910b7919ac5edf01af9998b98b624a5f5a896d69cad51542823"
+  },
+  "Sao10K": {
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/64be6a5376a6e2efccc638c1/gvRRLHsicTCxpURJeQDv3.jpeg",
+    "mode": "image",
+    "file": "Sao10K.webp",
+    "sha256": "a333344975a7ab74a5e7a0ba27e5080b0acc5518eb1123e2b8b1c3e66461ae43"
+  },
+  "Gryphe": {
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/64ae4107ad6218d51a2a7d0c/3dcor68aYBKEcTlOUHJpK.png",
+    "mode": "image",
+    "file": "Gryphe.webp",
+    "sha256": "46eaab8fb9e95bbb09ce52fd4f1758aa039f9d45a99993aac5dc1048f0343dba"
+  },
+  "Mancer": {
+    "url": "https://mancer.tech/resources/Phantom%20Favicon.svg",
+    "mode": "image",
+    "file": "Mancer.svg",
+    "sha256": "f0bffaeb231ac19bd86eda9a94f45f5675ae8a28db637bc043604831bb61e8bb"
+  }
+}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { globSync, readFileSync } from 'node:fs';
 import {
   createProviderIconRegistry,
+  createLocalProviderIconRegistry,
   resolveProviderIcon,
 } from '../src/helpers/providerIconRegistry.js';
 
@@ -39,6 +40,61 @@ test('POSIX and Windows paths register only supported JS icon components', () =>
     assert.equal(resolveProviderIcon(registry, 'Unknown', 'Color'), null);
     assert.equal(resolveProviderIcon(registry, '../../OpenAI'), null);
   }
+});
+
+test('local registry only accepts checked-in component names', () => {
+  const loader = () => {};
+  const registry = createLocalProviderIconRegistry({
+    '../assets/provider-icons/components/Inception.jsx': loader,
+    '..\\assets\\provider-icons\\components\\ZAI.jsx': loader,
+    '../assets/provider-icons/components/../../Injected.jsx': loader,
+    'https://example.com/Inception.jsx': loader,
+    '../assets/provider-icons/components/Unknown.js': loader,
+  });
+  assert.deepEqual([...registry.keys()], ['Inception.Mono', 'ZAI.Mono']);
+  assert.equal(resolveProviderIcon(registry, 'ZAI', 'Color'), 'ZAI.Mono');
+  assert.equal(
+    resolveProviderIcon(registry, 'https://example.com/logo.svg'),
+    null,
+  );
+});
+
+test('every onboarded vendor resolves to a packaged component or local asset', () => {
+  const registry = createProviderIconRegistry(
+    Object.fromEntries(
+      [...globSync('node_modules/@lobehub/icons/es/*/components/*.js')].map(
+        (file) => [file, () => {}],
+      ),
+    ),
+  );
+  for (const [key, loader] of createLocalProviderIconRegistry(
+    Object.fromEntries(
+      [...globSync('src/assets/provider-icons/components/*.jsx')].map(
+        (file) => [file, () => {}],
+      ),
+    ),
+  ))
+    registry.set(key, loader);
+  const assets = JSON.parse(
+    readFileSync('src/assets/provider-icons/assets.json', 'utf8'),
+  );
+  for (const [name, asset] of Object.entries(assets)) {
+    assert.match(
+      asset.file,
+      /^[A-Za-z][A-Za-z0-9-]*\.(svg|png|jpg|jpeg|webp)$/,
+    );
+    const data = readFileSync(`src/assets/provider-icons/images/${asset.file}`);
+    assert.ok(data.length > 100, name);
+    assert.ok(['mono', 'image'].includes(asset.mode));
+    registry.set(`${name}.Mono`, () => {});
+  }
+  // Xiaomi is an existing Simple Icons alias in render.jsx.
+  registry.set('Xiaomi.Mono', () => {});
+  const vendors = JSON.parse(
+    readFileSync('../docs/channel/openrouter-vendor-icons.json', 'utf8'),
+  );
+  for (const vendor of vendors)
+    assert.ok(resolveProviderIcon(registry, vendor.icon), vendor.name);
 });
 test('installed package covers every configured provider and special variant', () => {
   const files = [
