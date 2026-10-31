@@ -38,6 +38,18 @@ const pricing = {
     quota_type: 0,
     model_ratio: 1,
     completion_ratio: 2,
+    supports_cache_read: true,
+    cache_ratio: 0.1,
+    supports_cache_creation: true,
+    cache_creation_ratio: 1.25,
+    supports_cache_creation_ttl: true,
+    cache_creation_ratio_1h: 2,
+    ...(model_name === 'responses-fixture'
+      ? {
+          billing_mode: 'tiered_expr',
+          billing_expr: 'tier("base", p*4+c*20+cr*.4+cc*5+cc1h*8)',
+        }
+      : {}),
   })),
 };
 const browser = await puppeteer.launch({
@@ -95,31 +107,54 @@ try {
       });
     });
     await page.goto(baseURL + '/pricing');
-    await page.waitForSelector(
-      'article[aria-label="gpt-chat-fixture"] .model-protocol-template',
-    );
+    await page.waitForSelector('article[aria-label="gpt-chat-fixture"]');
     assert.equal(
-      await page.$eval('body', (el) => el.getAttribute('theme-mode') === 'dark'),
+      await page.$eval(
+        'body',
+        (el) => el.getAttribute('theme-mode') === 'dark',
+      ),
       mobile,
     );
-    const card = await page.$eval(
-      'article[aria-label="gpt-chat-fixture"]',
-      (el) => el.innerText,
-    );
-    assert.match(card, /已声明协议.*Chat Completions/s);
-    assert.match(card, /Responses · 示例 · 未声明/);
-    for (const name of [
-      'responses-fixture',
-      'image-fixture',
-      'video-fixture',
-      'unknown-fixture',
-    ]) {
-      assert.equal(
-        await page.$(`article[aria-label="${name}"] .model-protocol-template`),
-        null,
+    for (const [name] of entries) {
+      const card = await page.$eval(
+        `article[aria-label="${name}"]`,
+        (el) => el.innerText,
+      );
+      assert.doesNotMatch(
+        card,
+        /已声明协议|Responses · 示例|缓存.*价格|阶梯计费|OpenAI|动态计费|按量计费/,
         name,
       );
+      assert.match(card, /输入价格/);
+      assert.match(card, /补全价格/);
     }
+    assert.deepEqual(
+      await page.$$eval(
+        'article[aria-label="gpt-chat-fixture"] .pricing-card-prices strong',
+        (els) => els.map((el) => el.textContent),
+      ),
+      ['¥2.0000', '¥4.0000'],
+    );
+    assert.deepEqual(
+      await page.$$eval(
+        'article[aria-label="responses-fixture"] .pricing-card-prices strong',
+        (els) => els.map((el) => el.textContent),
+      ),
+      ['¥4.0000', '¥20.0000'],
+    );
+    await page.click('button[aria-label="复制模型名称: gpt-chat-fixture"]');
+    await page.waitForFunction(
+      () => window.__protocolCopy === 'gpt-chat-fixture',
+    );
+    await page.click('input[aria-label="选择模型: gpt-chat-fixture"]');
+    assert.match(page.url(), /\/pricing$/);
+    await page.click('input[aria-label="选择模型: gpt-chat-fixture"]');
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 2,
+      ),
+      true,
+    );
     if (screenshotDir)
       await page.screenshot({
         path: `${screenshotDir}/catalog-${mobile ? 'mobile' : 'desktop'}.png`,
@@ -169,14 +204,15 @@ try {
       /已声明协议: Responses/,
     );
     await page.click('.pricing-reset');
-    await page.waitForSelector(
-      'article[aria-label="gpt-chat-fixture"] .model-protocol-template',
-    );
-    await page.click(
-      'article[aria-label="gpt-chat-fixture"] .model-protocol-template',
-    );
+    await page.waitForSelector('article[aria-label="gpt-chat-fixture"]');
+    await page.click('article[aria-label="gpt-chat-fixture"]');
     await page.waitForSelector('#quick-start .model-quickstart pre');
-    assert.match(page.url(), /\/model\/gpt-chat-fixture#quick-start$/);
+    assert.match(page.url(), /\/model\/gpt-chat-fixture$/);
+    for (const key of ['cache', 'create-cache', 'create-cache-1h']) {
+      assert(await page.$(`.model-group-row [data-price-key="${key}"]`), key);
+    }
+    await page.select('select[aria-label="接口协议"]', 'openai-response');
+    await page.$eval('#quick-start', (el) => el.scrollIntoView());
     assert.equal(await page.$('#endpoints'), null);
     assert.doesNotMatch(
       await page.$eval('.model-detail-sections', (el) => el.innerText),
