@@ -46,7 +46,7 @@ import {
 import { useOfficialExchangeRate } from '../../hooks/model-pricing/useOfficialExchangeRate';
 import ModelExchangeRate from './ModelExchangeRate';
 import ModelSectionHelp from './ModelSectionHelp';
-import { officialComparisonUnit } from '../../helpers/modelGroupDiscount';
+import { visibleOfficialTiers } from '../../helpers/modelOfficialPricing';
 import ModelOfficialPricing from './ModelOfficialPricing';
 import './modelDetail.css';
 
@@ -81,12 +81,10 @@ export default function ModelDetail() {
   });
   const pageRef = useRef(null);
   const [priceGroup, setPriceGroup] = useState('all');
-  const [officialTierIndex, setOfficialTierIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useLayoutEffect(() => {
     pageRef.current?.scrollIntoView({ block: 'start' });
     setPriceGroup('all');
-    setOfficialTierIndex(0);
   }, [location.pathname]);
   useLayoutEffect(() => {
     if (
@@ -143,13 +141,7 @@ export default function ModelDetail() {
       group !== 'auto' && group && model.enable_groups?.includes(group),
   );
   const selectedGroup = groups.includes(priceGroup) ? priceGroup : 'all';
-  const officialTiers = (model.official_pricing?.tiers || []).filter(
-    (tier) => tier.unit === officialComparisonUnit(model),
-  );
-  const activeOfficialTierIndex = officialTiers[officialTierIndex]
-    ? officialTierIndex
-    : 0;
-  const officialTier = officialTiers[activeOfficialTierIndex];
+  const officialTiers = visibleOfficialTiers(model.official_pricing);
   const icon = model.icon || model.vendor_icon;
   const related =
     model.vendor_id || model.vendor_name
@@ -284,7 +276,7 @@ export default function ModelDetail() {
                       )}
                       <p className='model-detail-caption'>
                         {t(
-                          '逐项对比所选官方档位；动态计费按本站首档展示，不代表整次请求优惠。',
+                          '逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。',
                         )}
                       </p>
                     </>
@@ -364,28 +356,11 @@ export default function ModelDetail() {
                 )}
               </div>
             )}
-            {officialTiers.length > 0 && (
-              <div className='model-group-comparison-controls'>
-                <label>
-                  <span id='official-tier-label'>{t('官方对比档位')}</span>
-                  <Select
-                    aria-labelledby='official-tier-label'
-                    value={activeOfficialTierIndex}
-                    onChange={setOfficialTierIndex}
-                    optionList={officialTiers.map((tier, index) => ({
-                      value: index,
-                      label: tier.label,
-                    }))}
-                  />
-                </label>
-              </div>
-            )}
             <ModelGroupRows
               key={model.model_name}
               model={model}
               groups={groups}
               selectedGroup={selectedGroup}
-              officialTier={officialTier}
               data={data}
               health={uptimeHealth}
             />

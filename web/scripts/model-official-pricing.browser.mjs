@@ -57,11 +57,35 @@ const pricing = {
       display_name: 'same-model',
       description: '',
       billing_mode: 'tiered_expr',
-      billing_expr: 'v1:tier("base", p*10+c*20)',
+      billing_expr:
+        'v1:len <= 272000 ? tier("base", p*10+c*20) : tier("long", p*20+c*30)',
       official_pricing: {
         currency: 'USD',
         tiers: [
-          { label: '标准', unit: 'million_tokens', input: 20, output: 40 },
+          {
+            label: 'Standard · ≤ 272K input tokens · cache 30m',
+            unit: 'million_tokens',
+            input: 20,
+            output: 40,
+          },
+          {
+            label: 'Standard · > 272K input tokens · cache 30m',
+            unit: 'million_tokens',
+            input: 40,
+            output: 60,
+          },
+          {
+            label: 'Standard · ≤ 272K input tokens · cache 12h',
+            unit: 'million_tokens',
+            input: 20,
+            output: 40,
+          },
+          {
+            label: 'Standard · > 272K input tokens · cache 12h',
+            unit: 'million_tokens',
+            input: 40,
+            output: 60,
+          },
         ],
       },
     },
@@ -422,7 +446,6 @@ const expectActiveSection = async (page, id) => {
 
 const selectOption = async (page, label, text) => {
   const selector = {
-    官方对比档位: '.model-group-comparison-controls .semi-select',
     价格模式: '.model-detail-settings .semi-select',
     分组: '.model-detail-price-controls .semi-select',
     对比分组: '[role="combobox"][aria-labelledby="compare-group-label"]',
@@ -737,7 +760,9 @@ try {
       '较官方低 97.1%',
     );
     assert.equal(
-      await page.$('.model-group-row [data-price-key="cache"] del'),
+      await page.$(
+        '.model-group-row:first-of-type tbody tr:first-child [data-price-key="cache"] del',
+      ),
       null,
     );
     assert.equal(
@@ -770,14 +795,21 @@ try {
       ),
       '较官方低 97.1%',
     );
-    await selectOption(page, '官方对比档位', 'Input > 272K');
-    await page.waitForFunction(
-      () =>
-        document.querySelector(
-          '.model-group-row [data-price-key="input"] .model-group-discount',
-        )?.textContent === '较官方低 98.6%',
+    assert.equal(await page.$('.model-group-comparison-controls'), null);
+    assert.deepEqual(
+      await page.$$eval(
+        '.model-group-row:first-of-type .model-group-tier-table tbody th',
+        (els) => els.map((el) => el.textContent),
+      ),
+      ['Input ≤ 272K', 'Input > 272K'],
     );
-    await selectOption(page, '官方对比档位', 'Input ≤ 272K');
+    assert.equal(
+      await page.$eval(
+        '.model-group-row:first-of-type .model-group-tier-table tbody tr:nth-child(2) [data-price-key="input"] .model-group-discount',
+        (el) => el.textContent,
+      ),
+      '较官方低 98.6%',
+    );
     await clickButton(page, '显示设置');
     await selectOption(page, '价格模式', 'USD ($)');
     await page.waitForFunction(
@@ -850,6 +882,50 @@ try {
       '[data-price-key="tiered-p"] .model-group-discount',
     );
     await expectActiveSection(page, 'official-pricing');
+    assert.equal(
+      await page.$$eval('#official-pricing tbody tr', (els) => els.length),
+      2,
+    );
+    assert.equal(
+      await page.$$eval(
+        '.model-group-tier-table tbody tr',
+        (els) => els.length,
+      ),
+      2,
+    );
+    assert.equal(
+      await page.$eval('#official-pricing', (el) =>
+        /12h|30m/.test(el.textContent),
+      ),
+      false,
+    );
+    assert.equal(
+      await page.$eval('.model-group-tier-table', (el) =>
+        /12h|30m/.test(el.textContent),
+      ),
+      false,
+    );
+    const amounts = await page.$$eval(
+      '.model-group-tier-table [data-price-key="tiered-p"] strong',
+      (els) => els.map((el) => Number(el.textContent.slice(1))),
+    );
+    assert.equal(amounts[1], amounts[0] * 2);
+    await page.setViewport({ width: dark ? 390 : 1440, height: 1000 });
+    await page.$eval('.model-group-row', (el) =>
+      el.scrollIntoView({ block: 'center' }),
+    );
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'tiers-mobile-dark.png' : 'tiers-desktop.png',
+      ),
+    });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 2,
+      ),
+      true,
+    );
     assert.equal(
       await page.$eval(
         '[data-price-key="tiered-p"] .model-group-discount',

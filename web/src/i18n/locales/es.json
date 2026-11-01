@@ -6878,6 +6878,7 @@
     "按供应商、功能、标签和输入模态发现模型。": "Descubre modelos por proveedor, función, etiqueta y modalidad de entrada.",
     "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Usa los metadatos automáticamente. Las inclusiones o exclusiones manuales se conservan al sincronizar.",
     "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "Se factura según la duración de vídeo solicitada. Los precios incluyen los multiplicadores de grupo y tiempo y usan el modo de precio seleccionado.",
-    "多份生成按份数累加。": "Cada vídeo generado se cobra por separado."
+    "多份生成按份数累加。": "Cada vídeo generado se cobra por separado.",
+    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Los precios del sitio se muestran por nivel. Solo se comparan con los precios oficiales cuando coinciden las condiciones; no indican un descuento para toda la solicitud."
   }
 }

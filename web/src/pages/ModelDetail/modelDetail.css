@@ -1301,20 +1301,6 @@ html.dark .model-metric-chart {
   }
 }
 
-.model-group-comparison-controls {
-  margin: 16px 0 20px;
-}
-.model-group-comparison-controls label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-}
-.model-group-comparison-controls .semi-select {
-  min-width: 180px;
-  max-width: 100%;
-}
 .model-group-values dd > .model-group-price-item {
   display: flex;
   flex-direction: column;
@@ -1355,15 +1341,6 @@ html.dark .model-metric-chart {
 .model-group-discount-higher {
   background: var(--semi-color-warning-light-default);
   color: var(--semi-color-warning);
-}
-@media (max-width: 600px) {
-  .model-group-comparison-controls label {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .model-group-comparison-controls .semi-select {
-    width: 100%;
-  }
 }
 
 .model-attributes-grid {
@@ -1650,4 +1627,50 @@ html.dark .model-metric-chart {
 }
 .model-video-price-note {
   margin: 0;
+}
+
+.model-group-tier-table {
+  width: 100%;
+  min-width: 0;
+}
+.model-group-tier-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.model-group-tier-table th,
+.model-group-tier-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--detail-divider);
+  vertical-align: top;
+}
+.model-group-tier-table thead th {
+  background: var(--detail-soft);
+  color: var(--detail-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.model-group-tier-table tbody th {
+  min-width: 180px;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.model-group-tier-table tbody th small {
+  display: block;
+  margin-top: 6px;
+}
+.model-group-tier-table td {
+  min-width: 160px;
+  font-variant-numeric: tabular-nums;
+}
+.model-group-tier-table .model-group-price-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.model-group-tier-table tr:last-child > * {
+  border-bottom: 0;
 }

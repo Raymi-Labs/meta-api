@@ -19,6 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState } from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
+import ModelGroupTierTable from './ModelGroupTierTable';
+import { groupTierRows } from '../../helpers/modelGroupTiers';
+import { parseTiersFromExpr } from '../../helpers/render';
+import { splitBillingExprAndRequestRules } from '../Setting/Ratio/components/requestRuleExpr';
+import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
+import { isImagePriceExpression } from '../../helpers/imagePricing';
 import { Link } from 'react-router-dom';
 import { Button, Input, Pagination } from '@douyinfe/semi-ui';
 import { ChevronDown, Copy } from 'lucide-react';
@@ -46,11 +52,20 @@ export default function ModelGroupRows({
   model,
   groups,
   selectedGroup,
-  officialTier,
   data,
   health,
 }) {
   const { t } = data;
+  const isTokenExpression =
+    model.billing_mode === 'tiered_expr' &&
+    !isVideoPriceExpression(model.billing_expr) &&
+    !isImagePriceExpression(model.billing_expr);
+  const tiers = isTokenExpression
+    ? parseTiersFromExpr(
+        splitBillingExprAndRequestRules(model.billing_expr || '').billingExpr,
+      )
+    : [];
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState([]);
@@ -97,19 +112,28 @@ export default function ModelGroupRows({
         </p>
       )}
       {filtered.slice((currentPage - 1) * 6, currentPage * 6).map((group) => {
-        const { items, data: pricing } = getModelCatalogPricing(
-          {
-            record: model,
-            selectedGroup: group,
-            groupRatio: data.groupRatio,
-            timeRatioMap: data.timeRatioMap,
-            currency: data.currency,
-            quotaDisplayType: data.siteDisplayType,
-            tokenUnit: data.tokenUnit,
-            displayPrice: data.displayPrice,
-          },
-          t,
-        );
+        const getPricing = (tierIndex = 0) =>
+          getModelCatalogPricing(
+            {
+              record: model,
+              tierIndex,
+              allTiers: true,
+              selectedGroup: group,
+              groupRatio: data.groupRatio,
+              timeRatioMap: data.timeRatioMap,
+              currency: data.currency,
+              quotaDisplayType: data.siteDisplayType,
+              tokenUnit: data.tokenUnit,
+              displayPrice: data.displayPrice,
+            },
+            t,
+          );
+        const { items, data: pricing } = getPricing();
+        const rows =
+          !pricing.isDynamicPricing || tiers.length
+            ? groupTierRows(model, tiers, getPricing, t)
+            : [];
+        const officialTier = rows[0]?.officialTier;
         const stats = health.error ? undefined : statsByGroup.get(group);
         const metric = resolveGroupHealthMetric(stats, group, true);
         const latency = getHealthLatency(stats, metric, true);
@@ -129,50 +153,54 @@ export default function ModelGroupRows({
               />
             </header>
             <div className='model-group-values'>
-              <div
-                className={`model-group-pricing-values${pricing.videoPricing ? ' model-group-video-prices' : ''}`}
-              >
-                <div className='model-group-price-cell model-group-price-items'>
-                  {items.length
-                    ? items
-                        .filter((item) => !isCachePriceItem(item))
-                        .map((item) => (
-                          <ModelGroupPrice
-                            key={item.key}
-                            item={item}
-                            pricing={pricing}
-                            model={model}
-                            officialTier={officialTier}
-                            data={data}
-                          />
-                        ))
-                    : t('见价格详情')}
+              {rows.length > 1 || tiers.length > 1 ? (
+                <ModelGroupTierTable rows={rows} model={model} data={data} />
+              ) : (
+                <div
+                  className={`model-group-pricing-values${pricing.videoPricing ? ' model-group-video-prices' : ''}`}
+                >
+                  <div className='model-group-price-cell model-group-price-items'>
+                    {items.length
+                      ? items
+                          .filter((item) => !isCachePriceItem(item))
+                          .map((item) => (
+                            <ModelGroupPrice
+                              key={item.key}
+                              item={item}
+                              pricing={pricing}
+                              model={model}
+                              officialTier={officialTier}
+                              data={data}
+                            />
+                          ))
+                      : t('见价格详情')}
+                  </div>
+                  {pricing.videoPricing && (
+                    <p className='model-detail-caption model-video-price-note'>
+                      {t(
+                        '按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。',
+                      )}
+                      {items.some((item) => item.multiple) &&
+                        ` ${t('多份生成按份数累加。')}`}
+                    </p>
+                  )}
+                  <div className='model-group-price-items'>
+                    {items.filter(isCachePriceItem).map((item) => (
+                      <ModelGroupPrice
+                        key={item.key}
+                        item={item}
+                        pricing={pricing}
+                        model={model}
+                        officialTier={officialTier}
+                        data={data}
+                      />
+                    ))}
+                    {!pricing.videoPricing &&
+                      !items.some(isCachePriceItem) &&
+                      '—'}
+                  </div>
                 </div>
-                {pricing.videoPricing && (
-                  <p className='model-detail-caption model-video-price-note'>
-                    {t(
-                      '按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。',
-                    )}
-                    {items.some((item) => item.multiple) &&
-                      ` ${t('多份生成按份数累加。')}`}
-                  </p>
-                )}
-                <div className='model-group-price-items'>
-                  {items.filter(isCachePriceItem).map((item) => (
-                    <ModelGroupPrice
-                      key={item.key}
-                      item={item}
-                      pricing={pricing}
-                      model={model}
-                      officialTier={officialTier}
-                      data={data}
-                    />
-                  ))}
-                  {!pricing.videoPricing &&
-                    !items.some(isCachePriceItem) &&
-                    '—'}
-                </div>
-              </div>
+              )}
               <dl className='model-group-health-values'>
                 <div>
                   <dt>

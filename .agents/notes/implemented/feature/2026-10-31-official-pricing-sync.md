@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[逐档价格表](2026-11-01-group-tier-comparison-table.md)部分取代官方档位下拉/本站首档对比和全部缓存时长公开展示；保留本篇其余计价、来源及权限规则。
+
 [厂家来源约束](../bug-fix/2026-11-01-manufacturer-official-pricing.md)收紧公开价格来源并允许旧 OpenRouter 资料被厂家取价替换；保留人工厂家价及同步失败保护。
 
 [自动资料默认值](2026-10-31-model-official-defaults.md)扩展公开厂商来源、介绍/标签/供应商和自动更新入口；其新规则取代下文旧的字段范围与失败等待周期，人工保护及来源语义继续有效。
