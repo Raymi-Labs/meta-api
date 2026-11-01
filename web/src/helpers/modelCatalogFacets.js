@@ -36,6 +36,29 @@ const tagAliases = {
   code: 'coding',
   thinking: 'reasoning',
 };
+// Older metadata syncs stored family names in tags. Keep the raw managed data,
+// but exclude these exact reserved families from public tags and admin previews.
+// Do not use prefix matching: custom tags such as gpt-workflow remain valid.
+const legacyFamilyTags = new Set([
+  'claude',
+  'claude-haiku',
+  'claude-opus',
+  'claude-sonnet',
+  'gemini',
+  'gemini-flash',
+  'gemini-flash-lite',
+  'gemini-pro',
+  'gpt',
+  'gpt-codex',
+  'gpt-mini',
+  'gpt-nano',
+  'gpt-pro',
+  'minimax',
+  'o',
+  'o-pro',
+  'glm',
+  'qwen',
+]);
 export const rawCatalogTags = (model) =>
   String(model?.tags || '')
     .split(/[,;|]+/)
@@ -155,10 +178,10 @@ export function getCatalogTags(model) {
             'files',
             'file',
             'text',
+            'speech',
             'deprecated',
-            'glm',
-            'qwen',
           ].includes(x) &&
+          !legacyFamilyTags.has(x) &&
           !taskTags[x],
       ),
   );

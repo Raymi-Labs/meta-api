@@ -128,6 +128,75 @@ test('tag labels separate tasks, raw modalities/context/families and capability 
   assert.equal(catalogVendor('ChatGLM'), catalogVendor('Zhipu'));
   assert.equal(catalogVendor('CustomVendor'), 'CustomVendor');
 });
+test('legacy model families and generic speech are not user-facing tags', () => {
+  const families = [
+    'claude',
+    'claude-haiku',
+    'claude-opus',
+    'claude-sonnet',
+    'gemini',
+    'gemini-flash',
+    'gemini-flash-lite',
+    'gemini-pro',
+    'gpt',
+    'gpt-codex',
+    'gpt-mini',
+    'gpt-nano',
+    'gpt-pro',
+    'minimax',
+    'o',
+    'o-pro',
+    'glm',
+    'qwen',
+    'speech',
+  ];
+  const metadata = {
+    ...chat,
+    tags: [
+      ...families,
+      'tools',
+      'reasoning',
+      'open_weights',
+      'featured',
+      'CustomTag',
+      'gpt-workflow',
+      'speech-quality',
+      '客户专用',
+    ].join(','),
+  };
+  const before = structuredClone(metadata);
+  assert.deepEqual(getCatalogTags(metadata), [
+    'tools',
+    'reasoning',
+    'open weights',
+    'featured',
+    'customtag',
+    'gpt-workflow',
+    'speech-quality',
+    '客户专用',
+  ]);
+  for (const tag of families) {
+    assert.deepEqual(getCatalogTags({ tags: `  ${tag.toUpperCase()}  ` }), []);
+    assert.equal(matchesCatalogFilters(metadata, { filterTag: [tag] }), false);
+  }
+  assert.equal(
+    matchesCatalogFilters(metadata, { filterTag: ['tools', 'customtag'] }),
+    true,
+  );
+  assert.deepEqual(
+    metadata,
+    before,
+    'display normalization must not rewrite managed tags',
+  );
+  assert.deepEqual(
+    automaticModelFunctions({ tags: 'speech' }),
+    [],
+    'generic speech does not establish TTS or ASR',
+  );
+  assert.deepEqual(automaticModelFunctions({ tags: 'speech,text-to-speech' }), [
+    'speech_generation',
+  ]);
+});
 test('OR within provider/function, AND within tag/input and across dimensions', () => {
   const filter = (filters) =>
     models
