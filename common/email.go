@@ -64,6 +64,10 @@ func SendEmailWithAttachments(subject string, receiver string, content string, a
 }
 
 func buildEmailMessage(subject string, receiver string, content string, attachments []EmailAttachment) ([]byte, error) {
+	return buildEmailMessageWithSenderName(subject, receiver, content, attachments, SystemName)
+}
+
+func buildEmailMessageWithSenderName(subject string, receiver string, content string, attachments []EmailAttachment, senderName string) ([]byte, error) {
 	if SMTPFrom == "" { // for compatibility
 		SMTPFrom = SMTPAccount
 	}
@@ -75,7 +79,7 @@ func buildEmailMessage(subject string, receiver string, content string, attachme
 		return nil, fmt.Errorf("SMTP 服务器未配置")
 	}
 	encodedSubject := fmt.Sprintf("=?UTF-8?B?%s?=", base64.StdEncoding.EncodeToString([]byte(subject)))
-	from := mail.Address{Name: SystemName, Address: SMTPFrom}
+	from := mail.Address{Name: senderName, Address: SMTPFrom}
 	var encodedContent bytes.Buffer
 	quotedPrintableWriter := quotedprintable.NewWriter(&encodedContent)
 	if _, err := quotedPrintableWriter.Write([]byte(content)); err != nil {
@@ -293,7 +297,13 @@ func (e *SMTPOutcomeUnknown) Unwrap() error { return e.Err }
 // SendEmailTracked performs exactly one SMTP attempt. Durable callers own retry
 // scheduling and distinguish SMTP acceptance from end-recipient delivery.
 func SendEmailTracked(subject, receiver, content string) error {
-	message, err := buildEmailMessage(subject, receiver, content, nil)
+	return SendEmailTrackedWithSenderName(subject, receiver, content, SystemName)
+}
+
+// SendEmailTrackedWithSenderName overrides only this message's display name,
+// preserving the configured SMTP address and the single-attempt delivery contract.
+func SendEmailTrackedWithSenderName(subject, receiver, content, senderName string) error {
+	message, err := buildEmailMessageWithSenderName(subject, receiver, content, nil, senderName)
 	if err != nil {
 		return err
 	}

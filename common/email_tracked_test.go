@@ -64,7 +64,7 @@ func TestQuotaNoticeSMTPOutcome(t *testing.T) {
 					}
 				}
 			}()
-			err = sendSMTPMessageAttempt("tcp4", "recipient@example.invalid", []byte("Subject: fixture\r\n\r\nfixture\r\n"), true)
+			err = SendEmailTrackedWithSenderName("公告", "recipient@example.invalid", "fixture", "Meta-API团队")
 			var unknown *SMTPOutcomeUnknown
 			var rejected *textproto.Error
 			switch outcome {
