@@ -35,6 +35,8 @@ Status: implemented
 
 [操作与验收](../../../../docs/channel/openai-retail-66.md)、[逐项审计](../../../../docs/channel/openai-retail-66-audit-2026-11-01.json)。仅配置及文档，无应用版本或 Release。
 
+本次记录之后，用户将四个 Luna 型号统一改为官方价 ×33；两个普通 Luna 的旧价格保留规则由[后续决定](2026-11-01-luna-official-retail-33.md)取代，两个 Pro 已符合。
+
 ## Consequences
 
 整数 quota 的既有舍入规则保留，单笔旧整数费用乘 6.6 不一定等于新单价结算后的整数。部分历史名称和非在用语音/视频无法做真实调用；不擅自启用或重新定价。短测试不证明所有上游能力，历史账单不追溯修改。

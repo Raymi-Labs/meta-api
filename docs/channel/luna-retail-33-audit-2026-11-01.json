@@ -1,0 +1,459 @@
+{
+  "reviewed_at": "2026-11-01",
+  "factor": 33,
+  "threshold": 272000,
+  "models": [
+    {
+      "model": "gpt-5.6-luna",
+      "pricing_model": "gpt-5.6-luna",
+      "status": "enabled",
+      "existing_price": false,
+      "official_price": {
+        "prompt": 0.2,
+        "completion": 1.2,
+        "input_cache_read": 0.02,
+        "input_cache_write": 0.25,
+        "input_cache_write_12h": 0.5
+      },
+      "official_long_price": {
+        "prompt": 0.4,
+        "completion": 1.8,
+        "input_cache_read": 0.04,
+        "input_cache_write": 0.5,
+        "input_cache_write_12h": 1.0
+      },
+      "before_expr": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 297.0) : tier(\"第2档\", p * 132.0 + c * 792.0 + cr * 13.2 + cc * 594.0)",
+      "after_expr": "len <= 272000 ? tier(\"base\", p * 6.60 + c * 39.60 + cr * 0.66 + cc * 8.25) : tier(\"第2档\", p * 13.20 + c * 59.40 + cr * 1.32 + cc * 16.50)",
+      "changed": true,
+      "sources": [
+        "https://developers.openai.com/api/docs/pricing",
+        "https://developers.openai.com/api/docs/guides/reasoning"
+      ]
+    },
+    {
+      "model": "gpt-5.6-luna-pro",
+      "pricing_model": "gpt-5.6-luna",
+      "status": "enabled",
+      "existing_price": false,
+      "official_price": {
+        "prompt": 0.2,
+        "completion": 1.2,
+        "input_cache_read": 0.02,
+        "input_cache_write": 0.25,
+        "input_cache_write_12h": 0.5
+      },
+      "official_long_price": {
+        "prompt": 0.4,
+        "completion": 1.8,
+        "input_cache_read": 0.04,
+        "input_cache_write": 0.5,
+        "input_cache_write_12h": 1.0
+      },
+      "before_expr": "len <= 272000 ? tier(\"标准上下文\", p * 6.6 + c * 39.6 + cr * 0.66 + cc * 8.25) : tier(\"长上下文\", p * 13.2 + c * 59.4 + cr * 1.32 + cc * 16.5)",
+      "after_expr": "len <= 272000 ? tier(\"标准上下文\", p * 6.6 + c * 39.6 + cr * 0.66 + cc * 8.25) : tier(\"长上下文\", p * 13.2 + c * 59.4 + cr * 1.32 + cc * 16.5)",
+      "changed": false,
+      "sources": [
+        "https://developers.openai.com/api/docs/pricing",
+        "https://developers.openai.com/api/docs/guides/reasoning"
+      ]
+    },
+    {
+      "model": "gpt-6-luna",
+      "pricing_model": "gpt-6-luna",
+      "status": "enabled",
+      "existing_price": false,
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.5,
+        "input_cache_read": 0.01,
+        "input_cache_write": 0.125,
+        "input_cache_write_12h": 0.25
+      },
+      "official_long_price": {
+        "prompt": 0.2,
+        "completion": 0.75,
+        "input_cache_read": 0.02,
+        "input_cache_write": 0.25,
+        "input_cache_write_12h": 0.5
+      },
+      "before_expr": "len <= 272000 ? tier(\"base\", p * 13.2 + c * 66.0 + cr * 1.32 + cc * 16.50) : tier(\"第2档\", p * 26.4 + c * 132.0 + cr * 2.64 + cc * 33.0)",
+      "after_expr": "len <= 272000 ? tier(\"base\", p * 3.30 + c * 16.50 + cr * 0.33 + cc * 4.125) : tier(\"第2档\", p * 6.60 + c * 24.75 + cr * 0.66 + cc * 8.25)",
+      "changed": true,
+      "sources": [
+        "https://developers.openai.com/api/docs/pricing",
+        "https://developers.openai.com/api/docs/guides/reasoning"
+      ]
+    },
+    {
+      "model": "gpt-6-luna-pro",
+      "pricing_model": "gpt-6-luna",
+      "status": "enabled",
+      "existing_price": false,
+      "official_price": {
+        "prompt": 0.1,
+        "completion": 0.5,
+        "input_cache_read": 0.01,
+        "input_cache_write": 0.125,
+        "input_cache_write_12h": 0.25
+      },
+      "official_long_price": {
+        "prompt": 0.2,
+        "completion": 0.75,
+        "input_cache_read": 0.02,
+        "input_cache_write": 0.25,
+        "input_cache_write_12h": 0.5
+      },
+      "before_expr": "len <= 272000 ? tier(\"标准上下文\", p * 3.3 + c * 16.5 + cr * 0.33 + cc * 4.125) : tier(\"长上下文\", p * 6.6 + c * 24.75 + cr * 0.66 + cc * 8.25)",
+      "after_expr": "len <= 272000 ? tier(\"标准上下文\", p * 3.3 + c * 16.5 + cr * 0.33 + cc * 4.125) : tier(\"长上下文\", p * 6.6 + c * 24.75 + cr * 0.66 + cc * 8.25)",
+      "changed": false,
+      "sources": [
+        "https://developers.openai.com/api/docs/pricing",
+        "https://developers.openai.com/api/docs/guides/reasoning"
+      ]
+    }
+  ],
+  "option_changes": {
+    "billing_setting.billing_expr": {
+      "gpt-5.6-luna": {
+        "before": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 297.0) : tier(\"第2档\", p * 132.0 + c * 792.0 + cr * 13.2 + cc * 594.0)",
+        "after": "len <= 272000 ? tier(\"base\", p * 6.60 + c * 39.60 + cr * 0.66 + cc * 8.25) : tier(\"第2档\", p * 13.20 + c * 59.40 + cr * 1.32 + cc * 16.50)"
+      },
+      "gpt-6-luna": {
+        "before": "len <= 272000 ? tier(\"base\", p * 13.2 + c * 66.0 + cr * 1.32 + cc * 16.50) : tier(\"第2档\", p * 26.4 + c * 132.0 + cr * 2.64 + cc * 33.0)",
+        "after": "len <= 272000 ? tier(\"base\", p * 3.30 + c * 16.50 + cr * 0.33 + cc * 4.125) : tier(\"第2档\", p * 6.60 + c * 24.75 + cr * 0.66 + cc * 8.25)"
+      }
+    }
+  },
+  "official_document_sha256": "56e3da9bb29246cad60003e01f3fdc6b536149a09f5effe5e79af020a4922cfc",
+  "preserve_options": [
+    "ModelPrice",
+    "CacheRatio",
+    "ModelRatio",
+    "billing_setting.billing_mode",
+    "GroupRatio",
+    "Price",
+    "GroupGroupRatio",
+    "CompletionRatio",
+    "CreateCacheRatio"
+  ],
+  "scope": "All configured GPT-5.6/GPT-6 Luna and Pro prices globally; exclude unrelated Lunaris.",
+  "receipts": {
+    "apply-result.json": {
+      "verified": true,
+      "models": [
+        "gpt-5.6-luna",
+        "gpt-5.6-luna-pro",
+        "gpt-6-luna",
+        "gpt-6-luna-pro"
+      ],
+      "changed": [
+        "gpt-5.6-luna",
+        "gpt-6-luna"
+      ],
+      "already_correct": [
+        "gpt-5.6-luna-pro",
+        "gpt-6-luna-pro"
+      ],
+      "factor": 33,
+      "threshold": 272000,
+      "other_prices_unchanged": true,
+      "groups_unchanged": true,
+      "channels_unchanged": true,
+      "metadata_unchanged": true,
+      "database_and_catalog_match": true,
+      "runtime": "v1.11.14",
+      "time": 1793494020
+    },
+    "gateway-acceptance.json": {
+      "verified": true,
+      "results": [
+        {
+          "model": "gpt-5.6-luna",
+          "kind": "chat",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 0,
+          "cache_write_field_present": false,
+          "cache_write_tokens": 0,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 0,
+            "cc1h": 0,
+            "cr": 0,
+            "img": 0,
+            "img_o": 0,
+            "len": 4647,
+            "p": 4647
+          },
+          "verified": true,
+          "seconds": 1.21,
+          "input_tokens": 4647,
+          "output_tokens": 5,
+          "quota": 15434,
+          "token_used_quota": 15434,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": false
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "kind": "chat",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 4644,
+          "cache_write_field_present": false,
+          "cache_write_tokens": 0,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 0,
+            "cc1h": 0,
+            "cr": 4644,
+            "img": 0,
+            "img_o": 0,
+            "len": 4647,
+            "p": 3
+          },
+          "verified": true,
+          "seconds": 1.09,
+          "input_tokens": 4647,
+          "output_tokens": 5,
+          "quota": 1641,
+          "token_used_quota": 1641,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": true
+        },
+        {
+          "model": "gpt-6-luna",
+          "kind": "responses_stream",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 0,
+          "cache_write_field_present": true,
+          "cache_write_tokens": 5086,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 5086,
+            "cc1h": 0,
+            "cr": 0,
+            "img": 0,
+            "img_o": 0,
+            "len": 5089,
+            "p": 3
+          },
+          "verified": true,
+          "seconds": 0.93,
+          "input_tokens": 5089,
+          "output_tokens": 5,
+          "quota": 10536,
+          "token_used_quota": 10536,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": false
+        },
+        {
+          "model": "gpt-6-luna",
+          "kind": "responses_stream",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 5086,
+          "cache_write_field_present": false,
+          "cache_write_tokens": 0,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 0,
+            "cc1h": 0,
+            "cr": 5086,
+            "img": 0,
+            "img_o": 0,
+            "len": 5089,
+            "p": 3
+          },
+          "verified": true,
+          "seconds": 0.98,
+          "input_tokens": 5089,
+          "output_tokens": 5,
+          "quota": 885,
+          "token_used_quota": 885,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": true
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "kind": "responses",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 0,
+          "cache_write_field_present": true,
+          "cache_write_tokens": 5962,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 5962,
+            "cc1h": 0,
+            "cr": 0,
+            "img": 0,
+            "img_o": 0,
+            "len": 5964,
+            "p": 2
+          },
+          "verified": true,
+          "seconds": 0.83,
+          "input_tokens": 5964,
+          "output_tokens": 5,
+          "quota": 24699,
+          "token_used_quota": 24699,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": false,
+          "native_responses_default_caching": true
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "kind": "responses",
+          "channel_id": 1640,
+          "group": "企业级",
+          "status": 200,
+          "cache_read_tokens": 5962,
+          "cache_write_field_present": false,
+          "cache_write_tokens": 0,
+          "matched_tier": "base",
+          "tiered_params": {
+            "ai": 0,
+            "ao": 0,
+            "c": 5,
+            "cc": 0,
+            "cc1h": 0,
+            "cr": 5962,
+            "img": 0,
+            "img_o": 0,
+            "len": 5964,
+            "p": 2
+          },
+          "verified": true,
+          "seconds": 0.65,
+          "input_tokens": 5964,
+          "output_tokens": 5,
+          "quota": 2073,
+          "token_used_quota": 2073,
+          "single_charge": true,
+          "has_content": true,
+          "repeat": true,
+          "native_responses_default_caching": true
+        }
+      ],
+      "temporary_tokens_deleted": true,
+      "channel_id": 1640,
+      "group": "企业级",
+      "group_ratio": 1,
+      "write_evidence_models": [
+        "gpt-5.6-luna",
+        "gpt-6-luna"
+      ],
+      "read_evidence_models": [
+        "gpt-5.6-luna",
+        "gpt-6-luna"
+      ],
+      "time": 1793494115
+    },
+    "gateway-failed-explicit-options.json": {
+      "model": "gpt-5.6-luna",
+      "kind": "chat",
+      "channel_id": 1640,
+      "group": "企业级",
+      "status": 400,
+      "verified": false,
+      "phase": "response",
+      "error_type": "AssertionError",
+      "error": "(400, b'{\"error\":{\"message\":\"Invalid Responses API request\",\"type\":\"upstream_error\",\"param\":\"\",\"code\":\"invalid_prompt\"}}')",
+      "repeat": false,
+      "explicit_default_cache_options": true
+    },
+    "initial-acceptance-note.json": {
+      "all_requests_and_charges_correct": true,
+      "extra_assertion_failed": "gpt-5.6-luna did not report cache_write_tokens on the first Chat request",
+      "followup": "Chat implicit option rejected by upstream Responses; final followup uses native Responses default caching. No production config change."
+    },
+    "write-followup-usage.json": [
+      {
+        "input_tokens": 5964,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 5962
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 5969,
+        "cost": 0.0014969,
+        "is_byok": false,
+        "cost_details": {
+          "upstream_inference_cost": 0.0014969,
+          "upstream_inference_input_cost": 0.0014909,
+          "upstream_inference_output_cost": 6e-06
+        }
+      },
+      {
+        "input_tokens": 5964,
+        "input_tokens_details": {
+          "cached_tokens": 5962
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 5969,
+        "cost": 0.00012564,
+        "is_byok": false,
+        "cost_details": {
+          "upstream_inference_cost": 0.00012564,
+          "upstream_inference_input_cost": 0.00011964,
+          "upstream_inference_output_cost": 6e-06
+        }
+      }
+    ],
+    "final-verification.json": {
+      "verified": true,
+      "runtime": "v1.11.14",
+      "all_four_prices_match": true,
+      "other_options_preserved": true,
+      "test_tokens_deleted": true,
+      "failed_probe_zero_charge": true,
+      "time": 1793494134
+    }
+  },
+  "checks": {
+    "actual_go_settlement_checks": 108,
+    "frontend_models": 4,
+    "frontend_tiers_per_model": 2,
+    "frontend_price_components_per_tier": 4
+  },
+  "operation_directory": "/opt/meta-api/operations/luna-pricing-20261101",
+  "notes": [
+    "All four Luna names use the official Standard API USD price multiplied by 33. Only two base-model expressions changed; Pro numeric prices already matched.",
+    "12h official quotes are reference evidence only; this operation does not implement or enable extended caching.",
+    "Initial Chat GPT-5.6 sample did not report a cache write; native Responses produced actual write/read evidence. A followup implicit-mode request was rejected upstream, with zero charge.",
+    "No historical rebilling, group/channel changes, application deployment, or new release."
+  ]
+}

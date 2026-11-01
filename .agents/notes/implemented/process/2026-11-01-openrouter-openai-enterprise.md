@@ -38,6 +38,8 @@ OpenRouter 普通目录 76 条：20 个 batch/latest 特殊入口跳过，5 个�
 
 [配置说明](../../../../docs/channel/openrouter-openai.md)、[审计](../../../../docs/channel/openrouter-openai-audit-2026-11-01.json)保存全部范围、售价、报价和回执。
 
+本次记录之后，用户将四个 Luna 型号统一改为官方价 ×33；两个普通 Luna 的旧价格保留规则由[后续决定](2026-11-01-luna-official-retail-33.md)取代，两个 Pro 已符合。
+
 ## Consequences
 
 短请求不证明全上下文、所有工具、视觉或缓存写入能力。不同服务等级和报价动态变化仍需复核；保守低档限价会拒绝部分长上下文。配置时保留并发分组调整，不恢复外部操作；API 部分写入失败先停新渠道，再按预期值恢复本次项目。
