@@ -61,7 +61,10 @@ import {
 import TokenModelCopyList from '../TokenModelCopyList';
 import { UserContext } from '../../../../context/User';
 import { StatusContext } from '../../../../context/Status';
-import { resolveTokenGroupVendor } from '../tokenGroupUtils';
+import {
+  filterTokenGroupsByHealth,
+  resolveTokenGroupVendor,
+} from '../tokenGroupUtils';
 
 const { Text, Title } = Typography;
 const TOKEN_CHANNEL_LIMIT_TAG_MODE_KEY = 'token-channel-limit-tag-mode';
@@ -88,6 +91,18 @@ const EditTokenModal = (props) => {
   const [userState] = useContext(UserContext);
   const groupRequestRef = useRef(0);
   const groupHealth = useGroupHealth({ enabled: Boolean(props.visiable) });
+  const healthPending =
+    groupHealth.loading && !groupHealth.data && !groupHealth.error;
+  const selectableGroups = (values) =>
+    filterTokenGroupsByHealth(
+      availableGroups.userId === userState?.user?.id
+        ? availableGroups.groups
+        : [],
+      groupHealth,
+      values.routing_enabled
+        ? readTokenRouting(values.routing_config).groups
+        : [values.group],
+    );
   const groupHealthByName = useMemo(
     () =>
       new Map(
@@ -992,6 +1007,7 @@ const EditTokenModal = (props) => {
       loading ||
       (isEdit && !tokenReady) ||
       groupsLoading ||
+      healthPending ||
       groupsError ||
       modelsLoading ||
       modelsError ||
@@ -1226,6 +1242,7 @@ const EditTokenModal = (props) => {
               disabled={
                 loading ||
                 groupsLoading ||
+                healthPending ||
                 groupsError ||
                 modelsLoading ||
                 modelsError ||
@@ -1403,19 +1420,14 @@ const EditTokenModal = (props) => {
                       <TokenGroupPicker
                         key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
                         userId={userState?.user?.id}
-                        groups={
-                          availableGroups.userId === userState?.user?.id
-                            ? availableGroups.groups.filter(
-                                ({ value }) =>
-                                  value !== 'auto' ||
-                                  (isEdit &&
-                                    loadedTokenValuesRef.current?.group ===
-                                      'auto'),
-                              )
-                            : []
-                        }
+                        groups={selectableGroups(values).filter(
+                          ({ value }) =>
+                            value !== 'auto' ||
+                            (isEdit &&
+                              loadedTokenValuesRef.current?.group === 'auto'),
+                        )}
                         value={values.group}
-                        loading={groupsLoading}
+                        loading={groupsLoading || healthPending}
                         error={groupsError}
                         onRetry={loadGroups}
                         onSelect={(group) =>
@@ -1907,14 +1919,12 @@ const EditTokenModal = (props) => {
                           {values.routing_enabled && (
                             <TokenRoutingEditor
                               value={values.routing_config}
-                              groups={
-                                availableGroups.userId === userState?.user?.id
-                                  ? availableGroups.groups
-                                  : []
-                              }
+                              groups={selectableGroups(values)}
                               models={values.model_limits || []}
                               modelGroups={modelGroups}
-                              disabled={groupsLoading || groupsError}
+                              disabled={
+                                groupsLoading || healthPending || groupsError
+                              }
                               onChange={(raw) => {
                                 formApiRef.current?.setValue(
                                   'routing_config',

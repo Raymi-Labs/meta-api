@@ -17,7 +17,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { getUptimeRate } from '../../group-health/healthUtils.js';
+
 export const TOKEN_GROUP_OTHER_VENDOR = '__other__';
+
+// Filter candidate display only; never mutate permissions or selected routes.
+export const filterTokenGroupsByHealth = (groups, health, selected = []) => {
+  const data = health?.data;
+  if (
+    health?.error ||
+    !data ||
+    data.enabled === false ||
+    data.collection_incomplete
+  )
+    return groups;
+  const preserved = new Set(selected);
+  const unavailable = new Set(
+    (data.groups || [])
+      .filter((stats) => {
+        const count = stats.uptime_sample_count ?? stats.request_count;
+        return (
+          Number.isFinite(count) && count > 0 && getUptimeRate(stats) === 0
+        );
+      })
+      .map((stats) => stats.group),
+  );
+  return groups.filter(
+    ({ value }) => preserved.has(value) || !unavailable.has(value),
+  );
+};
 
 const TOKEN_GROUP_PRICE_LABELS = {
   企业级: '与官方价格一致',
