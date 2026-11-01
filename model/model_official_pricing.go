@@ -91,7 +91,7 @@ func (p *OfficialPricing) Normalize(nameRule int) error {
 			return fmt.Errorf("官方价格档位名称须为 1 至 128 个字符")
 		}
 		switch tier.Unit {
-		case "million_tokens", "request", "image", "second", "minute", "hour":
+		case "million_tokens", "million_characters", "million_audio_tokens", "million_image_tokens", "million_video_tokens", "request", "image", "second", "minute", "hour":
 		default:
 			return fmt.Errorf("官方参考价计价单位无效")
 		}

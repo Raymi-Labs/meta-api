@@ -441,11 +441,12 @@ func fetchOfficialModelAttributesFor(ctx context.Context, names map[string]bool)
 		}
 	}
 	warn := func(value string) { mu.Lock(); defer mu.Unlock(); warnings = append(warnings, value) }
+	var publicResults map[string]model.ModelCapabilityMetadata
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		values, failures := fetchPublicModelDocuments(ctx, names)
-		merge(values)
+		publicResults = values
 		for _, failure := range failures {
 			warn(failure)
 		}
@@ -520,6 +521,9 @@ dispatch:
 	}
 	close(jobs)
 	wg.Wait()
+	// The shared image price sheet includes protocol conditions absent from model
+	// cards. Apply it deterministically after individual pages, regardless of latency.
+	merge(publicResults)
 	for _, values := range apiResults {
 		merge(values)
 	}

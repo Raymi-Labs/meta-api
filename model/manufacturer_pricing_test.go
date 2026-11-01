@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -19,6 +20,13 @@ func TestManufacturerPriceSources(t *testing.T) {
 		{"cohere/command-a", "https://docs.cohere.com.evil.test/pricing", false},
 		{"cohere/command-a", "https://cohere.com@evil.test/pricing", false},
 		{"cohere/command-a", "", false},
+		{"amazon/nova-lite-v1", "https://aws.amazon.com/nova/pricing/", true},
+		{"thinkingmachines/inkling", "https://tinker-docs.thinkingmachines.ai/tinker/models/", true},
+		{"writer/palmyra-x5", "https://dev.writer.com/home/pricing", true},
+		{"morph/morph-v3-fast", "https://www.morphllm.com/api/models/json", true},
+		{"aion-labs/aion-2.1", "https://api.aionlabs.ai/v1/models", true},
+		{"amazon/nova-lite-v1", "https://openrouter.ai/amazon/nova-lite-v1", false},
+		{"amazon/nova-lite-v1", "https://aws.amazon.com.evil.test/", false},
 		{"cohere/command-a", "http://cohere.com/pricing", false},
 		{"unknown/gpt-example", "https://openai.com/pricing", false},
 		{"unknown-model", "https://cohere.com/pricing", false},
@@ -55,6 +63,10 @@ func TestLegacyResellerPriceReplacement(t *testing.T) {
 }
 
 func TestManufacturerNativeModel(t *testing.T) {
+	for _, name := range []string{"amazon/nova-lite-v1", "aion-labs/aion-2.1", "thinkingmachines/inkling", "writer/palmyra-x5", "morph/morph-v3-fast"} {
+		require.Equal(t, strings.SplitN(name, "/", 2)[1], ManufacturerNativeModel(name))
+	}
+	require.Equal(t, "writer/gpt-6", ManufacturerNativeModel("writer/gpt-6"))
 	require.Equal(t, "gpt-example", ManufacturerNativeModel("openai/gpt-example"))
 	require.Equal(t, "cohere/gpt-example", ManufacturerNativeModel("cohere/gpt-example"))
 	require.Equal(t, "unknown/command-a", ManufacturerNativeModel("unknown/command-a"))

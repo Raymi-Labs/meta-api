@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
   officialPriceColumns,
   officialPricingSource,
@@ -32,4 +33,14 @@ test('official source is a link only and excludes active URLs and credentials', 
     officialPricingSource('https://example.com/pricing'),
     'https://example.com/pricing',
   );
+});
+
+test('modality and character rates retain their units', () => {
+  assert.equal(OFFICIAL_PRICE_UNITS.million_tokens, 'M tokens');
+  assert.equal(OFFICIAL_PRICE_UNITS.million_characters, 'M characters');
+  for (const mode of ['audio', 'image', 'video'])
+    assert.equal(
+      OFFICIAL_PRICE_UNITS[`million_${mode}_tokens`],
+      `M ${mode} tokens`,
+    );
 });

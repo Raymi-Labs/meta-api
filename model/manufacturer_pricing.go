@@ -8,6 +8,7 @@ import (
 // Explicit manufacturer namespaces and first-party origins. Unknown providers
 // remain unknown; reseller hosting does not establish a manufacturer's price.
 var manufacturerPriceDomains = map[string][]string{
+	"amazon": {"amazon.com", "amazonaws.com"}, "thinkingmachines": {"thinkingmachines.ai"},
 	"openai": {"openai.com"}, "anthropic": {"anthropic.com", "claude.com"},
 	"google": {"ai.google.dev", "cloud.google.com"}, "cohere": {"cohere.com"},
 	"deepseek": {"deepseek.com"}, "x-ai": {"x.ai"},
@@ -15,6 +16,8 @@ var manufacturerPriceDomains = map[string][]string{
 	"xiaomi":     {"mimo.mi.com"}, "minimax": {"minimax.io", "minimaxi.com"},
 	"z-ai": {"z.ai", "bigmodel.cn"}, "qwen": {"aliyun.com", "alibabacloud.com", "qwen.ai"},
 	"mistralai": {"mistral.ai"}, "inception": {"inceptionlabs.ai"},
+	"meta": {"meta.ai"}, "liquid": {"liquid.ai"}, "moondream": {"moondream.ai"}, "rekaai": {"reka.ai"}, "meituan": {"longcat.chat"}, "fireworks": {"fireworks.ai"}, "perceptron": {"perceptron.inc"}, "particle-ai": {"particle.ai"}, "inference-net": {"inference.net"}, "unbiased": {"unbiased.ai"},
+	"writer": {"writer.com"}, "upstage": {"upstage.ai"}, "morph": {"morphllm.com"}, "aion-labs": {"aionlabs.ai"},
 	"perplexity": {"perplexity.ai"}, "meta-llama": {"llama.com", "meta.com"},
 	"ai21": {"ai21.com"}, "baidu": {"baidu.com", "baidubce.com"},
 	"tencent": {"tencent.com", "tencentcloud.com"}, "bytedance": {"volcengine.com", "byteplus.com"},
@@ -26,13 +29,13 @@ func manufacturerForPrice(name string) string {
 		return namespace // Never infer a different maker from a reseller's model suffix.
 	}
 	for _, rule := range []struct{ prefix, manufacturer string }{
-		{"gpt-", "openai"}, {"chatgpt-", "openai"}, {"o1", "openai"}, {"o3", "openai"}, {"o4", "openai"},
+		{"nova-", "amazon"}, {"inkling", "thinkingmachines"}, {"gpt-", "openai"}, {"chatgpt-", "openai"}, {"o1", "openai"}, {"o3", "openai"}, {"o4", "openai"},
 		{"claude-", "anthropic"}, {"gemini-", "google"}, {"gemma-", "google"}, {"veo-", "google"}, {"imagen-", "google"},
 		{"command-", "cohere"}, {"deepseek-", "deepseek"}, {"grok-", "x-ai"},
 		{"kimi-", "moonshotai"}, {"moonshot-", "moonshotai"}, {"mimo-", "xiaomi"},
-		{"minimax-", "minimax"}, {"glm-", "z-ai"}, {"qwen", "qwen"},
+		{"wan", "qwen"}, {"happyhorse-", "qwen"}, {"happyoyster-", "qwen"}, {"z-image-", "qwen"}, {"minimax-", "minimax"}, {"glm-", "z-ai"}, {"qwen", "qwen"},
 		{"mistral", "mistralai"}, {"ministral", "mistralai"}, {"codestral", "mistralai"}, {"devstral", "mistralai"}, {"pixtral", "mistralai"},
-		{"mercury", "inception"}, {"sonar", "perplexity"}, {"llama", "meta-llama"},
+		{"muse-", "meta"}, {"lfm-", "liquid"}, {"moondream", "moondream"}, {"reka-", "rekaai"}, {"longcat-", "meituan"}, {"ember-", "fireworks"}, {"perceptron-", "perceptron"}, {"particle-", "particle-ai"}, {"schematron-", "inference-net"}, {"pareto-", "unbiased"}, {"aion-", "aion-labs"}, {"palmyra-", "writer"}, {"solar-", "upstage"}, {"morph-v3-", "morph"}, {"mercury", "inception"}, {"sonar", "perplexity"}, {"llama", "meta-llama"},
 		{"ernie", "baidu"}, {"hunyuan", "tencent"}, {"doubao", "bytedance"},
 	} {
 		if strings.HasPrefix(name, rule.prefix) {

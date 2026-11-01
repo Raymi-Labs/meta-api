@@ -485,6 +485,77 @@ try {
     `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {ThemeProvider} from './src/context/Theme';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><App/></ThemeProvider></BrowserRouter>);`,
   );
   await launchBrowser();
+  // Optional read-only audit output exercises the actual detail route with
+  // prices parsed from manufacturer documents, rather than hand-entered UI data.
+  if (process.env.TEST_OFFICIAL_PRICING_REPORT) {
+    const report = JSON.parse(
+      fs.readFileSync(process.env.TEST_OFFICIAL_PRICING_REPORT, 'utf8'),
+    );
+    const savedModels = pricing.data;
+    try {
+      for (const name of [
+        'claude-haiku-5-5',
+        'qwen3.8-omni-flash',
+        'qwen-image-3.0-pro',
+        'gpt-image-2',
+        'amazon/nova-lite-v1',
+        'MiniMax-M3',
+      ]) {
+        const official = report.prices[name];
+        assert.ok(official?.tiers.length, `missing audit price: ${name}`);
+        pricing.data = [
+          { ...modelDefaults, model_name: name, official_pricing: official },
+        ];
+        for (const mobile of [false, true]) {
+          const { page, errors } = await makePage(1, mobile);
+          try {
+            await page.goto(`${baseURL}/model/${encodeURIComponent(name)}`, {
+              waitUntil: 'networkidle0',
+            });
+            await page.waitForSelector('#official-pricing tbody tr');
+            const rows = await page.$$eval(
+              '#official-pricing tbody tr',
+              (els) => els.map((el) => el.textContent),
+            );
+            assert.equal(rows.length, official.tiers.length);
+            for (const tier of official.tiers) {
+              assert.ok(rows.some((row) => row.includes(tier.label)));
+            }
+            assert.equal(
+              await page.$eval('#official-pricing a', (a) => a.href),
+              official.source_url,
+            );
+            if (name === 'gpt-image-2')
+              assert.ok(rows.some((row) => row.includes('M image tokens')));
+            if (name === 'claude-haiku-5-5') {
+              assert.equal(rows.length, 4);
+              assert.ok(rows.some((row) => row.includes('≤ 100000')));
+              assert.ok(rows.some((row) => row.includes('> 100000')));
+            }
+            assert.ok(
+              await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth + 1,
+              ),
+            );
+            await page.$eval('#official-pricing', (el) =>
+              el.scrollIntoView({ block: 'start' }),
+            );
+            await page.screenshot({
+              path: path.join(
+                artifacts,
+                `coverage-${name.replaceAll('/', '-')}-${mobile ? 'mobile' : 'desktop'}.png`,
+              ),
+            });
+            assert.deepEqual(errors, []);
+          } finally {
+            await page.close();
+          }
+        }
+      }
+    } finally {
+      pricing.data = savedModels;
+    }
+  }
   // Opt-in end-to-end rendering of prices parsed from downloaded xAI pages.
   // Generate these files with TEST_XAI_PRICE_DIR + TestDownloadedXAIPrices.
   if (process.env.TEST_XAI_PRICE_DIR) {

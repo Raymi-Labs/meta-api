@@ -99,13 +99,17 @@ func documentLines(n *html.Node) []string {
 
 var markdownLink = regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`)
 
-func cleanDocumentText(s string) string {
+func normalizeDocumentText(s string) string {
 	s = markdownLink.ReplaceAllString(s, "$1")
+	return strings.Join(strings.Fields(strings.NewReplacer("`", "", "**", "", "\u200b", "").Replace(s)), " ")
+}
+
+func cleanDocumentText(s string) string {
 	n, _ := html.Parse(strings.NewReader(s))
 	if n != nil {
 		s = strings.Join(documentLines(n), " ")
 	}
-	return strings.Join(strings.Fields(strings.NewReplacer("`", "", "**", "", "\u200b", "").Replace(s)), " ")
+	return normalizeDocumentText(s)
 }
 
 // Expand row/column spans before interpreting columns; shifted cells must never
@@ -163,7 +167,7 @@ func documentTables(data []byte) [][][]string {
 					if cols < 1 || cols > 100 || rowsCount < 1 || rowsCount > 100 {
 						cols, rowsCount = 1, 1
 					}
-					text := cleanDocumentText(strings.Join(documentLines(cell), " "))
+					text := normalizeDocumentText(strings.Join(documentLines(cell), " "))
 					for i := 0; i < cols; i++ {
 						row = append(row, text)
 						if rowsCount > 1 {
@@ -412,37 +416,13 @@ func parseClaudeDocument(data []byte, id, address string) (model.ModelCapability
 			break
 		}
 	}
-	// Each cache TTL gets a separate tier; ignore non-numeric/dynamic price cells.
-	prices := map[string]*float64{}
-	for _, table := range tables {
-		if len(table) < 2 || len(table[0]) != 2 || table[0][0] != "Feature" {
-			continue
-		}
-		for _, row := range table[1:] {
-			if len(row) == 2 {
-				if m := regexp.MustCompile(`^\$([0-9.]+) / MTok$`).FindStringSubmatch(row[1]); m != nil {
-					v, e := strconv.ParseFloat(m[1], 64)
-					if e == nil {
-						prices[row[0]] = &v
-					}
-				}
-			}
-		}
+	pricing, err := parseClaudePricing(tables, address)
+	if err != nil {
+		return markOfficialAttributes(entry, address), err
 	}
-	if prices["Input"] != nil && prices["Output"] != nil {
-		p := model.OfficialPricing{Currency: "USD", SourceURL: address}
-		for _, ttl := range []string{"5m", "1h"} {
-			if write := prices[ttl+" cache write"]; write != nil {
-				p.Tiers = append(p.Tiers, model.OfficialPricingTier{Label: "Standard · cache " + ttl, Unit: "million_tokens", Input: prices["Input"], Output: prices["Output"], CacheRead: prices["Cache read"], CacheWrite: write})
-			}
-		}
-		if len(p.Tiers) == 0 {
-			p.Tiers = []model.OfficialPricingTier{{Label: "Standard", Unit: "million_tokens", Input: prices["Input"], Output: prices["Output"]}}
-		}
-		// Only complete numeric price cells reach this path; starting-price and
-		// conditional cells cannot silently become a flat rate.
-		entry.OfficialPricing = p
-		if prices["Cache read"] != nil {
+	entry.OfficialPricing = pricing
+	for _, tier := range pricing.Tiers {
+		if tier.CacheRead != nil {
 			if entry.Capabilities == nil {
 				entry.Capabilities = model.ModelCapabilities{}
 			}
@@ -596,6 +576,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			continue
 		}
 		switch {
+		case strings.HasPrefix(id, "gpt-image-"):
+			provider = "openai-images"
 		case strings.HasPrefix(id, "claude-"):
 			provider = "anthropic"
 			slug := strings.TrimPrefix(id, "claude-")
@@ -618,7 +600,44 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			provider = "moonshotai"
 		case strings.HasPrefix(strings.ToLower(id), "minimax-"):
 			provider = "minimax"
-		case strings.HasPrefix(id, "qwen"):
+		case strings.HasPrefix(id, "nova-"):
+			provider = "amazon"
+		case id == "inkling":
+			provider = "thinkingmachines"
+		case strings.HasPrefix(id, "muse-"):
+			provider = "meta"
+		case strings.HasPrefix(id, "lfm-"):
+			provider = "liquid"
+		case strings.HasPrefix(id, "moondream"):
+			provider = "moondream"
+		case strings.HasPrefix(id, "reka-"):
+			provider = "rekaai"
+		case strings.HasPrefix(id, "longcat-"):
+			provider = "meituan"
+		case strings.HasPrefix(id, "ember-"):
+			provider = "fireworks"
+		case strings.HasPrefix(id, "particle-"):
+			provider = "particle-ai"
+		case strings.HasPrefix(id, "schematron-"):
+			provider = "inference-net"
+		case strings.HasPrefix(id, "pareto-"):
+			provider = "unbiased"
+		case id == "perceptron-mk1" || id == "perceptron-mk1.5":
+			jobs = append(jobs, job{"https://www.perceptron.inc/blog/introducing-" + strings.ReplaceAll(id, ".", "-"), id, "perceptron", parsePerceptronPricing})
+		case strings.HasPrefix(id, "mercury-"):
+			provider = "inception"
+		case strings.HasPrefix(id, "palmyra-"):
+			provider = "writer"
+		case strings.HasPrefix(id, "morph-v3-"):
+			provider = "morph"
+		case strings.HasPrefix(id, "aion-"):
+			provider = "aion-labs"
+		case id == "solar-pro4" || id == "solar-mini4":
+			slug := strings.TrimSuffix(id, "4") + "-4"
+			jobs = append(jobs, job{"https://console.upstage.ai/docs/models/" + slug + ".md", id, "upstage", parseUpstagePricing})
+		case mistralPricingModels[id] != "":
+			provider = "mistralai"
+		case strings.HasPrefix(id, "qwen"), strings.HasPrefix(id, "wan"), strings.HasPrefix(id, "happyhorse-"), strings.HasPrefix(id, "HappyOyster-"), strings.HasPrefix(id, "z-image-"):
 			provider = "alibaba"
 		}
 		if provider != "" {
@@ -629,6 +648,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 		}
 	}
 	for _, source := range []struct{ provider, url string }{
+		{"openai-images", openAIImagePricingURL}, {"amazon", awsNovaPricingURL}, {"thinkingmachines", thinkingMachinesPricingURL}, {"meta", metaPricingURL}, {"liquid", liquidPricingURL}, {"moondream", moondreamPricingURL}, {"rekaai", rekaPricingURL}, {"meituan", longcatPricingURL}, {"fireworks", fireworksPricingURL}, {"particle-ai", particlePricingURL}, {"inference-net", inferencePricingURL}, {"unbiased", unbiasedPricingURL},
+		{"inception", inceptionPricingURL}, {"writer", writerPricingURL}, {"morph", morphPricingURL}, {"aion-labs", aionPricingURL}, {"mistralai", mistralPricingURL}, {"minimax", minimaxPricingURL},
 		{"google", "https://ai.google.dev/gemini-api/docs/models"},
 		{"google", "https://ai.google.dev/gemini-api/docs/pricing"},
 		{"xiaomi", "https://mimo.mi.com/static/docs/price/pay-as-you-go.md"},
@@ -638,6 +659,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 		{"moonshotai", "https://platform.kimi.ai/docs/models.md"},
 		{"moonshotai", kimiPricingURL},
 		{"minimax", "https://platform.minimax.io/docs/guides/text-generation.md"},
+		{"alibaba", aliyunPricingURL},
 		{"alibaba", "https://help.aliyun.com/zh/model-studio/text-generation-model"},
 		{"alibaba", "https://help.aliyun.com/zh/model-studio/vision-model"},
 		{"alibaba", "https://help.aliyun.com/zh/model-studio/image-model"},
@@ -662,16 +684,16 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 				j := jobs[index]
 				data, err := fetchPublicModelDocument(ctx, j.url)
 				if err != nil {
-					results[index].warning = j.provider + ": " + j.id
+					results[index].warning = j.provider + ": " + j.url + ": " + err.Error()
 					continue
 				}
 				if j.parse != nil {
 					entry, err := j.parse(data, j.id, j.url)
 					if err != nil {
-						results[index].warning = j.provider + ": " + j.id
+						results[index].warning = j.provider + ": " + j.url + ": " + err.Error()
 						// A malformed price sheet must not block independently
-						// verified xAI attributes or erase the last valid price.
-						if j.provider != "xai" || len(entry.FieldSources) == 0 {
+						// verified attributes or erase the last valid price.
+						if len(entry.FieldSources) == 0 {
 							continue
 						}
 					}
@@ -679,10 +701,50 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 				} else {
 					entries := parseCatalogTables(data, groups[j.provider], j.provider, j.url)
 					if j.provider == "deepseek" {
-						entries = parseDeepSeekDocument(data, groups[j.provider], j.url)
-						addDeepSeekPrices(data, entries, j.url)
+						entries = parseDeepSeekDocumentWithPrices(data, groups[j.provider], j.url)
 					}
 					switch j.url {
+					case openAIImagePricingURL:
+						entries = parseOpenAIImagePricing(data, groups[j.provider], j.url)
+					case awsNovaPricingURL:
+						entries, err = fetchAWSNovaPricing(ctx, data, groups[j.provider])
+						if err != nil {
+							results[index].warning = "amazon pricing: " + err.Error()
+						}
+					case thinkingMachinesPricingURL:
+						entries = parseThinkingMachinesPricing(data, groups[j.provider], j.url)
+					case metaPricingURL:
+						entries = parseMetaPricing(data, groups[j.provider], j.url)
+					case liquidPricingURL:
+						entries = parseLiquidPricing(data, groups[j.provider], j.url)
+					case moondreamPricingURL:
+						entries = parseMoondreamPricing(data, groups[j.provider], j.url)
+					case rekaPricingURL:
+						entries = parseRekaPricing(data, groups[j.provider], j.url)
+					case longcatPricingURL:
+						entries = parseLongcatPricing(data, groups[j.provider], j.url)
+					case fireworksPricingURL:
+						entries = parseFireworksPricing(data, groups[j.provider], j.url)
+					case particlePricingURL:
+						entries = parseParticlePricing(data, groups[j.provider], j.url)
+					case inferencePricingURL:
+						entries = parseInferencePricing(data, groups[j.provider], j.url)
+					case unbiasedPricingURL:
+						entries = parseUnbiasedPricing(data, groups[j.provider], j.url)
+					case aliyunPricingURL:
+						entries = parseAliyunPricing(data, groups[j.provider], j.url)
+					case inceptionPricingURL:
+						entries = parseInceptionPricing(data, groups[j.provider], j.url)
+					case writerPricingURL:
+						entries = parseWriterPricing(data, groups[j.provider], j.url)
+					case morphPricingURL:
+						entries = parseMorphPricing(data, groups[j.provider], j.url)
+					case aionPricingURL:
+						entries = parseAionPricing(data, groups[j.provider], j.url)
+					case mistralPricingURL:
+						entries = parseMistralPricing(data, groups[j.provider], j.url)
+					case minimaxPricingURL:
+						entries = parseMiniMaxPricing(data, groups[j.provider], j.url)
 					case kimiPricingURL:
 						entries, err = parseKimiPricing(data, groups[j.provider])
 						if err != nil {
@@ -753,4 +815,32 @@ func parseDeepSeekDocument(data []byte, names map[string]bool, address string) m
 		}
 	}
 	return out
+}
+
+func parseDeepSeekDocumentWithPrices(data []byte, names map[string]bool, address string) map[string]model.ModelCapabilityMetadata {
+	requested := map[string]bool{}
+	for n := range names {
+		requested[n] = true
+	}
+	// Only aliases that the current manufacturer explicitly says are served and
+	// billed as Flash. A version-looking model name alone is not alias evidence.
+	text := strings.Join(priceLines(data), " ")
+	aliases := []string{"deepseek-v4-flash", "deepseek-v4-flash-vision-exp"}
+	verified := strings.Contains(text, "Use deepseek-flash as the model name. The legacy names deepseek-v4-flash and deepseek-v4-flash-vision-exp are still accepted, but the corresponding models have been retired, their requests are served by the DeepSeek-V4.1-Flash-1017 model and billed at the Flash price.")
+	if verified {
+		requested["deepseek-flash"] = true
+	}
+	entries := parseDeepSeekDocument(data, requested, address)
+	addDeepSeekPrices(data, entries, address)
+	if verified && len(entries["deepseek-flash"].OfficialPricing.Tiers) > 0 {
+		for _, alias := range aliases {
+			if names[alias] {
+				entries[alias] = entries["deepseek-flash"]
+			}
+		}
+	}
+	if !names["deepseek-flash"] {
+		delete(entries, "deepseek-flash")
+	}
+	return entries
 }
