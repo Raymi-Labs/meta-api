@@ -81,6 +81,9 @@ func parseOpenAIPriceLines(lines []string, address string) (model.OfficialPricin
 		}
 	}
 	section := lines[start+1 : end]
+	if slices.Contains(section, "Image tokens") {
+		return parseOpenAIImagePriceCards(section, address)
+	}
 	card := slices.Index(section, "Text tokens")
 	if card < 0 {
 		return empty, nil
@@ -176,4 +179,44 @@ func parseOpenAIPriceLines(lines []string, address string) (model.OfficialPricin
 		return empty, err
 	}
 	return pricing, nil
+}
+
+// Image generators may have text inputs but no text outputs. Keep their image
+// token rates separate so token comparisons cannot treat images as text.
+func parseOpenAIImagePriceCards(section []string, address string) (model.OfficialPricing, error) {
+	p := model.OfficialPricing{Currency: "USD", SourceURL: address}
+	for _, spec := range []struct{ heading, unit string }{{"Text tokens", "million_tokens"}, {"Image tokens", "million_image_tokens"}} {
+		i := slices.Index(section, spec.heading)
+		if i < 0 || i+1 >= len(section) || section[i+1] != "Per 1M tokens" {
+			return model.OfficialPricing{}, errors.New("missing image model token unit")
+		}
+		t := model.OfficialPricingTier{Label: "Standard · " + spec.heading, Unit: spec.unit}
+		fields := map[string]**float64{"Input": &t.Input, "Output": &t.Output, "Cached input": &t.CacheRead}
+		seen := map[string]bool{}
+		for j := i + 2; j < len(section); j++ {
+			line := section[j]
+			if slices.Contains([]string{"Image tokens", "Text tokens", "Audio tokens", "Video tokens", "Quick comparison"}, line) {
+				break
+			}
+			if ptr, ok := fields[line]; ok {
+				if seen[line] || j+1 >= len(section) {
+					return model.OfficialPricing{}, errors.New("duplicate image price field")
+				}
+				seen[line] = true
+				j++
+				v := documentUSD(section[j])
+				if v == nil {
+					return model.OfficialPricing{}, errors.New("invalid image price field")
+				}
+				*ptr = v
+			} else if line != "∙" && line != "Batch API price" {
+				p.Notes += " " + line
+			}
+		}
+		if t.Input == nil || spec.unit == "million_image_tokens" && t.Output == nil {
+			return model.OfficialPricing{}, errors.New("incomplete image token rates")
+		}
+		p.Tiers = append(p.Tiers, t)
+	}
+	return p, p.Normalize(model.NameRuleExact)
 }

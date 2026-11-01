@@ -27,6 +27,10 @@ export const OFFICIAL_PRICE_COLUMNS = [
 ];
 export const OFFICIAL_PRICE_UNITS = {
   million_tokens: 'M tokens',
+  million_characters: 'M characters',
+  million_audio_tokens: 'M audio tokens',
+  million_image_tokens: 'M image tokens',
+  million_video_tokens: 'M video tokens',
   request: 'request',
   image: 'image',
   second: 's',

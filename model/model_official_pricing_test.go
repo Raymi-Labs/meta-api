@@ -45,7 +45,7 @@ func TestOfficialPricingValidation(t *testing.T) {
 		p.Tiers[0].Input = &v
 		require.Error(t, p.Normalize(NameRuleExact))
 	}
-	for _, unit := range []string{"request", "image", "second", "minute", "hour"} {
+	for _, unit := range []string{"request", "image", "second", "minute", "hour", "million_characters", "million_audio_tokens", "million_image_tokens", "million_video_tokens"} {
 		zero := 0.0
 		p = OfficialPricing{Currency: "CNY", Tiers: []OfficialPricingTier{{Label: "Standard", Unit: unit, Price: &zero}}}
 		require.NoError(t, p.Normalize(NameRuleExact))

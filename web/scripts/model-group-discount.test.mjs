@@ -204,3 +204,13 @@ test('independent reference quote rejects stale data and never uses internal quo
   assert.ok(Math.abs(actual.official - 66.52882205513785) < 1e-8);
   assert.equal(actual.percent, '85');
 });
+
+test('character and non-text token rates cannot become a text-token discount', () => {
+  for (const unit of [
+    'million_characters',
+    'million_audio_tokens',
+    'million_image_tokens',
+    'million_video_tokens',
+  ])
+    assert.equal(compare({ officialTier: { unit, input: 10 } }), null);
+});
