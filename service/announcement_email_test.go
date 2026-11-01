@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/textproto"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,4 +77,34 @@ func TestAnnouncementEmailWorkerRecoveryAndEligibility(t *testing.T) {
 	require.Equal(t, 1, jobs[0].Unknown)
 	require.Equal(t, 1, jobs[0].Submitted)
 	require.Equal(t, 1, jobs[0].Skipped)
+}
+
+func TestAnnouncementEmailBrandAndSignature(t *testing.T) {
+	oldName := common.SystemName
+	common.SystemName = "元衡 API"
+	t.Cleanup(func() { common.SystemName = oldName })
+	for _, tc := range []struct{ name, body, extra, want string }{
+		{"no signature", "维护内容", "", "维护内容"},
+		{"old signature", "维护内容\n\nMeta-Api 团队\r\n", "", "维护内容"},
+		{"current signature", "维护内容\nMeta-API团队", "", "维护内容"},
+		{"extra signature", "维护内容", "附加信息\nMeta-Api 团队", "附加信息"},
+		{"body mention", "Meta-Api 团队将在凌晨维护", "", "Meta-Api 团队将在凌晨维护"},
+		{"middle mention", "Meta-Api 团队\n将在凌晨维护", "", "Meta-Api 团队\n将在凌晨维护"},
+		{"HTML", "<script>内容</script>", "<img src=x>", "&lt;script&gt;内容&lt;/script&gt;"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			job := &model.AnnouncementEmailJob{Content: tc.body, Extra: tc.extra}
+			subject, body := announcementEmailContent(job)
+			require.Equal(t, "[Meta-API团队] 新平台公告", subject)
+			require.Contains(t, body, "<h2>Meta-API团队</h2>")
+			require.Contains(t, body, "<p>Meta-API团队</p>")
+			require.Equal(t, 2, strings.Count(body, "Meta-API团队"))
+			require.Contains(t, body, tc.want)
+			require.NotContains(t, body, "元衡 API")
+			require.NotContains(t, body, "<script>")
+			require.NotContains(t, body, "<img")
+			require.Equal(t, tc.body, job.Content)
+			require.Equal(t, tc.extra, job.Extra)
+		})
+	}
 }

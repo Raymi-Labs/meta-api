@@ -14,6 +14,8 @@ import (
 	"github.com/QuantumNous/new-api/model"
 )
 
+const announcementEmailTeam = "Meta-API团队"
+
 var announcementEmailOnce sync.Once
 
 func AnnouncementSMTPReady() bool {
@@ -25,14 +27,30 @@ func AnnouncementSMTPReady() bool {
 }
 
 func announcementEmailContent(job *model.AnnouncementEmailJob) (string, string) {
-	// Treat announcement Markdown/HTML as text in email. This preserves every
-	// character without allowing announcement content to inject email markup.
-	content := `<div style="font-family:Arial,sans-serif;line-height:1.7;max-width:720px;margin:auto"><h2>` + html.EscapeString(common.SystemName) + ` 平台公告</h2><div style="white-space:pre-wrap">` + html.EscapeString(job.Content) + `</div>`
+	// Treat announcement Markdown/HTML as text in email, normalizing only the
+	// trailing team signature without allowing content to inject email markup.
+	content := `<div style="font-family:Arial,sans-serif;line-height:1.7;max-width:720px;margin:auto"><h2>` + announcementEmailTeam + `</h2><div style="white-space:pre-wrap">` + html.EscapeString(announcementEmailText(job.Content)) + `</div>`
 	if job.Extra != "" {
-		content += `<div style="white-space:pre-wrap;margin-top:16px">` + html.EscapeString(job.Extra) + `</div>`
+		content += `<div style="white-space:pre-wrap;margin-top:16px">` + html.EscapeString(announcementEmailText(job.Extra)) + `</div>`
 	}
-	content += `<p style="color:#666">您收到此邮件，是因为您是本平台的注册用户。</p></div>`
-	return fmt.Sprintf("[%s] 新平台公告", common.SystemName), content
+	content += `<p>` + announcementEmailTeam + `</p><p style="color:#666">您收到此邮件，是因为您是本平台的注册用户。</p></div>`
+	return fmt.Sprintf("[%s] 新平台公告", announcementEmailTeam), content
+}
+
+// Remove only a standalone trailing team signature; retain mentions in the body
+// and leave the stored website announcement and delivery snapshot untouched.
+func announcementEmailText(text string) string {
+	trimmed := strings.TrimRight(text, " \t\r\n")
+	lineStart := strings.LastIndex(trimmed, "\n") + 1
+	lastLine := strings.TrimSpace(trimmed[lineStart:])
+	if strings.EqualFold(strings.ReplaceAll(lastLine, " ", ""), announcementEmailTeam) {
+		return strings.TrimRight(trimmed[:lineStart], " \t\r\n")
+	}
+	return text
+}
+
+func sendAnnouncementEmail(subject, receiver, content string) error {
+	return common.SendEmailTrackedWithSenderName(subject, receiver, content, announcementEmailTeam)
 }
 
 func announcementEmailOutcome(err error) (status string, retry bool) {
@@ -85,7 +103,7 @@ func StartAnnouncementEmailTask() {
 						common.SysError("announcement email cleanup failed")
 					}
 				}
-				if err := processAnnouncementEmail(now.Unix(), common.SendEmailTracked); err != nil {
+				if err := processAnnouncementEmail(now.Unix(), sendAnnouncementEmail); err != nil {
 					// Do not include SQL errors, SMTP replies or recipient addresses.
 					common.SysError("announcement email queue processing failed")
 				}
