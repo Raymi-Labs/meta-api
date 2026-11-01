@@ -7095,6 +7095,10 @@
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site prices are shown by tier. Official prices are compared only for matching conditions; this is not a discount for the entire request.",
     "与官方价格一致": "Same as official pricing",
     "比官方价格低{{percent}}%": "{{percent}}% below official pricing",
-    "比官方价格高{{percent}}%": "{{percent}}% above official pricing"
+    "比官方价格高{{percent}}%": "{{percent}}% above official pricing",
+    "近30分钟": "Last 30 minutes",
+    "模型用量参考": "Model usage reference",
+    "用量时间范围": "Usage time range",
+    "最近 {{days}} 天": "Last {{days}} days"
   }
 }

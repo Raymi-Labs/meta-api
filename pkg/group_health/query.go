@@ -85,17 +85,38 @@ type Group struct {
 	Series []Bucket `json:"series"`
 }
 
+// ModelUsageReference is public model-wide activity, never this site's group usage.
+type ModelUsagePoint struct {
+	Ts           int64  `json:"ts"`
+	TotalTokens  *int64 `json:"total_tokens"`
+	RequestCount *int64 `json:"request_count"`
+}
+type ModelUsageReference struct {
+	Source        string            `json:"source"`
+	Model         string            `json:"model"`
+	Permaslug     string            `json:"permaslug"`
+	Variant       string            `json:"variant"`
+	Scope         string            `json:"scope"`
+	Groups        []string          `json:"groups"`
+	BucketSeconds int64             `json:"bucket_seconds"`
+	FetchedAt     int64             `json:"fetched_at"`
+	UpdatedAt     int64             `json:"updated_at"`
+	ExpiresAt     int64             `json:"expires_at"`
+	Series        []ModelUsagePoint `json:"series"`
+}
+
 type Result struct {
-	Enabled              bool    `json:"enabled"`
-	StartTime            int64   `json:"start_time"`
-	EndTime              int64   `json:"end_time"`
-	UpdatedAt            int64   `json:"updated_at"`
-	BucketSeconds        int64   `json:"bucket_seconds"`
-	MetricScope          string  `json:"metric_scope"`
-	WindowScope          string  `json:"window_scope"`
-	WindowHours          int     `json:"window_hours"`
-	CollectionIncomplete bool    `json:"collection_incomplete"`
-	Groups               []Group `json:"groups"`
+	ModelUsageReference  *ModelUsageReference `json:"model_usage_reference,omitempty"`
+	Enabled              bool                 `json:"enabled"`
+	StartTime            int64                `json:"start_time"`
+	EndTime              int64                `json:"end_time"`
+	UpdatedAt            int64                `json:"updated_at"`
+	BucketSeconds        int64                `json:"bucket_seconds"`
+	MetricScope          string               `json:"metric_scope"`
+	WindowScope          string               `json:"window_scope"`
+	WindowHours          int                  `json:"window_hours"`
+	CollectionIncomplete bool                 `json:"collection_incomplete"`
+	Groups               []Group              `json:"groups"`
 }
 
 func Query(ctx context.Context, groups []string, modelName string, role int, now time.Time, windowHours ...int) (Result, error) {

@@ -180,7 +180,9 @@ try {
             output_tps: 20,
           };
       const stats = {
-        request_count: 0,
+        request_count: measured ? 1 : 0,
+        observed_count: measured ? 1 : 0,
+        total_tokens: measured ? 0 : null,
         success_count: 0,
         avg_ttft_ms: measured ? 300 : null,
         ttft_count: measured ? 1 : 0,
@@ -192,6 +194,22 @@ try {
         success: true,
         data: {
           enabled: true,
+          model_usage_reference: unavailable
+            ? null
+            : {
+                source: 'openrouter',
+                scope: 'model_global',
+                model: 'vendor/model',
+                bucket_seconds: 86400,
+                groups: ['chat'],
+                fetched_at: Math.floor(Date.now() / 1000) - 5,
+                expires_at: Math.floor(Date.now() / 1000) + 895,
+                series: Array.from({ length: 30 }, (_, i) => ({
+                  ts: Math.floor(Date.now() / 86400000) * 86400 - i * 86400,
+                  total_tokens: 1000000,
+                  request_count: 100,
+                })),
+              },
           groups: ['chat', 'image', 'speech'].map((group) => ({
             group,
             ...stats,
@@ -230,6 +248,78 @@ try {
   assert.ok(text.includes('首字时间') && text.includes('20'));
   assert.ok(!/OpenRouter|P50|参考/.test(text));
   assert.ok(!text.includes('100.00%'), 'external data must not create uptime');
+  const performance = await page.$eval('#performance', (e) => e.textContent);
+  assert.ok(performance.includes('1.92 s') && performance.includes('20 tok/s'));
+  assert.equal(
+    await page.$$eval(
+      '#performance .model-chart-reference-values',
+      (es) => es.length,
+    ),
+    2,
+  );
+  assert.equal(
+    await page.$$eval('#performance svg[role="img"]', (es) => es.length),
+    0,
+    'no fake history',
+  );
+  await page.waitForFunction(() =>
+    document.querySelector('#usage')?.textContent.includes('模型用量参考'),
+  );
+  let usage = await page.$eval('#usage', (e) => e.textContent);
+  assert.ok(usage.includes('7M') && !usage.includes('暂无数据'));
+  assert.ok(!usage.includes('chat') && !usage.includes('OpenRouter'));
+  await page.click('#usage button[aria-pressed="false"]');
+  usage = await page.$eval('#usage', (e) => e.textContent);
+  assert.ok(usage.includes('700'));
+  await page.click('#usage .model-chart-heading button');
+  await page.waitForSelector('.model-chart-modal .is-expanded');
+  assert.ok(
+    (await page.$eval('.model-chart-modal', (e) => e.textContent)).includes(
+      '700',
+    ),
+  );
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.semi-modal-mask')].every(
+      (e) =>
+        getComputedStyle(e).display === 'none' ||
+        getComputedStyle(e).opacity === '0',
+    ),
+  );
+  await page.click('#usage .semi-select');
+  await page.waitForSelector('.semi-select-option');
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.semi-select-option')]
+      .find((e) => e.textContent.includes('30'))
+      .click(),
+  );
+  await page.waitForFunction(() =>
+    document
+      .querySelector('#usage .model-chart-legend')
+      ?.textContent.includes('3K'),
+  );
+  await page.click('#usage .semi-select');
+  await page.waitForSelector('.semi-select-option');
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.semi-select-option')]
+      .find((e) => e.textContent.includes('7'))
+      .click(),
+  );
+  await page.waitForFunction(() =>
+    document
+      .querySelector('#usage .model-chart-legend')
+      ?.textContent.includes('700'),
+  );
+  await (
+    await page.$('#performance')
+  ).screenshot({ path: path.join(artifacts, 'performance-desktop.png') });
+  await (
+    await page.$('#usage')
+  ).screenshot({ path: path.join(artifacts, 'usage-desktop.png') });
+  await page.screenshot({
+    path: path.join(artifacts, 'charts-desktop.png'),
+    fullPage: true,
+  });
   await page.setViewport({ width: 390, height: 844 });
   await page.evaluate(() => {
     document.documentElement.classList.add('dark');
@@ -254,6 +344,15 @@ try {
   );
   text = await page.$eval(card, (e) => e.textContent);
   assert.ok(text.includes('首字均值') && text.includes('77'));
+  await page.click('.pricing-model-card a[href="/model/chat-00"]');
+  await page.waitForFunction(() =>
+    document.querySelector('#usage')?.textContent.includes('分组用量'),
+  );
+  assert.ok(
+    !(await page.$eval('#usage', (e) => e.textContent)).includes(
+      '模型用量参考',
+    ),
+  );
   measured = false;
   unavailable = true;
   await page.reload({ waitUntil: 'networkidle0' });
@@ -273,6 +372,9 @@ try {
       checks: [
         'card P50',
         'detail P50',
+        'empty plots show current P50 without fake history',
+        'public daily tokens and requests',
+        'usage expansion and local priority',
         'no source labels',
         'no synthetic uptime',
         '390px dark layout',

@@ -843,6 +843,36 @@ html.dark .model-metric-chart {
   color: var(--detail-muted);
   text-align: center;
 }
+.model-chart-reference-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  align-content: center;
+  gap: 24px;
+  min-height: 220px;
+  padding: 24px 8px;
+  text-align: center;
+}
+.model-chart-reference-values > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.model-chart-reference-values span,
+.model-chart-reference-window {
+  font-size: 12px;
+  color: var(--detail-muted);
+}
+.model-chart-reference-values strong {
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.model-chart-reference-window {
+  text-align: center;
+  margin: 0 0 12px;
+}
 .model-chart-data {
   font-size: 11px;
   color: var(--detail-muted);

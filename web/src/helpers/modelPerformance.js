@@ -22,7 +22,7 @@ import { getHealthLatency } from '../components/group-health/healthUtils';
 const valid = (value) =>
   value != null && Number.isFinite(Number(value)) && Number(value) >= 0;
 
-// Display fallback only. Do not feed references into history charts or aggregates.
+// Display fallback only. Never feed references into historical buckets or aggregates.
 export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
   const latency = getHealthLatency(stats, metric, true);
   const reference = stats?.performance_reference;
