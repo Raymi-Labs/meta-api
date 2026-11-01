@@ -22,7 +22,8 @@ import (
 
 const (
 	imagePlaygroundDefaultModel    = "gpt-image-2"
-	imagePlaygroundAgentModel      = "gpt-5.5"
+	imagePlaygroundAgentModel      = "gpt-6-sol"
+	imagePlaygroundPreferredGroup  = "福利"
 	imagePlaygroundSessionDuration = 2 * time.Hour
 	imagePlaygroundRefreshWindow   = 15 * time.Minute
 )
@@ -136,6 +137,7 @@ func createImagePlaygroundToken(userId int, now int64) (*model.Token, bool, erro
 		ModelLimitsEnabled:   false,
 		ModelLimits:          "",
 		Group:                group,
+		AutoGroupFallback:    true,
 		MaxConcurrency:       2,
 		WindowRequestLimit:   60,
 		WindowSeconds:        60,
@@ -169,6 +171,15 @@ func refreshImagePlaygroundToken(token *model.Token, userId int) (bool, bool, er
 		token.Group = group
 		changed = true
 	}
+	if token != nil {
+		// 系统管理的生图会话使用首选组自动回退，避免旧的自定义路由覆盖它。
+		if !token.AutoGroupFallback || token.CrossGroupRetry || token.RoutingConfig != "" {
+			token.AutoGroupFallback = true
+			token.CrossGroupRetry = false
+			token.RoutingConfig = ""
+			changed = true
+		}
+	}
 	return changed, supportsEcommerce, nil
 }
 
@@ -183,10 +194,13 @@ func clearImagePlaygroundTokenModelLimits(token *model.Token) bool {
 
 // resolveImagePlaygroundTokenGroup 选出最适合当前用户的 image-playground 分组并报告其能力。
 // 选择顺序：
-//  1. 当前用户分组（仅当它仍是有效、可用分组时）；
-//  2. AutoGroups 中按配置顺序排列的有效分组；
-//  3. 其余有效、可用分组（按名称排序，保证结果稳定）；
-//  4. 在上述候选中优先选择同时支持 image + agent 模型的分组，其次选择仅支持 image 的分组。
+//  1. 福利分组（仅当用户有权限且分组仍有效时）；
+//  2. 当前用户分组（仅当它仍是有效、可用分组时）；
+//  3. AutoGroups 中按配置顺序排列的有效分组；
+//  4. 其余有效、可用分组（按名称排序，保证结果稳定）；
+//  5. 在上述候选中优先选择同时支持 image + agent 模型的分组，其次选择仅支持 image 的分组。
+//
+// 决策见 .agents/notes/implemented/bug-fix/2026-11-01-image-playground-defaults.md。
 //
 // 不再回退到 default 或已取消的用户分组：无可执行分组时直接返回配置错误，避免创建一个
 // 看似可用、实际无法路由的临时令牌。
@@ -266,6 +280,7 @@ func buildImagePlaygroundGroupCandidates(userGroup string) []string {
 		candidates = append(candidates, group)
 	}
 
+	add(imagePlaygroundPreferredGroup)
 	add(userGroup)
 	for _, group := range setting.GetAutoGroups() {
 		add(group)

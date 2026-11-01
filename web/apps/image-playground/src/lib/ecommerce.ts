@@ -17,7 +17,7 @@ import { getApiErrorMessage } from './imageApiShared'
 
 export const DEFAULT_ECOMMERCE_CAPABILITIES: EcommerceCapabilities = {
   defaultImageModel: 'gpt-image-2',
-  defaultPlanModel: 'gpt-5.5',
+  defaultPlanModel: 'gpt-6-sol',
   supportsEcommerce: true,
 }
 
