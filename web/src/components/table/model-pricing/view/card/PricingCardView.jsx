@@ -284,7 +284,12 @@ const PricingCardView = ({
                           <Gauge size={13} />
                           {t('输出速度')}
                         </dt>
-                        <dd>
+                        <dd
+                          title={formatHealthReference(
+                            { referenceTs: performance.throughputReferenceTs },
+                            t,
+                          )}
+                        >
                           {formatModelThroughput(performance.throughput) === '—'
                             ? t('暂无数据')
                             : formatModelThroughput(performance.throughput)}

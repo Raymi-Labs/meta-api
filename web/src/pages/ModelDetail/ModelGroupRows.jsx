@@ -221,7 +221,17 @@ export default function ModelGroupRows({
                 </div>
                 <div>
                   <dt>{t('输出速度')}</dt>
-                  <dd>{formatModelThroughput(performance.throughput)}</dd>
+                  <dd
+                    title={formatHealthReference(
+                      { referenceTs: performance.throughputReferenceTs },
+                      t,
+                    )}
+                  >
+                    {formatModelThroughput(performance.throughput)}
+                    {performance.throughputReferenceTs && (
+                      <small> · {t('沿用最近有效值')}</small>
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt>

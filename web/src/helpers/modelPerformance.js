@@ -17,7 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { getHealthLatency } from '../components/group-health/healthUtils';
+import {
+  getHealthLatency,
+  getHealthMeasurement,
+} from '../components/group-health/healthUtils';
 
 const valid = (value) =>
   value != null && Number.isFinite(Number(value)) && Number(value) >= 0;
@@ -25,6 +28,7 @@ const valid = (value) =>
 // Display fallback only. Never feed references into historical buckets or aggregates.
 export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
   const latency = getHealthLatency(stats, metric, true);
+  const throughput = getHealthMeasurement(stats, 'output_tps', true);
   const reference = stats?.performance_reference;
   const fresh =
     reference?.source === 'openrouter' &&
@@ -38,14 +42,15 @@ export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
     fresh &&
     valid(reference.ttft_ms);
   const externalThroughput =
-    !valid(stats?.avg_output_tps) && fresh && valid(reference.output_tps);
+    !valid(throughput.value) && fresh && valid(reference.output_tps);
   return {
     latency: externalLatency
       ? { value: Number(reference.ttft_ms), count: 0 }
       : latency,
     throughput: externalThroughput
       ? Number(reference.output_tps)
-      : stats?.avg_output_tps,
+      : throughput.value,
+    throughputReferenceTs: throughput.referenceTs,
     externalLatency: Boolean(externalLatency),
     externalThroughput: Boolean(externalThroughput),
   };

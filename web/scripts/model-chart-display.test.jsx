@@ -189,6 +189,35 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(html).toContain('aria-label="展开 · 首字均值 · s"');
     });
 
+    test('historical throughput retains source time without changing raw samples', () => {
+      const point = {
+        ts: 7200,
+        avg_output_tps: null,
+        throughput_sample_count: 0,
+        last_valid: { output_tps: { value: 73.7, ts: 3600 } },
+      };
+      expect(chartDisplayValue(point, 'avg_output_tps')).toBe(73.7);
+      expect(point.avg_output_tps).toBeNull();
+      expect(point.throughput_sample_count).toBe(0);
+      expect(
+        chartDisplayValue({ ...point, avg_output_tps: 0 }, 'avg_output_tps'),
+      ).toBe(0);
+      expect(
+        chartDisplayValue({ ...point, ts: 1800 }, 'avg_output_tps'),
+      ).toBeNull();
+      const html = renderToStaticMarkup(
+        <ModelMetricChart
+          title='输出速度'
+          metric='avg_output_tps'
+          groups={[{ ...point, group: '同组', series: [point] }]}
+          t={(key) => key}
+        />,
+      );
+      expect(html).toContain('73.7 tok/s');
+      expect(html).toContain('沿用');
+      expect(html).not.toContain('P50');
+    });
+
     test('low-sample success remains gray; no-data and usage do not invent observations', () => {
       const render = (metric, groups, bar = false) =>
         renderToStaticMarkup(

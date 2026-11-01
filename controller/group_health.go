@@ -170,5 +170,6 @@ func GetModelHealthSummaries(c *gin.Context) {
 }
 
 func needsPerformanceReference(m grouphealth.Metrics) bool {
-	return (m.AvgTTFTMs == nil && (m.LastValid == nil || m.LastValid.TTFT == nil)) || m.AvgOutputTPS == nil
+	return (m.AvgTTFTMs == nil && (m.LastValid == nil || m.LastValid.TTFT == nil)) ||
+		(m.AvgOutputTPS == nil && (m.LastValid == nil || m.LastValid.OutputTPS == nil))
 }

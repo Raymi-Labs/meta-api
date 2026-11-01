@@ -12,6 +12,7 @@ type MeasurementReferences struct {
 	TTFT       *MeasurementReference `json:"ttft,omitempty"`
 	Completion *MeasurementReference `json:"completion,omitempty"`
 	Cache      *MeasurementReference `json:"cache,omitempty"`
+	OutputTPS  *MeasurementReference `json:"output_tps,omitempty"`
 }
 
 func measurementStart(end int64) int64 {
@@ -19,6 +20,9 @@ func measurementStart(end int64) int64 {
 }
 
 func (r *MeasurementReferences) observe(row model.GroupHealthMetric, ts int64) {
+	if row.ThroughputSampleCount > 0 && row.GenerationSumMs > 0 && row.ThroughputOutputTokens >= 0 && (r.OutputTPS == nil || ts > r.OutputTPS.Ts) {
+		r.OutputTPS = &MeasurementReference{Value: float64(row.ThroughputOutputTokens) * 1000 / float64(row.GenerationSumMs), Ts: ts}
+	}
 	if row.TTFTCount > 0 && row.TTFTSumMs >= 0 && (r.TTFT == nil || ts > r.TTFT.Ts) {
 		r.TTFT = &MeasurementReference{Value: float64(row.TTFTSumMs) / float64(row.TTFTCount), Ts: ts}
 	}
@@ -31,7 +35,7 @@ func (r *MeasurementReferences) observe(row model.GroupHealthMetric, ts int64) {
 }
 
 func (r MeasurementReferences) snapshot() *MeasurementReferences {
-	if r.TTFT == nil && r.Completion == nil && r.Cache == nil {
+	if r.TTFT == nil && r.Completion == nil && r.Cache == nil && r.OutputTPS == nil {
 		return nil
 	}
 	// Values are immutable; replacing a later pointer cannot change earlier hours.
