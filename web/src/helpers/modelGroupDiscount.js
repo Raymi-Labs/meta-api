@@ -57,7 +57,7 @@ export function officialComparisonUnit(model) {
 
 // Compare the displayed site cost against a reference converted at the actual
 // USD/CNY rate. Recharge/package credit rates must never discount the reference.
-export function compareGroupPrice({
+export function groupPriceComparison({
   item,
   pricing,
   model,
@@ -68,53 +68,51 @@ export function compareGroupPrice({
   tokenUnit,
   quotaDisplayType,
 }) {
+  const unavailable = (reason) => ({ comparison: null, reason });
   const field = fieldByKey[item.key];
-  if (
-    !field ||
-    quotaDisplayType === 'TOKENS' ||
-    !officialTier ||
-    officialTier.unit !== officialComparisonUnit(model)
-  )
-    return null;
-  // The current official schema has no TTL; do not equate it to 5m/1h pricing.
+  if (!field) return unavailable('该项暂不支持官方对比');
+  if (quotaDisplayType === 'TOKENS') return unavailable('倍率视图不比较金额');
+  if (!officialTier) return unavailable('尚未匹配到对应的官方档位');
+  if (officialTier.unit !== officialComparisonUnit(model))
+    return unavailable('官方与本站的计价单位不同');
+  // No structured TTL in the official schema: do not guess retention equivalence.
   if (
     field === 'cache_write' &&
     (model.supports_cache_creation_ttl ||
       (pricing.isDynamicPricing &&
         model.supported_endpoint_types?.includes('anthropic')))
   )
-    return null;
+    return unavailable('缓存时长未对应，暂不比较');
   const reference = officialTier[field];
   const usd = pricing.unitPricesUSD?.[item.key];
-  if (
-    !validPrice(reference) ||
-    !validPrice(usd) ||
-    typeof displayPrice?.toAmount !== 'function'
-  )
-    return null;
+  if (!validPrice(reference)) return unavailable('官方未提供该项单价');
+  if (!validPrice(usd) || typeof displayPrice?.toAmount !== 'function')
+    return unavailable('本站单价暂不可比较');
   const sourceCurrency = model.official_pricing?.currency;
   if (
     !['USD', 'CNY'].includes(currency) ||
     !['USD', 'CNY'].includes(sourceCurrency)
   )
-    return null;
+    return unavailable('当前币种无法换算官方价格');
   let rate = 1;
   if (sourceCurrency !== currency) {
     const fx = usableOfficialExchangeRate(exchangeQuote);
-    if (fx == null) return null;
+    if (fx == null) return unavailable('暂无有效汇率，暂不显示官方对比');
     rate = sourceCurrency === 'USD' ? fx : 1 / fx;
   }
   const official =
     (reference * rate) /
     (officialTier.unit === 'million_tokens' && tokenUnit === 'K' ? 1000 : 1);
   const group = displayPrice.toAmount(usd);
-  if (!validPrice(official) || !validPrice(group)) return null;
+  if (!validPrice(official) || !validPrice(group))
+    return unavailable('本站单价暂不可比较');
   if (Math.abs(official - group) <= Math.max(official, group) * 1e-10)
-    return { official, group, kind: 'equal', percent: null };
-  if (official === 0) return { official, group, kind: 'higher', percent: null };
+    return { comparison: { official, group, kind: 'equal', percent: null } };
+  if (official === 0)
+    return { comparison: { official, group, kind: 'higher', percent: null } };
   const percent = Math.abs((group - official) / official) * 100;
   // Underflow/overflow must not become a spurious zero/free or infinite badge.
-  if (!Number.isFinite(percent)) return null;
+  if (!Number.isFinite(percent)) return unavailable('本站单价暂不可比较');
   const kind = group < official ? 'lower' : 'higher';
   const percentText =
     percent < 0.1
@@ -123,5 +121,10 @@ export function compareGroupPrice({
           ? Math.min(99.9, percent)
           : percent
         ).toLocaleString('en-US', { maximumFractionDigits: 1 });
-  return { official, group, kind, percent: percentText };
+  return { comparison: { official, group, kind, percent: percentText } };
+}
+
+// Keep the existing pure comparison API for other callers.
+export function compareGroupPrice(options) {
+  return groupPriceComparison(options).comparison;
 }

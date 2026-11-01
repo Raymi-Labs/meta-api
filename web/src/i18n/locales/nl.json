@@ -6887,6 +6887,16 @@
     "近30分钟": "Afgelopen 30 minuten",
     "模型用量参考": "Referentie voor modelgebruik",
     "用量时间范围": "Gebruiksperiode",
-    "最近 {{days}} 天": "Afgelopen {{days}} dagen"
+    "最近 {{days}} 天": "Afgelopen {{days}} dagen",
+    "官方与本站的计价单位不同": "Officiële en lokale facturatie-eenheden verschillen",
+    "尚未匹配到对应的官方档位": "Geen overeenkomstige officiële prijsklasse",
+    "该项暂不支持官方对比": "Officiële vergelijking niet beschikbaar voor dit onderdeel",
+    "倍率视图不比较金额": "In de factorweergave worden geen bedragen vergeleken",
+    "缓存时长未对应，暂不比较": "Cacheduur komt niet overeen; vergelijking niet beschikbaar",
+    "官方未提供该项单价": "Geen officiële eenheidsprijs voor dit onderdeel",
+    "本站单价暂不可比较": "Lokale eenheidsprijs niet vergelijkbaar",
+    "当前币种无法换算官方价格": "Officiële prijs niet om te rekenen naar deze valuta",
+    "暂无有效汇率，暂不显示官方对比": "Geen geldige wisselkoers; vergelijking niet beschikbaar",
+    "按峰谷档位比较，生效时段以各自规则为准": "Vergelijking van piek- en daltarieven; elk tijdschema volgt zijn eigen regels"
   }
 }

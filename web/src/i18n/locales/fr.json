@@ -7219,6 +7219,16 @@
     "近30分钟": "30 dernières minutes",
     "模型用量参考": "Référence d’utilisation du modèle",
     "用量时间范围": "Période d’utilisation",
-    "最近 {{days}} 天": "{{days}} derniers jours"
+    "最近 {{days}} 天": "{{days}} derniers jours",
+    "官方与本站的计价单位不同": "Les unités de facturation diffèrent",
+    "尚未匹配到对应的官方档位": "Aucun palier officiel correspondant",
+    "该项暂不支持官方对比": "Comparaison officielle indisponible pour cet élément",
+    "倍率视图不比较金额": "Les montants ne sont pas comparés en mode coefficient",
+    "缓存时长未对应，暂不比较": "Durées de cache non correspondantes : comparaison indisponible",
+    "官方未提供该项单价": "Aucun prix unitaire officiel pour cet élément",
+    "本站单价暂不可比较": "Prix unitaire du site non comparable",
+    "当前币种无法换算官方价格": "Prix officiel non convertible dans cette devise",
+    "暂无有效汇率，暂不显示官方对比": "Aucun taux de change valide : comparaison indisponible",
+    "按峰谷档位比较，生效时段以各自规则为准": "Comparaison des tarifs heures pleines/creuses ; chaque calendrier suit ses propres règles"
   }
 }

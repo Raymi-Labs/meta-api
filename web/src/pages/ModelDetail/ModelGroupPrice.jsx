@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { compareGroupPrice } from '../../helpers/modelGroupDiscount';
+import { groupPriceComparison } from '../../helpers/modelGroupDiscount';
 import { formatOfficialPrice } from '../../helpers/modelOfficialPricing';
 
 export default function ModelGroupPrice({
@@ -30,7 +30,7 @@ export default function ModelGroupPrice({
   hideLabel = false,
 }) {
   const { t } = data;
-  const comparison = compareGroupPrice({
+  const { comparison, reason } = groupPriceComparison({
     item,
     pricing,
     model,
@@ -89,6 +89,9 @@ export default function ModelGroupPrice({
         <small>{item.suffix}</small>
       </span>
       {item.duration && <small>{item.duration}</small>}
+      {!comparison && officialTier && reason && (
+        <small className='model-group-comparison-note'>{t(reason)}</small>
+      )}
       {comparison && (
         <span
           className={`model-group-discount model-group-discount-${comparison.kind}`}

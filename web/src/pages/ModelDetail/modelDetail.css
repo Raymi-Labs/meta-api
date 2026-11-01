@@ -1704,3 +1704,12 @@ html.dark .model-metric-chart {
 .model-group-tier-table tr:last-child > * {
   border-bottom: 0;
 }
+
+.model-group-comparison-note {
+  color: var(--detail-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

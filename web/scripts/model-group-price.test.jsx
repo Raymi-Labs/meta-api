@@ -106,6 +106,15 @@ test('unavailable comparison keeps the existing price item', () => {
   assert.ok(!html.includes('model-group-discount'), html);
 });
 
+test('a matched tier with a missing official field explains the unavailable comparison', () => {
+  const html = renderPrice(54.4, {
+    officialTier: { unit: 'million_tokens', input: 10 },
+  });
+  assert.ok(html.includes('<strong>原价格</strong>'), html);
+  assert.ok(html.includes('官方未提供该项单价'), html);
+  assert.ok(!html.includes('model-group-discount'), html);
+});
+
 test('video resolution price keeps recharge amount, seconds and duration apart from official token prices', () => {
   const html = renderToStaticMarkup(
     <ModelGroupPrice
