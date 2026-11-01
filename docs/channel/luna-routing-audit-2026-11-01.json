@@ -1,0 +1,645 @@
+{
+  "reviewed_at": "2026-11-01",
+  "scope": "The nine enabled Luna channels listed to the user; split Luna from six mixed-group sources and keep 1352/1385/1640 unchanged.",
+  "operation_directory": "/opt/meta-api/operations/luna-routing-20261101",
+  "receipts": {
+    "apply_result": {
+      "verified": true,
+      "source_to_luna_channel": {
+        "1365": 1641,
+        "1398": 1642,
+        "1486": 1643,
+        "1495": 1644,
+        "1502": 1645,
+        "1532": 1646
+      },
+      "allowed_groups": [
+        "企业级",
+        "优选",
+        "福利"
+      ],
+      "kept_channels": [
+        1352,
+        1385,
+        1640
+      ],
+      "new_channels": 6,
+      "source_luna_removals": 8,
+      "all_non_luna_abilities_preserved": true,
+      "all_keys_preserved": true,
+      "price_and_group_options_unchanged": true,
+      "business_tokens_not_changed": true,
+      "active_luna_abilities": [
+        {
+          "group": "企业级",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-5.6-luna-pro",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-6-luna-pro",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1352
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1385
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1641
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1352
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1641
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1645
+        },
+        {
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1642
+        },
+        {
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1644
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1643
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1644
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1646
+        }
+      ],
+      "catalog_groups": {
+        "gpt-5.6-luna": [
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "gpt-5.6-luna-pro": [
+          "企业级"
+        ],
+        "gpt-6-luna": [
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "gpt-6-luna-pro": [
+          "企业级"
+        ]
+      },
+      "time": 1793494902
+    },
+    "gateway_acceptance": {
+      "routing_verified": true,
+      "results": [
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 独享账号",
+          "model": "gpt-5.6-luna",
+          "status": 404,
+          "error_code": "model_not_found",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 独享账号",
+          "model": "gpt-6-luna",
+          "status": 503,
+          "error_code": "no_available_channel",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 优质",
+          "model": "gpt-5.6-luna",
+          "status": 503,
+          "error_code": "no_available_channel",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 优质",
+          "model": "gpt-6-luna",
+          "status": 503,
+          "error_code": "no_available_channel",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 鹈鹕王",
+          "model": "gpt-5.6-luna",
+          "status": 404,
+          "error_code": "model_not_found",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "denied_group",
+          "group": "OpenAI · 鹈鹕王",
+          "model": "gpt-6-luna",
+          "status": 503,
+          "error_code": "no_available_channel",
+          "catalog_hidden": true,
+          "zero_charge": true,
+          "verified": true
+        },
+        {
+          "kind": "allowed_catalog",
+          "group": "企业级",
+          "models": [
+            "gpt-5.6-luna",
+            "gpt-5.6-luna-pro",
+            "gpt-6-luna",
+            "gpt-6-luna-pro"
+          ],
+          "verified": true
+        },
+        {
+          "kind": "allowed_catalog",
+          "group": "优选",
+          "models": [
+            "gpt-5.6-luna",
+            "gpt-6-luna"
+          ],
+          "verified": true
+        },
+        {
+          "kind": "allowed_catalog",
+          "group": "福利",
+          "models": [
+            "gpt-5.6-luna",
+            "gpt-6-luna"
+          ],
+          "verified": true
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1365,
+          "channel_id": 1641,
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.86,
+          "quota": 46,
+          "group_ratio": 0.8,
+          "single_charge": true,
+          "input_tokens": 10,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1365,
+          "channel_id": 1641,
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.27,
+          "quota": 1638,
+          "group_ratio": 0.8,
+          "single_charge": true,
+          "input_tokens": 4392,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1398,
+          "channel_id": 1642,
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.02,
+          "quota": 3364,
+          "group_ratio": 0.6,
+          "single_charge": true,
+          "input_tokens": 5125,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1486,
+          "channel_id": 1643,
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.1,
+          "quota": 35,
+          "group_ratio": 0.6,
+          "single_charge": true,
+          "input_tokens": 10,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1495,
+          "channel_id": 1644,
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.3,
+          "quota": 35,
+          "group_ratio": 0.6,
+          "single_charge": true,
+          "input_tokens": 10,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1495,
+          "channel_id": 1644,
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.47,
+          "quota": 1228,
+          "group_ratio": 0.6,
+          "single_charge": true,
+          "input_tokens": 4392,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1502,
+          "channel_id": 1645,
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.21,
+          "quota": 46,
+          "group_ratio": 0.8,
+          "single_charge": true,
+          "input_tokens": 10,
+          "output_tokens": 5
+        },
+        {
+          "kind": "generation",
+          "source_channel": 1532,
+          "channel_id": 1646,
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "status": 200,
+          "verified": true,
+          "seconds": 2.1,
+          "quota": 607,
+          "group_ratio": 0.6,
+          "single_charge": true,
+          "input_tokens": 4390,
+          "output_tokens": 5
+        }
+      ],
+      "upstream_successes": 8,
+      "upstream_failures": [],
+      "tokens_deleted": true,
+      "time": 1793494978
+    },
+    "final_verification": {
+      "verified": true,
+      "routes": [
+        {
+          "source_id": 1365,
+          "source_name": "muze-独享分组",
+          "source_group": "OpenAI · 独享账号,优选",
+          "new_channel_id": 1641,
+          "new_channel_name": "Luna · 1365 · muze-独享分组",
+          "models": [
+            "gpt-6-luna",
+            "gpt-5.6-luna"
+          ],
+          "group": "优选",
+          "source_remaining_models": [
+            "gpt-5.6-sol",
+            "gpt-6-astra",
+            "gpt-5.6-terra",
+            "gpt-6-sol",
+            "gpt-6.1-sol",
+            "codex-auto-review"
+          ],
+          "source_test_model_before": "gpt-6-luna",
+          "source_test_model_after": "gpt-6.1-sol",
+          "new_test_model": "gpt-6-luna",
+          "priority": 3,
+          "weight": 3,
+          "both_enabled": true
+        },
+        {
+          "source_id": 1398,
+          "source_name": "https://codexauv.com/0.25",
+          "source_group": "福利,OpenAI · 优质",
+          "new_channel_id": 1642,
+          "new_channel_name": "Luna · 1398 · https://codexauv.com/0.25",
+          "models": [
+            "gpt-5.6-luna"
+          ],
+          "group": "福利",
+          "source_remaining_models": [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-6-astra"
+          ],
+          "source_test_model_before": "",
+          "source_test_model_after": "",
+          "new_test_model": "gpt-5.6-luna",
+          "priority": 5,
+          "weight": 6,
+          "both_enabled": true
+        },
+        {
+          "source_id": 1486,
+          "source_name": "muze/xisheng/0.25",
+          "source_group": "OpenAI · 优质,福利",
+          "new_channel_id": 1643,
+          "new_channel_name": "Luna · 1486 · muze/xisheng/0.25",
+          "models": [
+            "gpt-6-luna"
+          ],
+          "group": "福利",
+          "source_remaining_models": [
+            "gpt-6-sol",
+            "gpt-6-astra",
+            "gpt-5.6-sol",
+            "codex-auto-review",
+            "gpt-5.6-terra",
+            "gpt-6.1-terra"
+          ],
+          "source_test_model_before": "gpt-6.1-sol",
+          "source_test_model_after": "gpt-6.1-sol",
+          "new_test_model": "gpt-6-luna",
+          "priority": 4,
+          "weight": 5,
+          "both_enabled": true
+        },
+        {
+          "source_id": 1495,
+          "source_name": "https://api.muzeai.top/xisheng/0.25",
+          "source_group": "OpenAI · 鹈鹕王,福利",
+          "new_channel_id": 1644,
+          "new_channel_name": "Luna · 1495 · https://api.muzeai.top/xisheng/0.25",
+          "models": [
+            "gpt-6-luna",
+            "gpt-5.6-luna"
+          ],
+          "group": "福利",
+          "source_remaining_models": [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-6-sol",
+            "gpt-6-astra",
+            "gpt-6.1-sol",
+            "codex-auto-review",
+            "gpt-6.1-terra"
+          ],
+          "source_test_model_before": "gpt-6.1-sol",
+          "source_test_model_after": "gpt-6.1-sol",
+          "new_test_model": "gpt-6-luna",
+          "priority": 6,
+          "weight": 6,
+          "both_enabled": true
+        },
+        {
+          "source_id": 1502,
+          "source_name": "muze/xisheng/独享025",
+          "source_group": "OpenAI · 独享账号,优选",
+          "new_channel_id": 1645,
+          "new_channel_name": "Luna · 1502 · muze/xisheng/独享025",
+          "models": [
+            "gpt-6-luna"
+          ],
+          "group": "优选",
+          "source_remaining_models": [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-6-sol",
+            "gpt-6-astra",
+            "gpt-6.1-sol",
+            "codex-auto-review",
+            "gpt-6.1-terra"
+          ],
+          "source_test_model_before": "gpt-6-luna",
+          "source_test_model_after": "gpt-6.1-sol",
+          "new_test_model": "gpt-6-luna",
+          "priority": 5,
+          "weight": 6,
+          "both_enabled": true
+        },
+        {
+          "source_id": 1532,
+          "source_name": "team/014",
+          "source_group": "OpenAI · 独享账号,福利",
+          "new_channel_id": 1646,
+          "new_channel_name": "Luna · 1532 · team/014",
+          "models": [
+            "gpt-6-luna"
+          ],
+          "group": "福利",
+          "source_remaining_models": [
+            "gpt-6-astra",
+            "gpt-6-sol",
+            "gpt-6.1-sol",
+            "gpt-5.6-sol",
+            "gpt-6.1-terra"
+          ],
+          "source_test_model_before": "gpt-6-luna",
+          "source_test_model_after": "gpt-6.1-sol",
+          "new_test_model": "gpt-6-luna",
+          "priority": 2,
+          "weight": 2,
+          "both_enabled": true
+        }
+      ],
+      "kept_channels": [
+        1352,
+        1385,
+        1640
+      ],
+      "allowed_groups": [
+        "企业级",
+        "优选",
+        "福利"
+      ],
+      "active_luna_channels": 9,
+      "active_luna_abilities": [
+        {
+          "group": "企业级",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-5.6-luna-pro",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "企业级",
+          "model": "gpt-6-luna-pro",
+          "enabled": 1,
+          "channel_id": 1640
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1352
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1385
+        },
+        {
+          "group": "优选",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1641
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1352
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1641
+        },
+        {
+          "group": "优选",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1645
+        },
+        {
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1642
+        },
+        {
+          "group": "福利",
+          "model": "gpt-5.6-luna",
+          "enabled": 1,
+          "channel_id": 1644
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1643
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1644
+        },
+        {
+          "group": "福利",
+          "model": "gpt-6-luna",
+          "enabled": 1,
+          "channel_id": 1646
+        }
+      ],
+      "non_luna_preserved": true,
+      "source_test_models_adjusted": 3,
+      "price_group_options_unchanged": true,
+      "temporary_tokens_deleted": true,
+      "background_timestamp_drift": [
+        {
+          "channel_id": 1352,
+          "changes": {
+            "upstream_model_update_last_check_time": {
+              "before": 1793493214,
+              "after": 1793495017
+            }
+          },
+          "cause": "periodic read-only model sync check timestamp; configuration unchanged"
+        }
+      ],
+      "runtime": "v1.11.14",
+      "time": 1793495073
+    }
+  },
+  "boundaries": [
+    "Restriction applies to the effective routing/billing group. Existing multi-group tokens may still use their explicitly authorized welfare/preferred/enterprise groups.",
+    "Fourteen previously disabled historical Luna channels are not enabled or changed; audit their groups before any future enablement.",
+    "New channels have separate IDs, usage counters and health history; future source credential/settings changes need propagation.",
+    "Model pricing, group ratios, user tokens and historical invoices are not changed. No application update or restart."
+  ]
+}
