@@ -37,7 +37,7 @@ func TestQuotaNoticeFinalOutcome(t *testing.T) {
 		constant.ErrorLogEnabled = oldLog
 	})
 	for _, path := range []string{"/v1/messages", "/v1/responses", "/v1/chat/completions"} {
-		for _, kind := range []string{"local", "upstream", "db_error", "auth", "fallback_success", "free", "query"} {
+		for _, kind := range []string{"local", "formatted_local", "upstream", "db_error", "auth", "fallback_success", "free", "query"} {
 			t.Run(path+kind, func(t *testing.T) {
 				for len(quotaNoticeQueue) > 0 {
 					<-quotaNoticeQueue
@@ -51,7 +51,7 @@ func TestQuotaNoticeFinalOutcome(t *testing.T) {
 				c.Set("token_name", "private-name")
 				quota := &types.QuotaRejection{Source: "wallet", Known: true, Available: 1, Required: 9, Message: "local refusal"}
 				switch kind {
-				case "local":
+				case "local", "formatted_local":
 					MarkRequestFailure(c, types.NewErrorWithStatusCode(quota, types.ErrorCodeInsufficientUserQuota, 403))
 				case "upstream":
 					MarkRequestFailure(c, types.NewOpenAIError(quota, types.ErrorCodeInsufficientUserQuota, 403))
@@ -65,10 +65,15 @@ func TestQuotaNoticeFinalOutcome(t *testing.T) {
 					c.Request.Method = http.MethodGet
 					MarkRequestFailure(c, types.NewErrorWithStatusCode(quota, types.ErrorCodeInsufficientUserQuota, 403))
 				}
+				if kind == "formatted_local" {
+					value, _ := c.Get(requestFailureKey)
+					apiErr := value.(*types.NewAPIError)
+					apiErr.SetMessage(apiErr.Error() + " (request id: fixture-request)")
+				}
 				ObserveQuotaNoticeOutcome(c)
 				ObserveQuotaNoticeOutcome(c)
 				switch kind {
-				case "local":
+				case "local", "formatted_local":
 					require.Len(t, quotaNoticeQueue, 1)
 					got := <-quotaNoticeQueue
 					require.False(t, got.Success)
