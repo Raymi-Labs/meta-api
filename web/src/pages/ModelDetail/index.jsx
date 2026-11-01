@@ -39,6 +39,7 @@ import ModelFAQ from './ModelFAQ.jsx';
 import ModelQuickStart from './ModelQuickStart.jsx';
 import ModelSectionNav from './ModelSectionNav.jsx';
 import ModelStickyBar from './ModelStickyBar.jsx';
+import ModelPriceSettings from './ModelPriceSettings';
 import {
   buildModelComparePath,
   buildModelPlaygroundPath,
@@ -166,6 +167,7 @@ export default function ModelDetail() {
     ...(model.faq?.length ? [['faq', '常见问题']] : []),
   ];
   const priceMode = data.showWithRecharge ? data.priceConvertMode : 'base';
+  const compareState = { catalogState: sanitizeModelCatalogSnapshot(data) };
   const comparePath = buildModelComparePath([model.model_name]);
   const playgroundPath = buildModelPlaygroundPath(
     model.model_name,
@@ -177,7 +179,11 @@ export default function ModelDetail() {
       <div className='model-detail-breadcrumb'>
         {backLink}
         <div className='model-detail-header-actions'>
-          <Link to={comparePath} className='model-action-secondary'>
+          <Link
+            to={comparePath}
+            state={compareState}
+            className='model-action-secondary'
+          >
             {t('对比')}
           </Link>
           <Link to={playgroundPath} className='model-action-primary'>
@@ -228,6 +234,7 @@ export default function ModelDetail() {
         pageRef={pageRef}
         copyText={data.copyText}
         comparePath={comparePath}
+        compareState={compareState}
         playgroundPath={playgroundPath}
         t={t}
       />
@@ -314,48 +321,7 @@ export default function ModelDetail() {
                 </Button>
               </div>
             </div>
-            {settingsOpen && (
-              <div className='model-detail-settings'>
-                <label>
-                  <span>{t('价格模式')}</span>
-                  <Select
-                    aria-label={t('价格模式')}
-                    value={priceMode}
-                    onChange={(value) => {
-                      data.setShowWithRecharge(value !== 'base');
-                      if (value !== 'base') data.setPriceConvertMode(value);
-                    }}
-                    optionList={[
-                      {
-                        value: 'base',
-                        label:
-                          data.siteDisplayType === 'CUSTOM'
-                            ? t('自定义货币')
-                            : 'USD ($)',
-                      },
-                      { value: 'recharge', label: t('充值价格') },
-                      ...(data.availablePlans.length
-                        ? [{ value: 'package', label: t('套餐价格') }]
-                        : []),
-                    ]}
-                  />
-                </label>
-                {priceMode === 'package' && data.availablePlans.length > 0 && (
-                  <label>
-                    <span>{t('请选择套餐')}</span>
-                    <Select
-                      aria-label={t('请选择套餐')}
-                      value={data.selectedPlanId}
-                      onChange={data.setSelectedPlanId}
-                      optionList={data.availablePlans.map((plan) => ({
-                        value: plan.id,
-                        label: plan.title,
-                      }))}
-                    />
-                  </label>
-                )}
-              </div>
-            )}
+            {settingsOpen && <ModelPriceSettings data={data} />}
             <ModelGroupRows
               key={model.model_name}
               model={model}

@@ -27,6 +27,7 @@ export default function ModelStickyBar({
   pageRef,
   copyText,
   comparePath,
+  compareState,
   playgroundPath,
   t,
 }) {
@@ -86,7 +87,11 @@ export default function ModelStickyBar({
           </button>
         </div>
         <div className='model-sticky-actions'>
-          <Link to={comparePath} className='model-action-secondary'>
+          <Link
+            to={comparePath}
+            state={compareState}
+            className='model-action-secondary'
+          >
             {t('对比')}
           </Link>
           <Link
