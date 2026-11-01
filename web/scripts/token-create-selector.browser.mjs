@@ -270,10 +270,6 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     );
   });
   const ready = async () => {
-    // This suite covers the retained single-group editor. The multi-group
-    // default and mappings have their own token-routing.browser.mjs suite.
-    const routing = page.locator('#routing_enabled');
-    if (await routing.count() && await routing.getAttribute('aria-checked') === 'true') await routing.click();
     await page.getByRole('radio').first().waitFor();
     await page.waitForFunction(
       () =>
@@ -302,6 +298,12 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     `http://127.0.0.1:${server.httpServer.address().port}/${prefix}.html`,
   );
   await ready();
+  assert.equal(await page.locator('#model_limits').isVisible(), false);
+  assert.equal(await page.locator('#routing_enabled').isVisible(), false);
+  assert.equal(
+    await page.locator('#routing_enabled').getAttribute('aria-checked'),
+    'false',
+  );
   assert.equal(await create().isEnabled(), false);
   assert.equal(await page.getByRole('radio', { checked: true }).count(), 0);
   assert.equal(await page.getByText('0×', { exact: true }).count(), 1);
@@ -317,7 +319,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'OpenAI · 优质',
     'Claude · 优质',
   ]);
-  assert.equal(await page.locator('#auto_group_fallback').getAttribute('aria-checked'), 'true');
+  assert.equal(
+    await page.locator('#auto_group_fallback').getAttribute('aria-checked'),
+    'true',
+  );
   await choose('OpenAI · 独享账号');
   await enabled(create());
   for (const value of ['', '   ']) {
@@ -628,6 +633,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   failSave = false;
   await create().click();
   await delay(200);
+  assert.equal(writes.at(-1).routing_config, '');
   assert.equal(writes.at(-1).group, 'OpenAI · 独享账号');
   assert.equal(writes.at(-1).auto_group_fallback, true);
   assert.equal(writes.at(-1).expired_time, -1);
@@ -663,7 +669,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   savedToken.cross_group_retry = true;
   await page.evaluate(() => window.qa.edit());
   await enabled(submit);
-  assert.equal(await page.locator('#cross_group_retry').getAttribute('aria-checked'), 'true');
+  assert.equal(
+    await page.locator('#cross_group_retry').getAttribute('aria-checked'),
+    'true',
+  );
   await submit.click();
   await delay(200);
   assert.equal(writes.at(-1).group, 'auto');
@@ -800,7 +809,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await delay(100);
   failGroups = true;
   await page.evaluate(() => window.qa.open());
-  await page.getByText('分组加载失败', { exact: false }).filter({ visible: true }).waitFor();
+  await page
+    .getByText('分组加载失败', { exact: false })
+    .filter({ visible: true })
+    .waitFor();
   assert.equal(await page.getByRole('radio').count(), 0);
   assert.equal(await create().isEnabled(), false);
   failGroups = false;

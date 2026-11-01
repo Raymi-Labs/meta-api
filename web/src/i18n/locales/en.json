@@ -7091,6 +7091,9 @@
     "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Uses model metadata automatically. Manual include or exclude settings are preserved during sync.",
     "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "Billed by requested video duration. Prices include group and time multipliers and use the selected price mode.",
     "多份生成按份数累加。": "Multiple outputs are charged per output.",
-    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site prices are shown by tier. Official prices are compared only for matching conditions; this is not a discount for the entire request."
+    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site prices are shown by tier. Official prices are compared only for matching conditions; this is not a discount for the entire request.",
+    "与官方价格一致": "Same as official pricing",
+    "比官方价格低20%": "20% below official pricing",
+    "比官方价格低40%": "40% below official pricing"
   }
 }

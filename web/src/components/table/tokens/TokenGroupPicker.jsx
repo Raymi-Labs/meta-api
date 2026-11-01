@@ -1,7 +1,26 @@
+/*
+Copyright (C) 2025 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   buildTokenGroupVendorOptions,
+  tokenGroupPriceLabel,
   prioritizeTokenGroups,
   resolveTokenGroupVendor,
   sortTokenGroupsByRatio,
@@ -181,6 +200,7 @@ export default function TokenGroupPicker({
               const description =
                 typeof group.label === 'string' ? group.label : '';
               const favorite = favorites.includes(group.value);
+              const priceLabel = tokenGroupPriceLabel(group.value);
               return (
                 <div
                   key={group.value}
@@ -200,12 +220,18 @@ export default function TokenGroupPicker({
                     <input
                       type='radio'
                       name='token-group-choice'
+                      aria-label={group.value}
                       value={group.value}
                       checked={group.value === value}
                       onChange={() => onSelect(group.value)}
                     />
                     <span className='token-group-picker__copy'>
                       <strong>{group.value}</strong>
+                      {priceLabel && (
+                        <span className='token-group-picker__price-label'>
+                          {t(priceLabel)}
+                        </span>
+                      )}
                     </span>
                   </label>
                   <span className='token-group-picker__ratio'>

@@ -6879,6 +6879,9 @@
     "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Automatycznie używa metadanych modelu. Ręczne uwzględnienia i wykluczenia są zachowywane podczas synchronizacji.",
     "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "Opłata zależy od żądanego czasu trwania filmu. Ceny uwzględniają mnożniki grupy i czasu oraz wybrany tryb cenowy.",
     "多份生成按份数累加。": "Każdy wygenerowany film jest rozliczany osobno.",
-    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Ceny witryny są wyświetlane według progów. Porównanie z cenami oficjalnymi dotyczy wyłącznie zgodnych warunków i nie oznacza rabatu na całe żądanie."
+    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Ceny witryny są wyświetlane według progów. Porównanie z cenami oficjalnymi dotyczy wyłącznie zgodnych warunków i nie oznacza rabatu na całe żądanie.",
+    "与官方价格一致": "Zgodnie z oficjalną ceną",
+    "比官方价格低20%": "20% poniżej oficjalnej ceny",
+    "比官方价格低40%": "40% poniżej oficjalnej ceny"
   }
 }

@@ -19,6 +19,19 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const TOKEN_GROUP_OTHER_VENDOR = '__other__';
 
+const TOKEN_GROUP_PRICE_LABELS = {
+  企业级: '与官方价格一致',
+  企业: '与官方价格一致',
+  优选: '比官方价格低20%',
+  优质: '比官方价格低20%',
+  福利: '比官方价格低40%',
+};
+
+export const tokenGroupPriceLabel = (groupName) =>
+  Object.hasOwn(TOKEN_GROUP_PRICE_LABELS, groupName)
+    ? TOKEN_GROUP_PRICE_LABELS[groupName]
+    : '';
+
 const TOKEN_GROUP_PRIORITY = ['企业级', '优选', '福利'];
 
 // Candidate display only; selected groups keep the user's routing order.

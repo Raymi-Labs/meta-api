@@ -365,3 +365,22 @@ describe('tokenGroupUtils', () => {
     );
   });
 });
+
+test('official price labels apply only to the explicitly named common tiers', async () => {
+  const { tokenGroupPriceLabel } = await import('./tokenGroupUtils.js');
+  assert.equal(tokenGroupPriceLabel('企业级'), '与官方价格一致');
+  assert.equal(tokenGroupPriceLabel('优选'), '比官方价格低20%');
+  assert.equal(tokenGroupPriceLabel('优质'), '比官方价格低20%');
+  assert.equal(tokenGroupPriceLabel('福利'), '比官方价格低40%');
+  for (const name of [
+    'auto',
+    'default',
+    '企业专属',
+    'OpenAI · 优质',
+    '限时福利',
+    'constructor',
+    undefined,
+  ]) {
+    assert.equal(tokenGroupPriceLabel(name), '');
+  }
+});

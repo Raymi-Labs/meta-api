@@ -6879,6 +6879,9 @@
     "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Model meta verileri otomatik kullanılır. Elle dahil etme veya hariç tutma ayarları eşitleme sırasında korunur.",
     "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "İstenen video süresine göre ücretlendirilir. Fiyatlar grup ve zaman çarpanlarını içerir ve seçilen fiyat moduna göre dönüştürülür.",
     "多份生成按份数累加。": "Oluşturulan her video ayrı ücretlendirilir.",
-    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site fiyatları kademelere göre gösterilir. Resmî referans fiyatlarla yalnızca koşullar eşleştiğinde karşılaştırılır; bu, isteğin tamamı için indirim anlamına gelmez."
+    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site fiyatları kademelere göre gösterilir. Resmî referans fiyatlarla yalnızca koşullar eşleştiğinde karşılaştırılır; bu, isteğin tamamı için indirim anlamına gelmez.",
+    "与官方价格一致": "Resmî fiyatla aynı",
+    "比官方价格低20%": "Resmî fiyattan %20 daha düşük",
+    "比官方价格低40%": "Resmî fiyattan %40 daha düşük"
   }
 }
