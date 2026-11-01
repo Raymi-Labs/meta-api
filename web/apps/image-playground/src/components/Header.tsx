@@ -46,7 +46,7 @@ export default function Header() {
     if (!ecommerceCapabilities.supportsEcommerce) {
       setConfirmDialog({
         title: '电商套图暂不可用',
-        message: ecommerceCapabilities.disabledReason || '当前令牌分组未同时支持 gpt-image-2 与 gpt-5.5。',
+        message: ecommerceCapabilities.disabledReason || '当前令牌分组未同时支持 gpt-image-2 与 gpt-6-sol。',
         showCancel: false,
         confirmText: '我知道了',
         icon: 'info',

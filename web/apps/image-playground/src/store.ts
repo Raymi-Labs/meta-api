@@ -741,7 +741,7 @@ function normalizeEcommerceCapabilities(value: unknown): EcommerceCapabilities {
       ? record.defaultPlanModel.trim()
       : DEFAULT_ECOMMERCE_CAPABILITIES.defaultPlanModel,
     supportsEcommerce,
-    disabledReason: typeof record.disabledReason === 'string' ? record.disabledReason : supportsEcommerce ? undefined : '当前分组未同时支持 gpt-image-2 与 gpt-5.5',
+    disabledReason: typeof record.disabledReason === 'string' ? record.disabledReason : supportsEcommerce ? undefined : '当前分组未同时支持 gpt-image-2 与 gpt-6-sol',
   }
 }
 
@@ -1318,7 +1318,7 @@ export const useStore = create<AppState>()(
           if (!state.ecommerceCapabilities.supportsEcommerce) {
             state.setConfirmDialog({
               title: '电商套图暂不可用',
-              message: state.ecommerceCapabilities.disabledReason || '当前令牌分组未同时支持 gpt-image-2 与 gpt-5.5，无法启用电商套图工作台。',
+              message: state.ecommerceCapabilities.disabledReason || '当前令牌分组未同时支持 gpt-image-2 与 gpt-6-sol，无法启用电商套图工作台。',
               showCancel: false,
               confirmText: '我知道了',
               icon: 'info',
