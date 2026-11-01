@@ -165,6 +165,7 @@
 | --- | --- | --- | --- |
 | 能力核对与决策记录工具包 | [使用说明](../scripts/agent-workflow/README.md)、[安装器](../scripts/agent-workflow/workflow.py) | 本地目标仓库；默认预览，--apply 写入，--ci 可选 | 保留业务笔记与原规则；独立工具包版本，不改变应用或生产部署；结构检查不代替业务验收 |
 | Linux 优先发布与可选服务端包 | [发布说明](installation/release-artifacts.md)、[Linux 附件](../.github/workflows/release.yml)、[手动跨平台附件](../.github/workflows/release-optional.yml)、[镜像](../.github/workflows/docker-image-arm64.yml) | 标签自动构建 Linux 双架构程序/镜像；Mac、Windows 仅手动选择已有发布标签；准备任务锁定提交、跳过已有附件 | 构建机本机编译、Go 交叉输出目标架构；检查 ELF/版本后组清单；不改变 SHA 更新入口、不重写已有发布、不自动部署生产 |
+| Electron Windows桌面发布 | [工作流](../.github/workflows/electron-build.yml)、[打包配置](../electron/package.json)、[策略门禁](../scripts/release/check-policy.mjs) | 正式tag自动构建NSIS/portable，手动release_tag补包；固定获准Actions SHA，核对tag/源码/内嵌版本，附SHA256 | 等Linux正式Release及两份服务端附件齐全后仅补传桌面文件；已有完整资产保留，不创建/覆盖Release；不改组织策略，不自动启用其他平台；见[决策](../.agents/notes/implemented/bug-fix/2026-11-01-electron-company-actions.md) |
 | Go 构建安全版本一致性 | [版本源](../go.mod)、[Docker](../Dockerfile)、[发布门禁](../scripts/release/check-policy.mjs) | 当前Go 1.26.10；Linux/可选附件/Electron从go.mod取版本，Docker使用一致补丁版；更改go.mod和构建流程触发检查 | 只约束新构建，不声称旧附件或生产已升级；保留Linux优先和独立生产授权 |
 
 入口运维补充（2026-10-17）：Flawless 当前保留七个业务虚拟主机和八个域名（迁移后已在新旧机停用 edu.xlrdf.cn、edu.gewu.uk 及其自动续期），保留原源站及鉴权；DNS/负载均衡切换由用户完成。ChatShare 源站拒绝连接为单独未通过项，nan/ai 源站域名不在迁移清单。详见 [迁移与例外](REVERSE_PROXY_MIGRATION.md#flawless-替换旧跳板2026-10-17)。

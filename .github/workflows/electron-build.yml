@@ -9,7 +9,23 @@ on:
       - '!cn-tunnel-*' # Published independently by cn-tunnel.yml
       - '!agent-workflow-*' # Published independently by agent-workflow.yml
       - '!project-decision-kit-*' # Published independently by agent-workflow.yml
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '已有正式应用标签，例如 v1.12.7'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+
+concurrency:
+  group: electron-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -25,22 +41,29 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Validate release source
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "$(tr -d '\r\n' < VERSION)" == "$RELEASE_TAG" ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" ]] || exit 1
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: '1.4.0'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
 
@@ -50,8 +73,8 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           cd web
-          bun install
-          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION=$(git describe --tags) bun run build
+          bun install --frozen-lockfile
+          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$RELEASE_TAG" bun run build
           cd ..
 
       # - name: Build Go binary (macos/Linux)
@@ -64,14 +87,14 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           go mod download
-          VERSION=$(git describe --tags)
+          VERSION="$RELEASE_TAG"
           go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$VERSION'" -o new-api.exe
           test "$(./new-api.exe --version)" = "$VERSION"
 
       - name: Update Electron version
         run: |
           cd electron
-          VERSION=$(git describe --tags)
+          VERSION="$RELEASE_TAG"
           VERSION=${VERSION#v}  # Remove 'v' prefix if present
           # Convert to valid semver: take first 3 components and convert rest to prerelease format
           # e.g., 0.9.3-patch.1 -> 0.9.3-patch.1
@@ -107,11 +130,17 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd electron
-          npm run build:win
+          npm run build:win -- --x64 --publish never
+          test "$(./dist/win-unpacked/resources/bin/new-api.exe -version)" = "$RELEASE_TAG"
+          node -e 'const a=require("@electron/asar"); const p=JSON.parse(a.extractFile("dist/win-unpacked/resources/app.asar", "package.json")); if (p.version !== process.env.RELEASE_TAG.slice(1)) throw Error("打包应用版本不匹配");'
+          test -s "dist/New-API-App Setup ${RELEASE_TAG#v}.exe"
+          test -s "dist/New-API-App ${RELEASE_TAG#v}.exe"
+          cd dist
+          sha256sum ./*.exe > "New-API-App-${RELEASE_TAG#v}-windows.sha256"
 
       # - name: Upload artifacts (macOS)
       #   if: runner.os == 'macOS'
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       #   with:
       #     name: macos-build
       #     path: |
@@ -120,27 +149,74 @@ jobs:
 
       - name: Upload artifacts (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-build
+          if-no-files-found: error
           path: |
             electron/dist/*.exe
+            electron/dist/*.sha256
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
 
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            windows-build/*
+      - name: Add desktop assets to existing Linux release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PYUPLOAD'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import time
+          from pathlib import Path
+
+          tag = os.environ['RELEASE_TAG']
+          repo = os.environ['GITHUB_REPOSITORY']
+          version = tag.removeprefix('v')
+          names = [f'New-API-App Setup {version}.exe', f'New-API-App {version}.exe',
+                   f'New-API-App-{version}-windows.sha256']
+          files = [Path('windows-build') / name for name in names]
+          for path in files:
+              if not path.is_file() or path.stat().st_size == 0:
+                  raise RuntimeError(f'缺少桌面附件: {path.name}')
+          expected_checksums = ''.join(
+              f'{hashlib.sha256(path.read_bytes()).hexdigest()}  ./{path.name}\n'
+              for path in sorted(files[:2])
+          )
+          if files[2].read_text() != expected_checksums:
+              raise RuntimeError('桌面附件校验和不匹配')
+          required = {f'new-api-{tag}', f'new-api-arm64-{tag}'}
+          for attempt in range(60):
+              try:
+                  release = json.loads(subprocess.check_output([
+                      'gh', 'release', 'view', tag, '--repo', repo, '--json', 'isDraft,assets',
+                  ], text=True, timeout=30))
+                  complete = {a['name'] for a in release['assets']
+                              if a['state'] == 'uploaded' and a['size'] > 0}
+                  if not release['isDraft'] and required <= complete:
+                      break
+              except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                  pass
+              time.sleep(10)
+          else:
+              raise RuntimeError('Linux Release尚未完整发布，桌面附件保留在Actions artifact中，可重跑上传')
+          # Validate every collision before uploading anything. Never overwrite a release.
+          for name in names:
+              existing = [a for a in release['assets'] if a['name'] == name]
+              if existing and (len(existing) != 1 or existing[0]['state'] != 'uploaded' or existing[0]['size'] <= 0):
+                  raise RuntimeError(f'已有附件不完整，拒绝覆盖: {name}')
+          for path in files:
+              if path.name in complete:
+                  print(f'保留已有附件: {path.name}')
+                  continue
+              subprocess.run(['gh', 'release', 'upload', tag, str(path), '--repo', repo], check=True)
+          PYUPLOAD

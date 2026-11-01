@@ -43,4 +43,5 @@ jobs:
         run: |
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 \
             .github/workflows/release.yml .github/workflows/release-optional.yml \
-            .github/workflows/release-policy.yml .github/workflows/docker-image-arm64.yml
+            .github/workflows/release-policy.yml .github/workflows/docker-image-arm64.yml \
+            .github/workflows/electron-build.yml
