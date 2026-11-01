@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -93,7 +94,22 @@ func GetGroupHealth(c *gin.Context) {
 				needs = append(needs, g.Group)
 			}
 		}
+		emptyUsageGroups := []string{}
+		for _, g := range result.Groups {
+			if g.ObservedCount == 0 && g.RequestCount == 0 && g.TotalTokens == nil {
+				emptyUsageGroups = append(emptyUsageGroups, g.Group)
+			}
+		}
+		var usageRef *grouphealth.ModelUsageReference
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			usageRef = service.OpenRouterModelUsage(c.Request.Context(), emptyUsageGroups, modelName)
+		}()
 		refs := service.OpenRouterPerformance(c.Request.Context(), needs, []string{modelName})
+		wg.Wait()
+		result.ModelUsageReference = usageRef
 		for i := range result.Groups {
 			result.Groups[i].PerformanceReference = refs[modelName][result.Groups[i].Group]
 		}

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { chartMetricValue } from './modelPresentation';
+import { modelPerformance } from './modelPerformance';
 import {
   getUptimeRate,
   getHealthMeasurement,
@@ -76,6 +77,25 @@ export function chartMeasurement(point, metric) {
     cache_hit_rate: 'cache',
   }[metric];
   return key ? getHealthMeasurement(point, key, true) : null;
+}
+
+// A current snapshot can replace an empty plot, but cannot become hourly history.
+export function chartPerformanceReference(group, metric, now = Date.now()) {
+  if (
+    !['avg_ttft_ms', 'avg_output_tps'].includes(metric) ||
+    (group.series || []).some(
+      (point) => chartDisplayValue(point, metric) != null,
+    )
+  )
+    return null;
+  const display = modelPerformance(group, 'ttft', now);
+  if (metric === 'avg_ttft_ms' && display.externalLatency) {
+    return display.latency.value / 1000;
+  }
+  if (metric === 'avg_output_tps' && display.externalThroughput) {
+    return display.throughput;
+  }
+  return null;
 }
 
 export function formatChartValue(value, metric, withUnit = true) {

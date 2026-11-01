@@ -32,15 +32,15 @@ import {
   formatChartDetailValue,
   chartDomain,
   contiguousChartPoints,
+  chartPerformanceReference,
 } from '../../helpers/modelChartDisplay';
 
 export const GROUP_CHART_COLORS = ['#16b8a6', '#f5a623', '#5285ed', '#9b72cf'];
-const date = (ts) =>
+const date = (ts, daily = false) =>
   new Date(ts * 1000).toLocaleString([], {
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    ...(daily ? { timeZone: 'UTC' } : { hour: '2-digit', minute: '2-digit' }),
   });
 
 export default function ModelMetricChart({
@@ -50,6 +50,7 @@ export default function ModelMetricChart({
   bar = false,
   t,
   expandedView = false,
+  bucketSeconds = 3600,
 }) {
   const [hover, setHover] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -77,6 +78,12 @@ export default function ModelMetricChart({
       [...map.values()].map((point) => chartDisplayValue(point, metric)),
     )
     .filter((value) => value != null);
+  const references = groups.map((group) =>
+    chartPerformanceReference(group, metric),
+  );
+  const hasReference = references.some((value) => value != null);
+  const displayTitle =
+    hasReference && metric === 'avg_ttft_ms' ? t('首字时间') + ' · s' : title;
   const { min, max, ticks } = chartDomain(nums, metric);
   const tickLabels = ticks.map((value) =>
     formatChartValue(
@@ -93,10 +100,13 @@ export default function ModelMetricChart({
     top = 20,
     bottom = 36;
   const start = timestamps[0] || 0,
-    span = Math.max(3600, (timestamps.at(-1) || start) - start + 3600);
-  const slot = ((width - left - right) * 3600) / span;
+    span = Math.max(
+      bucketSeconds,
+      (timestamps.at(-1) || start) - start + bucketSeconds,
+    );
+  const slot = ((width - left - right) * bucketSeconds) / span;
   const x = (ts) =>
-    left + ((ts - start + 1800) / span) * (width - left - right);
+    left + ((ts - start + bucketSeconds / 2) / span) * (width - left - right);
   const y = (value) =>
     height - bottom - ((value - min) / (max - min)) * (height - top - bottom);
   const hoverIndex = timestamps.indexOf(hover);
@@ -132,14 +142,14 @@ export default function ModelMetricChart({
       }
     >
       <div className='model-chart-heading'>
-        <h3>{title}</h3>
+        <h3>{displayTitle}</h3>
         {!expandedView && (
           <Button
             theme='borderless'
             type='tertiary'
             size='small'
             icon={<Maximize2 size={15} />}
-            aria-label={t('展开') + ' · ' + title}
+            aria-label={t('展开') + ' · ' + displayTitle}
             onClick={() => setExpanded(true)}
           />
         )}
@@ -154,7 +164,7 @@ export default function ModelMetricChart({
             <svg
               viewBox={`0 0 ${width} ${height}`}
               role='img'
-              aria-label={title}
+              aria-label={displayTitle}
             >
               {ticks.map((value, tickIndex) => (
                 <g key={value}>
@@ -256,7 +266,7 @@ export default function ModelMetricChart({
                   onClick={() => setHover(ts)}
                 >
                   <title>
-                    {date(ts) +
+                    {date(ts, bucketSeconds === 86400) +
                       '\n' +
                       values
                         .map(
@@ -286,7 +296,7 @@ export default function ModelMetricChart({
                         : 'middle'
                   }
                 >
-                  {date(timestamps[i])}
+                  {date(timestamps[i], bucketSeconds === 86400)}
                 </text>
               ))}
             </svg>
@@ -299,7 +309,7 @@ export default function ModelMetricChart({
                     : { right: 8, left: 'auto' }
                 }
               >
-                <b>{date(hover)}</b>
+                <b>{date(hover, bucketSeconds === 86400)}</b>
                 {groups.map((group, i) => (
                   <span key={group.group}>
                     <i
@@ -314,17 +324,38 @@ export default function ModelMetricChart({
               </div>
             )}
           </>
+        ) : hasReference ? (
+          <div className='model-chart-reference-values'>
+            {groups.map((group, i) => (
+              <div key={group.group}>
+                <span>{group.group}</span>
+                <strong>{format(references[i])}</strong>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className='model-chart-empty'>{t('暂无数据')}</div>
         )}
       </div>
+      {hasReference && nums.length === 0 && (
+        <p className='model-chart-reference-window'>{t('近30分钟')} · P50</p>
+      )}
       <div className='model-chart-legend'>
         {groups.map((group, i) => (
           <div key={group.group}>
             <i style={{ background: activeColor(group, i) }} />
             <span title={group.group}>{group.group}</span>
-            <strong title={pointDetail(group)}>
-              {format(chartDisplayValue(group, metric))}
+            <strong
+              title={
+                references[i] != null
+                  ? detail(references[i])
+                  : pointDetail(group)
+              }
+            >
+              {format(chartDisplayValue(group, metric) ?? references[i])}
+              {references[i] != null && nums.length > 0 && (
+                <small> · {t('近30分钟')} · P50</small>
+              )}
               {chartMeasurement(group, metric)?.referenceTs && (
                 <small> · {t('沿用最近有效值')}</small>
               )}
@@ -348,7 +379,7 @@ export default function ModelMetricChart({
               <tbody>
                 {timestamps.map((ts) => (
                   <tr key={ts}>
-                    <th>{date(ts)}</th>
+                    <th>{date(ts, bucketSeconds === 86400)}</th>
                     {values.map((map, i) => (
                       <td key={i}>{pointDetail(map.get(ts))}</td>
                     ))}
@@ -362,7 +393,7 @@ export default function ModelMetricChart({
       {!expandedView && (
         <Modal
           visible={expanded}
-          title={title}
+          title={displayTitle}
           footer={null}
           width='min(1040px, calc(100vw - 32px))'
           onCancel={() => setExpanded(false)}
@@ -376,6 +407,7 @@ export default function ModelMetricChart({
               bar={bar}
               t={t}
               expandedView
+              bucketSeconds={bucketSeconds}
             />
           )}
         </Modal>

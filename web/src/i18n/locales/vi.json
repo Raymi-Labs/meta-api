@@ -7496,6 +7496,10 @@
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Giá trên trang được hiển thị theo từng bậc. Chỉ so sánh với giá tham khảo chính thức khi điều kiện khớp; đây không phải mức giảm giá cho toàn bộ yêu cầu.",
     "与官方价格一致": "Bằng giá chính thức",
     "比官方价格低{{percent}}%": "Thấp hơn giá chính thức {{percent}}%",
-    "比官方价格高{{percent}}%": "Cao hơn giá chính thức {{percent}}%"
+    "比官方价格高{{percent}}%": "Cao hơn giá chính thức {{percent}}%",
+    "近30分钟": "30 phút gần nhất",
+    "模型用量参考": "Tham khảo mức sử dụng mô hình",
+    "用量时间范围": "Khoảng thời gian sử dụng",
+    "最近 {{days}} 天": "{{days}} ngày gần nhất"
   }
 }

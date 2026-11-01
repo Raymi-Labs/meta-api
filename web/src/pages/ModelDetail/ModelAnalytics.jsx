@@ -28,6 +28,10 @@ import {
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
 import ModelMetricChart from './ModelMetricChart';
+import {
+  modelUsageReference,
+  usageReferenceGroup,
+} from '../../helpers/modelUsageReference';
 
 export default function ModelAnalytics({
   model,
@@ -35,10 +39,12 @@ export default function ModelAnalytics({
   health,
   hours,
   setHours,
+  onUsageReferenceChange,
 }) {
   const { t } = data;
   const [selection, setSelection] = useState(null);
   const [usageMetric, setUsageMetric] = useState('total_tokens');
+  const [usageDays, setUsageDays] = useState(7);
   const available = selectHealthGroups({
     groups: health.data?.groups || [],
     models: [model],
@@ -62,6 +68,16 @@ export default function ModelAnalytics({
     !health.error &&
     Boolean(health.data) &&
     health.data?.enabled !== false;
+  const referenceSeries = ready
+    ? modelUsageReference(health.data?.model_usage_reference, groups)
+    : null;
+  const usingReference = Boolean(referenceSeries);
+  React.useEffect(() => {
+    onUsageReferenceChange?.(usingReference);
+  }, [usingReference, onUsageReferenceChange]);
+  const usageGroups = referenceSeries
+    ? [usageReferenceGroup(referenceSeries, usageDays, t('模型用量参考'))]
+    : groups;
   return (
     <>
       <section id='performance' className='model-detail-section'>
@@ -148,7 +164,18 @@ export default function ModelAnalytics({
       </section>
       <section id='usage' className='model-detail-section'>
         <div className='model-detail-section-heading'>
-          <h2>{t('分组用量')}</h2>
+          <h2>{t(usingReference ? '模型用量参考' : '分组用量')}</h2>
+          {usingReference && (
+            <Select
+              aria-label={t('用量时间范围')}
+              value={usageDays}
+              onChange={setUsageDays}
+              optionList={[7, 30].map((value) => ({
+                value,
+                label: t('最近 {{days}} 天', { days: value }) + ' · UTC',
+              }))}
+            />
+          )}
           <div
             className='model-usage-switch'
             role='group'
@@ -172,7 +199,8 @@ export default function ModelAnalytics({
         {ready ? (
           <ModelMetricChart
             title={usageMetric === 'total_tokens' ? 'Tokens' : t('请求次数')}
-            groups={groups}
+            groups={usageGroups}
+            bucketSeconds={usingReference ? 86400 : 3600}
             metric={usageMetric}
             bar
             t={t}

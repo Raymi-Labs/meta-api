@@ -79,7 +79,12 @@ export function selectComparisonGroups(available, selected, limit = 4) {
 
 export function chartMetricValue(point, metric) {
   const value = point?.[metric];
-  if (metric === 'request_count' && !point?.observed_count) return null;
+  if (
+    metric === 'request_count' &&
+    !point?.observed_count &&
+    !point?.model_usage_reference
+  )
+    return null;
   return value != null && Number.isFinite(Number(value)) && Number(value) >= 0
     ? Number(value)
     : null;

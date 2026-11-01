@@ -6883,6 +6883,10 @@
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Os preços do site são exibidos por faixa. A comparação com os preços oficiais só ocorre em condições equivalentes e não indica desconto para toda a solicitação.",
     "与官方价格一致": "Igual ao preço oficial",
     "比官方价格低{{percent}}%": "{{percent}}% abaixo do preço oficial",
-    "比官方价格高{{percent}}%": "{{percent}}% acima do preço oficial"
+    "比官方价格高{{percent}}%": "{{percent}}% acima do preço oficial",
+    "近30分钟": "Últimos 30 minutos",
+    "模型用量参考": "Uso de referência do modelo",
+    "用量时间范围": "Período de uso",
+    "最近 {{days}} 天": "Últimos {{days}} dias"
   }
 }
