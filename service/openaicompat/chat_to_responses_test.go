@@ -24,6 +24,7 @@ func TestChatCompletionsRequestToResponsesRequest_MapsAssistantContentAndFields(
 		SafetyIdentifier:     "user-1",
 		PromptCacheKey:       "cache-key",
 		PromptCacheRetention: []byte(`{"type":"ephemeral"}`),
+		PromptCacheOptions:   []byte(`{"mode":"implicit","ttl":"30m"}`),
 		TopLogProbs:          5,
 	}
 
@@ -41,6 +42,7 @@ func TestChatCompletionsRequestToResponsesRequest_MapsAssistantContentAndFields(
 	require.NoError(t, err)
 	require.Equal(t, "cache-key", promptCacheKey)
 	require.JSONEq(t, `{"type":"ephemeral"}`, string(out.PromptCacheRetention))
+	require.JSONEq(t, `{"mode":"implicit","ttl":"30m"}`, string(out.PromptCacheOptions))
 
 	var inputItems []map[string]any
 	err = common.Unmarshal(out.Input, &inputItems)
