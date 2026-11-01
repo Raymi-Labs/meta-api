@@ -29,7 +29,20 @@ func IsModelAuthorized(name string, role int) bool {
 	return matchingName == name || (model.IsModelVisibleToRole(matchingName, role) && model.IsModelCallableByRole(matchingName, role))
 }
 
+// PerformanceReference is display-only: it never contributes to measured metrics.
+type PerformanceReference struct {
+	Source     string   `json:"source"`
+	Model      string   `json:"model"`
+	Provider   string   `json:"provider"`
+	Percentile int      `json:"percentile"`
+	FetchedAt  int64    `json:"fetched_at"`
+	ExpiresAt  int64    `json:"expires_at"`
+	TTFTMs     *float64 `json:"ttft_ms"`
+	OutputTPS  *float64 `json:"output_tps"`
+}
+
 type Metrics struct {
+	PerformanceReference    *PerformanceReference  `json:"performance_reference,omitempty"`
 	LastValid               *MeasurementReferences `json:"last_valid,omitempty"`
 	ProbeCount              int64                  `json:"probe_count"`
 	ProbeSuccessCount       int64                  `json:"probe_success_count"`

@@ -5984,6 +5984,7 @@
     "近 24 小时成功率": "Success rate over the last 24 hours",
     "近24小时": "Last 24 hours",
     "部分波动": "Some instability",
+    "首字时间": "First token time",
     "首字均值": "Avg first output",
     "平台分组统计，不限于个人请求。": "Platform-wide group statistics, including requests from all users.",
     "生图显示成功同步请求的完成耗时，异步提交不计入完成样本。": "Image generation shows completion times for successful synchronous requests. Asynchronous submissions are excluded from completion samples.",
