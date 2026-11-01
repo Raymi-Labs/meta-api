@@ -16,6 +16,8 @@ Status: implemented
 
 全局候选应用[通用分组置顶](../bug-fix/2026-11-01-token-group-priority.md)：企业级、优选、福利优先，其余沿用目录顺序；已选择的全局和逐模型路由顺序保持原值。
 
+[默认单组创建](2026-11-01-token-simple-create.md)部分取代新建默认多组的界面决定：入口移至高级设置，已有配置与本文的保存、路由、测试契约保持。
+
 ## Existing capability review
 
 - 创建/编辑、列表及测试 → token controller → Token；TokenAuth → Distribute → channel_select → ability；实际 group 进入既有计费和日志。

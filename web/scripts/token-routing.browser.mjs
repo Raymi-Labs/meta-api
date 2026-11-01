@@ -147,6 +147,54 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   await page.goto(
     `http://127.0.0.1:${server.httpServer.address().port}/${prefix}.html`,
   );
+  const openAdvanced = async () => {
+    const summary = page
+      .locator('.token-editor__section > summary')
+      .filter({ hasText: '高级设置' });
+    await summary.waitFor();
+    if (!((await summary.locator('..').getAttribute('open')) === ''))
+      await summary.click();
+  };
+  await page.getByRole('radio', { name: '企业级', exact: true }).waitFor();
+  assert.equal(await page.locator('#model_limits').isVisible(), false);
+  assert.equal(await page.locator('#routing_enabled').isVisible(), false);
+  for (const [group, label] of [
+    ['企业级', '与官方价格一致'],
+    ['优选', '比官方价格低20%'],
+    ['福利', '比官方价格低40%'],
+  ]) {
+    const row = page
+      .locator('.token-group-picker__row')
+      .filter({ has: page.getByRole('radio', { name: group, exact: true }) });
+    assert.ok((await row.innerText()).includes(label));
+  }
+  assert.equal(
+    await page.locator('.token-group-picker__price-label').count(),
+    3,
+  );
+  await page.waitForTimeout(700);
+  await page.screenshot({
+    path: path.join(artifacts, 'simple-create.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => document.body.setAttribute('theme-mode', 'dark'));
+  await page.waitForTimeout(700);
+  await page.screenshot({
+    path: path.join(artifacts, 'simple-create-mobile-dark.png'),
+    fullPage: true,
+  });
+  assert.equal(
+    await page
+      .locator('.token-group-picker')
+      .evaluate((el) => el.scrollWidth > el.clientWidth),
+    false,
+  );
+  await page.setViewportSize({ width: 1280, height: 960 });
+  await page.evaluate(() => document.body.removeAttribute('theme-mode'));
+  await openAdvanced();
+  assert.equal(await page.locator('#model_limits').isVisible(), true);
+  await page.locator('#routing_enabled').click();
   await page.locator('[data-testid="token-routing-editor"]').waitFor();
   const select = async (locator, text) => {
     await page.waitForTimeout(350);
@@ -253,6 +301,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     model_groups: { 'model-a': ['default'], 'model-b': ['vip'] },
   });
   await page.evaluate(() => window.qa.edit());
+  await openAdvanced();
   await page.getByLabel('model-b 可用分组', { exact: true }).waitFor();
   assert.match(await groupSelect().innerText(), /vip/);
   failSave = true;
@@ -269,6 +318,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   assert.equal(saves[1].routing_config, saves[0].routing_config);
   // A delayed save must not close or clear a different multi-group editor.
   await page.evaluate(() => window.qa.edit());
+  await openAdvanced();
   await page.getByLabel('model-b 可用分组', { exact: true }).waitFor();
   holdSave = true;
   await page.locator('#name').fill('delayed-routing-key');
@@ -288,6 +338,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   await page.waitForFunction(
     () => document.querySelector('#name')?.value === 'second-routing-key',
   );
+  await openAdvanced();
   await page.locator('#name').fill('second-draft');
   const oldSaveResponse = page.waitForResponse(
     (response) =>
@@ -322,6 +373,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     fullPage: true,
   });
   await page.evaluate(() => window.qa.edit());
+  await openAdvanced();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => document.body.setAttribute('theme-mode', 'dark'));
   await page.getByLabel('model-b 可用分组', { exact: true }).waitFor();
@@ -379,7 +431,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
       cross_group_retry: true,
     };
     await page.evaluate(() => window.qa.edit());
-    await page.locator('#routing_enabled').waitFor();
+    await openAdvanced();
+    await page.locator('#routing_enabled').waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     assert.equal(
       await page.locator('#routing_enabled').getAttribute('aria-checked'),
@@ -410,6 +463,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   }
   // Display priority must not rewrite the user's chosen routing order.
   await page.evaluate(() => window.qa.create());
+  await openAdvanced();
+  await page.locator('#routing_enabled').click();
   await groupSelect().waitFor();
   await select(groupSelect(), '福利 ·');
   await select(groupSelect(), '企业级 ·');
@@ -424,6 +479,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   ]);
   assert.equal(saves.at(-1).group, '福利');
   await page.evaluate(() => window.qa.edit());
+  await openAdvanced();
   await groupSelect().waitFor();
   await page.locator('.token-editor__submit:visible').click();
   await page.waitForFunction(

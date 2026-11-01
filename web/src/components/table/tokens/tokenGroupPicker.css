@@ -213,12 +213,24 @@
   accent-color: var(--semi-color-primary);
 }
 .token-group-picker__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 .token-group-picker__copy strong {
   display: block;
   font-weight: 600;
+}
+.token-group-picker__price-label {
+  color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .token-group-picker__description {
   display: block;

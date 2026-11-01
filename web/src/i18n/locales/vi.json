@@ -7492,6 +7492,9 @@
     "自动使用模型资料；包含或排除为人工设置，不会被同步覆盖。": "Tự động dùng siêu dữ liệu mô hình. Các thiết lập bao gồm hoặc loại trừ thủ công được giữ lại khi đồng bộ.",
     "按请求视频时长计费；价格已包含分组和时间倍率，并按当前价格模式换算。": "Tính phí theo thời lượng video yêu cầu. Giá đã bao gồm hệ số nhóm và thời gian, quy đổi theo chế độ giá đã chọn.",
     "多份生成按份数累加。": "Mỗi video được tạo sẽ được tính phí riêng.",
-    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Giá trên trang được hiển thị theo từng bậc. Chỉ so sánh với giá tham khảo chính thức khi điều kiện khớp; đây không phải mức giảm giá cho toàn bộ yêu cầu."
+    "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Giá trên trang được hiển thị theo từng bậc. Chỉ so sánh với giá tham khảo chính thức khi điều kiện khớp; đây không phải mức giảm giá cho toàn bộ yêu cầu.",
+    "与官方价格一致": "Bằng giá chính thức",
+    "比官方价格低20%": "Thấp hơn giá chính thức 20%",
+    "比官方价格低40%": "Thấp hơn giá chính thức 40%"
   }
 }

@@ -133,7 +133,7 @@ const EditTokenModal = (props) => {
     channel_limits: [],
     allow_ips: '',
     group: '',
-    routing_enabled: !isEdit,
+    routing_enabled: false,
     routing_config: '',
     group_vendor: '',
     cross_group_retry: false,
@@ -1392,75 +1392,6 @@ const EditTokenModal = (props) => {
                           : [{ required: true, message: t('请选择令牌分组') }]
                       }
                     />
-                    {!isSellableToken && (
-                      <>
-                        <Form.Switch
-                          field='routing_enabled'
-                          label={t('按模型配置多个分组')}
-                          onChange={(enabled) => {
-                            if (
-                              enabled &&
-                              !formApiRef.current?.getValue('routing_config')
-                            ) {
-                              const group =
-                                formApiRef.current?.getValue('group');
-                              formApiRef.current?.setValue(
-                                'routing_config',
-                                JSON.stringify({
-                                  groups:
-                                    group && group !== 'auto' ? [group] : [],
-                                }),
-                              );
-                            }
-                          }}
-                        />
-                        <Form.Input
-                          field='routing_config'
-                          noLabel
-                          fieldStyle={{ display: 'none' }}
-                        />
-                        <Form.Select
-                          field='model_limits'
-                          label={t('模型限制列表')}
-                          placeholder={t(
-                            '请选择该令牌支持的模型，留空支持所有模型',
-                          )}
-                          multiple
-                          optionList={models}
-                          extraText={t(
-                            '留空允许所选分组内全部模型；选择多个模型后可分别指定分组。',
-                          )}
-                          filter={selectFilter}
-                          autoClearSearchValue={false}
-                          searchPosition='dropdown'
-                          showClear
-                          style={{ width: '100%' }}
-                        />
-                        {values.routing_enabled && (
-                          <TokenRoutingEditor
-                            value={values.routing_config}
-                            groups={
-                              availableGroups.userId === userState?.user?.id
-                                ? availableGroups.groups
-                                : []
-                            }
-                            models={values.model_limits || []}
-                            modelGroups={modelGroups}
-                            disabled={groupsLoading || groupsError}
-                            onChange={(raw) => {
-                              formApiRef.current?.setValue(
-                                'routing_config',
-                                raw,
-                              );
-                              formApiRef.current?.setValue(
-                                'group',
-                                readTokenRouting(raw).groups[0] || '',
-                              );
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
                     <div
                       style={{
                         display:
@@ -1521,39 +1452,27 @@ const EditTokenModal = (props) => {
                           </>
                         }
                       />
-                      {!isSellableToken && (
-                        <>
-                          <div
-                            style={{
-                              display:
-                                values.group === 'auto' ? 'block' : 'none',
-                            }}
-                          >
-                            <Form.Switch
-                              field='cross_group_retry'
-                              label={t('跨分组重试')}
-                              extraText={t(
-                                '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
-                              )}
-                            />
-                          </div>
-                          <div
-                            style={{
-                              display:
-                                values.group === 'auto' ? 'none' : 'block',
-                            }}
-                          >
-                            <Form.Switch
-                              field='auto_group_fallback'
-                              label={t('故障时自动切换分组（Auto）')}
-                              extraText={t(
-                                '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
-                              )}
-                            />
-                          </div>
-                        </>
-                      )}
                     </div>
+                    {values.routing_enabled && !isSellableToken && (
+                      <div className='token-group-picker__selection'>
+                        {t('已选分组')}：
+                        {readTokenRouting(values.routing_config).groups.join(
+                          ' → ',
+                        )}
+                        <Button
+                          htmlType='button'
+                          theme='borderless'
+                          onClick={() => {
+                            advancedSectionRef.current.open = true;
+                            advancedSectionRef.current.scrollIntoView({
+                              block: 'nearest',
+                            });
+                          }}
+                        >
+                          {t('高级设置')}
+                        </Button>
+                      </div>
+                    )}
                     {values.routing_enabled && groupsError && (
                       <div role='alert'>
                         {t('分组加载失败')}{' '}
@@ -1942,7 +1861,108 @@ const EditTokenModal = (props) => {
                         </div>
                       </div>
                       <Row gutter={12}>
-                        <Col span={24}></Col>
+                        <Col span={24}>
+                          <Form.Select
+                            field='model_limits'
+                            label={t('模型限制列表')}
+                            placeholder={t(
+                              '请选择该令牌支持的模型，留空支持所有模型',
+                            )}
+                            multiple
+                            optionList={models}
+                            extraText={t(
+                              '留空允许所选分组内全部模型；选择多个模型后可分别指定分组。',
+                            )}
+                            filter={selectFilter}
+                            autoClearSearchValue={false}
+                            searchPosition='dropdown'
+                            showClear
+                            style={{ width: '100%' }}
+                          />
+                          <Form.Switch
+                            field='routing_enabled'
+                            label={t('按模型配置多个分组')}
+                            onChange={(enabled) => {
+                              if (
+                                enabled &&
+                                !formApiRef.current?.getValue('routing_config')
+                              ) {
+                                const group =
+                                  formApiRef.current?.getValue('group');
+                                formApiRef.current?.setValue(
+                                  'routing_config',
+                                  JSON.stringify({
+                                    groups:
+                                      group && group !== 'auto' ? [group] : [],
+                                  }),
+                                );
+                              }
+                            }}
+                          />
+                          <Form.Input
+                            field='routing_config'
+                            noLabel
+                            fieldStyle={{ display: 'none' }}
+                          />
+                          {values.routing_enabled && (
+                            <TokenRoutingEditor
+                              value={values.routing_config}
+                              groups={
+                                availableGroups.userId === userState?.user?.id
+                                  ? availableGroups.groups
+                                  : []
+                              }
+                              models={values.model_limits || []}
+                              modelGroups={modelGroups}
+                              disabled={groupsLoading || groupsError}
+                              onChange={(raw) => {
+                                formApiRef.current?.setValue(
+                                  'routing_config',
+                                  raw,
+                                );
+                                formApiRef.current?.setValue(
+                                  'group',
+                                  readTokenRouting(raw).groups[0] || '',
+                                );
+                              }}
+                            />
+                          )}
+                        </Col>
+                        <Col
+                          span={24}
+                          style={{
+                            display: values.routing_enabled ? 'none' : 'block',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display:
+                                values.group === 'auto' ? 'block' : 'none',
+                            }}
+                          >
+                            <Form.Switch
+                              field='cross_group_retry'
+                              label={t('跨分组重试')}
+                              extraText={t(
+                                '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
+                              )}
+                            />
+                          </div>
+                          <div
+                            style={{
+                              display:
+                                values.group === 'auto' ? 'none' : 'block',
+                            }}
+                          >
+                            <Form.Switch
+                              field='auto_group_fallback'
+                              label={t('故障时自动切换分组（Auto）')}
+                              extraText={t(
+                                '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
+                              )}
+                            />
+                          </div>
+                        </Col>
                         {isAdminUser && (
                           <Col span={24}>
                             <Form.Slot
