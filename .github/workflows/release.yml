@@ -1,6 +1,6 @@
 name: Release (Linux)
 permissions:
-  contents: write
+  contents: read
 
 on:
   workflow_dispatch:
@@ -23,8 +23,39 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
+concurrency:
+  group: release-${{ inputs.release_tag || github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  frontend:
+    uses: ./.github/workflows/release-frontend.yml
+    with:
+      source_ref: ${{ inputs.release_tag || github.ref }}
+  images:
+    permissions:
+      contents: read
+      packages: write
+    needs: frontend
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/docker-image-arm64.yml
+    with:
+      tag: ${{ inputs.release_tag || github.ref_name }}
+      frontend_artifact: ${{ needs.frontend.outputs.artifact }}
+    secrets: inherit
+  desktop:
+    permissions:
+      contents: write
+    needs: frontend
+    if: github.event_name == 'push' && !contains(needs.frontend.outputs.version, '-')
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      release_tag: ${{ inputs.release_tag || github.ref_name }}
+      frontend_artifact: ${{ needs.frontend.outputs.artifact }}
   linux:
+    permissions:
+      contents: write
+    needs: frontend
     name: Linux Release
     runs-on: ubuntu-latest
     steps:
@@ -33,30 +64,27 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.release_tag || github.ref }}
+      - name: Checkout current release tools
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/release
       - name: Determine Version
         env:
-          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_VERSION: ${{ needs.frontend.outputs.version }}
         run: |
-          if [[ -n "$REQUESTED_RELEASE_TAG" ]]; then
-            [[ "$REQUESTED_RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || exit 1
-            [[ "$(tr -d '\r\n' < VERSION)" == "$REQUESTED_RELEASE_TAG" ]] || exit 1
-            VERSION="$REQUESTED_RELEASE_TAG"
-          else
-            VERSION=$(git describe --tags --always)
-          fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+          test "$(tr -d '\r\n' < VERSION)" = "$SOURCE_VERSION"
+          echo "VERSION=$SOURCE_VERSION" >> "$GITHUB_ENV"
+      - name: Download shared frontend
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          bun-version: '1.4.0'
-      - name: Build Frontend
-        env:
-          CI: ""
+          name: ${{ needs.frontend.outputs.artifact }}
+          path: .release-artifact
+      - name: Restore verified frontend
+        run: python3 .release-tools/scripts/release/frontend-artifact.py restore --directory .release-artifact --version "$VERSION"
+      - name: Package documentation
         run: |
-          cd web
-          bun install --frozen-lockfile
-          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build
-          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build:docs
-          cd ..
           tar -czf "new-api-docs-$VERSION.tar.gz" -C web/docs-dist .
           sha256sum "new-api-docs-$VERSION.tar.gz" > "new-api-docs-$VERSION.sha256"
       - name: Package server management commands

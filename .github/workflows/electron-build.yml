@@ -1,14 +1,14 @@
 name: Build Electron App
 
 on:
-  push:
-    tags:
-      - '*'  # Triggers on version tags like v1.0.0
-      - '!*-*'  # Ignore pre-release tags like v1.0.0-beta
-      - '!*-alpha*' # Ignore alpha tags like v1.0.0-alpha
-      - '!cn-tunnel-*' # Published independently by cn-tunnel.yml
-      - '!agent-workflow-*' # Published independently by agent-workflow.yml
-      - '!project-decision-kit-*' # Published independently by agent-workflow.yml
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      frontend_artifact:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       release_tag:
@@ -52,6 +52,23 @@ jobs:
           [[ "$(tr -d '\r\n' < VERSION)" == "$RELEASE_TAG" ]] || exit 1
           [[ "$(git rev-parse HEAD)" == "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" ]] || exit 1
 
+      - name: Checkout current release tools
+        if: inputs.frontend_artifact != ''
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/release
+      - name: Download shared frontend
+        if: inputs.frontend_artifact != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.frontend_artifact }}
+          path: .release-artifact
+      - name: Restore verified frontend
+        if: inputs.frontend_artifact != ''
+        run: python3 .release-tools/scripts/release/frontend-artifact.py restore --directory .release-artifact --version "$RELEASE_TAG"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
@@ -68,6 +85,7 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Build frontend
+        if: inputs.frontend_artifact == ''
         env:
           CI: ""
           NODE_OPTIONS: "--max-old-space-size=4096"
@@ -168,8 +186,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: windows-build
+          path: windows-build
 
       - name: Add desktop assets to existing Linux release
         env:

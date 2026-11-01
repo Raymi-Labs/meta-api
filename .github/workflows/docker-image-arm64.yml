@@ -3,10 +3,18 @@ name: Publish Docker image (Multi-arch, GHCR + optional Docker Hub)
 on:
   push:
     tags:
-      - '*'
-      - '!cn-tunnel-*' # Published independently by cn-tunnel.yml
-      - '!agent-workflow-*' # Published independently by agent-workflow.yml
-      - '!project-decision-kit-*' # Published independently by agent-workflow.yml
+      - '*-alpha*'
+      - '!cn-tunnel-*'
+      - '!agent-workflow-*'
+      - '!project-decision-kit-*'
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      frontend_artifact:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -23,6 +31,8 @@ env:
 jobs:
   build_single_arch:
     name: Build & push (${{ matrix.arch }})
+    outputs:
+      commit: ${{ steps.version.outputs.commit }}
     strategy:
       fail-fast: false
       matrix:
@@ -44,11 +54,12 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: ${{ github.event_name == 'workflow_dispatch' && 0 || 1 }}
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Resolve tag & write VERSION
+        id: version
         env:
-          REQUESTED_TAG: ${{ github.event.inputs.tag || '' }}
+          REQUESTED_TAG: ${{ inputs.tag || '' }}
         run: |
           if [ -n "$REQUESTED_TAG" ]; then
             TAG="$REQUESTED_TAG"
@@ -62,9 +73,27 @@ jobs:
           fi
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "BUILD_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "$TAG" > VERSION
           echo "Building tag: $TAG for ${{ matrix.arch }}"
 
+
+      - name: Checkout current release tools
+        if: inputs.frontend_artifact != ''
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/release
+      - name: Download shared frontend
+        if: inputs.frontend_artifact != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.frontend_artifact }}
+          path: .release-artifact
+      - name: Restore verified frontend
+        if: inputs.frontend_artifact != ''
+        run: python3 .release-tools/scripts/release/frontend-artifact.py restore --directory .release-artifact --version "$TAG"
 
       - name: Normalize GHCR repository
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
@@ -118,18 +147,25 @@ jobs:
           IMAGE_TAGS: ${{ steps.tags.outputs.tags }}
           TARGET_PLATFORM: ${{ matrix.platform }}
           TARGET_ARCH: ${{ matrix.arch }}
+          FRONTEND_ARTIFACT: ${{ inputs.frontend_artifact }}
         run: |
+          frontend_args=()
+          if [[ -n "$FRONTEND_ARTIFACT" ]]; then
+            frontend_args+=(--build-arg FRONTEND_SOURCE=frontend-prebuilt)
+          fi
           tags=()
           while IFS= read -r image_tag; do
             [[ -z "$image_tag" ]] || tags+=(--tag "$image_tag")
           done <<< "$IMAGE_TAGS"
           docker buildx build --push --platform "$TARGET_PLATFORM" \
-            "${tags[@]}" --provenance=false --sbom=false \
+            "${tags[@]}" "${frontend_args[@]}" --provenance=false --sbom=false \
             --cache-from "type=registry,ref=${IMAGE_NAME}:buildcache-${TARGET_ARCH}" \
             --cache-to "type=registry,ref=${IMAGE_NAME}:buildcache-${TARGET_ARCH},mode=max" \
             --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
             --label "org.opencontainers.image.revision=${BUILD_COMMIT}" \
             --label "org.opencontainers.image.version=${TAG}" \
+            --build-arg "GOPROXY=https://proxy.golang.org,direct" \
+            --build-arg "GOSUMDB=sum.golang.org" \
             --build-arg "BUILD_COMMIT=${BUILD_COMMIT}" \
             --build-arg "BUILD_REPOSITORY=${GITHUB_REPOSITORY}" \
             --build-arg "BUILD_BRANCH=${TAG}" .
@@ -147,11 +183,10 @@ jobs:
       contents: read
       packages: write
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Extract tag
         env:
-          REQUESTED_TAG: ${{ github.event.inputs.tag || '' }}
+          REQUESTED_TAG: ${{ inputs.tag || '' }}
         run: |
           if [ -n "$REQUESTED_TAG" ]; then
             echo "TAG=$REQUESTED_TAG" >> "$GITHUB_ENV"
@@ -215,3 +250,14 @@ jobs:
             -t "calciumion/new-api:latest" \
             "calciumion/new-api:${TAG}-amd64" \
             "calciumion/new-api:${TAG}-arm64"
+
+      - name: Publish same-commit SHA image
+        if: github.event_name == 'push'
+        env:
+          BUILD_COMMIT: ${{ needs.build_single_arch.outputs.commit }}
+        run: |
+          [[ "$BUILD_COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          docker buildx imagetools create \
+            -t "${IMAGE_NAME}:sha-${BUILD_COMMIT:0:7}" \
+            "${IMAGE_NAME}:${TAG}-amd64" \
+            "${IMAGE_NAME}:${TAG}-arm64"

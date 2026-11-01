@@ -8,6 +8,9 @@ Raymi Labs 的组织级规则要求 main 通过 PR 合入，Actions 必须使用
 
 ## Decision
 
+[发布构建复用](../../implemented/process/2026-11-02-release-build-reuse.md)扩展构建入口：正式发布共享一份校验后的前端，保留各平台产物、手动补包与SHA更新地址。
+
+
 保留组织规则，通过 PR 合入公司迁移。常用发布、主线镜像和关联检查固定获准 Actions 的完整 SHA；Docker 使用 GitHub 执行器自带的 CLI，Release 使用 gh CLI。镜像按现有 alpha 流程已采用的原生 ARM64 执行器构建，避免依赖未获准的 QEMU Action；继续校验程序架构和版本，保留镜像标签、可选 Docker Hub、CGO 与附件契约。保留原自动发布和手动补包入口，补包不覆盖完整附件。
 
 初次 compat.99 标签已导入公司仓库，但 Actions 当时关闭且 main 推送失败，没有把它认定为已发布；保留该标签，不重写，以包含策略适配的下一版本发布。

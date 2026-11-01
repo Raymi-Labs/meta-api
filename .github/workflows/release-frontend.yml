@@ -1,0 +1,85 @@
+name: Build shared release frontend
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: true
+        type: string
+    outputs:
+      artifact:
+        value: ${{ jobs.frontend.outputs.artifact }}
+      version:
+        value: ${{ jobs.frontend.outputs.version }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.metadata.outputs.artifact }}
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.source_ref }}
+      - name: Checkout current release tools
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/release
+      - name: Select artifact identity
+        id: metadata
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          VERSION=$(tr -d '\r\n' < VERSION)
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || exit 1
+          if [[ "$SOURCE_REF" == refs/tags/* || "$SOURCE_REF" =~ ^v[0-9]+\. ]]; then
+            TAG=${SOURCE_REF#refs/tags/}
+            test "$VERSION" = "$TAG"
+            test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$TAG^{commit}")"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "artifact=release-frontend-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.0'
+      - name: Select browser for prerender
+        run: |
+          CHROME=$(command -v google-chrome || command -v chromium || true)
+          if [[ -z "$CHROME" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y chromium fonts-noto-cjk
+            CHROME=$(command -v chromium)
+          fi
+          echo "PUPPETEER_EXECUTABLE_PATH=$CHROME" >> "$GITHUB_ENV"
+      - name: Build frontend and docs once
+        env:
+          CI: ""
+        run: |
+          cd web
+          bun install --frozen-lockfile
+          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build
+          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build:docs
+      - name: Bind artifact to source and version
+        run: python3 .release-tools/scripts/release/frontend-artifact.py pack --directory .release-artifact --version "$VERSION"
+      - name: Upload shared frontend
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.metadata.outputs.artifact }}
+          path: |
+            .release-artifact/frontend.tar.gz
+            .release-artifact/frontend.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
