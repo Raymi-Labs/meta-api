@@ -1,5 +1,7 @@
 # OpenRouter Claude 企业级接入（2026-11-01）
 
+> 本文记录当时操作；其中3个旧型号的价格现以[官方价修正记录](retail-official-correction.md)为准，原始审计保留。
+
 新增 **1639：OpenRouter · Claude**，类型 20，分组为 **企业级**，倍率 1。使用当前 OpenRouter 账号，15 个普通 Claude 型号单渠道管理。原有其他 Claude/OpenRouter 渠道、14 个已配置型号售价、分组倍率和用户令牌保持原值。
 
 ## 模型与价格

@@ -1,0 +1,760 @@
+{
+  "date": "2026-11-01",
+  "production_version": "v1.12.1",
+  "change_type": "production configuration; no application deployment or release",
+  "applied_at": "2026-11-01T02:34:18+00:00",
+  "scope": "The eight model IDs listed by the user; shared base pricing applies to all groups",
+  "formula": {
+    "energy_per_million_tokens": "official USD per million tokens * 6.6 * 5",
+    "cny_per_energy": 0.2,
+    "enterprise_group_ratio": 1,
+    "standard_enterprise_cny_per_million_tokens": "official USD per million tokens * 6.6",
+    "official_reference_display_uses_separate_fx": true
+  },
+  "root_causes": [
+    "Previous operations multiplied existing configured sales prices by 6.6 without rebasing on official USD prices.",
+    "Three Claude 4.5 aliases inherited the same default ModelRatio 37.5, subsequently made explicit as 247.5.",
+    "Existing output/cache ratios and tier expressions retained inconsistent base prices; official metadata does not automatically rewrite sales options."
+  ],
+  "models": [
+    {
+      "model": "claude-haiku-4-5",
+      "official_usd": {
+        "p": 1.0,
+        "c": 5.0,
+        "cr": 0.1,
+        "cc": 1.25,
+        "cc1h": 2.0
+      },
+      "official_long_usd": {},
+      "threshold": 0,
+      "source_url": "https://platform.claude.com/docs/en/models/haiku-4-5/overview",
+      "energy": {
+        "p": 33.0,
+        "c": 165.0,
+        "cr": 3.3,
+        "cc": 41.25,
+        "cc1h": 66.0
+      },
+      "expression": "tier(\"standard\", p * 33.0 + c * 165.0 + cr * 3.3 + cc * 41.25 + cc1h * 66.0)",
+      "ratios": {
+        "ModelRatio": 16.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "ratio",
+      "before_options": {
+        "ModelRatio": 247.5,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 16.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 6.6,
+        "c": 33.0,
+        "cr": 0.66,
+        "cc": 8.25,
+        "cc1h": 13.2
+      },
+      "enterprise_long_cny_per_million_tokens": {}
+    },
+    {
+      "model": "claude-sonnet-4-5",
+      "official_usd": {
+        "p": 3.0,
+        "c": 15.0,
+        "cr": 0.3,
+        "cc": 3.75,
+        "cc1h": 6.0
+      },
+      "official_long_usd": {},
+      "threshold": 0,
+      "source_url": "https://platform.claude.com/docs/en/models/sonnet-4-5/overview",
+      "energy": {
+        "p": 99.0,
+        "c": 495.0,
+        "cr": 9.9,
+        "cc": 123.75,
+        "cc1h": 198.0
+      },
+      "expression": "tier(\"standard\", p * 99.0 + c * 495.0 + cr * 9.9 + cc * 123.75 + cc1h * 198.0)",
+      "ratios": {
+        "ModelRatio": 49.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "ratio",
+      "before_options": {
+        "ModelRatio": 247.5,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 49.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 19.8,
+        "c": 99.0,
+        "cr": 1.98,
+        "cc": 24.75,
+        "cc1h": 39.6
+      },
+      "enterprise_long_cny_per_million_tokens": {}
+    },
+    {
+      "model": "claude-opus-4-5",
+      "official_usd": {
+        "p": 5.0,
+        "c": 25.0,
+        "cr": 0.5,
+        "cc": 6.25,
+        "cc1h": 10.0
+      },
+      "official_long_usd": {},
+      "threshold": 0,
+      "source_url": "https://platform.claude.com/docs/en/models/opus-4-5/overview",
+      "energy": {
+        "p": 165.0,
+        "c": 825.0,
+        "cr": 16.5,
+        "cc": 206.25,
+        "cc1h": 330.0
+      },
+      "expression": "tier(\"standard\", p * 165.0 + c * 825.0 + cr * 16.5 + cc * 206.25 + cc1h * 330.0)",
+      "ratios": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "ratio",
+      "before_options": {
+        "ModelRatio": 247.5,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 33.0,
+        "c": 165.0,
+        "cr": 3.3,
+        "cc": 41.25,
+        "cc1h": 66.0
+      },
+      "enterprise_long_cny_per_million_tokens": {}
+    },
+    {
+      "model": "gpt-4o-mini",
+      "official_usd": {
+        "p": 0.15,
+        "c": 0.6,
+        "cr": 0.075
+      },
+      "official_long_usd": {},
+      "threshold": 0,
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-4o-mini",
+      "energy": {
+        "p": 4.95,
+        "c": 19.8,
+        "cr": 2.475
+      },
+      "expression": "tier(\"standard\", p * 4.95 + c * 19.8 + cr * 2.475)",
+      "ratios": {
+        "ModelRatio": 2.475,
+        "CompletionRatio": 4.0,
+        "CacheRatio": 0.5,
+        "CreateCacheRatio": null
+      },
+      "final_mode": "ratio",
+      "before_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 1.2,
+        "CacheRatio": 1.3,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 2.475,
+        "CompletionRatio": 4.0,
+        "CacheRatio": 0.5,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 0.99,
+        "c": 3.96,
+        "cr": 0.495
+      },
+      "enterprise_long_cny_per_million_tokens": {}
+    },
+    {
+      "model": "gpt-6.1-terra",
+      "official_usd": {
+        "p": 1.0,
+        "c": 5.0,
+        "cr": 0.05,
+        "cc": 1.25
+      },
+      "official_long_usd": {
+        "p": 2.0,
+        "c": 7.5,
+        "cr": 0.1,
+        "cc": 2.5
+      },
+      "threshold": 272000,
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-6.1-terra",
+      "energy": {
+        "p": 33.0,
+        "c": 165.0,
+        "cr": 1.65,
+        "cc": 41.25
+      },
+      "expression": "len <= 272000 ? tier(\"standard\", p * 33.0 + c * 165.0 + cr * 1.65 + cc * 41.25) : tier(\"long\", p * 66.0 + c * 247.5 + cr * 3.3 + cc * 82.5)",
+      "ratios": {
+        "ModelRatio": 16.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "tiered_expr",
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"base\", p * 66.0 + c * 396.0 + cr * 6.6 + cc * 82.50) : tier(\"第2档\", p * 132.0 + c * 594.0 + cr * 13.2 + cc * 165.0)"
+      },
+      "after_options": {
+        "ModelRatio": 16.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"standard\", p * 33.0 + c * 165.0 + cr * 1.65 + cc * 41.25) : tier(\"long\", p * 66.0 + c * 247.5 + cr * 3.3 + cc * 82.5)"
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 6.6,
+        "c": 33.0,
+        "cr": 0.33,
+        "cc": 8.25
+      },
+      "enterprise_long_cny_per_million_tokens": {
+        "p": 13.2,
+        "c": 49.5,
+        "cr": 0.66,
+        "cc": 16.5
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "official_usd": {
+        "p": 2.0,
+        "c": 10.0,
+        "cr": 0.1,
+        "cc": 2.5
+      },
+      "official_long_usd": {
+        "p": 4.0,
+        "c": 15.0,
+        "cr": 0.2,
+        "cc": 5.0
+      },
+      "threshold": 272000,
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+      "energy": {
+        "p": 66.0,
+        "c": 330.0,
+        "cr": 3.3,
+        "cc": 82.5
+      },
+      "expression": "len <= 272000 ? tier(\"standard\", p * 66.0 + c * 330.0 + cr * 3.3 + cc * 82.5) : tier(\"long\", p * 132.0 + c * 495.0 + cr * 6.6 + cc * 165.0)",
+      "ratios": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "tiered_expr",
+      "before_options": {
+        "ModelRatio": 49.5,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"standard\", p * 66.0 + c * 330.0 + cr * 3.3 + cc * 82.5) : tier(\"long\", p * 132.0 + c * 495.0 + cr * 6.6 + cc * 165.0)"
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 13.2,
+        "c": 66.0,
+        "cr": 0.66,
+        "cc": 16.5
+      },
+      "enterprise_long_cny_per_million_tokens": {
+        "p": 26.4,
+        "c": 99.0,
+        "cr": 1.32,
+        "cc": 33.0
+      }
+    },
+    {
+      "model": "gpt-6-sol",
+      "official_usd": {
+        "p": 2.0,
+        "c": 10.0,
+        "cr": 0.2,
+        "cc": 2.5
+      },
+      "official_long_usd": {
+        "p": 4.0,
+        "c": 15.0,
+        "cr": 0.4,
+        "cc": 5.0
+      },
+      "threshold": 272000,
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+      "energy": {
+        "p": 66.0,
+        "c": 330.0,
+        "cr": 6.6,
+        "cc": 82.5
+      },
+      "expression": "len <= 272000 ? tier(\"standard\", p * 66.0 + c * 330.0 + cr * 6.6 + cc * 82.5) : tier(\"long\", p * 132.0 + c * 495.0 + cr * 13.2 + cc * 165.0)",
+      "ratios": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "tiered_expr",
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"base\", p * 82.50 + c * 495.0 + cr * 8.250 + cc * 99.0) : tier(\"第2档\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 198.0)"
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"standard\", p * 66.0 + c * 330.0 + cr * 6.6 + cc * 82.5) : tier(\"long\", p * 132.0 + c * 495.0 + cr * 13.2 + cc * 165.0)"
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 13.2,
+        "c": 66.0,
+        "cr": 1.32,
+        "cc": 16.5
+      },
+      "enterprise_long_cny_per_million_tokens": {
+        "p": 26.4,
+        "c": 99.0,
+        "cr": 2.64,
+        "cc": 33.0
+      }
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "official_usd": {
+        "p": 4.0,
+        "c": 20.0,
+        "cr": 0.4,
+        "cc": 5.0
+      },
+      "official_long_usd": {
+        "p": 8.0,
+        "c": 30.0,
+        "cr": 0.8,
+        "cc": 10.0
+      },
+      "threshold": 272000,
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+      "energy": {
+        "p": 132.0,
+        "c": 660.0,
+        "cr": 13.2,
+        "cc": 165.0
+      },
+      "expression": "len <= 272000 ? tier(\"standard\", p * 132.0 + c * 660.0 + cr * 13.2 + cc * 165.0) : tier(\"long\", p * 264.0 + c * 990.0 + cr * 26.4 + cc * 330.0)",
+      "ratios": {
+        "ModelRatio": 66.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25
+      },
+      "final_mode": "tiered_expr",
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"base\", p * 165.0 + c * 990.0 + cr * 16.50 + cc * 206.250) : tier(\"第2档\", p * 330.0 + c * 1485.0 + cr * 33.0 + cc * 412.50)"
+      },
+      "after_options": {
+        "ModelRatio": 66.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 272000 ? tier(\"standard\", p * 132.0 + c * 660.0 + cr * 13.2 + cc * 165.0) : tier(\"long\", p * 264.0 + c * 990.0 + cr * 26.4 + cc * 330.0)"
+      },
+      "enterprise_cny_per_million_tokens": {
+        "p": 26.4,
+        "c": 132.0,
+        "cr": 2.64,
+        "cc": 33.0
+      },
+      "enterprise_long_cny_per_million_tokens": {
+        "p": 52.8,
+        "c": 198.0,
+        "cr": 5.28,
+        "cc": 66.0
+      }
+    }
+  ],
+  "apply_result": {
+    "verified": true,
+    "time": 1793500458,
+    "models": 8,
+    "steps": 6,
+    "channels_unchanged": true,
+    "protected_options_unchanged": true
+  },
+  "steps": [
+    {
+      "label": "bridge",
+      "keys": [
+        "billing_setting.billing_mode",
+        "billing_setting.billing_expr"
+      ],
+      "time": 1793500458,
+      "complete": true
+    },
+    {
+      "label": "ModelRatio",
+      "keys": [
+        "ModelRatio"
+      ],
+      "time": 1793500458,
+      "complete": true
+    },
+    {
+      "label": "CompletionRatio",
+      "keys": [
+        "CompletionRatio"
+      ],
+      "time": 1793500458,
+      "complete": true
+    },
+    {
+      "label": "CacheRatio",
+      "keys": [
+        "CacheRatio"
+      ],
+      "time": 1793500458,
+      "complete": true
+    },
+    {
+      "label": "CreateCacheRatio",
+      "keys": [
+        "CreateCacheRatio"
+      ],
+      "time": 1793500458,
+      "complete": true
+    },
+    {
+      "label": "final",
+      "keys": [
+        "billing_setting.billing_mode",
+        "billing_setting.billing_expr"
+      ],
+      "time": 1793500458,
+      "complete": true
+    }
+  ],
+  "configuration_verification": {
+    "verified": true,
+    "total_visible_models": 224,
+    "unrelated_models": 216,
+    "normalized_before_sha256": "e1fd82cb5400770a51810dd455acaa67df060c2b97dbd84b6178aaeccadb2ec2",
+    "normalized_after_sha256": "e1fd82cb5400770a51810dd455acaa67df060c2b97dbd84b6178aaeccadb2ec2",
+    "unrelated_price_option_entries_unchanged": true,
+    "official_pricing_unchanged": true,
+    "normalization": [
+      "sort enable_groups and supported_endpoint_types as sets",
+      "omit pricing_version: model/pricing.go attaches the catalog compatibility marker to the first map-iteration row"
+    ],
+    "raw_verification": {
+      "verified_models": [
+        "claude-haiku-4-5",
+        "claude-sonnet-4-5",
+        "claude-opus-4-5",
+        "gpt-4o-mini",
+        "gpt-6.1-terra",
+        "gpt-6.1-sol",
+        "gpt-6-sol",
+        "gpt-5.6-sol"
+      ],
+      "time": 1793500480,
+      "channels_unchanged": true,
+      "protected_options_unchanged": true,
+      "unrelated_catalog_unchanged": false
+    },
+    "raw_hash_mismatch_explanation": "Raw catalog hashing includes pricing_version attached to a non-deterministic first row. All 216 non-target model records match the original public investigation snapshot after normalization; all non-target pricing option entries match the immediate pre-write snapshot exactly."
+  },
+  "live_acceptance": {
+    "verified": true,
+    "results": [
+      {
+        "model": "claude-haiku-4-5",
+        "channel_id": 1639,
+        "http_status": 200,
+        "content_returned": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 594,
+        "token_used_quota": 594,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 5,
+        "log_id": 15462605
+      },
+      {
+        "model": "claude-sonnet-4-5",
+        "channel_id": 1639,
+        "http_status": 200,
+        "content_returned": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 1782,
+        "token_used_quota": 1782,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 5,
+        "log_id": 15462607
+      },
+      {
+        "model": "claude-opus-4-5",
+        "channel_id": 1639,
+        "http_status": 200,
+        "content_returned": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 2970,
+        "token_used_quota": 2970,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 5,
+        "log_id": 15462610
+      },
+      {
+        "model": "gpt-4o-mini",
+        "channel_id": 1640,
+        "http_status": 200,
+        "content_returned": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 47,
+        "token_used_quota": 47,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 2,
+        "log_id": 15462612
+      },
+      {
+        "model": "gpt-6.1-terra",
+        "channel_id": 1640,
+        "http_status": 200,
+        "content_returned": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 10,
+          "p": 10
+        },
+        "verified": true,
+        "quota": 578,
+        "token_used_quota": 578,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15462615
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "channel_id": 1640,
+        "http_status": 200,
+        "content_returned": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 10,
+          "p": 10
+        },
+        "verified": true,
+        "quota": 1155,
+        "token_used_quota": 1155,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15462617
+      },
+      {
+        "model": "gpt-6-sol",
+        "channel_id": 1640,
+        "http_status": 200,
+        "content_returned": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 10,
+          "p": 10
+        },
+        "verified": true,
+        "quota": 1155,
+        "token_used_quota": 1155,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15462620
+      },
+      {
+        "model": "gpt-5.6-sol",
+        "channel_id": 1640,
+        "http_status": 200,
+        "content_returned": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 10,
+          "p": 10
+        },
+        "verified": true,
+        "quota": 2310,
+        "token_used_quota": 2310,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15462622
+      }
+    ],
+    "temporary_tokens_deleted": true,
+    "time": 1793500529
+  },
+  "tests": {
+    "actual_go_billing_engine_checks": 6951,
+    "frontend_parser_and_display_checks": 98,
+    "commands": [
+      "go run check.go plan.json",
+      "go test ./pkg/billingexpr ./setting/billing_setting ./setting/ratio_setting",
+      "go test ./service ./relay/helper ./model -run 'Test(TryTiered|BuildTiered|ClaudeTokenQuota|ModelPriceHelper|UpdateTieredBilling|TieredBilling)' -count=1",
+      "bun web/scripts/tiered-billing-display.test.mjs",
+      "bun web/scripts/model-pricing-currency.test.mjs",
+      "bun check-ui.mjs"
+    ],
+    "coverage": [
+      "eight model bridge and final prices against independent USD reference",
+      "272000 boundary: 271999, 272000, 272001; additional context lengths",
+      "cache read, ordinary write, Claude 5m/1h and mixed token usage",
+      "group and time ratios; zero usage",
+      "frontend expression parser, tiers and K/M currency display"
+    ],
+    "live_acceptance_limits": "Eight short non-streaming Chat requests, no cache hits/writes and no long-context request. Cache and long-context prices validated with actual billing engine and display checks."
+  },
+  "safety_and_recovery": {
+    "private_server_directory": "/opt/meta-api/operations/retail-official-correction-20261101",
+    "credentials_kept_on_server": true,
+    "used_existing_admin_options_api": true,
+    "application_restarted": false,
+    "sql_writes": false,
+    "historical_bills_modified": false,
+    "temporary_tokens_deleted": true,
+    "non_target_options_unchanged": true,
+    "channels_unchanged": true,
+    "first_preflight_aborted_before_write": "enable_groups/supported_endpoint_types array ordering differed; normalized these set-valued fields, refreshed snapshot, then applied once",
+    "rollback_strategy": "Compare expected current target values, restore only target entries in reverse journal order; preserve unrelated entries. Do not blindly replay apply or overwrite complete snapshots.",
+    "private_script_sha256": {
+      "operation.py": "a91468f62f0e39e68263b1f31f25c8d61f0db6b4aef37bcbe887a0f77fc47f93",
+      "reference.json": "b78953ca246f88af39ec6a6cdd3ef4667de66d3264445aebec50d70a93b5f94c",
+      "check.go": "c658f11fcfba5136b480970140e1a14d5169514dc6cae8b80b7f82e69a4017aa",
+      "check-ui.mjs": "2927538cb5e4eb516e9cca9e7c7c0bc68e5e10bd67307d1390a32b2f1d55925b",
+      "accept.py": "8306b6e6a0e62ac5cd3e1780e7e8397fabd8a6595379db9b0b2bb7a9c06b58fa"
+    }
+  }
+}
