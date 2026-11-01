@@ -67,7 +67,6 @@ for (const name of ['release', 'release-optional', 'release-policy', 'docker-pub
     assert.match(step.uses, /^(actions\/[^@]+|oven-sh\/setup-bun)@[a-f0-9]{40}$/, `${name}: company Actions must use approved sources and full commit SHAs`);
   }
 }
-console.log('Release policy passed: Linux defaults, manual optional artifacts, immutable sources, cross-compiled image targets.');
 
 const electron = workflow('electron-build');
 assert.equal(electron.on.workflow_dispatch.inputs.release_tag.required, true);
@@ -78,3 +77,4 @@ assert.equal(electron.jobs.build.steps.find(s => s.uses?.startsWith('actions/upl
 const desktopUpload = electron.jobs.release.steps.find(s => s.name === 'Add desktop assets to existing Linux release').run;
 assert.match(desktopUpload, /'release', 'upload'/);
 assert.doesNotMatch(desktopUpload, /--clobber|'release', '(create|edit)'/);
+console.log('Release policy passed: Linux defaults, manual optional artifacts, immutable sources, cross-compiled image targets.');
