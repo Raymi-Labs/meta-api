@@ -32,7 +32,8 @@ v1.14.1同提交触发main镜像、正式双架构镜像、Linux附件与Windows
 - 29项发布回归通过，包含产物commit/版本/哈希、缺失入口、路径穿越/链接拒绝、精确tag去重、网络失败/超时回退及既有Linux/Windows只补附件规则。
 - 自动发布只有一份前端构建，保留两架构镜像、Linux程序、文档/管理包及Windows两种exe/校验文件。
 - 正式sha标签与版本清单相同；普通main和旧标签手动入口仍可工作。
-- 完整前端、文档和5页Chrome预渲染通过；真实静态产物打包/恢复以及嵌入Go构建通过。策略/actionlint及笔记校验通过。本机Docker daemon未运行，Docker图检查加入PR CI；真实发布与耗时需在GitHub完成后核实，不能用静态配置声称提速。
+- 完整前端、文档和5页Chrome预渲染通过；真实静态产物打包/恢复以及嵌入Go构建通过。策略/actionlint及笔记校验通过。本机Docker daemon未运行，PR CI已验证两种Docker构建图无警告；真实发布与耗时需在GitHub完成后核实，不能用静态配置声称提速。
+- PR触发的发票PDF检查因浮动Actions被公司策略拒绝启动，改用同版本完整SHA；main镜像脚本按ShellCheck合并环境文件重定向，未改变业务语义。
 
 ## Consequences
 

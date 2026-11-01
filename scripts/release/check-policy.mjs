@@ -65,7 +65,7 @@ for (const step of images.jobs.create_manifests.steps.filter((step) => step.name
 }
 assert.ok(main.on.push.branches.includes('main'));
 assert.match(main.jobs.docker.steps.find((step) => step.name === 'Build and push').run, /:sha-/);
-for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes', 'electron-build', 'release-frontend']) {
+for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes', 'electron-build', 'release-frontend', 'invoice-pdf']) {
   for (const step of Object.values(workflow(name).jobs).flatMap((job) => job.steps ?? [])) {
     if (!step.uses) continue;
     assert.match(step.uses, /^(actions\/[^@]+|oven-sh\/setup-bun)@[a-f0-9]{40}$/, `${name}: company Actions must use approved sources and full commit SHAs`);
