@@ -309,6 +309,9 @@ func TokenAuth() func(c *gin.Context) {
 			}
 		}
 		if err != nil {
+			if token != nil && token.Status == common.TokenStatusDisabled {
+				service.MarkDisabledTokenAuthRejection(c)
+			}
 			if len(parts) > 1 {
 				c.Set("quota_notice_specific_channel", parts[1])
 			}

@@ -111,7 +111,10 @@ const LogsTable = (logsData) => {
           <Button
             size='small'
             onClick={(event) => {
-              copyText(event, buildRequestFailureReport(record, t));
+              copyText(
+                event,
+                buildRequestFailureReport(record, t, isAdminUser),
+              );
             }}
           >
             {t('复制排查信息')}

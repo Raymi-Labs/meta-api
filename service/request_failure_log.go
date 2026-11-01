@@ -17,6 +17,7 @@ import (
 
 const requestFailureKey = "final_request_failure"
 const requestFailureAttemptsKey = "request_failure_attempts"
+const disabledTokenAuthRejectionKey = "disabled_token_auth_rejection"
 const requestUnbilledUsageKey = "request_unbilled_usage"
 const RequestLogStreamKey = "request_log_stream"
 const RequestOutcomeKey = "relay_request_succeeded"
@@ -41,6 +42,13 @@ func MarkRequestFailure(c *gin.Context, err *types.NewAPIError) {
 	if c != nil && err != nil {
 		c.Set(requestFailureKey, err)
 	}
+}
+
+// MarkDisabledTokenAuthRejection only marks requests rejected by TokenAuth.
+// Never infer this from token state at completion: in-flight failures and the
+// failure that triggers automatic disabling must still be recorded.
+func MarkDisabledTokenAuthRejection(c *gin.Context) {
+	c.Set(disabledTokenAuthRejectionKey, true)
 }
 
 // CaptureUnbilledRequestUsage snapshots counters only, without settling quota or
@@ -179,7 +187,7 @@ func isExplicitUpstreamConcurrencyLimit(err *types.NewAPIError) bool {
 // RecordFinalRequestFailure runs once after the request handler has returned.
 // It records explicit stream errors even when headers have already sent HTTP 200.
 func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
-	if !constant.ErrorLogEnabled || c.GetInt("id") <= 0 {
+	if !constant.ErrorLogEnabled || c.GetInt("id") <= 0 || c.GetBool(disabledTokenAuthRejectionKey) {
 		return
 	}
 	if done, _ := c.Get("request_failure_logged"); done == true {
@@ -198,6 +206,11 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 	attempts, _ := c.Get(requestFailureAttemptsKey)
 	upstream := apiErr.UpstreamStatusCode > 0 || apiErr.GetErrorType() == types.ErrorTypeOpenAIError || apiErr.GetErrorType() == types.ErrorTypeClaudeError || attempts != nil
 	category, reason, hint := describeRequestFailure(apiErr, upstream)
+	if rejection, exists := c.Get("token_quota_auth_rejection"); exists && !upstream && httpStatus == http.StatusUnauthorized {
+		if _, ok := rejection.(*types.QuotaRejection); ok {
+			category, reason, hint = "quota", "账户或令牌额度不足", "请检查账户余额、令牌额度及套餐限制。"
+		}
+	}
 	code := string(apiErr.GetErrorCode())
 	if !logErrorCodePattern.MatchString(code) {
 		code = category

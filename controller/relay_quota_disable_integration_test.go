@@ -43,7 +43,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 				common.UsingSQLite = true
 				t.Cleanup(func() { common.UsingSQLite = oldSQLite })
 				oldRedis, oldMemory, oldCount, oldLog := common.RedisEnabled, common.MemoryCacheEnabled, constant.CountToken, constant.ErrorLogEnabled
-				common.RedisEnabled, common.MemoryCacheEnabled, constant.CountToken, constant.ErrorLogEnabled = false, false, false, false
+				common.RedisEnabled, common.MemoryCacheEnabled, constant.CountToken, constant.ErrorLogEnabled = false, false, false, true
 				t.Cleanup(func() {
 					common.RedisEnabled, common.MemoryCacheEnabled, constant.CountToken, constant.ErrorLogEnabled = oldRedis, oldMemory, oldCount, oldLog
 				})
@@ -103,6 +103,9 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 						require.Contains(t, w.Body.String(), "连续三次")
 					}
 					var current model.Token
+					var failureCount int64
+					require.NoError(t, db.Model(&model.Log{}).Where("token_id = ? AND type = ?", token.Id, model.LogTypeError).Count(&failureCount).Error)
+					require.EqualValues(t, min(n, 3), failureCount, "keep the triggering failure, suppress disabled retries")
 					require.NoError(t, db.First(&current, token.Id).Error)
 					require.Equal(t, min(n, 3), current.QuotaFailureCount)
 					if n < 3 {

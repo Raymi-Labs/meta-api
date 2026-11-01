@@ -22,6 +22,7 @@ import {
   videoLogSegments,
 } from '../../../helpers/videoPriceDisplay';
 import React from 'react';
+import { getRequestLogUserLabel } from '../../../helpers/requestFailure';
 import {
   Avatar,
   Space,
@@ -632,20 +633,21 @@ export const getLogsColumns = ({
       title: t('用户'),
       dataIndex: 'username',
       render: (text, record) => {
+        const label = getRequestLogUserLabel(record);
         return isAdminUser ? (
           <div>
             <Avatar
               size='extra-small'
-              color={stringToColor(text)}
+              color={stringToColor(label)}
               style={{ marginRight: 4 }}
               onClick={(event) => {
                 event.stopPropagation();
                 showUserInfoFunc(record.user_id);
               }}
             >
-              {typeof text === 'string' && text.slice(0, 1)}
+              {label.slice(0, 1)}
             </Avatar>
-            {text}
+            {label}
           </div>
         ) : (
           <></>
