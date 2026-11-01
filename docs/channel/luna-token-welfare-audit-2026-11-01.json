@@ -1,0 +1,207 @@
+{
+  "reviewed_at": "2026-11-01T02:00:42+00:00",
+  "scope": "Undeleted tokens with retained Luna consumption/error history whose configured groups include groups outside 福利/优选/企业级. Preserve already allowed groups and deduplicate replacements.",
+  "excluded_model_family": "sao10k/l3-lunaris-8b",
+  "configured_without_call_history_outside_allowed_not_migrated": 46,
+  "operation_directory": "/opt/meta-api/operations/luna-token-welfare-20261101",
+  "receipt": {
+    "tokens": 2686,
+    "owners": 1790,
+    "success_history": 2471,
+    "only_error_history": 215,
+    "fixed": 2657,
+    "multi": 29,
+    "luna_model_rule_tokens": 1,
+    "model_limited": 213,
+    "expired": 66,
+    "statuses": {
+      "1": 2644,
+      "2": 42
+    },
+    "source_types": {
+      "": 2598,
+      "image_playground": 88
+    },
+    "owner_welfare_ratios": {
+      "Kimi · 福利": 0.6,
+      "OpenAI · 蒸馏": 0.6,
+      "default": 0.6,
+      "EMOXIA": 0.6
+    },
+    "already_allowed": 114,
+    "new_historical_tokens_since_inventory": 0,
+    "first_log": 1783739083,
+    "last_log": 1793498325,
+    "mysql_same_schema_tests": 3,
+    "allowed_groups": [
+      "企业级",
+      "优选",
+      "福利"
+    ],
+    "target": "福利",
+    "target_ratio": 0.6,
+    "only_updated_columns": [
+      "group",
+      "routing_config"
+    ],
+    "mode": "applied",
+    "verified": true,
+    "remaining_callers_outside_allowed": 0,
+    "cache_entries_deleted": 10,
+    "stale_cache_entries": 0,
+    "catalog_probes": [
+      {
+        "owner_group": "default",
+        "multi_group": false,
+        "model_limited": false,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 49,
+        "visible_luna": [
+          "gpt-5.6-luna",
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": false,
+        "model_limited": true,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 5,
+        "visible_luna": [
+          "gpt-5.6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "EMOXIA",
+        "multi_group": false,
+        "model_limited": false,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 49,
+        "visible_luna": [
+          "gpt-5.6-luna",
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": false,
+        "model_limited": false,
+        "luna_model_rule": false,
+        "source_type": "image_playground",
+        "http_status": 200,
+        "model_count": 49,
+        "visible_luna": [
+          "gpt-5.6-luna",
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": true,
+        "model_limited": true,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 1,
+        "visible_luna": [],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": false,
+        "model_limited": true,
+        "luna_model_rule": false,
+        "source_type": "image_playground",
+        "http_status": 200,
+        "model_count": 3,
+        "visible_luna": [
+          "gpt-5.6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": true,
+        "model_limited": false,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 49,
+        "visible_luna": [
+          "gpt-5.6-luna",
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "OpenAI · 蒸馏",
+        "multi_group": false,
+        "model_limited": true,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 1,
+        "visible_luna": [
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "default",
+        "multi_group": true,
+        "model_limited": true,
+        "luna_model_rule": true,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 3,
+        "visible_luna": [
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "EMOXIA",
+        "multi_group": false,
+        "model_limited": true,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 1,
+        "visible_luna": [
+          "gpt-5.6-luna"
+        ],
+        "cached_group": "福利"
+      },
+      {
+        "owner_group": "Kimi · 福利",
+        "multi_group": true,
+        "model_limited": false,
+        "luna_model_rule": false,
+        "source_type": "",
+        "http_status": 200,
+        "model_count": 49,
+        "visible_luna": [
+          "gpt-5.6-luna",
+          "gpt-6-luna"
+        ],
+        "cached_group": "福利"
+      }
+    ],
+    "protected_fields_preserved": true,
+    "already_allowed_tokens_preserved": true,
+    "other_settings_unchanged": true,
+    "user_groups_unchanged": true,
+    "time": 1793498442,
+    "runtime": "v1.12.1"
+  }
+}
