@@ -110,6 +110,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     };
   });
   let healthVariant = 'classified';
+  let candidateHealth = null,
+    failHealth = false,
+    holdHealth = false,
+    releaseHealth;
   const healthFixture = () => {
     const result = structuredClone(healthGroups);
     const claude = result.find(({ group }) => group === 'Claude · 优质');
@@ -246,8 +250,21 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       ];
     else if (url.pathname === '/api/token/99')
       data = structuredClone(savedToken);
-    else if (url.pathname === '/api/health/groups')
-      data = { enabled: true, groups: healthFixture() };
+    else if (url.pathname === '/api/health/groups') {
+      if (holdHealth) {
+        holdHealth = false;
+        await new Promise((resolve) => {
+          releaseHealth = resolve;
+        });
+      }
+      if (failHealth) {
+        await route.fulfill({
+          json: { success: false, message: 'synthetic health failure' },
+        });
+        return;
+      }
+      data = candidateHealth || { enabled: true, groups: healthFixture() };
+    }
     await route.fulfill({ json: { success: true, data } });
   });
   await page.addInitScript(() => {
@@ -1048,6 +1065,132 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   }
   console.log(
     'PASS token 1/29/30 count boundaries agree across summary, trend and hourly details; actual rate stays 100%',
+  );
+  // Candidate filtering uses Uptime (including probes), not request success alone.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  groups = {
+    down: { desc: 'all failed', ratio: 5 },
+    recovered: { desc: 'successful probe', ratio: 4 },
+    unknown: { desc: 'no samples', ratio: 3 },
+    partial: { desc: 'some succeeded', ratio: 2 },
+  };
+  const candidateStats = (group, count, rate) => ({
+    group,
+    uptime_sample_count: count,
+    uptime_rate: rate,
+    request_count: count,
+    success_rate: 0,
+  });
+  candidateHealth = {
+    enabled: true,
+    groups: [
+      candidateStats('down', 4, 0),
+      candidateStats('recovered', 2, 50),
+      candidateStats('unknown', 0, null),
+      candidateStats('partial', 1000000, 0.0001),
+    ],
+  };
+  holdHealth = true;
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  while (!releaseHealth) await delay(20);
+  assert.equal(
+    await page.getByRole('radio').count(),
+    0,
+    'wait for initial health before offering groups',
+  );
+  releaseHealth();
+  await page.getByRole('radio', { name: 'recovered', exact: true }).waitFor();
+  assert.deepEqual(await order(), ['recovered', 'unknown', 'partial']);
+  await page.getByLabel('搜索分组', { exact: true }).fill('down');
+  assert.equal(await page.getByRole('radio').count(), 0);
+  await page.getByLabel('搜索分组', { exact: true }).fill('');
+  await page
+    .locator('details > summary')
+    .filter({ hasText: '高级设置' })
+    .click();
+  await page.locator('#routing_enabled').click();
+  const routeGroups = page.getByLabel('可用分组（可多选，按选择顺序路由）', {
+    exact: true,
+  });
+  await routeGroups.click();
+  assert.equal(
+    await page
+      .locator('.semi-select-option')
+      .filter({ hasText: 'all failed' })
+      .count(),
+    0,
+  );
+  await page
+    .locator('.semi-select-option')
+    .filter({ hasText: 'successful probe' })
+    .waitFor();
+  await page.keyboard.press('Escape');
+  await page.screenshot({
+    path: path.join(artifacts, 'uptime-filter-advanced.png'),
+  });
+
+  failHealth = true;
+  await page.reload();
+  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  assert.equal(
+    (await order()).length,
+    4,
+    'health failure must not hide unknown groups',
+  );
+  failHealth = false;
+  candidateHealth.collection_incomplete = true;
+  await page.reload();
+  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  candidateHealth.collection_incomplete = false;
+  candidateHealth.groups[0].uptime_rate = 100;
+  await page.reload();
+  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+
+  // Existing selections survive health refresh and unchanged saves, including multi-group order.
+  candidateHealth.groups[0].uptime_rate = 0;
+  savedToken = {
+    id: 99,
+    name: 'unhealthy-existing',
+    group: 'down',
+    expired_time: -1,
+    unlimited_quota: true,
+    model_limits: '',
+    channel_limits: '',
+  };
+  await page.reload();
+  await page.getByRole('radio', { name: 'recovered', exact: true }).waitFor();
+  await page.evaluate(() => window.qa.close());
+  await delay(350);
+  await page.evaluate(() => window.qa.edit());
+  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole('radio', { name: 'down', exact: true }).isChecked(),
+    true,
+  );
+  await enabled(page.locator('.token-editor__submit:visible'));
+  await page.locator('.token-editor__submit:visible').click();
+  await delay(350);
+  assert.equal(writes.at(-1).group, 'down');
+  savedToken.routing_config = JSON.stringify({
+    groups: ['down', 'recovered'],
+    model_groups: {},
+  });
+  await page.evaluate(() => window.qa.edit());
+  await page
+    .locator('details > summary')
+    .filter({ hasText: '高级设置' })
+    .click();
+  await page.getByTestId('token-routing-editor').waitFor();
+  await enabled(page.locator('.token-editor__submit:visible'));
+  await page.locator('.token-editor__submit:visible').click();
+  await delay(350);
+  assert.deepEqual(JSON.parse(writes.at(-1).routing_config).groups, [
+    'down',
+    'recovered',
+  ]);
+  console.log(
+    'PASS zero Uptime candidate filtering, probes, search, initial load, advanced picker, failure, incomplete data, recovery, existing single/multiple saves',
   );
   assert.deepEqual(errors, []);
   console.log(

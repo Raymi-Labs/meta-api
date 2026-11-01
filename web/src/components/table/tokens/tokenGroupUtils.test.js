@@ -22,6 +22,7 @@ import { describe, test } from 'node:test';
 
 import {
   TOKEN_GROUP_OTHER_VENDOR,
+  filterTokenGroupsByHealth,
   buildTokenGroupVendorOptions,
   filterTokenGroupsByVendor,
   formatTokenGroupSelectedLabel,
@@ -383,4 +384,81 @@ test('official price labels apply only to the explicitly named common tiers', as
   ]) {
     assert.equal(tokenGroupPriceLabel(name), '');
   }
+});
+
+describe('token group Uptime candidates', () => {
+  const groups = ['down', 'healthy', 'unknown', 'auto'].map((value) => ({
+    value,
+  }));
+  const snapshot = (stats, extra = {}) => ({
+    data: { enabled: true, groups: [{ group: 'down', ...stats }], ...extra },
+  });
+  const values = (health, selected) =>
+    filterTokenGroupsByHealth(groups, health, selected).map(
+      ({ value }) => value,
+    );
+  test('hides exact zero Uptime with real samples, keeps partial success and unknown', () => {
+    assert.deepEqual(
+      values(snapshot({ uptime_sample_count: 1, uptime_rate: 0 })),
+      ['healthy', 'unknown', 'auto'],
+    );
+    for (const stats of [
+      { uptime_sample_count: 0, uptime_rate: 0 },
+      { uptime_sample_count: 1, uptime_rate: null },
+      { uptime_sample_count: 1000000, uptime_rate: 0.0001 },
+      {
+        uptime_sample_count: 2,
+        uptime_rate: 50,
+        request_count: 1,
+        success_rate: 0,
+      },
+      {
+        uptime_sample_count: 0,
+        uptime_rate: null,
+        request_count: 2,
+        success_rate: 0,
+      },
+      { uptime_sample_count: NaN, uptime_rate: 0 },
+    ])
+      assert.equal(values(snapshot(stats)).length, 4);
+  });
+  test('supports older request-only response without inventing missing samples', () => {
+    assert.equal(
+      values(snapshot({ request_count: 1, success_rate: 0 })).length,
+      3,
+    );
+    assert.equal(
+      values(snapshot({ request_count: 0, success_rate: 0 })).length,
+      4,
+    );
+    assert.equal(values(snapshot({ success_rate: 0 })).length, 4);
+  });
+  test('unavailable and incomplete health fail open, recovery restores candidates', () => {
+    const down = snapshot({ uptime_sample_count: 1, uptime_rate: 0 });
+    for (const health of [
+      undefined,
+      { loading: true },
+      { ...down, error: Error('offline') },
+      snapshot({ uptime_sample_count: 1, uptime_rate: 0 }, { enabled: false }),
+      snapshot(
+        { uptime_sample_count: 1, uptime_rate: 0 },
+        { collection_incomplete: true },
+      ),
+      snapshot({ uptime_sample_count: 1, uptime_rate: 100 }),
+    ])
+      assert.equal(values(health).length, 4);
+    assert.equal(values({ ...down, loading: true }).length, 3);
+  });
+  test('preserves selected routes within permission catalog, without mutating either input', () => {
+    const selected = ['unknown', 'down', 'not-authorized'];
+    const before = structuredClone(groups);
+    const down = snapshot({ uptime_sample_count: 10, uptime_rate: 0 });
+    assert.deepEqual(
+      values(down, selected),
+      groups.map(({ value }) => value),
+    );
+    assert.deepEqual(selected, ['unknown', 'down', 'not-authorized']);
+    assert.deepEqual(groups, before);
+    assert.equal(values(down, []).includes('down'), false);
+  });
 });
