@@ -61,10 +61,20 @@ for (const step of images.jobs.create_manifests.steps.filter((step) => step.name
 }
 assert.ok(main.on.push.branches.includes('main'));
 assert.match(main.jobs.docker.steps.find((step) => step.name === 'Build and push').run, /:sha-/);
-for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes']) {
+for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes', 'electron-build']) {
   for (const step of Object.values(workflow(name).jobs).flatMap((job) => job.steps ?? [])) {
     if (!step.uses) continue;
     assert.match(step.uses, /^(actions\/[^@]+|oven-sh\/setup-bun)@[a-f0-9]{40}$/, `${name}: company Actions must use approved sources and full commit SHAs`);
   }
 }
+
+const electron = workflow('electron-build');
+assert.equal(electron.on.workflow_dispatch.inputs.release_tag.required, true);
+assert.equal(electron.jobs.build.steps[0].with.ref, '${{ inputs.release_tag || github.ref }}');
+assert.equal(electron.jobs.release.permissions.contents, 'write');
+assert.equal(electron.jobs.release.if, undefined, 'manual desktop backfills must upload too');
+assert.equal(electron.jobs.build.steps.find(s => s.uses?.startsWith('actions/upload-artifact@')).with['if-no-files-found'], 'error');
+const desktopUpload = electron.jobs.release.steps.find(s => s.name === 'Add desktop assets to existing Linux release').run;
+assert.match(desktopUpload, /'release', 'upload'/);
+assert.doesNotMatch(desktopUpload, /--clobber|'release', '(create|edit)'/);
 console.log('Release policy passed: Linux defaults, manual optional artifacts, immutable sources, cross-compiled image targets.');
