@@ -136,7 +136,7 @@ jobs:
           test -s "dist/New-API-App Setup ${RELEASE_TAG#v}.exe"
           test -s "dist/New-API-App ${RELEASE_TAG#v}.exe"
           cd dist
-          sha256sum ./*.exe > "New-API-App-${RELEASE_TAG#v}-windows.sha256"
+          sha256sum --binary ./*.exe > "New-API-App-${RELEASE_TAG#v}-windows.sha256"
 
       # - name: Upload artifacts (macOS)
       #   if: runner.os == 'macOS'
@@ -175,6 +175,7 @@ jobs:
           import hashlib
           import json
           import os
+          import re
           import subprocess
           import time
           from pathlib import Path
@@ -188,11 +189,18 @@ jobs:
           for path in files:
               if not path.is_file() or path.stat().st_size == 0:
                   raise RuntimeError(f'缺少桌面附件: {path.name}')
-          expected_checksums = ''.join(
-              f'{hashlib.sha256(path.read_bytes()).hexdigest()}  ./{path.name}\n'
-              for path in sorted(files[:2])
-          )
-          if files[2].read_text() != expected_checksums:
+          expected_checksums = {
+              f'./{path.name}': hashlib.sha256(path.read_bytes()).hexdigest()
+              for path in files[:2]
+          }
+          checksums = {}
+          for line in files[2].read_text().splitlines():
+              # GNU sha256sum uses '*' for binary mode on Windows, ' ' for text.
+              match = re.fullmatch(r'([0-9a-fA-F]{64}) [ *](.+)', line)
+              if not match or match[2] in checksums:
+                  raise RuntimeError('桌面附件校验文件格式无效或重复')
+              checksums[match[2]] = match[1].lower()
+          if checksums != expected_checksums:
               raise RuntimeError('桌面附件校验和不匹配')
           required = {f'new-api-{tag}', f'new-api-arm64-{tag}'}
           for attempt in range(60):
@@ -214,6 +222,14 @@ jobs:
               existing = [a for a in release['assets'] if a['name'] == name]
               if existing and (len(existing) != 1 or existing[0]['state'] != 'uploaded' or existing[0]['size'] <= 0):
                   raise RuntimeError(f'已有附件不完整，拒绝覆盖: {name}')
+          if not set(names) <= complete:
+              # A new build can differ from a partially uploaded earlier build.
+              # Only complete a matching artifact set, never mix its checksums.
+              for path in files:
+                  existing = next((a for a in release['assets'] if a['name'] == path.name), None)
+                  digest = f'sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}'
+                  if existing and existing.get('digest') != digest:
+                      raise RuntimeError(f'已有附件与本次构建不同，需使用原Actions artifact补传: {path.name}')
           for path in files:
               if path.name in complete:
                   print(f'保留已有附件: {path.name}')

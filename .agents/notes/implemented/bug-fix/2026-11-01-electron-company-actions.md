@@ -26,9 +26,10 @@ FEATURE_MAP公司发布入口 → electron-build.yml → Windows前端/Go/Electr
 
 ## Verification
 
-- 发布策略检查和19项附件回归通过，包括校验和、缺失exe、完整附件保留、损坏/重复资产拒绝、Linux未就绪及网络失败不写入。
+- 发布策略检查和22项附件回归通过，包括校验和、缺失exe、完整附件保留、损坏/重复资产拒绝、部分补传与既有资产哈希不一致时拒绝混用、Linux未就绪及网络失败不写入。
 - actionlint v1.7.12（本地已有二进制）验证Electron与发布门禁工作流通过；Go在线启动同版本工具因proxy.golang.org超时失败，使用现有同版本工具完成检查。
 - CI启用ShellCheck后发现旧npm version命令的SC2086，补齐版本参数引用；本地actionlint环境没有ShellCheck，该差异由真实CI发现并修复。
+- Windows首次实际构建通过（run 41309647233），上传阶段发现Windows GNU sha256sum二进制标记与原逐字文本比对不兼容；改为解析标准记录、按文件名/真实哈希核对，覆盖二进制标记、CRLF、顺序及重复/缺失/非法记录。最终完整上传仍需新运行验收。
 - 笔记、diff检查通过。Windows实际构建和附件上传由本次Actions验收，不能以本地脚本通过代替Windows结果。
 
 ## Consequences
