@@ -2,7 +2,7 @@
 
 公司仓库为 [Raymi-Labs/meta-api](https://github.com/Raymi-Labs/meta-api)，后续发布使用该仓库及 `ghcr.io/raymi-labs/meta-api` 镜像。下文保留的个人仓库命令适用于历史版本；公司版本请将 `--repo` / `-R` 目标设为 `Raymi-Labs/meta-api`。仓库、命名和生产边界见 [Meta API 说明](../META_API.md)。
 
-本项目的线上部署使用 Linux Docker 镜像。服务端程序包与桌面客户端独立；本说明不改变 Electron/其他桌面客户端的发布流程，也不授权生产升级。
+本项目的线上部署使用 Linux Docker 镜像。服务端程序包与桌面客户端独立发布；Electron Windows 的独立流程见本文末尾，本说明不授权生产升级。
 
 ## 版本号约定
 
@@ -87,6 +87,6 @@ make verify-notes
 gh workflow run electron-build.yml -R Raymi-Labs/meta-api --ref main -f release_tag=v1.12.7
 ```
 
-工作流核对 tag 提交、源码 VERSION、内嵌 Go 程序和 ASAR 应用版本，生成两个 exe 及 SHA256 文件。桌面上传等待 Linux Release 及两份服务端附件完整后才执行，只补充缺失文件，保留发布说明、已有完整附件与发布状态。失败时在 Actions 的 `windows-build` artifact 中保留已构建文件，可重跑失败的上传作业；已有零字节或未完成附件会明确拒绝覆盖。
+工作流核对 tag 提交、源码 VERSION、内嵌 Go 程序和 ASAR 应用版本，生成 `New-API-App.Setup.<版本>.exe`、`New-API-App.<版本>.exe` 及 SHA256 文件；提前使用 GitHub 保留的点号名称，确保下载后的文件名与校验记录一致。桌面上传等待 Linux Release 及两份服务端附件完整后才执行，只补充缺失文件，保留发布说明、已有完整附件与发布状态。失败时在 Actions 的 `windows-build` artifact 中保留已构建文件，可重跑失败的上传作业；已有零字节或未完成附件会明确拒绝覆盖。部分附件已上传时，补传要求它们与本次 artifact 的 SHA256 一致；不同构建的文件不混用，应重跑原构建的上传作业。
 
 发布流程不新增代码签名证书，也不代表已在用户 Windows 电脑安装验收。旧标签的失败运行记录保留，补包成功以新的手动运行和实际附件为准。

@@ -135,6 +135,10 @@ jobs:
           node -e 'const a=require("@electron/asar"); const p=JSON.parse(a.extractFile("dist/win-unpacked/resources/app.asar", "package.json")); if (p.version !== process.env.RELEASE_TAG.slice(1)) throw Error("打包应用版本不匹配");'
           test -s "dist/New-API-App Setup ${RELEASE_TAG#v}.exe"
           test -s "dist/New-API-App ${RELEASE_TAG#v}.exe"
+          # GitHub normalizes spaces in release asset names to dots.
+          # Use those names before hashing so downloads and retries agree.
+          mv "dist/New-API-App Setup ${RELEASE_TAG#v}.exe" "dist/New-API-App.Setup.${RELEASE_TAG#v}.exe"
+          mv "dist/New-API-App ${RELEASE_TAG#v}.exe" "dist/New-API-App.${RELEASE_TAG#v}.exe"
           cd dist
           sha256sum --binary ./*.exe > "New-API-App-${RELEASE_TAG#v}-windows.sha256"
 
@@ -183,7 +187,7 @@ jobs:
           tag = os.environ['RELEASE_TAG']
           repo = os.environ['GITHUB_REPOSITORY']
           version = tag.removeprefix('v')
-          names = [f'New-API-App Setup {version}.exe', f'New-API-App {version}.exe',
+          names = [f'New-API-App.Setup.{version}.exe', f'New-API-App.{version}.exe',
                    f'New-API-App-{version}-windows.sha256']
           files = [Path('windows-build') / name for name in names]
           for path in files:

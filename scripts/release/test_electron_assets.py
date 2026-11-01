@@ -28,7 +28,7 @@ class ElectronAssetTests(unittest.TestCase):
         shell = json.loads(subprocess.check_output(['bun', '-e', command], cwd=root, text=True))
         cls.code = shell.split("python3 - <<'PYUPLOAD'\n", 1)[1].rsplit('\nPYUPLOAD', 1)[0]
         cls.tag = 'v1.12.8'
-        cls.names = ['New-API-App Setup 1.12.8.exe', 'New-API-App 1.12.8.exe', 'New-API-App-1.12.8-windows.sha256']
+        cls.names = ['New-API-App.Setup.1.12.8.exe', 'New-API-App.1.12.8.exe', 'New-API-App-1.12.8-windows.sha256']
 
     def release(self, assets=(), draft=False, linux=True):
         required = [f'new-api-{self.tag}', f'new-api-arm64-{self.tag}'] if linux else []
