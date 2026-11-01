@@ -485,6 +485,150 @@ try {
     `import React from 'react';import {createRoot} from 'react-dom/client';import {BrowserRouter} from 'react-router-dom';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {ThemeProvider} from './src/context/Theme';import './src/i18n/i18n';import './src/index.css';function App(){const [open,setOpen]=React.useState(true);return <EditModelModal visiable={open} editingModel={{id:1}} handleClose={()=>setOpen(false)} refresh={()=>{}}/>}createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><App/></ThemeProvider></BrowserRouter>);`,
   );
   await launchBrowser();
+  // Public API snapshots reproduce the missing period/localized tier comparisons.
+  const matchingFixtures = JSON.parse(
+    fs.readFileSync(
+      new URL('./fixtures/official-tier-matching.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const savedMatchingModels = pricing.data;
+  const deepseek = matchingFixtures.find(
+    (m) => m.model_name === 'deepseek-flash',
+  );
+  try {
+    pricing.data = matchingFixtures.map((m) => ({ ...modelDefaults, ...m }));
+    pricing.data.push(
+      { ...modelDefaults, model_name: 'missing-official' },
+      {
+        ...modelDefaults,
+        model_name: 'image-unit',
+        quota_type: 1,
+        model_price: 0.2,
+        official_pricing: {
+          currency: 'USD',
+          tiers: [{ label: 'image', unit: 'image', price: 0.1 }],
+        },
+      },
+      {
+        ...modelDefaults,
+        ...deepseek,
+        model_name: 'regional-period',
+        official_pricing: {
+          ...deepseek.official_pricing,
+          tiers: deepseek.official_pricing.tiers.map((tier) => ({
+            ...tier,
+            label: 'EU · ' + tier.label,
+          })),
+        },
+      },
+    );
+    for (const mobile of [false, true]) {
+      const { page, errors } = await makePage(1, mobile);
+      try {
+        for (const model of matchingFixtures) {
+          await page.goto(`${baseURL}/model/${model.model_name}`, {
+            waitUntil: 'networkidle0',
+          });
+          await page.waitForSelector(
+            '.model-group-tier-table .model-group-discount',
+          );
+          assert.equal(
+            (await page.$$('.model-group-tier-table tbody tr')).length,
+            2,
+          );
+          assert.equal(
+            (await page.$$('.model-group-tier-table .model-group-discount'))
+              .length,
+            6,
+          );
+          if (model.model_name === 'deepseek-flash') {
+            const labels = await page.$$eval(
+              '.model-group-tier-table tbody th',
+              (els) => els.map((el) => el.textContent),
+            );
+            assert.ok(
+              labels[0].startsWith('峰时') && labels[1].startsWith('谷时'),
+            );
+            assert.ok(
+              labels.every((label) => label.includes('生效时段以各自规则为准')),
+            );
+            await clickButton(page, '显示设置');
+            await selectOption(page, '价格模式', 'USD ($)');
+            await page.waitForFunction(
+              () =>
+                document.querySelector(
+                  '.model-group-row [data-price-key="tiered-p"] strong',
+                )?.textContent === '$5',
+            );
+            const refs = await page.$$eval(
+              '.model-group-tier-table tbody tr:first-child [aria-label="官方参考价"]',
+              (els) => els.map((el) => el.textContent),
+            );
+            assert.deepEqual(refs, ['$0.3', '$1.2', '$0.006']);
+            const badges = await page.$$eval('.model-group-discount', (els) =>
+              els.map((el) => el.textContent),
+            );
+            await page.click('button[aria-label="按K显示单位"]');
+            await page.waitForFunction(
+              () =>
+                document.querySelector(
+                  '.model-group-row [data-price-key="tiered-p"] strong',
+                )?.textContent === '$0.005',
+            );
+            assert.deepEqual(
+              await page.$$eval('.model-group-discount', (els) =>
+                els.map((el) => el.textContent),
+              ),
+              badges,
+            );
+            await clickButton(page, '显示设置');
+            await clickButton(page, '分组价格');
+            await page.screenshot({
+              path: path.join(
+                artifacts,
+                `deepseek-period-${mobile ? 'mobile' : 'desktop'}.png`,
+              ),
+            });
+          }
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth + 1,
+            ),
+          );
+        }
+        for (const [name, reason] of [
+          ['missing-official', '暂无官方参考价'],
+          ['image-unit', '官方与本站的计价单位不同'],
+          ['regional-period', '尚未匹配到对应的官方档位'],
+        ]) {
+          await page.goto(`${baseURL}/model/${name}`, {
+            waitUntil: 'networkidle0',
+          });
+          await page.waitForSelector(
+            '.model-group-row .model-group-comparison-note',
+          );
+          assert.ok(
+            (
+              await page.$eval('.model-group-list', (el) => el.textContent)
+            ).includes(reason),
+          );
+          assert.ok(await page.$('.model-group-price-item strong'));
+          assert.equal(await page.$('.model-group-discount'), null);
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth + 1,
+            ),
+          );
+        }
+        assert.deepEqual(errors, []);
+      } finally {
+        await page.close();
+      }
+    }
+  } finally {
+    pricing.data = savedMatchingModels;
+  }
   // Optional read-only audit output exercises the actual detail route with
   // prices parsed from manufacturer documents, rather than hand-entered UI data.
   if (process.env.TEST_OFFICIAL_PRICING_REPORT) {

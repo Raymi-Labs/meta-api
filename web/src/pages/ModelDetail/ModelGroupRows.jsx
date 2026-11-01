@@ -22,7 +22,10 @@ import { modelPerformance } from '../../helpers/modelPerformance';
 import React, { useState } from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
 import ModelGroupTierTable from './ModelGroupTierTable';
-import { groupTierRows } from '../../helpers/modelGroupTiers';
+import {
+  groupTierRows,
+  groupComparisonUnavailable,
+} from '../../helpers/modelGroupTiers';
 import { parseTiersFromExpr } from '../../helpers/render';
 import { splitBillingExprAndRequestRules } from '../Setting/Ratio/components/requestRuleExpr';
 import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
@@ -154,6 +157,14 @@ export default function ModelGroupRows({
                 onClick={() => data.copyText(model.model_name)}
               />
             </header>
+            {rows.length <= 1 && !officialTier && (
+              <p className='model-detail-caption model-group-comparison-note'>
+                {t(
+                  rows[0]?.comparisonUnavailable ||
+                    groupComparisonUnavailable(model),
+                )}
+              </p>
+            )}
             <div className='model-group-values'>
               {rows.length > 1 || tiers.length > 1 ? (
                 <ModelGroupTierTable rows={rows} model={model} data={data} />

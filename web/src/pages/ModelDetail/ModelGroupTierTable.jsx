@@ -50,6 +50,11 @@ export default function ModelGroupTierTable({ rows, model, data }) {
               <th scope='row'>
                 {row.label}
                 {row.condition && <small>{row.condition}</small>}
+                {(row.comparisonNote || row.comparisonUnavailable) && (
+                  <small className='model-group-comparison-note'>
+                    {data.t(row.comparisonNote || row.comparisonUnavailable)}
+                  </small>
+                )}
               </th>
               {columns.map(([key]) => {
                 const item = row.items.find((value) => value.key === key);

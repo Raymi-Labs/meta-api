@@ -6887,6 +6887,16 @@
     "近30分钟": "Son 30 dakika",
     "模型用量参考": "Model kullanım referansı",
     "用量时间范围": "Kullanım dönemi",
-    "最近 {{days}} 天": "Son {{days}} gün"
+    "最近 {{days}} 天": "Son {{days}} gün",
+    "官方与本站的计价单位不同": "Resmî ve site faturalandırma birimleri farklı",
+    "尚未匹配到对应的官方档位": "Eşleşen resmî fiyat kademesi bulunamadı",
+    "该项暂不支持官方对比": "Bu kalem için resmî karşılaştırma kullanılamıyor",
+    "倍率视图不比较金额": "Çarpan görünümünde tutarlar karşılaştırılmaz",
+    "缓存时长未对应，暂不比较": "Önbellek süreleri eşleşmiyor; karşılaştırma yapılamıyor",
+    "官方未提供该项单价": "Bu kalem için resmî birim fiyat verilmemiş",
+    "本站单价暂不可比较": "Site birim fiyatı karşılaştırılamıyor",
+    "当前币种无法换算官方价格": "Resmî fiyat bu para birimine çevrilemiyor",
+    "暂无有效汇率，暂不显示官方对比": "Geçerli döviz kuru yok; karşılaştırma yapılamıyor",
+    "按峰谷档位比较，生效时段以各自规则为准": "Yoğun ve sakin saat tarifeleri karşılaştırılır; her zaman aralığı kendi kurallarına tabidir"
   }
 }

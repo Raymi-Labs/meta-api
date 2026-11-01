@@ -7099,6 +7099,16 @@
     "近30分钟": "Last 30 minutes",
     "模型用量参考": "Model usage reference",
     "用量时间范围": "Usage time range",
-    "最近 {{days}} 天": "Last {{days}} days"
+    "最近 {{days}} 天": "Last {{days}} days",
+    "官方与本站的计价单位不同": "Official and site billing units differ",
+    "尚未匹配到对应的官方档位": "No matching official tier",
+    "该项暂不支持官方对比": "Official comparison unavailable for this item",
+    "倍率视图不比较金额": "Amounts are not compared in ratio view",
+    "缓存时长未对应，暂不比较": "Cache durations do not match; comparison unavailable",
+    "官方未提供该项单价": "No official unit price for this item",
+    "本站单价暂不可比较": "Site unit price cannot be compared",
+    "当前币种无法换算官方价格": "Official price cannot be converted to this currency",
+    "暂无有效汇率，暂不显示官方对比": "No valid exchange rate; comparison unavailable",
+    "按峰谷档位比较，生效时段以各自规则为准": "Peak/off-peak rates compared; each schedule follows its own rules"
   }
 }

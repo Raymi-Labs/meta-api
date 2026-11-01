@@ -35,7 +35,37 @@ export function tierConditions(tiers, index) {
   return conditions;
 }
 
-// Only a proven input-length boundary can match a multi-tier official rate.
+// Explicit period names compare rates, not calendars or the currently active tier.
+const periodName = (label = '') => {
+  const name = label.trim().toLowerCase().replace(/[ _]/g, '-');
+  if (['峰时', '高峰', 'peak', 'peak-hours'].includes(name)) return 'peak';
+  if (['谷时', '低谷', 'off-peak', 'off-peak-hours'].includes(name))
+    return 'off-peak';
+  return null;
+};
+
+export function groupComparisonUnavailable(model) {
+  const official = visibleOfficialTiers(model.official_pricing);
+  if (!official.length) return '暂无官方参考价';
+  if (!official.some((tier) => tier.unit === officialComparisonUnit(model)))
+    return '官方与本站的计价单位不同';
+  return '尚未匹配到对应的官方档位';
+}
+
+function matchingPeriodTier(tiers, index, official) {
+  if (tiers.length !== 2 || tiers.some((tier) => tier.conditions.length))
+    return undefined;
+  const periods = tiers.map((tier) => periodName(tier.label));
+  if (!periods.includes('peak') || !periods.includes('off-peak'))
+    return undefined;
+  // Exact labels only: e.g. "US · PEAK" has additional conditions, not an alias.
+  const matches = official.filter(
+    (tier) => periodName(tier.label) === periods[index],
+  );
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+// Do not strip regions, service tiers or arbitrary qualifiers to force a match.
 function matchingOfficialTier(tiers, index, official) {
   if (
     tiers.length === 1 &&
@@ -50,7 +80,7 @@ function matchingOfficialTier(tiers, index, official) {
   const condition = conditions[0];
   const matches = official.filter((tier) => {
     const match = tier.label.match(
-      /^(?:Standard · )?(?:Input\s+)?(≤|<=|<|≥|>=|>)\s*([\d.]+)([KM]?)(?: input tokens)?$/i,
+      /^(?:Standard(?:\s*·\s*|\s+))?(?:Input\s+|输入\s*)?(≤|<=|<|≥|>=|>)\s*([\d.]+)([KM]?)(?:\s*(?:input\s+)?tokens)?(?:\\?\*? Permanent 50% off)?$/i,
     );
     if (!match) return false;
     const op = { '≤': '<=', '≥': '>=' }[match[1]] || match[1];
@@ -74,7 +104,9 @@ export function groupTierRows(model, tiers, getPricing, t) {
   }
   if (tiers.length)
     return tiers.map((tier, index) => {
-      const reference = matchingOfficialTier(tiers, index, official);
+      const periodReference = matchingPeriodTier(tiers, index, official);
+      const reference =
+        periodReference || matchingOfficialTier(tiers, index, official);
       const conditions = tierConditions(tiers, index);
       const summary = conditions
         .map(
@@ -84,7 +116,15 @@ export function groupTierRows(model, tiers, getPricing, t) {
         .join(' && ');
       return {
         ...getPricing(index),
-        label: reference?.label || tier.label || t('默认'),
+        label: periodReference
+          ? tier.label
+          : reference?.label || tier.label || t('默认'),
+        comparisonNote: periodReference
+          ? '按峰谷档位比较，生效时段以各自规则为准'
+          : undefined,
+        comparisonUnavailable: reference
+          ? undefined
+          : groupComparisonUnavailable(model),
         condition: reference ? '' : summary || (index > 0 ? t('默认') : ''),
         officialTier: reference,
       };

@@ -7500,6 +7500,16 @@
     "近30分钟": "30 phút gần nhất",
     "模型用量参考": "Tham khảo mức sử dụng mô hình",
     "用量时间范围": "Khoảng thời gian sử dụng",
-    "最近 {{days}} 天": "{{days}} ngày gần nhất"
+    "最近 {{days}} 天": "{{days}} ngày gần nhất",
+    "官方与本站的计价单位不同": "Đơn vị tính phí chính thức và của trang khác nhau",
+    "尚未匹配到对应的官方档位": "Chưa tìm thấy bậc giá chính thức tương ứng",
+    "该项暂不支持官方对比": "Mục này chưa hỗ trợ so sánh giá chính thức",
+    "倍率视图不比较金额": "Chế độ hệ số không so sánh số tiền",
+    "缓存时长未对应，暂不比较": "Thời gian lưu bộ nhớ đệm không tương ứng; chưa thể so sánh",
+    "官方未提供该项单价": "Không có đơn giá chính thức cho mục này",
+    "本站单价暂不可比较": "Chưa thể so sánh đơn giá của trang",
+    "当前币种无法换算官方价格": "Không thể quy đổi giá chính thức sang tiền tệ này",
+    "暂无有效汇率，暂不显示官方对比": "Chưa có tỷ giá hợp lệ; không hiển thị so sánh",
+    "按峰谷档位比较，生效时段以各自规则为准": "So sánh giá giờ cao điểm và thấp điểm; thời gian áp dụng theo quy tắc của từng bên"
   }
 }
