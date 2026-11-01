@@ -95,3 +95,45 @@ test('model, sampling and thinking diagnoses translate without exposing adjustme
     }
   }
 });
+
+test('admin reports identify early rejections without exposing credentials or diagnostics', () => {
+  const log = {
+    type: 5,
+    created_at: 100,
+    user_id: 6175,
+    username: '',
+    token_id: 27364,
+    token_name: 'fixture-token',
+    key: 'sk-private-key',
+    ip: 'private-ip',
+    other: JSON.stringify({
+      admin_info: { error_message: 'private-diagnostic' },
+    }),
+  };
+  const report = buildRequestFailureReport(log, t, true);
+  assert.match(report, /用户: ID: 6175/);
+  assert.match(report, /用户 ID: 6175/);
+  assert.match(report, /令牌名称: fixture-token/);
+  assert.match(report, /令牌 ID: 27364/);
+  assert.doesNotMatch(report, /private/);
+  assert.doesNotMatch(
+    buildRequestFailureReport(log, t),
+    /6175|27364|fixture-token|private/,
+  );
+  assert.match(
+    buildRequestFailureReport({ ...log, username: 'known-user' }, t, true),
+    /用户: known-user/,
+  );
+});
+
+test('missing log identity has a readable fallback', async () => {
+  const { getRequestLogUserLabel } = await import(
+    '../src/helpers/requestFailure.js'
+  );
+  assert.equal(getRequestLogUserLabel({ user_id: 973 }), 'ID: 973');
+  assert.equal(
+    getRequestLogUserLabel({ user_id: 973, username: 'owner' }),
+    'owner',
+  );
+  assert.equal(getRequestLogUserLabel({}), '-');
+});

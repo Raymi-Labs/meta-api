@@ -78,12 +78,23 @@ export const getRequestFailureDetails = (record, t) => {
   return details;
 };
 
-export const buildRequestFailureReport = (record, t) => {
+export const getRequestLogUserLabel = (record) =>
+  record.username || (record.user_id > 0 ? `ID: ${record.user_id}` : '-');
+
+export const buildRequestFailureReport = (record, t, isAdmin = false) => {
   const base = [
     ['Request ID', record.request_id || '-'],
     [t('时间'), new Date(record.created_at * 1000).toISOString()],
     [t('模型名称'), record.model_name || '-'],
   ];
+  if (isAdmin) {
+    base.push(
+      [t('用户'), getRequestLogUserLabel(record)],
+      [`${t('用户')} ID`, record.user_id || '-'],
+      [t('令牌名称'), record.token_name || '-'],
+      [`${t('令牌')} ID`, record.token_id || '-'],
+    );
+  }
   return [
     ...base,
     ...getRequestFailureDetails(record, t).map(({ key, value }) => [
