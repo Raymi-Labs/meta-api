@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { modelPerformance } from '../../../../../helpers/modelPerformance';
+
 import {
   getCatalogTags,
   catalogTagLabel,
@@ -49,7 +51,6 @@ import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 import { useModelHealthSummaries } from '../../../../../hooks/group-health/useModelHealthSummaries';
 import {
   formatHealthLatency,
-  getHealthLatency,
   formatHealthReference,
 } from '../../../../group-health/healthUtils';
 import {
@@ -117,7 +118,8 @@ const PricingCardView = ({
           const tags = getCatalogTags(model);
           const icon = model.icon || model.vendor_icon;
           const stats = health.summaries.get(model.model_name);
-          const latency = getHealthLatency(stats, 'ttft', true);
+          const performance = modelPerformance(stats);
+          const { latency } = performance;
           const showTokenMetrics =
             data.isPerToken ||
             (data.isDynamicPricing &&
@@ -242,7 +244,12 @@ const PricingCardView = ({
               {showTokenMetrics && (
                 <dl
                   className='pricing-card-performance'
-                  title={`${t('全部分组')} · ${t('最近 {{hours}} 小时', { hours: 24 })} · ${t('平台分组统计，不限于个人请求。')}`}
+                  title={
+                    performance.externalLatency ||
+                    performance.externalThroughput
+                      ? undefined
+                      : `${t('全部分组')} · ${t('最近 {{hours}} 小时', { hours: 24 })} · ${t('平台分组统计，不限于个人请求。')}`
+                  }
                 >
                   <div>
                     <dt>
@@ -260,7 +267,11 @@ const PricingCardView = ({
                       <div>
                         <dt>
                           <Timer size={13} />
-                          {t('首字均值')}
+                          {t(
+                            performance.externalLatency
+                              ? '首字时间'
+                              : '首字均值',
+                          )}
                         </dt>
                         <dd title={formatHealthReference(latency, t)}>
                           {formatHealthLatency(latency.value) === '—'
@@ -274,9 +285,9 @@ const PricingCardView = ({
                           {t('输出速度')}
                         </dt>
                         <dd>
-                          {formatModelThroughput(stats?.avg_output_tps) === '—'
+                          {formatModelThroughput(performance.throughput) === '—'
                             ? t('暂无数据')
-                            : formatModelThroughput(stats?.avg_output_tps)}
+                            : formatModelThroughput(performance.throughput)}
                         </dd>
                       </div>
                     </>

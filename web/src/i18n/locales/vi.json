@@ -6360,6 +6360,7 @@
     "近 24 小时成功率": "Tỷ lệ thành công trong 24 giờ qua",
     "近24小时": "24 giờ qua",
     "部分波动": "Có dao động",
+    "首字时间": "Thời gian token đầu tiên",
     "首字均值": "Đầu ra đầu tiên TB",
     "平台分组统计，不限于个人请求。": "Thống kê nhóm trên toàn nền tảng, bao gồm yêu cầu từ mọi người dùng.",
     "生图显示成功同步请求的完成耗时，异步提交不计入完成样本。": "Tạo ảnh hiển thị thời gian hoàn tất của yêu cầu đồng bộ thành công. Các lần gửi bất đồng bộ không được tính vào mẫu hoàn tất.",

@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { modelPerformance } from '../../helpers/modelPerformance';
+
 import React, { useState } from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
 import ModelGroupTierTable from './ModelGroupTierTable';
@@ -44,7 +46,6 @@ import {
   uptimeTone,
   getUptimeRate,
   resolveGroupHealthMetric,
-  getHealthLatency,
   formatHealthReference,
 } from '../../components/group-health/healthUtils';
 
@@ -136,7 +137,8 @@ export default function ModelGroupRows({
         const officialTier = rows[0]?.officialTier;
         const stats = health.error ? undefined : statsByGroup.get(group);
         const metric = resolveGroupHealthMetric(stats, group, true);
-        const latency = getHealthLatency(stats, metric, true);
+        const performance = modelPerformance(stats, metric);
+        const { latency } = performance;
         const open = expanded.includes(group);
         return (
           <article className='model-group-row' key={group}>
@@ -204,7 +206,11 @@ export default function ModelGroupRows({
               <dl className='model-group-health-values'>
                 <div>
                   <dt>
-                    {metric === 'completion' ? t('平均完成') : t('首字均值')}
+                    {metric === 'completion'
+                      ? t('平均完成')
+                      : t(
+                          performance.externalLatency ? '首字时间' : '首字均值',
+                        )}
                   </dt>
                   <dd title={formatHealthReference(latency, t)}>
                     {formatHealthLatency(latency.value)}
@@ -215,7 +221,7 @@ export default function ModelGroupRows({
                 </div>
                 <div>
                   <dt>{t('输出速度')}</dt>
-                  <dd>{formatModelThroughput(stats?.avg_output_tps)}</dd>
+                  <dd>{formatModelThroughput(performance.throughput)}</dd>
                 </div>
                 <div>
                   <dt>

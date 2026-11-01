@@ -6068,6 +6068,7 @@
     "近 24 小时成功率": "Taux de réussite sur les dernières 24 heures",
     "近24小时": "Dernières 24 heures",
     "部分波动": "Quelques fluctuations",
+    "首字时间": "Temps du premier token",
     "首字均值": "Première sortie moy.",
     "平台分组统计，不限于个人请求。": "Statistiques des groupes à l’échelle de la plateforme, incluant les requêtes de tous les utilisateurs.",
     "生图显示成功同步请求的完成耗时，异步提交不计入完成样本。": "Pour les images, la durée de traitement concerne les requêtes synchrones réussies. Les soumissions asynchrones sont exclues des échantillons de traitement.",

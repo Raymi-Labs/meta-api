@@ -86,6 +86,18 @@ func GetGroupHealth(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "message": "分组健康数据暂不可用"})
 		return
 	}
+	if modelName != "" && len(groups) > 0 {
+		needs := []string{}
+		for _, g := range result.Groups {
+			if needsPerformanceReference(g.Metrics) {
+				needs = append(needs, g.Group)
+			}
+		}
+		refs := service.OpenRouterPerformance(c.Request.Context(), needs, []string{modelName})
+		for i := range result.Groups {
+			result.Groups[i].PerformanceReference = refs[modelName][result.Groups[i].Group]
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": result})
 }
 
@@ -122,5 +134,25 @@ func GetModelHealthSummaries(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "message": "分组健康数据暂不可用"})
 		return
 	}
+	needs := []string{}
+	for _, m := range result.Models {
+		if needsPerformanceReference(m.Metrics) {
+			needs = append(needs, m.Model)
+		}
+	}
+	groups := visibleHealthGroups(user.Group, "")
+	refs := service.OpenRouterPerformance(c.Request.Context(), groups, needs)
+	for i := range result.Models {
+		for _, group := range groups {
+			if ref := refs[result.Models[i].Model][group]; ref != nil {
+				result.Models[i].PerformanceReference = ref
+				break
+			}
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": result})
+}
+
+func needsPerformanceReference(m grouphealth.Metrics) bool {
+	return (m.AvgTTFTMs == nil && (m.LastValid == nil || m.LastValid.TTFT == nil)) || m.AvgOutputTPS == nil
 }
