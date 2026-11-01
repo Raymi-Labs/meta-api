@@ -899,7 +899,7 @@ func normalizeResponsesUsage(usage *dto.Usage) dto.Usage {
 	if responseUsage.TotalTokens == 0 {
 		responseUsage.TotalTokens = responseUsage.InputTokens + responseUsage.OutputTokens
 	}
-	if responseUsage.InputTokensDetails == nil && (usage.PromptTokensDetails.CachedTokens != 0 || usage.PromptTokensDetails.CachedTokensDetails != nil) {
+	if responseUsage.InputTokensDetails == nil && (usage.PromptTokensDetails.CachedTokens != 0 || usage.PromptTokensDetails.CachedTokensDetails != nil || usage.PromptTokensDetails.CacheWriteTokens != nil) {
 		details := usage.PromptTokensDetails.Clone()
 		responseUsage.InputTokensDetails = &details
 	}

@@ -47,3 +47,20 @@ func TestUpdateUsageFromStreamDataRetainsMiMoSearchOnlyUsage(t *testing.T) {
 	require.Equal(t, 3, usage.WebSearchRequests)
 	require.Nil(t, usage.WebSearchUsage)
 }
+
+func TestCacheWriteStreamSnapshotsAreNotAccumulated(t *testing.T) {
+	usage := &dto.Usage{}
+	present := false
+	chunk := `{"choices":[],"usage":{"prompt_tokens":6022,"completion_tokens":5,"total_tokens":6027,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":6019}}}`
+	updateUsageFromStreamData(chunk, &usage, &present)
+	updateUsageFromStreamData(chunk, &usage, &present)
+	updateUsageFromStreamData(`{"choices":[],"metadata":"done"}`, &usage, &present)
+	require.True(t, present)
+	require.Equal(t, 6022, usage.PromptTokens)
+	require.Equal(t, 6019, usage.PromptTokensDetails.CachedCreationTokens)
+	require.Equal(t, 6019, *usage.PromptTokensDetails.CacheWriteTokens)
+
+	updateUsageFromStreamData(`{"choices":[],"usage":{"input_tokens":20,"output_tokens":1,"total_tokens":21,"input_tokens_details":{"cached_tokens":3,"cache_write_tokens":17}}}`, &usage, &present)
+	require.Equal(t, 17, usage.PromptTokensDetails.CachedCreationTokens)
+	require.Equal(t, 3, usage.PromptTokensDetails.CachedTokens)
+}

@@ -12,7 +12,7 @@
     "stale": false
   },
   "channel_status": "enabled",
-  "reason": "当前账号 19 个非语音型号已恢复；4 个语音等待网关计量验收，6 个价格未通过继续暂停",
+  "reason": "已切到当前账号，23 个审核型号恢复；6 个原厂价格未通过的型号继续暂停",
   "limitations": [
     "语音不支持上游最低价排序或硬限价；经用户同意每次调用前检查全部服务商报价，仍有报价到扣费的时间差",
     "固定汇率校正为公开 ECB 快照；不是自动每日调价任务",
@@ -51,7 +51,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-4-argon/endpoints",
       "endpoint_quotes": [
         {
@@ -180,7 +180,7 @@
         "text"
       ],
       "context_length": 65536,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-nano-banana-2.1/endpoints",
       "endpoint_quotes": [
         {
@@ -200,7 +200,7 @@
       "channel_id": 1638,
       "model": "gemini-3.5-transcribe",
       "upstream_model": "google/gemini-3.5-transcribe",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -221,7 +221,7 @@
         "transcription"
       ],
       "context_length": 98304,
-      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.5-transcribe/endpoints",
       "endpoint_quotes": [
         {
@@ -239,7 +239,7 @@
       "channel_id": 1638,
       "model": "gemini-3.8-flash-lite-tts",
       "upstream_model": "google/gemini-3.8-flash-lite-tts",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -261,7 +261,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash-lite-tts/endpoints",
       "endpoint_quotes": [
         {
@@ -288,7 +288,7 @@
       "channel_id": 1638,
       "model": "gemini-3.8-flash-tts",
       "upstream_model": "google/gemini-3.8-flash-tts",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -310,7 +310,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash-tts/endpoints",
       "endpoint_quotes": [
         {
@@ -364,7 +364,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.8-flash/endpoints",
       "endpoint_quotes": [
         {
@@ -512,7 +512,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.7-flash/endpoints",
       "endpoint_quotes": [
         {
@@ -660,7 +660,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.6-flash/endpoints",
       "endpoint_quotes": [
         {
@@ -808,7 +808,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.5-flash-lite/endpoints",
       "endpoint_quotes": [
         {
@@ -970,7 +970,7 @@
         "text"
       ],
       "context_length": 65536,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite-image/endpoints",
       "endpoint_quotes": [
         {
@@ -1026,7 +1026,7 @@
         "text"
       ],
       "context_length": 131072,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-image/endpoints",
       "endpoint_quotes": [
         {
@@ -1093,7 +1093,7 @@
         "text"
       ],
       "context_length": 131072,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image/endpoints",
       "endpoint_quotes": [
         {
@@ -1165,7 +1165,7 @@
         "embeddings"
       ],
       "context_length": 8192,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-embedding-2/endpoints",
       "endpoint_quotes": [
         {
@@ -1394,7 +1394,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite/endpoints",
       "endpoint_quotes": [
         {
@@ -1531,7 +1531,7 @@
       "channel_id": 1638,
       "model": "gemini-3.1-flash-tts-preview",
       "upstream_model": "google/gemini-3.1-flash-tts-preview",
-      "status": "paused",
+      "status": "enabled",
       "price_verified": true,
       "routing_reviewed": true,
       "official_price": {
@@ -1552,7 +1552,7 @@
         "speech"
       ],
       "context_length": 32768,
-      "reason": "新账号上游真实 usage 已取得；等待 TTS 延迟用量与 JSON 转录前置校验修复部署和网关计费验收",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-tts-preview/endpoints",
       "endpoint_quotes": [
         {
@@ -1751,7 +1751,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-pro-preview-customtools/endpoints",
       "endpoint_quotes": [
         {
@@ -1819,7 +1819,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3.1-pro-preview/endpoints",
       "endpoint_quotes": [
         {
@@ -2018,7 +2018,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-3-flash-preview/endpoints",
       "endpoint_quotes": [
         {
@@ -2206,7 +2206,7 @@
         "embeddings"
       ],
       "context_length": 20000,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-embedding-001/endpoints",
       "endpoint_quotes": [
         {
@@ -2259,7 +2259,7 @@
         "text"
       ],
       "context_length": 32768,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash-image/endpoints",
       "endpoint_quotes": [
         {
@@ -2312,7 +2312,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash-lite/endpoints",
       "endpoint_quotes": [
         {
@@ -2396,7 +2396,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-flash/endpoints",
       "endpoint_quotes": [
         {
@@ -2479,7 +2479,7 @@
         "text"
       ],
       "context_length": 1048576,
-      "reason": "当前账号报价复核和上游实测通过，生产渠道已恢复；网关文本、图像和向量代表请求及消费验收通过",
+      "reason": "当前账号报价复核和上游实测通过；生产 v1.11.12 已启用，语音实际 Token 与网关消费验证通过",
       "endpoint_source": "https://openrouter.ai/api/v1/models/google/gemini-2.5-pro/endpoints",
       "endpoint_quotes": [
         {

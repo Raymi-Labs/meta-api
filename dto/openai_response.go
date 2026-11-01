@@ -282,6 +282,7 @@ type OpenAIChatCompletionsUsage struct {
 
 type OpenAIChatPromptTokensDetails struct {
 	CachedTokens        int                 `json:"cached_tokens"`
+	CacheWriteTokens    *int                `json:"cache_write_tokens,omitempty"`
 	AudioTokens         int                 `json:"audio_tokens"`
 	CachedTokensDetails *CachedTokenDetails `json:"cached_tokens_details,omitempty"`
 }
@@ -301,6 +302,7 @@ func NewOpenAIChatCompletionsUsage(usage *Usage) *OpenAIChatCompletionsUsage {
 		TotalTokens:      usage.TotalTokens,
 		PromptTokensDetails: OpenAIChatPromptTokensDetails{
 			CachedTokens:        usage.PromptTokensDetails.CachedTokens,
+			CacheWriteTokens:    cloneTokenCount(usage.PromptTokensDetails.CacheWriteTokens),
 			AudioTokens:         usage.PromptTokensDetails.AudioTokens,
 			CachedTokensDetails: usage.PromptTokensDetails.CachedTokensDetails.Clone(),
 		},
@@ -378,6 +380,7 @@ type OpenAIVideoResponse struct {
 
 type InputTokenDetails struct {
 	CachedTokens         int                 `json:"cached_tokens"`
+	CacheWriteTokens     *int                `json:"cache_write_tokens,omitempty"`
 	CachedTokensDetails  *CachedTokenDetails `json:"cached_tokens_details,omitempty"`
 	CachedCreationTokens int                 `json:"-"`
 	TextTokens           int                 `json:"text_tokens"`

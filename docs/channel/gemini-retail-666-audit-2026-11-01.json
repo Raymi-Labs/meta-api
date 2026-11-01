@@ -1,0 +1,2428 @@
+{
+  "date": "2026-11-01",
+  "formula": "manufacturer_reference_usd * 6.66 * 5",
+  "usd_cny": 6.66,
+  "energy_per_usd": 33.3,
+  "cny_per_energy": 0.2,
+  "models": [
+    {
+      "model": "gemini-2.5-flash",
+      "reference_model": "gemini-2.5-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.3,
+            "output": 2.5,
+            "cache_read": 0.03
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.3,
+        "c": 2.5,
+        "cr": 0.03,
+        "ai": 1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 9.99,
+        "c": 83.25,
+        "cr": 0.999,
+        "ai": 33.3
+      },
+      "expression": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990 + ai * 33.30)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-2.5-flash-image",
+      "reference_model": "gemini-2.5-flash-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.3,
+            "output": 2.5
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 30
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.3,
+        "c": 2.5,
+        "img_o": 30
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 9.99,
+        "c": 83.25,
+        "img_o": 999.0
+      },
+      "expression": "tier(\"standard\", p * 9.990 + c * 83.250 + img_o * 999.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "reference_model": "gemini-2.5-flash-lite",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.1,
+            "output": 0.4,
+            "cache_read": 0.01
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 0.3
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.1,
+        "c": 0.4,
+        "cr": 0.01,
+        "ai": 0.3
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 3.33,
+        "c": 13.32,
+        "cr": 0.333,
+        "ai": 9.99
+      },
+      "expression": "tier(\"standard\", p * 3.330 + c * 13.320 + cr * 0.3330 + ai * 9.990)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-2.5-flash-preview-tts",
+      "reference_model": "gemini-2.5-flash-preview-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-preview-tts",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 10
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 10.0,
+        "ao": 10.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 333.0,
+        "ao": 333.0
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 333.000 + ao * 333.000)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro",
+      "reference_model": "gemini-2.5-pro",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "输入 ≤ 200k Tokens",
+            "unit": "million_tokens",
+            "input": 1.25,
+            "output": 10,
+            "cache_read": 0.125
+          },
+          {
+            "label": "输入 > 200k Tokens",
+            "unit": "million_tokens",
+            "input": 2.5,
+            "output": 15,
+            "cache_read": 0.25
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.25,
+        "c": 10.0,
+        "cr": 0.125
+      },
+      "long_context_usd_per_million": {
+        "p": 2.5,
+        "c": 15,
+        "cr": 0.25
+      },
+      "energy_per_million": {
+        "p": 41.625,
+        "c": 333.0,
+        "cr": 4.1625
+      },
+      "expression": "len <= 200000 ? tier(\"standard\", p * 41.6250 + c * 333.000 + cr * 4.16250) : tier(\"long_context\", p * 83.250 + c * 499.50 + cr * 8.3250)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-2.5-pro-preview-tts",
+      "reference_model": "gemini-2.5-pro-preview-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-pro-preview-tts",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 1,
+            "output": 20
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.0,
+        "c": 20.0,
+        "ao": 20.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 33.3,
+        "c": 666.0,
+        "ao": 666.0
+      },
+      "expression": "tier(\"standard\", p * 33.300 + c * 666.000 + ao * 666.000)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "reference_model": "gemini-3-flash-preview",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 3,
+            "cache_read": 0.05
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 3.0,
+        "cr": 0.05,
+        "ai": 1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 99.9,
+        "cr": 1.665,
+        "ai": 33.3
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 99.900 + cr * 1.6650 + ai * 33.30)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3-pro-image",
+      "reference_model": "gemini-3-pro-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://cloud.google.com/model-garden/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12,
+            "cache_read": 0.2
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 120
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "cr": 0.2,
+        "img_o": 120
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "cr": 6.66,
+        "img_o": 3996.0
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660 + img_o * 3996.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-image",
+      "reference_model": "gemini-3.1-flash-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 3
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 60
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 3.0,
+        "img_o": 60
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 99.9,
+        "img_o": 1998.0
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 99.900 + img_o * 1998.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "reference_model": "gemini-3.1-flash-lite",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.25,
+            "output": 1.5,
+            "cache_read": 0.025
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 0.5
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.25,
+        "c": 1.5,
+        "cr": 0.025,
+        "ai": 0.5
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 8.325,
+        "c": 49.95,
+        "cr": 0.8325,
+        "ai": 16.65
+      },
+      "expression": "tier(\"standard\", p * 8.3250 + c * 49.950 + cr * 0.83250 + ai * 16.650)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-lite-image",
+      "reference_model": "gemini-3.1-flash-lite-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.25,
+            "output": 1.5
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 30
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.25,
+        "c": 1.5,
+        "img_o": 30
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 8.325,
+        "c": 49.95,
+        "img_o": 999.0
+      },
+      "expression": "tier(\"standard\", p * 8.3250 + c * 49.950 + img_o * 999.00)",
+      "replaces_fixed_price": 1,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-tts-preview",
+      "reference_model": "gemini-3.1-flash-tts-preview",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 1,
+            "output": 20
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.0,
+        "c": 20.0,
+        "ao": 20.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 33.3,
+        "c": 666.0,
+        "ao": 666.0
+      },
+      "expression": "tier(\"standard\", p * 33.300 + c * 666.000 + ao * 666.000)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-pro-preview",
+      "reference_model": "gemini-3.1-pro-preview",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "输入 ≤ 200k Tokens",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12,
+            "cache_read": 0.2
+          },
+          {
+            "label": "输入 > 200k Tokens",
+            "unit": "million_tokens",
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "cr": 0.2
+      },
+      "long_context_usd_per_million": {
+        "p": 4,
+        "c": 18,
+        "cr": 0.4
+      },
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "cr": 6.66
+      },
+      "expression": "len <= 200000 ? tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660) : tier(\"long_context\", p * 133.20 + c * 599.40 + cr * 13.320)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.1-pro-preview-customtools",
+      "reference_model": "gemini-3.1-pro-preview-customtools",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "输入 ≤ 200k Tokens",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12,
+            "cache_read": 0.2
+          },
+          {
+            "label": "输入 > 200k Tokens",
+            "unit": "million_tokens",
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "cr": 0.2
+      },
+      "long_context_usd_per_million": {
+        "p": 4,
+        "c": 18,
+        "cr": 0.4
+      },
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "cr": 6.66
+      },
+      "expression": "len <= 200000 ? tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660) : tier(\"long_context\", p * 133.20 + c * 599.40 + cr * 13.320)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.5-flash",
+      "reference_model": "gemini-3.5-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://cloud.google.com/model-garden/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 1.5,
+            "output": 9,
+            "cache_read": 0.15
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.5,
+        "c": 9.0,
+        "cr": 0.15
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 49.95,
+        "c": 299.7,
+        "cr": 4.995
+      },
+      "expression": "tier(\"standard\", p * 49.950 + c * 299.700 + cr * 4.9950)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "reference_model": "gemini-3.5-flash-lite",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.3,
+            "output": 2.5,
+            "cache_read": 0.03
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.3,
+        "c": 2.5,
+        "cr": 0.03
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 9.99,
+        "c": 83.25,
+        "cr": 0.999
+      },
+      "expression": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.5-transcribe",
+      "reference_model": "gemini-3.5-transcribe",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（音频输入/文本输出）",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "ai": 2.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "ai": 66.6
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 399.600 + ai * 66.600)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "reference_model": "gemini-3.6-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "Context caching price: $0.075 through December 31, 2026. $0.15 starting January 1, 2027. $0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026. $1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.",
+        "tiers": [
+          {
+            "label": "Standard",
+            "unit": "million_tokens",
+            "input": 0.75,
+            "output": 3.75,
+            "cache_read": 0.075
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.75,
+        "c": 3.75,
+        "cr": 0.075
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 24.975,
+        "c": 124.875,
+        "cr": 2.4975
+      },
+      "expression": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.7-flash",
+      "reference_model": "gemini-3.7-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://cloud.google.com/model-garden/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.75,
+            "output": 3.75,
+            "cache_read": 0.075
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.75,
+        "c": 3.75,
+        "cr": 0.075
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 24.975,
+        "c": 124.875,
+        "cr": 2.4975
+      },
+      "expression": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1566,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "reference_model": "gemini-3.8-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "Context caching price: $0.075 through December 31, 2026. $0.15 starting January 1, 2027. $0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026. $1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.",
+        "tiers": [
+          {
+            "label": "Standard",
+            "unit": "million_tokens",
+            "input": 0.75,
+            "output": 3.75,
+            "cache_read": 0.075
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.75,
+        "c": 3.75,
+        "cr": 0.075
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 24.975,
+        "c": 124.875,
+        "cr": 2.4975
+      },
+      "expression": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1374,
+        1510,
+        1566,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.8-flash-lite-tts",
+      "reference_model": "gemini-3.8-flash-lite-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 6
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 6.0,
+        "ao": 6.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 199.8,
+        "ao": 199.8
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 199.800 + ao * 199.800)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-3.8-flash-tts",
+      "reference_model": "gemini-3.8-flash-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 9
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 9.0,
+        "ao": 9.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 299.7,
+        "ao": 299.7
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 299.700 + ao * 299.700)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-4-argon",
+      "reference_model": "gemini-4-argon",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "Context caching price: $0.10 through November 30, 2026. $0.20 starting December 1, 2026. Implicit caching only (explicit caching is not supported).",
+        "tiers": [
+          {
+            "label": "Standard",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 10,
+            "cache_read": 0.1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 10.0,
+        "cr": 0.1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 333.0,
+        "cr": 3.33
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 333.000 + cr * 3.330)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1525,
+        1566,
+        1576,
+        1638
+      ]
+    },
+    {
+      "model": "gemini-embedding-001",
+      "reference_model": "gemini-embedding-001",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.15,
+            "output": 0
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.15,
+        "c": 0.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 4.995,
+        "c": 0.0
+      },
+      "expression": "tier(\"standard\", p * 4.9950 + c * 0.000)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-embedding-2",
+      "reference_model": "gemini-embedding-2",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.2,
+            "output": 0
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 6.5
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.2,
+        "c": 0.0,
+        "ai": 6.5
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 6.66,
+        "c": 0.0,
+        "ai": 216.45
+      },
+      "expression": "tier(\"standard\", p * 6.660 + c * 0.000 + ai * 216.450)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1638
+      ]
+    },
+    {
+      "model": "gemini-nano-banana-2.1",
+      "reference_model": "gemini-nano-banana-2.1",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 1.5,
+            "output": 7.5
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 30
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.5,
+        "c": 7.5,
+        "img_o": 30
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 49.95,
+        "c": 249.75,
+        "img_o": 999.0
+      },
+      "expression": "tier(\"standard\", p * 49.950 + c * 249.750 + img_o * 999.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": [
+        1510,
+        1638
+      ]
+    },
+    {
+      "model": "google/gemini-2.5-flash",
+      "reference_model": "gemini-2.5-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.3,
+            "output": 2.5,
+            "cache_read": 0.03
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.3,
+        "c": 2.5,
+        "cr": 0.03,
+        "ai": 1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 9.99,
+        "c": 83.25,
+        "cr": 0.999,
+        "ai": 33.3
+      },
+      "expression": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990 + ai * 33.30)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-flash-image",
+      "reference_model": "gemini-2.5-flash-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.3,
+            "output": 2.5
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 30
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.3,
+        "c": 2.5,
+        "img_o": 30
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 9.99,
+        "c": 83.25,
+        "img_o": 999.0
+      },
+      "expression": "tier(\"standard\", p * 9.990 + c * 83.250 + img_o * 999.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-flash-lite",
+      "reference_model": "gemini-2.5-flash-lite",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.1,
+            "output": 0.4,
+            "cache_read": 0.01
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 0.3
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.1,
+        "c": 0.4,
+        "cr": 0.01,
+        "ai": 0.3
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 3.33,
+        "c": 13.32,
+        "cr": 0.333,
+        "ai": 9.99
+      },
+      "expression": "tier(\"standard\", p * 3.330 + c * 13.320 + cr * 0.3330 + ai * 9.990)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-pro",
+      "reference_model": "gemini-2.5-pro",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "输入 ≤ 200k Tokens",
+            "unit": "million_tokens",
+            "input": 1.25,
+            "output": 10,
+            "cache_read": 0.125
+          },
+          {
+            "label": "输入 > 200k Tokens",
+            "unit": "million_tokens",
+            "input": 2.5,
+            "output": 15,
+            "cache_read": 0.25
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.25,
+        "c": 10.0,
+        "cr": 0.125
+      },
+      "long_context_usd_per_million": {
+        "p": 2.5,
+        "c": 15,
+        "cr": 0.25
+      },
+      "energy_per_million": {
+        "p": 41.625,
+        "c": 333.0,
+        "cr": 4.1625
+      },
+      "expression": "len <= 200000 ? tier(\"standard\", p * 41.6250 + c * 333.000 + cr * 4.16250) : tier(\"long_context\", p * 83.250 + c * 499.50 + cr * 8.3250)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3-flash-preview",
+      "reference_model": "gemini-3-flash-preview",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 3,
+            "cache_read": 0.05
+          },
+          {
+            "label": "音频输入",
+            "unit": "million_tokens",
+            "input": 1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 3.0,
+        "cr": 0.05,
+        "ai": 1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 99.9,
+        "cr": 1.665,
+        "ai": 33.3
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 99.900 + cr * 1.6650 + ai * 33.30)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3-pro-image",
+      "reference_model": "gemini-3-pro-image",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://cloud.google.com/model-garden/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12,
+            "cache_read": 0.2
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 120
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "cr": 0.2,
+        "img_o": 120
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "cr": 6.66,
+        "img_o": 3996.0
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660 + img_o * 3996.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3.5-transcribe",
+      "reference_model": "gemini-3.5-transcribe",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（音频输入/文本输出）",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 12
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 12.0,
+        "ai": 2.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 399.6,
+        "ai": 66.6
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 399.600 + ai * 66.600)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3.8-flash",
+      "reference_model": "gemini-3.8-flash",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "Context caching price: $0.075 through December 31, 2026. $0.15 starting January 1, 2027. $0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026. $1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.",
+        "tiers": [
+          {
+            "label": "Standard",
+            "unit": "million_tokens",
+            "input": 0.75,
+            "output": 3.75,
+            "cache_read": 0.075
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.75,
+        "c": 3.75,
+        "cr": 0.075
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 24.975,
+        "c": 124.875,
+        "cr": 2.4975
+      },
+      "expression": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3.8-flash-lite-tts",
+      "reference_model": "gemini-3.8-flash-lite-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 6
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 6.0,
+        "ao": 6.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 199.8,
+        "ao": 199.8
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 199.800 + ao * 199.800)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3.8-flash-tts",
+      "reference_model": "gemini-3.8-flash-tts",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准（文本输入/音频输出）",
+            "unit": "million_tokens",
+            "input": 0.5,
+            "output": 9
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 0.5,
+        "c": 9.0,
+        "ao": 9.0
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 16.65,
+        "c": 299.7,
+        "ao": 299.7
+      },
+      "expression": "tier(\"standard\", p * 16.650 + c * 299.700 + ao * 299.700)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-4-argon",
+      "reference_model": "gemini-4-argon",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "Context caching price: $0.10 through November 30, 2026. $0.20 starting December 1, 2026. Implicit caching only (explicit caching is not supported).",
+        "tiers": [
+          {
+            "label": "Standard",
+            "unit": "million_tokens",
+            "input": 2,
+            "output": 10,
+            "cache_read": 0.1
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 2.0,
+        "c": 10.0,
+        "cr": 0.1
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 66.6,
+        "c": 333.0,
+        "cr": 3.33
+      },
+      "expression": "tier(\"standard\", p * 66.600 + c * 333.000 + cr * 3.330)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-nano-banana-2.1",
+      "reference_model": "gemini-nano-banana-2.1",
+      "reference": {
+        "currency": "USD",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "notes": "2026-11-01 核实的原厂标准价；非 OpenRouter 目录报价。促销截止日期与附加收费以来源为准。",
+        "tiers": [
+          {
+            "label": "标准",
+            "unit": "million_tokens",
+            "input": 1.5,
+            "output": 7.5
+          },
+          {
+            "label": "图像输出 Tokens",
+            "unit": "million_tokens",
+            "output": 30
+          }
+        ]
+      },
+      "prices_usd_per_million": {
+        "p": 1.5,
+        "c": 7.5,
+        "img_o": 30
+      },
+      "long_context_usd_per_million": null,
+      "energy_per_million": {
+        "p": 49.95,
+        "c": 249.75,
+        "img_o": 999.0
+      },
+      "expression": "tier(\"standard\", p * 49.950 + c * 249.750 + img_o * 999.00)",
+      "replaces_fixed_price": null,
+      "enabled_channels": []
+    }
+  ],
+  "preserved_unverified": [
+    {
+      "model": "flow-video-gemini-omni-flash-1.1",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": [
+        1580
+      ]
+    },
+    {
+      "model": "flow-video-gemini-omni-flash-1.1-1080p",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": [
+        1580
+      ]
+    },
+    {
+      "model": "flow-video-gemini-omni-flash-1.1-edit",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-1.5-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-1.5-flash-8b",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-1.5-flash-latest",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-1.5-pro",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-1.5-pro-latest",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash-001",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash-exp",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash-lite",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash-lite-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-flash-thinking-exp",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.0-pro-exp",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-image-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-lite-preview-06-17",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-lite-preview-09-2025",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-nothink",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-preview-04-17",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-preview-05-20",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-flash-preview-09-2025",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro-exp-03-25",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro-preview-03-25",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro-preview-05-06",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-2.5-pro-preview-06-05",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-1-pro-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-image",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-pro",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-pro-image-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-pro-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3-pro-preview-search",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3.1-flash-image-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": [
+        1552
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-lite-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3.1-pro",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-3.1-pro-low",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-4-argon-high",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-4-argon-low",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-4-argon-medium",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-embedding-2-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-embedding-exp-03-07",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-exp-1206",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-flash-latest",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-flash-lite-latest",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-live-2.5-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "gemini-live-2.5-flash-preview-native-audio",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.0-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.0-flash-001",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.0-flash-lite",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.0-flash-lite-001",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-flash-image-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-flash-lite-preview-09-2025",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-flash-preview-09-2025",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-pro-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-pro-preview-05-06",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-2.5-pro-preview-06-05",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3-flash",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3-pro",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3-pro-preview",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-3.8-flash:batch",
+      "reason": "excluded_special_entry",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-4-argon:batch",
+      "reason": "excluded_special_entry",
+      "enabled_channels": []
+    },
+    {
+      "model": "google/gemini-deep-research",
+      "reason": "manufacturer_reference_unverified",
+      "enabled_channels": []
+    }
+  ],
+  "option_changes": {
+    "billing_setting.billing_mode": {
+      "gemini-2.5-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-2.5-flash-lite": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-2.5-flash-preview-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-2.5-pro": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3-flash-preview": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.1-flash-lite": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.1-flash-lite-image": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.1-flash-tts-preview": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.1-pro-preview": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.1-pro-preview-customtools": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.5-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.5-flash-lite": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.5-transcribe": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.6-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.7-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.8-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-3.8-flash-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-4-argon": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-embedding-001": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "gemini-embedding-2": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-2.5-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-2.5-flash-image": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-2.5-flash-lite": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-2.5-pro": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3-flash-preview": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3-pro-image": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3.5-transcribe": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3.8-flash": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-4-argon": {
+        "before": null,
+        "after": "tiered_expr"
+      },
+      "google/gemini-nano-banana-2.1": {
+        "before": null,
+        "after": "tiered_expr"
+      }
+    },
+    "billing_setting.billing_expr": {
+      "gemini-2.5-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990 + ai * 33.30)"
+      },
+      "gemini-2.5-flash-image": {
+        "before": "tier(\"standard\", p * 0.3 + c * 30.0 + img_o * 30.0 + cr * 0.075)",
+        "after": "tier(\"standard\", p * 9.990 + c * 83.250 + img_o * 999.00)"
+      },
+      "gemini-2.5-flash-lite": {
+        "before": null,
+        "after": "tier(\"standard\", p * 3.330 + c * 13.320 + cr * 0.3330 + ai * 9.990)"
+      },
+      "gemini-2.5-flash-preview-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 333.000 + ao * 333.000)"
+      },
+      "gemini-2.5-pro": {
+        "before": null,
+        "after": "len <= 200000 ? tier(\"standard\", p * 41.6250 + c * 333.000 + cr * 4.16250) : tier(\"long_context\", p * 83.250 + c * 499.50 + cr * 8.3250)"
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 33.300 + c * 666.000 + ao * 666.000)"
+      },
+      "gemini-3-flash-preview": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 99.900 + cr * 1.6650 + ai * 33.30)"
+      },
+      "gemini-3-pro-image": {
+        "before": "tier(\"standard\", p * 66.528822055136 + c * 399.172932330816 + img_o * 3991.729323308271 + cr * 6.652882205513)",
+        "after": "tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660 + img_o * 3996.00)"
+      },
+      "gemini-3.1-flash-image": {
+        "before": "tier(\"standard\", p * 16.632205513784 + c * 99.793233082704 + img_o * 1995.864661654135)",
+        "after": "tier(\"standard\", p * 16.650 + c * 99.900 + img_o * 1998.00)"
+      },
+      "gemini-3.1-flash-lite": {
+        "before": null,
+        "after": "tier(\"standard\", p * 8.3250 + c * 49.950 + cr * 0.83250 + ai * 16.650)"
+      },
+      "gemini-3.1-flash-lite-image": {
+        "before": null,
+        "after": "tier(\"standard\", p * 8.3250 + c * 49.950 + img_o * 999.00)"
+      },
+      "gemini-3.1-flash-tts-preview": {
+        "before": null,
+        "after": "tier(\"standard\", p * 33.300 + c * 666.000 + ao * 666.000)"
+      },
+      "gemini-3.1-pro-preview": {
+        "before": null,
+        "after": "len <= 200000 ? tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660) : tier(\"long_context\", p * 133.20 + c * 599.40 + cr * 13.320)"
+      },
+      "gemini-3.1-pro-preview-customtools": {
+        "before": null,
+        "after": "len <= 200000 ? tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660) : tier(\"long_context\", p * 133.20 + c * 599.40 + cr * 13.320)"
+      },
+      "gemini-3.5-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 49.950 + c * 299.700 + cr * 4.9950)"
+      },
+      "gemini-3.5-flash-lite": {
+        "before": null,
+        "after": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990)"
+      },
+      "gemini-3.5-transcribe": {
+        "before": null,
+        "after": "tier(\"standard\", p * 66.600 + c * 399.600 + ai * 66.600)"
+      },
+      "gemini-3.6-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)"
+      },
+      "gemini-3.7-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)"
+      },
+      "gemini-3.8-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)"
+      },
+      "gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 199.800 + ao * 199.800)"
+      },
+      "gemini-3.8-flash-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 299.700 + ao * 299.700)"
+      },
+      "gemini-4-argon": {
+        "before": null,
+        "after": "tier(\"standard\", p * 66.600 + c * 333.000 + cr * 3.330)"
+      },
+      "gemini-embedding-001": {
+        "before": null,
+        "after": "tier(\"standard\", p * 4.9950 + c * 0.000)"
+      },
+      "gemini-embedding-2": {
+        "before": null,
+        "after": "tier(\"standard\", p * 6.660 + c * 0.000 + ai * 216.450)"
+      },
+      "gemini-nano-banana-2.1": {
+        "before": "tier(\"standard\", p * 49.896616541352 + c * 249.48308270676 + img_o * 997.932330827067)",
+        "after": "tier(\"standard\", p * 49.950 + c * 249.750 + img_o * 999.00)"
+      },
+      "google/gemini-2.5-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 9.990 + c * 83.250 + cr * 0.9990 + ai * 33.30)"
+      },
+      "google/gemini-2.5-flash-image": {
+        "before": null,
+        "after": "tier(\"standard\", p * 9.990 + c * 83.250 + img_o * 999.00)"
+      },
+      "google/gemini-2.5-flash-lite": {
+        "before": null,
+        "after": "tier(\"standard\", p * 3.330 + c * 13.320 + cr * 0.3330 + ai * 9.990)"
+      },
+      "google/gemini-2.5-pro": {
+        "before": null,
+        "after": "len <= 200000 ? tier(\"standard\", p * 41.6250 + c * 333.000 + cr * 4.16250) : tier(\"long_context\", p * 83.250 + c * 499.50 + cr * 8.3250)"
+      },
+      "google/gemini-3-flash-preview": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 99.900 + cr * 1.6650 + ai * 33.30)"
+      },
+      "google/gemini-3-pro-image": {
+        "before": null,
+        "after": "tier(\"standard\", p * 66.600 + c * 399.600 + cr * 6.660 + img_o * 3996.00)"
+      },
+      "google/gemini-3.5-transcribe": {
+        "before": null,
+        "after": "tier(\"standard\", p * 66.600 + c * 399.600 + ai * 66.600)"
+      },
+      "google/gemini-3.8-flash": {
+        "before": null,
+        "after": "tier(\"standard\", p * 24.9750 + c * 124.8750 + cr * 2.49750)"
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 199.800 + ao * 199.800)"
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": "tier(\"standard\", p * 16.650 + c * 299.700 + ao * 299.700)"
+      },
+      "google/gemini-4-argon": {
+        "before": null,
+        "after": "tier(\"standard\", p * 66.600 + c * 333.000 + cr * 3.330)"
+      },
+      "google/gemini-nano-banana-2.1": {
+        "before": null,
+        "after": "tier(\"standard\", p * 49.950 + c * 249.750 + img_o * 999.00)"
+      }
+    },
+    "ModelRatio": {
+      "gemini-2.5-flash": {
+        "before": 4.989661654135,
+        "after": 4.995
+      },
+      "gemini-2.5-flash-image": {
+        "before": 0.15,
+        "after": 4.995
+      },
+      "gemini-2.5-flash-lite": {
+        "before": 0.05,
+        "after": 1.665
+      },
+      "gemini-2.5-flash-preview-tts": {
+        "before": 0.25,
+        "after": 8.325
+      },
+      "gemini-2.5-pro": {
+        "before": 20.79025689223,
+        "after": 20.8125
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "before": 0.5,
+        "after": 16.65
+      },
+      "gemini-3-flash-preview": {
+        "before": 8.316102756892,
+        "after": 8.325
+      },
+      "gemini-3-pro-image": {
+        "before": 33.264411027568,
+        "after": 33.3
+      },
+      "gemini-3.1-flash-image": {
+        "before": 8.316102756892,
+        "after": 8.325
+      },
+      "gemini-3.1-flash-lite": {
+        "before": 1,
+        "after": 4.1625
+      },
+      "gemini-3.1-flash-lite-image": {
+        "before": null,
+        "after": 4.1625
+      },
+      "gemini-3.1-flash-tts-preview": {
+        "before": 16.632205513784,
+        "after": 16.65
+      },
+      "gemini-3.1-pro-preview": {
+        "before": 8,
+        "after": 33.3
+      },
+      "gemini-3.1-pro-preview-customtools": {
+        "before": 1,
+        "after": 33.3
+      },
+      "gemini-3.5-flash": {
+        "before": 6.5,
+        "after": 24.975
+      },
+      "gemini-3.5-flash-lite": {
+        "before": 4.989661654135,
+        "after": 4.995
+      },
+      "gemini-3.5-transcribe": {
+        "before": 33.264411027568,
+        "after": 33.3
+      },
+      "gemini-3.6-flash": {
+        "before": 3.75,
+        "after": 12.4875
+      },
+      "gemini-3.7-flash": {
+        "before": 3.75,
+        "after": 12.4875
+      },
+      "gemini-3.8-flash": {
+        "before": 3.75,
+        "after": 12.4875
+      },
+      "gemini-3.8-flash-lite-tts": {
+        "before": 8.316102756892,
+        "after": 8.325
+      },
+      "gemini-3.8-flash-tts": {
+        "before": 8.316102756892,
+        "after": 8.325
+      },
+      "gemini-4-argon": {
+        "before": 5,
+        "after": 33.3
+      },
+      "gemini-embedding-001": {
+        "before": 2.494830827067,
+        "after": 2.4975
+      },
+      "gemini-embedding-2": {
+        "before": 3.326441102756,
+        "after": 3.33
+      },
+      "gemini-nano-banana-2.1": {
+        "before": 24.948308270676,
+        "after": 24.975
+      },
+      "google/gemini-2.5-flash": {
+        "before": null,
+        "after": 4.995
+      },
+      "google/gemini-2.5-flash-image": {
+        "before": null,
+        "after": 4.995
+      },
+      "google/gemini-2.5-flash-lite": {
+        "before": null,
+        "after": 1.665
+      },
+      "google/gemini-2.5-pro": {
+        "before": null,
+        "after": 20.8125
+      },
+      "google/gemini-3-flash-preview": {
+        "before": null,
+        "after": 8.325
+      },
+      "google/gemini-3-pro-image": {
+        "before": 1,
+        "after": 33.3
+      },
+      "google/gemini-3.5-transcribe": {
+        "before": null,
+        "after": 33.3
+      },
+      "google/gemini-3.8-flash": {
+        "before": null,
+        "after": 12.4875
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": 8.325
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": 8.325
+      },
+      "google/gemini-4-argon": {
+        "before": null,
+        "after": 33.3
+      },
+      "google/gemini-nano-banana-2.1": {
+        "before": null,
+        "after": 24.975
+      }
+    },
+    "CompletionRatio": {
+      "gemini-2.5-flash": {
+        "before": 8.333333333333,
+        "after": 8.333333333333334
+      },
+      "gemini-2.5-flash-image": {
+        "before": 100,
+        "after": 8.333333333333334
+      },
+      "gemini-3.1-flash-lite": {
+        "before": 3,
+        "after": 6.0
+      },
+      "gemini-3.1-flash-lite-image": {
+        "before": null,
+        "after": 6.0
+      },
+      "gemini-3.5-flash": {
+        "before": 16.923076923077,
+        "after": 6.0
+      },
+      "gemini-3.5-flash-lite": {
+        "before": 8.333333333333,
+        "after": 8.333333333333334
+      },
+      "google/gemini-2.5-flash": {
+        "before": 8.571428571429,
+        "after": 8.333333333333334
+      },
+      "google/gemini-2.5-flash-image": {
+        "before": 8.333333333333,
+        "after": 8.333333333333334
+      },
+      "google/gemini-2.5-pro": {
+        "before": 8.045977011494,
+        "after": 8.0
+      },
+      "google/gemini-3-pro-image": {
+        "before": 60,
+        "after": 6.0
+      },
+      "google/gemini-3.5-transcribe": {
+        "before": null,
+        "after": 6.0
+      },
+      "google/gemini-3.8-flash": {
+        "before": null,
+        "after": 5.0
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": 12.0
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": 18.0
+      },
+      "google/gemini-4-argon": {
+        "before": null,
+        "after": 5.0
+      },
+      "google/gemini-nano-banana-2.1": {
+        "before": null,
+        "after": 5.0
+      }
+    },
+    "AudioRatio": {
+      "gemini-2.5-flash": {
+        "before": 3.333333333333,
+        "after": 3.3333333333333335
+      },
+      "gemini-2.5-flash-lite": {
+        "before": 1.0,
+        "after": 3.0
+      },
+      "gemini-2.5-flash-preview-tts": {
+        "before": null,
+        "after": 1.0
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "before": null,
+        "after": 1.0
+      },
+      "gemini-3.1-flash-lite": {
+        "before": 1.0,
+        "after": 2.0
+      },
+      "gemini-embedding-2": {
+        "before": 32.500000000008,
+        "after": 32.5
+      },
+      "google/gemini-2.5-flash": {
+        "before": null,
+        "after": 3.3333333333333335
+      },
+      "google/gemini-2.5-flash-lite": {
+        "before": null,
+        "after": 3.0
+      },
+      "google/gemini-3-flash-preview": {
+        "before": null,
+        "after": 2.0
+      },
+      "google/gemini-3.5-transcribe": {
+        "before": null,
+        "after": 1.0
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": 1.0
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": 1.0
+      }
+    },
+    "CacheRatio": {
+      "gemini-2.5-flash-lite": {
+        "before": 0.25,
+        "after": 0.1
+      },
+      "gemini-3.1-flash-lite": {
+        "before": 0.05,
+        "after": 0.1
+      },
+      "gemini-3.1-pro-preview": {
+        "before": 0.0125,
+        "after": 0.1
+      },
+      "gemini-4-argon": {
+        "before": 0.01,
+        "after": 0.05
+      },
+      "google/gemini-3-pro-image": {
+        "before": null,
+        "after": 0.1
+      },
+      "google/gemini-3.8-flash": {
+        "before": null,
+        "after": 0.1
+      },
+      "google/gemini-4-argon": {
+        "before": null,
+        "after": 0.05
+      }
+    },
+    "AudioCompletionRatio": {
+      "gemini-2.5-flash-preview-tts": {
+        "before": null,
+        "after": 20.0
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "before": null,
+        "after": 20.0
+      },
+      "google/gemini-3.8-flash-lite-tts": {
+        "before": null,
+        "after": 12.0
+      },
+      "google/gemini-3.8-flash-tts": {
+        "before": null,
+        "after": 18.0
+      }
+    },
+    "ModelPrice": {
+      "gemini-3.1-flash-lite-image": {
+        "before": 1,
+        "after": null
+      }
+    }
+  },
+  "sources": [
+    {
+      "url": "https://ai.google.dev/gemini-api/docs/pricing",
+      "sha256": "ef4a0b5c5b830757d8dc927b511f79c9961b9cd84e08e64ba7962ed26da50658"
+    },
+    {
+      "url": "https://cloud.google.com/model-garden/pricing",
+      "sha256": "2357c92756686078ec2fc2a9b3299a9d22638d5feb4cdd4a3371403d4d6c9253"
+    }
+  ],
+  "verification": {
+    "engine_checks": 504,
+    "existing_float_half_quota_boundaries": 4,
+    "public_active_models": 23,
+    "updated_option_entries": 150,
+    "channels_unchanged": true,
+    "unrelated_prices_unchanged": true,
+    "groups_recharge_unchanged": true,
+    "temporary_tokens_deleted": true,
+    "version": "v1.11.12",
+    "gateway_requests": [
+      {
+        "model": "gemini-3.8-flash",
+        "kind": "text",
+        "status": 200,
+        "quota": 5370,
+        "single_charge": true,
+        "prompt_tokens": 5,
+        "completion_tokens": 85
+      },
+      {
+        "model": "gemini-2.5-pro",
+        "kind": "text",
+        "status": 200,
+        "quota": 4433,
+        "single_charge": true,
+        "prompt_tokens": 5,
+        "completion_tokens": 26
+      },
+      {
+        "model": "gemini-embedding-001",
+        "kind": "embedding",
+        "status": 200,
+        "quota": 7,
+        "single_charge": true,
+        "prompt_tokens": 3,
+        "completion_tokens": 0
+      },
+      {
+        "model": "gemini-3.1-flash-lite-image",
+        "kind": "image",
+        "status": 200,
+        "quota": 559473,
+        "single_charge": true,
+        "prompt_tokens": 8,
+        "completion_tokens": 1120
+      },
+      {
+        "model": "gemini-3.8-flash-lite-tts",
+        "kind": "tts",
+        "status": 200,
+        "quota": 2614,
+        "single_charge": true,
+        "prompt_tokens": 2,
+        "completion_tokens": 26
+      },
+      {
+        "model": "gemini-3.5-transcribe",
+        "kind": "stt",
+        "status": 200,
+        "quota": 1365,
+        "single_charge": true,
+        "prompt_tokens": 29,
+        "completion_tokens": 2
+      }
+    ]
+  }
+}
