@@ -7213,7 +7213,7 @@
     "多份生成按份数累加。": "Chaque vidéo générée est facturée séparément.",
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Les prix du site sont affichés par palier. La comparaison avec les prix officiels exige des conditions identiques et ne constitue pas une remise sur toute la requête.",
     "与官方价格一致": "Au tarif officiel",
-    "比官方价格低20%": "20 % de moins que le tarif officiel",
-    "比官方价格低40%": "40 % de moins que le tarif officiel"
+    "比官方价格低{{percent}}%": "{{percent}} % de moins que le tarif officiel",
+    "比官方价格高{{percent}}%": "{{percent}} % de plus que le tarif officiel"
   }
 }

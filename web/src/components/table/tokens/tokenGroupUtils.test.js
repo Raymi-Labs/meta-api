@@ -22,6 +22,7 @@ import { describe, test } from 'node:test';
 
 import {
   TOKEN_GROUP_OTHER_VENDOR,
+  tokenGroupPriceLabel,
   filterTokenGroupsByHealth,
   buildTokenGroupVendorOptions,
   filterTokenGroupsByVendor,
@@ -367,23 +368,40 @@ describe('tokenGroupUtils', () => {
   });
 });
 
-test('official price labels apply only to the explicitly named common tiers', async () => {
-  const { tokenGroupPriceLabel } = await import('./tokenGroupUtils.js');
-  assert.equal(tokenGroupPriceLabel('企业级'), '与官方价格一致');
-  assert.equal(tokenGroupPriceLabel('优选'), '比官方价格低20%');
-  assert.equal(tokenGroupPriceLabel('优质'), '比官方价格低20%');
-  assert.equal(tokenGroupPriceLabel('福利'), '比官方价格低40%');
+test('official price comparison uses each current ratio rather than group names', () => {
+  const t = (key, values) => key.replace('{{percent}}', values?.percent);
   for (const name of [
-    'auto',
-    'default',
-    '企业专属',
+    '企业级',
+    '优选',
+    '福利',
+    '自定义分组',
     'OpenAI · 优质',
-    '限时福利',
-    'constructor',
-    undefined,
   ]) {
-    assert.equal(tokenGroupPriceLabel(name), '');
+    for (const [ratio, label] of [
+      [0.38, '比官方价格低62%'],
+      [0.6, '比官方价格低40%'],
+      [0.8, '比官方价格低20%'],
+      [1, '与官方价格一致'],
+      [0, '比官方价格低100%'],
+      [1.2, '比官方价格高20%'],
+      [0.333333, '比官方价格低66.67%'],
+    ])
+      assert.equal(tokenGroupPriceLabel({ value: name, ratio }, t), label);
   }
+  for (const ratio of [
+    undefined,
+    null,
+    '',
+    '0.38',
+    -1,
+    NaN,
+    Infinity,
+    Number.MAX_VALUE,
+  ])
+    assert.equal(tokenGroupPriceLabel({ value: '福利', ratio }, t), '');
+  assert.equal(tokenGroupPriceLabel({ value: 'auto', ratio: 0.38 }, t), '');
+  assert.equal(tokenGroupPriceLabel({ value: '福利', ratio: 0.999999 }, t), '');
+  assert.equal(tokenGroupPriceLabel(undefined, t), '');
 });
 
 describe('token group Uptime candidates', () => {

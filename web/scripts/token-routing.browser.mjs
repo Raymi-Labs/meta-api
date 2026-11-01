@@ -61,6 +61,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     saves = [],
     tests = [];
   let failSave = false;
+  let welfareRatio = 0.38;
   let holdSave = false,
     releaseSave;
   let stored = {
@@ -94,7 +95,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
         企业专属: { desc: '企业专属的后台注释', ratio: 5.5 },
         企业级: { desc: '企业级的后台注释', ratio: 1 },
         优选: { desc: '优选的后台注释', ratio: 0.8 },
-        福利: { desc: '福利的后台注释', ratio: 0.1 },
+        福利: { desc: '福利的后台注释', ratio: welfareRatio },
         free: { desc: '<b>纯文本说明</b>' + '长说明'.repeat(45), ratio: 0 },
         unknown: { desc: '未返回倍率的说明' },
         auto: { desc: 'Auto', ratio: 'auto' },
@@ -161,7 +162,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   for (const [group, label] of [
     ['企业级', '与官方价格一致'],
     ['优选', '比官方价格低20%'],
-    ['福利', '比官方价格低40%'],
+    ['福利', '比官方价格低62%'],
   ]) {
     const row = page
       .locator('.token-group-picker__row')
@@ -170,7 +171,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
   }
   assert.equal(
     await page.locator('.token-group-picker__price-label').count(),
-    3,
+    8,
   );
   await page.waitForTimeout(700);
   await page.screenshot({
@@ -229,13 +230,17 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
       'unknown',
     ],
   );
+  assert.match(
+    await page.getByRole('option').filter({ hasText: '福利 ·' }).innerText(),
+    /比官方价格低62%/,
+  );
   for (const name of ['企业专属', '企业级', '优选']) {
     const option = page.getByRole('option').filter({ hasText: `${name} ·` });
     assert.ok((await option.innerText()).includes(`${name}的后台注释`));
   }
   assert.equal(
     await page.getByRole('option').filter({ hasText: 'team ·' }).innerText(),
-    'team · 5x',
+    'team · 5x\n比官方价格高400%',
   );
   assert.match(
     await page.getByRole('option').filter({ hasText: 'free ·' }).innerText(),
@@ -461,8 +466,14 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     assert.equal(saves.at(-1).auto_group_fallback, true);
     assert.equal(saves.at(-1).cross_group_retry, true);
   }
-  // Display priority must not rewrite the user's chosen routing order.
+  // Reopening loads the new ratio; display priority does not rewrite route order.
+  welfareRatio = 0.6;
   await page.evaluate(() => window.qa.create());
+  await page.getByText('比官方价格低40%', { exact: true }).waitFor();
+  assert.equal(
+    await page.getByText('比官方价格低62%', { exact: true }).count(),
+    0,
+  );
   await openAdvanced();
   await page.locator('#routing_enabled').click();
   await groupSelect().waitFor();
