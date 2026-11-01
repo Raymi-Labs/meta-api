@@ -22,13 +22,16 @@ import { ArrowUpRight } from 'lucide-react';
 import ModelSectionHelp from './ModelSectionHelp';
 import {
   officialPriceColumns,
+  visibleOfficialTiers,
+  visibleOfficialNotes,
   OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
   officialPricingSource,
 } from '../../helpers/modelOfficialPricing';
 
 export default function ModelOfficialPricing({ pricing, provenance, t }) {
-  const tiers = Array.isArray(pricing?.tiers) ? pricing.tiers : [];
+  const tiers = visibleOfficialTiers(pricing);
+  const notes = visibleOfficialNotes(pricing?.notes);
   const columns = officialPriceColumns(tiers);
   const source = officialPricingSource(pricing?.source_url);
   return (
@@ -52,9 +55,7 @@ export default function ModelOfficialPricing({ pricing, provenance, t }) {
                   })}
                 </p>
               )}
-            {pricing?.notes && (
-              <p className='model-official-notes'>{pricing.notes}</p>
-            )}
+            {notes && <p className='model-official-notes'>{notes}</p>}
           </ModelSectionHelp>
         </h2>
         {source && (

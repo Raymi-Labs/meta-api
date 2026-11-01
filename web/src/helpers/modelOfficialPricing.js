@@ -65,3 +65,22 @@ export function officialPricingSource(value) {
     return null;
   }
 }
+
+// Retain raw source metadata; the catalog offers the default 30m cache rate.
+export function visibleOfficialTiers(pricing) {
+  return (Array.isArray(pricing?.tiers) ? pricing.tiers : [])
+    .filter((tier) => !/ · cache 12h$/i.test(tier.label || ''))
+    .map((tier) => ({
+      ...tier,
+      label: (tier.label || '').replace(/ · cache 30m$/i, ''),
+    }));
+}
+
+export function visibleOfficialNotes(notes = '') {
+  return notes
+    .replace(
+      /Cache-write prices shown use 30-minute retention\. Standard cache writes cost \$[\d.]+ per million tokens for 30-minute retention and \$[\d.]+ for 12-hour retention, before long-context adjustments\./g,
+      '',
+    )
+    .trim();
+}

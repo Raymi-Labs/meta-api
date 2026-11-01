@@ -27,6 +27,7 @@ export default function ModelGroupPrice({
   model,
   officialTier,
   data,
+  hideLabel = false,
 }) {
   const { t } = data;
   const comparison = compareGroupPrice({
@@ -63,7 +64,9 @@ export default function ModelGroupPrice({
           : '';
   return (
     <span className='model-group-price-item' data-price-key={item.key}>
-      <small className='model-group-price-label'>{item.label}</small>
+      {!hideLabel && (
+        <small className='model-group-price-label'>{item.label}</small>
+      )}
       <span className='model-group-price-amounts'>
         {comparison &&
           (comparison.kind === 'lower' ? (

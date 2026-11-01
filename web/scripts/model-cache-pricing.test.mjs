@@ -391,3 +391,42 @@ test('video resolution prices share actual recharge/group/time conversion across
   assert.equal(dynamic.items[0].value, '动态计费');
   assert.ok(!dynamic.data.unitPricesUSD);
 });
+
+test('group tier table uses each tier amount and preserves zero fields across units', () => {
+  const record = {
+    billing_mode: 'tiered_expr',
+    billing_expr:
+      'v1:len <= 272000 ? tier("short", p*1+c*5+cr*0.05+cc*1.25) : tier("long", p*2+c*7.5+cr*0+cc*2.5)',
+  };
+  for (const tokenUnit of ['M', 'K']) {
+    const options = {
+      allTiers: true,
+      tokenUnit,
+      groupRatio: { standard: 0.5 },
+      timeRatioMap: {
+        'fixture-text': { standard: { ratio: 2, matched: true } },
+      },
+      displayPrice: money('¥', 7),
+    };
+    const first = pricing(record, { ...options, tierIndex: 0 });
+    const second = pricing(record, { ...options, tierIndex: 1 });
+    assert.equal(
+      first.data.unitPricesUSD['tiered-p'],
+      tokenUnit === 'K' ? 0.001 : 1,
+    );
+    assert.equal(
+      second.data.unitPricesUSD['tiered-p'],
+      first.data.unitPricesUSD['tiered-p'] * 2,
+    );
+    assert.equal(
+      second.data.unitPricesUSD['tiered-c'],
+      first.data.unitPricesUSD['tiered-c'] * 1.5,
+    );
+    assert.equal(second.data.unitPricesUSD['tiered-cr'], 0);
+    assert.ok(item(second, 'tiered-cr').value.startsWith('¥0.'));
+    assert.equal(
+      Number(item(second, 'tiered-p').value.slice(1)),
+      second.data.unitPricesUSD['tiered-p'] * 7,
+    );
+  }
+});

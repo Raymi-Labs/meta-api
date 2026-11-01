@@ -119,8 +119,14 @@ export function getModelCatalogPricing(options, t) {
   const { billingExpr } = splitBillingExprAndRequestRules(
     options.record.billing_expr || '',
   );
+  const tiers = parseTiersFromExpr(billingExpr);
   const tier = buildFirstTierGroupPriceItems({
-    tiers: parseTiersFromExpr(billingExpr),
+    tiers: tiers.slice(options.tierIndex || 0),
+    includeZeroFields: options.allTiers
+      ? BILLING_PRICING_VARS.filter((v) =>
+          tiers.some((row) => row[v.field] > 0),
+        ).map((v) => v.field)
+      : [],
     effectiveBillingRatio: data.effectiveBillingRatio,
     displayPrice: options.displayPrice,
     tokenUnit: options.tokenUnit,

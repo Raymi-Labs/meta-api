@@ -35,6 +35,7 @@ export const buildFirstTierGroupPriceItems = ({
   displayPrice,
   tokenUnit = 'M',
   precision = 4,
+  includeZeroFields = [],
   t = (value) => value,
 }) => {
   const firstTier = Array.isArray(tiers) ? tiers[0] : null;
@@ -46,7 +47,8 @@ export const buildFirstTierGroupPriceItems = ({
   const safeRatio = Number.isFinite(numericRatio) ? numericRatio : 1;
   const items = BILLING_PRICING_VARS.map((variable) => {
     const unitPriceUSD = numberOrZero(firstTier[variable.field]);
-    if (unitPriceUSD === 0) return null;
+    if (unitPriceUSD === 0 && !includeZeroFields.includes(variable.field))
+      return null;
     return {
       key: `tiered-${variable.key}`,
       label: t(variable.label),
