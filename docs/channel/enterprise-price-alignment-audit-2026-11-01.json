@@ -1,0 +1,3384 @@
+{
+  "verified_at": "2026-11-01T03:15:27.666523+00:00",
+  "version": "v1.12.1",
+  "operation": "production options only; no application update/restart",
+  "formula": {
+    "USD_to_energy": 33,
+    "CNY_to_energy": 5,
+    "energy_to_CNY": 0.2,
+    "enterprise_group_ratio": 1
+  },
+  "explicit_models": 29,
+  "inherited_alias": {
+    "explicit_models": 29,
+    "inherited_alias": "codex-auto-review",
+    "alias_inherits": "gpt-5.3-codex",
+    "alias_changes": {
+      "model_ratio": [
+        18.48,
+        28.875
+      ]
+    },
+    "unchanged_other_models": 194,
+    "user_excluded_models_unchanged": true,
+    "previous_eight_models_unchanged": true
+  },
+  "excluded_by_user": [
+    "k3",
+    "kimi-k2.8",
+    "kimi-k2.8-code"
+  ],
+  "unchanged_verified": {
+    "model": "z-image-turbo",
+    "false_or_omitted_cny_per_image": 0.1,
+    "true_cny_per_image": 0.2,
+    "source": "https://help.aliyun.com/zh/model-studio/z-image-api-reference"
+  },
+  "apply": {
+    "verified": true,
+    "time": 1793502567,
+    "models": 29,
+    "steps": 7,
+    "channels_unchanged": true,
+    "protected_options_unchanged": true
+  },
+  "config_verification": {
+    "verified_models": [
+      "gpt-5",
+      "gpt-5.1",
+      "gpt-5.1-codex-max",
+      "gpt-5.2",
+      "gpt-5.2-codex",
+      "gpt-5.3-codex",
+      "claude-opus-5",
+      "claude-opus-4-6",
+      "claude-opus-4-7",
+      "claude-opus-4-8",
+      "claude-sonnet-4-6",
+      "claude-fable-5",
+      "claude-fable-5-1",
+      "claude-sonnet-5-5",
+      "grok-4.5",
+      "grok-4.6",
+      "grok-4.7",
+      "MiniMax-M3",
+      "kimi-k3",
+      "glm-5",
+      "glm-5.1",
+      "qwen-plus",
+      "qwen-plus-latest",
+      "qwen3.7-plus",
+      "grok-imagine-image",
+      "qwen-image-2.0-pro",
+      "grok-imagine-video",
+      "grok-imagine-video-1.5",
+      "wan3.0-video"
+    ],
+    "time": 1793502651,
+    "channels_unchanged": true,
+    "protected_options_unchanged": true,
+    "unrelated_catalog_unchanged": false
+  },
+  "catalog_verification": {
+    "explicit_models": 29,
+    "inherited_alias": "codex-auto-review",
+    "alias_inherits": "gpt-5.3-codex",
+    "alias_changes": {
+      "model_ratio": [
+        18.48,
+        28.875
+      ]
+    },
+    "unchanged_other_models": 194,
+    "user_excluded_models_unchanged": true,
+    "previous_eight_models_unchanged": true
+  },
+  "validation": {
+    "engine_checks": 59136,
+    "frontend_checks": 357,
+    "image_pipeline_checks": 96,
+    "successful_live_billing_requests": 19,
+    "unavailable_live_requests": 7,
+    "video_local_quotes": 8,
+    "paid_image_or_video_generation": false,
+    "live_cache_or_long_context_verified": false
+  },
+  "acceptance": {
+    "verified": false,
+    "results": [
+      {
+        "model": "gpt-5",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 3341,
+        "token_used_quota": 3341,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 19,
+        "log_id": 15464599
+      },
+      {
+        "model": "gpt-5.1",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 2186,
+        "token_used_quota": 2186,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 12,
+        "log_id": 15464601
+      },
+      {
+        "model": "gpt-5.1-codex-max",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 6806,
+        "token_used_quota": 6806,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 40,
+        "log_id": 15464603
+      },
+      {
+        "model": "gpt-5.2",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 1444,
+        "token_used_quota": 1444,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15464605
+      },
+      {
+        "model": "gpt-5.2-codex",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 3985,
+        "token_used_quota": 3985,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 16,
+        "log_id": 15464608
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "channel_id": 1640,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 1444,
+        "token_used_quota": 1444,
+        "single_charge": true,
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "log_id": 15464611
+      },
+      {
+        "model": "claude-opus-5",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "phase": "billing",
+        "initial_verification_error": "('quota', 2888, 2887)",
+        "quota": 2888,
+        "token_used_quota": 2888,
+        "single_charge": true,
+        "prompt_tokens": 15,
+        "completion_tokens": 4,
+        "log_id": 15464614,
+        "verification_correction": "OpenRouter Chat uses standard round-half-up, not native Claude Messages truncation; original evidence retained."
+      },
+      {
+        "model": "claude-opus-4-6",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "phase": "billing",
+        "initial_verification_error": "('quota', 2558, 2557)",
+        "quota": 2558,
+        "token_used_quota": 2558,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 4,
+        "log_id": 15464616,
+        "verification_correction": "OpenRouter Chat uses standard round-half-up, not native Claude Messages truncation; original evidence retained."
+      },
+      {
+        "model": "claude-opus-4-7",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 4125,
+        "token_used_quota": 4125,
+        "single_charge": true,
+        "prompt_tokens": 20,
+        "completion_tokens": 6,
+        "log_id": 15464617
+      },
+      {
+        "model": "claude-opus-4-8",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "phase": "billing",
+        "initial_verification_error": "('quota', 2888, 2887)",
+        "quota": 2888,
+        "token_used_quota": 2888,
+        "single_charge": true,
+        "prompt_tokens": 15,
+        "completion_tokens": 4,
+        "log_id": 15464620,
+        "verification_correction": "OpenRouter Chat uses standard round-half-up, not native Claude Messages truncation; original evidence retained."
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 1782,
+        "token_used_quota": 1782,
+        "single_charge": true,
+        "prompt_tokens": 11,
+        "completion_tokens": 5,
+        "log_id": 15464622
+      },
+      {
+        "model": "claude-fable-5",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 15675,
+        "token_used_quota": 15675,
+        "single_charge": true,
+        "prompt_tokens": 15,
+        "completion_tokens": 16,
+        "log_id": 15464625
+      },
+      {
+        "model": "claude-fable-5-1",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 6105,
+        "token_used_quota": 6105,
+        "single_charge": true,
+        "prompt_tokens": 17,
+        "completion_tokens": 4,
+        "log_id": 15464630
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "channel_id": 1639,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 1221,
+        "token_used_quota": 1221,
+        "single_charge": true,
+        "prompt_tokens": 17,
+        "completion_tokens": 4,
+        "log_id": 15464631
+      },
+      {
+        "model": "grok-4.5",
+        "channel_id": 1422,
+        "thinking": false,
+        "http_status": 503,
+        "error_code": "no_available_channel",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "grok-4.6",
+        "channel_id": 1422,
+        "thinking": false,
+        "http_status": 503,
+        "error_code": "no_available_channel",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "grok-4.7",
+        "channel_id": 1422,
+        "thinking": false,
+        "http_status": 503,
+        "error_code": "no_available_channel",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "MiniMax-M3",
+        "channel_id": 1620,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 53,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 180,
+          "p": 180
+        },
+        "verified": true,
+        "quota": 1940,
+        "token_used_quota": 1940,
+        "single_charge": true,
+        "prompt_tokens": 180,
+        "completion_tokens": 53,
+        "log_id": 15464636
+      },
+      {
+        "model": "kimi-k3",
+        "channel_id": 1551,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+        "prompt_tokens_semantic": "inclusive",
+        "verified": true,
+        "quota": 15840,
+        "token_used_quota": 15840,
+        "single_charge": true,
+        "prompt_tokens": 90,
+        "completion_tokens": 46,
+        "log_id": 15464639
+      },
+      {
+        "model": "glm-5",
+        "channel_id": 1549,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 1,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 9,
+          "p": 9
+        },
+        "verified": true,
+        "quota": 135,
+        "token_used_quota": 135,
+        "single_charge": true,
+        "prompt_tokens": 9,
+        "completion_tokens": 1,
+        "log_id": 15464641
+      },
+      {
+        "model": "glm-5.1",
+        "channel_id": 1549,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 1,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 9,
+          "p": 9
+        },
+        "verified": true,
+        "quota": 195,
+        "token_used_quota": 195,
+        "single_charge": true,
+        "prompt_tokens": 9,
+        "completion_tokens": 1,
+        "log_id": 15464643
+      },
+      {
+        "model": "qwen-plus",
+        "channel_id": 1550,
+        "thinking": false,
+        "http_status": 500,
+        "error_code": "bad_response_body",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "qwen-plus",
+        "channel_id": 1550,
+        "thinking": true,
+        "http_status": 500,
+        "error_code": "bad_response_body",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "qwen-plus-latest",
+        "channel_id": 1550,
+        "thinking": false,
+        "http_status": 500,
+        "error_code": "bad_response_body",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "qwen-plus-latest",
+        "channel_id": 1550,
+        "thinking": true,
+        "http_status": 500,
+        "error_code": "bad_response_body",
+        "verified": false,
+        "phase": "request",
+        "no_charge_verified": true
+      },
+      {
+        "model": "qwen3.7-plus",
+        "channel_id": 1586,
+        "thinking": false,
+        "http_status": 200,
+        "content_returned": true,
+        "usage_present": true,
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 1,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 16,
+          "p": 16
+        },
+        "verified": true,
+        "quota": 80,
+        "token_used_quota": 80,
+        "single_charge": true,
+        "prompt_tokens": 16,
+        "completion_tokens": 1,
+        "log_id": 15464652
+      }
+    ],
+    "temporary_tokens_deleted": true,
+    "time": 1793502674,
+    "successful_billing_verified": 19,
+    "unavailable_requests": 7,
+    "rounding_reaudit_only_no_additional_requests": true
+  },
+  "video_quotes": [
+    {
+      "model": "grok-imagine-video",
+      "resolution": "480P",
+      "verified": true,
+      "quote": {
+        "quota": 4125000,
+        "amount_usd": 8.25,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "grok-imagine-video",
+      "resolution": "720P",
+      "verified": true,
+      "quote": {
+        "quota": 5775000,
+        "amount_usd": 11.55,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "grok-imagine-video-1.5",
+      "resolution": "480P",
+      "verified": true,
+      "quote": {
+        "quota": 6600000,
+        "amount_usd": 13.2,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "grok-imagine-video-1.5",
+      "resolution": "720P",
+      "verified": true,
+      "quote": {
+        "quota": 11550000,
+        "amount_usd": 23.1,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "grok-imagine-video-1.5",
+      "resolution": "1080P",
+      "verified": true,
+      "quote": {
+        "quota": 20625000,
+        "amount_usd": 41.25,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "wan3.0-video",
+      "resolution": "480P",
+      "verified": true,
+      "quote": {
+        "quota": 2625000,
+        "amount_usd": 5.25,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "wan3.0-video",
+      "resolution": "720P",
+      "verified": true,
+      "quote": {
+        "quota": 5250000,
+        "amount_usd": 10.5,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    },
+    {
+      "model": "wan3.0-video",
+      "resolution": "1080P",
+      "verified": true,
+      "quote": {
+        "quota": 10500000,
+        "amount_usd": 21,
+        "group": "企业级",
+        "group_ratio": 1,
+        "time_ratio": 1,
+        "calculated_at": 1793502717
+      },
+      "quote_unavailable": null,
+      "generation_verified": false,
+      "upstream_requests": 0
+    }
+  ],
+  "models": [
+    {
+      "model": "gpt-5",
+      "reference": {
+        "model": "gpt-5",
+        "currency": "USD",
+        "official": {
+          "p": 1.25,
+          "c": 10,
+          "cr": 0.125
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 41.25 + c * 330 + cr * 4.125)",
+        "ratios": {
+          "ModelRatio": 20.625,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/pricing"
+      },
+      "before_options": {
+        "ModelRatio": 13.2,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 20.625,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 13.2,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 20.625,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "gpt-5.1",
+      "reference": {
+        "model": "gpt-5.1",
+        "currency": "USD",
+        "official": {
+          "p": 1.25,
+          "c": 10,
+          "cr": 0.125
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 41.25 + c * 330 + cr * 4.125)",
+        "ratios": {
+          "ModelRatio": 20.625,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/pricing"
+      },
+      "before_options": {
+        "ModelRatio": 13.2,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 20.625,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 13.2,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 20.625,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "gpt-5.1-codex-max",
+      "reference": {
+        "model": "gpt-5.1-codex-max",
+        "currency": "USD",
+        "official": {
+          "p": 1.25,
+          "c": 10,
+          "cr": 0.125
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 41.25 + c * 330 + cr * 4.125)",
+        "ratios": {
+          "ModelRatio": 20.625,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/models/gpt-5.1-codex-max"
+      },
+      "before_options": {
+        "ModelRatio": 13.2,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 20.625,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 13.2,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 20.625,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "gpt-5.2",
+      "reference": {
+        "model": "gpt-5.2",
+        "currency": "USD",
+        "official": {
+          "p": 1.75,
+          "c": 14,
+          "cr": 0.175
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 57.75 + c * 462 + cr * 5.775)",
+        "ratios": {
+          "ModelRatio": 28.875,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/pricing"
+      },
+      "before_options": {
+        "ModelRatio": 18.48,
+        "CompletionRatio": 8,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 28.875,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 18.48,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 28.875,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "gpt-5.2-codex",
+      "reference": {
+        "model": "gpt-5.2-codex",
+        "currency": "USD",
+        "official": {
+          "p": 1.75,
+          "c": 14,
+          "cr": 0.175
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 57.75 + c * 462 + cr * 5.775)",
+        "ratios": {
+          "ModelRatio": 28.875,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/models/gpt-5.2-codex"
+      },
+      "before_options": {
+        "ModelRatio": 18.48,
+        "CompletionRatio": 8,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 28.875,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 18.48,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 28.875,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "gpt-5.3-codex",
+      "reference": {
+        "model": "gpt-5.3-codex",
+        "currency": "USD",
+        "official": {
+          "p": 1.75,
+          "c": 14,
+          "cr": 0.175
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 57.75 + c * 462 + cr * 5.775)",
+        "ratios": {
+          "ModelRatio": 28.875,
+          "CompletionRatio": 8.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "ratio",
+        "source_url": "https://developers.openai.com/api/docs/pricing"
+      },
+      "before_options": {
+        "ModelRatio": 18.48,
+        "CompletionRatio": 8,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 28.875,
+        "CompletionRatio": 8.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 18.48,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 28.875,
+        "model_price": 0,
+        "completion_ratio": 8,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai-response",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-opus-5",
+      "reference": {
+        "model": "claude-opus-5",
+        "currency": "USD",
+        "official": {
+          "p": 5,
+          "c": 25,
+          "cr": 0.5,
+          "cc": 6.25,
+          "cc1h": 10
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 165 + c * 825 + cr * 16.5 + cc * 206.25 + cc1h * 330)",
+        "ratios": {
+          "ModelRatio": 82.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/opus-5/overview"
+      },
+      "before_options": {
+        "ModelRatio": 99.0,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 99,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 82.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-opus-4-6",
+      "reference": {
+        "model": "claude-opus-4-6",
+        "currency": "USD",
+        "official": {
+          "p": 5,
+          "c": 25,
+          "cr": 0.5,
+          "cc": 6.25,
+          "cc1h": 10
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 165 + c * 825 + cr * 16.5 + cc * 206.25 + cc1h * 330)",
+        "ratios": {
+          "ModelRatio": 82.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/opus-4-6/overview"
+      },
+      "before_options": {
+        "ModelRatio": 99.0,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 99,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 82.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-opus-4-7",
+      "reference": {
+        "model": "claude-opus-4-7",
+        "currency": "USD",
+        "official": {
+          "p": 5,
+          "c": 25,
+          "cr": 0.5,
+          "cc": 6.25,
+          "cc1h": 10
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 165 + c * 825 + cr * 16.5 + cc * 206.25 + cc1h * 330)",
+        "ratios": {
+          "ModelRatio": 82.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/opus-4-7/overview"
+      },
+      "before_options": {
+        "ModelRatio": 99.0,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 99,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 82.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-opus-4-8",
+      "reference": {
+        "model": "claude-opus-4-8",
+        "currency": "USD",
+        "official": {
+          "p": 5,
+          "c": 25,
+          "cr": 0.5,
+          "cc": 6.25,
+          "cc1h": 10
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 165 + c * 825 + cr * 16.5 + cc * 206.25 + cc1h * 330)",
+        "ratios": {
+          "ModelRatio": 82.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/opus-4-8/overview"
+      },
+      "before_options": {
+        "ModelRatio": 99.0,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 82.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 99,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 82.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "reference": {
+        "model": "claude-sonnet-4-6",
+        "currency": "USD",
+        "official": {
+          "p": 3,
+          "c": 15,
+          "cr": 0.3,
+          "cc": 3.75,
+          "cc1h": 6
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 99 + c * 495 + cr * 9.9 + cc * 123.75 + cc1h * 198)",
+        "ratios": {
+          "ModelRatio": 49.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/sonnet-4-6/overview"
+      },
+      "before_options": {
+        "ModelRatio": 59.4,
+        "CompletionRatio": null,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 49.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 59.4,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 49.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-fable-5",
+      "reference": {
+        "model": "claude-fable-5",
+        "currency": "USD",
+        "official": {
+          "p": 10,
+          "c": 50,
+          "cr": 1,
+          "cc": 12.5,
+          "cc1h": 20
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 330 + c * 1650 + cr * 33 + cc * 412.5 + cc1h * 660)",
+        "ratios": {
+          "ModelRatio": 165.0,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/fable-5/overview"
+      },
+      "before_options": {
+        "ModelRatio": 198.0,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.208333333333,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 165.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 198,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.208333333333,
+        "cache_creation_ratio_1h": 1.9333333333328,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 165,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-fable-5-1",
+      "reference": {
+        "model": "claude-fable-5-1",
+        "currency": "USD",
+        "official": {
+          "p": 10,
+          "c": 50,
+          "cr": 0.25,
+          "cc": 12.5,
+          "cc1h": 20
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 330 + c * 1650 + cr * 8.25 + cc * 412.5 + cc1h * 660)",
+        "ratios": {
+          "ModelRatio": 165.0,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.025,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/fable-5-1/overview"
+      },
+      "before_options": {
+        "ModelRatio": 198.0,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.025,
+        "CreateCacheRatio": 1.2,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 165.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.025,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 198,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.025,
+        "cache_creation_ratio": 1.2,
+        "cache_creation_ratio_1h": 1.92,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 165,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.025,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 顶级华强北",
+          "企业级",
+          "优选",
+          "福利",
+          "Claude · 0注入",
+          "Claude · 优质（第三方）"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "reference": {
+        "model": "claude-sonnet-5-5",
+        "currency": "USD",
+        "official": {
+          "p": 2,
+          "c": 10,
+          "cr": 0.1,
+          "cc": 2.5,
+          "cc1h": 4
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 66 + c * 330 + cr * 3.3 + cc * 82.5 + cc1h * 132)",
+        "ratios": {
+          "ModelRatio": 33.0,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.05,
+          "CreateCacheRatio": 1.25
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview"
+      },
+      "before_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.05,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 33,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 33,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.05,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 2,
+        "enable_groups": [
+          "Claude · 0注入",
+          "Claude · 优质（第三方）",
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "grok-4.5",
+      "reference": {
+        "model": "grok-4.5",
+        "currency": "USD",
+        "official": {
+          "p": 2,
+          "c": 6,
+          "cr": 0.3
+        },
+        "official_long": {
+          "p": 4,
+          "c": 12,
+          "cr": 0.6
+        },
+        "threshold": 200000,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 9.9) : tier(\"long\", p * 132 + c * 396 + cr * 19.8)",
+        "ratios": {
+          "ModelRatio": 33.0,
+          "CompletionRatio": 3.0,
+          "CacheRatio": 0.15,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.x.ai/developers/models/grok-4.5"
+      },
+      "before_options": {
+        "ModelRatio": 5,
+        "CompletionRatio": 3,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 3.0,
+        "CacheRatio": 0.15,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 9.9) : tier(\"long\", p * 132 + c * 396 + cr * 19.8)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 5,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 33,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.15,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选",
+          "福利",
+          "Grok · 福利"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 9.9) : tier(\"long\", p * 132 + c * 396 + cr * 19.8)"
+      }
+    },
+    {
+      "model": "grok-4.6",
+      "reference": {
+        "model": "grok-4.6",
+        "currency": "USD",
+        "official": {
+          "p": 2,
+          "c": 6,
+          "cr": 0.5
+        },
+        "official_long": {
+          "p": 4,
+          "c": 12,
+          "cr": 1.0
+        },
+        "threshold": 200000,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)",
+        "ratios": {
+          "ModelRatio": 33.0,
+          "CompletionRatio": 3.0,
+          "CacheRatio": 0.25,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.x.ai/developers/models/grok-4.6"
+      },
+      "before_options": {
+        "ModelRatio": 5,
+        "CompletionRatio": 3,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 3.0,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 5,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 33,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)"
+      }
+    },
+    {
+      "model": "grok-4.7",
+      "reference": {
+        "model": "grok-4.7",
+        "currency": "USD",
+        "official": {
+          "p": 2,
+          "c": 6,
+          "cr": 0.5
+        },
+        "official_long": {
+          "p": 4,
+          "c": 12,
+          "cr": 1.0
+        },
+        "threshold": 200000,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)",
+        "ratios": {
+          "ModelRatio": 33.0,
+          "CompletionRatio": 3.0,
+          "CacheRatio": 0.25,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.x.ai/developers/models/grok-4.7"
+      },
+      "before_options": {
+        "ModelRatio": 5,
+        "CompletionRatio": 3,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 33.0,
+        "CompletionRatio": 3.0,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 5,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 33,
+        "model_price": 0,
+        "completion_ratio": 3,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "优选",
+          "福利",
+          "Grok · 福利",
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 200000 ? tier(\"standard\", p * 66 + c * 198 + cr * 16.5) : tier(\"long\", p * 132 + c * 396 + cr * 33)"
+      }
+    },
+    {
+      "model": "MiniMax-M3",
+      "reference": {
+        "model": "MiniMax-M3",
+        "currency": "USD",
+        "official": {
+          "p": 0.3,
+          "c": 1.2,
+          "cr": 0.06
+        },
+        "official_long": {
+          "p": 0.6,
+          "c": 2.4,
+          "cr": 0.12
+        },
+        "threshold": 512000,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "len <= 512000 ? tier(\"standard\", p * 9.9 + c * 39.6 + cr * 1.98) : tier(\"long\", p * 19.8 + c * 79.2 + cr * 3.96)",
+        "ratios": {
+          "ModelRatio": 4.95,
+          "CompletionRatio": 4.0,
+          "CacheRatio": 0.2,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://platform.minimax.io/docs/pricing/overview"
+      },
+      "before_options": {
+        "ModelRatio": 4.989661654135,
+        "CompletionRatio": 4,
+        "CacheRatio": 0.100207195328,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 4.95,
+        "CompletionRatio": 4.0,
+        "CacheRatio": 0.2,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 512000 ? tier(\"standard\", p * 9.9 + c * 39.6 + cr * 1.98) : tier(\"long\", p * 19.8 + c * 79.2 + cr * 3.96)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 4.989661654135,
+        "model_price": 0,
+        "completion_ratio": 4,
+        "cache_ratio": 0.100207195328,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 4.95,
+        "model_price": 0,
+        "completion_ratio": 4,
+        "cache_ratio": 0.2,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 512000 ? tier(\"standard\", p * 9.9 + c * 39.6 + cr * 1.98) : tier(\"long\", p * 19.8 + c * 79.2 + cr * 3.96)"
+      }
+    },
+    {
+      "model": "kimi-k3",
+      "reference": {
+        "model": "kimi-k3",
+        "currency": "USD",
+        "official": {
+          "p": 3,
+          "c": 15,
+          "cr": 0.3,
+          "cc": 3
+        },
+        "official_long": {},
+        "threshold": 0,
+        "threshold_op": "<=",
+        "factor": 33,
+        "expression": "tier(\"standard\", p * 99 + c * 495 + cr * 9.9 + cc * 99)",
+        "ratios": {
+          "ModelRatio": 49.5,
+          "CompletionRatio": 5.0,
+          "CacheRatio": 0.1,
+          "CreateCacheRatio": 1.0
+        },
+        "final_mode": "ratio",
+        "source_url": "https://platform.kimi.ai/docs/pricing/chat"
+      },
+      "before_options": {
+        "ModelRatio": 50,
+        "CompletionRatio": 5,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.25,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": 49.5,
+        "CompletionRatio": 5.0,
+        "CacheRatio": 0.1,
+        "CreateCacheRatio": 1.0,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 50,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1.25,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Kimi · 福利",
+          "企业级",
+          "优选",
+          "福利"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 49.5,
+        "model_price": 0,
+        "completion_ratio": 5,
+        "cache_ratio": 0.1,
+        "cache_creation_ratio": 1,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "优选",
+          "福利",
+          "Kimi · 福利",
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "glm-5",
+      "reference": {
+        "model": "glm-5",
+        "currency": "CNY",
+        "official": {
+          "p": 4,
+          "c": 18,
+          "cr": 1
+        },
+        "official_long": {
+          "p": 6,
+          "c": 22,
+          "cr": 1.5
+        },
+        "threshold": 32000,
+        "threshold_op": "<",
+        "factor": 5,
+        "expression": "len < 32000 ? tier(\"standard\", p * 20 + c * 90 + cr * 5) : tier(\"long\", p * 30 + c * 110 + cr * 7.5)",
+        "ratios": {
+          "ModelRatio": 10.0,
+          "CompletionRatio": 4.5,
+          "CacheRatio": 0.25,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.bigmodel.cn/cn/guide/start/pricing"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 32000\n  ? tier(\"short\", p * 20 + c * 90 + cr * 4)\n  : tier(\"long\", p * 30 + c * 110 + cr * 6)"
+      },
+      "after_options": {
+        "ModelRatio": 10.0,
+        "CompletionRatio": 4.5,
+        "CacheRatio": 0.25,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len < 32000 ? tier(\"standard\", p * 20 + c * 90 + cr * 5) : tier(\"long\", p * 30 + c * 110 + cr * 7.5)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 32000\n  ? tier(\"short\", p * 20 + c * 90 + cr * 4)\n  : tier(\"long\", p * 30 + c * 110 + cr * 6)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 10,
+        "model_price": 0,
+        "completion_ratio": 4.5,
+        "cache_ratio": 0.25,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len < 32000 ? tier(\"standard\", p * 20 + c * 90 + cr * 5) : tier(\"long\", p * 30 + c * 110 + cr * 7.5)"
+      }
+    },
+    {
+      "model": "glm-5.1",
+      "reference": {
+        "model": "glm-5.1",
+        "currency": "CNY",
+        "official": {
+          "p": 6,
+          "c": 24,
+          "cr": 1.3
+        },
+        "official_long": {
+          "p": 8,
+          "c": 28,
+          "cr": 2
+        },
+        "threshold": 32000,
+        "threshold_op": "<",
+        "factor": 5,
+        "expression": "len < 32000 ? tier(\"standard\", p * 30 + c * 120 + cr * 6.5) : tier(\"long\", p * 40 + c * 140 + cr * 10)",
+        "ratios": {
+          "ModelRatio": 15.0,
+          "CompletionRatio": 4.0,
+          "CacheRatio": 0.216666666667,
+          "CreateCacheRatio": null
+        },
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.bigmodel.cn/cn/guide/start/pricing"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 32000\n  ? tier(\"short\", p * 30 + c * 120 + cr * 6)\n  : tier(\"long\", p * 40 + c * 140 + cr * 8)"
+      },
+      "after_options": {
+        "ModelRatio": 15.0,
+        "CompletionRatio": 4.0,
+        "CacheRatio": 0.216666666667,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len < 32000 ? tier(\"standard\", p * 30 + c * 120 + cr * 6.5) : tier(\"long\", p * 40 + c * 140 + cr * 10)"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 32000\n  ? tier(\"short\", p * 30 + c * 120 + cr * 6)\n  : tier(\"long\", p * 40 + c * 140 + cr * 8)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 15,
+        "model_price": 0,
+        "completion_ratio": 4,
+        "cache_ratio": 0.216666666667,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "anthropic",
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len < 32000 ? tier(\"standard\", p * 30 + c * 120 + cr * 6.5) : tier(\"long\", p * 40 + c * 140 + cr * 10)"
+      }
+    },
+    {
+      "model": "qwen-plus",
+      "reference": {
+        "model": "qwen-plus",
+        "currency": "CNY",
+        "factor": 5,
+        "variants": [
+          {
+            "explicit": false,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "implicit_standard_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 2,
+                  "cr": 0.16000000000000003,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5)"
+              },
+              {
+                "label": "implicit_standard_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 20,
+                  "cr": 0.48,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15)"
+              },
+              {
+                "label": "implicit_standard_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 48,
+                  "cr": 0.96,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30))"
+          },
+          {
+            "explicit": false,
+            "thinking": true,
+            "tiers": [
+              {
+                "label": "implicit_thinking_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 8,
+                  "cr": 0.16000000000000003,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5)"
+              },
+              {
+                "label": "implicit_thinking_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 24,
+                  "cr": 0.48,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15)"
+              },
+              {
+                "label": "implicit_thinking_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 64,
+                  "cr": 0.96,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30))"
+          },
+          {
+            "explicit": true,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "explicit_standard_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 2,
+                  "cr": 0.08000000000000002,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5)"
+              },
+              {
+                "label": "explicit_standard_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 20,
+                  "cr": 0.24,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15)"
+              },
+              {
+                "label": "explicit_standard_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 48,
+                  "cr": 0.48,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))"
+          },
+          {
+            "explicit": true,
+            "thinking": true,
+            "tiers": [
+              {
+                "label": "explicit_thinking_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 8,
+                  "cr": 0.08000000000000002,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5)"
+              },
+              {
+                "label": "explicit_thinking_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 24,
+                  "cr": 0.24,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15)"
+              },
+              {
+                "label": "explicit_thinking_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 64,
+                  "cr": 0.48,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30))"
+          }
+        ],
+        "expression": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "cache_source_url": "https://help.aliyun.com/zh/model-studio/context-cache",
+        "notes": "Cache uses standard list input basis; public promotion is applied only to input/output. Explicit marker only in messages content. Default thinking=false."
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 128000 ? tier(\"short\", p * 4 + c * 40 + cr * 0.8) : len <= 256000 ? tier(\"medium\", p * 12 + c * 120 + cr * 2.4) : tier(\"long\", p * 24 + c * 320 + cr * 4.8)"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 128000 ? tier(\"short\", p * 4 + c * 40 + cr * 0.8) : len <= 256000 ? tier(\"medium\", p * 12 + c * 120 + cr * 2.4) : tier(\"long\", p * 24 + c * 320 + cr * 4.8)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))"
+      }
+    },
+    {
+      "model": "qwen-plus-latest",
+      "reference": {
+        "model": "qwen-plus-latest",
+        "currency": "CNY",
+        "factor": 5,
+        "variants": [
+          {
+            "explicit": false,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "implicit_standard_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 2,
+                  "cr": 0.16000000000000003,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5)"
+              },
+              {
+                "label": "implicit_standard_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 20,
+                  "cr": 0.48,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15)"
+              },
+              {
+                "label": "implicit_standard_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 48,
+                  "cr": 0.96,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30))"
+          },
+          {
+            "explicit": false,
+            "thinking": true,
+            "tiers": [
+              {
+                "label": "implicit_thinking_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 8,
+                  "cr": 0.16000000000000003,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5)"
+              },
+              {
+                "label": "implicit_thinking_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 24,
+                  "cr": 0.48,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15)"
+              },
+              {
+                "label": "implicit_thinking_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 64,
+                  "cr": 0.96,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30))"
+          },
+          {
+            "explicit": true,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "explicit_standard_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 2,
+                  "cr": 0.08000000000000002,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5)"
+              },
+              {
+                "label": "explicit_standard_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 20,
+                  "cr": 0.24,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15)"
+              },
+              {
+                "label": "explicit_standard_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 48,
+                  "cr": 0.48,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))"
+          },
+          {
+            "explicit": true,
+            "thinking": true,
+            "tiers": [
+              {
+                "label": "explicit_thinking_1",
+                "official": {
+                  "p": 0.8,
+                  "c": 8,
+                  "cr": 0.08000000000000002,
+                  "cc": 1.0
+                },
+                "expression": "tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5)"
+              },
+              {
+                "label": "explicit_thinking_2",
+                "official": {
+                  "p": 2.4,
+                  "c": 24,
+                  "cr": 0.24,
+                  "cc": 3.0
+                },
+                "expression": "tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15)"
+              },
+              {
+                "label": "explicit_thinking_3",
+                "official": {
+                  "p": 4.8,
+                  "c": 64,
+                  "cr": 0.48,
+                  "cc": 6.0
+                },
+                "expression": "tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)"
+              }
+            ],
+            "expression": "(len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30))"
+          }
+        ],
+        "expression": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "cache_source_url": "https://help.aliyun.com/zh/model-studio/context-cache",
+        "notes": "Cache uses standard list input basis; public promotion is applied only to input/output. Explicit marker only in messages content. Default thinking=false."
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 128000 ? tier(\"short\", p * 4 + c * 40 + cr * 0.8) : len <= 256000 ? tier(\"medium\", p * 12 + c * 120 + cr * 2.4) : tier(\"long\", p * 24 + c * 320 + cr * 4.8)"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 128000 ? tier(\"short\", p * 4 + c * 40 + cr * 0.8) : len <= 256000 ? tier(\"medium\", p * 12 + c * 120 + cr * 2.4) : tier(\"long\", p * 24 + c * 320 + cr * 4.8)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"explicit_thinking_1\", p * 4 + c * 40 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_thinking_2\", p * 12 + c * 120 + cr * 1.2 + cc * 15) : tier(\"explicit_thinking_3\", p * 24 + c * 320 + cr * 2.4 + cc * 30)) : (len <= 128000 ? tier(\"explicit_standard_1\", p * 4 + c * 10 + cr * 0.4 + cc * 5) : len <= 256000 ? tier(\"explicit_standard_2\", p * 12 + c * 100 + cr * 1.2 + cc * 15) : tier(\"explicit_standard_3\", p * 24 + c * 240 + cr * 2.4 + cc * 30))) : (param(\"enable_thinking\") == true ? (len <= 128000 ? tier(\"implicit_thinking_1\", p * 4 + c * 40 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_thinking_2\", p * 12 + c * 120 + cr * 2.4 + cc * 15) : tier(\"implicit_thinking_3\", p * 24 + c * 320 + cr * 4.8 + cc * 30)) : (len <= 128000 ? tier(\"implicit_standard_1\", p * 4 + c * 10 + cr * 0.8 + cc * 5) : len <= 256000 ? tier(\"implicit_standard_2\", p * 12 + c * 100 + cr * 2.4 + cc * 15) : tier(\"implicit_standard_3\", p * 24 + c * 240 + cr * 4.8 + cc * 30)))"
+      }
+    },
+    {
+      "model": "qwen3.7-plus",
+      "reference": {
+        "model": "qwen3.7-plus",
+        "currency": "CNY",
+        "factor": 5,
+        "variants": [
+          {
+            "explicit": false,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "implicit_standard_1",
+                "official": {
+                  "p": 1.6,
+                  "c": 6.4,
+                  "cr": 0.4,
+                  "cc": 2.5
+                },
+                "expression": "tier(\"implicit_standard_1\", p * 8 + c * 32 + cr * 2 + cc * 12.5)"
+              },
+              {
+                "label": "implicit_standard_2",
+                "official": {
+                  "p": 4.800000000000001,
+                  "c": 19.2,
+                  "cr": 1.2000000000000002,
+                  "cc": 7.5
+                },
+                "expression": "tier(\"implicit_standard_2\", p * 24 + c * 96 + cr * 6 + cc * 37.5)"
+              }
+            ],
+            "expression": "(len <= 256000 ? tier(\"implicit_standard_1\", p * 8 + c * 32 + cr * 2 + cc * 12.5) : tier(\"implicit_standard_2\", p * 24 + c * 96 + cr * 6 + cc * 37.5))"
+          },
+          {
+            "explicit": true,
+            "thinking": false,
+            "tiers": [
+              {
+                "label": "explicit_standard_1",
+                "official": {
+                  "p": 1.6,
+                  "c": 6.4,
+                  "cr": 0.2,
+                  "cc": 2.5
+                },
+                "expression": "tier(\"explicit_standard_1\", p * 8 + c * 32 + cr * 1 + cc * 12.5)"
+              },
+              {
+                "label": "explicit_standard_2",
+                "official": {
+                  "p": 4.800000000000001,
+                  "c": 19.2,
+                  "cr": 0.6000000000000001,
+                  "cc": 7.5
+                },
+                "expression": "tier(\"explicit_standard_2\", p * 24 + c * 96 + cr * 3 + cc * 37.5)"
+              }
+            ],
+            "expression": "(len <= 256000 ? tier(\"explicit_standard_1\", p * 8 + c * 32 + cr * 1 + cc * 12.5) : tier(\"explicit_standard_2\", p * 24 + c * 96 + cr * 3 + cc * 37.5))"
+          }
+        ],
+        "expression": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? ((len <= 256000 ? tier(\"explicit_standard_1\", p * 8 + c * 32 + cr * 1 + cc * 12.5) : tier(\"explicit_standard_2\", p * 24 + c * 96 + cr * 3 + cc * 37.5))) : ((len <= 256000 ? tier(\"implicit_standard_1\", p * 8 + c * 32 + cr * 2 + cc * 12.5) : tier(\"implicit_standard_2\", p * 24 + c * 96 + cr * 6 + cc * 37.5)))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "cache_source_url": "https://help.aliyun.com/zh/model-studio/context-cache",
+        "notes": "Cache uses standard list input basis; public promotion is applied only to input/output. Explicit marker only in messages content. Default thinking=false."
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "len <= 256000 ? tier(\"short\", p * 10 + c * 40 + cr * 1 + cc * 12.5) : tier(\"long\", p * 30 + c * 120 + cr * 3 + cc * 37.5)"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? ((len <= 256000 ? tier(\"explicit_standard_1\", p * 8 + c * 32 + cr * 1 + cc * 12.5) : tier(\"explicit_standard_2\", p * 24 + c * 96 + cr * 3 + cc * 37.5))) : ((len <= 256000 ? tier(\"implicit_standard_1\", p * 8 + c * 32 + cr * 2 + cc * 12.5) : tier(\"implicit_standard_2\", p * 24 + c * 96 + cr * 6 + cc * 37.5)))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "len <= 256000 ? tier(\"short\", p * 10 + c * 40 + cr * 1 + cc * 12.5) : tier(\"long\", p * 30 + c * 120 + cr * 3 + cc * 37.5)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"messages.#(content.#(cache_control.type==\\\"ephemeral\\\")).role\") != nil ? ((len <= 256000 ? tier(\"explicit_standard_1\", p * 8 + c * 32 + cr * 1 + cc * 12.5) : tier(\"explicit_standard_2\", p * 24 + c * 96 + cr * 3 + cc * 37.5))) : ((len <= 256000 ? tier(\"implicit_standard_1\", p * 8 + c * 32 + cr * 2 + cc * 12.5) : tier(\"implicit_standard_2\", p * 24 + c * 96 + cr * 6 + cc * 37.5)))"
+      }
+    },
+    {
+      "model": "grok-imagine-image",
+      "reference": {
+        "model": "grok-imagine-image",
+        "currency": "USD",
+        "official_unit_price": 0.02,
+        "unit": "image",
+        "factor": 33,
+        "ratios": {
+          "ModelPrice": 0.66
+        },
+        "final_mode": "fixed",
+        "source_url": "https://docs.x.ai/developers/models/grok-imagine-image"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": 2,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": 0.66,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 1,
+        "model_ratio": 0,
+        "model_price": 2,
+        "completion_ratio": 0,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "生图和视频"
+        ],
+        "supported_endpoint_types": [
+          "image-generation",
+          "openai",
+          "openai-response"
+        ]
+      },
+      "after_public": {
+        "quota_type": 1,
+        "model_ratio": 0,
+        "model_price": 0.66,
+        "completion_ratio": 0,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "生图和视频"
+        ],
+        "supported_endpoint_types": [
+          "image-generation",
+          "openai",
+          "openai-response"
+        ]
+      }
+    },
+    {
+      "model": "qwen-image-2.0-pro",
+      "reference": {
+        "model": "qwen-image-2.0-pro",
+        "currency": "CNY",
+        "official_unit_price": 0.5,
+        "unit": "image",
+        "factor": 5,
+        "ratios": {
+          "ModelPrice": 2.5
+        },
+        "final_mode": "fixed",
+        "source_url": "https://help.aliyun.com/zh/model-studio/model-pricing"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": 3,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": 2.5,
+        "billing_setting.billing_mode": null,
+        "billing_setting.billing_expr": null
+      },
+      "before_public": {
+        "quota_type": 1,
+        "model_ratio": 0,
+        "model_price": 3,
+        "completion_ratio": 0,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "image-generation",
+          "openai"
+        ]
+      },
+      "after_public": {
+        "quota_type": 1,
+        "model_ratio": 0,
+        "model_price": 2.5,
+        "completion_ratio": 0,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选"
+        ],
+        "supported_endpoint_types": [
+          "image-generation",
+          "openai"
+        ]
+      }
+    },
+    {
+      "model": "grok-imagine-video",
+      "reference": {
+        "model": "grok-imagine-video",
+        "currency": "USD",
+        "official_resolution_prices": {
+          "480P": 0.05,
+          "720P": 0.07
+        },
+        "unit": "second",
+        "factor": 33,
+        "expression": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1650000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2310000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.x.ai/developers/models/grok-imagine-video"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? tier(\"grok_snow_benchmark_cny_0_15_per_second\", param(\"duration\") * 3000000.0) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1650000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2310000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "生图和视频"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response",
+          "openai-video"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? tier(\"grok_snow_benchmark_cny_0_15_per_second\", param(\"duration\") * 3000000.0) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级",
+          "优选",
+          "生图和视频",
+          "Grok · 福利"
+        ],
+        "supported_endpoint_types": [
+          "openai-video",
+          "openai",
+          "openai-response"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1650000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2310000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      }
+    },
+    {
+      "model": "grok-imagine-video-1.5",
+      "reference": {
+        "model": "grok-imagine-video-1.5",
+        "currency": "USD",
+        "official_resolution_prices": {
+          "480P": 0.08,
+          "720P": 0.14,
+          "1080P": 0.25
+        },
+        "unit": "second",
+        "factor": 33,
+        "expression": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 2640000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 4620000) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 8250000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://docs.x.ai/developers/models/grok-imagine-video-1.5"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (\n  param(\"duration\") < 1 || param(\"duration\") > 15 ? tier(\"unsupported_video_parameters\", -1) : (\n    (param(\"resolution\") == \"480p\" || param(\"resolution\") == \"480P\")\n      ? tier(\"480p\", param(\"duration\") * 6000000.0)\n      : ((param(\"resolution\") == \"720p\" || param(\"resolution\") == \"720P\")\n        ? tier(\"720p\", param(\"duration\") * 6000000.0)\n        : ((param(\"resolution\") == \"1080p\" || param(\"resolution\") == \"1080P\")\n          ? tier(\"1080p\", param(\"duration\") * 6000000.0)\n          : tier(\"unsupported_video_parameters\", -1)))\n  )\n)"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 2640000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 4620000) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 8250000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "生图和视频"
+        ],
+        "supported_endpoint_types": [
+          "openai",
+          "openai-response",
+          "openai-video"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (\n  param(\"duration\") < 1 || param(\"duration\") > 15 ? tier(\"unsupported_video_parameters\", -1) : (\n    (param(\"resolution\") == \"480p\" || param(\"resolution\") == \"480P\")\n      ? tier(\"480p\", param(\"duration\") * 6000000.0)\n      : ((param(\"resolution\") == \"720p\" || param(\"resolution\") == \"720P\")\n        ? tier(\"720p\", param(\"duration\") * 6000000.0)\n        : ((param(\"resolution\") == \"1080p\" || param(\"resolution\") == \"1080P\")\n          ? tier(\"1080p\", param(\"duration\") * 6000000.0)\n          : tier(\"unsupported_video_parameters\", -1)))\n  )\n)"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "Grok · 福利",
+          "企业级",
+          "优选",
+          "生图和视频"
+        ],
+        "supported_endpoint_types": [
+          "openai-video",
+          "openai",
+          "openai-response"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") >= 1 && param(\"duration\") <= 15 && param(\"duration\") == floor(param(\"duration\")) ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 2640000) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 4620000) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 8250000) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      }
+    },
+    {
+      "model": "wan3.0-video",
+      "reference": {
+        "model": "wan3.0-video",
+        "currency": "CNY",
+        "official_resolution_prices": {
+          "480P": 0.21,
+          "720P": 0.42,
+          "1080P": 0.84
+        },
+        "unit": "second",
+        "factor": 5,
+        "expression": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") > 0 ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1050000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2100000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 4200000 * (param(\"sampleCount\") ?? 1)) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))",
+        "ratios": {},
+        "final_mode": "tiered_expr",
+        "source_url": "https://help.aliyun.com/zh/model-studio/model-pricing"
+      },
+      "before_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") > 0 ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1500000 * (param(\"sampleCount\") ?? 1)) : (param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 3000000 * (param(\"sampleCount\") ?? 1)) : (param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 6000000 * (param(\"sampleCount\") ?? 1)) : tier(\"unsupported_video_parameters\", -1)))) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "after_options": {
+        "ModelRatio": null,
+        "CompletionRatio": null,
+        "CacheRatio": null,
+        "CreateCacheRatio": null,
+        "ModelPrice": null,
+        "billing_setting.billing_mode": "tiered_expr",
+        "billing_setting.billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") > 0 ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1050000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2100000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 4200000 * (param(\"sampleCount\") ?? 1)) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "before_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai-video"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") > 0 ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1500000 * (param(\"sampleCount\") ?? 1)) : (param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 3000000 * (param(\"sampleCount\") ?? 1)) : (param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 6000000 * (param(\"sampleCount\") ?? 1)) : tier(\"unsupported_video_parameters\", -1)))) : tier(\"unsupported_video_parameters\", -1))"
+      },
+      "after_public": {
+        "quota_type": 0,
+        "model_ratio": 37.5,
+        "model_price": 0,
+        "completion_ratio": 1,
+        "cache_ratio": 0,
+        "cache_creation_ratio": 0,
+        "cache_creation_ratio_1h": 0,
+        "enable_groups": [
+          "企业级"
+        ],
+        "supported_endpoint_types": [
+          "openai-video"
+        ],
+        "billing_mode": "tiered_expr",
+        "billing_expr": "param(\"duration\") == nil ? tier(\"video_config_preview\", 0) : (param(\"duration\") > 0 ? (param(\"resolution\") == \"480P\" ? tier(\"video_480p\", param(\"duration\") * 1050000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"720P\" ? tier(\"video_720p\", param(\"duration\") * 2100000 * (param(\"sampleCount\") ?? 1)) : param(\"resolution\") == \"1080P\" ? tier(\"video_1080p\", param(\"duration\") * 4200000 * (param(\"sampleCount\") ?? 1)) : tier(\"unsupported_video_parameters\", -1)) : tier(\"unsupported_video_parameters\", -1))"
+      }
+    }
+  ],
+  "script_sha256": {
+    "operation.py": "a2a81c724fd374a8b7adbb6a419d7563aa25987472ba83f4eb909044fca85453",
+    "reference.json": "f6854e63cef2f658af70841803f4b84ef6c6448f8c2527f4aa8848b446a9f2c6",
+    "check.go": "0f6860ba77d832751280f0051f739bf4c6a93ea127b70aabe1b63a0f93211e95",
+    "check-ui.mjs": "1d6b9dfbe0445f286d8cc95fb3a8e5bf14ad171629ec6f6d6e7adcacec527512",
+    "check-image.go": "f9b6b8e4d995894f6b197e5b4bf8f5c3a0877a403011e9091338e04a04897f74",
+    "accept.py": "71978011f992635b14fd448e3845bbe3e777db9a78059ff52a4c72187b4ee562",
+    "diagnose.py": "dae326adf0b7d47798d24297d96c3f082ac45f9f5bb3783bb585a5e0be3540e9"
+  },
+  "observed_verification_issues": [
+    "Initial public catalog read retained the one-minute pricing cache. Admin config matched immediately; later public and localhost catalogs match.",
+    "Original non-target catalog hash differs only because codex-auto-review inherits the corrected gpt-5.3-codex ratio. 194 other rows are identical.",
+    "Three Claude OpenRouter Chat requests were initially checked with native Messages truncation. Recomputing the original logs with Chat round-half-up matches each log and token debit; no repeat requests."
+  ],
+  "limits": [
+    "Public promotions have no published expiry; no invented automatic reset. Qwen cache components use standard list input basis.",
+    "Input-image additive fees and input-video seconds are not introduced by output-unit price corrections.",
+    "Kimi OpenAI paths do not establish separate 1h cache usage evidence.",
+    "The 105 models missing official reference metadata in the earlier 206-model audit are not asserted to be verified by this operation."
+  ]
+}
