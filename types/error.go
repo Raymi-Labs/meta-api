@@ -235,8 +235,22 @@ func (e *NewAPIError) MaskSensitiveErrorWithStatusCode() string {
 	return fmt.Sprintf("status_code=%d, %s", e.StatusCode, msg)
 }
 
+// errorWithMessage changes presentation without discarding authoritative causes.
+// Final-result observers still need errors.Is/As after request-ID decoration.
+type errorWithMessage struct {
+	message string
+	cause   error
+}
+
+func (e *errorWithMessage) Error() string { return e.message }
+func (e *errorWithMessage) Unwrap() error { return e.cause }
+
 func (e *NewAPIError) SetMessage(message string) {
-	e.Err = errors.New(message)
+	cause := e.Err
+	if previous, ok := cause.(*errorWithMessage); ok {
+		cause = previous.cause
+	}
+	e.Err = &errorWithMessage{message: message, cause: cause}
 }
 
 func (e *NewAPIError) ToOpenAIError() OpenAIError {
