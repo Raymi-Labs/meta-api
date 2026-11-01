@@ -6881,7 +6881,7 @@
     "多份生成按份数累加。": "Elke gegenereerde video wordt afzonderlijk berekend.",
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "De siteprijzen worden per niveau getoond. Officiële referentieprijzen worden alleen bij gelijke voorwaarden vergeleken; dit is geen korting op het volledige verzoek.",
     "与官方价格一致": "Gelijk aan de officiële prijs",
-    "比官方价格低20%": "20% onder de officiële prijs",
-    "比官方价格低40%": "40% onder de officiële prijs"
+    "比官方价格低{{percent}}%": "{{percent}}% onder de officiële prijs",
+    "比官方价格高{{percent}}%": "{{percent}}% boven de officiële prijs"
   }
 }

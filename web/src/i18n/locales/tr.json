@@ -6881,7 +6881,7 @@
     "多份生成按份数累加。": "Oluşturulan her video ayrı ücretlendirilir.",
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Site fiyatları kademelere göre gösterilir. Resmî referans fiyatlarla yalnızca koşullar eşleştiğinde karşılaştırılır; bu, isteğin tamamı için indirim anlamına gelmez.",
     "与官方价格一致": "Resmî fiyatla aynı",
-    "比官方价格低20%": "Resmî fiyattan %20 daha düşük",
-    "比官方价格低40%": "Resmî fiyattan %40 daha düşük"
+    "比官方价格低{{percent}}%": "Resmî fiyattan %{{percent}} daha düşük",
+    "比官方价格高{{percent}}%": "Resmî fiyattan %{{percent}} daha yüksek"
   }
 }

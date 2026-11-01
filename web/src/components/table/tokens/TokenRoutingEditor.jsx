@@ -20,7 +20,7 @@ import React, { useId } from 'react';
 import { Select, Typography } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { readTokenRouting } from './tokenRouting';
-import { prioritizeTokenGroups } from './tokenGroupUtils';
+import { prioritizeTokenGroups, tokenGroupPriceLabel } from './tokenGroupUtils';
 
 const filterGroupOption = (input, option) =>
   String(option.searchText || option.value)
@@ -47,12 +47,13 @@ export default function TokenRoutingEditor({
     .filter(({ value }) => value !== 'auto')
     .map((group) => {
       const summary = `${group.value}${Number.isFinite(group.ratio) ? ` · ${group.ratio}x` : ''}`;
+      const priceLabel = tokenGroupPriceLabel(group, t);
       const description =
         typeof group.label === 'string' ? group.label.trim() : '';
       return {
         value: group.value,
         summary,
-        searchText: `${summary} ${description}`,
+        searchText: `${summary} ${priceLabel} ${description}`,
         label: (
           <div
             style={{
@@ -63,6 +64,11 @@ export default function TokenRoutingEditor({
             }}
           >
             <div>{summary}</div>
+            {priceLabel && (
+              <span className='token-group-picker__price-label'>
+                {priceLabel}
+              </span>
+            )}
             {description && (
               <div style={{ color: 'var(--semi-color-text-2)', fontSize: 12 }}>
                 {description}

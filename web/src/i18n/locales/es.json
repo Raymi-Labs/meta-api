@@ -6881,7 +6881,7 @@
     "多份生成按份数累加。": "Cada vídeo generado se cobra por separado.",
     "逐档展示本站价格；条件一致时对比官方参考价，不代表整次请求优惠。": "Los precios del sitio se muestran por nivel. Solo se comparan con los precios oficiales cuando coinciden las condiciones; no indican un descuento para toda la solicitud.",
     "与官方价格一致": "Igual al precio oficial",
-    "比官方价格低20%": "20 % menos que el precio oficial",
-    "比官方价格低40%": "40 % menos que el precio oficial"
+    "比官方价格低{{percent}}%": "{{percent}} % menos que el precio oficial",
+    "比官方价格高{{percent}}%": "{{percent}} % más que el precio oficial"
   }
 }

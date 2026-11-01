@@ -200,7 +200,7 @@ export default function TokenGroupPicker({
               const description =
                 typeof group.label === 'string' ? group.label : '';
               const favorite = favorites.includes(group.value);
-              const priceLabel = tokenGroupPriceLabel(group.value);
+              const priceLabel = tokenGroupPriceLabel(group, t);
               return (
                 <div
                   key={group.value}
@@ -229,7 +229,7 @@ export default function TokenGroupPicker({
                       <strong>{group.value}</strong>
                       {priceLabel && (
                         <span className='token-group-picker__price-label'>
-                          {t(priceLabel)}
+                          {priceLabel}
                         </span>
                       )}
                     </span>

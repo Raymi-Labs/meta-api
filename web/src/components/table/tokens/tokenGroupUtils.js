@@ -47,18 +47,24 @@ export const filterTokenGroupsByHealth = (groups, health, selected = []) => {
   );
 };
 
-const TOKEN_GROUP_PRICE_LABELS = {
-  企业级: '与官方价格一致',
-  企业: '与官方价格一致',
-  优选: '比官方价格低20%',
-  优质: '比官方价格低20%',
-  福利: '比官方价格低40%',
+// Token creation uses the current user's group ratio as the reference-price
+// ratio. Model detail pages retain their separate per-model price comparison.
+export const tokenGroupPriceLabel = ({ value, ratio } = {}, t) => {
+  if (
+    value === 'auto' ||
+    typeof ratio !== 'number' ||
+    !Number.isFinite(ratio) ||
+    ratio < 0
+  )
+    return '';
+  if (ratio === 1) return t('与官方价格一致');
+  const percent = Number((Math.abs(1 - ratio) * 100).toFixed(2));
+  // Keep the raw multiplier for differences below display precision or overflow.
+  if (!Number.isFinite(percent) || percent === 0) return '';
+  return ratio < 1
+    ? t('比官方价格低{{percent}}%', { percent })
+    : t('比官方价格高{{percent}}%', { percent });
 };
-
-export const tokenGroupPriceLabel = (groupName) =>
-  Object.hasOwn(TOKEN_GROUP_PRICE_LABELS, groupName)
-    ? TOKEN_GROUP_PRICE_LABELS[groupName]
-    : '';
 
 const TOKEN_GROUP_PRIORITY = ['企业级', '优选', '福利'];
 
