@@ -144,6 +144,7 @@ export function getHealthMeasurement(stats, metric, useReference = false) {
     ttft: ['avg_ttft_ms', 'ttft_count'],
     completion: ['avg_completion_ms', 'completion_count'],
     cache: ['cache_hit_rate', 'cache_sample_count'],
+    output_tps: ['avg_output_tps', 'throughput_sample_count'],
   };
   const [valueKey, countKey] = fields[metric];
   const value = stats?.[valueKey];

@@ -75,6 +75,7 @@ export function chartMeasurement(point, metric) {
     avg_ttft_ms: 'ttft',
     avg_completion_ms: 'completion',
     cache_hit_rate: 'cache',
+    avg_output_tps: 'output_tps',
   }[metric];
   return key ? getHealthMeasurement(point, key, true) : null;
 }

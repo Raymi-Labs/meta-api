@@ -50,3 +50,31 @@ test('expired, missing, malformed or non-P50 references remain unknown', () => {
     assert.equal(display.externalThroughput, false);
   }
 });
+
+test('historical throughput fills independently and current zero wins over history and P50', () => {
+  const stats = {
+    last_valid: {
+      output_tps: { value: 73.69682444577592, ts: now / 1000 - 80000 },
+    },
+  };
+  const before = structuredClone(stats);
+  const display = calculate(stats);
+  assert.equal(display.throughput, stats.last_valid.output_tps.value);
+  assert.equal(display.throughputReferenceTs, stats.last_valid.output_tps.ts);
+  assert.equal(display.externalThroughput, false);
+  assert.equal(display.latency.value, 1915);
+  assert.deepEqual(stats, before);
+  assert.equal(calculate({ ...stats, avg_output_tps: 0 }).throughput, 0);
+  assert.equal(
+    calculate({ ...stats, avg_output_tps: 0 }).throughputReferenceTs,
+    undefined,
+  );
+  for (const ref of [
+    { value: -1, ts: 1 },
+    { value: NaN, ts: 1 },
+    { value: 100, ts: 0 },
+    { value: 100, ts: 'bad' },
+  ]) {
+    assert.equal(calculate({ last_valid: { output_tps: ref } }).throughput, 20);
+  }
+});

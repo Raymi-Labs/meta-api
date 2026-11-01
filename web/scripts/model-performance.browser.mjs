@@ -101,7 +101,8 @@ let browser,
   failOnce = false,
   restricted = false;
 let measured = false,
-  unavailable = false;
+  unavailable = false,
+  historical = false;
 const errors = [],
   writes = [];
 try {
@@ -179,6 +180,18 @@ try {
             ttft_ms: 1915,
             output_tps: 20,
           };
+      const history = historical
+        ? {
+            ttft: {
+              value: 15034,
+              ts: Math.floor(Date.now() / 3600000) * 3600 - 80 * 3600,
+            },
+            output_tps: {
+              value: 73.69682444577592,
+              ts: Math.floor(Date.now() / 3600000) * 3600 - 80 * 3600,
+            },
+          }
+        : undefined;
       const stats = {
         request_count: measured ? 1 : 0,
         observed_count: measured ? 1 : 0,
@@ -188,7 +201,14 @@ try {
         ttft_count: measured ? 1 : 0,
         avg_output_tps: measured ? 77 : null,
         performance_reference: ref,
-        series: [],
+        last_valid: history,
+        series: historical
+          ? Array.from({ length: 24 }, (_, i) => ({
+              ts: Math.floor(Date.now() / 3600000) * 3600 - (23 - i) * 3600,
+              avg_output_tps: null,
+              last_valid: history,
+            }))
+          : [],
       };
       body = {
         success: true,
@@ -334,6 +354,47 @@ try {
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   );
+  historical = true;
+  await page.setViewport({ width: 1440, height: 1000 });
+  await page.goto(`${base}/${name}.html`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(
+    (selector) =>
+      document.querySelector(selector)?.textContent.includes('73.7'),
+    {},
+    card,
+  );
+  assert.ok((await page.$eval(card, (e) => e.textContent)).includes('15.03 s'));
+  assert.ok(
+    await page.$eval(card, (e) =>
+      [...e.querySelectorAll('dd')].some((d) => d.title.includes('沿用')),
+    ),
+  );
+  await page.click('.pricing-model-card a[href="/model/chat-00"]');
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.model-group-health-values')
+      ?.textContent.includes('73.7'),
+  );
+  const speedChart = await page.$eval('#performance', (e) => e.textContent);
+  assert.ok(
+    speedChart.includes('73.7 tok/s') && speedChart.includes('沿用最近有效值'),
+  );
+  assert.ok(!speedChart.includes('P50'));
+  await (
+    await page.$('#performance')
+  ).screenshot({
+    path: path.join(artifacts, 'throughput-history-desktop.png'),
+  });
+  await page.setViewport({ width: 390, height: 844 });
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
+  await (
+    await page.$('#pricing')
+  ).screenshot({ path: path.join(artifacts, 'throughput-history-mobile.png') });
+  historical = false;
   measured = true;
   await page.goto(`${base}/${name}.html`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(
@@ -378,6 +439,7 @@ try {
         'no source labels',
         'no synthetic uptime',
         '390px dark layout',
+        'historical throughput across card, group row and chart with time hint',
         'measured priority',
         'missing reference remains unknown',
       ],
