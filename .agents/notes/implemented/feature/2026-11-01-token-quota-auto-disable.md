@@ -12,6 +12,10 @@ Status: implemented
 
 Token 新增计数及代数字段，GORM 兼容新增迁移。数据库事务更新同一令牌行串行化，避免内存/Redis 丢失；Redis 模式鉴权额外核对主库状态和代数，防止异步缓存回填重新放行已禁用令牌。最终观察同步完成，不依赖通知开关、日志开关或通知队列。数据库故障记录内部错误，不伪造计数成功。
 
+### 错误文案与原因链
+
+`NewAPIError.SetMessage` 只替换展示文案，通过可 Unwrap 的内部包装保留原始原因；重复替换不累积包装。Relay 在记录失败对象后追加 Request ID，最终观察器必须仍能识别 QuotaRejection。原始原因仅供服务端类型判断，客户端 OpenAI/Claude 错误仍输出既有格式化及脱敏文案。不能用 `insufficient_user_quota` 字符串替代可信原因判断。
+
 ## Existing capabilities and note audit
 
 功能地图 → 令牌页面 → controller/token.go → model/token.go 管理已有启停；middleware/auth.go 和 service/billing_session.go 提供本地拒绝事实；middleware/request_failure_log.go 提供最终结果。普通用户仍仅管理自己的令牌。
@@ -24,6 +28,8 @@ Token 新增计数及代数字段，GORM 兼容新增迁移。数据库事务更
 - 在每个预扣失败处计数：接入直接，但资金回退成功或内部重试会重复累计；选择请求最终结果观察，保留结构化错误来源。
 - 只删除普通令牌缓存：不增加鉴权查询，但异步旧快照可能再次写回启用状态；选择 Redis 命中后额外核对主库状态与代数。
 
+- 仅复制 MarkRequestFailure 的错误对象：可以保护当前观察器，但其他 SetMessage 调用仍丢失 errors.Is/As 语义；选择在错误文案方法保留原因链。
+
 ## Verification
 
 `TestTokenQuotaFailureDatabaseMatrix` 在 SQLite、MySQL 8.0（utf8mb4_unicode_ci）及 PostgreSQL 16 隔离库验证两次保持、第三次禁用、清零、24 并发、令牌隔离、保存代数和旧在途结果忽略。`TestTokenQuotaFailureStaleRedisCannotReenable` 验证旧快照回填及 Redis 离线仍拒绝已禁用令牌。
@@ -31,6 +37,12 @@ Token 新增计数及代数字段，GORM 兼容新增迁移。数据库事务更
 `TestTokenQuotaAutoDisableHTTP` 经实际 TokenAuth 和最终观察器，验证令牌余额/周期包/钱包/订阅四种拒绝、预扣不足但余额非零、日志和通知关闭、查询及 IP 拒绝不参与、成功和普通错误中断、手动启用后重新累计。视频任务转换保留本地错误链；Midjourney 两处本地钱包拒绝添加结构化标记；上游错误不从文案推断。`TestTaskFinalQuotaOutcome` 验证任务 DTO 转换和每个请求仅观察一次；`TestTokenQuotaInvocationRoutes` 覆盖生成、WebSocket、视频提交及查询排除。
 
 相关包全量 `go test ./model ./service ./middleware ./controller ./router ./relay/...` 通过；新增回归在三种数据库下的 race 检查通过。竞态测试发现缓存回填读同一令牌指针与鉴权状态更新竞争，`GetTokenByKey` 现先复制快照再异步写缓存。前端 Bun 生产构建、Go 服务端构建、发布策略及 `make verify-notes` 通过。未做生产部署或真实上游付费请求；未做压力吞吐基准。
+
+### 2026-11-01 真实转发漏计修复
+
+生产 v1.11.12 的只读匿名样本在检查窗口有 52 次钱包预扣不足、无成功消费日志，令牌仍启用且计数/代数为 0。可用额度 11379、所需预扣 42210，原始错误为本地 new_api_error。问题出在 Relay 的 defer：MarkRequestFailure 保存同一错误指针后，SetMessage 用 errors.New 追加 Request ID，擦除了 QuotaRejection。原回归直接调用预扣和 MarkRequestFailure，没有执行 Relay 的错误装饰，因而漏检。
+
+`TestRelayQuotaDisablePreservesFinalCause` 使用 TokenAuth → 实际 Relay → 最终结果观察器，覆盖 Chat、Claude Messages、Responses、Gemini × 钱包/令牌/周期包/订阅 16 种组合，并关闭日志与通知；修复前全部首次计数为 0，修复后依次为 1、2、3 且第四次返回禁用提示。拒绝发生在本地，测试禁止向上游发送请求。`TestSetMessagePreservesCause` 覆盖多次改写、errors.Is/As、空原因以及对外 JSON 不泄露原始原因；通知观察器补充装饰后错误回归。没有修改生产令牌、数据库或部署；升级后的新失败才会计数，不回算旧日志。相关 Go 包全量测试及定向 race、Go 构建、Bun 前端构建和笔记校验通过；首次前端语言扫描在并行 Go 测试时超过默认 5 秒，待后台测试完成后用相同构建命令重跑通过。本次没有 schema 或 SQL 改动。
 
 ## Consequences
 
