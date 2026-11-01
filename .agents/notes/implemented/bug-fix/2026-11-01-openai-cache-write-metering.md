@@ -32,7 +32,7 @@ OpenRouter OpenAI 企业级接入验收中，真实 GPT-6 Luna 请求报告 6022
 
 实际控制器在 Chat/Responses × JSON/SSE × 普通/阶梯 8 个组合中验证输入 1000、读取 800、写入 100、输出 20：准确扣 325 quota，钱包、令牌和单条消费记录一致。SQLite 和导入生产 10 张原始表结构的隔离 MySQL 8.0.46 / utf8mb4_unicode_ci 均通过；没有生产数据拷贝。初始化测试容器首次导入遇到启动就绪窗口，等待后重建隔离库并用准确生产排序规则完整重跑成功。
 
-相关 dto、service/openaicompat、relay/channel/openai、controller、service、relay/common、billingexpr 全包回归通过；专项 -race 通过。前端 Bun 生产构建及 Go 应用构建通过，浏览器预渲染因本机没有 /usr/bin/chromium 跳过，后端既有元信息渲染继续兜底。生产更新和真实缓存扣费验收须在 v1.11.14 镜像发布后单独完成。
+相关 dto、service/openaicompat、relay/channel/openai、controller、service、relay/common、billingexpr 全包回归通过；专项 -race 通过。前端 Bun 生产构建及 Go 应用构建通过，浏览器预渲染因本机没有 /usr/bin/chromium 跳过，后端既有元信息渲染继续兜底。v1.11.14 已通过受保护入口更新生产，运行镜像 revision 与发布提交 dfbff4731 一致。10 笔真实缓存请求覆盖两种协议、JSON/SSE、普通与阶梯计价；每组都验证实际写入/读取、单条消费记录和令牌扣费，1640 已恢复完整 45 个型号。三项未审核扩展 TTL 请求被拒绝且零扣费；Responses 既有拒绝包装返回 500 而非 Chat 的 400，此状态码差异不影响拦截，但不称为已修复。
 
 ## Consequences
 

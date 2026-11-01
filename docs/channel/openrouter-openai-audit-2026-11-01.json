@@ -14026,27 +14026,95 @@
     "has_content": true
   },
   "production": {
-    "phase": "cache_fix_pending",
-    "runtime": "v1.11.12",
-    "available_models": 29,
-    "held_models": [
-      "gpt-6.1-terra-pro",
-      "gpt-6.1-terra",
-      "gpt-6.1-sol-pro",
-      "gpt-6.1-sol",
-      "gpt-6-luna-pro",
-      "gpt-6-luna",
-      "gpt-6-sol-pro",
-      "gpt-6-sol",
-      "gpt-6-astra",
-      "gpt-6-astra-pro",
-      "gpt-5.6-luna-pro",
-      "gpt-5.6-luna",
-      "gpt-5.6-terra-pro",
-      "gpt-5.6-terra",
-      "gpt-5.6-sol-pro",
-      "gpt-5.6-sol"
-    ]
+    "phase": "verified",
+    "runtime": "v1.11.14",
+    "available_models": 45,
+    "held_models": [],
+    "prior_cache_maintenance": {
+      "phase": "cache_fix_pending",
+      "runtime": "v1.11.12",
+      "available_models": 29,
+      "held_models": [
+        "gpt-6.1-terra-pro",
+        "gpt-6.1-terra",
+        "gpt-6.1-sol-pro",
+        "gpt-6.1-sol",
+        "gpt-6-luna-pro",
+        "gpt-6-luna",
+        "gpt-6-sol-pro",
+        "gpt-6-sol",
+        "gpt-6-astra",
+        "gpt-6-astra-pro",
+        "gpt-5.6-luna-pro",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra-pro",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol-pro",
+        "gpt-5.6-sol"
+      ]
+    },
+    "final_verification": {
+      "verified": true,
+      "version": "v1.11.14",
+      "channel_id": 1640,
+      "status": 1,
+      "group": "企业级",
+      "group_ratio": 1,
+      "enabled_models": 45,
+      "pricing_verified": 45,
+      "catalog_verified": 45,
+      "existing_prices_preserved": 19,
+      "new_prices": 26,
+      "metadata_added": 37,
+      "cache_gateway_requests": 10,
+      "cache_ttl_rejections": [
+        {
+          "endpoint": "/v1/chat/completions",
+          "location": "request",
+          "status": 400,
+          "zero_charge": true,
+          "error_code": "openrouter_price_policy"
+        },
+        {
+          "endpoint": "/v1/responses",
+          "location": "request",
+          "status": 500,
+          "zero_charge": true,
+          "error_code": "channel:param_override_invalid"
+        },
+        {
+          "endpoint": "/v1/responses",
+          "location": "content_block",
+          "status": 500,
+          "zero_charge": true,
+          "error_code": "channel:param_override_invalid"
+        }
+      ],
+      "temporary_tokens_deleted": true,
+      "old_channels_unchanged": false,
+      "price_options_match_expected": true,
+      "unrelated_option_drift_fields": [
+        "GroupRatio",
+        "UserUsableGroups"
+      ],
+      "time": 1793493751
+    },
+    "deployment": {
+      "observed_at": 1793493467,
+      "container_status": "running",
+      "container_health": null,
+      "configured_image": "ghcr.io/raymi-labs/meta-api@sha256:00e3f9e4626b39749c34e1f85e54af53f4aa9a5ab36771b699566bd0d4f81510",
+      "image_id": "sha256:00e3f9e4626b39749c34e1f85e54af53f4aa9a5ab36771b699566bd0d4f81510",
+      "repo_digests": [
+        "ghcr.io/raymi-labs/meta-api@sha256:00e3f9e4626b39749c34e1f85e54af53f4aa9a5ab36771b699566bd0d4f81510"
+      ],
+      "image_version": "v1.11.14",
+      "image_revision": "dfbff47313d2dc20e80a63d2d71a6a04845e1bd1",
+      "runtime_version": "v1.11.14",
+      "backup_directory": "/opt/meta-api/backups/one-click/20261101-002352-v1.11.12-to-v1.11.14-1881466",
+      "deployment_success_log": true,
+      "lock_free": true
+    }
   },
   "checks": {
     "wire_policy": 591,
@@ -14060,6 +14128,1007 @@
     "Cache quotes are reviewed snapshots; OpenRouter has no separate dynamic cache max_price.",
     "Base prompt/output hard caps remain conservative for long-context requests.",
     "GPT-5.6/GPT-6 Pro entries are fixed reasoning-mode aliases, billed by aggregate underlying-model tokens.",
-    "Standalone image, audio, embeddings and decisions excluded by user choice."
-  ]
+    "Standalone image, audio, embeddings and decisions excluded by user choice.",
+    "OpenRouter Responses rejects prompt_cache_options.mode=implicit; omit options to use default caching.",
+    "Existing Responses local policy rejection returns HTTP 500 (Chat returns 400); all tested extended-TTL requests are blocked with zero charge."
+  ],
+  "cache_gateway_acceptance": {
+    "verified": true,
+    "version": "v1.11.14",
+    "channel_id": 1640,
+    "results": [
+      {
+        "model": "gpt-6-luna",
+        "kind": "chat",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 6022,
+        "matched_tier": "base",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 6022,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 6025,
+          "p": 3
+        },
+        "verified": true,
+        "seconds": 1.14,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 49866,
+        "token_used_quota": 49866,
+        "single_charge": true,
+        "has_content": true,
+        "case": "0-0",
+        "repeat": false
+      },
+      {
+        "model": "gpt-6-luna",
+        "kind": "chat",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 6022,
+        "cache_write_tokens": 0,
+        "matched_tier": "base",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 6022,
+          "img": 0,
+          "img_o": 0,
+          "len": 6025,
+          "p": 3
+        },
+        "verified": true,
+        "seconds": 1.16,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 4159,
+        "token_used_quota": 4159,
+        "single_charge": true,
+        "has_content": true,
+        "case": "0-1",
+        "repeat": true
+      },
+      {
+        "model": "gpt-6-luna",
+        "kind": "responses_stream",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 0,
+        "cache_write_field_present": true,
+        "cache_write_tokens": 6022,
+        "matched_tier": "base",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 6022,
+          "cc1h": 0,
+          "cr": 0,
+          "img": 0,
+          "img_o": 0,
+          "len": 6025,
+          "p": 3
+        },
+        "verified": true,
+        "seconds": 1.08,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 49866,
+        "token_used_quota": 49866,
+        "single_charge": true,
+        "has_content": true,
+        "case": "1-0",
+        "repeat": false
+      },
+      {
+        "model": "gpt-6-luna",
+        "kind": "responses_stream",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 6022,
+        "cache_write_field_present": false,
+        "cache_write_tokens": 0,
+        "matched_tier": "base",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 5,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 6022,
+          "img": 0,
+          "img_o": 0,
+          "len": 6025,
+          "p": 3
+        },
+        "verified": true,
+        "seconds": 1.05,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 4159,
+        "token_used_quota": 4159,
+        "single_charge": true,
+        "has_content": true,
+        "case": "1-1",
+        "repeat": true
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "kind": "stream",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 0,
+        "cache_write_field_present": true,
+        "cache_write_tokens": 6023,
+        "model_ratio": 49.5,
+        "cache_tokens": 0,
+        "verified": true,
+        "seconds": 1.14,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 374010,
+        "token_used_quota": 374010,
+        "single_charge": true,
+        "has_content": true,
+        "case": "2-0",
+        "repeat": false
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "kind": "stream",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 6023,
+        "cache_write_field_present": true,
+        "cache_write_tokens": 0,
+        "model_ratio": 49.5,
+        "cache_tokens": 6023,
+        "verified": true,
+        "seconds": 1.77,
+        "input_tokens": 6025,
+        "output_tokens": 5,
+        "quota": 16243,
+        "token_used_quota": 16243,
+        "single_charge": true,
+        "has_content": true,
+        "case": "2-1",
+        "repeat": true
+      },
+      {
+        "model": "gpt-6-luna-pro",
+        "kind": "responses",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 6022,
+        "cache_write_field_present": false,
+        "cache_write_tokens": 0,
+        "matched_tier": "标准上下文",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 45,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 6022,
+          "img": 0,
+          "img_o": 0,
+          "len": 19840,
+          "p": 13818
+        },
+        "verified": true,
+        "seconds": 2.2,
+        "input_tokens": 19840,
+        "output_tokens": 45,
+        "quota": 24165,
+        "token_used_quota": 24165,
+        "single_charge": true,
+        "has_content": true,
+        "case": "3-0",
+        "repeat": false
+      },
+      {
+        "model": "gpt-6-luna-pro",
+        "kind": "responses",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 19582,
+        "cache_write_field_present": false,
+        "cache_write_tokens": 0,
+        "matched_tier": "标准上下文",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 60,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 19582,
+          "img": 0,
+          "img_o": 0,
+          "len": 19847,
+          "p": 265
+        },
+        "verified": true,
+        "seconds": 2.93,
+        "input_tokens": 19847,
+        "output_tokens": 60,
+        "quota": 4163,
+        "token_used_quota": 4163,
+        "single_charge": true,
+        "has_content": true,
+        "case": "3-1",
+        "repeat": true
+      },
+      {
+        "model": "gpt-6-luna-pro",
+        "kind": "responses",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 7514,
+        "cache_write_field_present": true,
+        "cache_write_tokens": 7514,
+        "matched_tier": "标准上下文",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 40,
+          "cc": 7514,
+          "cc1h": 0,
+          "cr": 7514,
+          "img": 0,
+          "img_o": 0,
+          "len": 24356,
+          "p": 9328
+        },
+        "verified": true,
+        "seconds": 2.21,
+        "input_tokens": 24356,
+        "output_tokens": 40,
+        "quota": 32459,
+        "token_used_quota": 32459,
+        "single_charge": true,
+        "has_content": true,
+        "case": "3-2",
+        "repeat": false,
+        "fresh_unique_prompt": true
+      },
+      {
+        "model": "gpt-6-luna-pro",
+        "kind": "responses",
+        "channel_id": 1640,
+        "group": "企业级",
+        "status": 200,
+        "cache_read_tokens": 24205,
+        "cache_write_field_present": false,
+        "cache_write_tokens": 0,
+        "matched_tier": "标准上下文",
+        "tiered_params": {
+          "ai": 0,
+          "ao": 0,
+          "c": 46,
+          "cc": 0,
+          "cc1h": 0,
+          "cr": 24205,
+          "img": 0,
+          "img_o": 0,
+          "len": 24356,
+          "p": 151
+        },
+        "verified": true,
+        "seconds": 2.17,
+        "input_tokens": 24356,
+        "output_tokens": 46,
+        "quota": 4622,
+        "token_used_quota": 4622,
+        "single_charge": true,
+        "has_content": true,
+        "case": "3-3",
+        "repeat": true,
+        "fresh_unique_prompt": true
+      }
+    ],
+    "temporary_tokens_deleted": true,
+    "time": 1793493668
+  },
+  "cache_acceptance_retries": {
+    "implicit_mode_rejected": {
+      "explicit_options": true,
+      "status": 400,
+      "error": {
+        "error": {
+          "code": "invalid_prompt",
+          "message": "Invalid Responses API request"
+        },
+        "metadata": {
+          "raw": "[\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      \"explicit\"\n    ],\n    \"path\": [\n      \"prompt_cache_options\",\n      \"mode\"\n    ],\n    \"message\": \"Invalid input: expected \\\"explicit\\\"\"\n  }\n]"
+        }
+      }
+    },
+    "responses_default_cache_supported": {
+      "explicit_options": false,
+      "status": 200,
+      "completed": 1,
+      "usage": {
+        "input_tokens": 10,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 17,
+        "output_tokens_details": {
+          "reasoning_tokens": 10
+        },
+        "total_tokens": 27,
+        "cost": 9.5e-06,
+        "is_byok": false,
+        "cost_details": {
+          "upstream_inference_cost": 9.5e-06,
+          "upstream_inference_input_cost": 1e-06,
+          "upstream_inference_output_cost": 8.5e-06
+        }
+      }
+    },
+    "initial_gateway_failure": {
+      "model": "gpt-6-luna",
+      "kind": "responses_stream",
+      "channel_id": 1640,
+      "group": "企业级",
+      "status": 400,
+      "verified": false,
+      "phase": "response",
+      "error_type": "AssertionError",
+      "error": "(400, b'{\"error\":{\"message\":\"Invalid Responses API request\",\"type\":\"upstream_error\",\"param\":\"\",\"code\":\"invalid_prompt\"}}')",
+      "case": "1-0",
+      "repeat": false
+    },
+    "fresh_prompt_key_too_long_failure": {
+      "model": "gpt-6-luna-pro",
+      "kind": "responses",
+      "channel_id": 1640,
+      "group": "企业级",
+      "status": 400,
+      "verified": false,
+      "phase": "response",
+      "error_type": "AssertionError",
+      "error": "(400, b'{\"error\":{\"message\":\"Provider returned error ({\\\\\"raw\\\\\":\\\\\"{\\\\\\\\n  \\\\\\\\\\\\\"error\\\\\\\\\\\\\": {\\\\\\\\n    \\\\\\\\\\\\\"message\\\\\\\\\\\\\": \\\\\\\\\\\\\"Invalid \\'prompt_cache_key\\': string too long. Expected a string with maximum length 64, but got a string with length 66 instead.\\\\\\\\\\\\\",\\\\\\\\n    \\\\\\\\\\\\\"type\\\\\\\\\\\\\": \\\\\\\\\\\\\"invalid_request_error\\\\\\\\\\\\\",\\\\\\\\n    \\\\\\\\\\\\\"param\\\\\\\\\\\\\": \\\\\\\\\\\\\"prompt_cache_key\\\\\\\\\\\\\",\\\\\\\\n    \\\\\\\\\\\\\"code\\\\\\\\\\\\\": \\\\\\\\\\\\\"string_above_max_length\\\\\\\\\\\\\"\\\\\\\\n  }\\\\\\\\n}\\\\')",
+      "case": "3-2",
+      "repeat": false,
+      "fresh_unique_prompt": true
+    },
+    "pro_fresh_usage": [
+      {
+        "usage": {
+          "input_tokens": 24356,
+          "input_tokens_details": {
+            "cached_tokens": 7514,
+            "cache_write_tokens": 7514
+          },
+          "output_tokens": 40,
+          "output_tokens_details": {
+            "reasoning_tokens": 13
+          },
+          "total_tokens": 24396,
+          "cost": 0.00196719,
+          "is_byok": false,
+          "cost_details": {
+            "upstream_inference_cost": 0.00196719,
+            "upstream_inference_input_cost": 0.00194719,
+            "upstream_inference_output_cost": 2e-05
+          }
+        },
+        "model": "openai/gpt-6-luna-pro",
+        "status": "completed"
+      },
+      {
+        "usage": {
+          "input_tokens": 24356,
+          "input_tokens_details": {
+            "cached_tokens": 24205
+          },
+          "output_tokens": 46,
+          "output_tokens_details": {
+            "reasoning_tokens": 19
+          },
+          "total_tokens": 24402,
+          "cost": 0.00028015,
+          "is_byok": false,
+          "cost_details": {
+            "upstream_inference_cost": 0.00028015,
+            "upstream_inference_input_cost": 0.00025715,
+            "upstream_inference_output_cost": 2.3e-05
+          }
+        },
+        "model": "openai/gpt-6-luna-pro",
+        "status": "completed"
+      }
+    ],
+    "finalizer_status_expectation_corrected": {
+      "initial_assertion": "expected 400 for Responses policy rejection",
+      "observed_status": 500,
+      "error_code": "channel:param_override_invalid",
+      "meaning": "existing Responses handler wraps locally denied request as 500; enforcement unchanged",
+      "model_restoration_had_not_started": true,
+      "time": 1793493707
+    },
+    "note": "Failed test attempts are retained. Successful pairs were not replayed; two fresh Pro requests supplied missing write evidence. Responses zero write field may be omitted."
+  },
+  "release": {
+    "tag_name": "v1.11.14",
+    "html_url": "https://github.com/Raymi-Labs/meta-api/releases/tag/v1.11.14",
+    "published_at": "2026-11-01T00:29:38Z",
+    "assets": [
+      {
+        "name": "meta-api-management-v1.11.14.sha256",
+        "size": 102
+      },
+      {
+        "name": "meta-api-management-v1.11.14.tar.gz",
+        "size": 26868
+      },
+      {
+        "name": "new-api-arm64-v1.11.14",
+        "size": 99746057
+      },
+      {
+        "name": "new-api-docs-v1.11.14.sha256",
+        "size": 95
+      },
+      {
+        "name": "new-api-docs-v1.11.14.tar.gz",
+        "size": 9850551
+      },
+      {
+        "name": "new-api-v1.11.14",
+        "size": 103063817
+      }
+    ],
+    "verified": true,
+    "merge_commit": "dfbff47313d2dc20e80a63d2d71a6a04845e1bd1",
+    "pull_request": "https://github.com/Raymi-Labs/meta-api/pull/130",
+    "workflows": [
+      {
+        "id": 41256068032,
+        "name": "Build Electron App",
+        "status": "completed",
+        "conclusion": "startup_failure",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256068032"
+      },
+      {
+        "id": 41256066708,
+        "name": "Cleanup old Actions artifacts",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256066708"
+      },
+      {
+        "id": 41256066695,
+        "name": "Publish Docker image (Multi-arch, GHCR + optional Docker Hub)",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256066695"
+      },
+      {
+        "id": 41256066777,
+        "name": "Release (Linux)",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256066777"
+      },
+      {
+        "id": 41256027326,
+        "name": "Verify Agent Notes",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256027326"
+      },
+      {
+        "id": 41256027191,
+        "name": "Build and Push Docker Image",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Raymi-Labs/meta-api/actions/runs/41256027191"
+      }
+    ],
+    "required_server_artifacts_verified": true,
+    "optional_electron_startup_failure": "Separate desktop workflow failed before jobs; not required for server deployment."
+  },
+  "deployment_attempt_before_reusing_completed_release": {
+    "before_version": "v1.11.12",
+    "target_sha": "dfbff47313d2dc20e80a63d2d71a6a04845e1bd1",
+    "target_image": "sha-dfbff47",
+    "time": 1793493062,
+    "exit_code": 1,
+    "finished_at": 1793493062,
+    "current_version": "v1.11.12",
+    "reason": "Protected lock held by concurrent operation targeting the same v1.11.14 tag; no stop or lock deletion. Verified its completed deployment and reused it."
+  },
+  "concurrent_changes_preserved": {
+    "channel_fields": [
+      {
+        "channel_id": 762,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1336,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1352,
+        "changed_fields": [
+          "settings"
+        ]
+      },
+      {
+        "channel_id": 1361,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1394,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1395,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1398,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1404,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1414,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1420,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1428,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1429,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1432,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1433,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1439,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1443,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1444,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1446,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1449,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1450,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1453,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1454,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1456,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1465,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1473,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1474,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1475,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1478,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1484,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1486,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1487,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1488,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1490,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1491,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1495,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1497,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1501,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1503,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1504,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1507,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1513,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1515,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1516,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1519,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1520,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1522,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1524,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1527,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1530,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1531,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1532,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1533,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1534,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1535,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1537,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1539,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1540,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1541,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1542,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1554,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1555,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1559,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1560,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1561,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1562,
+        "changed_fields": [
+          "group",
+          "setting"
+        ]
+      },
+      {
+        "channel_id": 1563,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1565,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1567,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1578,
+        "changed_fields": [
+          "group"
+        ]
+      },
+      {
+        "channel_id": 1621,
+        "changed_fields": [
+          "group"
+        ]
+      }
+    ],
+    "field_counts": {
+      "group": 69,
+      "setting": 37,
+      "settings": 1
+    },
+    "option_fields": [
+      "GroupRatio",
+      "UserUsableGroups"
+    ],
+    "note": "Post-configuration external group/serialization/sync-timestamp changes explain channel digest mismatch. No restoration of external changes; all price options still match expected."
+  }
 }
