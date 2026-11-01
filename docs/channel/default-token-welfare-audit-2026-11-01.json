@@ -1,0 +1,40 @@
+{
+  "reviewed_at": "2026-11-01T01:50:53+00:00",
+  "scope": "Undeleted tokens with empty group and empty routing_config inheriting default; explicit default was already migrated in a prior operation.",
+  "operation_directory": "/opt/meta-api/operations/default-tokens-welfare-20261101",
+  "receipt": {
+    "tokens": 51,
+    "owners": 47,
+    "mysql_same_schema_tests": 3,
+    "source": "empty group inheriting default",
+    "target": "福利",
+    "target_ratio": 0.6,
+    "only_updated_column": "group",
+    "other_inherited_tokens_preserved": 2,
+    "deleted_default_tokens_preserved": 894,
+    "mode": "applied",
+    "verified": true,
+    "remaining_effective_default_tokens": 0,
+    "cache_entries_deleted": 0,
+    "stale_cache_entries": 0,
+    "catalog_probes": [
+      {
+        "model_limited": false,
+        "http_status": 200,
+        "model_count": 49,
+        "cached_group": "福利"
+      },
+      {
+        "model_limited": true,
+        "http_status": 200,
+        "model_count": 1,
+        "cached_group": "福利"
+      }
+    ],
+    "protected_fields_preserved": true,
+    "other_settings_unchanged": true,
+    "user_groups_unchanged": true,
+    "time": 1793497853,
+    "runtime": "v1.11.14"
+  }
+}
