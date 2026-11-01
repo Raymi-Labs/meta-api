@@ -57,7 +57,12 @@ export function getCompareGroups(models, usableGroup) {
 }
 
 // Monthly token estimates only apply to ordinary text token pricing.
-export function estimateModelMonthlyCost(model, price, workload) {
+export function estimateModelMonthlyCost(
+  model,
+  price,
+  workload,
+  tokenUnit = 'M',
+) {
   if (!price || model.quota_type !== 0 || price.isDynamicPricing) return null;
   const input = price.unitPricesUSD?.input;
   const output = price.unitPricesUSD?.completion;
@@ -79,6 +84,6 @@ export function estimateModelMonthlyCost(model, price, workload) {
     (workload.requests *
       30 *
       (workload.input * input + workload.output * output)) /
-    1e6;
+    (tokenUnit === 'K' ? 1e3 : 1e6);
   return Number.isFinite(total) ? total : null;
 }

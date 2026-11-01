@@ -20,7 +20,14 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Select, Spin } from '@douyinfe/semi-ui';
-import { ArrowLeft, ArrowUpRight, Copy, Plus, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Copy,
+  Plus,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import {
@@ -34,7 +41,10 @@ import {
   getComparePricing,
   comparePriceItems,
 } from '../../helpers/modelComparePricing';
-import { buildModelDetailPath } from '../../helpers/modelDetailNavigation';
+import {
+  buildModelDetailPath,
+  sanitizeModelCatalogSnapshot,
+} from '../../helpers/modelDetailNavigation';
 import {
   MODEL_MODALITY_LABELS,
   formatModelThroughput,
@@ -61,6 +71,7 @@ import ComparisonMetrics, {
   comparisonStats,
 } from './ComparisonMetrics';
 import ModelCostCalculator from './ModelCostCalculator';
+import ModelPriceSettings from '../ModelDetail/ModelPriceSettings';
 import '../ModelDetail/modelDetail.css';
 import './modelCompare.css';
 
@@ -69,11 +80,9 @@ const sourceTitle = (model, field, known, t) =>
 export default function ModelCompare() {
   const location = useLocation();
   const navigate = useNavigate();
-  const data = useModelPricingData({
-    currency: 'USD',
-    showWithRecharge: false,
-    tokenUnit: 'M',
-  });
+  const data = useModelPricingData(location.state?.catalogState);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigationState = { catalogState: sanitizeModelCatalogSnapshot(data) };
   const { t } = data;
   const selectedNames = getCompareModels(location.search);
   const selected = selectedNames
@@ -96,7 +105,8 @@ export default function ModelCompare() {
       items.flatMap((list) => list.map((item) => [item.key, item.label])),
     ).entries(),
   ];
-  const changeModels = (names) => navigate(buildModelComparePath(names));
+  const changeModels = (names) =>
+    navigate(buildModelComparePath(names), { state: navigationState });
   const removeModel = (name) =>
     changeModels(selectedNames.filter((item) => item !== name));
   const options = data.models
@@ -118,7 +128,11 @@ export default function ModelCompare() {
       .map((value) => t(MODEL_MODALITY_LABELS[value] || value))
       .join(' · ') || '—';
   const back = (
-    <Link className='model-detail-back' to='/pricing'>
+    <Link
+      className='model-detail-back'
+      to='/pricing'
+      state={{ modelCatalogSnapshot: navigationState.catalogState }}
+    >
       <ArrowLeft size={16} />
       {t('返回模型广场')}
     </Link>
@@ -238,8 +252,28 @@ export default function ModelCompare() {
                 }))}
               />
             </label>
-            <span>{`${t('价格')} · USD`}</span>
+            <Button
+              theme='outline'
+              type='tertiary'
+              aria-label={t('按K显示单位')}
+              onClick={() =>
+                data.setTokenUnit(data.tokenUnit === 'M' ? 'K' : 'M')
+              }
+            >
+              {data.tokenUnit}
+            </Button>
+            <Button
+              theme='borderless'
+              type='tertiary'
+              icon={<SlidersHorizontal size={16} />}
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              {t('显示设置')}
+            </Button>
+            <span>{`${t('价格')} · ${data.currency} · ${data.showWithRecharge ? t(data.priceConvertMode === 'package' && data.availablePlans.length ? '套餐价格' : '充值价格') : t('基础价格')}`}</span>
           </div>
+          {settingsOpen && <ModelPriceSettings data={data} />}
           <div
             className='model-compare-cards'
             style={{ '--compare-count': selected.length }}
@@ -296,6 +330,7 @@ export default function ModelCompare() {
                   <Link
                     className='model-action-secondary'
                     to={buildModelDetailPath(model.model_name)}
+                    state={navigationState}
                   >
                     {t('查看详情')}
                   </Link>
@@ -438,7 +473,13 @@ export default function ModelCompare() {
             group={group}
             t={t}
           />
-          <ModelCostCalculator models={selected} prices={prices} t={t} />
+          <ModelCostCalculator
+            models={selected}
+            prices={prices}
+            data={data}
+            navigationState={navigationState}
+            t={t}
+          />
           {selected.some((model) => model.faq?.length) && (
             <section className='model-detail-section model-faq'>
               <h2>{t('常见问题')}</h2>

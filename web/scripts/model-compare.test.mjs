@@ -75,3 +75,21 @@ test('monthly estimates distinguish ordinary tokens, zero, unknown and dynamic b
     null,
   );
 });
+
+test('K/M display units preserve the same monthly estimate', () => {
+  const workload = { requests: 1000, input: 2000, output: 500 };
+  assert.equal(
+    estimateModelMonthlyCost(
+      model,
+      { unitPricesUSD: { input: 0.002, completion: 0.006 } },
+      workload,
+      'K',
+    ),
+    estimateModelMonthlyCost(
+      model,
+      { unitPricesUSD: { input: 2, completion: 6 } },
+      workload,
+      'M',
+    ),
+  );
+});

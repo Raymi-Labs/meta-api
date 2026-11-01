@@ -1035,6 +1035,86 @@ try {
     assert.deepEqual(errors, []);
     await page.close();
   }
+  // Reproduce the screenshot: USD standard numerically equals CNY long context.
+  const previousPrice = status.price;
+  status.price = 0.2;
+  pricing.data.push({
+    ...modelDefaults,
+    model_name: 'claude-haiku-5-5',
+    enable_groups: ['Screenshot'],
+    billing_mode: 'tiered_expr',
+    billing_expr:
+      'len <= 100000 ? tier("standard", p*3.3+c*16.5+cr*.33+cc*4.125+cc1h*6.6) : tier("long_context", p*16.5+c*82.5+cr*1.65+cc*20.625+cc1h*33)',
+  });
+  pricing.usable_group.Screenshot = 'Screenshot';
+  pricing.group_ratio.Screenshot = 0.2;
+  for (const dark of [false, true]) {
+    const { page, errors } = await makePage(1, dark);
+    await page.goto(`${baseURL}/model/claude-haiku-5-5`, {
+      waitUntil: 'networkidle0',
+    });
+    await page.waitForFunction(() =>
+      document.querySelector('#pricing')?.textContent.includes('¥0.1320'),
+    );
+    await page.click('.model-detail-header-actions a:first-child');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-card-prices')
+        ?.textContent.includes('¥0.1320'),
+    );
+    assert.ok(
+      await page.$eval(
+        '.model-compare-card-prices',
+        (el) =>
+          el.textContent.includes('standard') &&
+          el.textContent.includes('¥0.6600') &&
+          el.textContent.includes('¥0.0132'),
+      ),
+    );
+    assert.ok(
+      await page.$eval('.model-compare-table', (el) =>
+        el.textContent.includes('¥0.1320'),
+      ),
+    );
+    await page.screenshot({
+      path: path.join(
+        artifacts,
+        dark ? 'haiku-compare-mobile.png' : 'haiku-compare-desktop.png',
+      ),
+    });
+    await clickButton(page, '显示设置');
+    await selectOption(page, '价格模式', 'USD ($)');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-card-prices')
+        ?.textContent.includes('$0.6600'),
+    );
+    await page.click('button[aria-label="按K显示单位"]');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-card-prices')
+        ?.textContent.includes('$0.000660'),
+    );
+    await page.click('.model-compare-card-actions a:first-child');
+    await page.waitForFunction(() =>
+      document.querySelector('#pricing')?.textContent.includes('$0.000660'),
+    );
+    await page.click('.model-detail-header-actions a:first-child');
+    await page.waitForFunction(() =>
+      document
+        .querySelector('.model-compare-card-prices')
+        ?.textContent.includes('$0.000660'),
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 2,
+      ),
+      true,
+    );
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  status.price = previousPrice;
   comparisonFixtures = true;
   const encodedName = 'vendor/a+b%2F';
   pricing.data.push({ ...modelDefaults, model_name: encodedName });
@@ -1161,7 +1241,7 @@ try {
     await page.keyboard.type('0');
     assert.ok(
       await page.$eval('.model-cost-results article', (el) =>
-        el.textContent.includes('$0.00'),
+        el.textContent.includes('¥0.00'),
       ),
     );
     assert.equal(

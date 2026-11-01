@@ -59,24 +59,27 @@ const source = [
     'parseTiersFromExpr',
   ]),
   extract('../src/helpers/modelCatalogPricing.js'),
-  '({ getModelCatalogPricing, isCachePriceItem })',
+  extract('../src/helpers/modelComparePricing.js'),
+  '({ getModelCatalogPricing, isCachePriceItem, getComparePricing, comparePriceItems })',
 ].join('\n');
-const { getModelCatalogPricing, isCachePriceItem } = vm.runInNewContext(
-  source,
-  {
-    getModelSortPrices,
-    videoPriceItems,
-    BILLING_PRICING_VARS,
-    BILLING_VAR_REGEX,
-    BILLING_VAR_KEY_TO_FIELD,
-    buildFirstTierGroupPriceItems,
-    splitBillingExprAndRequestRules,
-    isVideoPriceExpression,
-    parseImagePriceExpression,
-    isImagePriceExpression,
-    formatModelPricingUnitPrice,
-  },
-);
+const {
+  getModelCatalogPricing,
+  isCachePriceItem,
+  getComparePricing,
+  comparePriceItems,
+} = vm.runInNewContext(source, {
+  getModelSortPrices,
+  videoPriceItems,
+  BILLING_PRICING_VARS,
+  BILLING_VAR_REGEX,
+  BILLING_VAR_KEY_TO_FIELD,
+  buildFirstTierGroupPriceItems,
+  splitBillingExprAndRequestRules,
+  isVideoPriceExpression,
+  parseImagePriceExpression,
+  isImagePriceExpression,
+  formatModelPricingUnitPrice,
+});
 const t = (key) => key;
 const money = (symbol = '$', rate = 1) =>
   Object.assign((value) => `${symbol}${value * rate}`, {
@@ -428,5 +431,72 @@ test('group tier table uses each tier amount and preserves zero fields across un
       Number(item(second, 'tiered-p').value.slice(1)),
       second.data.unitPricesUSD['tiered-p'] * 7,
     );
+  }
+});
+
+test('comparison keeps the standard tier and shares detail currency, plan, unit and time conversion', () => {
+  const model = {
+    ...base,
+    model_name: 'claude-haiku-5-5',
+    billing_mode: 'tiered_expr',
+    billing_expr:
+      'len <= 100000 ? tier("standard", p*3.30+c*16.50+cr*0.330+cc*4.125+cc1h*6.6) : tier("long_context", p*16.50+c*82.50+cr*1.650+cc*20.625+cc1h*33)',
+  };
+  for (const [symbol, rate] of [
+    ['¥', 0.2],
+    ['¥', 0.1],
+    ['$', 1],
+    ['¤', 3],
+  ]) {
+    for (const tokenUnit of ['M', 'K']) {
+      for (const timeRatio of [1, 1.5]) {
+        for (const groupRatio of [0.2, 0]) {
+          const data = {
+            usableGroup: { standard: 'Visible' },
+            groupRatio: { standard: groupRatio },
+            timeRatioMap: {
+              [model.model_name]: {
+                standard: { ratio: timeRatio, matched: true },
+              },
+            },
+            currency:
+              symbol === '¥' ? 'CNY' : symbol === '$' ? 'USD' : 'CUSTOM',
+            siteDisplayType: 'USD',
+            tokenUnit,
+            displayPrice: money(symbol, rate),
+          };
+          const compared = getComparePricing(model, data, 'standard', t);
+          const detail = getModelCatalogPricing(
+            {
+              ...data,
+              record: model,
+              selectedGroup: 'standard',
+              allTiers: true,
+            },
+            t,
+          );
+          assert.equal(compared.data.firstTierLabel, 'standard');
+          assert.deepEqual(compared.items, detail.items);
+          assert.equal(comparePriceItems(compared)[0].key, 'input');
+          const expected =
+            (3.3 * groupRatio * timeRatio * rate) /
+            (tokenUnit === 'K' ? 1000 : 1);
+          assert.equal(
+            compared.items[0].value,
+            symbol + expected.toFixed(tokenUnit === 'K' ? 6 : 4),
+          );
+          assert.equal(getComparePricing(model, data, 'hidden', t), null);
+          assert.equal(
+            getComparePricing(
+              { ...model, enable_groups: [] },
+              data,
+              'standard',
+              t,
+            ),
+            null,
+          );
+        }
+      }
+    }
   }
 });

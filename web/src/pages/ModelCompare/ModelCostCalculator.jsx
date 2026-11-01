@@ -22,7 +22,13 @@ import { Link } from 'react-router-dom';
 import { estimateModelMonthlyCost } from '../../helpers/modelCompare';
 import { buildModelDetailPath } from '../../helpers/modelDetailNavigation';
 
-export default function ModelCostCalculator({ models, prices, t }) {
+export default function ModelCostCalculator({
+  models,
+  prices,
+  data,
+  navigationState,
+  t,
+}) {
   const [workload, setWorkload] = useState({
     requests: 1000,
     input: 2000,
@@ -69,6 +75,7 @@ export default function ModelCostCalculator({ models, prices, t }) {
             model,
             prices[index]?.data,
             workload,
+            data.tokenUnit,
           );
           return (
             <article key={model.model_name}>
@@ -76,17 +83,20 @@ export default function ModelCostCalculator({ models, prices, t }) {
               {cost === null ? (
                 <p>
                   {t('暂无可用估算')} ·{' '}
-                  <Link to={buildModelDetailPath(model.model_name)}>
+                  <Link
+                    to={buildModelDetailPath(model.model_name)}
+                    state={navigationState}
+                  >
                     {t('查看详情')}
                   </Link>
                 </p>
               ) : (
                 <strong>
-                  {new Intl.NumberFormat(undefined, {
-                    style: 'currency',
-                    currency: 'USD',
+                  {data.displayPrice.currencySymbol}
+                  {data.displayPrice.toAmount(cost).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  }).format(cost)}{' '}
+                  })}{' '}
                   <small>/ {t('月')}</small>
                 </strong>
               )}
