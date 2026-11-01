@@ -19,7 +19,11 @@ for (const name of ['release', 'release-optional', 'electron-build']) {
   }
 }
 
-assert.deepEqual(Object.keys(linux.jobs), ['linux'], 'tags must not allocate optional platform runners');
+assert.deepEqual(Object.keys(linux.jobs), ['frontend', 'images', 'desktop', 'linux'], 'release must share one frontend before existing artifact jobs');
+assert.equal(linux.jobs.linux.needs, 'frontend');
+assert.equal(linux.jobs.images.uses, './.github/workflows/docker-image-arm64.yml');
+assert.equal(linux.jobs.desktop.uses, './.github/workflows/electron-build.yml');
+assert.equal(linux.jobs.frontend.uses, './.github/workflows/release-frontend.yml');
 assert.ok(linux.on.push.tags.includes('*'));
 assert.equal(linux.jobs.linux.steps[0].with.ref, '${{ inputs.release_tag || github.ref }}');
 const automaticRelease = linux.jobs.linux.steps.find((step) => step.name === 'Release');
@@ -39,11 +43,11 @@ assert.doesNotMatch(upload, /--clobber|release (create|edit)/, 'optional artifac
 
 const dockerfile = read('Dockerfile');
 const stages = dockerfile.split('\n').filter((line) => line.startsWith('FROM '));
-assert.equal(stages.length, 3);
+assert.equal(stages.length, 5);
 assert.match(stages[0], /--platform=\$BUILDPLATFORM/);
-assert.match(stages[1], /--platform=\$BUILDPLATFORM/);
-assert.ok(stages[1].includes(`golang:${goVersion}-alpine `), 'Docker and go.mod must use the same Go patch');
-assert.doesNotMatch(stages[2], /--platform=/, 'runtime must retain the requested target platform');
+assert.match(stages[3], /--platform=\$BUILDPLATFORM/);
+assert.ok(stages[3].includes(`golang:${goVersion}-alpine `), 'Docker and go.mod must use the same Go patch');
+assert.doesNotMatch(stages[4], /--platform=/, 'runtime must retain the requested target platform');
 assert.match(dockerfile, /CGO_ENABLED=0/);
 assert.match(dockerfile, /GOOS=\$\{TARGETOS:-linux\} GOARCH=\$\{TARGETARCH:-amd64\}/);
 const build = images.jobs.build_single_arch.steps.find((step) => step.name === 'Build & push single-arch (GHCR + optional Docker Hub)');
@@ -61,7 +65,7 @@ for (const step of images.jobs.create_manifests.steps.filter((step) => step.name
 }
 assert.ok(main.on.push.branches.includes('main'));
 assert.match(main.jobs.docker.steps.find((step) => step.name === 'Build and push').run, /:sha-/);
-for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes', 'electron-build']) {
+for (const name of ['release', 'release-optional', 'release-policy', 'docker-publish', 'docker-image-arm64', 'verify-notes', 'electron-build', 'release-frontend']) {
   for (const step of Object.values(workflow(name).jobs).flatMap((job) => job.steps ?? [])) {
     if (!step.uses) continue;
     assert.match(step.uses, /^(actions\/[^@]+|oven-sh\/setup-bun)@[a-f0-9]{40}$/, `${name}: company Actions must use approved sources and full commit SHAs`);
@@ -77,4 +81,25 @@ assert.equal(electron.jobs.build.steps.find(s => s.uses?.startsWith('actions/upl
 const desktopUpload = electron.jobs.release.steps.find(s => s.name === 'Add desktop assets to existing Linux release').run;
 assert.match(desktopUpload, /'release', 'upload'/);
 assert.doesNotMatch(desktopUpload, /--clobber|'release', '(create|edit)'/);
+assert.deepEqual(images.on.push.tags, ['*-alpha*', '!cn-tunnel-*', '!agent-workflow-*', '!project-decision-kit-*']);
+assert.equal(linux.jobs.images.if, "github.event_name == 'push'", 'manual Linux backfill must not rebuild existing images');
+assert.deepEqual(Object.keys(electron.on), ['workflow_call', 'workflow_dispatch']);
+assert.match(images.jobs.create_manifests.steps.find(s => s.name === 'Publish same-commit SHA image').run, /:sha-\$\{BUILD_COMMIT:0:7\}/);
+assert.equal(main.jobs.docker.if, "needs.prepare.outputs.release_build != 'true'");
+assert.equal(main.jobs.prepare.steps[0].with['fetch-depth'], 2);
+const sourceDeps = dockerfile.indexOf('RUN go mod download');
+for (const arg of ['ARG BUILD_COMMIT', 'ARG BUILD_BRANCH', 'ARG BUILD_REPOSITORY']) {
+  assert.ok(dockerfile.indexOf(arg) > sourceDeps, `${arg} must not invalidate Go dependency cache`);
+}
+assert.ok(dockerfile.indexOf('ARG APP_VERSION') > dockerfile.indexOf('RUN bun install'), 'version must not invalidate Bun dependency cache');
+assert.match(dockerfile, /FROM \$\{FRONTEND_SOURCE\} AS frontend/);
+assert.match(dockerfile, /COPY --from=frontend \/build\/dist/);
+for (const name of ['release', 'docker-image-arm64', 'electron-build']) {
+  const restore = Object.values(workflow(name).jobs).flatMap(j => j.steps ?? []).find(s => s.name === 'Restore verified frontend');
+  assert.match(restore.run, /frontend-artifact.py restore/);
+}
+const frontendUpload = workflow('release-frontend').jobs.frontend.steps.find(s => s.name === 'Upload shared frontend');
+assert.equal(frontendUpload.with['include-hidden-files'], true);
+assert.deepEqual(frontendUpload.with.path.trim().split('\n'), ['.release-artifact/frontend.tar.gz', '.release-artifact/frontend.json']);
+assert.equal(electron.jobs.release.steps[0].with.name, 'windows-build');
 console.log('Release policy passed: Linux defaults, manual optional artifacts, immutable sources, cross-compiled image targets.');

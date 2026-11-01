@@ -39,9 +39,16 @@ jobs:
           bun scripts/release/check-policy.mjs
           python3 -B -m unittest discover -s scripts/release -p 'test_*.py' -v
           bash -n scripts/release/verify-image.sh
+      - name: Check Docker build graph
+        run: |
+          mkdir -p web/dist
+          touch web/dist/index.html
+          docker buildx build --call=check .
+          docker buildx build --call=check --build-arg FRONTEND_SOURCE=frontend-prebuilt .
       - name: Check workflow syntax
         run: |
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 \
             .github/workflows/release.yml .github/workflows/release-optional.yml \
             .github/workflows/release-policy.yml .github/workflows/docker-image-arm64.yml \
-            .github/workflows/electron-build.yml
+            .github/workflows/electron-build.yml .github/workflows/release-frontend.yml \
+            .github/workflows/docker-publish.yml

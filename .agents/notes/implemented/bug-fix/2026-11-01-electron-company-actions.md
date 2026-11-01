@@ -8,6 +8,9 @@ Electron在v1.12.4至v1.12.7连续startup_failure，尚未分配Windows构建机
 
 ## Decision
 
+[发布构建复用](../../implemented/process/2026-11-02-release-build-reuse.md)扩展构建入口：正式发布共享一份校验后的前端，保留各平台产物、手动补包与SHA更新地址。
+
+
 复用[公司Actions策略](../../implemented/process/2026-10-27-company-actions-policy.md)，将Electron所有Actions固定获准源的完整SHA，以gh补传桌面附件并纳入来源与语法校验；不修改组织规则。保留Windows NSIS与portable两种产物及现有应用标识，不启用macOS/Linux桌面构建。
 
 手动补包必须指定正式tag，源码VERSION、HEAD和tag提交一致；不移动历史标签。构建验证内嵌后端和ASAR版本及两个非空exe，附SHA256；构建产物先采用GitHub实际保留的点号文件名，防止上传后空格自动归一化使校验/重试失配。并发发布时等待Linux正式Release及双架构服务端附件完整，只上传缺失桌面文件，不创建/修改Release或覆盖已有资产。部分上传必须与原文件哈希一致，防止重建的不同exe混用旧校验文件；上传失败保留Actions artifact供重试。

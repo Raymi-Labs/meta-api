@@ -10,6 +10,9 @@ Status: implemented
 
 ## Decision
 
+[发布构建复用](../../implemented/process/2026-11-02-release-build-reuse.md)扩展构建入口：正式发布共享一份校验后的前端，保留各平台产物、手动补包与SHA更新地址。
+
+
 [公司 Actions 适配](2026-10-27-company-actions-policy.md) 取代公司常规发布中的第三方 Actions 及 ARM64 执行器选择：使用 CLI、原生 ARM64 和 GHCR 缓存；本篇记录的 Linux 附件矩阵、交叉编译能力和历史验证仍成立。
 
 - 公司仓库与发布目标由 [Meta API 仓库迁移](2026-10-27-company-repository.md) 管理；这里的构建矩阵和附件约定继续适用。

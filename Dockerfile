@@ -1,3 +1,5 @@
+ARG FRONTEND_SOURCE=builder
+
 # Compile on the builder CPU; only the runtime stage uses the target platform.
 FROM --platform=$BUILDPLATFORM oven/bun:1.4.0@sha256:5ff609364c049b54eb0ff560ec96319729a972078ef2c755d758f0c6ef89c2d6 AS builder
 
@@ -11,25 +13,27 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /build
-ARG APP_VERSION=""
 COPY web/package.json .
 COPY web/bun.lock .
 RUN bun install --frozen-lockfile
 COPY ./web .
 COPY ./docs /docs
 COPY ./VERSION .
+ARG APP_VERSION=""
 RUN BUILD_VERSION="${APP_VERSION:-$(cat VERSION 2>/dev/null)}"; \
     if [ -z "$BUILD_VERSION" ]; then BUILD_VERSION="dev"; fi; \
     DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$BUILD_VERSION" bun run build
+
+FROM scratch AS frontend-prebuilt
+COPY ./web/dist /build/dist
+
+# BuildKit skips the source frontend stage when CI supplies the verified artifact.
+FROM ${FRONTEND_SOURCE} AS frontend
 
 FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine AS builder2
 ENV GO111MODULE=on CGO_ENABLED=0
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn
-ARG APP_VERSION=""
-ARG BUILD_COMMIT=""
-ARG BUILD_REPOSITORY="QuantumNous/new-api"
-ARG BUILD_BRANCH="main"
 ENV GOPROXY=${GOPROXY} GOSUMDB=${GOSUMDB}
 
 ARG TARGETOS
@@ -49,7 +53,12 @@ RUN test "$(go list -m -f '{{if .Replace}}{{.Replace.Version}}{{else}}{{.Version
     && test "$(go list -m -f '{{if .Replace}}{{.Replace.Version}}{{else}}{{.Version}}{{end}}' gorm.io/driver/postgres)" = "v1.5.9"
 
 COPY . .
-COPY --from=builder /build/dist ./web/dist
+COPY --from=frontend /build/dist ./web/dist
+# Release metadata must not invalidate downloaded Go modules.
+ARG APP_VERSION=""
+ARG BUILD_COMMIT=""
+ARG BUILD_REPOSITORY="QuantumNous/new-api"
+ARG BUILD_BRANCH="main"
 RUN BUILD_VERSION="${APP_VERSION:-$(cat VERSION 2>/dev/null)}"; \
     if [ -z "$BUILD_VERSION" ]; then BUILD_VERSION="dev"; fi; \
     go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=${BUILD_VERSION}' -X 'github.com/QuantumNous/new-api/common.BuildCommit=${BUILD_COMMIT}' -X 'github.com/QuantumNous/new-api/common.BuildRepository=${BUILD_REPOSITORY}' -X 'github.com/QuantumNous/new-api/common.BuildBranch=${BUILD_BRANCH}'" -o new-api

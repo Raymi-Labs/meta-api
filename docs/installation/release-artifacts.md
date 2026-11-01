@@ -24,7 +24,13 @@
 
 ## 常规发布
 
-应用标签自动触发：
+正式应用标签由 `Release (Linux)` 编排：先执行一次 `release-frontend.yml`，生成与源提交、版本、SHA256 绑定的前端和文档产物；Linux 附件、双架构镜像与 Windows 桌面作业随后复用。消费前校验来源与压缩包，失败不使用旧产物。镜像与 Electron 的独立工作流保留手动补包入口；未提供共享产物时仍从指定标签源码构建。Linux 手动补包只处理 Linux/文档/管理附件，不重建已有镜像或桌面包。
+
+主分支检测到 VERSION 更新时，最多短暂等待对应版本 tag：仅当 tag 精确指向该提交才省略重复构建，由正式发布生成同提交的 `sha-<commit>` 镜像。普通 main、手动 main、标签缺失/不匹配或查询失败均继续原 SHA 镜像构建。正式 SHA 地址与版本镜像来自同一组已验证架构产物。alpha 标签保留原独立镜像触发。
+
+Docker 默认支持完整源码构建，CI 提供已核验产物时使用 `FRONTEND_SOURCE=frontend-prebuilt` 跳过前端阶段。提交/版本参数位于依赖下载之后，避免反复失效；托管 CI 使用 Go 官方代理，保留 Docker 自定义 GOPROXY/GOSUMDB。缓存需预热，性能以实际 Actions 记录为准。
+
+发布包含：
 
 - `Release (Linux)`：Linux AMD64、ARM64 独立服务端程序，上传到该标签的 GitHub Release。
 - `Publish Docker image (Multi-arch, GHCR + optional Docker Hub)`：Linux AMD64、ARM64 镜像及多架构清单。

@@ -13,7 +13,22 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      release_build: ${{ steps.gate.outputs.release_build }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Reuse exact tagged release
+        id: gate
+        run: python3 scripts/release/main-release-gate.py
   docker:
+    needs: prepare
+    if: needs.prepare.outputs.release_build != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -57,6 +72,8 @@ jobs:
             --provenance=false --sbom=false \
             --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --build-arg "GOPROXY=https://proxy.golang.org,direct" \
+            --build-arg "GOSUMDB=sum.golang.org" \
             --build-arg "APP_VERSION=${APP_VERSION}" \
             --build-arg "BUILD_COMMIT=${GITHUB_SHA}" \
             --build-arg "BUILD_REPOSITORY=${GITHUB_REPOSITORY}" \

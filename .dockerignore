@@ -24,3 +24,8 @@ docs
 .eslintcache
 .gocache
 /web/node_modules
+
+.release-tools
+.release-artifact
+.frontend-restore-*
+/web/docs-dist
