@@ -41,7 +41,6 @@ type capabilityProvider struct {
 
 type capabilityModel struct {
 	Description      string          `json:"description"`
-	Family           string          `json:"family"`
 	Type             string          `json:"type"`
 	ID               string          `json:"id"`
 	Reasoning        json.RawMessage `json:"reasoning"`
@@ -121,8 +120,10 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 				releaseDate = ""
 			}
 			entry := model.ModelCapabilityMetadata{
-				Description:     strings.TrimSpace(upstream.Description),
-				Tags:            metadataTags(upstream.Family, upstream.Type),
+				Description: strings.TrimSpace(upstream.Description),
+				// Family identifies a model series, not a capability or catalog tag.
+				// Retain explicit type metadata for task classification only.
+				Tags:            metadataTags(upstream.Type),
 				VendorName:      communityMetadataVendor(providerID, id),
 				ReleaseDate:     releaseDate,
 				ContextLength:   contextLength,

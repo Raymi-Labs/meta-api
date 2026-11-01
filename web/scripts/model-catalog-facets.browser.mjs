@@ -51,7 +51,7 @@ const common = {
   supported_endpoint_types: ['openai'],
   endpoints: '{"openai":{"path":"/v1/chat/completions","method":"POST"}}',
   capabilities: { reasoning: true, function_calling: true },
-  tags: '1m,vision,tools,CustomTag',
+  tags: '1m,vision,tools,CustomTag,claude-haiku,gpt-mini,gemini-flash,o-pro',
 };
 const items = Array.from({ length: 25 }, (_, i) => ({
   ...common,
@@ -89,7 +89,7 @@ items.push(
     output_modalities: ['audio'],
     supported_endpoint_types: ['audio-speech'],
     capabilities: {},
-    tags: 'audio,8.2k',
+    tags: 'audio,8.2k,speech',
   },
 );
 const vendors = [
@@ -243,6 +243,25 @@ try {
   await page.goto(`${base}/${name}.html`, { waitUntil: 'networkidle0' });
   await count(27);
   await page.waitForSelector('.pricing-model-card[aria-label]');
+  const assertCleanTags = async (selector) => {
+    const text = await page.$eval(selector, (e) => e.textContent);
+    for (const tag of [
+      'claude-haiku',
+      'gpt-mini',
+      'gemini-flash',
+      'o-pro',
+      'speech',
+    ])
+      assert.ok(!text.includes(tag), `${selector} must not expose ${tag}`);
+    assert.ok(text.includes('工具调用'));
+    assert.ok(text.includes('CustomTag'));
+  };
+  await assertCleanTags('[data-facet="tag"]');
+  await assertCleanTags('.pricing-model-card');
+  await facet('tag', 'CustomTag');
+  await count(25);
+  await clickText('清空');
+  await count(27);
   assert.equal(
     await page.$$eval('.pricing-model-card', (els) => els.length),
     20,
@@ -324,6 +343,8 @@ try {
       (b) => b.textContent.trim() === '提交' && !b.disabled,
     ),
   );
+  await assertCleanTags('[aria-label="广场展示预览"]');
+  const originalTags = items[0].tags;
   await page.click('[aria-labelledby="function-label-text_chat"]');
   await clickText('排除', '[role="option"]');
   await page.waitForFunction(
@@ -354,6 +375,11 @@ try {
     text_chat: false,
     image_editing: true,
   });
+  assert.equal(
+    items[0].tags,
+    originalTags,
+    'unrelated admin saves preserve raw tags',
+  );
   await count(27);
   await facet('function', '图像编辑');
   await count(1);
@@ -423,6 +449,7 @@ try {
   await page.setViewport({ width: 390, height: 844 });
   await clickText('更多筛选');
   await page.waitForSelector('.pricing-filter-drawer .catalog-facets-drawer');
+  await assertCleanTags('.catalog-facets-drawer [data-facet="tag"]');
   await facet('function', '文生图', '.catalog-facets-drawer');
   await count(1);
   await page.waitForFunction(

@@ -59,6 +59,20 @@ func TestParseModelCapabilitiesPriorityAndExactIDs(t *testing.T) {
 	require.Equal(t, model.ModelModalities{"text", "image"}, entries["exact-model"].InputModalities)
 }
 
+func TestParseModelCapabilitiesDoesNotPromoteFamiliesToTags(t *testing.T) {
+	entries, err := parseModelCapabilities([]byte(`{
+		"native":{"id":"native","models":{
+			"haiku":{"id":"haiku","family":"claude-haiku","type":"text","limit":{"context":128000}},
+			"future":{"id":"future","family":"future-family","limit":{"context":128000}},
+			"speech":{"id":"speech","family":"speech","type":"text-to-speech","limit":{"context":8192}}
+		}}
+	}`))
+	require.NoError(t, err)
+	require.Equal(t, "text", entries["haiku"].Tags)
+	require.Empty(t, entries["future"].Tags, "new source families must not become catalog tags")
+	require.Equal(t, "text-to-speech", entries["speech"].Tags, "keep explicit task metadata for function classification")
+}
+
 func TestParseModelCapabilitiesNormalizesPDFAndRejectsUnknownModalities(t *testing.T) {
 	entries, err := parseModelCapabilities([]byte(`{
 		"openai":{"id":"openai","models":{
