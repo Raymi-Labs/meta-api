@@ -323,7 +323,18 @@ func validatePulseUsageLogOption(key string, value string) error {
 	return nil
 }
 
+func isGroupGroupRatioOption(key string) bool {
+	return key == "GroupGroupRatio" || key == "group_ratio_setting.group_group_ratio"
+}
+
 func UpdateOption(key string, value string) error {
+	if isGroupGroupRatioOption(key) {
+		var err error
+		value, err = ratio_setting.NormalizeGroupGroupRatioJSON(value)
+		if err != nil {
+			return err
+		}
+	}
 	if err := setting.ValidateStripeDisplayOption(key, value); err != nil {
 		return err
 	}
@@ -368,19 +379,22 @@ func UpdateOption(key string, value string) error {
 			}
 		}
 	}
-	// Save to database first
-	option := Option{
-		Key: key,
+	// Special ratio creation and replacement must commit before publication;
+	// a failed Save must not leave the temporary empty FirstOrCreate row behind.
+	saveOption := func(tx *gorm.DB) error {
+		option := Option{Key: key}
+		// https://gorm.io/docs/update.html#Save-All-Fields
+		if err := tx.FirstOrCreate(&option, Option{Key: key}).Error; err != nil {
+			return err
+		}
+		option.Value = value
+		return tx.Save(&option).Error
 	}
-	// https://gorm.io/docs/update.html#Save-All-Fields
-	if err := DB.FirstOrCreate(&option, Option{Key: key}).Error; err != nil {
-		return err
-	}
-	option.Value = value
-	// Save is a combination function.
-	// If save value does not contain primary key, it will execute Create,
-	// otherwise it will execute Update (with all fields).
-	if err := DB.Save(&option).Error; err != nil {
+	if isGroupGroupRatioOption(key) {
+		if err := DB.Transaction(saveOption); err != nil {
+			return err
+		}
+	} else if err := saveOption(DB); err != nil {
 		return err
 	}
 	// Update OptionMap
@@ -453,6 +467,12 @@ func updateOptionMap(key string, value string) (err error) {
 }
 
 func updateOptionMapUnlocked(key string, value string) (err error) {
+	if isGroupGroupRatioOption(key) {
+		value, err = ratio_setting.NormalizeGroupGroupRatioJSON(value)
+		if err != nil {
+			return err
+		}
+	}
 	if err = setting.ValidateStripeDisplayOption(key, value); err != nil {
 		return err
 	}
@@ -477,6 +497,15 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 	}
 	common.OptionMapRWMutex.Lock()
 	defer common.OptionMapRWMutex.Unlock()
+	// Both legacy and namespaced keys must bypass the generic pointer loader:
+	// it clears maps before decoding and can publish a partial invalid value.
+	if isGroupGroupRatioOption(key) {
+		if err = ratio_setting.UpdateGroupGroupRatioByJSONString(value); err != nil {
+			return err
+		}
+		common.OptionMap[key] = value
+		return nil
+	}
 	common.OptionMap[key] = value
 
 	// 检查是否是模型配置 - 使用更规范的方式处理
@@ -823,8 +852,6 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 		err = ratio_setting.UpdateModelRatioByJSONString(value)
 	case "GroupRatio":
 		err = ratio_setting.UpdateGroupRatioByJSONString(value)
-	case "GroupGroupRatio":
-		err = ratio_setting.UpdateGroupGroupRatioByJSONString(value)
 	case "TimeRatioRules":
 		err = ratio_setting.UpdateTimeRatioRulesByJSONString(value)
 	case "UserUsableGroups":

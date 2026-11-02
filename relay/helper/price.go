@@ -58,8 +58,10 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.
 		groupRatioInfo.GroupSpecialRatio = userGroupRatio
 		groupRatioInfo.GroupRatio = userGroupRatio
 		groupRatioInfo.HasSpecialRatio = true
-	} else {
-		// normal group ratio
+	} else if !relayInfo.IsChannelTest || ratio_setting.ContainsGroupRatio(relayInfo.UsingGroup) {
+		// Channel tests can inherit an administrator group retired from the
+		// public catalog. Keep the test default of 1 without restoring that group.
+		// Real requests still use the existing missing-ratio diagnostic.
 		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
 	}
 

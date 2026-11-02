@@ -3,6 +3,8 @@ package ratio_setting
 import (
 	"encoding/json"
 	"errors"
+	"math"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting/config"
@@ -106,8 +108,51 @@ func GroupGroupRatio2JSONString() string {
 	return groupGroupRatioMap.MarshalJSONString()
 }
 
+// Empty strings were emitted by older group editors when the last rule was
+// removed. Only this optional rule map treats blank input as an empty object.
+func ParseGroupGroupRatio(jsonStr string) (map[string]map[string]float64, error) {
+	if strings.TrimSpace(jsonStr) == "" {
+		jsonStr = "{}"
+	}
+	var raw map[string]map[string]*float64
+	if err := common.UnmarshalJsonStr(jsonStr, &raw); err != nil {
+		return nil, err
+	}
+	if raw == nil {
+		return nil, errors.New("special group ratios must be an object")
+	}
+	parsed := make(map[string]map[string]float64, len(raw))
+	for userGroup, rules := range raw {
+		if rules == nil {
+			return nil, errors.New("special group ratio rules must be an object")
+		}
+		parsed[userGroup] = make(map[string]float64, len(rules))
+		for usingGroup, ratio := range rules {
+			if ratio == nil || math.IsNaN(*ratio) || math.IsInf(*ratio, 0) || *ratio < 0 {
+				return nil, errors.New("special group ratio must be a finite non-negative number")
+			}
+			parsed[userGroup][usingGroup] = *ratio
+		}
+	}
+	return parsed, nil
+}
+
+func NormalizeGroupGroupRatioJSON(jsonStr string) (string, error) {
+	parsed, err := ParseGroupGroupRatio(jsonStr)
+	if err != nil {
+		return "", err
+	}
+	data, err := common.Marshal(parsed)
+	return string(data), err
+}
+
 func UpdateGroupGroupRatioByJSONString(jsonStr string) error {
-	return types.LoadFromJsonString(groupGroupRatioMap, jsonStr)
+	parsed, err := ParseGroupGroupRatio(jsonStr)
+	if err != nil {
+		return err
+	}
+	groupGroupRatioMap.ReplaceAll(parsed)
+	return nil
 }
 
 func CheckGroupRatio(jsonStr string) error {
