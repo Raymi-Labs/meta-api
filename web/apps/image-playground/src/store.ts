@@ -26,7 +26,7 @@ import type {
   SuitePlanItem,
 } from './types'
 import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_PARAMS } from './types'
-import { DEFAULT_SETTINGS, getActiveApiProfile, getCustomProviderDefinition, mergeImportedSettings, normalizeSettings, validateApiProfile } from './lib/apiProfiles'
+import { DEFAULT_SETTINGS, getActiveApiProfile, getAgentApiProfile, getAgentImageProfile, getCustomProviderDefinition, mergeImportedSettings, normalizeSettings, validateApiProfile } from './lib/apiProfiles'
 import { dismissAllTooltips } from './lib/tooltipDismiss'
 import { remapImageMentionsForOrder, replaceImageMentionsForApi } from './lib/promptImageMentions'
 import {
@@ -1346,7 +1346,7 @@ export const useStore = create<AppState>()(
         }
 
         const settings = normalizeSettings(state.settings)
-        const activeProfile = getActiveApiProfile(settings)
+        const activeProfile = getAgentApiProfile(settings)
 
         if (activeProfile.provider === 'openai' && activeProfile.apiMode === 'responses') {
           const galleryInputDraft = saveGalleryInputDraft(state)
@@ -3487,7 +3487,7 @@ function createAgentContinuationInputItem(newImageRefs: string[], toolCallsUsed:
   ]
   if (newImageRefs.length > 0) {
     lines.push(
-      `The following image ref ids are now available for you to reference in subsequent image_generation prompts: ${newImageRefs.join(', ')}`,
+      `The following image ref ids are now available for you to reference in subsequent image tool prompts: ${newImageRefs.join(', ')}`,
     )
   }
   lines.push(
@@ -3573,7 +3573,7 @@ export async function submitAgentMessage() {
   const state = useStore.getState()
   const { settings, prompt, inputImages, maskDraft, params, showToast } = state
   const normalizedSettings = normalizeSettings(settings)
-  const activeProfile = getActiveApiProfile(normalizedSettings)
+  const activeProfile = getAgentApiProfile(normalizedSettings)
 
   if (activeProfile.provider !== 'openai' || activeProfile.apiMode !== 'responses') {
     state.setAppMode('agent')
@@ -3723,7 +3723,7 @@ export async function regenerateAgentAssistantMessage(conversationId: string, ro
   const state = useStore.getState()
   const { settings, params, showToast } = state
   const normalizedSettings = normalizeSettings(settings)
-  const activeProfile = getActiveApiProfile(normalizedSettings)
+  const activeProfile = getAgentApiProfile(normalizedSettings)
 
   if (activeProfile.provider !== 'openai' || activeProfile.apiMode !== 'responses') {
     state.setAppMode('agent')
@@ -3835,6 +3835,7 @@ async function executeAgentRound(
   requestSettings: AppSettings,
   activeProfile: ApiProfile,
 ) {
+  const imageProfile = getAgentImageProfile(activeProfile)
   const startedAt = Date.now()
   const controller = new AbortController()
   const controllerKey = getAgentRoundControllerKey(conversationId, roundId)
@@ -3901,8 +3902,8 @@ async function executeAgentRound(
         apiProvider: activeProfile.provider,
         apiProfileId: activeProfile.id,
         apiProfileName: activeProfile.name,
-        apiMode: activeProfile.apiMode,
-        apiModel: activeProfile.model,
+        apiMode: imageProfile.apiMode,
+        apiModel: imageProfile.model,
         inputImageIds,
         maskTargetImageId: options.maskTargetImageId !== undefined ? options.maskTargetImageId : round.maskTargetImageId ?? null,
         maskImageId: options.maskImageId !== undefined ? options.maskImageId : round.maskImageId ?? null,
@@ -3988,6 +3989,10 @@ async function executeAgentRound(
     let toolCallsUsed = 0
     let reachedToolLimit = false
     let pendingToolTextSeparator = false
+    let responseRounds = 0
+    const executedCalls = new Map<string, string>()
+    const attemptedBatches = new Set<string>()
+    let managedImageFailed = false
 
     // Helper: resolve reference image ids to data URLs for batch image calls
     const resolveReferenceImages = async (referenceIds: string[]): Promise<{ dataUrls: string[]; imageIds: string[] }> => {
@@ -4026,6 +4031,9 @@ async function executeAgentRound(
     // Helper: execute a generate_image_batch function call concurrently
     const executeBatchFunctionCall = async (functionCallItem: ResponsesOutputItem): Promise<string> => {
       const callId = functionCallItem.call_id ?? ''
+      if (!callId) return JSON.stringify({ error: 'Missing tool call id' })
+      if (executedCalls.has(callId)) return executedCalls.get(callId)!
+      executedCalls.set(callId, JSON.stringify({ error: 'Tool call already attempted' }))
       const args = functionCallItem.arguments ?? ''
       const batchItems = parseBatchImageCallArguments(args)
 
@@ -4033,26 +4041,54 @@ async function executeAgentRound(
         return JSON.stringify({ error: 'Invalid or empty batch arguments' })
       }
 
+      const signature = JSON.stringify(batchItems.map((item) => item.prompt))
+      if (activeProfile.agentImageModel && (managedImageFailed || attemptedBatches.has(signature))) {
+        return JSON.stringify({ error: 'Image request already attempted or failed; wait for the user to explicitly retry.' })
+      }
+      attemptedBatches.add(signature)
+      const remaining = Math.max(0, maxToolCalls - toolCallsUsed)
+      if (batchItems.length > remaining) {
+        reachedToolLimit = true
+        return JSON.stringify({ error: 'Image batch exceeds remaining tool budget', remaining })
+      }
+      toolCallsUsed += batchItems.length // Attempts, including failures, consume the budget.
+      if (controller.signal.aborted) throw createAgentAbortError()
+
       // Create task cards in model-provided order before starting network calls.
-      const batchExecutionItems = []
+      const batchExecutionItems: Array<{ item: { id: string; prompt: string }; batchToolCallId: string; references: { dataUrls: string[]; imageIds: string[] }; referenceIds: string[] }> = []
       for (const item of batchItems) {
         const referenceIds = uniqueIds(extractAgentReferenceIds(item.prompt))
+        if (activeProfile.agentImageModel && referenceIds.length === 0 && round.inputImageIds.length > 0) {
+          // Attach user-provided references even when the model omitted the ref tags.
+          referenceIds.push(...round.inputImageIds.map((_, index) => getAgentCurrentReferenceId(round, index)))
+        }
+        if (activeProfile.agentImageModel && round.maskImageId && round.inputImageIds.length > 0) {
+          const maskReference = getAgentCurrentReferenceId(round, 0)
+          const index = referenceIds.indexOf(maskReference)
+          if (index >= 0) referenceIds.splice(index, 1)
+          referenceIds.unshift(maskReference)
+        }
         const references = await resolveReferenceImages(referenceIds)
+        if (referenceIds.length > 0 && references.dataUrls.length !== referenceIds.length) {
+          throw new Error('输入图片已不存在')
+        }
         const batchToolCallId = genId()
         await ensureStreamingAgentTask(batchToolCallId, item.prompt, references.imageIds, {
           createdAt: Date.now(),
-          maskTargetImageId: null,
-          maskImageId: null,
+          maskTargetImageId: activeProfile.agentImageModel ? round.maskTargetImageId : null,
+          maskImageId: activeProfile.agentImageModel ? round.maskImageId : null,
           ...(callId ? { agentBatchCallId: callId } : {}),
         })
         batchExecutionItems.push({ item, batchToolCallId, references, referenceIds })
       }
 
-      // Fire all batch items concurrently after all cards are visible.
-      const batchPromises = batchExecutionItems.map(async ({ item, batchToolCallId, references, referenceIds }) => {
+      // Keep cards in model order, but respect the managed token concurrency limit.
+      const runBatchItem = async ({ item, batchToolCallId, references, referenceIds }: typeof batchExecutionItems[number]) => {
+        if (controller.signal.aborted) throw createAgentAbortError()
 
         const batchResult = await callBatchImageSingle({
           profile: activeProfile,
+          maskDataUrl: activeProfile.agentImageModel ? maskDataUrl : undefined,
           params,
           batchItemId: item.id,
           prompt: item.prompt,
@@ -4084,15 +4120,35 @@ async function executeAgentRound(
             : undefined,
         })
 
+        if (controller.signal.aborted) throw createAgentAbortError()
+
         // If not streaming and we have an image, complete the pre-created task.
         if (batchResult.image && !shouldStreamAssistantMessage) {
           await completeAgentImageTask({ ...batchResult.image, toolCallId: batchToolCallId }, batchResult.rawResponsePayload)
         }
 
+        if (!batchResult.image) {
+          managedImageFailed = true
+          const failedTaskId = taskIdByToolCallId.get(batchToolCallId)
+          if (failedTaskId) updateTaskInStore(failedTaskId, { status: 'error', error: batchResult.error || '接口未返回图片数据', finishedAt: Date.now() })
+        }
         return batchResult
-      })
+      }
 
-      const batchResults = await Promise.allSettled(batchPromises)
+      const batchResults: PromiseSettledResult<BatchImageCallResult>[] = []
+      for (let index = 0; index < batchExecutionItems.length; index += 2) {
+        if (controller.signal.aborted) throw createAgentAbortError()
+        const chunk = await Promise.allSettled(batchExecutionItems.slice(index, index + 2).map(runBatchItem))
+        batchResults.push(...chunk)
+        for (let offset = 0; offset < chunk.length; offset++) {
+          const result = chunk[offset]
+          if (result.status === 'rejected') {
+            managedImageFailed = true
+            const taskId = taskIdByToolCallId.get(batchExecutionItems[index + offset].batchToolCallId)
+            if (taskId) updateTaskInStore(taskId, { status: 'error', error: result.reason instanceof Error ? result.reason.message : String(result.reason), finishedAt: Date.now() })
+          }
+        }
+      }
 
       // Build function_call_output
       const outputImages: Array<{ id: string; status: string; error?: string }> = []
@@ -4115,13 +4171,13 @@ async function executeAgentRound(
         }
       }
 
-      const successCount = outputImages.filter((img) => img.status === 'done').length
-      toolCallsUsed += successCount
-
-      return JSON.stringify({ images: outputImages })
+      const output = JSON.stringify({ images: outputImages })
+      executedCalls.set(callId, output)
+      return output
     }
 
     while (true) {
+      if (responseRounds++ >= maxToolCalls + 1) { reachedToolLimit = true; break }
       if (controller.signal.aborted) throw createAgentAbortError()
       const textBeforeResponse = accumulatedText
       let currentResponseOutputItems: ResponsesOutputItem[] = []
@@ -4227,8 +4283,8 @@ async function executeAgentRound(
           apiProvider: activeProfile.provider,
           apiProfileId: activeProfile.id,
           apiProfileName: activeProfile.name,
-          apiMode: activeProfile.apiMode,
-          apiModel: activeProfile.model,
+          apiMode: imageProfile.apiMode,
+          apiModel: imageProfile.model,
           inputImageIds: uniqueIds([...(round?.inputImageIds ?? []), ...promptRefs.imageIds]),
           maskTargetImageId: round?.maskTargetImageId ?? null,
           maskImageId: round?.maskImageId ?? null,
@@ -4391,6 +4447,11 @@ async function executeAgentRound(
     }
 
     let message = err instanceof Error ? err.message : String(err)
+    for (const task of useStore.getState().tasks) {
+      if (task.agentConversationId === conversationId && task.agentRoundId === roundId && task.status === 'running') {
+        updateTaskInStore(task.id, { status: 'error', error: message, finishedAt: Date.now() })
+      }
+    }
     const usesApiProxy = activeProfile.apiProxy ?? requestSettings.apiProxy
     const networkErrorHint = getApiRequestNetworkErrorHint(err, startedAt, usesApiProxy, activeProfile)
     if (networkErrorHint && !message.includes(IMAGE_FETCH_CORS_HINT)) {

@@ -57,6 +57,9 @@ export interface CustomProviderDefinition {
 }
 
 export interface ApiProfile {
+  /** Managed workspace: derive a text profile for Agent, keeping Images as the saved default. */
+  agentTextModel?: string
+  agentImageModel?: string
   id: string
   name: string
   provider: ApiProvider

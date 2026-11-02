@@ -546,7 +546,11 @@ async function callImagesApiSingle(opts: CallApiOptions, profile: ApiProfile, cu
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), profile.timeout * 1000)
 
+  const abortFromCaller = () => controller.abort()
+  if (opts.signal?.aborted) controller.abort()
+  opts.signal?.addEventListener('abort', abortFromCaller, { once: true })
   try {
+    if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
     let response: Response
 
     if (isEdit) {
@@ -603,6 +607,7 @@ async function callImagesApiSingle(opts: CallApiOptions, profile: ApiProfile, cu
         formData.append('mask', maskBlob, 'mask.png')
       }
 
+      if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
       response = await fetch(buildApiUrl(profile.baseUrl, paths.editPath, proxyConfig, useApiProxy), {
         method: 'POST',
         headers: requestHeaders,
@@ -637,6 +642,7 @@ async function callImagesApiSingle(opts: CallApiOptions, profile: ApiProfile, cu
         body.partial_images = getStreamPartialImages(profile)
       }
 
+      if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
       response = await fetch(buildApiUrl(profile.baseUrl, paths.generationPath, proxyConfig, useApiProxy), {
         method: 'POST',
         headers: {
@@ -654,12 +660,13 @@ async function callImagesApiSingle(opts: CallApiOptions, profile: ApiProfile, cu
     }
 
     if (profile.streamImages && isEventStreamResponse(response)) {
-      return parseImagesApiStreamResponse(response, mime, opts.onPartialImage)
+      return await parseImagesApiStreamResponse(response, mime, opts.onPartialImage)
     }
 
-    return parseImagesApiResponse(await response.json() as ImageApiResponse, mime, controller.signal)
+    return await parseImagesApiResponse(await response.json() as ImageApiResponse, mime, controller.signal)
   } finally {
     clearTimeout(timeoutId)
+    opts.signal?.removeEventListener('abort', abortFromCaller)
   }
 }
 

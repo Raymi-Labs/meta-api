@@ -44,6 +44,7 @@ type imagePlaygroundLaunchSettings struct {
 }
 
 type imagePlaygroundLaunchProfile struct {
+	AgentTextModel        string `json:"agentTextModel,omitempty"`
 	ID                    string `json:"id"`
 	Name                  string `json:"name"`
 	Provider              string `json:"provider"`
@@ -471,6 +472,9 @@ func buildImagePlaygroundLaunchURL(origin string, key string, supportsEcommerce 
 		DefaultImageModel: imagePlaygroundDefaultModel,
 		DefaultPlanModel:  imagePlaygroundAgentModel,
 		SupportsEcommerce: supportsEcommerce,
+	}
+	if supportsEcommerce {
+		settings.Profiles[0].AgentTextModel = imagePlaygroundAgentModel
 	}
 	if !supportsEcommerce {
 		settings.EcommerceDisabledReason = fmt.Sprintf(
