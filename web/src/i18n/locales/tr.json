@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Kapat: yalnızca seçilen grubu kullan",
     "请选择是否开启自动切换分组": "Otomatik grup değişiminin açılıp açılmayacağını seçin",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Açıldığında, model seçilen grupta kullanılamıyorsa erişim izniniz olan diğer gruplar yöneticinin belirlediği sırayla denenir. Ücretlendirme kullanılan gruba göre yapılır ve mevcut gruptan daha pahalı olabilir.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Özel yönlendirme yalnızca yapılandırdığınız gruplar arasında geçiş yapar. Ücretlendirme kullanılan gruba göre yapılır ve tercih edilen gruptan daha pahalı olabilir."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Özel yönlendirme yalnızca yapılandırdığınız gruplar arasında geçiş yapar. Ücretlendirme kullanılan gruba göre yapılır ve tercih edilen gruptan daha pahalı olabilir.",
+    "BYOK 外部成本": "Harici BYOK maliyeti",
+    "OpenRouter 官方账单": "Resmî OpenRouter faturaları",
+    "OpenRouter 消费明细": "OpenRouter harcama ayrıntıları",
+    "OpenRouter 账户": "OpenRouter hesabı",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Tutarlar USD cinsindedir. Satın alınan krediler ödeme ücretlerini içermez; tek tek yüklemeler için resmî faturalara bakın.",
+    "全部日期": "Tüm tarihler",
+    "搜索模型或供应商": "Model veya sağlayıcı ara",
+    "新增 OpenRouter 账户": "OpenRouter hesabı ekle",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Tamamlanmış son 30 UTC günü; tarih, model ve sağlayıcıya göre. Bugün dahil değildir. Harici BYOK maliyetleri OpenRouter harcamalarına dahil edilmez.",
+    "消费金额": "Harcama",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Kredi, bakiye ve harcamaları görmek için OpenRouter Management Key ekleyin.",
+    "筛选范围消费": "Filtrelenen harcama",
+    "累计消费": "Toplam harcama",
+    "累计购入额度": "Toplam satın alınan kredi",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "OpenRouter Management Key kullanın. Şifrelenerek saklanır ve yalnızca sunucudan salt okunur sorgular için kullanılır.",
+    "账户名称": "Hesap adı",
+    "选择账户": "Hesap seç"
   }
 }

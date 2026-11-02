@@ -21,7 +21,7 @@ var upstreamAccountErrorMap = map[error]string{
 	model.ErrUpstreamAccountRemoteNotNewAPI:       "远端不是受支持的 new-api 实例",
 	model.ErrUpstreamAccountRemoteURLInvalid:      "远端额度地址不可用",
 	model.ErrUpstreamAccountRemoteRequestFail:     "远端请求失败",
-	model.ErrUpstreamAccountTypeUnsupported:       "当前仅支持 new-api 和 sub2api 上游账户",
+	model.ErrUpstreamAccountTypeUnsupported:       "当前仅支持 new-api、sub2api 和 OpenRouter 上游账户",
 	model.ErrUpstreamAccountNameEmpty:             "上游账户名称不能为空",
 	model.ErrUpstreamAccountInvalid:               "无效的上游账户",
 	model.ErrUpstreamAccountTokenEmpty:            "上游 access token 不能为空",
@@ -127,4 +127,18 @@ func GetUpstreamAccountTrend(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, trend)
+}
+
+func GetOpenRouterAccountFinance(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		common.ApiErrorMsg(c, "无效的上游账户")
+		return
+	}
+	data, err := model.GetOpenRouterAccountFinance(c.Request.Context(), id)
+	if err != nil {
+		upstreamAccountApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, data)
 }

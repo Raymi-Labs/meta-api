@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Disattiva: usa solo il gruppo selezionato",
     "请选择是否开启自动切换分组": "Scegli se attivare il cambio automatico di gruppo",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Se attivato, quando il modello non è disponibile nel gruppo selezionato, vengono provati altri gruppi a cui hai accesso nell’ordine configurato dall’amministratore. La fatturazione segue il gruppo effettivamente utilizzato e può costare più del gruppo attuale.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Il routing personalizzato cambia solo tra i gruppi configurati da te. La fatturazione segue il gruppo effettivamente utilizzato e può costare più del gruppo preferito."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Il routing personalizzato cambia solo tra i gruppi configurati da te. La fatturazione segue il gruppo effettivamente utilizzato e può costare più del gruppo preferito.",
+    "BYOK 外部成本": "Costo BYOK esterno",
+    "OpenRouter 官方账单": "Fatturazione ufficiale OpenRouter",
+    "OpenRouter 消费明细": "Dettaglio spese OpenRouter",
+    "OpenRouter 账户": "Account OpenRouter",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Importi in USD. I crediti acquistati escludono le commissioni di pagamento; consultare la fatturazione ufficiale per le singole ricariche.",
+    "全部日期": "Tutte le date",
+    "搜索模型或供应商": "Cerca modelli o fornitori",
+    "新增 OpenRouter 账户": "Aggiungi account OpenRouter",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Ultimi 30 giorni UTC completi, per data, modello e fornitore. Oggi è escluso. I costi BYOK esterni non sono inclusi nelle spese OpenRouter.",
+    "消费金额": "Spesa",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Aggiungi una Management Key OpenRouter per vedere crediti, saldo e spese.",
+    "筛选范围消费": "Spesa filtrata",
+    "累计消费": "Spesa totale",
+    "累计购入额度": "Crediti acquistati totali",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Usa una Management Key OpenRouter, salvata cifrata e utilizzata solo per query server in sola lettura.",
+    "账户名称": "Nome account",
+    "选择账户": "Seleziona account"
   }
 }

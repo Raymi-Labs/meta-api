@@ -7115,6 +7115,23 @@
     "关闭，仅使用所选分组": "Disable: use only the selected group",
     "请选择是否开启自动切换分组": "Choose whether to enable automatic group switching",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "When enabled, if the model is unavailable in the selected group, other groups you can access are tried in the order configured by the administrator. Billing follows the group actually used and may cost more than the current group.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Custom routing switches only within your configured groups. Billing follows the group actually used and may cost more than the preferred group."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Custom routing switches only within your configured groups. Billing follows the group actually used and may cost more than the preferred group.",
+    "BYOK 外部成本": "External BYOK cost",
+    "OpenRouter 官方账单": "OpenRouter billing",
+    "OpenRouter 消费明细": "OpenRouter spending details",
+    "OpenRouter 账户": "OpenRouter account",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Amounts are in USD. Purchased credits exclude payment fees; see official billing for individual top-ups.",
+    "全部日期": "All dates",
+    "搜索模型或供应商": "Search models or providers",
+    "新增 OpenRouter 账户": "Add OpenRouter account",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Last 30 completed UTC days, grouped by date, model and provider. Today is excluded. External BYOK costs are excluded from OpenRouter spending.",
+    "消费金额": "Spend",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Add an OpenRouter Management Key to view credits, balance and spending.",
+    "筛选范围消费": "Filtered spend",
+    "累计消费": "Total spend",
+    "累计购入额度": "Total credits purchased",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Use an OpenRouter Management Key. It is encrypted and used only for read-only server queries.",
+    "账户名称": "Account name",
+    "选择账户": "Select account"
   }
 }

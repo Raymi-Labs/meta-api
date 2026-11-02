@@ -199,7 +199,10 @@ func normalizeUpstreamAccount(account UpstreamAccount) UpstreamAccount {
 		account.UserID = 0
 	}
 	account.ResourceDisplayMode = normalizeUpstreamAccountResourceDisplayMode(account.ResourceDisplayMode)
-	if account.AccountType == UpstreamAccountTypeSub2API {
+	if account.AccountType == UpstreamAccountTypeOpenRouter {
+		account.BaseURL = openRouterAccountBaseURL
+	}
+	if account.AccountType == UpstreamAccountTypeSub2API || account.AccountType == UpstreamAccountTypeOpenRouter {
 		account.UserID = 0
 		account.ResourceDisplayMode = UpstreamAccountResourceDisplayWallet
 	}
@@ -212,9 +215,10 @@ func validateUpstreamAccount(account UpstreamAccount, requireSecret bool) error 
 		return ErrUpstreamAccountNameEmpty
 	}
 	switch account.AccountType {
-	case UpstreamAccountTypeNewAPI:
+	case UpstreamAccountTypeNewAPI, UpstreamAccountTypeOpenRouter:
 		config := UpstreamAccountRemoteConfig{
 			Enabled:              true,
+			AccountType:          account.AccountType,
 			BaseURL:              account.BaseURL,
 			UserID:               account.UserID,
 			AccessToken:          account.AccessToken,
@@ -264,7 +268,7 @@ func (a UpstreamAccount) remoteObserverConfig() UpstreamAccountRemoteConfig {
 		Password:          a.Password,
 		PasswordEncrypted: a.PasswordEncrypted,
 	}
-	if a.AccountType == UpstreamAccountTypeNewAPI {
+	if a.AccountType == UpstreamAccountTypeNewAPI || a.AccountType == UpstreamAccountTypeOpenRouter {
 		config.AccessToken = a.AccessToken
 		config.AccessTokenEncrypted = a.AccessTokenEncrypted
 	}
@@ -418,7 +422,7 @@ func SaveUpstreamAccount(account UpstreamAccount) (*UpstreamAccountOption, error
 		}
 	}
 	requireSecret := account.Id == 0 ||
-		(account.AccountType == UpstreamAccountTypeNewAPI && (account.AccessToken != "" || account.AccessTokenEncrypted == "")) ||
+		((account.AccountType == UpstreamAccountTypeNewAPI || account.AccountType == UpstreamAccountTypeOpenRouter) && (account.AccessToken != "" || account.AccessTokenEncrypted == "")) ||
 		(account.AccountType == UpstreamAccountTypeSub2API && (account.Password != "" || account.PasswordEncrypted == ""))
 	if err := validateUpstreamAccount(account, requireSecret); err != nil {
 		return nil, err
@@ -458,7 +462,7 @@ func SaveUpstreamAccount(account UpstreamAccount) (*UpstreamAccountOption, error
 
 func prepareUpstreamAccountSecrets(account *UpstreamAccount, existing UpstreamAccount) error {
 	switch account.AccountType {
-	case UpstreamAccountTypeNewAPI:
+	case UpstreamAccountTypeNewAPI, UpstreamAccountTypeOpenRouter:
 		account.PasswordEncrypted = ""
 		account.Email = ""
 		switch {
@@ -468,7 +472,7 @@ func prepareUpstreamAccountSecrets(account *UpstreamAccount, existing UpstreamAc
 				return err
 			}
 			account.AccessTokenEncrypted = encrypted
-		case existing.AccountType == UpstreamAccountTypeNewAPI && existing.AccessTokenEncrypted != "":
+		case existing.AccountType == account.AccountType && existing.AccessTokenEncrypted != "":
 			account.AccessTokenEncrypted = existing.AccessTokenEncrypted
 		default:
 			return ErrUpstreamAccountTokenEmpty

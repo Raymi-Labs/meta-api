@@ -392,6 +392,7 @@ func SetApiRouter(router *gin.Engine) {
 			upstreamAccountRoute.POST("/sync_all", controller.SyncAllUpstreamAccounts)
 			upstreamAccountRoute.POST("/:id/sync", controller.SyncUpstreamAccount)
 			upstreamAccountRoute.GET("/:id/trend", controller.GetUpstreamAccountTrend)
+			upstreamAccountRoute.GET("/:id/openrouter/finance", controller.GetOpenRouterAccountFinance)
 		}
 
 		// Keep the account-only legacy path for one compatibility cycle.

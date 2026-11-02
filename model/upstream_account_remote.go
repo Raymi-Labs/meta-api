@@ -157,6 +157,10 @@ func normalizeUpstreamAccountRemoteConfig(config UpstreamAccountRemoteConfig) Up
 	if config.UserID < 0 {
 		config.UserID = 0
 	}
+	if config.AccountType == UpstreamAccountTypeOpenRouter {
+		config.BaseURL = openRouterAccountBaseURL
+		config.UserID = 0
+	}
 	if config.AccountType == UpstreamAccountTypeSub2API {
 		config.UserID = 0
 		config.AccessToken = ""
@@ -169,6 +173,8 @@ func normalizeUpstreamAccountRemoteConfig(config UpstreamAccountRemoteConfig) Up
 func upstreamAccountRemoteObserverConfigured(config UpstreamAccountRemoteConfig) bool {
 	config = normalizeUpstreamAccountRemoteConfig(config)
 	switch config.AccountType {
+	case UpstreamAccountTypeOpenRouter:
+		return config.AccessToken != "" || config.AccessTokenEncrypted != ""
 	case UpstreamAccountTypeSub2API:
 		return config.BaseURL != "" && config.Email != "" &&
 			(config.Password != "" || config.PasswordEncrypted != "")
@@ -194,8 +200,8 @@ func validateUpstreamAccountRemoteConfig(config UpstreamAccountRemoteConfig) err
 		if config.Password == "" && config.PasswordEncrypted == "" {
 			return ErrUpstreamAccountRemoteMissingPassword
 		}
-	case UpstreamAccountTypeNewAPI:
-		if config.UserID <= 0 {
+	case UpstreamAccountTypeNewAPI, UpstreamAccountTypeOpenRouter:
+		if config.AccountType == UpstreamAccountTypeNewAPI && config.UserID <= 0 {
 			return ErrUpstreamAccountRemoteMissingUID
 		}
 		if config.AccessToken == "" && config.AccessTokenEncrypted == "" {
@@ -585,6 +591,9 @@ func fetchUpstreamAccountRemoteObserver(remoteConfig UpstreamAccountRemoteConfig
 	}
 	client := newUpstreamAccountRemoteHTTPClient()
 	remoteConfig = normalizeUpstreamAccountRemoteConfig(remoteConfig)
+	if remoteConfig.AccountType == UpstreamAccountTypeOpenRouter {
+		return fetchOpenRouterAccountSnapshot(remoteConfig)
+	}
 	if remoteConfig.AccountType == UpstreamAccountTypeSub2API {
 		return fetchUpstreamAccountSub2APIObserver(client, remoteConfig)
 	}
@@ -846,6 +855,9 @@ func buildUpstreamAccountSnapshotState(selectionSignature string, batch Upstream
 		state.RemoteQuotaPerUnit = latestSuccess.RemoteQuotaPerUnit
 		state.QuotaPerUnitMismatch = latestSuccess.RemoteQuotaPerUnit > 0 && latestSuccess.RemoteQuotaPerUnit != common.QuotaPerUnit
 		state.WalletBalanceUSD = upstreamAccountQuotaToUSD(latestSuccess.WalletQuota)
+		if config.AccountType == UpstreamAccountTypeOpenRouter && common.QuotaPerUnit > 0 {
+			state.WalletBalanceUSD = roundUpstreamAccountAmount(float64(latestSuccess.WalletQuota) / common.QuotaPerUnit)
+		}
 		state.WalletQuotaUSD = state.WalletBalanceUSD
 		state.WalletUsedTotalUSD = upstreamAccountQuotaToUSD(latestSuccess.WalletUsedQuota)
 		state.WalletUsedQuotaUSD = state.WalletUsedTotalUSD

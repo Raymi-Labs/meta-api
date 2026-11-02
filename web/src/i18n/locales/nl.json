@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Uitschakelen: alleen de geselecteerde groep gebruiken",
     "请选择是否开启自动切换分组": "Kies of u automatisch wisselen van groep wilt inschakelen",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Als dit is ingeschakeld en het model niet beschikbaar is in de geselecteerde groep, worden andere groepen waartoe u toegang hebt geprobeerd in de door de beheerder ingestelde volgorde. De kosten volgen de daadwerkelijk gebruikte groep en kunnen hoger zijn dan bij de huidige groep.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Aangepaste routering wisselt alleen tussen de door u ingestelde groepen. De kosten volgen de daadwerkelijk gebruikte groep en kunnen hoger zijn dan bij de voorkeursgroep."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Aangepaste routering wisselt alleen tussen de door u ingestelde groepen. De kosten volgen de daadwerkelijk gebruikte groep en kunnen hoger zijn dan bij de voorkeursgroep.",
+    "BYOK 外部成本": "Externe BYOK-kosten",
+    "OpenRouter 官方账单": "Officiële OpenRouter-facturering",
+    "OpenRouter 消费明细": "OpenRouter-uitgavendetails",
+    "OpenRouter 账户": "OpenRouter-account",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Bedragen in USD. Gekochte credits zijn exclusief betaalkosten; zie de officiële facturering voor afzonderlijke opwaarderingen.",
+    "全部日期": "Alle datums",
+    "搜索模型或供应商": "Zoek modellen of providers",
+    "新增 OpenRouter 账户": "OpenRouter-account toevoegen",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Laatste 30 voltooide UTC-dagen, per datum, model en provider. Vandaag is uitgesloten. Externe BYOK-kosten tellen niet mee bij OpenRouter-uitgaven.",
+    "消费金额": "Uitgaven",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Voeg een OpenRouter Management Key toe om credits, saldo en uitgaven te bekijken.",
+    "筛选范围消费": "Gefilterde uitgaven",
+    "累计消费": "Totale uitgaven",
+    "累计购入额度": "Totaal gekochte credits",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Gebruik een OpenRouter Management Key. Deze wordt versleuteld opgeslagen en alleen gebruikt voor alleen-lezen serverquery’s.",
+    "账户名称": "Accountnaam",
+    "选择账户": "Account selecteren"
   }
 }

@@ -7516,6 +7516,23 @@
     "关闭，仅使用所选分组": "Tắt: chỉ dùng nhóm đã chọn",
     "请选择是否开启自动切换分组": "Vui lòng chọn có bật tự động chuyển nhóm hay không",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Khi bật, nếu mô hình không khả dụng trong nhóm đã chọn, hệ thống sẽ thử các nhóm khác mà bạn có quyền truy cập theo thứ tự do quản trị viên thiết lập. Phí được tính theo nhóm thực tế sử dụng và có thể cao hơn nhóm hiện tại.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Định tuyến tùy chỉnh chỉ chuyển trong phạm vi các nhóm bạn đã cấu hình. Phí được tính theo nhóm thực tế sử dụng và có thể cao hơn nhóm ưu tiên."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Định tuyến tùy chỉnh chỉ chuyển trong phạm vi các nhóm bạn đã cấu hình. Phí được tính theo nhóm thực tế sử dụng và có thể cao hơn nhóm ưu tiên.",
+    "BYOK 外部成本": "Chi phí BYOK bên ngoài",
+    "OpenRouter 官方账单": "Hóa đơn chính thức OpenRouter",
+    "OpenRouter 消费明细": "Chi tiết chi tiêu OpenRouter",
+    "OpenRouter 账户": "Tài khoản OpenRouter",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Số tiền tính bằng USD. Tín dụng đã mua không gồm phí thanh toán; xem hóa đơn chính thức để biết từng lần nạp.",
+    "全部日期": "Tất cả ngày",
+    "搜索模型或供应商": "Tìm mô hình hoặc nhà cung cấp",
+    "新增 OpenRouter 账户": "Thêm tài khoản OpenRouter",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "30 ngày UTC hoàn tất gần nhất, theo ngày, mô hình và nhà cung cấp. Không gồm hôm nay. Chi phí BYOK bên ngoài không tính vào chi tiêu OpenRouter.",
+    "消费金额": "Chi tiêu",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Thêm OpenRouter Management Key để xem tín dụng, số dư và chi tiêu.",
+    "筛选范围消费": "Chi tiêu đã lọc",
+    "累计消费": "Tổng chi tiêu",
+    "累计购入额度": "Tổng tín dụng đã mua",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Dùng OpenRouter Management Key. Khóa được lưu mã hóa và chỉ dùng cho truy vấn chỉ đọc từ máy chủ.",
+    "账户名称": "Tên tài khoản",
+    "选择账户": "Chọn tài khoản"
   }
 }
