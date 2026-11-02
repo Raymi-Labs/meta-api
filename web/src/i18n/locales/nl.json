@@ -6897,6 +6897,12 @@
     "本站单价暂不可比较": "Lokale eenheidsprijs niet vergelijkbaar",
     "当前币种无法换算官方价格": "Officiële prijs niet om te rekenen naar deze valuta",
     "暂无有效汇率，暂不显示官方对比": "Geen geldige wisselkoers; vergelijking niet beschikbaar",
-    "按峰谷档位比较，生效时段以各自规则为准": "Vergelijking van piek- en daltarieven; elk tijdschema volgt zijn eigen regels"
+    "按峰谷档位比较，生效时段以各自规则为准": "Vergelijking van piek- en daltarieven; elk tijdschema volgt zijn eigen regels",
+    "故障时是否自动切换分组（Auto）？": "Bij een storing automatisch van groep wisselen (Auto)?",
+    "开启，故障时尝试其他可用分组": "Inschakelen: bij een storing andere beschikbare groepen proberen",
+    "关闭，仅使用所选分组": "Uitschakelen: alleen de geselecteerde groep gebruiken",
+    "请选择是否开启自动切换分组": "Kies of u automatisch wisselen van groep wilt inschakelen",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Als dit is ingeschakeld en het model niet beschikbaar is in de geselecteerde groep, worden andere groepen waartoe u toegang hebt geprobeerd in de door de beheerder ingestelde volgorde. De kosten volgen de daadwerkelijk gebruikte groep en kunnen hoger zijn dan bij de huidige groep.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Aangepaste routering wisselt alleen tussen de door u ingestelde groepen. De kosten volgen de daadwerkelijk gebruikte groep en kunnen hoger zijn dan bij de voorkeursgroep."
   }
 }

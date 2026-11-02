@@ -7510,6 +7510,12 @@
     "本站单价暂不可比较": "Chưa thể so sánh đơn giá của trang",
     "当前币种无法换算官方价格": "Không thể quy đổi giá chính thức sang tiền tệ này",
     "暂无有效汇率，暂不显示官方对比": "Chưa có tỷ giá hợp lệ; không hiển thị so sánh",
-    "按峰谷档位比较，生效时段以各自规则为准": "So sánh giá giờ cao điểm và thấp điểm; thời gian áp dụng theo quy tắc của từng bên"
+    "按峰谷档位比较，生效时段以各自规则为准": "So sánh giá giờ cao điểm và thấp điểm; thời gian áp dụng theo quy tắc của từng bên",
+    "故障时是否自动切换分组（Auto）？": "Tự động chuyển nhóm khi gặp lỗi (Auto)?",
+    "开启，故障时尝试其他可用分组": "Bật: thử các nhóm khả dụng khác khi gặp lỗi",
+    "关闭，仅使用所选分组": "Tắt: chỉ dùng nhóm đã chọn",
+    "请选择是否开启自动切换分组": "Vui lòng chọn có bật tự động chuyển nhóm hay không",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Khi bật, nếu mô hình không khả dụng trong nhóm đã chọn, hệ thống sẽ thử các nhóm khác mà bạn có quyền truy cập theo thứ tự do quản trị viên thiết lập. Phí được tính theo nhóm thực tế sử dụng và có thể cao hơn nhóm hiện tại.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Định tuyến tùy chỉnh chỉ chuyển trong phạm vi các nhóm bạn đã cấu hình. Phí được tính theo nhóm thực tế sử dụng và có thể cao hơn nhóm ưu tiên."
   }
 }

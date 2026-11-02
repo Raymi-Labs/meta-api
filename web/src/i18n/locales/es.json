@@ -6897,6 +6897,12 @@
     "本站单价暂不可比较": "El precio unitario del sitio no se puede comparar",
     "当前币种无法换算官方价格": "No se puede convertir el precio oficial a esta moneda",
     "暂无有效汇率，暂不显示官方对比": "Sin tipo de cambio válido; comparación no disponible",
-    "按峰谷档位比较，生效时段以各自规则为准": "Se comparan tarifas punta y valle; cada horario sigue sus propias reglas"
+    "按峰谷档位比较，生效时段以各自规则为准": "Se comparan tarifas punta y valle; cada horario sigue sus propias reglas",
+    "故障时是否自动切换分组（Auto）？": "¿Cambiar automáticamente de grupo si falla (Auto)?",
+    "开启，故障时尝试其他可用分组": "Activar: probar otros grupos disponibles si falla",
+    "关闭，仅使用所选分组": "Desactivar: usar solo el grupo seleccionado",
+    "请选择是否开启自动切换分组": "Elige si quieres activar el cambio automático de grupo",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Si se activa y el modelo no está disponible en el grupo seleccionado, se probarán otros grupos a los que tengas acceso en el orden configurado por el administrador. Se factura según el grupo utilizado y el coste puede ser mayor que en el grupo actual.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "El enrutamiento personalizado solo cambia entre los grupos que has configurado. Se factura según el grupo utilizado y el coste puede ser mayor que en el grupo preferido."
   }
 }

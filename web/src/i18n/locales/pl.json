@@ -6897,6 +6897,12 @@
     "本站单价暂不可比较": "Cena jednostkowa strony nie jest porównywalna",
     "当前币种无法换算官方价格": "Nie można przeliczyć oficjalnej ceny na tę walutę",
     "暂无有效汇率，暂不显示官方对比": "Brak aktualnego kursu walut; porównanie niedostępne",
-    "按峰谷档位比较，生效时段以各自规则为准": "Porównanie stawek szczytowych i pozaszczytowych; obowiązują odrębne zasady godzinowe"
+    "按峰谷档位比较，生效时段以各自规则为准": "Porównanie stawek szczytowych i pozaszczytowych; obowiązują odrębne zasady godzinowe",
+    "故障时是否自动切换分组（Auto）？": "Automatycznie zmieniać grupę w razie awarii (Auto)?",
+    "开启，故障时尝试其他可用分组": "Włącz: w razie awarii próbuj innych dostępnych grup",
+    "关闭，仅使用所选分组": "Wyłącz: używaj tylko wybranej grupy",
+    "请选择是否开启自动切换分组": "Wybierz, czy włączyć automatyczną zmianę grupy",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Po włączeniu, gdy model jest niedostępny w wybranej grupie, system próbuje innych grup, do których masz dostęp, w kolejności ustalonej przez administratora. Opłaty zależą od faktycznie użytej grupy i mogą być wyższe niż w bieżącej grupie.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Własny routing przełącza wyłącznie między skonfigurowanymi przez Ciebie grupami. Opłaty zależą od faktycznie użytej grupy i mogą być wyższe niż w preferowanej grupie."
   }
 }

@@ -7109,6 +7109,12 @@
     "本站单价暂不可比较": "Site unit price cannot be compared",
     "当前币种无法换算官方价格": "Official price cannot be converted to this currency",
     "暂无有效汇率，暂不显示官方对比": "No valid exchange rate; comparison unavailable",
-    "按峰谷档位比较，生效时段以各自规则为准": "Peak/off-peak rates compared; each schedule follows its own rules"
+    "按峰谷档位比较，生效时段以各自规则为准": "Peak/off-peak rates compared; each schedule follows its own rules",
+    "故障时是否自动切换分组（Auto）？": "Automatically switch groups on failure (Auto)?",
+    "开启，故障时尝试其他可用分组": "Enable: try other available groups on failure",
+    "关闭，仅使用所选分组": "Disable: use only the selected group",
+    "请选择是否开启自动切换分组": "Choose whether to enable automatic group switching",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "When enabled, if the model is unavailable in the selected group, other groups you can access are tried in the order configured by the administrator. Billing follows the group actually used and may cost more than the current group.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Custom routing switches only within your configured groups. Billing follows the group actually used and may cost more than the preferred group."
   }
 }
