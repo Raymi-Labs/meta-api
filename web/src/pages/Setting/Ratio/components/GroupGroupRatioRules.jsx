@@ -59,9 +59,7 @@ function nestRules(rules) {
 
 export function serializeGroupGroupRatio(rules) {
   const nested = nestRules(rules);
-  return Object.keys(nested).length === 0
-    ? ''
-    : JSON.stringify(nested, null, 2);
+  return JSON.stringify(nested, null, 2);
 }
 
 function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAdd, t }) {
