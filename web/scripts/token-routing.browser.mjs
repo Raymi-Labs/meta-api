@@ -185,6 +185,19 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     path: path.join(artifacts, 'simple-create-mobile-dark.png'),
     fullPage: true,
   });
+  await page
+    .locator('.token-editor__auto-choice:visible')
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: path.join(artifacts, 'auto-choice-mobile-dark.png'),
+    fullPage: true,
+  });
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  );
+
   assert.equal(
     await page
       .locator('.token-group-picker')
@@ -500,6 +513,41 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id:901,role:100}},()=
     '福利',
     '企业级',
   ]);
+  // Explicit fixed-group Auto choice survives visiting advanced routing.
+  await page.evaluate(() => window.qa.create());
+  await page.getByRole('radio', { name: '企业级', exact: true }).waitFor();
+  const autoChoice = page.locator('.token-editor__auto-choice:visible');
+  assert.equal(
+    await autoChoice.getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await page.getByRole('radio', { name: '企业级', exact: true }).check();
+  await autoChoice
+    .getByRole('radio', { name: '关闭，仅使用所选分组', exact: true })
+    .check();
+  await openAdvanced();
+  await page.locator('#routing_enabled').click();
+  assert.equal(await autoChoice.getByRole('radio').count(), 0);
+  assert.ok(
+    (await autoChoice.innerText()).includes('仅在你配置的分组范围内切换'),
+  );
+  await page.locator('#routing_enabled').click();
+  assert.equal(
+    await autoChoice
+      .getByRole('radio', { name: '关闭，仅使用所选分组', exact: true })
+      .isChecked(),
+    true,
+  );
+  await page.locator('#name').fill('scope-toggle');
+  await page.waitForFunction(
+    () => !document.querySelector('.token-editor__submit').disabled,
+  );
+  await page.locator('.token-editor__submit:visible').click();
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-content'),
+  );
+  assert.equal(saves.at(-1).auto_group_fallback, false);
+  assert.equal(saves.at(-1).routing_config, '');
   assert.deepEqual(errors, []);
   console.log(
     `PASS: create, model groups, edit, failed save, delayed save isolation, group test, mobile, legacy fixed/auto compatibility. Screenshots: ${artifacts}`,

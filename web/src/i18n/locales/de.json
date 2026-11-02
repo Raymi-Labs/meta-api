@@ -6897,6 +6897,12 @@
     "本站单价暂不可比较": "Lokaler Einzelpreis nicht vergleichbar",
     "当前币种无法换算官方价格": "Offizieller Preis nicht in diese Währung umrechenbar",
     "暂无有效汇率，暂不显示官方对比": "Kein gültiger Wechselkurs; Vergleich nicht verfügbar",
-    "按峰谷档位比较，生效时段以各自规则为准": "Vergleich von Spitzen- und Nebenzeittarifen; es gelten die jeweiligen Zeitregeln"
+    "按峰谷档位比较，生效时段以各自规则为准": "Vergleich von Spitzen- und Nebenzeittarifen; es gelten die jeweiligen Zeitregeln",
+    "故障时是否自动切换分组（Auto）？": "Bei Ausfall automatisch die Gruppe wechseln (Auto)?",
+    "开启，故障时尝试其他可用分组": "Aktivieren: bei Ausfall andere verfügbare Gruppen versuchen",
+    "关闭，仅使用所选分组": "Deaktivieren: nur die gewählte Gruppe verwenden",
+    "请选择是否开启自动切换分组": "Wählen Sie, ob der automatische Gruppenwechsel aktiviert werden soll",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Wenn aktiviert, werden bei Nichtverfügbarkeit des Modells in der gewählten Gruppe andere Gruppen mit Zugriffsberechtigung in der vom Administrator festgelegten Reihenfolge versucht. Abgerechnet wird nach der tatsächlich verwendeten Gruppe; die Kosten können höher sein als in der aktuellen Gruppe.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Benutzerdefiniertes Routing wechselt nur innerhalb Ihrer konfigurierten Gruppen. Abgerechnet wird nach der tatsächlich verwendeten Gruppe; die Kosten können höher sein als in der bevorzugten Gruppe."
   }
 }

@@ -35,9 +35,9 @@ import i18n from 'i18next';import {initReactI18next} from 'react-i18next';
 import {UserContext} from './src/context/User';import {StatusContext} from './src/context/Status';
 import EditTokenModal from './src/components/table/tokens/modals/EditTokenModal';import './src/index.css';
 i18n.use(initReactI18next).init({lng:'zh',resources:{zh:{translation:{}}},interpolation:{escapeValue:false}});
-function App(){const [visible,setVisible]=useState(true),[id,setId]=useState(901),[edit,setEdit]=useState({});
-window.qa={switchUser:setId,close:()=>setVisible(false),open:()=>{setEdit({});setVisible(true)},edit:(sellable=false)=>{setEdit({id:99,source_type:sellable?'sellable_token':undefined,status:1});setVisible(true)}};
-return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]}><StatusContext.Provider value={[{status:{quota_per_unit:500000,default_use_auto_group:true}},()=>{}]}><EditTokenModal visiable={visible} editingToken={edit} handleClose={()=>setVisible(false)} refresh={()=>{}}/></StatusContext.Provider></UserContext.Provider></BrowserRouter>};createRoot(document.getElementById('root')).render(<App/>);`,
+function App(){const [visible,setVisible]=useState(true),[id,setId]=useState(901),[edit,setEdit]=useState({}),[defaultAuto,setDefaultAuto]=useState(true);
+window.qa={setDefaultAuto,switchUser:setId,close:()=>setVisible(false),open:()=>{setEdit({});setVisible(true)},edit:(sellable=false)=>{setEdit({id:99,source_type:sellable?'sellable_token':undefined,status:1});setVisible(true)}};
+return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]}><StatusContext.Provider value={[{status:{quota_per_unit:500000,default_use_auto_group:defaultAuto}},()=>{}]}><EditTokenModal visiable={visible} editingToken={edit} handleClose={()=>setVisible(false)} refresh={()=>{}}/></StatusContext.Provider></UserContext.Provider></BrowserRouter>};createRoot(document.getElementById('root')).render(<App/>);`,
   );
   const { config } = await loadConfigFromFile(
     { command: 'serve', mode: 'development' },
@@ -185,7 +185,8 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     window_request_limit: 10,
   };
   const writes = [],
-    modelRequests = [];
+    modelRequests = [],
+    autoModelRequests = [];
   await page.route('**/api/**', async (route) => {
     const req = route.request(),
       url = new URL(req.url());
@@ -224,6 +225,7 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     } else if (url.pathname === '/api/token/models') {
       const group = url.searchParams.get('group');
       modelRequests.push(group);
+      autoModelRequests.push(url.searchParams.get('auto_group_fallback'));
       data = [group === 'Claude · 优质' ? 'claude-test' : 'openai-test'];
       if (holdModel && group === 'OpenAI · 优质') {
         holdModel = false;
@@ -287,7 +289,11 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     );
   });
   const ready = async () => {
-    await page.getByRole('radio').first().waitFor();
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio')
+      .first()
+      .waitFor();
     await page.waitForFunction(
       () =>
         document
@@ -297,8 +303,18 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   };
   const name = () => page.getByPlaceholder('请输入名称', { exact: true });
   const create = () => page.getByRole('button', { name: /创建令牌/ });
+  const autoChoice = () => page.locator('.token-editor__auto-choice:visible');
+  const chooseAuto = async (on) => {
+    await autoChoice()
+      .getByRole('radio', {
+        name: on ? '开启，故障时尝试其他可用分组' : '关闭，仅使用所选分组',
+        exact: true,
+      })
+      .check();
+  };
   const choose = async (group) => {
     await page
+      .locator('.token-group-picker')
       .getByRole('radio', {
         name: new RegExp(group.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
       })
@@ -322,24 +338,35 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     'false',
   );
   assert.equal(await create().isEnabled(), false);
-  assert.equal(await page.getByRole('radio', { checked: true }).count(), 0);
+  assert.equal(
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .count(),
+    0,
+  );
   assert.equal(await page.getByText('0×', { exact: true }).count(), 1);
   assert.equal(await page.getByText('动态', { exact: true }).count(), 0);
   const row = (group) =>
-    page
-      .locator('.token-group-picker__row')
-      .filter({ has: page.getByRole('radio', { name: group, exact: true }) });
+    page.locator('.token-group-picker__row').filter({
+      has: page.getByRole('radio', { name: group, exact: true }),
+    });
   const order = () =>
-    page.getByRole('radio').evaluateAll((nodes) => nodes.map((n) => n.value));
+    page
+      .locator('.token-group-picker')
+      .getByRole('radio')
+      .evaluateAll((nodes) => nodes.map((n) => n.value));
   assert.deepEqual(await order(), [
     'OpenAI · 独享账号',
     'OpenAI · 优质',
     'Claude · 优质',
   ]);
   assert.equal(
-    await page.locator('#auto_group_fallback').getAttribute('aria-checked'),
-    'true',
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
   );
+  assert.ok((await autoChoice().innerText()).includes('费用可能高于当前分组'));
+  assert.equal(await autoChoice().isVisible(), true);
   await choose('OpenAI · 独享账号');
   await enabled(create());
   for (const value of ['', '   ']) {
@@ -366,6 +393,18 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     fullPage: true,
   });
   await name().fill('simple token');
+  await create().click();
+  await page.getByText('请选择是否开启自动切换分组', { exact: true }).waitFor();
+  assert.equal(writes.length, 0);
+  assert.ok(
+    await autoChoice()
+      .getByRole('radio')
+      .first()
+      .evaluate((el) => el === document.activeElement),
+  );
+  await chooseAuto(true);
+  await enabled(create());
+  assert.equal(autoModelRequests.at(-1), 'true');
   await page
     .locator('.token-editor__name .semi-input-wrapper-error')
     .waitFor({ state: 'hidden' });
@@ -373,22 +412,34 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     .locator('.token-group-picker__description')
     .click();
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 优质',
   );
   await row('OpenAI · 独享账号').locator('.token-group-picker__ratio').click();
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 独享账号',
   );
   await row('OpenAI · 优质').click({ position: { x: 4, y: 4 } });
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 优质',
   );
   await page.getByRole('button', { name: '展开说明', exact: true }).click();
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 优质',
   );
   await page.getByRole('button', { name: '收起说明', exact: true }).click();
@@ -405,7 +456,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 独享账号',
   );
   await page.evaluate(() => window.getSelection().removeAllRanges());
@@ -514,7 +568,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       .isVisible(),
   );
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 独享账号',
   );
   await health.screenshot({
@@ -587,7 +644,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     .getByRole('button', { name: '取消收藏 OpenAI · 独享账号', exact: true })
     .click();
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'OpenAI · 独享账号',
   );
   assert.equal(modelRequests.length, requestsBefore);
@@ -616,7 +676,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page
     .getByRole('textbox', { name: '搜索分组', exact: true })
     .fill('日常');
-  assert.equal(await page.getByRole('radio').count(), 1);
+  assert.equal(
+    await page.locator('.token-group-picker').getByRole('radio').count(),
+    1,
+  );
   assert(
     await page
       .getByText('已选分组：OpenAI · 独享账号', { exact: true })
@@ -711,13 +774,21 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.evaluate(() => window.qa.open());
   await ready();
   await name().fill('race test');
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await chooseAuto(false);
   holdModel = true;
   await choose('OpenAI · 优质');
   for (let i = 0; !releaseModel && i < 80; i++) await delay(25);
   assert(releaseModel);
   await row('Claude · 优质').locator('.token-group-picker__ratio').click();
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'Claude · 优质',
   );
   await enabled(create());
@@ -759,7 +830,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   );
   assert.equal(await health.getByText('样本不足', { exact: true }).count(), 0);
   assert.equal(
-    await page.getByRole('radio', { checked: true }).inputValue(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { checked: true })
+      .inputValue(),
     'Claude · 优质',
   );
   await health.screenshot({
@@ -773,10 +847,16 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await create().click();
   await delay(200);
   assert.equal(writes.at(-1).group, 'Claude · 优质');
+  assert.equal(writes.at(-1).auto_group_fallback, false);
   console.log('PASS model response race cannot overwrite latest group');
   await page.evaluate(() => window.qa.open());
   await ready();
   await name().fill('package');
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await chooseAuto(false);
   await choose('OpenAI · 优质');
   await enabled(create());
   await page.locator('summary').filter({ hasText: '额度与有效期' }).click();
@@ -788,6 +868,11 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.evaluate(() => window.qa.open());
   await ready();
   await name().fill('limited');
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await chooseAuto(false);
   await choose('Claude · 优质');
   await enabled(create());
   await page.locator('summary').filter({ hasText: '额度与有效期' }).click();
@@ -816,6 +901,11 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.evaluate(() => window.qa.open());
   await ready();
   await name().fill('failed models');
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await chooseAuto(false);
   await choose('Claude · 优质');
   await page.getByText('模型加载失败', { exact: false }).waitFor();
   assert.equal(await create().isEnabled(), false);
@@ -830,7 +920,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     .getByText('分组加载失败', { exact: false })
     .filter({ visible: true })
     .waitFor();
-  assert.equal(await page.getByRole('radio').count(), 0);
+  assert.equal(
+    await page.locator('.token-group-picker').getByRole('radio').count(),
+    0,
+  );
   assert.equal(await create().isEnabled(), false);
   failGroups = false;
   await page.getByRole('button', { name: '重试', exact: true }).click();
@@ -846,16 +939,25 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await ready();
   releaseGroups();
   await delay(150);
-  assert.equal(await page.getByRole('radio').count(), 1);
+  assert.equal(
+    await page.locator('.token-group-picker').getByRole('radio').count(),
+    1,
+  );
   assert.equal(await create().isEnabled(), false);
   console.log(
     'PASS permission failure and account-switch late response isolation',
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await name().fill('mobile');
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await chooseAuto(false);
   await choose('Claude · 优质');
   await enabled(create());
   await delay(350);
+  await autoChoice().scrollIntoViewIfNeeded();
   await page.screenshot({
     path: path.join(artifacts, 'mobile.png'),
     fullPage: true,
@@ -875,6 +977,38 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.keyboard.press('Enter');
   await delay(200);
   assert.equal(writes.at(-1).name, 'mobile');
+  assert.equal(writes.at(-1).auto_group_fallback, false);
+  // Default off must still ask, just like default on. One choice covers a batch.
+  await page.evaluate(() => {
+    window.qa.setDefaultAuto(false);
+    window.qa.open();
+  });
+  await ready();
+  await name().fill('batch auto choice');
+  await choose('Claude · 优质');
+  await enabled(create());
+  assert.equal(
+    await autoChoice().getByRole('radio', { checked: true }).count(),
+    0,
+  );
+  await create().click();
+  await page.getByText('请选择是否开启自动切换分组', { exact: true }).waitFor();
+  await chooseAuto(true);
+  await enabled(create());
+  await page.locator('summary').filter({ hasText: '额度与有效期' }).click();
+  await page.locator('#tokenCount').fill('2');
+  const batchStart = writes.length;
+  await create().click();
+  await delay(350);
+  assert.equal(writes.length, batchStart + 2);
+  assert.ok(
+    writes
+      .slice(batchStart)
+      .every((value) => value.auto_group_fallback === true),
+  );
+  console.log(
+    'PASS explicit Auto yes/no, no choice blocks writes, reset and default on/off, batch consistency',
+  );
   for (const variant of ['excluded-only', 'legacy']) {
     healthVariant = variant;
     await page.setViewportSize({ width: 320, height: 900 });
@@ -971,7 +1105,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       );
     }
     assert.equal(
-      await page.getByRole('radio', { checked: true }).inputValue(),
+      await page
+        .locator('.token-group-picker')
+        .getByRole('radio', { checked: true })
+        .inputValue(),
       'Claude · 优质',
     );
     assert(
@@ -1052,7 +1189,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
       '100.00%',
     );
     assert.equal(
-      await page.getByRole('radio', { checked: true }).inputValue(),
+      await page
+        .locator('.token-group-picker')
+        .getByRole('radio', { checked: true })
+        .inputValue(),
       'Claude · 优质',
     );
     await page.screenshot({
@@ -1095,15 +1235,21 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   await page.waitForFunction(() => !!window.qa);
   while (!releaseHealth) await delay(20);
   assert.equal(
-    await page.getByRole('radio').count(),
+    await page.locator('.token-group-picker').getByRole('radio').count(),
     0,
     'wait for initial health before offering groups',
   );
   releaseHealth();
-  await page.getByRole('radio', { name: 'recovered', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'recovered', exact: true })
+    .waitFor();
   assert.deepEqual(await order(), ['recovered', 'unknown', 'partial']);
   await page.getByLabel('搜索分组', { exact: true }).fill('down');
-  assert.equal(await page.getByRole('radio').count(), 0);
+  assert.equal(
+    await page.locator('.token-group-picker').getByRole('radio').count(),
+    0,
+  );
   await page.getByLabel('搜索分组', { exact: true }).fill('');
   await page
     .locator('details > summary')
@@ -1132,7 +1278,10 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
 
   failHealth = true;
   await page.reload();
-  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'down', exact: true })
+    .waitFor();
   assert.equal(
     (await order()).length,
     4,
@@ -1141,11 +1290,17 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
   failHealth = false;
   candidateHealth.collection_incomplete = true;
   await page.reload();
-  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'down', exact: true })
+    .waitFor();
   candidateHealth.collection_incomplete = false;
   candidateHealth.groups[0].uptime_rate = 100;
   await page.reload();
-  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'down', exact: true })
+    .waitFor();
 
   // Existing selections survive health refresh and unchanged saves, including multi-group order.
   candidateHealth.groups[0].uptime_rate = 0;
@@ -1159,13 +1314,22 @@ return <BrowserRouter><UserContext.Provider value={[{user:{id,role:100}},()=>{}]
     channel_limits: '',
   };
   await page.reload();
-  await page.getByRole('radio', { name: 'recovered', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'recovered', exact: true })
+    .waitFor();
   await page.evaluate(() => window.qa.close());
   await delay(350);
   await page.evaluate(() => window.qa.edit());
-  await page.getByRole('radio', { name: 'down', exact: true }).waitFor();
+  await page
+    .locator('.token-group-picker')
+    .getByRole('radio', { name: 'down', exact: true })
+    .waitFor();
   assert.equal(
-    await page.getByRole('radio', { name: 'down', exact: true }).isChecked(),
+    await page
+      .locator('.token-group-picker')
+      .getByRole('radio', { name: 'down', exact: true })
+      .isChecked(),
     true,
   );
   await enabled(page.locator('.token-editor__submit:visible'));

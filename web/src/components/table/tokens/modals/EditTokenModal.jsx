@@ -82,6 +82,7 @@ const EditTokenModal = (props) => {
   const isMobile = useIsMobile();
   const formApiRef = useRef(null);
   const nameFieldRef = useRef(null);
+  const autoChoiceRef = useRef(null);
   const loadedTokenValuesRef = useRef(null);
   const [models, setModels] = useState([]);
   const [availableGroups, setAvailableGroups] = useState({
@@ -152,8 +153,9 @@ const EditTokenModal = (props) => {
     routing_config: '',
     group_vendor: '',
     cross_group_retry: false,
-    auto_group_fallback:
-      !isEdit && !!statusState?.status?.default_use_auto_group,
+    // New tokens require a choice before accepting a potentially different
+    // fallback group's price. Existing tokens are restored by loadToken.
+    auto_group_fallback: isEdit ? false : undefined,
     max_concurrency: 0,
     window_request_limit: 0,
     window_seconds: 0,
@@ -1032,6 +1034,14 @@ const EditTokenModal = (props) => {
         return;
       }
     }
+    if (
+      !isEdit &&
+      !values.routing_enabled &&
+      typeof values.auto_group_fallback !== 'boolean'
+    ) {
+      showError(t('请选择是否开启自动切换分组'));
+      return;
+    }
     submittingRef.current = true;
     const session = editorSessionRef.current;
     const isCurrentSession = () => session === editorSessionRef.current;
@@ -1356,6 +1366,18 @@ const EditTokenModal = (props) => {
                 ?.focus({ preventScroll: true });
               return;
             }
+            if (
+              !isEdit &&
+              !formApiRef.current?.getValue('routing_enabled') &&
+              typeof formApiRef.current?.getValue('auto_group_fallback') !==
+                'boolean'
+            ) {
+              autoChoiceRef.current?.scrollIntoView({ block: 'nearest' });
+              autoChoiceRef.current
+                ?.querySelector('input[type="radio"]')
+                ?.focus({ preventScroll: true });
+              return;
+            }
             if (quotaSectionRef.current) quotaSectionRef.current.open = true;
             if (advancedSectionRef.current)
               advancedSectionRef.current.open = true;
@@ -1484,6 +1506,55 @@ const EditTokenModal = (props) => {
                           {t('高级设置')}
                         </Button>
                       </div>
+                    )}
+                    {!isEdit && (
+                      <>
+                        <div
+                          ref={autoChoiceRef}
+                          className='token-editor__auto-choice'
+                          style={{
+                            display: values.routing_enabled ? 'none' : 'block',
+                          }}
+                        >
+                          <Form.RadioGroup
+                            field='auto_group_fallback'
+                            label={t('故障时是否自动切换分组（Auto）？')}
+                            direction='vertical'
+                            options={[
+                              {
+                                value: true,
+                                label: t('开启，故障时尝试其他可用分组'),
+                              },
+                              {
+                                value: false,
+                                label: t('关闭，仅使用所选分组'),
+                              },
+                            ]}
+                            rules={[
+                              {
+                                required: !values.routing_enabled,
+                                validator: (_rule, value) =>
+                                  values.routing_enabled ||
+                                  typeof value === 'boolean'
+                                    ? Promise.resolve()
+                                    : Promise.reject(
+                                        t('请选择是否开启自动切换分组'),
+                                      ),
+                              },
+                            ]}
+                            extraText={t(
+                              '开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。',
+                            )}
+                          />
+                        </div>
+                        {values.routing_enabled && (
+                          <div className='token-editor__auto-choice text-sm'>
+                            {t(
+                              '自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。',
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                     {values.routing_enabled && groupsError && (
                       <div role='alert'>
@@ -1958,20 +2029,22 @@ const EditTokenModal = (props) => {
                               )}
                             />
                           </div>
-                          <div
-                            style={{
-                              display:
-                                values.group === 'auto' ? 'none' : 'block',
-                            }}
-                          >
-                            <Form.Switch
-                              field='auto_group_fallback'
-                              label={t('故障时自动切换分组（Auto）')}
-                              extraText={t(
-                                '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
-                              )}
-                            />
-                          </div>
+                          {isEdit && (
+                            <div
+                              style={{
+                                display:
+                                  values.group === 'auto' ? 'none' : 'block',
+                              }}
+                            >
+                              <Form.Switch
+                                field='auto_group_fallback'
+                                label={t('故障时自动切换分组（Auto）')}
+                                extraText={t(
+                                  '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
+                                )}
+                              />
+                            </div>
+                          )}
                         </Col>
                         {isAdminUser && (
                           <Col span={24}>

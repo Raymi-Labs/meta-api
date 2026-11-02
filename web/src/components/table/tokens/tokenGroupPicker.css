@@ -59,6 +59,30 @@
 .token-editor__footer .token-editor__submit:disabled {
   opacity: 0.45;
 }
+.token-editor__auto-choice {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--semi-color-warning-light-active);
+  border-radius: 8px;
+  background: var(--semi-color-warning-light-default);
+  overflow-wrap: anywhere;
+}
+.token-editor__auto-choice .semi-form-field {
+  padding: 0;
+}
+.token-editor__auto-choice .semi-radio {
+  white-space: normal;
+  align-items: flex-start;
+}
+.token-editor__auto-choice
+  .semi-radio-inner:not(.semi-radio-inner-checked)
+  .semi-radio-inner-display {
+  border: 1px solid var(--semi-color-text-2);
+}
+.token-editor__auto-choice .semi-form-field-extra {
+  color: var(--semi-color-text-1);
+  margin-top: 8px;
+}
 .token-editor__basic .semi-card-body {
   padding: 0 0 8px;
 }

@@ -6897,6 +6897,12 @@
     "本站单价暂不可比较": "Site birim fiyatı karşılaştırılamıyor",
     "当前币种无法换算官方价格": "Resmî fiyat bu para birimine çevrilemiyor",
     "暂无有效汇率，暂不显示官方对比": "Geçerli döviz kuru yok; karşılaştırma yapılamıyor",
-    "按峰谷档位比较，生效时段以各自规则为准": "Yoğun ve sakin saat tarifeleri karşılaştırılır; her zaman aralığı kendi kurallarına tabidir"
+    "按峰谷档位比较，生效时段以各自规则为准": "Yoğun ve sakin saat tarifeleri karşılaştırılır; her zaman aralığı kendi kurallarına tabidir",
+    "故障时是否自动切换分组（Auto）？": "Hata durumunda grup otomatik değiştirilsin mi (Auto)?",
+    "开启，故障时尝试其他可用分组": "Aç: hata durumunda diğer kullanılabilir grupları dene",
+    "关闭，仅使用所选分组": "Kapat: yalnızca seçilen grubu kullan",
+    "请选择是否开启自动切换分组": "Otomatik grup değişiminin açılıp açılmayacağını seçin",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Açıldığında, model seçilen grupta kullanılamıyorsa erişim izniniz olan diğer gruplar yöneticinin belirlediği sırayla denenir. Ücretlendirme kullanılan gruba göre yapılır ve mevcut gruptan daha pahalı olabilir.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Özel yönlendirme yalnızca yapılandırdığınız gruplar arasında geçiş yapar. Ücretlendirme kullanılan gruba göre yapılır ve tercih edilen gruptan daha pahalı olabilir."
   }
 }

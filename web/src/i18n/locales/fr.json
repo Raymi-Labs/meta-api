@@ -7229,6 +7229,12 @@
     "本站单价暂不可比较": "Prix unitaire du site non comparable",
     "当前币种无法换算官方价格": "Prix officiel non convertible dans cette devise",
     "暂无有效汇率，暂不显示官方对比": "Aucun taux de change valide : comparaison indisponible",
-    "按峰谷档位比较，生效时段以各自规则为准": "Comparaison des tarifs heures pleines/creuses ; chaque calendrier suit ses propres règles"
+    "按峰谷档位比较，生效时段以各自规则为准": "Comparaison des tarifs heures pleines/creuses ; chaque calendrier suit ses propres règles",
+    "故障时是否自动切换分组（Auto）？": "Changer automatiquement de groupe en cas de panne (Auto) ?",
+    "开启，故障时尝试其他可用分组": "Activer : essayer d’autres groupes disponibles en cas de panne",
+    "关闭，仅使用所选分组": "Désactiver : utiliser uniquement le groupe sélectionné",
+    "请选择是否开启自动切换分组": "Choisissez si vous souhaitez activer le changement automatique de groupe",
+    "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Si cette option est activée et que le modèle est indisponible dans le groupe sélectionné, les autres groupes auxquels vous avez accès sont essayés dans l’ordre défini par l’administrateur. La facturation dépend du groupe réellement utilisé et peut être plus élevée que dans le groupe actuel.",
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Le routage personnalisé bascule uniquement entre les groupes que vous avez configurés. La facturation dépend du groupe réellement utilisé et peut être plus élevée que dans le groupe préféré."
   }
 }
