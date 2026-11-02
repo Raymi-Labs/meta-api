@@ -239,5 +239,8 @@
   "聊聊你的下一步。": "Sprechen wir über Ihren nächsten Schritt.",
   "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Nennen Sie uns Ihren Anwendungsfall, die gewünschten Modelle und die erwartete Nutzung. Gemeinsam klären wir die passende Anbindung.",
   "你的应用": "Ihre Anwendung",
-  "服务支持": "Support"
+  "服务支持": "Support",
+  "余额": "Guthaben",
+  "钱包管理": "Wallet-Management",
+  "余额不足": "Nicht genügend Guthaben"
 }

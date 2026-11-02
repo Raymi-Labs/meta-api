@@ -207,3 +207,7 @@
 
 | 官方参考价厂家来源 | [来源约束](../model/manufacturer_pricing.go)、[Cohere同步](../controller/model_cohere_pricing.go) | 官方同步与 `/api/pricing` 共用厂商来源校验，详情/分组对比统一消费 | 无厂家来源不公开为官方价；旧 OpenRouter 资料只在厂家取价成功后替换；命名空间校验、平台变体空态，人工厂家价及计费不变。见[决策](../.agents/notes/implemented/bug-fix/2026-11-01-manufacturer-official-pricing.md) |
 | 官方价条件与覆盖审计 | [Claude 条件](../controller/model_claude_pricing.go)、[百炼](../controller/model_aliyun_pricing.go)、[厂家格式](../controller/model_additional_pricing.go)、[只读审计](../controller/model_pricing_coverage_test.go) | 复用模型管理自动同步及公开价格；保留上下文、缓存时长、区域及多模态单位 | 六并发抓取、确定性合并，错型号/条件歧义拒绝；失败和人工价保护，未知别名不猜价。见[决策](../.agents/notes/implemented/bug-fix/2026-11-01-official-pricing-coverage.md)及[224 模型审计](audits/2026-11-01-official-price-coverage.md) |
+
+### 顶部余额入口（2026-11-02）
+
+共享控制台顶栏与公开页面顶栏在通知与账户之间复用 [HeaderBalance](../web/src/components/layout/headerbar/HeaderBalance.jsx)，读取 UserContext 并沿用钱包 renderQuota。登录才显示，未知金额为 —；点击进入现有钱包；跟随原账户/钱包刷新，不新增请求或轮询。币种和有效预警阈值沿用既有配置，不改计费、支付、权限或用户设置。见[决策](../.agents/notes/implemented/feature/2026-11-02-header-balance.md)。

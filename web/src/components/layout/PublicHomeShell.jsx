@@ -51,6 +51,8 @@ import {
   getTopNavigationTarget,
 } from '../../helpers/topNavigation';
 
+const PublicHeaderBalance = lazy(() => import('./headerbar/HeaderBalance'));
+
 const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
 const Enterprise = lazy(() => import('../../pages/Enterprise'));
 const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
@@ -251,7 +253,9 @@ const PublicHomeShell = () => {
               )}
             </nav>
 
-            <div className='public-header-actions flex items-center gap-2 md:gap-3'>
+            <div
+              className={`public-header-actions flex items-center gap-2 md:gap-3${userState?.user ? ' has-header-balance' : ''}`}
+            >
               <HeaderDownloadLink t={t} />
               <button
                 id='public-menu-toggle'
@@ -305,6 +309,15 @@ const PublicHomeShell = () => {
                   />
                 )}
               </button>
+              {userState.user && (
+                <Suspense fallback={null}>
+                  <PublicHeaderBalance
+                    user={userState.user}
+                    loading={statusState?.status === undefined}
+                    t={t}
+                  />
+                </Suspense>
+              )}
               {userState.user ? (
                 <Link
                   to='/console/personal'

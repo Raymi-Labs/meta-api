@@ -23,6 +23,7 @@ import NotificationButton from './NotificationButton';
 import ThemeToggle from './ThemeToggle';
 import LanguageSelector from './LanguageSelector';
 import UserArea from './UserArea';
+import HeaderBalance from './HeaderBalance';
 import HeaderDownloadLink from '../HeaderDownloadLink';
 
 const ActionButtons = ({
@@ -42,7 +43,9 @@ const ActionButtons = ({
   t,
 }) => {
   return (
-    <div className='public-header-actions flex flex-shrink-0 items-center gap-2 md:gap-3'>
+    <div
+      className={`public-header-actions flex flex-shrink-0 items-center gap-2 md:gap-3${userState?.user ? ' has-header-balance' : ''}`}
+    >
       <NewYearButton isNewYear={isNewYear} />
       <HeaderDownloadLink t={t} />
 
@@ -59,6 +62,8 @@ const ActionButtons = ({
         onNoticeOpen={onNoticeOpen}
         t={t}
       />
+
+      <HeaderBalance user={userState?.user} loading={isLoading} t={t} />
 
       <UserArea
         userState={userState}
