@@ -437,6 +437,8 @@ export function normalizeApiProfile(input: unknown, fallback?: Partial<ApiProfil
     responseFormatB64Json: record.responseFormatB64Json === true ? true : undefined,
     streamImages: typeof record.streamImages === 'boolean' ? record.streamImages : defaults.streamImages,
     streamPartialImages: normalizeStreamPartialImages(record.streamPartialImages, defaults.streamPartialImages),
+    agentTextModel: provider === 'openai' && typeof record.agentTextModel === 'string' && record.agentTextModel.trim() ? record.agentTextModel.trim() : undefined,
+    agentImageModel: provider === 'openai' && typeof record.agentImageModel === 'string' && record.agentImageModel.trim() ? record.agentImageModel.trim() : undefined,
     providerDrafts: normalizeProviderDrafts(record.providerDrafts, customProviderIds),
   }
 }
@@ -786,3 +788,16 @@ export const DEFAULT_SETTINGS: AppSettings = normalizeSettings({
   agentMaxToolRounds: DEFAULT_AGENT_MAX_TOOL_ROUNDS,
   agentWebSearch: false,
 })
+
+// Mode-local projection: never overwrite the saved gallery image model or API mode.
+export function getAgentApiProfile(settings: AppSettings): ApiProfile {
+  const profile = getActiveApiProfile(settings)
+  if (profile.provider !== 'openai' || profile.apiMode !== 'images' || !profile.agentTextModel) return profile
+  return { ...profile, model: profile.agentTextModel, agentImageModel: profile.model, apiMode: 'responses', streamImages: false }
+}
+
+export function getAgentImageProfile(profile: ApiProfile): ApiProfile {
+  return profile.agentImageModel
+    ? { ...profile, model: profile.agentImageModel, apiMode: 'images', streamImages: false, agentImageModel: undefined }
+    : profile
+}

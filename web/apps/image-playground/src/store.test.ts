@@ -97,7 +97,7 @@ vi.mock('./lib/agentApi', () => ({
 }))
 import { clearAgentConversations, clearImages, getAllAgentConversations, getAllTasks, putAgentConversation, putImage, putTask as putDbTask } from './lib/db'
 import { callAgentResponsesApi, callBatchImageSingle } from './lib/agentApi'
-import { cleanStaleAgentInputDrafts, deleteAgentRoundFromConversation, editOutputs, getActiveAgentRounds, getErrorToastMessage, getPersistedState, getTaskApiProfile, importData, initStore, markInterruptedOpenAIRunningTasks, migratePersistedState, regenerateAgentAssistantMessage, remapAgentRoundMentionsForPathChange, removeTask, reuseConfig, submitAgentMessage, submitTask, useStore } from './store'
+import { cleanStaleAgentInputDrafts, deleteAgentRoundFromConversation, editOutputs, getActiveAgentRounds, getErrorToastMessage, getPersistedState, getTaskApiProfile, importData, initStore, markInterruptedOpenAIRunningTasks, migratePersistedState, regenerateAgentAssistantMessage, remapAgentRoundMentionsForPathChange, removeTask, reuseConfig, stopAgentResponse, submitAgentMessage, submitTask, useStore } from './store'
 
 const imageA = { id: 'image-a', dataUrl: 'data:image/png;base64,a' }
 const imageB = { id: 'image-b', dataUrl: 'data:image/png;base64,b' }
@@ -1755,5 +1755,82 @@ describe('reused task API profile', () => {
       cancelText: '放弃提交',
     }))
     expect(state.showSettings).toBe(false)
+  })
+})
+
+describe('managed workspace Agent lifecycle', () => {
+  beforeEach(async () => {
+    await clearImages(); await putImage(imageA)
+    vi.mocked(callAgentResponsesApi).mockReset()
+    vi.mocked(callBatchImageSingle).mockReset().mockImplementation(async (opts) => ({ batchItemId: opts.batchItemId, image: { dataUrl: 'data:image/png;base64,managed-output' }, error: null }))
+    const profile = createDefaultOpenAIProfile({ id: 'newapi-image-playground', apiKey: 'fixture', model: 'gpt-image-2', apiMode: 'images', streamImages: false, agentTextModel: 'gpt-6-sol' })
+    useStore.setState({ settings: normalizeSettings({ profiles: [profile], activeProfileId: profile.id, agentMaxToolRounds: 3 }), appMode: 'gallery', prompt: '画一只猫', inputImages: [imageA], maskDraft: null, params: { ...DEFAULT_PARAMS }, tasks: [], agentConversations: [agentConversation({ id: 'managed' })], activeAgentConversationId: 'managed', agentEditingRoundId: null, confirmDialog: null, galleryInputDraft: null, agentInputDrafts: {} })
+  })
+  const tool = (id = 'one', count = 1) => ({ text: '', images: [], outputItems: [{ type: 'function_call' as const, name: 'generate_image_batch', call_id: id, arguments: JSON.stringify({ images: Array.from({ length: count }, (_, i) => ({ id: `i${i}`, prompt: `cat ${i}` })) }) }] })
+  const done = { text: '完成', images: [], outputItems: [{ type: 'message' as const, content: [{ type: 'output_text' as const, text: '完成' }] }] }
+  async function settled() { await vi.waitFor(() => expect(useStore.getState().agentConversations[0].rounds.slice(-1)[0]?.status).not.toBe('running')) }
+
+  it('switches without configuration, executes references, preserves gallery and records image task model', async () => {
+    useStore.getState().setAppMode('agent')
+    expect(useStore.getState().appMode).toBe('agent'); expect(useStore.getState().confirmDialog).toBeNull()
+    useStore.setState({ prompt: 'cat', inputImages: [imageA] })
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool()).mockResolvedValueOnce(done)
+    await submitAgentMessage(); await settled()
+    expect(callAgentResponsesApi).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(callAgentResponsesApi).mock.calls[0][0].profile.model).toBe('gpt-6-sol')
+    expect(callBatchImageSingle).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(callBatchImageSingle).mock.calls[0][0].referenceImageDataUrls).toEqual([imageA.dataUrl])
+    expect(useStore.getState().tasks[0]).toMatchObject({ status: 'done', apiMode: 'images', apiModel: 'gpt-image-2' })
+    expect(JSON.stringify(vi.mocked(callAgentResponsesApi).mock.calls[1][0].input)).toContain('function_call_output')
+    useStore.getState().setAppMode('gallery')
+    expect(useStore.getState().settings).toMatchObject({ model: 'gpt-image-2', apiMode: 'images' })
+  })
+  it('does not execute duplicate tool requests with repeated or new call ids', async () => {
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool('a')).mockResolvedValueOnce(tool('a')).mockResolvedValueOnce(tool('b')).mockResolvedValueOnce(done)
+    await submitAgentMessage(); await settled(); expect(callBatchImageSingle).toHaveBeenCalledTimes(1)
+  })
+  it('rejects an oversized batch before paid requests', async () => {
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool('a', 4)).mockResolvedValueOnce(done)
+    await submitAgentMessage(); await settled(); expect(callBatchImageSingle).not.toHaveBeenCalled()
+  })
+  it('marks failed images terminal and does not retry automatically', async () => {
+    vi.mocked(callBatchImageSingle).mockResolvedValue({ batchItemId: 'i0', image: null, error: 'fixture refused' })
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool('a')).mockResolvedValueOnce(tool('b')).mockResolvedValueOnce(done)
+    await submitAgentMessage(); await settled(); expect(callBatchImageSingle).toHaveBeenCalledTimes(1)
+    expect(useStore.getState().tasks[0]).toMatchObject({ status: 'error', error: 'fixture refused' })
+  })
+  it('bounds tool-only continuations without creating images', async () => {
+    vi.mocked(callAgentResponsesApi).mockResolvedValue({ text: '', images: [], outputItems: [{ type: 'function_call', name: 'continue_generation', call_id: 'continue', arguments: '{"reason":"more"}' }] })
+    await submitAgentMessage(); await settled(); expect(callAgentResponsesApi).toHaveBeenCalledTimes(4); expect(callBatchImageSingle).not.toHaveBeenCalled()
+  })
+  it('stops in-flight images and never launches queued images', async () => {
+    vi.mocked(callBatchImageSingle).mockImplementation(async (opts) => new Promise((resolve) => {
+      opts.signal?.addEventListener('abort', () => resolve({ batchItemId: opts.batchItemId, image: null, error: '请求已取消' }), { once: true })
+    }))
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool('a', 3))
+    await submitAgentMessage()
+    await vi.waitFor(() => expect(callBatchImageSingle).toHaveBeenCalledTimes(2))
+    stopAgentResponse('managed')
+    await settled()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(callBatchImageSingle).toHaveBeenCalledTimes(2)
+    expect(useStore.getState().tasks.some((task) => task.status === 'running')).toBe(false)
+    expect(useStore.getState().tasks.some((task) => task.status === 'done')).toBe(false)
+  })
+
+  it('supports ordinary conversation without starting an image request', async () => {
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(done)
+    await submitAgentMessage(); await settled()
+    expect(callBatchImageSingle).not.toHaveBeenCalled()
+  })
+
+  it('caps image concurrency at two', async () => {
+    let running = 0, maximum = 0
+    vi.mocked(callBatchImageSingle).mockImplementation(async (opts) => {
+      maximum = Math.max(maximum, ++running); await new Promise((resolve) => setTimeout(resolve, 5)); running--
+      return { batchItemId: opts.batchItemId, image: { dataUrl: 'data:image/png;base64,managed-output' }, error: null }
+    })
+    vi.mocked(callAgentResponsesApi).mockResolvedValueOnce(tool('a', 3))
+    await submitAgentMessage(); await settled(); expect(callBatchImageSingle).toHaveBeenCalledTimes(3); expect(maximum).toBe(2); expect(running).toBe(0)
   })
 })

@@ -128,6 +128,9 @@ func TestBuildImagePlaygroundLaunchURLForcesGalleryImagesMode(t *testing.T) {
 		t.Fatalf("profiles length = %d, want 1", len(settings.Profiles))
 	}
 	profile := settings.Profiles[0]
+	if profile.AgentTextModel != imagePlaygroundAgentModel {
+		t.Fatalf("agent model = %q", profile.AgentTextModel)
+	}
 	if profile.APIMode != "images" {
 		t.Fatalf("apiMode = %q, want images", profile.APIMode)
 	}
@@ -678,6 +681,9 @@ func TestImagePlaygroundMediaGroupIndependentOfPlanning(t *testing.T) {
 			var config imagePlaygroundLaunchSettings
 			if err := common.UnmarshalJsonStr(launch.Query().Get("settings"), &config); err != nil {
 				t.Fatal(err)
+			}
+			if (config.Profiles[0].AgentTextModel != "") != planning {
+				t.Fatal("managed Agent must only be configured when text routing is available")
 			}
 			if launch.Query().Get("appMode") != "gallery" || config.SupportsEcommerce != planning || config.Profiles[0].APIMode != "images" {
 				t.Fatal("gallery launch must remain usable independently of planning")

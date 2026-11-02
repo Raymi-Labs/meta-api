@@ -1,3 +1,5 @@
+import { callImageApi } from './api'
+import { DEFAULT_SETTINGS, getAgentImageProfile } from './apiProfiles'
 import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_STREAM_PARTIAL_IMAGES, type ApiProfile, type AppSettings, type ResponsesApiResponse, type ResponsesOutputItem, type TaskParams } from '../types'
 import { buildApiUrl, readClientDevProxyConfig, shouldUseApiProxy } from './devProxy'
 import { getApiErrorMessage, MIME_MAP, normalizeBase64Image, pickActualParams } from './imageApiShared'
@@ -50,12 +52,14 @@ const AGENT_IMAGE_INSTRUCTIONS = [
   'Resolve user mentions ("the first image") to the matching id. Only use existing ids in image_generation prompts and generate_image_batch prompts.',
 ].join('\n')
 
-function createAgentInstructions(settings: AppSettings) {
+function createAgentInstructions(settings: AppSettings, profile: ApiProfile) {
   const maxToolRounds = Number.isFinite(settings.agentMaxToolRounds)
     ? Math.max(1, Math.trunc(settings.agentMaxToolRounds))
     : DEFAULT_AGENT_MAX_TOOL_ROUNDS
   return [
-    AGENT_IMAGE_INSTRUCTIONS,
+    profile.agentImageModel
+      ? AGENT_IMAGE_INSTRUCTIONS.replaceAll('image_generation', 'generate_image_batch') + '\nFor every image, including a single image or prerequisite, call generate_image_batch. Use a one-item images array for one image. The application executes image generation; never invent an image result.'
+      : AGENT_IMAGE_INSTRUCTIONS,
     '',
     '## Tool policy',
     `- Current maximum tool-use rounds for this Agent turn: ${maxToolRounds}.`,
@@ -111,17 +115,17 @@ function createImageTool(params: TaskParams, profile: ApiProfile, maskDataUrl?: 
 }
 
 function createAgentTools(params: TaskParams, profile: ApiProfile, settings: AppSettings, maskDataUrl?: string): Array<Record<string, unknown>> {
-  const tools: Array<Record<string, unknown>> = [createImageTool(params, profile, maskDataUrl)]
+  const tools: Array<Record<string, unknown>> = profile.agentImageModel ? [] : [createImageTool(params, profile, maskDataUrl)]
 
   // generate_image_batch: custom function tool for concurrent multi-image generation
   tools.push({
     type: 'function',
     name: 'generate_image_batch',
     description: [
-      'Generate multiple images concurrently. Use this ONLY when:',
-      '1. There are 2+ remaining images whose prerequisites (base references) are ALL already generated.',
+      profile.agentImageModel ? 'Generate one or more images using the application Images API. Use a one-item array for single or prerequisite images.' : 'Generate multiple images concurrently. Use this ONLY when:',
+      profile.agentImageModel ? '1. Every prerequisite reference is already available; a single image is valid.' : '1. There are 2+ remaining images whose prerequisites (base references) are ALL already generated.',
       '2. These images are independent of each other (none references another image in this same batch).',
-      'For single images or prerequisite/base images, use the built-in image_generation tool instead.',
+      profile.agentImageModel ? 'For dependent images, finish the prerequisite first before requesting another batch.' : 'For single images or prerequisite/base images, use the built-in image_generation tool instead.',
       'Each image prompt must be self-contained and include full visual style descriptions.',
       'If an image needs to match a previously generated image, include the corresponding XML tag (e.g. <ref id="round-1-image-1" />) inside that image prompt so the app can attach the reference image automatically.',
     ].join(' '),
@@ -627,7 +631,7 @@ export async function callAgentResponsesApi(opts: {
   try {
     const body: Record<string, unknown> = {
       model: profile.model || settings.model,
-      instructions: createAgentInstructions(settings),
+      instructions: createAgentInstructions(settings, profile),
       input,
       tools: createAgentTools(params, profile, settings, maskDataUrl),
     }
@@ -741,6 +745,7 @@ export async function callBatchImageSingle(opts: {
   profile: ApiProfile
   params: TaskParams
   batchItemId: string
+  maskDataUrl?: string
   prompt: string
   referenceImageDataUrls: string[]
   referenceIds?: string[]
@@ -750,6 +755,24 @@ export async function callBatchImageSingle(opts: {
   onImageToolCompleted?: (image: AgentApiResultImage) => void | Promise<void>
 }): Promise<BatchImageCallResult> {
   const { profile, params, batchItemId, prompt, referenceImageDataUrls, referenceIds, signal, onImageToolStarted, onPartialImage, onImageToolCompleted } = opts
+  if (profile.agentImageModel) {
+    try {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      const imageProfile = getAgentImageProfile(profile)
+      await onImageToolStarted?.()
+      const result = await callImageApi({
+        settings: { ...DEFAULT_SETTINGS, ...imageProfile, profiles: [imageProfile], activeProfileId: imageProfile.id },
+        prompt, params: { ...params, n: 1 }, inputImageDataUrls: referenceImageDataUrls,
+        maskDataUrl: opts.maskDataUrl, signal,
+      })
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      const image = result.images[0] ? { dataUrl: result.images[0], actualParams: result.actualParamsList?.[0] ?? result.actualParams, revisedPrompt: result.revisedPrompts?.[0] } : null
+      if (image) await onImageToolCompleted?.(image)
+      return { batchItemId, image, error: image ? null : '接口未返回图片数据' }
+    } catch (error) {
+      return { batchItemId, image: null, error: signal?.aborted ? '请求已取消' : error instanceof Error ? error.message : String(error) }
+    }
+  }
   const mime = MIME_MAP[params.output_format] || 'image/png'
   const proxyConfig = readClientDevProxyConfig()
   const useApiProxy = shouldUseApiProxy(profile.apiProxy, proxyConfig)

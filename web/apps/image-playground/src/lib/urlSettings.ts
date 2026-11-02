@@ -70,7 +70,13 @@ function activateFirstImportedProfile(settings: AppSettings, importedSettings: u
   const activeProfile = findEquivalentApiProfile(settings, importedProfile, imported.customProviders)
 
   return activeProfile
-    ? normalizeSettings({ ...settings, activeProfileId: activeProfile.id })
+    ? normalizeSettings({
+        ...settings,
+        profiles: settings.profiles.map((profile) => profile.id === activeProfile.id && importedProfile.id === 'newapi-image-playground'
+          ? { ...profile, agentTextModel: importedProfile.agentTextModel, agentImageModel: undefined }
+          : profile),
+        activeProfileId: activeProfile.id,
+      })
     : settings
 }
 
