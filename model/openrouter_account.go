@@ -125,6 +125,18 @@ func fetchOpenRouterAccountSnapshot(config UpstreamAccountRemoteConfig) (*upstre
 	}, nil
 }
 
+// Activity days are UTC. The live API also returns SQL-style timestamps, while
+// the documented examples use date-only strings. Keep the dashboard contract
+// date-only so sorting and inclusive date filters work for both representations.
+func normalizeOpenRouterActivityDate(value string) (string, error) {
+	for _, layout := range []string{"2006-01-02", "2006-01-02 15:04:05", time.RFC3339Nano} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed.UTC().Format("2006-01-02"), nil
+		}
+	}
+	return "", errors.New("OpenRouter activity date invalid")
+}
+
 func fetchOpenRouterFinance(ctx context.Context, client *http.Client, config UpstreamAccountRemoteConfig) *OpenRouterAccountFinance {
 	result := &OpenRouterAccountFinance{Activity: nil, FetchedAt: common.GetTimestamp()}
 	credits, err := fetchOpenRouterCredits(ctx, client, config)
@@ -141,11 +153,14 @@ func fetchOpenRouterFinance(ctx context.Context, client *http.Client, config Ups
 		err = errors.New("OpenRouter activity missing")
 	}
 	if err == nil {
-		for _, row := range *activity.Data {
-			if _, dateErr := time.Parse("2006-01-02", row.Date); dateErr != nil || row.Usage == nil || *row.Usage < 0 || row.BYOKUsageInference < 0 || row.Requests < 0 || row.PromptTokens < 0 || row.CompletionTokens < 0 || row.ReasoningTokens < 0 {
+		for i := range *activity.Data {
+			row := &(*activity.Data)[i]
+			date, dateErr := normalizeOpenRouterActivityDate(row.Date)
+			if dateErr != nil || row.Usage == nil || *row.Usage < 0 || row.BYOKUsageInference < 0 || row.Requests < 0 || row.PromptTokens < 0 || row.CompletionTokens < 0 || row.ReasoningTokens < 0 {
 				err = errors.New("OpenRouter activity invalid")
 				break
 			}
+			row.Date = date
 		}
 	}
 	if err != nil {

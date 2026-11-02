@@ -35,6 +35,7 @@ func TestOpenRouterFinancePartialFailureAndEmpty(t *testing.T) {
 		creditOK, activityOK    bool
 	}{
 		{"valid", `{"data":{"total_credits":50,"total_usage":12.5}}`, `{"data":[{"date":"2026-11-01","model":"m","usage":1.25,"byok_usage_inference":4}]}`, 200, true, true},
+		{"negative-usage", `{"data":{"total_credits":50,"total_usage":12.5}}`, `{"data":[{"date":"2026-11-01 00:00:00","usage":-1}]}`, 200, true, false},
 		{"empty", `{"data":{"total_credits":0,"total_usage":0}}`, `{"data":[]}`, 200, true, true},
 		{"activity-forbidden", `{"data":{"total_credits":50,"total_usage":12.5}}`, `test-secret`, 403, true, false},
 		{"credits-missing", `{"data":{"total_credits":50}}`, `{"data":[]}`, 200, false, true},
@@ -56,6 +57,49 @@ func TestOpenRouterFinancePartialFailureAndEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestOpenRouterActivityDateNormalization(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"2026-11-01", "2026-11-01"},
+		{"2026-11-01 00:00:00", "2026-11-01"},
+		{"2026-11-01T00:00:00.000Z", "2026-11-01"},
+		{"2026-11-02T01:00:00+08:00", "2026-11-01"},
+		{"2026-11-01T23:00:00-02:00", "2026-11-02"},
+		{"2026-02-30 00:00:00", ""},
+		{"2026-11-01 25:00:00", ""},
+		{"2026-11-01 unexpected", ""},
+		{"", ""},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			got, err := normalizeOpenRouterActivityDate(tc.input)
+			if got != tc.want || (err != nil) != (tc.want == "") {
+				t.Fatalf("normalize %q = %q, %v; want %q", tc.input, got, err, tc.want)
+			}
+		})
+	}
+}
+
+func TestOpenRouterFinanceLiveActivityDateFormat(t *testing.T) {
+	// Same fields and timestamp shape as the read-only production response.
+	activity := `{"data":[
+		{"date":"2026-10-31","model":"older","usage":0},
+		{"date":"2026-11-01 00:00:00","model":"openai/gpt-4o-mini","provider_name":"azure","requests":11,"usage":0.000062,"byok_usage_inference":0,"prompt_tokens":91,"completion_tokens":83,"reasoning_tokens":0,"cached_tokens":0,"byok_requests":0},
+		{"date":"2026-11-02T01:00:00+08:00","model":"same-utc-day","usage":1.25}
+	]}`
+	result := fetchOpenRouterFinance(context.Background(), openRouterTestClient(t, `{"data":{"total_credits":50,"total_usage":12.5}}`, activity, 200), UpstreamAccountRemoteConfig{AccessToken: "test-secret"})
+	if result.ActivityError != "" || len(result.Activity) != 3 {
+		t.Fatalf("live activity rejected: %+v", result)
+	}
+	for i, want := range []string{"2026-11-01", "2026-11-01", "2026-10-31"} {
+		if result.Activity[i].Date != want {
+			t.Fatalf("row %d date = %q, want %q", i, result.Activity[i].Date, want)
+		}
+	}
+	if *result.Activity[0].Usage != 0.000062 || result.Activity[0].Requests != 11 || result.Activity[0].PromptTokens != 91 {
+		t.Fatal("normalization changed activity amounts or counts")
+	}
+}
+
 func TestOpenRouterRequestFailuresAndRedirect(t *testing.T) {
 	for _, status := range []int{301, 302, 401, 403, 429, 500} {
 		client := newOpenRouterAccountClient()
