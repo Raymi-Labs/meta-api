@@ -56,7 +56,7 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 }
 
 // buildResponsesUsage 从一个完整的 Responses 响应对象计算 *dto.Usage(含内置工具用量),
-// 供非流式直连 handler 与聚合 handler 共用,保证两条路径计费口径完全一致。
+// 供非流式直连、流式与聚合 handler 共用,保证各路径计费口径一致。
 func buildResponsesUsage(c *gin.Context, info *relaycommon.RelayInfo, responsesResponse *dto.OpenAIResponsesResponse) *dto.Usage {
 	info.ObserveResponseModel(responsesResponse.Model)
 	usage := dto.Usage{}
@@ -82,11 +82,28 @@ func buildResponsesUsage(c *gin.Context, info *relaycommon.RelayInfo, responsesR
 		}
 	}
 	// 解析 Tools 用量
+	warnedMissingTools := make(map[string]bool)
 	for _, tool := range responsesResponse.Tools {
 		toolType := dto.NormalizeBuiltInToolType(common.Interface2String(tool["type"]))
+		switch toolType {
+		case "namespace", "function", "custom":
+			// These declare client tools, not separately billed built-in calls.
+			// Keep the original response (including nested tools) untouched.
+			continue
+		}
 		buildToolinfo, ok := info.ResponsesUsageInfo.BuiltInTools[toolType]
 		if !ok || buildToolinfo == nil {
-			logger.LogError(c, fmt.Sprintf("BuiltInTools not found for tool type: %v", tool["type"]))
+			// Only fixed categories reach logs: unknown upstream values may be
+			// arbitrary content. Bound both cardinality and repeated diagnostics.
+			category := "unknown"
+			switch toolType {
+			case dto.BuildInToolWebSearchPreview, dto.BuildInToolFileSearch, dto.BuildInToolImageGeneration:
+				category = toolType
+			}
+			if !warnedMissingTools[category] {
+				logger.LogWarn(c, fmt.Sprintf("Responses tool usage metadata missing: tool_type=%s", category))
+				warnedMissingTools[category] = true
+			}
 			continue
 		}
 		if dto.IsBuiltInWebSearchToolType(toolType) {
