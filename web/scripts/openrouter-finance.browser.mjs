@@ -240,6 +240,21 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     ),
     'page overflow',
   );
+  await page.getByRole('button', { name: '编辑', exact: true }).click();
+  await page.getByRole('switch', { name: '启用', exact: true }).click();
+  await page
+    .getByRole('button')
+    .filter({ hasText: /^保存$/ })
+    .click();
+  await page.getByText('已停用', { exact: true }).waitFor();
+  assert.equal(saved.at(-1).enabled, false);
+  await page.getByRole('button', { name: '编辑', exact: true }).click();
+  await page.getByRole('switch', { name: '启用', exact: true }).click();
+  await page
+    .getByRole('button')
+    .filter({ hasText: /^保存$/ })
+    .click();
+  await page.getByText('$50.000000', { exact: true }).waitFor();
   mode = 'partial';
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await page

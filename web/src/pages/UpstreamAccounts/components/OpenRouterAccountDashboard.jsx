@@ -354,13 +354,16 @@ export default function OpenRouterAccountDashboard({
                 setDraft((d) => ({ ...d, access_token }))
               }
             />
-            <div>
-              <Switch
-                checked={draft.enabled}
-                onChange={(enabled) => setDraft((d) => ({ ...d, enabled }))}
-              />{' '}
-              <Text>{t('启用')}</Text>
-            </div>
+            {draft.id ? (
+              <div>
+                <Switch
+                  aria-label={t('启用')}
+                  checked={draft.enabled}
+                  onChange={(enabled) => setDraft((d) => ({ ...d, enabled }))}
+                />{' '}
+                <Text>{t('启用')}</Text>
+              </div>
+            ) : null}
           </div>
         )}
       </Modal>
