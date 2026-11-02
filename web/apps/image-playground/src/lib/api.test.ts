@@ -10,6 +10,34 @@ describe('callImageApi', () => {
     vi.useRealTimers()
   })
 
+  it.each([false, true])('gallery uses only Images API with reference image=%s', async (edit) => {
+    const image = 'data:image/png;base64,aW1hZ2U='
+    const calls: { url: string; init?: RequestInit }[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === image) return new Response(new Blob(['image'], { type: 'image/png' }))
+      calls.push({ url, init })
+      if (!url.endsWith(edit ? '/images/edits' : '/images/generations')) {
+        throw new Error(`Unexpected text or planning request: ${url}`)
+      }
+      return new Response(JSON.stringify({ data: [{ b64_json: 'aW1hZ2U=' }] }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const result = await callImageApi({
+      settings: { ...DEFAULT_SETTINGS, baseUrl: 'https://gallery.example/v1', apiKey: 'gallery-only', apiMode: 'images', model: 'gpt-image-2', apiProxy: false, codexCli: false },
+      prompt: '画一只猫',
+      params: { ...DEFAULT_PARAMS, n: 1 },
+      inputImageDataUrls: edit ? [image] : [],
+    })
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe(`https://gallery.example/v1/images/${edit ? 'edits' : 'generations'}`)
+    const body = calls[0].init?.body
+    expect(edit ? (body as FormData).get('model') : JSON.parse(String(body)).model).toBe('gpt-image-2')
+    if (edit) expect((body as FormData).getAll('image[]')).toHaveLength(1)
+    expect(result.images).toEqual([image])
+  })
+
   it.each([false, true])(
     'adds the prompt rewrite guard on Responses API when Codex CLI mode is %s',
     async (codexCli) => {

@@ -23,7 +23,7 @@ import (
 const (
 	imagePlaygroundDefaultModel    = "gpt-image-2"
 	imagePlaygroundAgentModel      = "gpt-6-sol"
-	imagePlaygroundPreferredGroup  = "福利"
+	imagePlaygroundPreferredGroup  = "生图和视频"
 	imagePlaygroundSessionDuration = 2 * time.Hour
 	imagePlaygroundRefreshWindow   = 15 * time.Minute
 )
@@ -159,7 +159,7 @@ func createImagePlaygroundToken(userId int, now int64) (*model.Token, bool, erro
 // 返回值：
 //   - changed: token 内存状态是否已被修改（caller 应据此决定是否回写 DB；即便随后返回 err，
 //     已经发生的内存变更也应一并持久化以避免内存/DB 漂移）。
-//   - supportsEcommerce: 选定的 group 是否同时支持 image + agent 两个模型，用于决定 UI 是否启用电商模式。
+//   - supportsEcommerce: 选定图片组及其实际回退范围是否支持规划，用于决定 UI 是否启用电商模式。
 //   - err: 解析 group 时的错误，nil 表示成功。
 func refreshImagePlaygroundToken(token *model.Token, userId int) (bool, bool, error) {
 	changed := clearImagePlaygroundTokenModelLimits(token)
@@ -192,74 +192,46 @@ func clearImagePlaygroundTokenModelLimits(token *model.Token) bool {
 	return true
 }
 
-// resolveImagePlaygroundTokenGroup 选出最适合当前用户的 image-playground 分组并报告其能力。
-// 选择顺序：
-//  1. 福利分组（仅当用户有权限且分组仍有效时）；
-//  2. 当前用户分组（仅当它仍是有效、可用分组时）；
-//  3. AutoGroups 中按配置顺序排列的有效分组；
-//  4. 其余有效、可用分组（按名称排序，保证结果稳定）；
-//  5. 在上述候选中优先选择同时支持 image + agent 模型的分组，其次选择仅支持 image 的分组。
-//
-// 决策见 .agents/notes/implemented/bug-fix/2026-11-01-image-playground-defaults.md。
-//
-// 不再回退到 default 或已取消的用户分组：无可执行分组时直接返回配置错误，避免创建一个
-// 看似可用、实际无法路由的临时令牌。
+// resolveImagePlaygroundTokenGroup prioritizes gallery image routing independently of
+// optional planning. Planning must be reachable through this token's actual fallback
+// groups, not just through any group the user could select manually.
+// Decision: .agents/notes/implemented/bug-fix/2026-11-02-gallery-media-routing.md.
 func resolveImagePlaygroundTokenGroup(userId int) (string, bool, error) {
 	userGroup, err := model.GetUserGroup(userId, false)
 	if err != nil {
 		return "", false, err
 	}
 	userGroup = strings.TrimSpace(userGroup)
-
 	candidates := buildImagePlaygroundGroupCandidates(userGroup)
 	if len(candidates) == 0 {
-		return "", false, errors.New(
-			"当前用户没有可用于 AI 生图的有效分组，请检查用户可用分组和分组倍率配置",
-		)
+		return "", false, errors.New("当前用户没有可用于 AI 生图的有效分组，请检查用户可用分组和分组倍率配置")
 	}
-
-	// 每个 candidate 对两个模型仅查询一次，避免分支间重复触发 model.GetChannel。
-	type supportInfo struct {
-		group string
-		image bool
-		agent bool
-	}
-	infos := make([]supportInfo, 0, len(candidates))
-	var firstImageCheckErr error
 	for _, group := range candidates {
-		imageSupported, imageErr := imagePlaygroundGroupSupportsModel(group, imagePlaygroundDefaultModel)
-		if imageErr != nil {
-			common.SysError(fmt.Sprintf("image-playground supports check failed: group=%s model=%s err=%v",
-				group, imagePlaygroundDefaultModel, imageErr))
-			if firstImageCheckErr == nil {
-				firstImageCheckErr = imageErr
+		imageSupported, err := imagePlaygroundGroupSupportsModel(group, imagePlaygroundDefaultModel)
+		if err != nil {
+			// A query failure is not proof that the preferred group is unavailable.
+			// Do not persist a different (possibly more expensive) default on DB errors.
+			return "", false, fmt.Errorf("检查 AI 生图分组能力失败: %w", err)
+		}
+		if !imageSupported {
+			continue
+		}
+		for _, planningGroup := range service.TokenRoutingGroups(userGroup, group, true) {
+			if !ratio_setting.ContainsGroupRatio(planningGroup) {
+				continue
+			}
+			available, planningErr := imagePlaygroundGroupSupportsModel(planningGroup, imagePlaygroundAgentModel)
+			if planningErr != nil {
+				common.SysError(fmt.Sprintf("image-playground planning check failed: group=%s err=%v", planningGroup, planningErr))
+				continue
+			}
+			if available {
+				return group, true, nil
 			}
 		}
-		agentSupported, agentErr := imagePlaygroundGroupSupportsModel(group, imagePlaygroundAgentModel)
-		if agentErr != nil {
-			common.SysError(fmt.Sprintf("image-playground supports check failed: group=%s model=%s err=%v",
-				group, imagePlaygroundAgentModel, agentErr))
-		}
-		infos = append(infos, supportInfo{group: group, image: imageSupported, agent: agentSupported})
+		return group, false, nil
 	}
-
-	for _, info := range infos {
-		if info.image && info.agent {
-			return info.group, true, nil
-		}
-	}
-	for _, info := range infos {
-		if info.image {
-			return info.group, false, nil
-		}
-	}
-	if firstImageCheckErr != nil {
-		return "", false, fmt.Errorf("检查 AI 生图分组能力失败: %w", firstImageCheckErr)
-	}
-	return "", false, fmt.Errorf(
-		"当前用户没有支持 %s 的可用分组，请检查渠道模型与分组配置",
-		imagePlaygroundDefaultModel,
-	)
+	return "", false, fmt.Errorf("当前用户没有支持 %s 的可用分组，请检查渠道模型与分组配置", imagePlaygroundDefaultModel)
 }
 
 func buildImagePlaygroundGroupCandidates(userGroup string) []string {
@@ -281,6 +253,7 @@ func buildImagePlaygroundGroupCandidates(userGroup string) []string {
 	}
 
 	add(imagePlaygroundPreferredGroup)
+	add("福利")
 	add(userGroup)
 	for _, group := range setting.GetAutoGroups() {
 		add(group)

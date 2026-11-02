@@ -257,7 +257,7 @@ func TestResolveImagePlaygroundTokenGroupPrefersModelEnabledGroup(t *testing.T) 
 	}
 }
 
-func TestResolveImagePlaygroundTokenGroupPrefersImageAndAgentGroup(t *testing.T) {
+func TestResolveImagePlaygroundTokenGroupKeepsImageGroupWithPlanningFallback(t *testing.T) {
 	setupImagePlaygroundGroupTestDB(t)
 
 	if err := model.DB.Create(&model.User{
@@ -290,11 +290,11 @@ func TestResolveImagePlaygroundTokenGroupPrefersImageAndAgentGroup(t *testing.T)
 	if err != nil {
 		t.Fatalf("resolve image playground group: %v", err)
 	}
-	if group != "vip" {
-		t.Fatalf("resolveImagePlaygroundTokenGroup() = %q, want vip", group)
+	if group != "default" {
+		t.Fatalf("resolveImagePlaygroundTokenGroup() = %q, want default", group)
 	}
 	if !supportsEcommerce {
-		t.Fatal("supportsEcommerce = false, want true (vip supports both models)")
+		t.Fatal("supportsEcommerce = false, want true (vip is reachable through fallback)")
 	}
 }
 
@@ -552,6 +552,139 @@ func TestImagePlaygroundWelfareSessionRouting(t *testing.T) {
 			group, ok, err := resolveImagePlaygroundTokenGroup(1)
 			if err != nil || group != "vip" || !ok {
 				t.Fatalf("group=%s ecommerce=%v err=%v", group, ok, err)
+			}
+		})
+	}
+}
+
+func TestImagePlaygroundMediaGroupIndependentOfPlanning(t *testing.T) {
+	for _, tc := range []struct {
+		name                                             string
+		usable                                           string
+		ratios                                           string
+		auto                                             string
+		disabled, disabledAbility, noImage, queryFailure bool
+		wantGroup                                        string
+		wantPlanning                                     bool
+	}{
+		{"separate planning fallback", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, false, false, false, "生图和视频", true},
+		{"planning outside fallback", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["team"]`, false, false, false, false, "生图和视频", false},
+		{"unauthorized media", `{"福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, false, false, false, "福利", true},
+		{"removed media ratio", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, false, false, false, "福利", true},
+		{"disabled media channel", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, true, false, false, false, "福利", true},
+		{"disabled media ability", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, true, false, false, "福利", true},
+		{"no images", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, false, true, false, "", false},
+		{"query error preserves old group", `{"生图和视频":"","福利":"","vip":"","team":""}`, `{"生图和视频":0.2,"福利":0.6,"vip":1,"team":1}`, `["vip"]`, false, false, false, true, "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setupImagePlaygroundGroupTestDB(t)
+			for _, err := range []error{setting.UpdateUserUsableGroupsByJSONString(tc.usable), ratio_setting.UpdateGroupRatioByJSONString(tc.ratios), setting.UpdateAutoGroupsByJsonString(tc.auto)} {
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := model.DB.Create(&model.User{Id: 1, Username: "gallery", Group: "team", Status: common.UserStatusEnabled, AffCode: "gallery"}).Error; err != nil {
+				t.Fatal(err)
+			}
+			for id, group := range []string{"生图和视频", "福利", "vip"} {
+				status := common.ChannelStatusEnabled
+				if id == 0 && tc.disabled {
+					status = common.ChannelStatusManuallyDisabled
+				}
+				if err := model.DB.Create(&model.Channel{Id: id + 1, Name: group, Key: "fixture", Group: group, Models: imagePlaygroundDefaultModel + "," + imagePlaygroundAgentModel, Status: status}).Error; err != nil {
+					t.Fatal(err)
+				}
+				if err := model.DB.Create(&model.Ability{Group: group, Model: imagePlaygroundDefaultModel, ChannelId: id + 1, Enabled: !tc.noImage && !(id == 0 && tc.disabledAbility)}).Error; err != nil {
+					t.Fatal(err)
+				}
+				if id > 0 {
+					if err := model.DB.Create(&model.Ability{Group: group, Model: imagePlaygroundAgentModel, ChannelId: id + 1, Enabled: true}).Error; err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			if tc.queryFailure {
+				if err := model.DB.Migrator().DropTable(&model.Ability{}); err != nil {
+					t.Fatal(err)
+				}
+				old := &model.Token{Group: "vip", AutoGroupFallback: false, RoutingConfig: `{"groups":["vip"]}`}
+				changed, _, err := refreshImagePlaygroundToken(old, 1)
+				if err == nil || changed || old.Group != "vip" || old.RoutingConfig == "" {
+					t.Fatal("query failure must not change stored routing")
+				}
+				return
+			}
+			token, planning, err := createImagePlaygroundToken(1, common.GetTimestamp())
+			if tc.wantGroup == "" {
+				if err == nil || token != nil {
+					t.Fatal("no image capability must reject session")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if token.Group != tc.wantGroup || planning != tc.wantPlanning {
+				t.Fatalf("group=%s planning=%v", token.Group, planning)
+			}
+			// Exercise actual channel selection for each request model, not only the candidate list.
+			for _, name := range []string{imagePlaygroundDefaultModel, imagePlaygroundAgentModel} {
+				if name == imagePlaygroundAgentModel && !planning {
+					continue
+				}
+				ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+				common.SetContextKey(ctx, constant.ContextKeyUserGroup, "team")
+				common.SetContextKey(ctx, constant.ContextKeyTokenAutoGroupFallback, token.AutoGroupFallback)
+				channel, group, err := service.CacheGetRandomSatisfiedChannel(&service.RetryParam{Ctx: ctx, TokenGroup: token.Group, ModelName: name})
+				want := tc.wantGroup
+				if name == imagePlaygroundAgentModel && want == "生图和视频" {
+					want = "vip"
+				}
+				if err != nil || channel == nil || group != want {
+					t.Fatalf("%s routed to %s, want %s: %v", name, group, want, err)
+				}
+			}
+			key, expiry := token.Key, token.ExpiredTime
+			token.Group, token.AutoGroupFallback, token.CrossGroupRetry = "vip", false, true
+			token.RoutingConfig = `{"groups":["vip"]}`
+			token.ModelLimitsEnabled, token.ModelLimits = true, "obsolete"
+			if err := token.Update(); err != nil {
+				t.Fatal(err)
+			}
+			// Use the real HTTP session entry to cover reuse and persistence.
+			response := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(response)
+			c.Request = httptest.NewRequest(http.MethodPost, "https://gallery.example/api/image-playground/session", nil)
+			c.Set("id", 1)
+			CreateImagePlaygroundSession(c)
+			var payload struct {
+				Success bool                           `json:"success"`
+				Data    imagePlaygroundSessionResponse `json:"data"`
+			}
+			if err := common.Unmarshal(response.Body.Bytes(), &payload); err != nil || !payload.Success {
+				t.Fatalf("session failed: %s", response.Body.String())
+			}
+			var saved model.Token
+			if err := model.DB.First(&saved, token.Id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if saved.Group != tc.wantGroup || saved.Key != key || saved.ExpiredTime != expiry || !saved.AutoGroupFallback || saved.CrossGroupRetry || saved.RoutingConfig != "" || saved.ModelLimitsEnabled {
+				t.Fatal("session refresh lost routing or identity invariants")
+			}
+			launch, err := url.Parse(payload.Data.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var config imagePlaygroundLaunchSettings
+			if err := common.UnmarshalJsonStr(launch.Query().Get("settings"), &config); err != nil {
+				t.Fatal(err)
+			}
+			if launch.Query().Get("appMode") != "gallery" || config.SupportsEcommerce != planning || config.Profiles[0].APIMode != "images" {
+				t.Fatal("gallery launch must remain usable independently of planning")
+			}
+			changed, _, err := refreshImagePlaygroundToken(&saved, 1)
+			if changed || err != nil {
+				t.Fatal("refresh must be idempotent")
 			}
 		})
 	}
