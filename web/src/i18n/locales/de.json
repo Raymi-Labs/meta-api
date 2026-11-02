@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Deaktivieren: nur die gewählte Gruppe verwenden",
     "请选择是否开启自动切换分组": "Wählen Sie, ob der automatische Gruppenwechsel aktiviert werden soll",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Wenn aktiviert, werden bei Nichtverfügbarkeit des Modells in der gewählten Gruppe andere Gruppen mit Zugriffsberechtigung in der vom Administrator festgelegten Reihenfolge versucht. Abgerechnet wird nach der tatsächlich verwendeten Gruppe; die Kosten können höher sein als in der aktuellen Gruppe.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Benutzerdefiniertes Routing wechselt nur innerhalb Ihrer konfigurierten Gruppen. Abgerechnet wird nach der tatsächlich verwendeten Gruppe; die Kosten können höher sein als in der bevorzugten Gruppe."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "Benutzerdefiniertes Routing wechselt nur innerhalb Ihrer konfigurierten Gruppen. Abgerechnet wird nach der tatsächlich verwendeten Gruppe; die Kosten können höher sein als in der bevorzugten Gruppe.",
+    "BYOK 外部成本": "Externe BYOK-Kosten",
+    "OpenRouter 官方账单": "Offizielle OpenRouter-Abrechnung",
+    "OpenRouter 消费明细": "OpenRouter-Ausgabendetails",
+    "OpenRouter 账户": "OpenRouter-Konto",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Beträge in USD. Gekaufte Credits enthalten keine Zahlungsgebühren; einzelne Aufladungen finden Sie in der offiziellen Abrechnung.",
+    "全部日期": "Alle Daten",
+    "搜索模型或供应商": "Modelle oder Anbieter suchen",
+    "新增 OpenRouter 账户": "OpenRouter-Konto hinzufügen",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Letzte 30 abgeschlossene UTC-Tage, nach Datum, Modell und Anbieter. Heute ist ausgeschlossen. Externe BYOK-Kosten zählen nicht zu OpenRouter-Ausgaben.",
+    "消费金额": "Ausgaben",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Fügen Sie einen OpenRouter Management Key hinzu, um Credits, Guthaben und Ausgaben anzuzeigen.",
+    "筛选范围消费": "Gefilterte Ausgaben",
+    "累计消费": "Gesamtausgaben",
+    "累计购入额度": "Insgesamt gekaufte Credits",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Verwenden Sie einen OpenRouter Management Key. Er wird verschlüsselt gespeichert und nur für lesende Serverabfragen genutzt.",
+    "账户名称": "Kontoname",
+    "选择账户": "Konto auswählen"
   }
 }

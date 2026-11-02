@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Desactivar: usar solo el grupo seleccionado",
     "请选择是否开启自动切换分组": "Elige si quieres activar el cambio automático de grupo",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Si se activa y el modelo no está disponible en el grupo seleccionado, se probarán otros grupos a los que tengas acceso en el orden configurado por el administrador. Se factura según el grupo utilizado y el coste puede ser mayor que en el grupo actual.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "El enrutamiento personalizado solo cambia entre los grupos que has configurado. Se factura según el grupo utilizado y el coste puede ser mayor que en el grupo preferido."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "El enrutamiento personalizado solo cambia entre los grupos que has configurado. Se factura según el grupo utilizado y el coste puede ser mayor que en el grupo preferido.",
+    "BYOK 外部成本": "Coste BYOK externo",
+    "OpenRouter 官方账单": "Facturación oficial de OpenRouter",
+    "OpenRouter 消费明细": "Detalle de gastos de OpenRouter",
+    "OpenRouter 账户": "Cuenta OpenRouter",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Importes en USD. Los créditos comprados no incluyen comisiones de pago; consulte la facturación oficial para cada recarga.",
+    "全部日期": "Todas las fechas",
+    "搜索模型或供应商": "Buscar modelos o proveedores",
+    "新增 OpenRouter 账户": "Añadir cuenta OpenRouter",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Últimos 30 días UTC completos, por fecha, modelo y proveedor. No incluye hoy. Los costes BYOK externos no se suman al gasto de OpenRouter.",
+    "消费金额": "Gasto",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Añada una Management Key de OpenRouter para ver créditos, saldo y gastos.",
+    "筛选范围消费": "Gasto filtrado",
+    "累计消费": "Gasto acumulado",
+    "累计购入额度": "Créditos comprados acumulados",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Use una Management Key de OpenRouter. Se guarda cifrada y solo se utiliza para consultas de lectura desde el servidor.",
+    "账户名称": "Nombre de cuenta",
+    "选择账户": "Seleccionar cuenta"
   }
 }

@@ -22,6 +22,7 @@ import { Card, Skeleton, Tabs, Typography } from '@douyinfe/semi-ui';
 import { Server, ServerCog, WalletCards } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../context/Status';
+import OpenRouterAccountDashboard from './components/OpenRouterAccountDashboard';
 import CPAAccountDashboard from './components/CPAAccountDashboard';
 import CRSDashboardCard from './components/CRSDashboardCard';
 import UpstreamWalletCard from './components/UpstreamWalletCard';
@@ -50,7 +51,7 @@ const UpstreamAccountsPage = () => {
                 {t('账户管理')}
               </Title>
               <Text type='tertiary' className='mt-1 block'>
-                {t('上游账户') + ' · CRS · CPA'}
+                {t('上游账户') + ' · OpenRouter · CRS · CPA'}
               </Text>
             </div>
           </div>
@@ -81,7 +82,9 @@ const UpstreamAccountsPage = () => {
               </Card>
             ) : (
               <UpstreamWalletCard
-                accounts={accountsHook.accounts}
+                accounts={accountsHook.accounts.filter(
+                  (a) => a.account_type !== 'openrouter',
+                )}
                 accountDraft={accountsHook.accountDraft}
                 updateAccountDraftField={accountsHook.updateAccountDraftField}
                 normalizeAccountDraftBaseUrl={
@@ -116,6 +119,14 @@ const UpstreamAccountsPage = () => {
               />
             )}
           </div>
+        </Tabs.TabPane>
+        <Tabs.TabPane itemKey='openrouter' tab='OpenRouter'>
+          <OpenRouterAccountDashboard
+            accounts={accountsHook.accounts}
+            reloadAccounts={accountsHook.loadAccounts}
+            active={activeTab === 'openrouter'}
+            t={t}
+          />
         </Tabs.TabPane>
         <Tabs.TabPane
           itemKey='crs'

@@ -9,6 +9,8 @@ import (
 const (
 	UpstreamAccountTypeNewAPI                  = "newapi"
 	UpstreamAccountTypeSub2API                 = "sub2api"
+	UpstreamAccountTypeOpenRouter              = "openrouter"
+	openRouterAccountBaseURL                   = "https://openrouter.ai"
 	UpstreamAccountResourceDisplayBoth         = "both"
 	UpstreamAccountResourceDisplayWallet       = "wallet"
 	UpstreamAccountResourceDisplaySubscription = "subscription"

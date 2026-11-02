@@ -6903,6 +6903,23 @@
     "关闭，仅使用所选分组": "Desativar: usar apenas o grupo selecionado",
     "请选择是否开启自动切换分组": "Escolha se pretende ativar a mudança automática de grupo",
     "开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。": "Se ativado, quando o modelo não estiver disponível no grupo selecionado, serão tentados outros grupos a que tem acesso pela ordem definida pelo administrador. A cobrança segue o grupo efetivamente utilizado e pode ser superior à do grupo atual.",
-    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "O encaminhamento personalizado muda apenas entre os grupos que configurou. A cobrança segue o grupo efetivamente utilizado e pode ser superior à do grupo preferido."
+    "自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。": "O encaminhamento personalizado muda apenas entre os grupos que configurou. A cobrança segue o grupo efetivamente utilizado e pode ser superior à do grupo preferido.",
+    "BYOK 外部成本": "Custo BYOK externo",
+    "OpenRouter 官方账单": "Faturação oficial OpenRouter",
+    "OpenRouter 消费明细": "Detalhes de gastos OpenRouter",
+    "OpenRouter 账户": "Conta OpenRouter",
+    "OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Valores em USD. Os créditos comprados excluem taxas de pagamento; consulte a faturação oficial para cada recarga.",
+    "全部日期": "Todas as datas",
+    "搜索模型或供应商": "Pesquisar modelos ou fornecedores",
+    "新增 OpenRouter 账户": "Adicionar conta OpenRouter",
+    "最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。": "Últimos 30 dias UTC completos, por data, modelo e fornecedor. Hoje está excluído. Os custos BYOK externos não entram nos gastos OpenRouter.",
+    "消费金额": "Gasto",
+    "添加 OpenRouter Management Key 后查看充值、余额和消费明细": "Adicione uma Management Key OpenRouter para consultar créditos, saldo e gastos.",
+    "筛选范围消费": "Gasto filtrado",
+    "累计消费": "Gasto acumulado",
+    "累计购入额度": "Créditos comprados acumulados",
+    "请使用 OpenRouter Management Key；密钥加密保存，仅用于后台只读查询。": "Use uma Management Key OpenRouter. É guardada encriptada e usada apenas em consultas de leitura no servidor.",
+    "账户名称": "Nome da conta",
+    "选择账户": "Selecionar conta"
   }
 }
