@@ -140,7 +140,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "reasoning_parameter", "上游不支持当前思考强度", "请调整思考强度；若仍失败，请携带请求 ID 联系管理员核对渠道思考参数适配。"
 	case upstream && err.StatusCode == http.StatusBadRequest && rejectedSampling != "":
 		return "sampling_parameter", "上游模型不支持当前采样参数", fmt.Sprintf("请关闭客户端自定义 %s 参数后重试；若仍失败，请携带请求 ID 联系管理员。", rejectedSampling)
-	case code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed):
+	case !upstream && types.ClassifyFailure(err) == types.FailureUserRequest &&
+		(code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed)):
 		return "quota", "账户或令牌额度不足", "请检查账户余额、令牌额度及套餐限制。"
 	case err.StatusCode == http.StatusRequestEntityTooLarge:
 		return "request_too_large", "请求体超过大小限制", "请减少消息、附件或图片大小后重试。"

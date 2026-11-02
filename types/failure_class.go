@@ -37,8 +37,13 @@ func ClassifyFailure(err *NewAPIError) FailureClass {
 			return FailureClientCanceled
 		}
 		switch code {
-		case ErrorCodeInsufficientUserQuota:
-			return FailureUserRequest
+		case ErrorCodeInsufficientUserQuota, ErrorCodePreConsumeTokenQuotaFailed:
+			// Codes/status/text can also describe failed database operations. Only a
+			// typed rejection from a local authoritative check can leave the denominator.
+			var rejection *QuotaRejection
+			if errors.As(err.Err, &rejection) && rejection != nil {
+				return FailureUserRequest
+			}
 		case ErrorCodeBadRequestBody, ErrorCodeReadRequestBodyFailed:
 			if err.StatusCode == 400 || err.StatusCode == 413 {
 				return FailureUserRequest
