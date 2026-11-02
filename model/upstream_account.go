@@ -437,17 +437,39 @@ func SaveUpstreamAccount(account UpstreamAccount) (*UpstreamAccountOption, error
 			return nil, err
 		}
 	} else {
-		existing.Name = account.Name
-		existing.Remark = account.Remark
-		existing.AccountType = account.AccountType
-		existing.BaseURL = account.BaseURL
-		existing.UserID = account.UserID
-		existing.Email = account.Email
-		existing.AccessTokenEncrypted = account.AccessTokenEncrypted
-		existing.PasswordEncrypted = account.PasswordEncrypted
-		existing.Enabled = account.Enabled
-		existing.ResourceDisplayMode = account.ResourceDisplayMode
-		if err := DB.Save(&existing).Error; err != nil {
+		err := DB.Transaction(func(tx *gorm.DB) error {
+			if existing.AccountType == UpstreamAccountTypeOpenRouter {
+				locked, err := cashLockAccount(tx, existing.Id)
+				if err != nil {
+					return err
+				}
+				existing = *locked
+				hasHistory, err := cashHasAccountHistory(tx, existing.Id)
+				if err != nil {
+					return err
+				}
+				if hasHistory && account.AccountType != existing.AccountType {
+					return errors.New("此账户已有财务记录，不能更换账户类型")
+				}
+				if hasHistory && account.AccessTokenEncrypted != existing.AccessTokenEncrypted {
+					if err := validateCashCredentialRotation(tx, &account); err != nil {
+						return err
+					}
+				}
+			}
+			existing.Name = account.Name
+			existing.Remark = account.Remark
+			existing.AccountType = account.AccountType
+			existing.BaseURL = account.BaseURL
+			existing.UserID = account.UserID
+			existing.Email = account.Email
+			existing.AccessTokenEncrypted = account.AccessTokenEncrypted
+			existing.PasswordEncrypted = account.PasswordEncrypted
+			existing.Enabled = account.Enabled
+			existing.ResourceDisplayMode = account.ResourceDisplayMode
+			return tx.Save(&existing).Error
+		})
+		if err != nil {
 			return nil, err
 		}
 		account = existing
@@ -506,6 +528,18 @@ func DeleteUpstreamAccount(id int) error {
 	}
 	signature := upstreamAccountSnapshotSignature(account.Id)
 	return DB.Transaction(func(tx *gorm.DB) error {
+		if account.AccountType == UpstreamAccountTypeOpenRouter {
+			if _, err := cashLockAccount(tx, id); err != nil {
+				return err
+			}
+			hasHistory, err := cashHasAccountHistory(tx, id)
+			if err != nil {
+				return err
+			}
+			if hasHistory {
+				return errors.New("此账户已有财务记录，请停用账户以保留审计记录")
+			}
+		}
 		if err := tx.Where("selection_signature = ?", signature).Delete(&UpstreamAccountSnapshot{}).Error; err != nil {
 			return err
 		}

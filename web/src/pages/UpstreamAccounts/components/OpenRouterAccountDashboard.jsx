@@ -11,9 +11,12 @@ import {
   Spin,
   Switch,
   Table,
+  Tabs,
+  TabPane,
   Typography,
 } from '@douyinfe/semi-ui';
 import { API, showError, showSuccess } from '../../../helpers';
+import OpenRouterCashDashboard from './OpenRouterCashDashboard';
 import { filterOpenRouterActivity, openRouterUSD } from '../openRouterFinance';
 
 const { Text } = Typography;
@@ -30,6 +33,7 @@ export default function OpenRouterAccountDashboard({
     [accounts],
   );
   const [selected, setSelected] = useState(0);
+  const [view, setView] = useState('profit');
   const account = options.find((a) => a.id === selected);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -59,11 +63,12 @@ export default function OpenRouterAccountDashboard({
     setDate('');
     setSearch('');
     setPage(1);
-    if (!active || !selected || !account?.enabled)
+    if (!active || view !== 'balance' || !selected || !account?.enabled)
       return () => controller.abort();
     setLoading(true);
     API.get(`${endpoint}/${selected}/openrouter/finance`, {
       signal: controller.signal,
+      skipErrorHandler: true,
     })
       .then(({ data: response }) => {
         if (sequence.current !== request) return;
@@ -81,7 +86,7 @@ export default function OpenRouterAccountDashboard({
       ++sequence.current;
       controller.abort();
     };
-  }, [selected, configIdentity, active, refresh]);
+  }, [selected, configIdentity, active, refresh, view]);
 
   const rows = useMemo(
     () => filterOpenRouterActivity(data?.activity, search, date),
@@ -216,18 +221,51 @@ export default function OpenRouterAccountDashboard({
             </a>
           </Space>
         </div>
-        <Text type='tertiary' className='mt-3 block'>
-          {t(
-            'OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。',
-          )}
-        </Text>
+        {view === 'balance' && (
+          <Text type='tertiary' className='mt-3 block'>
+            {t(
+              'OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。',
+            )}
+          </Text>
+        )}
       </Card>
+      {account && (
+        <Tabs
+          activeKey={view}
+          onChange={setView}
+          contentStyle={{ display: 'none' }}
+        >
+          {[
+            ['profit', '现金收益'],
+            ['flow', '现金流'],
+            ['review', '待核对'],
+            ['balance', '余额与消费'],
+          ].map(([key, label]) => (
+            <TabPane itemKey={key} tab={t(label)} key={key} />
+          ))}
+        </Tabs>
+      )}
       {!account ? (
         <Empty
           description={t(
             '添加 OpenRouter Management Key 后查看充值、余额和消费明细',
           )}
         />
+      ) : view !== 'balance' ? (
+        <>
+          {!account.enabled && (
+            <Banner type='warning' description={t('已停用')} />
+          )}
+          <OpenRouterCashDashboard
+            key={account.id}
+            account={account}
+            active={active}
+            view={view}
+            onViewChange={setView}
+            refresh={refresh}
+            t={t}
+          />
+        </>
       ) : !account.enabled ? (
         <Banner type='warning' description={t('已停用')} />
       ) : (

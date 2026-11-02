@@ -108,6 +108,7 @@ func main() {
 	model.StartUserBalanceSnapshotTask()
 	perfmetrics.Init()
 	model.StartUpstreamAccountSyncTask()
+	model.StartCashAccountingService()
 
 	if os.Getenv("CHANNEL_UPDATE_FREQUENCY") != "" {
 		frequency, err := strconv.Atoi(os.Getenv("CHANNEL_UPDATE_FREQUENCY"))

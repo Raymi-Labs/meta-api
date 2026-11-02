@@ -103,6 +103,9 @@ func InvalidatePulsePaidFundingTx(tx *gorm.DB, userID int, reason string) error 
 	if err != nil {
 		return err
 	}
+	if err := cashInvalidateWalletTx(tx, user); err != nil {
+		return err
+	}
 	if user.PulseFundingEpoch == 0 && user.PulsePaidQuota == 0 {
 		return nil
 	}
@@ -219,6 +222,9 @@ func AdjustPulseWalletReservation(userID int, requestID string, target int, stat
 			paidRefund := min(max(-delta-unknownReserved, 0), result.PaidQuota)
 			result.PaidQuota -= paidRefund
 			user.PulsePaidQuota += paidRefund
+		}
+		if err := cashAdjustReservationTx(tx, user, &result, target, state); err != nil {
+			return err
 		}
 		user.Quota -= int(delta)
 		if user.PulsePaidQuota > int64(max(user.Quota, 0)) {

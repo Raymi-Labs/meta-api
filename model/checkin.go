@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -169,7 +170,7 @@ func userCheckinWithTransaction(checkin *Checkin, userId int, quotaAwarded int) 
 		}
 
 		// 步骤2: 在事务中增加用户额度
-		if err := GrantUserQuotaTx(tx, userId, quotaAwarded, quotaAwarded); err != nil {
+		if err := GrantUserQuotaTx(tx, userId, quotaAwarded, quotaAwarded, CashGrantSource{Kind: "gift", Ref: fmt.Sprintf("checkin:%d", checkin.Id)}); err != nil {
 			return errors.New("签到失败：更新额度出错")
 		}
 

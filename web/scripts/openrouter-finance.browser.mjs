@@ -96,6 +96,12 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       await route.continue();
       return;
     }
+    if (url.pathname.endsWith('/cash/report')) {
+      await route.fulfill({
+        json: { success: false, message: 'Cash tested separately' },
+      });
+      return;
+    }
     if (url.pathname.endsWith('/openrouter/finance')) {
       const id = Number(url.pathname.split('/')[3]);
       const selectedMode = mode;
@@ -170,6 +176,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .getByRole('button')
     .filter({ hasText: /^保存$/ })
     .click();
+  await page.getByRole('tab', { name: '余额与消费', exact: true }).click();
   await page.getByText('$50.000000', { exact: true }).waitFor();
   assert.equal(saved[0].account_type, 'openrouter');
   assert.equal(await page.getByText('$2.500000', { exact: true }).count(), 1);

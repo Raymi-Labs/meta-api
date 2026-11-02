@@ -54,7 +54,7 @@ func EffectiveTransferableQuota(quota int, transferableQuota int) int {
 
 // GrantUserQuotaTx grants wallet quota and explicitly declares how much of the
 // grant is eligible to fund a user-created redemption code.
-func GrantUserQuotaTx(tx *gorm.DB, userID int, quota int, transferableQuota int) error {
+func GrantUserQuotaTx(tx *gorm.DB, userID int, quota int, transferableQuota int, cashSource ...CashGrantSource) error {
 	if tx == nil {
 		return errors.New("tx is nil")
 	}
@@ -74,6 +74,9 @@ func GrantUserQuotaTx(tx *gorm.DB, userID int, quota int, transferableQuota int)
 	effectiveExpr := "CASE WHEN transferable_quota <= 0 OR quota <= 0 THEN 0 WHEN transferable_quota > quota THEN quota ELSE transferable_quota END"
 	if err := tx.Model(&User{}).Where("id = ?", userID).
 		UpdateColumn("transferable_quota", gorm.Expr("("+effectiveExpr+") + ?", transferableQuota)).Error; err != nil {
+		return err
+	}
+	if err := cashGrantWalletTx(tx, userID, quota, cashSource); err != nil {
 		return err
 	}
 	result := tx.Model(&User{}).Where("id = ?", userID).
