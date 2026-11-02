@@ -44,6 +44,9 @@ func setupUpstreamAccountTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(&UpstreamAccount{}, &UpstreamAccountSnapshot{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
+	if err := db.AutoMigrate(cashAccountingModels()...); err != nil {
+		t.Fatal(err)
+	}
 	return db
 }
 

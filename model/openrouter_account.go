@@ -7,7 +7,10 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,7 +53,7 @@ func newOpenRouterAccountClient() *http.Client {
 
 // Only official read endpoints are reachable; never expose upstream bodies or credentials in errors.
 func openRouterAccountRequest(ctx context.Context, client *http.Client, config UpstreamAccountRemoteConfig, path string, target any) error {
-	if path != "/api/v1/credits" && path != "/api/v1/activity" {
+	if !validOpenRouterAccountReadPath(path) {
 		return errors.New("invalid OpenRouter endpoint")
 	}
 	token := strings.TrimSpace(config.AccessToken)
@@ -93,6 +96,33 @@ func openRouterAccountRequest(ctx context.Context, client *http.Client, config U
 		return errors.New("OpenRouter response invalid")
 	}
 	return nil
+}
+
+var openRouterKeyHashPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+func validOpenRouterAccountReadPath(path string) bool {
+	u, err := url.ParseRequestURI(path)
+	if err != nil || u.Scheme != "" || u.Host != "" || u.Fragment != "" {
+		return false
+	}
+	query, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		return false
+	}
+	switch u.Path {
+	case "/api/v1/credits":
+		return len(query) == 0
+	case "/api/v1/activity":
+		return len(query) == 0 || (len(query) == 1 && len(query["api_key_hash"]) == 1 && openRouterKeyHashPattern.MatchString(query.Get("api_key_hash")))
+	case "/api/v1/keys":
+		if len(query) != 3 || len(query["include_expired"]) != 1 || query.Get("include_expired") != "true" || len(query["include_disabled"]) != 1 || query.Get("include_disabled") != "true" || len(query["offset"]) != 1 {
+			return false
+		}
+		offset, err := strconv.Atoi(query.Get("offset"))
+		return err == nil && offset >= 0 && offset <= 10000
+	default:
+		return false
+	}
 }
 
 func fetchOpenRouterCredits(ctx context.Context, client *http.Client, config UpstreamAccountRemoteConfig) (*OpenRouterAccountCredits, error) {

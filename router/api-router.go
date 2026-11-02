@@ -393,6 +393,20 @@ func SetApiRouter(router *gin.Engine) {
 			upstreamAccountRoute.POST("/:id/sync", controller.SyncUpstreamAccount)
 			upstreamAccountRoute.GET("/:id/trend", controller.GetUpstreamAccountTrend)
 			upstreamAccountRoute.GET("/:id/openrouter/finance", controller.GetOpenRouterAccountFinance)
+			upstreamAccountRoute.GET("/:id/cash/report", controller.GetUpstreamCashReport)
+			upstreamAccountRoute.POST("/:id/cash/sync", controller.SyncUpstreamCash)
+			upstreamAccountRoute.GET("/:id/cash/bindings", controller.GetCashBindings)
+			upstreamAccountRoute.GET("/:id/cash/entries", controller.GetCashUpstreamEntries)
+			upstreamAccountRoute.POST("/:id/cash/bindings", middleware.RootAuth(), controller.SaveCashBinding)
+			upstreamAccountRoute.POST("/:id/cash/entries", middleware.RootAuth(), controller.SaveCashUpstreamEntry)
+			upstreamAccountRoute.POST("/:id/cash/entries/:entry_id/void", middleware.RootAuth(), controller.VoidCashUpstreamEntry)
+		}
+		cashRoute := apiRouter.Group("/cash_accounting", middleware.AdminAuth())
+		{
+			cashRoute.POST("/enable", middleware.RootAuth(), controller.EnableCashAccounting)
+			cashRoute.GET("/funding", controller.GetCashFundingLots)
+			cashRoute.GET("/funding/:lot_id/receipts", controller.GetCashFundingReceipts)
+			cashRoute.POST("/funding/:lot_id/receipt", middleware.RootAuth(), controller.SaveCashFundingReceipt)
 		}
 
 		// Keep the account-only legacy path for one compatibility cycle.

@@ -161,7 +161,7 @@ func GrantPulseBenefit(req PulseBenefitGrantRequest) (PulseBenefitResult, error)
 		if err := tx.Create(record).Error; err != nil {
 			return err
 		}
-		if err := GrantUserQuotaTx(tx, req.UserID, req.Amount, 0); err != nil {
+		if err := GrantUserQuotaTx(tx, req.UserID, req.Amount, 0, CashGrantSource{Kind: "gift", Ref: "pulse:" + req.SourceRef}); err != nil {
 			return err
 		}
 		result.Status = PulseBenefitStatusApplied

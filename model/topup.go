@@ -346,7 +346,7 @@ func RechargeWithPaymentDetails(referenceId string, customerId string, callerIp 
 				return err
 			}
 		}
-		if err := GrantUserQuotaTx(tx, topUp.UserId, int(quota), int(quota)); err != nil {
+		if err := GrantUserQuotaTx(tx, topUp.UserId, int(quota), int(quota), CashGrantSource{Kind: "topup", Ref: topUp.TradeNo}); err != nil {
 			return err
 		}
 		if err := recordQuotaBenefitGrantTx(tx, topUp, int(quota), "stripe"); err != nil {
@@ -623,7 +623,7 @@ func CompleteTopUpByTradeNoWithPayment(tradeNo string, source string, callerIp s
 			return err
 		}
 
-		if err := GrantUserQuotaTx(tx, topUp.UserId, quotaToAdd, quotaToAdd); err != nil {
+		if err := GrantUserQuotaTx(tx, topUp.UserId, quotaToAdd, quotaToAdd, CashGrantSource{Kind: "topup", Ref: topUp.TradeNo}); err != nil {
 			return err
 		}
 		if err := recordQuotaBenefitGrantTx(tx, topUp, quotaToAdd, source); err != nil {
@@ -737,7 +737,7 @@ func RechargeCreem(referenceId string, customerEmail string, customerName string
 				return err
 			}
 		}
-		if err := GrantUserQuotaTx(tx, topUp.UserId, int(quota), int(quota)); err != nil {
+		if err := GrantUserQuotaTx(tx, topUp.UserId, int(quota), int(quota), CashGrantSource{Kind: "topup", Ref: topUp.TradeNo}); err != nil {
 			return err
 		}
 		if err := recordQuotaBenefitGrantTx(tx, topUp, int(quota), "creem"); err != nil {

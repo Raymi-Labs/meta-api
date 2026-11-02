@@ -314,6 +314,7 @@ type RecordConsumeLogParams struct {
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
+	recordCashUsage(c, userId, params)
 	if !common.LogConsumeEnabled {
 		return
 	}
