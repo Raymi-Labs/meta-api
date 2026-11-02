@@ -130,7 +130,7 @@ func cashReportRange(start, end string, now int64) (time.Time, time.Time, error)
 
 type cashCostDay struct {
 	totalUsage, selectedUsage, totalCost, expense, byokExpense int64
-	known, byokConfirmed                                       bool
+	known, byokConfirmed, unallocated                          bool
 }
 
 // Periodic weighted-average cost across the whole account. Consumption by
@@ -219,13 +219,16 @@ func calculateCashCosts(start, end time.Time, entries []CashUpstreamEntry, activ
 					// from actual net refund is an account expense (or recovery),
 					// including fees even when all remaining credits are refunded.
 					cost.expense += basis - e.CostCNYMicros
+					cost.unallocated = cost.unallocated || basis != e.CostCNYMicros
 					credits -= e.CreditsNanos
 					cash -= basis
 				}
 			case "expense":
 				cost.expense += e.CostCNYMicros
+				cost.unallocated = cost.unallocated || e.CostCNYMicros != 0
 			case "byok":
 				cost.byokExpense += e.CostCNYMicros
+				cost.unallocated = cost.unallocated || e.CostCNYMicros != 0
 				cost.byokConfirmed = true
 			}
 		}
@@ -515,7 +518,7 @@ func GetCashReport(ctx context.Context, accountID int, startDate, endDate string
 			officialModelRequests[a.Model] += a.Requests
 		}
 	}
-	var missingDays, unknownCosts, unmatchedDays int64
+	var missingDays, unknownCosts, unmatchedDays, unallocatedCostDays int64
 	summary := &cashMetric{name: "total"}
 	for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 		day := d.Format("2006-01-02")
@@ -557,7 +560,8 @@ func GetCashReport(ctx context.Context, accountID int, startDate, endDate string
 			}
 		}
 		m.cost += cost.expense + cost.byokExpense
-		if cost.expense+cost.byokExpense != 0 {
+		if cost.unallocated {
+			unallocatedCostDays++
 			get(models, "直接费用 / BYOK").cost += cost.expense + cost.byokExpense
 		}
 		if !cost.known && complete {
@@ -578,7 +582,11 @@ func GetCashReport(ctx context.Context, accountID int, startDate, endDate string
 		summary.costUnknown, summary.incomeUnknown = true, true
 	}
 	report.Summary = summary.view()
+	issue("model_cost_allocation", unallocatedCostDays, "直接费用和 BYOK 账单尚未分配到模型，模型利润待核对", "entries")
 	for _, m := range models {
+		if unallocatedCostDays > 0 && m.name != "直接费用 / BYOK" {
+			m.costUnknown = true
+		}
 		if m.name != "直接费用 / BYOK" && officialModelRequests[m.name] != m.requests {
 			m.incomeUnknown, m.costUnknown = true, true
 		}

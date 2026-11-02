@@ -424,3 +424,33 @@ func TestCashFullUpstreamRefundRecognizesFee(t *testing.T) {
 	require.True(t, days["2026-10-01"].known)
 	require.EqualValues(t, 1e6, days["2026-10-01"].expense)
 }
+
+func TestCashAccountExpensesDoNotCertifyModelProfit(t *testing.T) {
+	setupCashTestDB(t)
+	account, _, _, day := cashReportFixture(t)
+	require.NoError(t, DB.Create(&CashUpstreamEntry{AccountID: account.Id, RequestKey: common.GetUUID(), Kind: "byok", Date: day, CostCNYMicros: 200000}).Error)
+	r, err := GetCashReport(context.Background(), account.Id, day, day)
+	require.NoError(t, err)
+	require.NotNil(t, r.Summary.Profit)
+	require.InDelta(t, 0.3, *r.Summary.Profit, 1e-9)
+	var totalKnownCost float64
+	for _, m := range r.Models {
+		totalKnownCost += m.KnownCost
+		if m.Name == "m" {
+			require.Nil(t, m.Cost)
+			require.Nil(t, m.Profit)
+			require.Equal(t, "pending", m.Status)
+			require.Equal(t, 1.0, *m.Income)
+		}
+	}
+	require.InDelta(t, *r.Summary.Cost, totalKnownCost, 1e-9)
+}
+
+func TestCashOffsettingExpensesStillNeedModelAllocation(t *testing.T) {
+	s, _ := time.Parse("2006-01-02", "2026-10-01")
+	entries := []CashUpstreamEntry{{ID: 1, Kind: "opening", Date: "2026-10-01", CreditsNanos: 10e9, CostCNYMicros: 70e6}, {ID: 2, Kind: "refund", Date: "2026-10-01", CreditsNanos: 1e9, CostCNYMicros: 8e6}, {ID: 3, Kind: "expense", Date: "2026-10-01", CostCNYMicros: 1e6}}
+	days, err := calculateCashCosts(s, s.AddDate(0, 0, 1), entries, nil, map[string]bool{cashHash("", "2026-10-01"): true}, nil)
+	require.NoError(t, err)
+	require.Zero(t, days["2026-10-01"].expense)
+	require.True(t, days["2026-10-01"].unallocated)
+}
