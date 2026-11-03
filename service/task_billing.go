@@ -39,6 +39,7 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 		logContent = fmt.Sprintf("%s，%s", logContent, timeRatioContent)
 	}
 	other := make(map[string]interface{})
+	other["billing_unit"] = "task"
 	other["request_path"] = c.Request.URL.Path
 	if info.TaskBillingLogInfo != nil {
 		other["task_billing"] = info.TaskBillingLogInfo
@@ -122,6 +123,7 @@ func logTaskBillingReconciliationError(ctx context.Context, task *model.Task, de
 // taskBillingOther 从 task 的 BillingContext 构建日志 Other 字段。
 func taskBillingOther(task *model.Task) map[string]interface{} {
 	other := make(map[string]interface{})
+	other["billing_unit"] = "task"
 	if bc := task.PrivateData.BillingContext; bc != nil {
 		other["model_price"] = bc.ModelPrice
 		other["group_ratio"] = bc.GroupRatio

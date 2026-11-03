@@ -33,17 +33,35 @@ export function dashboardMetricValues(quota, tokens, requests, cacheRate) {
   };
 }
 
-export function dashboardCacheStatUrl(inputs, isAdmin) {
-  const query = new URLSearchParams({
-    type: '2',
-    start_timestamp: String(
-      Math.floor(new Date(inputs.start_timestamp).getTime() / 1000),
-    ),
-    end_timestamp: String(
-      Math.floor(new Date(inputs.end_timestamp).getTime() / 1000),
-    ),
-  });
-  if (isAdmin && inputs.username)
-    query.set('username', `name:${inputs.username}`);
-  return `${isAdmin ? '/api/log/stat' : '/api/log/self/stat'}?${query}`;
+// Do not fall back to the legacy hourly response: that silently restores the
+// missing-cache denominator and combines metrics from different snapshots.
+export function dashboardUsageSummary(response, start, end) {
+  const s = response?.summary;
+  const nonnegative = (v) => Number.isSafeInteger(v) && v >= 0;
+  const finiteOrNull = (v) =>
+    v === null || (typeof v === 'number' && Number.isFinite(v));
+  if (
+    !response?.success ||
+    !s ||
+    s.source !== 'retained_settlement_logs_v1' ||
+    s.start_timestamp !== start ||
+    s.end_timestamp !== end ||
+    !Number.isSafeInteger(s.quota) ||
+    !Number.isSafeInteger(s.token_quota) ||
+    !Number.isSafeInteger(s.other_quota) ||
+    ![
+      'requests',
+      'tokens',
+      'priced_tokens',
+      'cache_read_tokens',
+      'input_tokens',
+      'unclassified_records',
+    ].every((k) => nonnegative(s[k])) ||
+    !finiteOrNull(s.unit_price) ||
+    !finiteOrNull(s.cache_rate) ||
+    (s.cache_rate !== null && (s.cache_rate < 0 || s.cache_rate > 1))
+  ) {
+    throw new Error('Invalid unified usage summary');
+  }
+  return s;
 }

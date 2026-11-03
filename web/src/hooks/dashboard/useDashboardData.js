@@ -32,7 +32,7 @@ import {
   dashboardRates,
   validateDashboardQuery,
 } from '../../helpers/dashboardQuery';
-import { dashboardCacheStatUrl } from '../../helpers/dashboardMetrics';
+import { dashboardUsageSummary } from '../../helpers/dashboardMetrics';
 import { TIME_OPTIONS } from '../../constants/dashboard.constants';
 import { useIsMobile } from '../common/useIsMobile';
 import { useLatestRequestGuard } from '../common/useLatestRequestGuard';
@@ -43,7 +43,6 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const quotaRequestGuard = useLatestRequestGuard();
-  const cacheRequestGuard = useLatestRequestGuard();
   const refreshRequestGuard = useLatestRequestGuard();
   const uptimeRequestGuard = useLatestRequestGuard();
   const userQuotaRequestGuard = useLatestRequestGuard();
@@ -54,6 +53,8 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   // ========== 基础状态 ==========
   const [loading, setLoading] = useState(true);
   const [quotaError, setQuotaError] = useState(false);
+  const [usageSummary, setUsageSummary] = useState(null);
+  const [quotaErrorMessage, setQuotaErrorMessage] = useState('');
   const [cacheRate, setCacheRate] = useState(null);
   const [cacheLoading, setCacheLoading] = useState(true);
   const [cacheError, setCacheError] = useState(false);
@@ -176,7 +177,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         return false;
       }
       quotaRequestGuard.createRequestId();
-      cacheRequestGuard.createRequestId();
+      setUsageSummary(null);
       setCacheRate(null);
       setCacheLoading(true);
       setCacheError(false);
@@ -198,7 +199,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
       setSearchModalVisible(false);
       return true;
     },
-    [isAdminUser, t, quotaRequestGuard, cacheRequestGuard, refreshRequestGuard],
+    [isAdminUser, t, quotaRequestGuard, refreshRequestGuard],
   );
 
   const showSearchModal = useCallback(() => {
@@ -234,49 +235,20 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   }, []);
 
   // ========== API 调用函数 ==========
-  const loadCacheRate = useCallback(async () => {
-    const requestId = cacheRequestGuard.createRequestId();
+  const loadQuotaData = useCallback(async () => {
+    const requestId = quotaRequestGuard.createRequestId();
+    setLoading(true);
+    setQuotaError(false);
+    setQuotaErrorMessage('');
+    setUsageSummary(null);
     setCacheLoading(true);
     setCacheError(false);
     setCacheRate(null);
     try {
-      const { data: response } = await API.get(
-        dashboardCacheStatUrl(inputs, isAdminUser),
-        {
-          skipErrorHandler: true,
-          skipGlobalLoading: true,
-          timeout: 15000,
-        },
-      );
-      if (!cacheRequestGuard.isLatestRequest(requestId)) return;
-      const rate = response?.data?.cache_global_rate;
-      if (
-        !response?.success ||
-        typeof rate !== 'number' ||
-        !Number.isFinite(rate) ||
-        rate < 0 ||
-        rate > 1
-      ) {
-        throw new Error('Invalid cache statistics');
-      }
-      setCacheRate(rate);
-    } catch {
-      if (cacheRequestGuard.isLatestRequest(requestId)) setCacheError(true);
-    } finally {
-      if (cacheRequestGuard.isLatestRequest(requestId)) setCacheLoading(false);
-    }
-  }, [cacheRequestGuard, inputs, isAdminUser]);
-
-  const loadQuotaData = useCallback(async () => {
-    void loadCacheRate();
-    const requestId = quotaRequestGuard.createRequestId();
-    setLoading(true);
-    setQuotaError(false);
-    try {
       let url = '';
       const { start_timestamp, end_timestamp, username } = inputs;
-      let localStartTimestamp = Date.parse(start_timestamp) / 1000;
-      let localEndTimestamp = Date.parse(end_timestamp) / 1000;
+      let localStartTimestamp = Math.floor(Date.parse(start_timestamp) / 1000);
+      let localEndTimestamp = Math.floor(Date.parse(end_timestamp) / 1000);
 
       if (isAdminUser) {
         url = `/api/data/?username=${encodeURIComponent(username)}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&default_time=${dataExportDefaultTime}`;
@@ -284,34 +256,41 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         url = `/api/data/self/?start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&default_time=${dataExportDefaultTime}`;
       }
 
-      const res = await API.get(url);
+      const res = await API.get(url, { timeout: 25000 });
       if (!quotaRequestGuard.isLatestRequest(requestId)) {
         return null;
       }
       const { success, message, data } = res.data;
       if (success) {
+        const summary = dashboardUsageSummary(
+          res.data,
+          localStartTimestamp,
+          localEndTimestamp,
+        );
         const rows = dashboardQuotaRows(data);
+        setUsageSummary(summary);
+        setCacheRate(summary.cache_rate);
         setQuotaData(rows);
         return rows;
       } else {
         setQuotaError(true);
+        setCacheError(true);
+        setQuotaErrorMessage(message || '');
         return null;
       }
     } catch {
-      if (quotaRequestGuard.isLatestRequest(requestId)) setQuotaError(true);
+      if (quotaRequestGuard.isLatestRequest(requestId)) {
+        setQuotaError(true);
+        setCacheError(true);
+      }
       return null;
     } finally {
       if (quotaRequestGuard.isLatestRequest(requestId)) {
         setLoading(false);
+        setCacheLoading(false);
       }
     }
-  }, [
-    dataExportDefaultTime,
-    inputs,
-    isAdminUser,
-    quotaRequestGuard,
-    loadCacheRate,
-  ]);
+  }, [dataExportDefaultTime, inputs, isAdminUser, quotaRequestGuard]);
 
   const loadUptimeData = useCallback(async () => {
     const requestId = uptimeRequestGuard.createRequestId();
@@ -513,7 +492,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
   useEffect(
     () => () => {
       quotaRequestGuard.createRequestId();
-      cacheRequestGuard.createRequestId();
+      setUsageSummary(null);
       refreshRequestGuard.createRequestId();
       accountRequestGuard.createRequestId();
       uptimeRequestGuard.createRequestId();
@@ -524,7 +503,6 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     },
     [
       quotaRequestGuard,
-      cacheRequestGuard,
       refreshRequestGuard,
       accountRequestGuard,
       uptimeRequestGuard,
@@ -580,6 +558,8 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
     // 基础状态
     loading: showLoading,
     quotaError,
+    quotaErrorMessage,
+    usageSummary,
     cacheRate,
     cacheLoading,
     cacheError,
