@@ -27,20 +27,38 @@ export const useDashboardStats = (
   times,
   cacheRate,
   t,
+  summary,
 ) => {
   const groupedStatsData = useMemo(() => {
-    const values = dashboardMetricValues(
-      consumeQuota,
-      consumeTokens,
-      times,
-      cacheRate,
-    );
+    const values = summary
+      ? {
+          quota: summary.quota,
+          tokens: summary.tokens,
+          requests: summary.requests,
+          cacheRate: summary.cache_rate,
+          unitPrice: summary.unit_price,
+        }
+      : dashboardMetricValues(consumeQuota, consumeTokens, times, cacheRate);
     const currency = (value) => (value == null ? '—' : renderQuota(value));
     const number = (value) => (value == null ? '—' : value.toLocaleString());
     return [
-      { id: 'spend', title: t('总消费'), value: currency(values.quota) },
+      {
+        id: 'spend',
+        title: t('总消费'),
+        value: currency(values.quota),
+        description: t(
+          '所选时段保留日志的消费减退款，按结算事件时间统计；可为负数。',
+        ),
+      },
       { id: 'requests', title: t('请求数'), value: number(values.requests) },
-      { id: 'tokens', title: t('Token 用量'), value: number(values.tokens) },
+      {
+        id: 'tokens',
+        title: t('Token 用量'),
+        value: number(values.tokens),
+        description: t(
+          '完整输入（含缓存读取与创建）加输出，已包含的缓存不重复计算。',
+        ),
+      },
       {
         id: 'cache',
         title: t('缓存命中率'),
@@ -58,10 +76,10 @@ export const useDashboardStats = (
         value:
           values.unitPrice == null ? '—' : renderQuota(values.unitPrice, 4),
         description: t(
-          '总消费 ÷ Token 用量 × 1,000,000，按看板汇总用量计算，并非模型报价。',
+          '仅按 Token 计费的净消费 ÷ 对应用量 × 1,000,000；排除按次、按时长及无法分类的费用，并非模型报价。',
         ),
       },
     ];
-  }, [consumeQuota, consumeTokens, times, cacheRate, t]);
+  }, [consumeQuota, consumeTokens, times, cacheRate, t, summary]);
   return { groupedStatsData };
 };

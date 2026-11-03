@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import { test } from 'bun:test';
 import {
   dashboardMetricValues,
-  dashboardCacheStatUrl,
+  dashboardUsageSummary,
 } from '../src/helpers/dashboardMetrics.js';
 
 test('unit cost uses weighted totals and handles missing or zero usage', () => {
@@ -43,27 +43,59 @@ test('unit cost uses weighted totals and handles missing or zero usage', () => {
   assert.equal(dashboardMetricValues(1, 1, 1, 1.2).cacheRate, null);
 });
 
-test('cache queries retain time boundaries and exact administrator username semantics', () => {
-  const inputs = {
-    start_timestamp: '2026-10-29T15:18:00+08:00',
-    end_timestamp: '2026-10-30T15:18:00+08:00',
-    username: '123&other',
+test('unified snapshot accepts negative net spend but rejects old, stale and partial responses', () => {
+  const summary = {
+    source: 'retained_settlement_logs_v1',
+    start_timestamp: 100,
+    end_timestamp: 200,
+    quota: -30,
+    token_quota: 10,
+    other_quota: -40,
+    requests: 2,
+    tokens: 120,
+    priced_tokens: 100,
+    input_tokens: 100,
+    cache_read_tokens: 80,
+    unclassified_records: 0,
+    unit_price: 100000,
+    cache_rate: 0.8,
   };
-  const admin = new URL(
-    dashboardCacheStatUrl(inputs, true),
-    'http://localhost',
-  );
-  assert.equal(admin.pathname, '/api/log/stat');
-  assert.equal(admin.searchParams.get('username'), 'name:123&other');
   assert.equal(
-    Number(admin.searchParams.get('end_timestamp')) -
-      Number(admin.searchParams.get('start_timestamp')),
-    86400,
+    dashboardUsageSummary({ success: true, summary }, 100, 200),
+    summary,
   );
-  const self = new URL(
-    dashboardCacheStatUrl(inputs, false),
-    'http://localhost',
+  assert.throws(() =>
+    dashboardUsageSummary({ success: true, data: [] }, 100, 200),
   );
-  assert.equal(self.pathname, '/api/log/self/stat');
-  assert.equal(self.searchParams.has('username'), false);
+  assert.throws(() =>
+    dashboardUsageSummary({ success: false, summary }, 100, 200),
+  );
+  assert.throws(() =>
+    dashboardUsageSummary({ success: true, summary }, 101, 200),
+  );
+  for (const patch of [
+    { tokens: -1 },
+    { tokens: Number.MAX_SAFE_INTEGER + 1 },
+    { cache_rate: 1.1 },
+    { unit_price: Infinity },
+    { quota: '30' },
+  ]) {
+    assert.throws(() =>
+      dashboardUsageSummary(
+        { success: true, summary: { ...summary, ...patch } },
+        100,
+        200,
+      ),
+    );
+  }
+  const unknown = {
+    ...summary,
+    unclassified_records: 1,
+    unit_price: null,
+    cache_rate: null,
+  };
+  assert.equal(
+    dashboardUsageSummary({ success: true, summary: unknown }, 100, 200),
+    unknown,
+  );
 });
