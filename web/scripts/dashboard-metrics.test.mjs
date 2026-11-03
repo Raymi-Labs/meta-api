@@ -22,6 +22,8 @@ import { test } from 'bun:test';
 import {
   dashboardMetricValues,
   dashboardUsageSummary,
+  dashboardCompactTokens,
+  dashboardMetricCoverage,
 } from '../src/helpers/dashboardMetrics.js';
 
 test('unit cost uses weighted totals and handles missing or zero usage', () => {
@@ -57,6 +59,10 @@ test('unified snapshot accepts negative net spend but rejects old, stale and par
     input_tokens: 100,
     cache_read_tokens: 80,
     unclassified_records: 0,
+    cache_included_records: 2,
+    cache_excluded_records: 0,
+    price_included_records: 2,
+    price_excluded_records: 0,
     unit_price: 100000,
     cache_rate: 0.8,
   };
@@ -79,6 +85,8 @@ test('unified snapshot accepts negative net spend but rejects old, stale and par
     { cache_rate: 1.1 },
     { unit_price: Infinity },
     { quota: '30' },
+    { cache_included_records: undefined },
+    { price_excluded_records: -1 },
   ]) {
     assert.throws(() =>
       dashboardUsageSummary(
@@ -98,4 +106,28 @@ test('unified snapshot accepts negative net spend but rejects old, stale and par
     dashboardUsageSummary({ success: true, summary: unknown }, 100, 200),
     unknown,
   );
+});
+
+test('partial coverage is record-based and compact tokens retain meaningful scale', () => {
+  const t = (key, params) => (params ? JSON.stringify(params) : key);
+  const s = {
+    cache_included_records: 3,
+    cache_excluded_records: 1,
+    price_included_records: 2,
+    price_excluded_records: 2,
+  };
+  assert.match(dashboardMetricCoverage(s, 'cache', t), /部分记录.*75.0/);
+  assert.match(dashboardMetricCoverage(s, 'price', t), /50.0/);
+  assert.equal(
+    dashboardMetricCoverage(
+      { cache_included_records: 0, cache_excluded_records: 0 },
+      'cache',
+      t,
+    ),
+    null,
+  );
+  assert.equal(dashboardCompactTokens(12936310889, 'zh-CN'), '129.36亿');
+  assert.equal(dashboardCompactTokens(12936310889, 'en'), '12.94B');
+  assert.equal(dashboardCompactTokens(27082015, 'en'), '27,082,015');
+  assert.equal(dashboardCompactTokens(-1, 'en'), '—');
 });

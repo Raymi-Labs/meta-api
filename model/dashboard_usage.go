@@ -27,7 +27,7 @@ var dashboardUsageCache *cachex.HybridCache[DashboardUsage]
 func GetCachedDashboardUsage(ctx context.Context, start, end int64, userID int, username string, byUser bool) (DashboardUsage, error) {
 	dashboardUsageCacheOnce.Do(func() {
 		dashboardUsageCache = cachex.NewHybridCache[DashboardUsage](cachex.HybridCacheConfig[DashboardUsage]{
-			Namespace: cachex.Namespace("dashboard_settlement:v1"),
+			Namespace: cachex.Namespace("dashboard_settlement:v2"),
 			Redis:     common.RDB, RedisEnabled: func() bool { return common.RedisEnabled && common.RDB != nil },
 			RedisCodec: cachex.JSONCodec[DashboardUsage]{},
 			Memory: func() *hot.HotCache[string, DashboardUsage] {
@@ -49,20 +49,24 @@ func GetCachedDashboardUsage(ctx context.Context, start, end int64, userID int, 
 }
 
 type DashboardUsageSummary struct {
-	Quota               int64    `json:"quota"`
-	Requests            int64    `json:"requests"`
-	Tokens              int64    `json:"tokens"`
-	TokenQuota          int64    `json:"token_quota"`
-	PricedTokens        int64    `json:"priced_tokens"`
-	OtherQuota          int64    `json:"other_quota"`
-	CacheReadTokens     int64    `json:"cache_read_tokens"`
-	InputTokens         int64    `json:"input_tokens"`
-	UnclassifiedRecords int64    `json:"unclassified_records"`
-	CacheRate           *float64 `json:"cache_rate"`
-	UnitPrice           *float64 `json:"unit_price"`
-	StartTimestamp      int64    `json:"start_timestamp"`
-	EndTimestamp        int64    `json:"end_timestamp"`
-	Source              string   `json:"source"`
+	Quota                int64    `json:"quota"`
+	Requests             int64    `json:"requests"`
+	Tokens               int64    `json:"tokens"`
+	TokenQuota           int64    `json:"token_quota"`
+	PricedTokens         int64    `json:"priced_tokens"`
+	OtherQuota           int64    `json:"other_quota"`
+	CacheReadTokens      int64    `json:"cache_read_tokens"`
+	InputTokens          int64    `json:"input_tokens"`
+	UnclassifiedRecords  int64    `json:"unclassified_records"`
+	CacheIncludedRecords int64    `json:"cache_included_records"`
+	CacheExcludedRecords int64    `json:"cache_excluded_records"`
+	PriceIncludedRecords int64    `json:"price_included_records"`
+	PriceExcludedRecords int64    `json:"price_excluded_records"`
+	CacheRate            *float64 `json:"cache_rate"`
+	UnitPrice            *float64 `json:"unit_price"`
+	StartTimestamp       int64    `json:"start_timestamp"`
+	EndTimestamp         int64    `json:"end_timestamp"`
+	Source               string   `json:"source"`
 }
 
 type DashboardUsage struct {
@@ -180,12 +184,24 @@ func (a *dashboardUsageAccumulator) add(row dashboardUsageLog) error {
 	if unknown || (priced && tokens == 0 && row.Type == LogTypeConsume && row.Quota > 0) {
 		s.UnclassifiedRecords++
 	}
-	if priced {
-		s.InputTokens += int64(input)
-		s.CacheReadTokens += int64(read)
+	priceValid := priced && !unknown && (tokens > 0 || row.Type == LogTypeRefund || row.Quota == 0)
+	if priced && count > 0 {
+		if !unknown && input > 0 {
+			s.CacheIncludedRecords++
+			s.InputTokens += int64(input)
+			s.CacheReadTokens += int64(read)
+		} else {
+			s.CacheExcludedRecords++
+		}
+	}
+	if priceValid {
+		s.PriceIncludedRecords++
 		s.TokenQuota += quota
 		s.PricedTokens += int64(tokens)
 	} else {
+		if priced {
+			s.PriceExcludedRecords++
+		}
 		s.OtherQuota += quota
 	}
 	for _, value := range []int64{s.Quota, s.TokenQuota, s.OtherQuota, s.Tokens, s.PricedTokens, s.InputTokens, s.CacheReadTokens} {
@@ -217,15 +233,13 @@ func (a *dashboardUsageAccumulator) add(row dashboardUsageLog) error {
 
 func (a *dashboardUsageAccumulator) finish() DashboardUsage {
 	s := &a.result.Summary
-	if s.UnclassifiedRecords == 0 {
-		if s.InputTokens > 0 {
-			rate := float64(s.CacheReadTokens) / float64(s.InputTokens)
-			s.CacheRate = &rate
-		}
-		if s.PricedTokens > 0 {
-			price := float64(s.TokenQuota) / float64(s.PricedTokens) * 1000000
-			s.UnitPrice = &price
-		}
+	if s.InputTokens > 0 {
+		rate := float64(s.CacheReadTokens) / float64(s.InputTokens)
+		s.CacheRate = &rate
+	}
+	if s.PricedTokens > 0 {
+		price := float64(s.TokenQuota) / float64(s.PricedTokens) * 1000000
+		s.UnitPrice = &price
 	}
 	for _, bucket := range a.buckets {
 		a.result.Rows = append(a.result.Rows, bucket)
