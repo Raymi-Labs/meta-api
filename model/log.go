@@ -519,6 +519,11 @@ type Stat struct {
 	CacheGlobalRate float64 `json:"cache_global_rate"`
 }
 
+// Channel tests have no real token; a user token with the same name is not a test.
+func isModelTestLog(tokenID int, tokenName string) bool {
+	return tokenID == 0 && tokenName == "模型测试"
+}
+
 type logCacheRateRow struct {
 	PromptTokens int    `gorm:"column:prompt_tokens"`
 	Other        string `gorm:"column:other"`
@@ -696,6 +701,9 @@ func cacheRateScanLimit() int {
 
 // scanCacheRates 流式读取缓存率统计所需的行，逐行累加而不缓冲整个结果集。
 func scanCacheRates(query *gorm.DB) (cacheHitRate float64, cacheGlobalRate float64, err error) {
+	// Match isModelTestLog before applying the sample limit; tests must not
+	// displace real requests in the cache-rate sample.
+	query = query.Where("NOT (COALESCE(token_id, 0) = ? AND COALESCE(token_name, '') = ?)", 0, "模型测试")
 	if limit := cacheRateScanLimit(); limit > 0 {
 		// 按最新的行取样，使结果反映当前的缓存表现。
 		query = query.Order("created_at DESC").Limit(limit)

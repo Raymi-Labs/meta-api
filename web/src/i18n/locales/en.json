@@ -7228,6 +7228,7 @@
     "本次请求预估费用超过可用额度": "Estimated request cost exceeds available quota",
     "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Your balance is not exhausted. Shorten the context, lower the output limit, or add quota. This rejection will not automatically disable the token.",
     "其他在途请求暂时占用额度": "Other active requests temporarily reserve quota",
-    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Wait for active requests to finish before retrying. Avoid immediate retries; this rejection will not automatically disable the token."
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Wait for active requests to finish before retrying. Avoid immediate retries; this rejection will not automatically disable the token.",
+    "缓存命中率不包含模型测试日志。": "Cache hit rates exclude model test logs."
   }
 }

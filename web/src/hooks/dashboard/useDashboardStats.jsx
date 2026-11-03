@@ -75,9 +75,9 @@ export const useDashboardStats = (
           values.cacheRate == null || values.tokens === 0
             ? '—'
             : `${(values.cacheRate * 100).toFixed(1)}%`,
-        description: t(
+        description: `${t(
           '缓存读取 Token ÷ 全部输入 Token，基于当前周期保留的消费日志。',
-        ),
+        )} ${t('缓存命中率不包含模型测试日志。')}`,
       },
       {
         id: 'unit-price',

@@ -7629,6 +7629,7 @@
     "本次请求预估费用超过可用额度": "Chi phí ước tính của yêu cầu vượt quá hạn mức khả dụng",
     "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Số dư chưa hết. Hãy rút ngắn ngữ cảnh, giảm giới hạn đầu ra hoặc bổ sung hạn mức. Lần từ chối này sẽ không tự động vô hiệu hóa token.",
     "其他在途请求暂时占用额度": "Các yêu cầu đang chạy khác tạm giữ hạn mức",
-    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Hãy đợi các yêu cầu đang chạy kết thúc rồi thử lại. Tránh gửi lại ngay; lần từ chối này sẽ không tự động vô hiệu hóa token."
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Hãy đợi các yêu cầu đang chạy kết thúc rồi thử lại. Tránh gửi lại ngay; lần từ chối này sẽ không tự động vô hiệu hóa token.",
+    "缓存命中率不包含模型测试日志。": "Tỷ lệ trúng bộ nhớ đệm không bao gồm nhật ký kiểm tra mô hình."
   }
 }

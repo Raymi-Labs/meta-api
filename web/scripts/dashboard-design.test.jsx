@@ -73,6 +73,7 @@ test('unified summary overrides stale chart totals and retains signed net spend'
   try {
     const html = renderToStaticMarkup(<Probe />);
     assert.match(html, /27,082,015/);
+    assert.match(html, /缓存命中率不包含模型测试日志/);
     assert.match(html, /221/);
     assert.match(html, /-1\.00/);
     assert.doesNotMatch(html, /999/);

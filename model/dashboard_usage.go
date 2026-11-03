@@ -27,7 +27,7 @@ var dashboardUsageCache *cachex.HybridCache[DashboardUsage]
 func GetCachedDashboardUsage(ctx context.Context, start, end int64, userID int, username string, byUser bool) (DashboardUsage, error) {
 	dashboardUsageCacheOnce.Do(func() {
 		dashboardUsageCache = cachex.NewHybridCache[DashboardUsage](cachex.HybridCacheConfig[DashboardUsage]{
-			Namespace: cachex.Namespace("dashboard_settlement:v2"),
+			Namespace: cachex.Namespace("dashboard_settlement:v3"),
 			Redis:     common.RDB, RedisEnabled: func() bool { return common.RedisEnabled && common.RDB != nil },
 			RedisCodec: cachex.JSONCodec[DashboardUsage]{},
 			Memory: func() *hot.HotCache[string, DashboardUsage] {
@@ -75,9 +75,9 @@ type DashboardUsage struct {
 }
 
 type dashboardUsageLog struct {
-	UserId, Type, PromptTokens, CompletionTokens, Quota int
-	CreatedAt                                           int64
-	Username, ModelName, Other                          string
+	UserId, Type, PromptTokens, CompletionTokens, Quota, TokenId int
+	CreatedAt                                                    int64
+	Username, ModelName, Other, TokenName                        string
 }
 
 type dashboardUsageOther struct {
@@ -185,7 +185,7 @@ func (a *dashboardUsageAccumulator) add(row dashboardUsageLog) error {
 		s.UnclassifiedRecords++
 	}
 	priceValid := priced && !unknown && (tokens > 0 || row.Type == LogTypeRefund || row.Quota == 0)
-	if priced && count > 0 {
+	if priced && count > 0 && !isModelTestLog(row.TokenId, row.TokenName) {
 		if !unknown && input > 0 {
 			s.CacheIncludedRecords++
 			s.InputTokens += int64(input)
@@ -276,7 +276,7 @@ func scanDashboardUsage(ctx context.Context, start, end int64, userID int, usern
 	}
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
-	query := LOG_DB.WithContext(ctx).Table("logs").Select("user_id, username, created_at, type, model_name, quota, prompt_tokens, completion_tokens, COALESCE(other, '') AS other").
+	query := LOG_DB.WithContext(ctx).Table("logs").Select("user_id, username, token_id, token_name, created_at, type, model_name, quota, prompt_tokens, completion_tokens, COALESCE(other, '') AS other").
 		Where("type IN ? AND created_at >= ? AND created_at < ?", []int{LogTypeConsume, LogTypeRefund}, start, end)
 	if userID > 0 {
 		query = query.Where("user_id = ?", userID)

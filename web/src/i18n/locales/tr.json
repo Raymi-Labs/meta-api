@@ -7016,6 +7016,7 @@
     "本次请求预估费用超过可用额度": "Tahmini istek maliyeti kullanılabilir kotayı aşıyor",
     "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Bakiyeniz tükenmedi. Bağlamı kısaltın, çıktı sınırını düşürün veya kota ekleyin. Bu ret, tokenı otomatik olarak devre dışı bırakmaz.",
     "其他在途请求暂时占用额度": "Diğer etkin istekler kotayı geçici olarak ayırıyor",
-    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Yeniden denemeden önce etkin isteklerin bitmesini bekleyin. Hemen tekrar göndermeyin; bu ret, tokenı otomatik olarak devre dışı bırakmaz."
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Yeniden denemeden önce etkin isteklerin bitmesini bekleyin. Hemen tekrar göndermeyin; bu ret, tokenı otomatik olarak devre dışı bırakmaz.",
+    "缓存命中率不包含模型测试日志。": "Önbellek isabet oranlarına model testi günlükleri dahil edilmez."
   }
 }

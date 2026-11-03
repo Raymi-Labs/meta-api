@@ -7016,6 +7016,7 @@
     "本次请求预估费用超过可用额度": "Szacowany koszt żądania przekracza dostępny limit",
     "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Saldo nie zostało wyczerpane. Skróć kontekst, zmniejsz limit odpowiedzi lub doładuj konto. Ta odmowa nie wyłączy tokenu automatycznie.",
     "其他在途请求暂时占用额度": "Inne aktywne żądania tymczasowo rezerwują środki",
-    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Poczekaj na zakończenie aktywnych żądań przed ponowną próbą. Nie ponawiaj żądania natychmiast; ta odmowa nie wyłączy tokenu automatycznie."
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Poczekaj na zakończenie aktywnych żądań przed ponowną próbą. Nie ponawiaj żądania natychmiast; ta odmowa nie wyłączy tokenu automatycznie.",
+    "缓存命中率不包含模型测试日志。": "Współczynniki trafień w pamięć podręczną nie uwzględniają dzienników testów modeli."
   }
 }

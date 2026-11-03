@@ -7016,6 +7016,7 @@
     "本次请求预估费用超过可用额度": "El coste estimado de la solicitud supera la cuota disponible",
     "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "El saldo no está agotado. Acorta el contexto, reduce el límite de salida o añade cuota. Este rechazo no desactivará automáticamente el token.",
     "其他在途请求暂时占用额度": "Otras solicitudes en curso reservan cuota temporalmente",
-    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Espera a que terminen las solicitudes en curso antes de reintentarlo. Evita los reintentos inmediatos; este rechazo no desactivará automáticamente el token."
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Espera a que terminen las solicitudes en curso antes de reintentarlo. Evita los reintentos inmediatos; este rechazo no desactivará automáticamente el token.",
+    "缓存命中率不包含模型测试日志。": "Las tasas de aciertos de caché excluyen los registros de pruebas de modelos."
   }
 }

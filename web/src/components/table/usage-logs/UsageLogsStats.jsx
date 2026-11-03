@@ -40,8 +40,16 @@ const LogsStats = ({
     ],
     ['RPM', number(stat.rpm) ?? '—'],
     ['TPM', number(stat.tpm) ?? '—'],
-    [t('命中缓存率'), percent(stat.cache_hit_rate)],
-    [t('全局缓存率'), percent(stat.cache_global_rate)],
+    [
+      t('命中缓存率'),
+      percent(stat.cache_hit_rate),
+      t('缓存命中率不包含模型测试日志。'),
+    ],
+    [
+      t('全局缓存率'),
+      percent(stat.cache_global_rate),
+      t('缓存命中率不包含模型测试日志。'),
+    ],
   ];
   return (
     <div className='usage-logs-stats'>
@@ -53,8 +61,8 @@ const LogsStats = ({
           </Button>
         </div>
       ) : (
-        metrics.map(([label, value]) => (
-          <div className='usage-logs-metric' key={label}>
+        metrics.map(([label, value, description]) => (
+          <div className='usage-logs-metric' key={label} title={description}>
             <span>{label}</span>
             {loadingStat || !showStat ? (
               <Skeleton.Title style={{ width: 42, height: 13 }} />

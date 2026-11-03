@@ -184,3 +184,59 @@ func TestDashboardUsageLimitDoesNotReturnPartialTotals(t *testing.T) {
 	_, err = GetDashboardUsage(context.Background(), 1, 100, 0, "", false)
 	require.ErrorContains(t, err, "繁忙")
 }
+
+func TestDashboardCacheExcludesModelTestsOnly(t *testing.T) {
+	setupCacheRateScanDB(t)
+	for _, row := range []Log{
+		{UserId: 1, Type: LogTypeConsume, CreatedAt: 100, TokenId: 10, TokenName: "模型测试", PromptTokens: 100, Quota: 100, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive","cache_tokens":40}`},
+		{UserId: 1, Type: LogTypeConsume, CreatedAt: 101, TokenName: "模型测试", PromptTokens: 100, Quota: 100, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive","cache_tokens":100}`},
+		{UserId: 1, Type: LogTypeConsume, CreatedAt: 102, TokenName: "模型测试", PromptTokens: 5, Quota: 10, Other: `{"model_ratio":1,"cache_tokens":92}`},
+		{UserId: 2, Type: LogTypeConsume, CreatedAt: 103, TokenName: "模型测试", PromptTokens: 100, Quota: 100, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive","cache_tokens":100}`},
+	} {
+		require.NoError(t, LOG_DB.Create(&row).Error)
+	}
+	usage, err := GetDashboardUsage(context.Background(), 100, 104, 1, "", false)
+	require.NoError(t, err)
+	s := usage.Summary
+	require.NotNil(t, s.CacheRate)
+	require.InDelta(t, 0.4, *s.CacheRate, 1e-10)
+	require.EqualValues(t, 100, s.InputTokens)
+	require.EqualValues(t, 40, s.CacheReadTokens)
+	require.EqualValues(t, 1, s.CacheIncludedRecords)
+	require.Zero(t, s.CacheExcludedRecords)
+	// Price, totals and charts retain test records under their existing rules.
+	require.EqualValues(t, 3, s.Requests)
+	require.EqualValues(t, 210, s.Quota)
+	require.EqualValues(t, 205, s.Tokens)
+	require.EqualValues(t, 2, s.PriceIncludedRecords)
+	require.EqualValues(t, 1, s.PriceExcludedRecords)
+	require.EqualValues(t, 200, s.TokenQuota)
+	require.EqualValues(t, 200, s.PricedTokens)
+	require.InDelta(t, 1000000, *s.UnitPrice, 1e-10)
+	require.Equal(t, 3, usage.Rows[0].Count)
+	require.Equal(t, 210, usage.Rows[0].Quota)
+	for _, byUser := range []bool{false, true} {
+		all, err := GetDashboardUsage(context.Background(), 100, 104, 0, "", byUser)
+		require.NoError(t, err)
+		require.InDelta(t, 0.4, *all.Summary.CacheRate, 1e-10)
+	}
+	onlyTests, err := GetDashboardUsage(context.Background(), 100, 104, 2, "", false)
+	require.NoError(t, err)
+	require.Nil(t, onlyTests.Summary.CacheRate)
+	require.Zero(t, onlyTests.Summary.CacheIncludedRecords)
+	require.Zero(t, onlyTests.Summary.CacheExcludedRecords)
+	require.NotNil(t, onlyTests.Summary.UnitPrice)
+
+	// The log statistics filter must run before LIMIT, even if newer tests exist.
+	setCacheRateScanLimit(t, 1)
+	stat, err := SumUsedQuota(LogTypeConsume, 100, 104, "", "", "", 0, "", "", false)
+	require.NoError(t, err)
+	require.InDelta(t, 0.4, stat.CacheGlobalRate, 1e-10)
+	require.InDelta(t, 0.4, stat.CacheHitRate, 1e-10)
+	require.Equal(t, 310, stat.Quota)
+	stat, err = SumUsedQuota(LogTypeConsume, 101, 104, "", "", "", 0, "", "", false)
+	require.NoError(t, err)
+	require.Zero(t, stat.CacheGlobalRate)
+	require.Zero(t, stat.CacheHitRate)
+	require.Equal(t, 210, stat.Quota)
+}
