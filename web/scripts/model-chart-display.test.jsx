@@ -189,7 +189,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(html).toContain('aria-label="展开 · 首字均值 · s"');
     });
 
-    test('historical throughput retains source time without changing raw samples', () => {
+    test('historical throughput keeps values without changing raw samples', () => {
       const point = {
         ts: 7200,
         avg_output_tps: null,
@@ -214,7 +214,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
         />,
       );
       expect(html).toContain('73.7 tok/s');
-      expect(html).toContain('沿用');
+      expect(html).not.toContain('沿用');
       expect(html).not.toContain('P50');
     });
 

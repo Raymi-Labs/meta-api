@@ -365,8 +365,10 @@ try {
   );
   assert.ok((await page.$eval(card, (e) => e.textContent)).includes('15.03 s'));
   assert.ok(
-    await page.$eval(card, (e) =>
-      [...e.querySelectorAll('dd')].some((d) => d.title.includes('沿用')),
+    await page.$eval(
+      card,
+      (e) =>
+        ![...e.querySelectorAll('dd')].some((d) => d.title.includes('沿用')),
     ),
   );
   await page.click('.pricing-model-card a[href="/model/chat-00"]');
@@ -377,7 +379,7 @@ try {
   );
   const speedChart = await page.$eval('#performance', (e) => e.textContent);
   assert.ok(
-    speedChart.includes('73.7 tok/s') && speedChart.includes('沿用最近有效值'),
+    speedChart.includes('73.7 tok/s') && !speedChart.includes('沿用最近有效值'),
   );
   assert.ok(!speedChart.includes('P50'));
   await (
@@ -439,7 +441,7 @@ try {
         'no source labels',
         'no synthetic uptime',
         '390px dark layout',
-        'historical throughput across card, group row and chart with time hint',
+        'historical throughput across card, group row and chart without source hint',
         'measured priority',
         'missing reference remains unknown',
       ],

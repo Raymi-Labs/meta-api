@@ -23,11 +23,9 @@ import { Maximize2 } from 'lucide-react';
 import {
   healthTone,
   uptimeTone,
-  formatHealthReference,
 } from '../../components/group-health/healthUtils';
 import {
   chartDisplayValue,
-  chartMeasurement,
   formatChartValue,
   formatChartDetailValue,
   chartDomain,
@@ -112,13 +110,7 @@ export default function ModelMetricChart({
   const hoverIndex = timestamps.indexOf(hover);
   const format = (value) => formatChartValue(value, metric);
   const detail = (value) => formatChartDetailValue(value, metric);
-  const pointDetail = (point) =>
-    [
-      detail(chartDisplayValue(point, metric)),
-      formatHealthReference(chartMeasurement(point, metric), t),
-    ]
-      .filter(Boolean)
-      .join(' · ');
+  const pointDetail = (point) => detail(chartDisplayValue(point, metric));
   const limited = (point) =>
     ['success_rate', 'uptime_rate'].includes(metric) &&
     ['empty', 'limited'].includes(
@@ -355,9 +347,6 @@ export default function ModelMetricChart({
               {format(chartDisplayValue(group, metric) ?? references[i])}
               {references[i] != null && nums.length > 0 && (
                 <small> · {t('近30分钟')} · P50</small>
-              )}
-              {chartMeasurement(group, metric)?.referenceTs && (
-                <small> · {t('沿用最近有效值')}</small>
               )}
             </strong>
           </div>

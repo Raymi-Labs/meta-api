@@ -49,10 +49,7 @@ import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoa
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 
 import { useModelHealthSummaries } from '../../../../../hooks/group-health/useModelHealthSummaries';
-import {
-  formatHealthLatency,
-  formatHealthReference,
-} from '../../../../group-health/healthUtils';
+import { formatHealthLatency } from '../../../../group-health/healthUtils';
 import {
   formatModelContext,
   formatModelContextExact,
@@ -273,7 +270,7 @@ const PricingCardView = ({
                               : '首字均值',
                           )}
                         </dt>
-                        <dd title={formatHealthReference(latency, t)}>
+                        <dd>
                           {formatHealthLatency(latency.value) === '—'
                             ? t('暂无数据')
                             : formatHealthLatency(latency.value)}
@@ -284,12 +281,7 @@ const PricingCardView = ({
                           <Gauge size={13} />
                           {t('输出速度')}
                         </dt>
-                        <dd
-                          title={formatHealthReference(
-                            { referenceTs: performance.throughputReferenceTs },
-                            t,
-                          )}
-                        >
+                        <dd>
                           {formatModelThroughput(performance.throughput) === '—'
                             ? t('暂无数据')
                             : formatModelThroughput(performance.throughput)}

@@ -63,9 +63,7 @@ import {
 import {
   formatChartDetailValue,
   chartDisplayValue,
-  chartMeasurement,
 } from '../../helpers/modelChartDisplay';
-import { formatHealthReference } from '../../components/group-health/healthUtils';
 import ComparisonMetrics, {
   useComparisonHealth,
   comparisonStats,
@@ -408,15 +406,7 @@ export default function ModelCompare() {
                     modalities(model, 'output_modalities'),
                   )}
                   {row('latency', t('首字均值'), (_, index) => (
-                    <span
-                      title={formatHealthReference(
-                        chartMeasurement(
-                          comparisonStats(health[index], group),
-                          'avg_ttft_ms',
-                        ),
-                        t,
-                      )}
-                    >
+                    <span>
                       {formatChartDetailValue(
                         chartDisplayValue(
                           comparisonStats(health[index], group),
@@ -424,10 +414,6 @@ export default function ModelCompare() {
                         ),
                         'avg_ttft_ms',
                       )}
-                      {chartMeasurement(
-                        comparisonStats(health[index], group),
-                        'avg_ttft_ms',
-                      )?.referenceTs && <small> · {t('沿用最近有效值')}</small>}
                     </span>
                   ))}
                   {row('throughput', t('输出速度'), (_, index) =>

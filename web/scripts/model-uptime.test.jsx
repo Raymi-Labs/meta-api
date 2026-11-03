@@ -28,7 +28,8 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
       t: (key, args = {}) => key.replace(/{{(\w+)}}/g, (_, name) => args[name]),
     }),
   }));
-  const { GroupHealthPanel } = await import('../src/components/group-health');
+  const { GroupHealthPanel, GroupHealthScopeNote, GroupHealthSummary } =
+    await import('../src/components/group-health');
   const passing = {
     request_count: 0,
     success_rate: null,
@@ -77,8 +78,17 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
       expect((html.match(/aria-controls=/g) || []).length).toBe(72);
       expect(html).toContain('1.14 s');
       expect(html).toContain('0.00%');
-      expect(html).toContain('沿用 ');
+      expect(html).not.toContain('沿用最近有效值');
       expect(html).not.toContain('0 个有效样本');
+      const summary = renderToStaticMarkup(
+        <GroupHealthSummary stats={stats} uptime compact />,
+      );
+      expect(summary).toContain('1.14 s');
+      expect(summary).toContain('0.00%');
+      expect(summary).not.toContain('沿用最近有效值');
+      expect(
+        renderToStaticMarkup(<GroupHealthScopeNote uptime />),
+      ).not.toContain('沿用最近有效值');
       expect(chartDisplayValue(stats, 'avg_ttft_ms')).toBe(1.14);
       const actual = {
         ...stats,
@@ -109,9 +119,9 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
         <GroupHealthPanel stats={{ ...stats, series: [] }} />,
       );
       expect(raw).not.toContain('1.14 s');
-      expect(raw).not.toContain('沿用 ');
+      expect(raw).not.toContain('沿用最近有效值');
     });
-    test('probe-only rows show availability and source without inventing traffic', () => {
+    test('probe-only rows show availability evidence without inventing traffic', () => {
       expect(healthTone(passing)).toBe('empty');
       expect(uptimeTone(passing)).toBe('healthy');
       const html = renderToStaticMarkup(

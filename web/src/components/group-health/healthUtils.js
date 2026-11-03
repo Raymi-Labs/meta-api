@@ -175,19 +175,6 @@ export function getHealthLatency(stats, metric = 'ttft', useReference = false) {
   );
 }
 
-export function formatHealthReference(measurement, t) {
-  if (!measurement?.referenceTs) return '';
-  return t('沿用 {{time}} 的有效值', {
-    time: new Date(measurement.referenceTs * 1000).toLocaleString(undefined, {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }),
-  });
-}
-
 // Keep request health intact; Uptime consumers explicitly select probe fallback.
 export function getUptimeRate(stats) {
   return stats?.uptime_sample_count == null

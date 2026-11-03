@@ -49,7 +49,6 @@ import {
   uptimeTone,
   getUptimeRate,
   resolveGroupHealthMetric,
-  formatHealthReference,
 } from '../../components/group-health/healthUtils';
 
 export default function ModelGroupRows({
@@ -223,26 +222,11 @@ export default function ModelGroupRows({
                           performance.externalLatency ? '首字时间' : '首字均值',
                         )}
                   </dt>
-                  <dd title={formatHealthReference(latency, t)}>
-                    {formatHealthLatency(latency.value)}
-                    {latency.referenceTs && (
-                      <small> · {t('沿用最近有效值')}</small>
-                    )}
-                  </dd>
+                  <dd>{formatHealthLatency(latency.value)}</dd>
                 </div>
                 <div>
                   <dt>{t('输出速度')}</dt>
-                  <dd
-                    title={formatHealthReference(
-                      { referenceTs: performance.throughputReferenceTs },
-                      t,
-                    )}
-                  >
-                    {formatModelThroughput(performance.throughput)}
-                    {performance.throughputReferenceTs && (
-                      <small> · {t('沿用最近有效值')}</small>
-                    )}
-                  </dd>
+                  <dd>{formatModelThroughput(performance.throughput)}</dd>
                 </div>
                 <div>
                   <dt>

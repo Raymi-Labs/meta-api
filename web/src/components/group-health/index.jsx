@@ -29,7 +29,6 @@ import {
   getHealthCounts,
   getHealthLatency,
   getHealthMeasurement,
-  formatHealthReference,
   healthTone,
   getUptimeRate,
   uptimeTone,
@@ -159,11 +158,10 @@ export function GroupHealthScopeNote({ uptime = false }) {
         '同组重试合并统计；跨组重试分别记录各组结果。首字均值仅统计成功流式请求，含排队和重试等待。',
       )}{' '}
       {t('生图显示成功同步请求的完成耗时，异步提交不计入完成样本。')}{' '}
-      {uptime
-        ? t('缺少测量时沿用最近有效值，来源时间另行标记，不增加当前样本数。')
-        : t(
-            '缓存命中率为成功请求的缓存读取 Token 总量除以输入 Token 总量，包含未命中请求，缓存写入不算命中；无有效用量时显示 —。',
-          )}
+      {!uptime &&
+        t(
+          '缓存命中率为成功请求的缓存读取 Token 总量除以输入 Token 总量，包含未命中请求，缓存写入不算命中；无有效用量时显示 —。',
+        )}
     </p>
   );
 }
@@ -216,14 +214,12 @@ export function GroupHealthSummary({
                 {formatHealthRate(rate)}
               </strong>
             </span>
-            <span title={formatHealthReference(latency, t)}>
+            <span>
               {metric === 'completion' ? t('平均完成') : t('首字均值')}{' '}
               <strong>{formatHealthLatency(latency.value)}</strong>
-              {latency.referenceTs && <small> · {t('沿用最近有效值')}</small>}
             </span>
-            <span title={formatHealthReference(cache, t) || t('缓存命中率')}>
+            <span title={t('缓存命中率')}>
               {t('缓存')} <strong>{formatHealthRate(cache.value)}</strong>
-              {cache.referenceTs && <small> · {t('沿用最近有效值')}</small>}
             </span>
             {(limited ||
               (latency.count > 0 && latency.count < HEALTH_MIN_SAMPLES)) && (
@@ -263,25 +259,25 @@ export function GroupHealthSummary({
         <strong className='group-health-number'>
           {formatHealthLatency(latency.value)}
         </strong>
-        <span className='group-health-caption'>
-          {formatHealthReference(latency, t) ||
-            t('{{count}} 个有效样本', { count: latency.count })}
-          {!latency.referenceTs &&
-          latency.count > 0 &&
-          latency.count < HEALTH_MIN_SAMPLES
-            ? ` · ${t('样本不足')}`
-            : ''}
-        </span>
+        {!latency.referenceTs && (
+          <span className='group-health-caption'>
+            {t('{{count}} 个有效样本', { count: latency.count })}
+            {latency.count > 0 && latency.count < HEALTH_MIN_SAMPLES
+              ? ` · ${t('样本不足')}`
+              : ''}
+          </span>
+        )}
       </div>
       <div>
         <span className='group-health-label'>{t('缓存命中率')}</span>
         <strong className='group-health-number'>
           {formatHealthRate(cache.value)}
         </strong>
-        <span className='group-health-caption'>
-          {formatHealthReference(cache, t) ||
-            t('{{count}} 个有效样本', { count: cache.count })}
-        </span>
+        {!cache.referenceTs && (
+          <span className='group-health-caption'>
+            {t('{{count}} 个有效样本', { count: cache.count })}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -299,6 +295,9 @@ export function GroupHealthPanel({
   const [selectedTs, setSelectedTs] = useState(null);
   const series = Array.isArray(stats?.series) ? stats.series : [];
   const selected = series.find((bucket) => bucket.ts === selectedTs);
+  const selectedLatency = selected
+    ? getHealthLatency(selected, metric, uptime)
+    : null;
   const resolveTone = uptime ? uptimeTone : healthTone;
   const resolveRate = uptime ? getUptimeRate : (value) => value?.success_rate;
   const tone = resolveTone(stats);
@@ -390,18 +389,21 @@ export function GroupHealthPanel({
             uptime={uptime}
           />
           <GroupHealthOutcomeDetails stats={selected} />
-          <div className='group-health-caption'>
-            {formatHealthReference(
-              getHealthLatency(selected, metric, uptime),
-              t,
-            ) ||
-              t('{{count}} 个有效样本', {
-                count: getHealthLatency(selected, metric).count,
-              })}
-            {selected.ts === series[series.length - 1]?.ts
-              ? ` · ${t('当前小时尚未结束')}`
-              : ''}
-          </div>
+          {(!selectedLatency?.referenceTs ||
+            selected.ts === series[series.length - 1]?.ts) && (
+            <div className='group-health-caption'>
+              {!selectedLatency?.referenceTs &&
+                t('{{count}} 个有效样本', {
+                  count: getHealthLatency(selected, metric).count,
+                })}
+              {selected.ts === series[series.length - 1]?.ts && (
+                <>
+                  {!selectedLatency?.referenceTs && ' · '}
+                  {t('当前小时尚未结束')}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
       {!getHealthCounts(stats).observed &&
