@@ -86,19 +86,3 @@ export function dashboardPresetRange(preset, now = new Date()) {
     grain: ['7d', '30d'].includes(preset) ? 'day' : 'hour',
   };
 }
-
-export function dashboardQuickActions(isAdmin, isVisible) {
-  const actions = [
-    ['console', 'token', '/console/token', '令牌管理'],
-    ['console', 'log', '/console/log', '使用日志'],
-    ...(isAdmin
-      ? [
-          ['admin', 'channel', '/console/channel', '渠道管理'],
-          ['admin', 'user', '/console/user', '用户管理'],
-        ]
-      : [['personal', 'topup', '/console/topup', '充值']]),
-  ];
-  return actions.filter(
-    ([section, module]) => isVisible(section) && isVisible(section, module),
-  );
-}

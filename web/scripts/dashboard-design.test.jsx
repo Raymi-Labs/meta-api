@@ -80,31 +80,104 @@ test('cache loading and failures do not hide successful aggregate cards', () => 
 test('aggregation failure hides stale values in every card', () => {
   assert.doesNotMatch(render({ quotaError: true }), /value-\d/);
 });
-test('header shows the applied period with query controls and no duplicate navigation', () => {
-  const html = renderToStaticMarkup(
+const renderHeader = (isAdminUser) =>
+  renderToStaticMarkup(
     <Header
-      inputs={{
-        start_timestamp: '2026-10-29T07:18:00Z',
-        end_timestamp: '2026-10-30T07:18:00Z',
-        username: 'hidden-filter',
-      }}
+      getGreeting='👋 欢迎回来'
       rangePreset='24h'
       onRangeChange={() => {}}
+      inputs={{
+        start_timestamp: '2026-10-29T14:00:00+08:00',
+        end_timestamp: '2026-10-30T14:00:00+08:00',
+        username: isAdminUser ? 'account-filter' : '',
+      }}
+      dataExportDefaultTime='hour'
+      isAdminUser={isAdminUser}
       showSearchModal={() => {}}
       refresh={() => {}}
       loading={false}
-      t={t}
+      t={(key) => key}
     />,
   );
-  assert.match(html, /2026/);
-  assert.match(html, /aria-label="筛选"/);
-  assert.match(html, /aria-label="刷新"/);
-  assert.match(html, /value="24h" selected/);
-  assert.doesNotMatch(
-    html,
-    /<h1|hidden-filter|概览|常用操作|dashboard-timezone|\/console\//,
-  );
+
+test('overview keeps query controls without duplicating sidebar destinations', () => {
+  for (const isAdminUser of [false, true]) {
+    const html = renderHeader(isAdminUser);
+    assert.equal(html.includes('dashboard-quick-actions'), false);
+    assert.equal(html.includes('<nav'), false);
+    assert.equal(html.includes('/console/'), false);
+    for (const label of [
+      '令牌管理',
+      '使用日志',
+      '渠道管理',
+      '用户管理',
+      '充值',
+    ]) {
+      assert.equal(html.includes(label), false);
+    }
+    assert.match(html, /aria-label="时间范围"/);
+    assert.match(html, /aria-label="筛选"/);
+    assert.match(html, /aria-label="刷新"/);
+    assert.match(html, /2026/);
+    assert.match(html, /value="24h" selected/);
+    assert.doesNotMatch(html, /<h1|概览|常用操作/);
+    assert.doesNotMatch(
+      html,
+      /时间粒度|dashboard-query-summary|dashboard-timezone/,
+    );
+    for (const preset of ['today', '24h', '7d', '30d', 'custom']) {
+      assert.ok(html.includes(`value="${preset}"`));
+    }
+  }
+  assert.doesNotMatch(renderHeader(true), /account-filter/);
 });
+
+test('range selection, filter and refresh keep their callbacks', () => {
+  const calls = [];
+  const header = Header({
+    inputs: {},
+    rangePreset: 'custom',
+    onRangeChange: (preset) => calls.push(preset),
+    showSearchModal: () => calls.push('filter'),
+    refresh: () => calls.push('refresh'),
+    loading: true,
+    t: (key) => key,
+  });
+  const elements = [];
+  const visit = (element) => {
+    if (!React.isValidElement(element)) return;
+    elements.push(element);
+    React.Children.forEach(element.props.children, visit);
+  };
+  visit(header);
+  const select = elements.find((element) => element.type === 'select');
+  assert.equal(select.props.value, 'custom');
+  select.props.onChange({ target: { value: '7d' } });
+  const filter = elements.find(
+    (element) => element.props['aria-label'] === '筛选',
+  );
+  filter.props.onClick();
+  const refresh = elements.find(
+    (element) => element.props['aria-label'] === '刷新',
+  );
+  assert.equal(refresh.props.loading, true);
+  refresh.props.onClick();
+  assert.deepEqual(calls, ['7d', 'filter', 'refresh']);
+});
+
+test('invalid or missing timestamps render a placeholder without leaking invalid dates', () => {
+  const html = renderToStaticMarkup(
+    <Header
+      inputs={{ start_timestamp: 'invalid' }}
+      rangePreset='custom'
+      t={(key) => key}
+    />,
+  );
+  assert.doesNotMatch(html, /Invalid Date|NaN/);
+  assert.match(html, /dashboard-applied-range/);
+  assert.match(html, /—/);
+});
+
 test('metric formatting respects the existing currency settings and zero-token boundary', () => {
   const descriptor = Object.getOwnPropertyDescriptor(
     globalThis,
