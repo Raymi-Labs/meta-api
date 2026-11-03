@@ -40,6 +40,7 @@ const (
 	InvoiceManualTransferProductName = "AI API 调用服务"
 	InvoiceManualTransferProductUnit = "项"
 
+	minInvoiceMoney = int64(20) // CNY, per application before service fees.
 	maxInvoiceMoney = int64(1_000_000_000_000)
 )
 
@@ -47,6 +48,7 @@ var (
 	ErrInvoiceRequestNotFound         = errors.New("发票申请不存在")
 	ErrInvoiceRequestAlreadyReviewed  = errors.New("发票申请已审核")
 	ErrInvoiceOrderUnavailable        = errors.New("订单不可申请发票")
+	ErrInvoiceAmountBelowMinimum      = errors.New("每次发票申请金额合计最低为人民币 20 元")
 	ErrInvoiceManualTransferOccupied  = errors.New("该银行转账已存在待审核或已开票申请")
 	ErrInsufficientQuotaForInvoiceFee = errors.New("余额不足，无法支付发票手续费")
 )
@@ -309,6 +311,9 @@ func CreateInvoiceRequest(userID int, input CreateInvoiceRequestInput) (*Invoice
 			totalMoneyDecimal = totalMoneyDecimal.Add(decimal.NewFromFloat(transfer.Money))
 		}
 
+		if totalMoneyDecimal.LessThan(decimal.NewFromInt(minInvoiceMoney)) {
+			return ErrInvoiceAmountBelowMinimum
+		}
 		if totalMoneyDecimal.GreaterThan(decimal.NewFromInt(maxInvoiceMoney)) {
 			return errors.New("开票金额合计不能超过 1000000000000 元")
 		}

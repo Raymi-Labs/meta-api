@@ -1,5 +1,6 @@
 {
   "translation": {
+    "每次发票申请金额合计最低为人民币 20 元": "Each invoice application must total at least CNY 20",
     "本轮模型": "Models for this round",
     "点击查看资料；不会改变调用名单。": "Click to inspect; the request selection stays unchanged.",
     "查看模型资料": "Inspect model",
