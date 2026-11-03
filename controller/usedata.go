@@ -12,26 +12,29 @@ import (
 )
 
 func GetAllQuotaDates(c *gin.Context) {
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	username := c.Query("username")
-	dates, err := model.GetAllQuotaDates(startTimestamp, endTimestamp, username)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    dates,
-	})
-	return
+	getDashboardUsage(c, false, false)
 }
 
 func GetQuotaDatesByUser(c *gin.Context) {
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	dates, err := model.GetQuotaDataGroupByUser(startTimestamp, endTimestamp)
+	getDashboardUsage(c, false, true)
+}
+
+func getDashboardUsage(c *gin.Context, self, byUser bool) {
+	start, startErr := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
+	end, endErr := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if startErr != nil || endErr != nil || start <= 0 || end <= start || end-start > 31*86400 || (self && end-start > 30*86400) {
+		common.ApiError(c, errors.New("请选择有效且不超过允许天数的时间范围"))
+		return
+	}
+	userID, username := 0, c.Query("username")
+	if self {
+		userID, username = c.GetInt("id"), ""
+		if userID <= 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "用户未认证"})
+			return
+		}
+	}
+	usage, err := model.GetCachedDashboardUsage(c.Request.Context(), start, end, userID, username, byUser)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -39,7 +42,8 @@ func GetQuotaDatesByUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    dates,
+		"data":    usage.Rows,
+		"summary": usage.Summary,
 	})
 }
 
@@ -131,26 +135,5 @@ func UpdateUserBalanceTrendUser(c *gin.Context) {
 }
 
 func GetUserQuotaDates(c *gin.Context) {
-	userId := c.GetInt("id")
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	// 判断时间跨度是否超过 1 个月
-	if endTimestamp-startTimestamp > 2592000 {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "时间跨度不能超过 1 个月",
-		})
-		return
-	}
-	dates, err := model.GetQuotaDataByUserId(userId, startTimestamp, endTimestamp)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    dates,
-	})
-	return
+	getDashboardUsage(c, true, false)
 }

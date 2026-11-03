@@ -47,6 +47,42 @@ const { useDashboardStats } = await import(
   '../src/hooks/dashboard/useDashboardStats.jsx'
 );
 const t = (key) => key;
+
+test('unified summary overrides stale chart totals and retains signed net spend', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'localStorage',
+  );
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key) =>
+        ({ quota_per_unit: '500000', quota_display_type: 'USD' })[key] ?? null,
+    },
+  });
+  function Probe() {
+    const { groupedStatsData } = useDashboardStats(999, 1, 999, 1, t, {
+      quota: -500000,
+      requests: 221,
+      tokens: 27082015,
+      cache_rate: null,
+      unit_price: null,
+    });
+    return <div>{JSON.stringify(groupedStatsData)}</div>;
+  }
+  try {
+    const html = renderToStaticMarkup(<Probe />);
+    assert.match(html, /27,082,015/);
+    assert.match(html, /221/);
+    assert.match(html, /-1\.00/);
+    assert.doesNotMatch(html, /999/);
+    assert.match(html, /—/);
+  } finally {
+    if (descriptor)
+      Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else delete globalThis.localStorage;
+  }
+});
 const render = (props = {}) => {
   const groupedStatsData = [
     'spend',
