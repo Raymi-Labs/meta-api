@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -142,6 +143,15 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "sampling_parameter", "上游模型不支持当前采样参数", fmt.Sprintf("请关闭客户端自定义 %s 参数后重试；若仍失败，请携带请求 ID 联系管理员。", rejectedSampling)
 	case !upstream && types.ClassifyFailure(err) == types.FailureUserRequest &&
 		(code == string(types.ErrorCodeInsufficientUserQuota) || code == string(types.ErrorCodePreConsumeTokenQuotaFailed)):
+		var rejection *types.QuotaRejection
+		if errors.As(err, &rejection) && rejection != nil {
+			switch rejection.RejectionReason() {
+			case types.QuotaReasonRequestTooLarge:
+				return "quota", "本次请求预估费用超过可用额度", "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。"
+			case types.QuotaReasonInFlight:
+				return "quota", "其他在途请求暂时占用额度", "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。"
+			}
+		}
 		return "quota", "账户或令牌额度不足", "请检查账户余额、令牌额度及套餐限制。"
 	case err.StatusCode == http.StatusRequestEntityTooLarge:
 		return "request_too_large", "请求体超过大小限制", "请减少消息、附件或图片大小后重试。"
@@ -254,6 +264,7 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 	AppendRelayHTTPTimeout(c, adminInfo)
 	AppendReasoningAdaptationAdminInfo(c, adminInfo)
 	AppendClaudeStreamDiagnostics(c, adminInfo)
+	AppendPreconsumeAdminInfo(c, adminInfo)
 	AppendUpstreamRequestIDs(c, adminInfo)
 	other["admin_info"] = adminInfo
 	group := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)

@@ -48,6 +48,10 @@ type PriceData struct {
 	ConservativeQuotaToPreConsume int // 套餐令牌前置拦截使用的保守预估额度
 	GroupRatioInfo                GroupRatioInfo
 	TimeRatioInfo                 TimeRatioInfo
+	EstimatedPromptTokens         int
+	RequestedMaxTokens            int
+	InitialChatQuota              int
+	InitialCompletionTokens       int
 }
 
 func (p *PriceData) AddOtherRatio(key string, ratio float64) {

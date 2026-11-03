@@ -7006,6 +7006,10 @@
     "资金批次": "Lote de recursos",
     "赠送": "Bônus gratuito",
     "退回 credits": "Credits devolvidos",
-    "采集起点": "Início do registro"
+    "采集起点": "Início do registro",
+    "本次请求预估费用超过可用额度": "O custo estimado da solicitação excede a cota disponível",
+    "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "O saldo não está esgotado. Reduza o contexto ou o limite de saída, ou adicione cota. Esta recusa não desativará o token automaticamente.",
+    "其他在途请求暂时占用额度": "Outras solicitações em andamento reservam cota temporariamente",
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Aguarde as solicitações em andamento terminarem antes de tentar novamente. Evite novas tentativas imediatas; esta recusa não desativará o token automaticamente."
   }
 }

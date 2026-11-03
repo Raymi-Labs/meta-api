@@ -30,7 +30,7 @@ func TestTaskFinalQuotaOutcome(t *testing.T) {
 				c, _ := gin.CreateTestContext(httptest.NewRecorder())
 				c.Request = httptest.NewRequest("POST", "/v1/videos", nil)
 				service.MarkTokenQuotaIdentity(c, &token)
-				var cause error = &types.QuotaRejection{Source: "wallet", Message: "local quota"}
+				var cause error = &types.QuotaRejection{Source: "wallet", Known: true, Message: "local quota"}
 				if kind == "database" {
 					cause = errors.New("database unavailable")
 				}

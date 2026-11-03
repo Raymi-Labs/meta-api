@@ -87,7 +87,7 @@ func ObserveTokenQuotaOutcome(c *gin.Context) {
 	if rejected != nil {
 		switch rejected.Source {
 		case "token", "token_package", BillingSourceWallet, BillingSourceSubscription:
-			insufficient = true
+			insufficient = rejected.RejectionReason() == types.QuotaReasonExhausted
 		}
 	}
 	if err := model.RecordTokenQuotaOutcome(token.Id, token.QuotaFailureVersion, insufficient); err != nil {

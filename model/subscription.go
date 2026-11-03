@@ -1751,8 +1751,9 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			return errors.New("no active subscription")
 		}
 		if len(subs) == 0 {
-			return &types.QuotaRejection{Source: "subscription", Required: amount, Message: "no active subscription"}
+			return &types.QuotaRejection{Source: "subscription", Required: amount, Known: true, Message: "no active subscription"}
 		}
+		var maxAvailable int64
 		for _, candidate := range subs {
 			sub := candidate
 			plan, err := getSubscriptionPlanByIdTx(tx, sub.PlanId)
@@ -1765,6 +1766,7 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			usedBefore := sub.AmountUsed
 			if sub.AmountTotal > 0 {
 				remain := sub.AmountTotal - usedBefore
+				maxAvailable = max(maxAvailable, remain)
 				if remain < amount {
 					continue
 				}
@@ -1802,7 +1804,7 @@ func PreConsumeUserSubscription(requestId string, userId int, modelName string, 
 			returnValue.AmountUsedAfter = sub.AmountUsed
 			return nil
 		}
-		return &types.QuotaRejection{Source: "subscription", Required: amount, Message: fmt.Sprintf("subscription quota insufficient, need=%d", amount)}
+		return &types.QuotaRejection{Source: "subscription", Available: maxAvailable, Required: amount, Known: true, Message: fmt.Sprintf("subscription quota insufficient, available=%d need=%d", maxAvailable, amount)}
 	})
 	if err != nil {
 		return nil, err

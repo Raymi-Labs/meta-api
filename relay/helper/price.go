@@ -303,6 +303,27 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 		QuotaToPreConsume:     preConsumedQuota,
 		TimeRatioInfo:         timeRatioInfo,
 	}
+	priceData.EstimatedPromptTokens = promptTokens
+	priceData.RequestedMaxTokens = meta.MaxTokens
+	chatInput := true
+	for _, file := range meta.Files {
+		if file != nil && (file.FileType == types.FileTypeAudio || file.FileType == types.FileTypeVideo) {
+			chatInput = false
+		}
+	}
+	if !usePrice && !useAudioDurationPrice && preConsumedQuota > 0 && chatInput {
+		priceData.InitialCompletionTokens = min(max(meta.MaxTokens, 0), defaultConservativeCompletionTokens)
+		if meta.MaxTokens <= 0 {
+			priceData.InitialCompletionTokens = defaultConservativeCompletionTokens
+		}
+		initial := decimal.NewFromInt(int64(max(promptTokens, common.PreConsumedQuota))).
+			Add(decimal.NewFromInt(int64(priceData.InitialCompletionTokens)).Mul(decimal.NewFromFloat(max(completionRatio, 1)))).
+			Mul(decimal.NewFromFloat(modelRatio)).Mul(decimal.NewFromFloat(groupRatioInfo.GroupRatio)).Mul(decimal.NewFromFloat(timeRatio))
+		// Clamp before conversion; the initial hold never exceeds the legacy
+		// estimate or the existing trust threshold. Final usage is unchanged.
+		capQuota := max(1, min(preConsumedQuota, common.GetTrustQuota()))
+		priceData.InitialChatQuota = max(1, int(decimal.Min(initial.Ceil(), decimal.NewFromInt(int64(capQuota))).IntPart()))
+	}
 	priceData.ConservativeQuotaToPreConsume = EstimateConservativePreConsumeQuota(info, promptTokens, meta, priceData)
 	if priceData.ConservativeQuotaToPreConsume < priceData.QuotaToPreConsume {
 		priceData.ConservativeQuotaToPreConsume = priceData.QuotaToPreConsume
@@ -503,6 +524,8 @@ func modelPriceHelperTiered(c *gin.Context, info *relaycommon.RelayInfo, exprStr
 		GroupRatioInfo:                groupRatioInfo,
 		QuotaToPreConsume:             preConsumedQuota,
 		ConservativeQuotaToPreConsume: preConsumedQuota,
+		EstimatedPromptTokens:         promptTokens,
+		RequestedMaxTokens:            meta.MaxTokens,
 		TimeRatioInfo:                 timeRatioInfo,
 	}
 

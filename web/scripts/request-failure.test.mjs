@@ -127,13 +127,69 @@ test('admin reports identify early rejections without exposing credentials or di
 });
 
 test('missing log identity has a readable fallback', async () => {
-  const { getRequestLogUserLabel } = await import(
-    '../src/helpers/requestFailure.js'
-  );
+  const { getRequestLogUserLabel } =
+    await import('../src/helpers/requestFailure.js');
   assert.equal(getRequestLogUserLabel({ user_id: 973 }), 'ID: 973');
   assert.equal(
     getRequestLogUserLabel({ user_id: 973, username: 'owner' }),
     'owner',
   );
   assert.equal(getRequestLogUserLabel({}), '-');
+});
+
+test('quota reasons distinguish request size and active holds in every locale', () => {
+  const keys = [
+    '本次请求预估费用超过可用额度',
+    '余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。',
+    '其他在途请求暂时占用额度',
+    '请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。',
+  ];
+  for (const locale of [
+    'zh-CN',
+    'zh-TW',
+    'en',
+    'ja',
+    'ko',
+    'fr',
+    'de',
+    'es',
+    'pt',
+    'it',
+    'nl',
+    'ru',
+    'uk',
+    'pl',
+    'bg',
+    'vi',
+    'tr',
+  ]) {
+    const { translation } = JSON.parse(
+      readFileSync(
+        new URL(`../src/i18n/locales/${locale}.json`, import.meta.url),
+      ),
+    );
+    for (const key of keys) assert.ok(translation[key], `${locale}: ${key}`);
+    const record = {
+      type: 5,
+      created_at: 100,
+      other: JSON.stringify({
+        request_failure: true,
+        failure_reason: keys[0],
+        failure_hint: keys[1],
+        admin_info: {
+          preconsume: {
+            estimated_quota: 536742306,
+            policy: 'bounded_chat_wallet',
+          },
+        },
+      }),
+    };
+    const report = buildRequestFailureReport(
+      record,
+      (key) => translation[key] || key,
+    );
+    assert.ok(report.includes(translation[keys[0]]));
+    assert.ok(report.includes(translation[keys[1]]));
+    assert.doesNotMatch(report, /536742306|bounded_chat_wallet/);
+  }
 });

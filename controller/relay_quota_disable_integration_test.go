@@ -42,7 +42,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 				require.NoError(t, err)
 				sqlDB.SetMaxOpenConns(1)
 				t.Cleanup(func() { sqlDB.Close() })
-				require.NoError(t, db.AutoMigrate(&model.Token{}, &model.User{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.UserSubscription{}, &model.SubscriptionPlan{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}))
+				require.NoError(t, db.AutoMigrate(&model.Token{}, &model.User{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.UserSubscription{}, &model.SubscriptionPlan{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}))
 				oldSQLite := common.UsingSQLite
 				common.UsingSQLite = true
 				t.Cleanup(func() { common.UsingSQLite = oldSQLite })
@@ -92,6 +92,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 				r.Use(middleware.RequestId(), middleware.RequestFailureLog(), middleware.RouteTag("relay"), middleware.TokenAuth())
 				var lastRequestID string
 				databaseFailure := strings.HasSuffix(source, "_database")
+				shouldDisable := source == "subscription"
 				inRelay := false
 				if databaseFailure {
 					callback := "test:quota-health-query"
@@ -120,7 +121,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 					r.ServeHTTP(w, req)
 					if databaseFailure {
 						require.GreaterOrEqual(t, w.Code, 400)
-					} else if n <= 3 {
+					} else if n <= 3 || !shouldDisable {
 						require.Equal(t, 403, w.Code, w.Body.String())
 						require.Contains(t, w.Body.String(), lastRequestID)
 					} else {
@@ -131,12 +132,12 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 					var failureCount int64
 					require.NoError(t, db.Model(&model.Log{}).Where("token_id = ? AND type = ?", token.Id, model.LogTypeError).Count(&failureCount).Error)
 					expectedCount := min(n, 3)
-					if databaseFailure {
+					if !shouldDisable {
 						expectedCount = n
 					}
 					require.EqualValues(t, expectedCount, failureCount, "keep triggering failures, suppress only disabled retries")
 					require.NoError(t, db.First(&current, token.Id).Error)
-					if databaseFailure {
+					if !shouldDisable {
 						require.Zero(t, current.QuotaFailureCount)
 					} else {
 						require.Equal(t, min(n, 3), current.QuotaFailureCount)
@@ -152,7 +153,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 						}
 					} else {
 						require.Zero(t, metric.RequestCount, "local quota rejections must not enter service denominator")
-						require.EqualValues(t, min(n, 3), metric.ExcludedUserErrorCount, "auth rejection after disable must not create group sample")
+						require.EqualValues(t, expectedCount, metric.ExcludedUserErrorCount, "auth rejection after disable must not create group sample")
 					}
 					require.Zero(t, metric.SuccessCount)
 					summary, queryErr := grouphealth.Query(context.Background(), []string{healthGroup}, "quota-chain-fixture", common.RoleRootUser, time.Now())
@@ -184,7 +185,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 					require.Equal(t, user.Quota, afterUser.Quota, "preflight rejection must not charge wallet")
 					require.Equal(t, token.RemainQuota, current.RemainQuota, "preflight rejection must not charge token")
 
-					if n < 3 || databaseFailure {
+					if n < 3 || !shouldDisable {
 						require.Equal(t, common.TokenStatusEnabled, current.Status)
 					} else {
 						require.Equal(t, common.TokenStatusDisabled, current.Status)

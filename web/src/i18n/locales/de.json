@@ -7006,6 +7006,10 @@
     "资金批次": "Finanzierungsposten",
     "赠送": "Geschenk",
     "退回 credits": "Zurückgegebene credits",
-    "采集起点": "Erfassungsbeginn"
+    "采集起点": "Erfassungsbeginn",
+    "本次请求预估费用超过可用额度": "Die geschätzten Anfragekosten überschreiten das verfügbare Kontingent",
+    "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Ihr Guthaben ist noch nicht aufgebraucht. Kürzen Sie den Kontext, senken Sie das Ausgabelimit oder laden Sie Guthaben auf. Diese Ablehnung deaktiviert den Token nicht automatisch.",
+    "其他在途请求暂时占用额度": "Andere laufende Anfragen reservieren vorübergehend Kontingent",
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Warten Sie, bis laufende Anfragen abgeschlossen sind. Vermeiden Sie sofortige Wiederholungen; diese Ablehnung deaktiviert den Token nicht automatisch."
   }
 }

@@ -20,6 +20,7 @@ const (
 // 会话存储在 relayInfo.Billing 上，供后续 Settle / Refund 使用。
 func PreConsumeBilling(c *gin.Context, preConsumedQuota int, relayInfo *relaycommon.RelayInfo) *types.NewAPIError {
 	session, apiErr := NewBillingSession(c, relayInfo, preConsumedQuota)
+	capturePreconsumeDiagnostics(c, relayInfo, preConsumedQuota, session, apiErr)
 	if apiErr != nil {
 		return apiErr
 	}

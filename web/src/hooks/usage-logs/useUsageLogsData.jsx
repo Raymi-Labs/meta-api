@@ -700,6 +700,12 @@ export const useLogsData = (admin = isAdmin()) => {
           value: logs[i].request_id,
         });
       }
+      if (isAdminUser && other?.admin_info?.preconsume) {
+        expandDataLocal.push({
+          key: t('请求预扣费额度'),
+          value: JSON.stringify(other.admin_info.preconsume, null, 2),
+        });
+      }
       if (logs[i].type === 5) {
         expandDataLocal.push(...getRequestFailureDetails(logs[i], t));
         if (isAdminUser && other?.admin_info?.error_message) {

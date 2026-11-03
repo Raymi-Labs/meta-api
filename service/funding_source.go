@@ -27,11 +27,12 @@ type FundingSource interface {
 // ---------------------------------------------------------------------------
 
 type WalletFunding struct {
-	requireAvailableQuota bool
-	userId                int
-	consumed              int // 实际预扣的用户额度
-	requestID             string
-	reservation           model.PulseWalletReservation
+	requireAvailableQuota    bool
+	allowSettlementOverdraft bool
+	userId                   int
+	consumed                 int // 实际预扣的用户额度
+	requestID                string
+	reservation              model.PulseWalletReservation
 }
 
 func (w *WalletFunding) Source() string { return BillingSourceWallet }
@@ -84,7 +85,8 @@ func (w *WalletFunding) Refund() error {
 }
 
 func (w *WalletFunding) resize(target int, state string) error {
-	receipt, err := model.AdjustPulseWalletReservation(w.userId, w.requestID, target, state, w.requireAvailableQuota)
+	requireAvailable := w.requireAvailableQuota && !(w.allowSettlementOverdraft && state == "settled")
+	receipt, err := model.AdjustPulseWalletReservation(w.userId, w.requestID, target, state, requireAvailable)
 	if err != nil {
 		return err
 	}

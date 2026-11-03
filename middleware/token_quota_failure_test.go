@@ -89,7 +89,7 @@ func TestTokenQuotaAutoDisableHTTP(t *testing.T) {
 						c.Status(429)
 						return
 					}
-					apiErr = types.NewErrorWithStatusCode(&types.QuotaRejection{Source: "wallet", Message: "insufficient"}, types.ErrorCodeInsufficientUserQuota, 403)
+					apiErr = types.NewErrorWithStatusCode(&types.QuotaRejection{Source: "wallet", Known: true, Message: "insufficient"}, types.ErrorCodeInsufficientUserQuota, 403)
 				}
 				service.MarkRequestFailure(c, apiErr)
 				c.Status(apiErr.StatusCode)
@@ -120,7 +120,7 @@ func TestTokenQuotaAutoDisableHTTP(t *testing.T) {
 				}
 			}
 			switch kind {
-			case "upstream", "database", "success_break", "other_break", "query", "ip_denied":
+			case "preconsume_token", "upstream", "database", "success_break", "other_break", "query", "ip_denied":
 				require.Zero(t, read().QuotaFailureCount)
 				require.NotEqual(t, common.TokenStatusDisabled, read().Status)
 				if kind == "success_break" || kind == "other_break" {

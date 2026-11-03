@@ -7006,6 +7006,10 @@
     "资金批次": "Geldpartij",
     "赠送": "Gratis tegoed",
     "退回 credits": "Teruggegeven credits",
-    "采集起点": "Begin van registratie"
+    "采集起点": "Begin van registratie",
+    "本次请求预估费用超过可用额度": "De geschatte aanvraagkosten overschrijden het beschikbare tegoed",
+    "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Uw saldo is niet op. Verkort de context, verlaag de uitvoerlimiet of voeg tegoed toe. Deze afwijzing schakelt het token niet automatisch uit.",
+    "其他在途请求暂时占用额度": "Andere actieve aanvragen reserveren tijdelijk tegoed",
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Wacht tot actieve aanvragen zijn voltooid voordat u opnieuw probeert. Vermijd directe herhalingen; deze afwijzing schakelt het token niet automatisch uit."
   }
 }

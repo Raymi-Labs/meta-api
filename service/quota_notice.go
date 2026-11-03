@@ -166,7 +166,7 @@ func ObserveQuotaNoticeOutcome(c *gin.Context) {
 		value, _ = c.Get("quota_notice_auth_rejection")
 		rejected, _ = value.(*types.QuotaRejection)
 	}
-	if rejected == nil {
+	if rejected == nil || rejected.RejectionReason() == types.QuotaReasonInFlight {
 		return
 	}
 	name := c.GetString("original_model")

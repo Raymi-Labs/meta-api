@@ -7006,6 +7006,10 @@
     "资金批次": "Lotto di fondi",
     "赠送": "Omaggio",
     "退回 credits": "Credits restituiti",
-    "采集起点": "Inizio registrazione"
+    "采集起点": "Inizio registrazione",
+    "本次请求预估费用超过可用额度": "Il costo stimato della richiesta supera la quota disponibile",
+    "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Il saldo non è esaurito. Riduci il contesto o il limite di output, oppure aggiungi quota. Questo rifiuto non disattiverà automaticamente il token.",
+    "其他在途请求暂时占用额度": "Altre richieste in corso riservano temporaneamente quota",
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Attendi il completamento delle richieste in corso prima di riprovare. Evita tentativi immediati; questo rifiuto non disattiverà automaticamente il token."
   }
 }

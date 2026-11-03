@@ -7338,6 +7338,10 @@
     "资金批次": "Lot de fonds",
     "赠送": "Don",
     "退回 credits": "Credits remboursés",
-    "采集起点": "Début de l’enregistrement"
+    "采集起点": "Début de l’enregistrement",
+    "本次请求预估费用超过可用额度": "Le coût estimé de la requête dépasse le quota disponible",
+    "余额尚未用尽；请缩短上下文、降低输出上限或补充相应额度。该拒绝不会自动禁用令牌。": "Votre solde n’est pas épuisé. Raccourcissez le contexte, réduisez la limite de sortie ou ajoutez du quota. Ce refus ne désactivera pas automatiquement le jeton.",
+    "其他在途请求暂时占用额度": "D’autres requêtes en cours réservent temporairement du quota",
+    "请等待在途请求结束后重试，避免立即重复发送；该拒绝不会自动禁用令牌。": "Attendez la fin des requêtes en cours avant de réessayer. Évitez les tentatives immédiates ; ce refus ne désactivera pas automatiquement le jeton."
   }
 }

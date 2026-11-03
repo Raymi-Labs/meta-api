@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -30,15 +31,16 @@ type PulseFundingLedger struct {
 // PulseWalletReservation follows one synchronous wallet request from reserve to
 // settle/refund. Its final snapshot is immutable; proof_ref deduplicates logs.
 type PulseWalletReservation struct {
-	ID           string `gorm:"primaryKey;type:varchar(64)"`
-	UserID       int    `gorm:"not null;index"`
-	RequestID    string `gorm:"type:varchar(64);not null;uniqueIndex"`
-	Quota        int64  `gorm:"not null"`
-	PaidQuota    int64  `gorm:"not null"`
-	FundingEpoch uint64 `gorm:"not null"`
-	Status       string `gorm:"type:varchar(16);not null"`
-	CreatedAt    int64  `gorm:"not null"`
-	UpdatedAt    int64  `gorm:"not null"`
+	ID              string `gorm:"primaryKey;type:varchar(64)"`
+	UserID          int    `gorm:"not null;index"`
+	RequestID       string `gorm:"type:varchar(64);not null;uniqueIndex"`
+	Quota           int64  `gorm:"not null"`
+	PaidQuota       int64  `gorm:"not null"`
+	FundingEpoch    uint64 `gorm:"not null"`
+	Status          string `gorm:"type:varchar(16);not null"`
+	CreatedAt       int64  `gorm:"not null"`
+	UpdatedAt       int64  `gorm:"not null"`
+	AvailableBefore int    `gorm:"-" json:"-"`
 }
 
 type PulseFundingSnapshot struct {
@@ -163,6 +165,21 @@ func creditOnlinePaidFundingTx(tx *gorm.DB, topUp *TopUp, quota int, source stri
 // retried transition therefore cannot charge/refund twice. Wallet and paid
 // allowance mutations always commit atomically; Redis is only a cache.
 func AdjustPulseWalletReservation(userID int, requestID string, target int, state string, requireAvailable bool) (PulseWalletReservation, error) {
+	return adjustPulseWalletReservation(userID, requestID, target, state, requireAvailable, nil)
+}
+
+type chatWalletAdmission struct{ initial, trust int }
+
+// ReserveChatWalletQuota decides the hold using the same locked balance that
+// pays it. Cached balances cannot grant multiple requests the same funds.
+func ReserveChatWalletQuota(userID int, requestID string, full, initial, trust int) (PulseWalletReservation, error) {
+	if initial <= 0 || initial > full || trust <= 0 || initial > trust {
+		return PulseWalletReservation{}, errors.New("invalid chat wallet admission")
+	}
+	return adjustPulseWalletReservation(userID, requestID, full, "reserved", true, &chatWalletAdmission{initial, trust})
+}
+
+func adjustPulseWalletReservation(userID int, requestID string, target int, state string, requireAvailable bool, chat *chatWalletAdmission) (PulseWalletReservation, error) {
 	var result PulseWalletReservation
 	if userID <= 0 || requestID == "" || len(requestID) > 64 || target < 0 || (state != "reserved" && state != "settled" && state != "refunded") || (state == "refunded" && target != 0) {
 		return result, errors.New("invalid wallet funding reservation")
@@ -176,6 +193,7 @@ func AdjustPulseWalletReservation(userID int, requestID string, target int, stat
 		if user.DeletedAt.Valid {
 			return gorm.ErrRecordNotFound
 		}
+		availableBefore := user.Quota
 		err = tx.Where("request_id = ?", requestID).First(&result).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			result = PulseWalletReservation{ID: common.GetUUID(), UserID: userID, RequestID: requestID, FundingEpoch: user.PulseFundingEpoch, Status: "reserved", CreatedAt: common.GetTimestamp()}
@@ -194,8 +212,29 @@ func AdjustPulseWalletReservation(userID int, requestID string, target int, stat
 			}
 			return errors.New("wallet funding already finalized")
 		}
+		result.AvailableBefore = availableBefore
+		if chat != nil {
+			if result.Quota > 0 {
+				// A repeated admission keeps the original hold, even if another
+				// request has since lowered the available wallet balance.
+				target = int(result.Quota)
+			} else if user.Quota > chat.trust {
+				target = chat.initial
+			}
+		}
 		delta := int64(target) - result.Quota
 		if delta > 0 && requireAvailable && int64(user.Quota) < delta {
+			if chat != nil {
+				var held int64
+				if err := tx.Model(&PulseWalletReservation{}).Where("user_id = ? AND status = ?", userID, "reserved").Select("COALESCE(SUM(quota), 0)").Scan(&held).Error; err != nil {
+					return err
+				}
+				rejection := &types.QuotaRejection{Source: "wallet", Available: int64(user.Quota), Required: delta, Known: true}
+				if held > 0 {
+					rejection.Reason = types.QuotaReasonInFlight
+				}
+				return rejection
+			}
 			return ErrInsufficientImageQuota
 		}
 		if delta > 0 && int64(user.Quota) < math.MinInt64+delta {

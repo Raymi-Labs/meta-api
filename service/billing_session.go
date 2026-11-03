@@ -31,6 +31,7 @@ type BillingSession struct {
 	tokenConsumed    int  // 令牌额度实际扣减量
 	extraReserved    int  // 发送前补充预扣的额度（订阅退款时需要单独回滚）
 	trusted          bool // 是否命中信任额度旁路
+	chatReservation  bool // 原子钱包首笔预留；无限额令牌仅结算真实用量
 	fundingSettled   bool // funding.Settle 已成功，资金来源已提交
 	settled          bool // Settle 全部完成（资金 + 令牌）
 	refunded         bool // Refund 已调用
@@ -55,7 +56,8 @@ func (s *BillingSession) Settle(actualQuota int) error {
 		s.fundingSettled = true
 	}
 	delta := actualQuota - s.preConsumedQuota
-	if delta == 0 {
+	tokenDelta := actualQuota - s.tokenConsumed
+	if delta == 0 && (tokenDelta == 0 || s.relayInfo.IsPlayground) {
 		s.settled = true
 		return nil
 	}
@@ -69,10 +71,10 @@ func (s *BillingSession) Settle(actualQuota int) error {
 	// 2) 调整令牌额度
 	var tokenErr error
 	if !s.relayInfo.IsPlayground {
-		if delta > 0 {
-			tokenErr = model.DecreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, delta)
-		} else {
-			tokenErr = model.IncreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, -delta)
+		if tokenDelta > 0 {
+			tokenErr = model.DecreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, tokenDelta)
+		} else if tokenDelta < 0 {
+			tokenErr = model.IncreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, -tokenDelta)
 		}
 		if tokenErr != nil {
 			// 资金来源已提交，令牌调整失败只能记录日志；标记 settled 防止 Refund 误退资金
@@ -145,6 +147,9 @@ func (s *BillingSession) needsRefundLocked() bool {
 		return false
 	}
 	if s.tokenConsumed > 0 {
+		return true
+	}
+	if wallet, ok := s.funding.(*WalletFunding); ok && wallet.consumed > 0 {
 		return true
 	}
 	// 订阅可能在 tokenConsumed=0 时仍预扣了额度
@@ -419,6 +424,9 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 
 	// 钱包路径需要先检查用户额度
 	tryWallet := func() (*BillingSession, *types.NewAPIError) {
+		if usesChatWalletReservation(c, relayInfo) {
+			return newChatWalletSession(c, relayInfo, preConsumedQuota)
+		}
 		userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
 		if err != nil {
 			return nil, types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
@@ -478,7 +486,8 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		session, err := tryWallet()
 		if err != nil {
 			if err.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				return trySubscription()
+				fallback, fallbackErr := trySubscription()
+				return fallback, preferAvailableFundingRejection(err, fallbackErr)
 			}
 			return nil, err
 		}
@@ -496,7 +505,8 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		session, apiErr := trySubscription()
 		if apiErr != nil {
 			if apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				return tryWallet()
+				fallback, fallbackErr := tryWallet()
+				return fallback, preferAvailableFundingRejection(apiErr, fallbackErr)
 			}
 			return nil, apiErr
 		}

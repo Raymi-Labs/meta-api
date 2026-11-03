@@ -302,39 +302,7 @@ func (c *ClaudeRequest) GetTokenCountMeta() *types.TokenCountMeta {
 			continue
 		}
 
-		content, _ := message.ParseContent()
-		for _, media := range content {
-			switch media.Type {
-			case "text":
-				texts = append(texts, media.GetText())
-			case "image":
-				if media.Source != nil {
-					data := media.Source.Url
-					if data == "" {
-						data = common.Interface2String(media.Source.Data)
-					}
-					if data != "" {
-						fileMeta = append(fileMeta, &types.FileMeta{
-							FileType: types.FileTypeImage,
-							Source:   createClaudeFileSource(data),
-						})
-					}
-				}
-			case "tool_use":
-				if media.Name != "" {
-					texts = append(texts, media.Name)
-				}
-				if media.Input != nil {
-					b, _ := common.Marshal(media.Input)
-					texts = append(texts, string(b))
-				}
-			case "tool_result":
-				if media.Content != nil {
-					b, _ := common.Marshal(media.Content)
-					texts = append(texts, string(b))
-				}
-			}
-		}
+		appendClaudeTokenContent(message.Content, &texts, &fileMeta)
 	}
 
 	// tools
