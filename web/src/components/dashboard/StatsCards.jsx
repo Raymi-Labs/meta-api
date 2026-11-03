@@ -57,7 +57,11 @@ export default function StatsCards({
               <span>{card.title}</span>
               <Icon size={17} aria-hidden='true' />
             </div>
-            <div className='dashboard-stat-value'>
+            <div
+              className={`dashboard-stat-value${card.id === 'tokens' ? ' dashboard-stat-token-value' : ''}`}
+              title={!busy && !failed ? card.fullValue : undefined}
+              aria-label={!busy && !failed ? card.fullValue : undefined}
+            >
               <Skeleton
                 loading={busy}
                 active
@@ -68,6 +72,16 @@ export default function StatsCards({
                 {failed ? '—' : card.value}
               </Skeleton>
             </div>
+            {!busy && !failed && card.coverage && (
+              <div
+                className='dashboard-stat-coverage'
+                title={t(
+                  '覆盖率仅针对已识别为Token计费的候选记录，不包含按次、按时长或计费类型不明的记录。',
+                )}
+              >
+                {card.coverage}
+              </div>
+            )}
             {isCache && cacheError && !busy && !quotaError && (
               <button
                 className='dashboard-cache-retry'

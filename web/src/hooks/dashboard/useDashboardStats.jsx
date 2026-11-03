@@ -18,8 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { renderQuota } from '../../helpers/dashboardFormat';
-import { dashboardMetricValues } from '../../helpers/dashboardMetrics';
+import {
+  dashboardMetricValues,
+  dashboardCompactTokens,
+  dashboardMetricCoverage,
+} from '../../helpers/dashboardMetrics';
 
 export const useDashboardStats = (
   consumeQuota,
@@ -29,6 +34,8 @@ export const useDashboardStats = (
   t,
   summary,
 ) => {
+  const { i18n } = useTranslation();
+  const locale = i18n?.resolvedLanguage || 'zh-CN';
   const groupedStatsData = useMemo(() => {
     const values = summary
       ? {
@@ -54,13 +61,15 @@ export const useDashboardStats = (
       {
         id: 'tokens',
         title: t('Token 用量'),
-        value: number(values.tokens),
-        description: t(
+        value: dashboardCompactTokens(values.tokens, locale),
+        fullValue: number(values.tokens),
+        description: `${number(values.tokens)} Token · ${t(
           '完整输入（含缓存读取与创建）加输出，已包含的缓存不重复计算。',
-        ),
+        )}`,
       },
       {
         id: 'cache',
+        coverage: dashboardMetricCoverage(summary, 'cache', t),
         title: t('缓存命中率'),
         value:
           values.cacheRate == null || values.tokens === 0
@@ -72,6 +81,7 @@ export const useDashboardStats = (
       },
       {
         id: 'unit-price',
+        coverage: dashboardMetricCoverage(summary, 'price', t),
         title: t('每百万 Token 综合单价'),
         value:
           values.unitPrice == null ? '—' : renderQuota(values.unitPrice, 4),
@@ -80,6 +90,6 @@ export const useDashboardStats = (
         ),
       },
     ];
-  }, [consumeQuota, consumeTokens, times, cacheRate, t, summary]);
+  }, [consumeQuota, consumeTokens, times, cacheRate, t, summary, locale]);
   return { groupedStatsData };
 };

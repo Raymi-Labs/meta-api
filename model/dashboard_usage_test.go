@@ -75,6 +75,50 @@ func TestDashboardUsageUnknownAndCorruptEvidence(t *testing.T) {
 	}
 }
 
+func TestDashboardUsagePartialMetricsHaveIndependentDenominators(t *testing.T) {
+	a := newDashboardUsageAccumulator(1, 100, false)
+	rows := []dashboardUsageLog{
+		{Type: LogTypeConsume, Quota: 100, PromptTokens: 100, CompletionTokens: 20, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive","cache_tokens":80}`},
+		// Unknown cached input: exclude both fee and tokens, not just denominator.
+		{Type: LogTypeConsume, Quota: 900, PromptTokens: 100, Other: `{"model_ratio":1,"cache_tokens":80}`},
+		// Output-only is valid for price, not an input cache rate observation.
+		{Type: LogTypeConsume, Quota: 100, CompletionTokens: 80, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive"}`},
+		{Type: LogTypeConsume, Quota: 700, Other: `{"model_ratio":1,"prompt_tokens_semantic":"inclusive"}`},
+		{Type: LogTypeConsume, Quota: 500, PromptTokens: 10, Other: `{"model_price":9.9}`},
+		// Clearly token-priced refund changes price only; never cache numerator/count.
+		{Type: LogTypeRefund, Quota: 50, Other: `{"billing_unit":"token"}`},
+	}
+	for _, row := range rows {
+		require.NoError(t, a.add(row))
+	}
+	s := a.finish().Summary
+	require.EqualValues(t, 2250, s.Quota)
+	require.EqualValues(t, 5, s.Requests)
+	require.EqualValues(t, 150, s.TokenQuota)
+	require.EqualValues(t, 2100, s.OtherQuota)
+	require.EqualValues(t, 200, s.PricedTokens)
+	require.InDelta(t, .8, *s.CacheRate, 1e-9)
+	require.InDelta(t, 750000, *s.UnitPrice, 1e-9)
+	require.EqualValues(t, 1, s.CacheIncludedRecords)
+	require.EqualValues(t, 3, s.CacheExcludedRecords)
+	require.EqualValues(t, 3, s.PriceIncludedRecords)
+	require.EqualValues(t, 2, s.PriceExcludedRecords)
+}
+
+func TestDashboardUsageAllUnknownCannotBecomeFalseZero(t *testing.T) {
+	a := newDashboardUsageAccumulator(1, 100, false)
+	require.NoError(t, a.add(dashboardUsageLog{Type: LogTypeConsume, Quota: 99, PromptTokens: 1, Other: `{"model_ratio":1,"cache_tokens":200}`}))
+	s := a.finish().Summary
+	require.Nil(t, s.CacheRate)
+	require.Nil(t, s.UnitPrice)
+	require.EqualValues(t, 99, s.Quota)
+	require.EqualValues(t, 99, s.OtherQuota)
+	require.EqualValues(t, 1, s.CacheExcludedRecords)
+	require.EqualValues(t, 1, s.PriceExcludedRecords)
+	require.Zero(t, s.PricedTokens)
+	require.Zero(t, s.CacheReadTokens)
+}
+
 func TestDashboardUsageExactRangeIdentityAndCancellation(t *testing.T) {
 	setupCacheRateScanDB(t)
 	// Both endpoints are inside hours. Filter events before bucketing.

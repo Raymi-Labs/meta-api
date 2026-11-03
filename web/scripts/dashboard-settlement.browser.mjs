@@ -127,6 +127,10 @@ try {
               input_tokens: 26898923,
               cache_read_tokens: 21815522,
               unclassified_records: 0,
+              cache_included_records: 221,
+              cache_excluded_records: 0,
+              price_included_records: 221,
+              price_excluded_records: 0,
               cache_rate: 21815522 / 26898923,
               unit_price: (92473150 / 27082015) * 1000000,
             };
@@ -136,9 +140,22 @@ try {
               message: '统计记录过多，请缩短时间范围或指定用户',
             };
           if (mode === 'unknown') {
-            body.summary.unclassified_records = 1;
+            body.summary.unclassified_records = 221;
+            body.summary.cache_included_records = 0;
+            body.summary.cache_excluded_records = 221;
+            body.summary.price_included_records = 0;
+            body.summary.price_excluded_records = 221;
             body.summary.cache_rate = null;
             body.summary.unit_price = null;
+          }
+          if (mode === 'partial') {
+            body.summary.unclassified_records = 21;
+            body.summary.cache_included_records = 200;
+            body.summary.cache_excluded_records = 21;
+            body.summary.price_included_records = 190;
+            body.summary.price_excluded_records = 31;
+            body.summary.tokens = 12936310889;
+            body.data[0].token_used = 12936310889;
           }
           if (requestMode === 'slow') {
             body.summary.requests = 999;
@@ -215,6 +232,25 @@ try {
     );
     text = await page.$eval('.dashboard-stat-grid', (e) => e.textContent);
     assert(!text.includes('6.8291') && text.includes('—'));
+    await load('partial');
+    text = await page.$eval('.dashboard-stat-grid', (e) => e.textContent);
+    assert(text.includes('6.8291') && text.includes('部分记录'));
+    assert(text.includes('200/221') && text.includes('190/221'));
+    assert(text.includes('129.36亿'));
+    const tokenBox = await page.$eval('.dashboard-stat-token-value', (e) => ({
+      title: e.title,
+      width: e.clientWidth,
+      scroll: e.scrollWidth,
+      lineHeight: parseFloat(getComputedStyle(e).lineHeight),
+      height: e.clientHeight,
+    }));
+    assert.equal(tokenBox.title, '12,936,310,889');
+    assert(tokenBox.scroll <= tokenBox.width, 'large tokens overflow card');
+    assert(tokenBox.height < tokenBox.lineHeight * 2, 'large tokens wrap');
+    await page.screenshot({
+      path: `/tmp/dashboard-partial-role-${role}.png`,
+      fullPage: false,
+    });
     for (const next of ['legacy', 'error']) {
       await load(next);
       await page.waitForSelector('.dashboard-load-error');

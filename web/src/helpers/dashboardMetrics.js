@@ -56,6 +56,10 @@ export function dashboardUsageSummary(response, start, end) {
       'cache_read_tokens',
       'input_tokens',
       'unclassified_records',
+      'cache_included_records',
+      'cache_excluded_records',
+      'price_included_records',
+      'price_excluded_records',
     ].every((k) => nonnegative(s[k])) ||
     !finiteOrNull(s.unit_price) ||
     !finiteOrNull(s.cache_rate) ||
@@ -64,4 +68,33 @@ export function dashboardUsageSummary(response, start, end) {
     throw new Error('Invalid unified usage summary');
   }
   return s;
+}
+
+export function dashboardCompactTokens(value, locale) {
+  if (!Number.isSafeInteger(value) || value < 0) return '—';
+  return value < 1e9
+    ? value.toLocaleString(locale)
+    : new Intl.NumberFormat(locale, {
+        notation: 'compact',
+        maximumFractionDigits: 2,
+      }).format(value);
+}
+
+export function dashboardMetricCoverage(summary, kind, t) {
+  if (!summary) return null;
+  const included = summary[`${kind}_included_records`];
+  const excluded = summary[`${kind}_excluded_records`];
+  if (!Number.isSafeInteger(included) || !Number.isSafeInteger(excluded))
+    return null;
+  const total = included + excluded;
+  if (!total) return null;
+  return `${excluded > 0 ? t('部分记录') + ' · ' : ''}${t(
+    '记录覆盖：{{included}}/{{total}}（{{percent}}%），排除{{excluded}}条',
+    {
+      included,
+      total,
+      excluded,
+      percent: ((included / total) * 100).toFixed(1),
+    },
+  )}`;
 }
