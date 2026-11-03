@@ -74,6 +74,7 @@ const invoiceText = createInvoiceTemplateTranslator((source) => i18n.t(source));
 const { Text } = Typography;
 
 const STATUS_CONFIG = PAYMENT_STATUS_CONFIG;
+const MIN_INVOICE_AMOUNT_CNY = 20;
 
 const PAYMENT_METHOD_MAP = {
   stripe: 'Stripe',
@@ -1863,6 +1864,11 @@ const TopupHistoryModal = ({
         }
       : selectedInvoiceSummary;
 
+  // 与数据库金额的六位小数精度一致，避免多笔合计恰好 20 元时的浮点误差。
+  const invoiceAmountBelowMinimum =
+    !Number.isFinite(invoiceApplySummary.money) ||
+    Number(invoiceApplySummary.money.toFixed(6)) < MIN_INVOICE_AMOUNT_CNY;
+
   // 发票申请手续费：开票金额(money)为人民币，按充值汇率 price 换回美元再 × 每元额度，
   // 与后端口径一致：feeQuota = money × rate × QuotaPerUnit / price，截断取整。
   const invoiceServiceFeeRate = useMemo(() => {
@@ -1916,6 +1922,10 @@ const TopupHistoryModal = ({
     const isManual = invoiceForm.sourceType === 'manual_transfer';
     if (!isManual && selectedInvoiceOrders.length === 0) {
       Toast.error({ content: t('请选择需要开票的订单') });
+      return;
+    }
+    if (invoiceAmountBelowMinimum) {
+      Toast.error({ content: t('每次发票申请金额合计最低为人民币 20 元') });
       return;
     }
     const manualTransactions = invoiceForm.manualTransactions.map((item) => ({
@@ -2277,7 +2287,7 @@ const TopupHistoryModal = ({
         record?.need_detail_bill !== false,
       sendServiceConfirmation: Boolean(
         record?.service_confirmation_file_name ||
-          record?.need_service_confirmation,
+        record?.need_service_confirmation,
       ),
       detailBillFile: null,
       serviceConfirmationFile: null,
@@ -4809,6 +4819,7 @@ const TopupHistoryModal = ({
         onOk={submitInvoiceRequest}
         onCancel={closeInvoiceApplyModal}
         confirmLoading={invoiceSubmitting}
+        okButtonProps={{ disabled: invoiceAmountBelowMinimum }}
         maskClosable={false}
         size={isMobile ? 'full-width' : 'large'}
         style={isMobile ? undefined : { width: '1000px', maxWidth: '95vw' }}
@@ -5236,6 +5247,9 @@ const TopupHistoryModal = ({
               </Text>
               <Text type='danger'>
                 {t('金额')} {formatMoney(invoiceApplySummary.money)}
+              </Text>
+              <Text type={invoiceAmountBelowMinimum ? 'danger' : 'tertiary'}>
+                {t('每次发票申请金额合计最低为人民币 20 元')}
               </Text>
               {invoiceApplySummary.quota > 0 ? (
                 <Text type='tertiary'>

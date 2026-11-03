@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -17,6 +18,11 @@ func setupInvoiceTestDB(t *testing.T) {
 		common.InvoiceServiceFeeRate = originInvoiceServiceFeeRate
 	})
 	require.NoError(t, DB.AutoMigrate(&InvoiceRequest{}, &InvoiceRequestItem{}, &InvoiceRequestProductItem{}))
+}
+
+func createInvoiceTestTopUp(t *testing.T, userID int, tradeNo string, createTime int64, status string) *TopUp {
+	t.Helper()
+	return createPaymentRecordTopUpWithDetail(t, userID, tradeNo, createTime, createTime, status, "stripe", 25)
 }
 
 func createInvoiceTestSubscriptionTopUp(t *testing.T, userID int, tradeNo string, createTime int64) *TopUp {
@@ -77,9 +83,9 @@ func TestGetEligibleInvoiceOrders_FiltersSuccessfulUnoccupiedOrders(t *testing.T
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	successTopup := createPaymentRecordTopUp(t, user.Id, "T-INV-001", 100, common.TopUpStatusSuccess)
-	createPaymentRecordTopUp(t, user.Id, "T-INV-002", 200, common.TopUpStatusPending)
-	createPaymentRecordTopUp(t, user.Id, "T-INV-003", 300, common.TopUpStatusExpired)
+	successTopup := createInvoiceTestTopUp(t, user.Id, "T-INV-001", 100, common.TopUpStatusSuccess)
+	createInvoiceTestTopUp(t, user.Id, "T-INV-002", 200, common.TopUpStatusPending)
+	createInvoiceTestTopUp(t, user.Id, "T-INV-003", 300, common.TopUpStatusExpired)
 	subscriptionTopup := createInvoiceTestSubscriptionTopUp(t, user.Id, "sub-inv-001", 400)
 
 	records, total, err := GetEligibleInvoiceOrders(user.Id, &common.PageInfo{Page: 1, PageSize: 10})
@@ -96,7 +102,7 @@ func TestCreateInvoiceRequest_RejectsInvalidEmail(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "invalid-invoice-email")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-INVALID-EMAIL", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-INVALID-EMAIL", 100, common.TopUpStatusSuccess)
 	input := createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id)
 	input.Email = "2370708759@qq,com"
 
@@ -108,7 +114,7 @@ func TestCreateInvoiceRequest_NormalizesRecipientDomain(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "normalized-invoice-email")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-NORMALIZED-EMAIL", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-NORMALIZED-EMAIL", 100, common.TopUpStatusSuccess)
 	input := createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id)
 	input.Email = "  Invoice@Example.COM  "
 
@@ -121,7 +127,7 @@ func TestCreateInvoiceRequest_OccupiesOrderAndRejectedReleasesIt(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-004", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-004", 100, common.TopUpStatusSuccess)
 
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
@@ -148,7 +154,7 @@ func TestCreateInvoiceRequest_StoresAttachmentOptions(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-SERVICE", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-SERVICE", 100, common.TopUpStatusSuccess)
 	input := createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id)
 	input.NeedDetailBill = false
 	input.NeedServiceConfirmation = true
@@ -169,7 +175,7 @@ func TestCreateInvoiceRequest_RejectsOtherUsersOrder(t *testing.T) {
 
 	alice := createPaymentRecordTestUser(t, "alice")
 	bob := createPaymentRecordTestUser(t, "bob")
-	bobTopup := createPaymentRecordTopUp(t, bob.Id, "T-INV-005", 100, common.TopUpStatusSuccess)
+	bobTopup := createInvoiceTestTopUp(t, bob.Id, "T-INV-005", 100, common.TopUpStatusSuccess)
 
 	_, err := CreateInvoiceRequest(alice.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, bobTopup.Id))
 	require.Error(t, err)
@@ -179,7 +185,7 @@ func TestCreateInvoiceRequest_SpecialInvoiceRequiresTaxNumberAndStoresInfo(t *te
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-SPECIAL", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-SPECIAL", 100, common.TopUpStatusSuccess)
 	input := createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id)
 	input.InvoiceType = InvoiceTypeSpecial
 	input.TitleType = InvoiceTitleTypePersonal
@@ -216,7 +222,7 @@ func TestApproveInvoiceRequest_KeepsOrderOccupiedAndPreventsSecondReview(t *test
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-006", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-006", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 
@@ -248,7 +254,7 @@ func TestApproveInvoiceRequest_RejectsInvalidRecipientBeforeReview(t *testing.T)
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "invalid-review-email")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-INVALID-REVIEW-EMAIL", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-INVALID-REVIEW-EMAIL", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 
@@ -266,7 +272,7 @@ func TestApproveInvoiceRequest_AllowsInvoiceFileWithoutInvoiceNo(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "alice")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-NO-NUMBER", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-NO-NUMBER", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 
@@ -293,10 +299,16 @@ func TestInvoiceSellableTokenPurchaseCanBeRequested(t *testing.T) {
 	require.Len(t, records, 1)
 	require.Equal(t, PaymentRecordTypeSellableTokenPurchase, records[0].OrderType)
 
-	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeSellableTokenPurchase, order.Id))
+	input := createInvoiceRequestInput(PaymentRecordTypeSellableTokenPurchase, order.Id)
+	_, err = CreateInvoiceRequest(user.Id, input)
+	require.ErrorIs(t, err, ErrInvoiceAmountBelowMinimum) // 钱包购买仅有额度，人民币开票金额为零。
+	topup := createInvoiceTestTopUp(t, user.Id, "WALLET-COMBINED", 101, common.TopUpStatusSuccess)
+	input.Orders = append(input.Orders, InvoiceOrderRef{OrderType: PaymentRecordTypeTopUp, Id: topup.Id})
+	request, err := CreateInvoiceRequest(user.Id, input)
 	require.NoError(t, err)
-	require.Equal(t, int64(200), request.TotalQuota)
-	require.Len(t, request.Items, 1)
+	require.Equal(t, int64(320), request.TotalQuota)
+	require.Equal(t, float64(25), request.TotalMoney)
+	require.Len(t, request.Items, 2)
 	require.Equal(t, "钱包包月", request.Items[0].ProductName)
 }
 
@@ -305,7 +317,7 @@ func TestGetUserInvoiceRequestDetail_EnforcesOwnerAndLoadsItems(t *testing.T) {
 
 	alice := createPaymentRecordTestUser(t, "alice")
 	bob := createPaymentRecordTestUser(t, "bob")
-	topup := createPaymentRecordTopUp(t, alice.Id, "T-INV-007", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, alice.Id, "T-INV-007", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(alice.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 
@@ -325,7 +337,7 @@ func TestGetInvoiceRequestDetail_IncludesReviewerInfo(t *testing.T) {
 
 	alice := createPaymentRecordTestUser(t, "alice")
 	reviewer := createPaymentRecordTestUser(t, "admin")
-	topup := createPaymentRecordTopUp(t, alice.Id, "T-INV-008", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, alice.Id, "T-INV-008", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(alice.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 	approved, err := ApproveInvoiceRequest(request.Id, reviewer.Id, InvoiceReviewInput{InvoiceNo: "FP-008"})
@@ -346,7 +358,7 @@ func TestUpdateInvoiceSendStatus(t *testing.T) {
 
 	alice := createPaymentRecordTestUser(t, "alice")
 	reviewer := createPaymentRecordTestUser(t, "admin")
-	topup := createPaymentRecordTopUp(t, alice.Id, "T-INV-009", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, alice.Id, "T-INV-009", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(alice.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 	_, err = ApproveInvoiceRequest(request.Id, reviewer.Id, InvoiceReviewInput{
@@ -376,7 +388,7 @@ func TestUpdateInvoiceSendStatusWithRecipientPersistsCorrectedEmail(t *testing.T
 
 	user := createPaymentRecordTestUser(t, "corrected-invoice-email")
 	reviewer := createPaymentRecordTestUser(t, "corrected-invoice-email-admin")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-CORRECTED-EMAIL", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-CORRECTED-EMAIL", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 	_, err = ApproveInvoiceRequest(request.Id, reviewer.Id, InvoiceReviewInput{
@@ -403,7 +415,7 @@ func TestUpdateInvoiceSendStatusWithRecipientRejectsPendingRequest(t *testing.T)
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "pending-recipient-update")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-PENDING-RECIPIENT", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-PENDING-RECIPIENT", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 
@@ -460,7 +472,7 @@ func TestCreateInvoiceRequest_ManualTransferRejectsMixedSources(t *testing.T) {
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "mixed-source-user")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-MIXED", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-MIXED", 100, common.TopUpStatusSuccess)
 	input := createManualInvoiceRequestInput("BANK-TRANSFER-MIXED")
 	input.Orders = []InvoiceOrderRef{{OrderType: PaymentRecordTypeTopUp, Id: topup.Id}}
 
@@ -539,7 +551,7 @@ func TestCreateInvoiceRequest_SystemOrderCreatesDefaultProductSnapshot(t *testin
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "system-product-user")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-PRODUCT", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-PRODUCT", 100, common.TopUpStatusSuccess)
 	request, err := CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id))
 	require.NoError(t, err)
 	require.Equal(t, InvoiceSourceTypeSystemOrder, request.SourceType)
@@ -572,7 +584,7 @@ func TestCreateInvoiceRequest_SystemOrderRejectsCustomProductItems(t *testing.T)
 	setupInvoiceTestDB(t)
 
 	user := createPaymentRecordTestUser(t, "system-custom-product-user")
-	topup := createPaymentRecordTopUp(t, user.Id, "T-INV-CUSTOM-PRODUCT", 100, common.TopUpStatusSuccess)
+	topup := createInvoiceTestTopUp(t, user.Id, "T-INV-CUSTOM-PRODUCT", 100, common.TopUpStatusSuccess)
 	input := createInvoiceRequestInput(PaymentRecordTypeTopUp, topup.Id)
 	input.ProductItems = []InvoiceProductItemInput{{
 		ProductName: "伪造产品",
@@ -700,4 +712,70 @@ func TestInvoice_StripeUsesCNYPresentmentAndRejectsUSDOnlyOrder(t *testing.T) {
 
 	_, err = CreateInvoiceRequest(user.Id, createInvoiceRequestInput(PaymentRecordTypeTopUp, usdTopUp.Id))
 	require.ErrorIs(t, err, ErrInvoiceOrderUnavailable)
+}
+
+func TestCreateInvoiceRequest_MinimumTotalCNY(t *testing.T) {
+	for _, source := range []string{InvoiceSourceTypeSystemOrder, InvoiceSourceTypeManualTransfer} {
+		for _, tc := range []struct {
+			name    string
+			amounts []float64
+			allowed bool
+		}{
+			{"below", []float64{19.99}, false},
+			{"exact", []float64{20}, true},
+			{"above", []float64{20.01}, true},
+			{"combined_below", []float64{10, 9.99}, false},
+			{"combined_exact", []float64{8.01, 11.99}, true},
+			{"decimal_sum", []float64{8.69, 8.69, 2.62}, true},
+		} {
+			t.Run(source+"/"+tc.name, func(t *testing.T) {
+				setupInvoiceTestDB(t)
+				user := createPaymentRecordTestUser(t, "minimum-test")
+				input := createInvoiceRequestInput("", 0)
+				input.Orders = nil
+				for i, money := range tc.amounts {
+					tradeNo := fmt.Sprintf("MINIMUM-%d", i)
+					if source == InvoiceSourceTypeManualTransfer {
+						transfer := createManualInvoiceRequestInput(tradeNo).ManualTransactions[0]
+						transfer.Money = money
+						input.ManualTransactions = append(input.ManualTransactions, transfer)
+					} else {
+						topup := createPaymentRecordTopUpWithDetail(t, user.Id, tradeNo, 100, 101, common.TopUpStatusSuccess, "stripe", money)
+						// A larger legacy amount must not override the CNY presentment.
+						require.NoError(t, DB.Model(topup).Update("money", 100).Error)
+						input.Orders = append(input.Orders, InvoiceOrderRef{OrderType: PaymentRecordTypeTopUp, Id: topup.Id})
+					}
+				}
+				if !tc.allowed {
+					// A fee cannot make an under-minimum invoice eligible; fail before charging.
+					common.InvoiceServiceFeeRate = 1
+					oldPrice := operation_setting.Price
+					operation_setting.Price = 1
+					t.Cleanup(func() { operation_setting.Price = oldPrice })
+				}
+				request, err := CreateInvoiceRequest(user.Id, input)
+				if tc.allowed {
+					require.NoError(t, err)
+					require.GreaterOrEqual(t, request.TotalMoney, float64(20))
+					require.Len(t, request.Items, len(tc.amounts))
+					return
+				}
+				require.ErrorIs(t, err, ErrInvoiceAmountBelowMinimum)
+				require.Nil(t, request)
+				for _, table := range []any{&InvoiceRequest{}, &InvoiceRequestItem{}, &InvoiceRequestProductItem{}} {
+					var count int64
+					require.NoError(t, DB.Model(table).Count(&count).Error)
+					require.Zero(t, count)
+				}
+				var after User
+				require.NoError(t, DB.First(&after, user.Id).Error)
+				require.Equal(t, user.Quota, after.Quota)
+				if source == InvoiceSourceTypeSystemOrder {
+					_, count, listErr := GetEligibleInvoiceOrders(user.Id, nil)
+					require.NoError(t, listErr)
+					require.EqualValues(t, len(tc.amounts), count)
+				}
+			})
+		}
+	}
 }
