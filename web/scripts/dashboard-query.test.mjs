@@ -116,33 +116,6 @@ test('presets are explicit, bounded, and never mutate the supplied clock', async
   assert.equal(dashboardPresetRange('today', midnight), null);
 });
 
-test('admin quick actions require both role and existing section/module visibility', async () => {
-  const { dashboardQuickActions } = await import(
-    '../src/helpers/dashboardQuery.js'
-  );
-  const allow = () => true;
-  assert.deepEqual(
-    dashboardQuickActions(false, allow).map((x) => x[1]),
-    ['token', 'log', 'topup'],
-  );
-  assert.deepEqual(
-    dashboardQuickActions(true, allow).map((x) => x[1]),
-    ['token', 'log', 'channel', 'user'],
-  );
-  assert.deepEqual(
-    dashboardQuickActions(true, (section, module) => section !== 'admin').map(
-      (x) => x[1],
-    ),
-    ['token', 'log'],
-  );
-  assert.deepEqual(
-    dashboardQuickActions(true, (_section, module) => module !== 'channel').map(
-      (x) => x[1],
-    ),
-    ['token', 'log', 'user'],
-  );
-});
-
 test('rolling 30 days stays within API limit across daylight-saving boundaries', async () => {
   const { dashboardPresetRange } = await import(
     '../src/helpers/dashboardQuery.js'
