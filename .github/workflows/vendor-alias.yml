@@ -1,0 +1,56 @@
+name: Vendor identity compatibility
+
+on:
+  pull_request:
+    paths:
+      - "model/*vendor*"
+      - "model/pricing_default*"
+      - "model/main.go"
+      - "controller/vendor_meta.go"
+      - "controller/vendor_alias_test.go"
+      - ".github/workflows/vendor-alias.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  database-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: fixture-only
+          MYSQL_DATABASE: vendor_alias_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pfixture-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: vendor_alias_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+      - name: Match production MySQL character set
+        run: docker exec '${{ job.services.mysql.id }}' mysql -uroot -pfixture-only -e 'ALTER DATABASE vendor_alias_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+      - name: Test SQLite, MySQL 5.7 and PostgreSQL 9.6
+        env:
+          TEST_ALIBABA_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/vendor_alias_test?charset=utf8mb4&parseTime=true
+          TEST_ALIBABA_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=vendor_alias_test sslmode=disable
+        run: go test -p 2 ./model ./controller -run 'IdentityVendor|DefaultVendorFallback|PricingVendorSurvives' -count=1 -timeout=180s -v

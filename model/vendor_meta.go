@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/QuantumNous/new-api/common"
 
 	"gorm.io/gorm"
@@ -25,6 +26,12 @@ type Vendor struct {
 
 // Insert 创建新的供应商记录
 func (v *Vendor) Insert() error {
+	v.Name = CanonicalVendorName(v.Name)
+	if duplicate, err := IsVendorNameDuplicated(0, v.Name); err != nil {
+		return err
+	} else if duplicate {
+		return fmt.Errorf("供应商名称已存在")
+	}
 	now := common.GetTimestamp()
 	v.CreatedTime = now
 	v.UpdatedTime = now
@@ -36,6 +43,21 @@ func IsVendorNameDuplicated(id int, name string) (bool, error) {
 	if name == "" {
 		return false, nil
 	}
+	name = CanonicalVendorName(name)
+	// Use Go canonicalization for known aliases rather than relying on database
+	// collation (MySQL case-insensitive, PostgreSQL/SQLite usually sensitive).
+	if canonicalIdentityVendor(name) != "" || name == defaultMiMoVendorName || name == defaultAlibabaVendorName {
+		var vendors []Vendor
+		if err := DB.Where("id <> ?", id).Find(&vendors).Error; err != nil {
+			return false, err
+		}
+		for _, v := range vendors {
+			if CanonicalVendorName(v.Name) == name {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 	var cnt int64
 	err := DB.Model(&Vendor{}).Where("name = ? AND id <> ?", name, id).Count(&cnt).Error
 	return cnt > 0, err
@@ -43,6 +65,12 @@ func IsVendorNameDuplicated(id int, name string) (bool, error) {
 
 // Update 更新供应商记录
 func (v *Vendor) Update() error {
+	v.Name = CanonicalVendorName(v.Name)
+	if duplicate, err := IsVendorNameDuplicated(v.Id, v.Name); err != nil {
+		return err
+	} else if duplicate {
+		return fmt.Errorf("供应商名称已存在")
+	}
 	v.UpdatedTime = common.GetTimestamp()
 	return DB.Save(v).Error
 }

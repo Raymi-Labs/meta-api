@@ -47,13 +47,13 @@ const priority = [
   ['openai'],
   ['deepseek'],
   ['google', 'gemini'],
-  ['moonshot', 'kimi'],
+  ['moonshot ai', 'moonshot', 'kimi'],
   ['xai', 'grok'],
 ];
 export const sortPricingVendors = (vendors) => {
   const rank = (value) => {
     const index = priority.findIndex((names) =>
-      names.includes(value.toLowerCase()),
+      names.includes(catalogVendor(value).toLowerCase()),
     );
     return index < 0 ? priority.length : index;
   };

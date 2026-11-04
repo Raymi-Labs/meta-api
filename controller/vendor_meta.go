@@ -61,6 +61,7 @@ func CreateVendorMeta(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	v.Name = model.CanonicalVendorName(v.Name)
 	if v.Name == "" {
 		common.ApiErrorMsg(c, "供应商名称不能为空")
 		return
@@ -90,6 +91,11 @@ func UpdateVendorMeta(c *gin.Context) {
 	}
 	if v.Id == 0 {
 		common.ApiErrorMsg(c, "缺少供应商 ID")
+		return
+	}
+	v.Name = model.CanonicalVendorName(v.Name)
+	if v.Name == "" {
+		common.ApiErrorMsg(c, "供应商名称不能为空")
 		return
 	}
 	// 名称冲突检查

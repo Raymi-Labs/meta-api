@@ -208,23 +208,30 @@ const vendorAliases = {
   gemini: 'Google',
   google: 'Google',
   deepseek: 'DeepSeek',
-  moonshotai: 'Moonshot',
-  moonshot: 'Moonshot',
-  kimi: 'Moonshot',
+  moonshotai: 'Moonshot AI',
+  'moonshot ai': 'Moonshot AI',
+  moonshot: 'Moonshot AI',
+  kimi: 'Moonshot AI',
   grok: 'xAI',
   xai: 'xAI',
   'z.ai': '智谱',
   zhipu: '智谱',
+  'zhipu ai': '智谱',
   chatglm: '智谱',
   智谱: '智谱',
   qwen: '阿里巴巴',
   alibaba: '阿里巴巴',
-  xiaomi: '小米 MiMo',
   mimo: '小米 MiMo',
   minimax: 'MiniMax',
 };
 export const catalogVendor = (value) =>
-  vendorAliases[String(value || '').toLowerCase()] || value || 'unknown';
+  vendorAliases[
+    String(value || '')
+      .trim()
+      .toLowerCase()
+  ] ||
+  value ||
+  'unknown';
 export const filterValues = (value) =>
   [
     ...new Set(
