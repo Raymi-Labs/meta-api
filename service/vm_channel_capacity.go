@@ -242,7 +242,11 @@ func GetVMChannelCapacity(ctx context.Context, ch *model.Channel, requestedModel
 		if err != nil || !locked {
 			return VMCapacitySnapshot{}, ErrVMCapacityUnavailable
 		}
-		defer common.RDB.Eval(context.Background(), `if redis.call('GET',KEYS[1]) == ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0`, []string{key + ":refresh"}, token)
+		defer func() {
+			releaseCtx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+			defer cancel()
+			common.RDB.Eval(releaseCtx, `if redis.call('GET',KEYS[1]) == ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0`, []string{key + ":refresh"}, token)
+		}()
 		allowed, err := common.RDB.SetNX(ctx, resource+":rate", "1", 150*time.Millisecond).Result()
 		if err != nil || !allowed {
 			return VMCapacitySnapshot{}, ErrVMCapacityUnavailable
@@ -251,8 +255,8 @@ func GetVMChannelCapacity(ctx context.Context, ch *model.Channel, requestedModel
 		entry := makeVMCapacityEntry(snapshot, fetchErr)
 		raw, _ := common.Marshal(entry)
 		// Publish only while still owning the refresh lock; an expired owner cannot overwrite newer state.
-		_, err = common.RDB.Eval(ctx, `if redis.call('GET',KEYS[1]) ~= ARGV[1] then return 0 end redis.call('PSETEX',KEYS[2],ARGV[2],ARGV[3]); return 1`, []string{key + ":refresh", key}, token, max(1, time.Until(entry.ExpiresAt).Milliseconds()), raw).Result()
-		if err != nil {
+		published, err := common.RDB.Eval(ctx, `if redis.call('GET',KEYS[1]) ~= ARGV[1] then return 0 end redis.call('PSETEX',KEYS[2],ARGV[2],ARGV[3]); return 1`, []string{key + ":refresh", key}, token, max(1, time.Until(entry.ExpiresAt).Milliseconds()), raw).Int()
+		if err != nil || published != 1 {
 			return VMCapacitySnapshot{}, ErrVMCapacityUnavailable
 		}
 		return snapshot, fetchErr
@@ -316,11 +320,14 @@ func HoldVMChannelCapacity(ch *model.Channel, retryAfter time.Duration) {
 		if common.RDB != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			common.RDB.Set(ctx, resource+":busy", "1", delay)
+			common.RDB.Eval(ctx, `if redis.call('PTTL',KEYS[1]) < tonumber(ARGV[1]) then redis.call('PSETEX',KEYS[1],ARGV[1],'1') end return 1`, []string{resource + ":busy"}, delay.Milliseconds())
 		}
 		return
 	}
 	vmCapacityLocal.Lock()
 	defer vmCapacityLocal.Unlock()
-	vmCapacityLocal.nextQuery[resource+":busy"] = time.Now().Add(delay)
+	until := time.Now().Add(delay)
+	if until.After(vmCapacityLocal.nextQuery[resource+":busy"]) {
+		vmCapacityLocal.nextQuery[resource+":busy"] = until
+	}
 }

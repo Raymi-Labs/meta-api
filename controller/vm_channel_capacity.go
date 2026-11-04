@@ -32,7 +32,7 @@ func capacityDeadline(c *gin.Context, ch *model.Channel, fallback time.Duration)
 		return time.Now().Add(fallback)
 	}
 	if service.VMCapacityEnabled(ch) && ch.GetSetting().UpstreamCapacity.PreferWait() {
-		fallback = max(fallback, time.Duration(ch.GetSetting().UpstreamCapacity.WaitDurationMs())*time.Millisecond)
+		fallback = time.Duration(ch.GetSetting().UpstreamCapacity.WaitDurationMs()) * time.Millisecond
 	}
 	deadline := start.Add(fallback)
 	if old, ok := c.Get(vmCapacityDeadlineKey); ok && old.(time.Time).After(deadline) {

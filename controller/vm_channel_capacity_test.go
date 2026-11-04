@@ -130,3 +130,51 @@ func TestVMCapacityErrorParsingAndReplayBoundary(t *testing.T) {
 	require.False(t, service.IsVMChannelCapacityError(ch, err))
 	require.False(t, service.IsVMChannelCapacityError(&model.Channel{}, err))
 }
+
+func TestVMCapacityConfiguredDeadlineCanBeShorterThanGlobal(t *testing.T) {
+	c := testVMCapacityContext()
+	setting := `{"upstream_capacity":{"enabled":true,"max_wait_ms":100}}`
+	ch := &model.Channel{Setting: &setting}
+	start := time.Now()
+	deadline := capacityDeadline(c, ch, 3*time.Second)
+	require.WithinDuration(t, start.Add(100*time.Millisecond), deadline, 20*time.Millisecond)
+}
+
+func TestVMCapacityAdminStatsShowIdleZeroAndUnknownWithoutProbing(t *testing.T) {
+	enableControllerCapacityForTest(t)
+	db := useControllerCapacityTestDB(t)
+	service.InitHttpClient()
+	var queries atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries.Add(1)
+		fmt.Fprintf(w, `{"schema_version":1,"model":"claude-haiku-4-5","observed_at":%q,"max_age_ms":1000,"state_quality":"known","effective_admission_limit":0,"available_now":0,"key_inflight":0}`, time.Now().UTC().Format(time.RFC3339Nano))
+	}))
+	defer server.Close()
+	base, setting := server.URL, `{"max_concurrency":10,"upstream_capacity":{"enabled":true}}`
+	ch := &model.Channel{Id: 778905, Name: "idle-vm", Type: constant.ChannelTypeAnthropic, Status: common.ChannelStatusEnabled, Key: "fixture-stats", BaseURL: &base, Setting: &setting, Models: "claude-haiku-4-5"}
+	require.NoError(t, db.Create(ch).Error)
+	for _, state := range []string{"unknown", "known"} {
+		if state == "known" {
+			_, err := service.GetVMChannelCapacity(context.Background(), ch, ch.Models)
+			require.NoError(t, err)
+		}
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/channel_concurrency/stats", nil)
+		GetChannelConcurrencyStats(c)
+		var result struct {
+			Data struct {
+				Channels []channelConcurrencyChannelStat `json:"channels"`
+			} `json:"data"`
+		}
+		require.NoError(t, common.Unmarshal(w.Body.Bytes(), &result))
+		require.Len(t, result.Data.Channels, 1)
+		stat := result.Data.Channels[0]
+		require.Zero(t, stat.Inflight)
+		require.Zero(t, stat.MaxConcurrency)
+		require.Equal(t, 10, stat.StaticMaxConcurrency)
+		require.Equal(t, state, stat.VMCapacity.State)
+		require.NotContains(t, w.Body.String(), ch.Key)
+	}
+	require.EqualValues(t, 1, queries.Load(), "opening stats must never query upstream")
+}

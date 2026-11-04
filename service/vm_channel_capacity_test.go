@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -80,6 +81,32 @@ func TestVMCapacityClientCacheMappingAndConfigIsolation(t *testing.T) {
 	ch.Key = "changed-fixture"
 	_, after := vmCapacityKeys(ch, "claude-haiku-4-5")
 	require.NotEqual(t, before, after)
+}
+
+func TestVMCapacityBusyHoldNeverShortens(t *testing.T) {
+	for _, useRedis := range []bool{false, true} {
+		t.Run(fmt.Sprint(useRedis), func(t *testing.T) {
+			vmCapacityTestState(t)
+			if useRedis {
+				r := miniredis.RunT(t)
+				common.RedisEnabled = true
+				common.RDB = redis.NewClient(&redis.Options{Addr: r.Addr()})
+				t.Cleanup(func() { common.RDB.Close() })
+			}
+			ch := vmTestChannel("https://fixture.invalid")
+			HoldVMChannelCapacity(ch, 5*time.Second)
+			HoldVMChannelCapacity(ch, time.Second)
+			resource, _ := vmCapacityKeys(ch, "")
+			if useRedis {
+				ttl, err := common.RDB.PTTL(context.Background(), resource+":busy").Result()
+				require.NoError(t, err)
+				require.Greater(t, ttl, 4*time.Second)
+			} else {
+				require.Greater(t, time.Until(vmCapacityLocal.nextQuery[resource+":busy"]), 4*time.Second)
+			}
+			require.Equal(t, "busy", PeekVMChannelCapacity(context.Background(), ch, "claude").State)
+		})
+	}
 }
 
 func TestVMCapacityClientRejectsInvalidAndStaleResponses(t *testing.T) {
