@@ -13,8 +13,8 @@ var defaultVendorRules = map[string]string{
 	"o3":       "OpenAI",
 	"claude":   "Anthropic",
 	"gemini":   "Google",
-	"moonshot": "Moonshot",
-	"kimi":     "Moonshot",
+	"moonshot": "Moonshot AI",
+	"kimi":     "Moonshot AI",
 	"chatglm":  "智谱",
 	"glm-":     "智谱",
 	"deepseek": "DeepSeek",
@@ -38,34 +38,34 @@ var defaultVendorRules = map[string]string{
 
 // 供应商默认图标映射
 var defaultVendorIcons = map[string]string{
-	"OpenAI":     "OpenAI",
-	"Anthropic":  "Claude.Color",
-	"Google":     "Gemini.Color",
-	"Moonshot":   "Moonshot",
-	"智谱":         "Zhipu.Color",
-	"阿里巴巴":       "Qwen.Color",
-	"DeepSeek":   "DeepSeek.Color",
-	"MiniMax":    "Minimax.Color",
-	"百度":         "Wenxin.Color",
-	"讯飞":         "Spark.Color",
-	"腾讯":         "Hunyuan.Color",
-	"Cohere":     "Cohere.Color",
-	"Cloudflare": "Cloudflare.Color",
-	"360":        "Ai360.Color",
-	"零一万物":       "Yi.Color",
-	"Jina":       "Jina",
-	"Mistral":    "Mistral.Color",
-	"xAI":        "XAI",
-	"Meta":       "Ollama",
-	"字节跳动":       "Doubao.Color",
-	"快手":         "Kling.Color",
-	"即梦":         "Jimeng.Color",
-	"Vidu":       "Vidu",
-	"微软":         "AzureAI",
-	"Microsoft":  "AzureAI",
-	"Azure":      "AzureAI",
-	"小米 MiMo":    "Xiaomi.color='#FF6900'",
-	"Inception":  "Inception",
+	"OpenAI":      "OpenAI",
+	"Anthropic":   "Claude.Color",
+	"Google":      "Gemini.Color",
+	"Moonshot AI": "Moonshot",
+	"智谱":          "Zhipu.Color",
+	"阿里巴巴":        "Qwen.Color",
+	"DeepSeek":    "DeepSeek.Color",
+	"MiniMax":     "Minimax.Color",
+	"百度":          "Wenxin.Color",
+	"讯飞":          "Spark.Color",
+	"腾讯":          "Hunyuan.Color",
+	"Cohere":      "Cohere.Color",
+	"Cloudflare":  "Cloudflare.Color",
+	"360":         "Ai360.Color",
+	"零一万物":        "Yi.Color",
+	"Jina":        "Jina",
+	"Mistral":     "Mistral.Color",
+	"xAI":         "XAI",
+	"Meta":        "Ollama",
+	"字节跳动":        "Doubao.Color",
+	"快手":          "Kling.Color",
+	"即梦":          "Jimeng.Color",
+	"Vidu":        "Vidu",
+	"微软":          "AzureAI",
+	"Microsoft":   "AzureAI",
+	"Azure":       "AzureAI",
+	"小米 MiMo":     "Xiaomi.color='#FF6900'",
+	"Inception":   "Inception",
 }
 
 func hasModelNameSegment(modelName string, segments ...string) bool {
@@ -182,6 +182,22 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 				vendor.Icon = getDefaultVendorIcon(vendorName)
 			}
 			return id
+		}
+	}
+	if canonicalIdentityVendor(vendorName) != "" {
+		var alias *Vendor
+		for _, v := range vendorMap {
+			if CanonicalVendorName(v.Name) == vendorName && (alias == nil || v.Id < alias.Id) {
+				alias = v
+			}
+		}
+		if alias != nil {
+			alias.Name = vendorName
+			if strings.TrimSpace(alias.Icon) == "" {
+				alias.Icon = getDefaultVendorIcon(vendorName)
+			}
+			fillInceptionVendorDefaults(alias)
+			return alias.Id
 		}
 	}
 	if vendorName == defaultInceptionVendorName {

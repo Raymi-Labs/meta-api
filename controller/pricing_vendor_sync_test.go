@@ -52,7 +52,7 @@ func TestPricingVendorSurvivesCapabilityMetadataCreation(t *testing.T) {
 		"gpt-4o":             "OpenAI",
 		"claude-sonnet-4-6":  "Anthropic",
 		"gemini-2.5-pro":     "Google",
-		"kimi-k2":            "Moonshot",
+		"kimi-k2":            "Moonshot AI",
 		"qwen3-32b":          "阿里巴巴",
 		"codex-auto-review":  "OpenAI",
 		"minimax-m2":         "MiniMax",

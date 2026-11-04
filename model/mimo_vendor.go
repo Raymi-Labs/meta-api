@@ -47,6 +47,9 @@ func isMiMoVendorAlias(name string) bool {
 // unrelated administrator-defined vendor names untouched.
 func CanonicalVendorName(name string) string {
 	trimmed := strings.TrimSpace(name)
+	if canonical := canonicalIdentityVendor(trimmed); canonical != "" {
+		return canonical
+	}
 	if isMiMoVendorAlias(trimmed) {
 		return defaultMiMoVendorName
 	}
@@ -61,6 +64,9 @@ func CanonicalVendorName(name string) string {
 
 func vendorNameCandidates(name string) []string {
 	canonicalName := CanonicalVendorName(name)
+	if aliases, ok := identityVendorAliases[canonicalName]; ok {
+		return append([]string(nil), aliases...)
+	}
 	if canonicalName == defaultAlibabaVendorName {
 		return []string{defaultAlibabaVendorName, "Alibaba", "Alibaba (China)"}
 	}
@@ -87,7 +93,7 @@ func findVendorByCanonicalName(db *gorm.DB, name string) (*Vendor, error) {
 	}
 
 	query := db
-	if canonicalName == defaultMiMoVendorName || canonicalName == defaultInceptionVendorName || canonicalName == defaultAlibabaVendorName {
+	if canonicalName == defaultMiMoVendorName || canonicalIdentityVendor(canonicalName) != "" || canonicalName == defaultAlibabaVendorName {
 		candidates := vendorNameCandidates(canonicalName)
 		for i := range candidates {
 			candidates[i] = strings.ToLower(candidates[i])

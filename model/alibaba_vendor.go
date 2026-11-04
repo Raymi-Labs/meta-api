@@ -70,7 +70,7 @@ func AlibabaMetadataVendor(name string) string {
 	}
 	return map[string]string{
 		"mimo": defaultMiMoVendorName, "deepseek": "DeepSeek", "openai": "OpenAI",
-		"anthropic": "Anthropic", "google": "Google", "moonshot": "Moonshot",
+		"anthropic": "Anthropic", "google": "Google", "moonshot": "Moonshot AI",
 		"zhipu": "智谱", "xai": "xAI", "minimax": "MiniMax", "mistral": "Mistral",
 		"inception": defaultInceptionVendorName,
 	}[inferModelDisplayVendor(name)]

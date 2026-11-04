@@ -112,7 +112,7 @@ func TestDefaultVendorFallbackPreservesSharedMetadata(t *testing.T) {
 		original := &Model{ModelName: "shared-rule", NameRule: rule, Status: 0,
 			SyncOfficial: 0, ContextLength: 128000, Description: "curated", Tags: "retained"}
 		names := []string{"gpt-6.1-sol", "claude-fable-5", "gemini-4-argon", "kimi-k3.1-pro", "qwen3.8-max", "deepseek-flash", "grok-4.7", "glm-5.3", "minimax-m3.1-flash", "codex-auto-review"}
-		vendors := []string{"OpenAI", "Anthropic", "Google", "Moonshot", "阿里巴巴", "DeepSeek", "xAI", "智谱", "MiniMax", "OpenAI"}
+		vendors := []string{"OpenAI", "Anthropic", "Google", "Moonshot AI", "阿里巴巴", "DeepSeek", "xAI", "智谱", "MiniMax", "OpenAI"}
 		vendorMap := make(map[int]*Vendor)
 		metaMap := make(map[string]*Model)
 		var abilities []AbilityWithChannel

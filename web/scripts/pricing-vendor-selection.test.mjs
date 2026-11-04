@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  matchesPricingVendor,
   groupForPricingVendor,
   sortPricingVendors,
 } from '../src/helpers/pricingVendorSelection.js';
@@ -82,3 +83,29 @@ assert.deepEqual(
 console.log(
   'Vendor selection, permissions, stable vendor order and natural model versions passed.',
 );
+
+for (const alias of [
+  'Moonshot',
+  'MoonshotAI',
+  'Moonshot AI',
+  ' moonshot ai ',
+]) {
+  assert(matchesPricingVendor({ vendor_name: 'Moonshot AI' }, alias));
+  assert(matchesPricingVendor({ vendor_name: alias }, 'Moonshot AI'));
+}
+for (const alias of ['ChatGLM', 'Z.AI', 'Zhipu', 'Zhipu AI', '智谱']) {
+  assert(matchesPricingVendor({ vendor_name: '智谱' }, alias));
+}
+for (const [a, b] of [
+  ['Moondream', 'Moonshot AI'],
+  ['Tencent TokenHub', '腾讯'],
+  ['Xiaomi', '小米 MiMo'],
+  ['OpenRouter', 'Moonshot AI'],
+]) {
+  assert(!matchesPricingVendor({ vendor_name: a }, b));
+}
+assert.deepEqual(sortPricingVendors(['xAI', 'Moonshot AI', 'Google']), [
+  'Google',
+  'Moonshot AI',
+  'xAI',
+]);
