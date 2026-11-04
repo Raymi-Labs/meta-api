@@ -45,6 +45,18 @@ const cachePriceKeys = new Set([
 
 export const isCachePriceItem = (item) => cachePriceKeys.has(item?.key);
 
+// Keep all raw prices for billing-related consumers; the catalog shows the
+// shorter write rate when both durations have a displayed price.
+function shortestCachePriceItems(items) {
+  const shorter = {
+    'create-cache-1h': 'create-cache',
+    'create-cache-1h-ratio': 'create-cache-ratio',
+    'tiered-cc1h': 'tiered-cc',
+  };
+  const keys = new Set(items.map((item) => item.key));
+  return items.filter((item) => !keys.has(shorter[item.key]));
+}
+
 // Cards and the comparison table must use the same group, currency and tier.
 export function getModelCatalogPricing(options, t) {
   const precision = options.tokenUnit === 'K' ? 6 : 4;
@@ -52,7 +64,9 @@ export function getModelCatalogPricing(options, t) {
   if (!data.isDynamicPricing) {
     return {
       data,
-      items: getModelPriceItems(data, t, options.quotaDisplayType),
+      items: shortestCachePriceItems(
+        getModelPriceItems(data, t, options.quotaDisplayType),
+      ),
     };
   }
   if (isImagePriceExpression(options.record.billing_expr)) {
@@ -145,6 +159,6 @@ export function getModelCatalogPricing(options, t) {
         ]),
       ),
     },
-    items: tier.items,
+    items: shortestCachePriceItems(tier.items),
   };
 }

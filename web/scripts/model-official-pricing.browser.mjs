@@ -523,9 +523,112 @@ try {
         },
       },
     );
+    const claudeCache = {
+      ...modelDefaults,
+      model_name: 'claude-sonnet-5-5',
+      supported_endpoint_types: ['anthropic'],
+      supports_cache_read: true,
+      cache_ratio: 0.05,
+      supports_cache_creation: true,
+      supports_cache_creation_ttl: true,
+      cache_creation_ratio: 1.25,
+      cache_creation_ratio_1h: 2,
+      official_pricing: {
+        currency: 'USD',
+        tiers: ['1h', '5m'].map((ttl) => ({
+          label: `Standard · cache ${ttl}`,
+          unit: 'million_tokens',
+          input: 2,
+          output: 10,
+          cache_read: 0.1,
+          cache_write: ttl === '5m' ? 2.5 : 4,
+        })),
+      },
+    };
+    pricing.data.push(claudeCache, {
+      ...claudeCache,
+      model_name: 'claude-cache-dynamic',
+      billing_mode: 'tiered_expr',
+      billing_expr: 'tier("Standard", p*2+c*10+cr*.1+cc*2.5+cc1h*4)',
+    });
     for (const mobile of [false, true]) {
       const { page, errors } = await makePage(1, mobile);
       try {
+        for (const [name, key] of [
+          ['claude-sonnet-5-5', 'create-cache'],
+          ['claude-cache-dynamic', 'tiered-cc'],
+        ]) {
+          await page.goto(`${baseURL}/model/${name}`, {
+            waitUntil: 'networkidle0',
+          });
+          const selector = `.model-group-row [data-price-key="${key}"]`;
+          await page.waitForSelector(selector + ' .model-group-discount');
+          assert.equal((await page.$$('#official-pricing tbody tr')).length, 1);
+          assert.equal(
+            await page.$(
+              '.model-group-row [data-price-key="create-cache-1h"], .model-group-row [data-price-key="tiered-cc1h"]',
+            ),
+            null,
+          );
+          assert.ok(
+            !(
+              await page.$eval('.model-group-list', (el) => el.textContent)
+            ).includes('暂不比较'),
+          );
+          await clickButton(page, '显示设置');
+          await selectOption(page, '价格模式', 'USD ($)');
+          await page.waitForFunction(
+            (selector) =>
+              document.querySelector(selector + ' strong')?.textContent ===
+              '$1.25',
+            {},
+            selector,
+          );
+          assert.equal(
+            await page.$eval(selector + ' del', (el) => el.textContent),
+            '$2.5',
+          );
+          assert.equal(
+            await page.$eval(
+              selector + ' .model-group-discount',
+              (el) => el.textContent,
+            ),
+            '较官方低 50%',
+          );
+          await page.click('button[aria-label="按K显示单位"]');
+          await page.waitForFunction(
+            (selector) =>
+              document.querySelector(selector + ' strong')?.textContent ===
+              '$0.00125',
+            {},
+            selector,
+          );
+          assert.equal(
+            await page.$eval(selector + ' del', (el) => el.textContent),
+            '$0.0025',
+          );
+          assert.equal(
+            await page.$eval(
+              selector + ' .model-group-discount',
+              (el) => el.textContent,
+            ),
+            '较官方低 50%',
+          );
+          await page.click('button[aria-label="按K显示单位"]');
+          await clickButton(page, '显示设置');
+          await clickButton(page, '分组价格');
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth + 1,
+            ),
+          );
+          await page.screenshot({
+            path: path.join(
+              artifacts,
+              `${name}-${mobile ? 'mobile' : 'desktop'}.png`,
+            ),
+          });
+        }
         for (const model of matchingFixtures) {
           await page.goto(`${baseURL}/model/${model.model_name}`, {
             waitUntil: 'networkidle0',

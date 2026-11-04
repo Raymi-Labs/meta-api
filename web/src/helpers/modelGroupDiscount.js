@@ -75,14 +75,7 @@ export function groupPriceComparison({
   if (!officialTier) return unavailable('尚未匹配到对应的官方档位');
   if (officialTier.unit !== officialComparisonUnit(model))
     return unavailable('官方与本站的计价单位不同');
-  // No structured TTL in the official schema: do not guess retention equivalence.
-  if (
-    field === 'cache_write' &&
-    (model.supports_cache_creation_ttl ||
-      (pricing.isDynamicPricing &&
-        model.supported_endpoint_types?.includes('anthropic')))
-  )
-    return unavailable('缓存时长未对应，暂不比较');
+  // Catalog projections select the shorter cache-write reference and site rate.
   const reference = officialTier[field];
   const usd = pricing.unitPricesUSD?.[item.key];
   if (!validPrice(reference)) return unavailable('官方未提供该项单价');

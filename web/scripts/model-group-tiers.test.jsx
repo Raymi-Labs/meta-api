@@ -45,7 +45,7 @@ const getPricing = (i) => ({
     },
   ],
 });
-test('30m projection handles persisted metadata without mutation or removing other TTLs', () => {
+test('short retention projection handles persisted metadata without mutation', () => {
   const before = JSON.stringify(original);
   const rows = visibleOfficialTiers(original);
   assert.deepEqual(
@@ -160,5 +160,85 @@ test('region-specific official labels do not masquerade as unconditional standar
     groupTierRows(regional, tiers, getPricing, t).every(
       (row) => !row.officialTier,
     ),
+  );
+});
+
+test('Claude short creation tier merges TTL rows, preserves conditions and renders discounts', () => {
+  const claude = {
+    quota_type: 0,
+    supports_cache_creation_ttl: true,
+    official_pricing: {
+      currency: 'USD',
+      tiers: ['1h', '5m'].flatMap((ttl) => [
+        {
+          label: `Standard · ≤ 200K input tokens · cache ${ttl}`,
+          unit: 'million_tokens',
+          input: 2,
+          cache_write: ttl === '5m' ? 2.5 : 4,
+        },
+        {
+          label: `Standard · > 200K input tokens · cache ${ttl}`,
+          unit: 'million_tokens',
+          input: 4,
+          cache_write: ttl === '5m' ? 5 : 8,
+        },
+      ]),
+    },
+  };
+  const rows = groupTierRows(
+    claude,
+    [],
+    () => ({
+      data: { unitPricesUSD: { 'create-cache': 0.5 } },
+      items: [
+        { key: 'create-cache', label: '缓存创建价格（5分钟）', value: '$0.5' },
+      ],
+    }),
+    t,
+  );
+  assert.equal(rows.length, 2);
+  assert.deepEqual(
+    rows.map((row) => row.officialTier.cache_write),
+    [2.5, 5],
+  );
+  const html = renderToStaticMarkup(
+    <ModelGroupTierTable
+      rows={rows}
+      model={claude}
+      data={{
+        t: (text, values) => text.replace('{{percent}}', values?.percent ?? ''),
+        currency: 'USD',
+        tokenUnit: 'M',
+        displayPrice: { toAmount: (v) => v },
+      }}
+    />,
+  );
+  assert.ok(html.includes('较官方低 80%'));
+  assert.ok(html.includes('较官方低 90%'));
+  assert.ok(!html.includes('暂不比较'));
+  assert.ok(!html.includes('cache 1h'));
+});
+
+test('shortest retention is per region, unit and condition, independent of price and order', () => {
+  const tiers = [
+    { label: 'US · cache 1h', unit: 'million_tokens', cache_write: 1 },
+    { label: 'US · cache 5m', unit: 'million_tokens', cache_write: 3 },
+    { label: 'EU · cache 1h', unit: 'million_tokens', cache_write: 4 },
+    { label: 'US · cache 1h', unit: 'request', price: 5 },
+    { label: 'Unknown cache TTL', unit: 'million_tokens', cache_write: 6 },
+    { label: 'Standard', unit: 'million_tokens', cache_write: 0 },
+  ];
+  assert.deepEqual(
+    visibleOfficialTiers({ tiers }).map((row) => [
+      row.label,
+      row.cache_write ?? row.price,
+    ]),
+    [
+      ['US', 3],
+      ['EU', 4],
+      ['US', 5],
+      ['Unknown cache TTL', 6],
+      ['Standard', 0],
+    ],
   );
 });

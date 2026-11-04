@@ -159,7 +159,7 @@ test('ambiguous period names and extra region/service conditions remain visibly 
   );
 });
 
-test('unavailable comparison explains missing price, TTL, FX, and view without inventing a discount', () => {
+test('unavailable comparison explains missing price, FX, and view without inventing a discount', () => {
   const base = {
     model: ds,
     item: { key: 'tiered-p' },
@@ -182,7 +182,7 @@ test('unavailable comparison explains missing price, TTL, FX, and view without i
         item: { key: 'tiered-cc' },
         model: { ...ds, supports_cache_creation_ttl: true },
       },
-      '缓存时长未对应，暂不比较',
+      '官方未提供该项单价',
     ],
   ]) {
     assert.deepEqual(groupPriceComparison({ ...base, ...patch }), {

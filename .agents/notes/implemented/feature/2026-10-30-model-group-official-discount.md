@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[较短缓存创建价对比](../bug-fix/2026-11-04-catalog-short-cache-comparison.md)取代本篇缓存 TTL 禁比与仅30m/12h展示特例：模型广场在相同其他条件下选较短时长的官方和本站创建价，其他价格/权限/计费规则保留。
+
 [官方分档匹配与说明](../bug-fix/2026-11-02-official-tier-matching.md)补充峰谷命名档位的单价对应及生效日历提示、中文/Standard上下文识别；无法比较的原因直接可见，取代相应静默回退，计价与币种规则保留。
 
 [逐档价格表](2026-11-01-group-tier-comparison-table.md)部分取代官方档位下拉/本站首档对比和全部缓存时长公开展示；保留本篇其余计价、来源及权限规则。

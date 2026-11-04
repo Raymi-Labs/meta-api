@@ -116,15 +116,16 @@ const item = (result, key) => result.items.find((entry) => entry.key === key);
 const cacheKeys = (result) =>
   Array.from(result.items.filter(isCachePriceItem), (entry) => entry.key);
 
-test('ordinary pricing reads API cache fields and preserves 5m/1h labels', () => {
+test('catalog uses shorter creation price while retaining both raw amounts', () => {
   const result = pricing();
   assert.equal(item(result, 'input').value, '$4.0000');
   assert.equal(item(result, 'completion').value, '$20.0000');
   assert.equal(item(result, 'cache').value, '$0.4000');
   assert.equal(item(result, 'create-cache').value, '$5.0000');
-  assert.equal(item(result, 'create-cache-1h').value, '$8.0000');
+  assert.equal(item(result, 'create-cache-1h'), undefined);
+  assert.equal(result.data.unitPricesUSD['create-cache-1h'], 8);
   assert.match(item(result, 'create-cache').label, /5/);
-  assert.match(item(result, 'create-cache-1h').label, /1/);
+
   assert.equal(item(result, 'cache').suffix, ' / 1M Tokens');
   assert.equal(
     item(pricing({ create_cache_ratio: 999 }), 'create-cache').value,
@@ -155,14 +156,10 @@ test('explicitly supported zero cache prices and ratios stay visible', () => {
     cache_creation_ratio: 0,
     cache_creation_ratio_1h: 0,
   };
-  for (const key of ['cache', 'create-cache', 'create-cache-1h'])
+  for (const key of ['cache', 'create-cache'])
     assert.equal(item(pricing(record), key).value, '$0.0000');
   const ratios = pricing(record, { quotaDisplayType: 'TOKENS' });
-  for (const key of [
-    'cache-ratio',
-    'create-cache-ratio',
-    'create-cache-1h-ratio',
-  ]) {
+  for (const key of ['cache-ratio', 'create-cache-ratio']) {
     assert.equal(item(ratios, key).value, 0);
     assert.equal(item(ratios, key).suffix, 'x');
   }
@@ -223,11 +220,11 @@ test('cache prices use the same group, time multiplier, currency and unit as inp
   assert.equal(item(result, 'input').value, '¥0.8000');
   assert.equal(item(result, 'cache').value, '¥0.0800');
   assert.equal(item(result, 'create-cache').value, '¥1.0000');
-  assert.equal(item(result, 'create-cache-1h').value, '¥1.6000');
+  assert.equal(item(result, 'create-cache-1h'), undefined);
   const perK = pricing(record, { ...options, tokenUnit: 'K' });
   assert.equal(item(perK, 'cache').value, '¥0.000080');
   assert.equal(item(perK, 'create-cache').value, '¥0.001000');
-  assert.equal(item(perK, 'create-cache-1h').value, '¥0.001600');
+  assert.equal(item(perK, 'create-cache-1h'), undefined);
   assert.equal(item(perK, 'cache').suffix, ' / 1K Tokens');
   const selected = pricing(record, { ...options, selectedGroup: 'cheap' });
   assert.equal(item(selected, 'cache').value, '¥0.3200');
@@ -238,12 +235,8 @@ test('ratio display uses configured ratios independently of currency conversion'
   const result = pricing({}, { quotaDisplayType: 'TOKENS' });
   assert.equal(item(result, 'cache-ratio').value, 0.1);
   assert.equal(item(result, 'create-cache-ratio').value, 1.25);
-  assert.equal(item(result, 'create-cache-1h-ratio').value, 2);
-  assert.deepEqual(cacheKeys(result), [
-    'cache-ratio',
-    'create-cache-ratio',
-    'create-cache-1h-ratio',
-  ]);
+  assert.equal(item(result, 'create-cache-1h-ratio'), undefined);
+  assert.deepEqual(cacheKeys(result), ['cache-ratio', 'create-cache-ratio']);
 });
 
 test('dynamic cache prices come from first tier even with ordinary flags false', () => {
@@ -258,12 +251,9 @@ test('dynamic cache prices come from first tier even with ordinary flags false',
   assert.equal(item(result, 'tiered-p').value, '$4.0000');
   assert.equal(item(result, 'tiered-cr').value, '$0.4000');
   assert.equal(item(result, 'tiered-cc').value, '$5.0000');
-  assert.equal(item(result, 'tiered-cc1h').value, '$8.0000');
-  assert.deepEqual(cacheKeys(result), [
-    'tiered-cr',
-    'tiered-cc',
-    'tiered-cc1h',
-  ]);
+  assert.equal(item(result, 'tiered-cc1h'), undefined);
+  assert.equal(result.data.unitPricesUSD['tiered-cc1h'], 8);
+  assert.deepEqual(cacheKeys(result), ['tiered-cr', 'tiered-cc']);
   assert.deepEqual(
     Array.from(
       result.items.filter((entry) => !isCachePriceItem(entry)),
@@ -499,4 +489,24 @@ test('comparison keeps the standard tier and shares detail currency, plan, unit 
       }
     }
   }
+});
+
+test('shorter means retention, not cheaper; missing short price keeps the long item explicit', () => {
+  assert.equal(
+    item(pricing({ cache_creation_ratio_1h: 0.1 }), 'create-cache').value,
+    '$5.0000',
+  );
+  assert.equal(
+    item(pricing({ cache_creation_ratio_1h: 0.1 }), 'create-cache-1h'),
+    undefined,
+  );
+  const missing = pricing({ cache_creation_ratio: null });
+  assert.equal(item(missing, 'create-cache'), undefined);
+  assert.equal(item(missing, 'create-cache-1h').value, '$8.0000');
+  const dynamic = pricing({
+    billing_mode: 'tiered_expr',
+    billing_expr: 'tier("base", p*4+c*20+cc1h*8)',
+  });
+  assert.equal(item(dynamic, 'tiered-cc'), undefined);
+  assert.equal(item(dynamic, 'tiered-cc1h').value, '$8.0000');
 });

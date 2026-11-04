@@ -70,13 +70,36 @@ export function officialPricingSource(value) {
   }
 }
 
-// Retain raw source metadata; the catalog offers the default 30m cache rate.
+// Retain raw metadata. Compare the shortest published retention separately
+// within each pricing condition and unit, never by price or array position.
 export function visibleOfficialTiers(pricing) {
-  return (Array.isArray(pricing?.tiers) ? pricing.tiers : [])
-    .filter((tier) => !/ · cache 12h$/i.test(tier.label || ''))
-    .map((tier) => ({
+  const tiers = (Array.isArray(pricing?.tiers) ? pricing.tiers : []).map(
+    (tier) => {
+      const match = (tier.label || '').match(/^(.*?) · cache ([\d.]+)(m|h)$/i);
+      const minutes = match
+        ? Number(match[2]) * (match[3].toLowerCase() === 'h' ? 60 : 1)
+        : NaN;
+      return {
+        tier,
+        label: match?.[1],
+        minutes: Number.isFinite(minutes) && minutes > 0 ? minutes : null,
+        group: JSON.stringify([tier.unit, match?.[1]]),
+      };
+    },
+  );
+  const shortest = new Map();
+  for (const { group, minutes } of tiers) {
+    if (minutes !== null)
+      shortest.set(group, Math.min(shortest.get(group) ?? Infinity, minutes));
+  }
+  return tiers
+    .filter(
+      ({ group, minutes }) =>
+        minutes === null || minutes === shortest.get(group),
+    )
+    .map(({ tier, label, minutes }) => ({
       ...tier,
-      label: (tier.label || '').replace(/ · cache 30m$/i, ''),
+      label: minutes === null ? tier.label || '' : label,
     }));
 }
 

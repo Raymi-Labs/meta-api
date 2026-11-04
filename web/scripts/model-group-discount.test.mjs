@@ -120,7 +120,7 @@ test('official FX and recharge/package credit conversion are independent', () =>
     null,
   );
 });
-test('selected official tier changes only reference; units and TTL cannot be guessed', () => {
+test('selected reference supports short cache writes while units and ratio view remain guarded', () => {
   assert.equal(
     compare({ officialTier: { unit: 'million_tokens', input: 20 } }).percent,
     '90',
@@ -139,8 +139,8 @@ test('selected official tier changes only reference; units and TTL cannot be gue
     compare({
       ...cache,
       model: { ...input.model, supports_cache_creation_ttl: true },
-    }),
-    null,
+    }).percent,
+    '80',
   );
   assert.equal(
     compare({
@@ -152,8 +152,8 @@ test('selected official tier changes only reference; units and TTL cannot be gue
         billing_mode: 'tiered_expr',
         supported_endpoint_types: ['anthropic'],
       },
-    }),
-    null,
+    }).percent,
+    '80',
   );
 });
 test('dynamic first tier and fixed request/hour compare their respective rate only', () => {

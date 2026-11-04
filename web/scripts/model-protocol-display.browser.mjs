@@ -324,9 +324,13 @@ try {
     await page.waitForSelector('.model-group-row .group-health-panel', {
       hidden: true,
     });
-    for (const key of ['cache', 'create-cache', 'create-cache-1h']) {
+    for (const key of ['cache', 'create-cache']) {
       assert(await page.$(`.model-group-row [data-price-key="${key}"]`), key);
     }
+    assert.equal(
+      await page.$('.model-group-row [data-price-key="create-cache-1h"]'),
+      null,
+    );
     await page.select('select[aria-label="接口协议"]', 'openai-response');
     await page.$eval('#quick-start', (el) => el.scrollIntoView());
     assert.equal(await page.$('#endpoints'), null);
