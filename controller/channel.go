@@ -857,6 +857,20 @@ func AddChannel(c *gin.Context) {
 		}
 		channels = append(channels, *localChannel)
 	}
+	capacityKeys := make(map[string]bool)
+	for i := range channels {
+		if service.VMCapacityEnabled(&channels[i]) {
+			if capacityKeys[channels[i].Key] {
+				common.ApiError(c, errors.New("VM capacity requires one channel per upstream key"))
+				return
+			}
+			capacityKeys[channels[i].Key] = true
+		}
+		if err := service.ValidateVMCapacityChannel(&channels[i]); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
 	err = model.BatchInsertChannels(channels)
 	if err != nil {
 		common.ApiError(c, err)
@@ -1261,6 +1275,23 @@ func UpdateChannel(c *gin.Context) {
 			// 覆盖模式：直接使用新密钥（默认行为，不需要特殊处理）
 		}
 	}
+	resolvedCapacityChannel := channel.Channel
+	if resolvedCapacityChannel.Key == "" {
+		resolvedCapacityChannel.Key = originChannel.Key
+	}
+	if resolvedCapacityChannel.BaseURL == nil {
+		resolvedCapacityChannel.BaseURL = originChannel.BaseURL
+	}
+	if resolvedCapacityChannel.Setting == nil {
+		resolvedCapacityChannel.Setting = originChannel.Setting
+	}
+	if resolvedCapacityChannel.Type == 0 {
+		resolvedCapacityChannel.Type = originChannel.Type
+	}
+	if err := service.ValidateVMCapacityChannel(&resolvedCapacityChannel); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	err = channel.Update()
 	if err != nil {
 		common.ApiError(c, err)
@@ -1544,6 +1575,10 @@ func CopyChannel(c *gin.Context) {
 	}
 
 	// insert
+	if err := service.ValidateVMCapacityChannel(&clone); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if err := model.BatchInsertChannels([]model.Channel{clone}); err != nil {
 		common.SysError("failed to clone channel: " + err.Error())
 		c.JSON(http.StatusOK, gin.H{"success": false, "message": "复制渠道失败，请稍后重试"})

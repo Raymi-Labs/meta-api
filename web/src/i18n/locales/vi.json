@@ -1,5 +1,15 @@
 {
   "translation": {
+    "VM 实时容量": "Dung lượng VM trực tiếp",
+    "仅限单 Key Claude 渠道，需开启渠道并发控制。快照不可用时暂停派发；静态上限仍生效。": "Chỉ dành cho kênh Claude một khóa. Bật kiểm soát đồng thời. Tạm dừng gửi khi không có ảnh chụp hợp lệ; giới hạn tĩnh vẫn áp dụng.",
+    "满载处理": "Khi đầy",
+    "缓存优先：有界等待当前渠道": "Ưu tiên bộ nhớ đệm: chờ kênh có giới hạn",
+    "速度优先：尝试其他渠道": "Ưu tiên tốc độ: thử kênh khác",
+    "最大等待时间（毫秒）": "Thời gian chờ tối đa (ms)",
+    "静态上限 {{limit}}，快照年龄 {{age}}ms": "Giới hạn tĩnh {{limit}}, tuổi ảnh chụp {{age}}ms",
+    "VM 当前可用 {{count}}": "VM khả dụng: {{count}}",
+    "容量状态未知": "Chưa rõ dung lượng",
+    "部分状态未知": "Chưa rõ một phần",
     "每次发票申请金额合计最低为人民币 20 元": "Tổng số tiền mỗi yêu cầu xuất hóa đơn phải tối thiểu 20 nhân dân tệ",
     "本轮模型": "Mô hình của lượt này",
     "点击查看资料；不会改变调用名单。": "Xem thông tin không thay đổi mô hình được chọn.",

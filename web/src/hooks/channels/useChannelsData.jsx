@@ -27,6 +27,7 @@ import {
   sumChannelUsage,
 } from '../../helpers/channelUsage';
 import { useTranslation } from 'react-i18next';
+import { readChannelCapacityUsage } from '../../helpers/channelCapacity';
 import {
   API,
   showError,
@@ -186,13 +187,7 @@ export const useChannelsData = () => {
       for (const item of data.channels || []) {
         const channelId = Number(item?.channel_id);
         if (!Number.isInteger(channelId) || channelId <= 0) continue;
-        byChannelId[channelId] = {
-          inflight: Math.max(0, Number(item.inflight) || 0),
-          maxConcurrency:
-            Number(item.max_concurrency) > 0
-              ? Number(item.max_concurrency)
-              : defaultMaxConcurrency,
-        };
+        byChannelId[channelId] = readChannelCapacityUsage(item, defaultMaxConcurrency);
       }
       setChannelConcurrencySnapshot({
         loaded: true,

@@ -1,5 +1,15 @@
 {
   "translation": {
+    "VM 实时容量": "VM-Live-Kapazität",
+    "仅限单 Key Claude 渠道，需开启渠道并发控制。快照不可用时暂停派发；静态上限仍生效。": "Nur Claude-Kanäle mit einem Schlüssel. Parallelitätskontrolle aktivieren. Ohne gültigen Snapshot wird nicht gesendet; das statische Limit gilt weiterhin.",
+    "满载处理": "Bei voller Kapazität",
+    "缓存优先：有界等待当前渠道": "Cache zuerst: begrenzt auf diesen Kanal warten",
+    "速度优先：尝试其他渠道": "Tempo zuerst: anderen Kanal versuchen",
+    "最大等待时间（毫秒）": "Maximale Wartezeit (ms)",
+    "静态上限 {{limit}}，快照年龄 {{age}}ms": "Statisches Limit {{limit}}, Snapshot-Alter {{age}}ms",
+    "VM 当前可用 {{count}}": "VM jetzt verfügbar: {{count}}",
+    "容量状态未知": "Kapazität unbekannt",
+    "部分状态未知": "Teilweise unbekannt",
     "每次发票申请金额合计最低为人民币 20 元": "Der Gesamtbetrag jedes Rechnungsantrags muss mindestens 20 CNY betragen",
     "本轮模型": "Modelle dieser Runde",
     "点击查看资料；不会改变调用名单。": "Details ansehen, ohne die Auswahl zu ändern.",

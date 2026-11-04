@@ -371,9 +371,11 @@ const getChannelConcurrency = (record, snapshot) => {
   const live = snapshot.byChannelId?.[record.id];
   const override = getChannelMaxConcurrencyOverride(record);
   return {
+    vmCapacity: live?.vmCapacity,
+    staticMaxConcurrency: live?.staticMaxConcurrency,
     inflight: Math.max(0, Number(live?.inflight) || 0),
     maxConcurrency:
-      Number(live?.maxConcurrency) > 0
+      live?.vmCapacity || Number(live?.maxConcurrency) > 0
         ? Number(live.maxConcurrency)
         : override || snapshot.defaultMaxConcurrency || 100,
   };
@@ -400,6 +402,26 @@ const renderChannelConcurrency = (record, snapshot, t) => {
   }
 
   const concurrency = getChannelConcurrency(record, snapshot);
+  if (concurrency?.vmCapacity) {
+    const vm = concurrency.vmCapacity;
+    const known = vm.state === 'known' || vm.state === 'partial';
+    return (
+      <Tooltip content={
+        <div>
+          <div>{t('VM 实时容量')} · {vm.model}</div>
+          <div>{t('静态上限 {{limit}}，快照年龄 {{age}}ms', {
+            limit: concurrency.staticMaxConcurrency, age: vm.age_ms,
+          })}</div>
+          {known && <div>{t('VM 当前可用 {{count}}', { count: vm.snapshot?.available_now })}</div>}
+        </div>
+      }>
+        <Typography.Text type={known && concurrency.maxConcurrency > 0 ? 'secondary' : 'warning'} size='small'>
+          {known ? `${concurrency.inflight}/${concurrency.maxConcurrency}` : t('容量状态未知')}
+          {vm.state === 'partial' && ` · ${t('部分状态未知')}`}
+        </Typography.Text>
+      </Tooltip>
+    );
+  }
   if (!concurrency || concurrency.maxConcurrency <= 0) {
     return <Typography.Text type='tertiary'>-</Typography.Text>;
   }
