@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+[移除模型详情用量模块](../simplification/2026-11-04-model-detail-remove-usage.md)取代用量区块及其目录展示，快速开始直接衔接性能对比；其余数据、性能与权限约束保留。
+
 [模型发现与接入路径](2026-10-26-model-discovery-experience.md)更新搜索与筛选布局、缺失状态、快速开始入口和首页手动公告规则；本文其余数据及权限契约继续有效。
 
 本篇的 cURL 单语言、仅复用旧健康数据与不新增展示元数据决定，由[模型展示元数据与分组指标](2026-10-25-model-catalog-metrics.md)部分扩展；独立路由、价格和权限边界继续保留。以下说明原详情页设计的边界。

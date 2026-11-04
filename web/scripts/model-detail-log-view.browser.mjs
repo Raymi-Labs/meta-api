@@ -201,8 +201,10 @@ try {
     assert.equal(
       await page.evaluate(() => {
         const quickStart = document.querySelector('#quick-start');
-        const usage = document.querySelector('#usage');
-        return Boolean(quickStart && usage?.nextElementSibling === quickStart);
+        const performance = document.querySelector('#performance');
+        return Boolean(
+          quickStart && performance?.nextElementSibling === quickStart,
+        );
       }),
       true,
     );

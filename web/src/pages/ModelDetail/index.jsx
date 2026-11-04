@@ -70,7 +70,6 @@ export default function ModelDetail() {
   const modelName = getModelNameFromDetailPath(location.pathname);
   const model = data.models.find((item) => item.model_name === modelName);
   const [hours, setHours] = useState(24);
-  const [usageReferenceVisible, setUsageReferenceVisible] = useState(false);
   const health = useGroupHealth({
     model: modelName,
     hours,
@@ -162,7 +161,6 @@ export default function ModelDetail() {
     ['capabilities', '模型属性'],
     ['pricing', '分组价格'],
     ['performance', '性能对比'],
-    ['usage', usageReferenceVisible ? '模型用量参考' : '分组用量'],
     ['quick-start', '快速开始'],
     ...(related.length ? [['related', '同厂商模型']] : []),
     ...(model.faq?.length ? [['faq', '常见问题']] : []),
@@ -333,7 +331,6 @@ export default function ModelDetail() {
             />
           </section>
           <ModelAnalytics
-            onUsageReferenceChange={setUsageReferenceVisible}
             key={`analytics-${model.model_name}`}
             model={model}
             data={data}

@@ -282,60 +282,21 @@ try {
     0,
     'no fake history',
   );
-  await page.waitForFunction(() =>
-    document.querySelector('#usage')?.textContent.includes('模型用量参考'),
-  );
-  let usage = await page.$eval('#usage', (e) => e.textContent);
-  assert.ok(usage.includes('7M') && !usage.includes('暂无数据'));
-  assert.ok(!usage.includes('chat') && !usage.includes('OpenRouter'));
-  await page.click('#usage button[aria-pressed="false"]');
-  usage = await page.$eval('#usage', (e) => e.textContent);
-  assert.ok(usage.includes('700'));
-  await page.click('#usage .model-chart-heading button');
-  await page.waitForSelector('.model-chart-modal .is-expanded');
+  assert.equal(await page.$('#usage'), null);
   assert.ok(
-    (await page.$eval('.model-chart-modal', (e) => e.textContent)).includes(
-      '700',
+    !(
+      await page.$eval('.model-detail-sections', (e) => e.textContent)
+    ).includes('用量'),
+  );
+  assert.ok(
+    await page.$eval(
+      '#performance',
+      (e) => e.nextElementSibling?.id === 'quick-start',
     ),
-  );
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() =>
-    [...document.querySelectorAll('.semi-modal-mask')].every(
-      (e) =>
-        getComputedStyle(e).display === 'none' ||
-        getComputedStyle(e).opacity === '0',
-    ),
-  );
-  await page.click('#usage .semi-select');
-  await page.waitForSelector('.semi-select-option');
-  await page.evaluate(() =>
-    [...document.querySelectorAll('.semi-select-option')]
-      .find((e) => e.textContent.includes('30'))
-      .click(),
-  );
-  await page.waitForFunction(() =>
-    document
-      .querySelector('#usage .model-chart-legend')
-      ?.textContent.includes('3K'),
-  );
-  await page.click('#usage .semi-select');
-  await page.waitForSelector('.semi-select-option');
-  await page.evaluate(() =>
-    [...document.querySelectorAll('.semi-select-option')]
-      .find((e) => e.textContent.includes('7'))
-      .click(),
-  );
-  await page.waitForFunction(() =>
-    document
-      .querySelector('#usage .model-chart-legend')
-      ?.textContent.includes('700'),
   );
   await (
     await page.$('#performance')
   ).screenshot({ path: path.join(artifacts, 'performance-desktop.png') });
-  await (
-    await page.$('#usage')
-  ).screenshot({ path: path.join(artifacts, 'usage-desktop.png') });
   await page.screenshot({
     path: path.join(artifacts, 'charts-desktop.png'),
     fullPage: true,
@@ -408,13 +369,12 @@ try {
   text = await page.$eval(card, (e) => e.textContent);
   assert.ok(text.includes('首字均值') && text.includes('77'));
   await page.click('.pricing-model-card a[href="/model/chat-00"]');
-  await page.waitForFunction(() =>
-    document.querySelector('#usage')?.textContent.includes('分组用量'),
-  );
+  await page.waitForSelector('#performance');
+  assert.equal(await page.$('#usage'), null);
   assert.ok(
-    !(await page.$eval('#usage', (e) => e.textContent)).includes(
-      '模型用量参考',
-    ),
+    !(
+      await page.$eval('.model-detail-sections', (e) => e.textContent)
+    ).includes('用量'),
   );
   measured = false;
   unavailable = true;
@@ -436,8 +396,8 @@ try {
         'card P50',
         'detail P50',
         'empty plots show current P50 without fake history',
-        'public daily tokens and requests',
-        'usage expansion and local priority',
+        'usage section and navigation removed for reference and local data',
+        'quick start follows performance',
         'no source labels',
         'no synthetic uptime',
         '390px dark layout',

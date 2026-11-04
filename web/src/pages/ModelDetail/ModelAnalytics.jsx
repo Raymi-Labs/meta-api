@@ -28,10 +28,6 @@ import {
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
 import ModelMetricChart from './ModelMetricChart';
-import {
-  modelUsageReference,
-  usageReferenceGroup,
-} from '../../helpers/modelUsageReference';
 
 export default function ModelAnalytics({
   model,
@@ -39,12 +35,9 @@ export default function ModelAnalytics({
   health,
   hours,
   setHours,
-  onUsageReferenceChange,
 }) {
   const { t } = data;
   const [selection, setSelection] = useState(null);
-  const [usageMetric, setUsageMetric] = useState('total_tokens');
-  const [usageDays, setUsageDays] = useState(7);
   const available = selectHealthGroups({
     groups: health.data?.groups || [],
     models: [model],
@@ -68,147 +61,88 @@ export default function ModelAnalytics({
     !health.error &&
     Boolean(health.data) &&
     health.data?.enabled !== false;
-  const referenceSeries = ready
-    ? modelUsageReference(health.data?.model_usage_reference, groups)
-    : null;
-  const usingReference = Boolean(referenceSeries);
-  React.useEffect(() => {
-    onUsageReferenceChange?.(usingReference);
-  }, [usingReference, onUsageReferenceChange]);
-  const usageGroups = referenceSeries
-    ? [usageReferenceGroup(referenceSeries, usageDays, t('模型用量参考'))]
-    : groups;
   return (
-    <>
-      <section id='performance' className='model-detail-section'>
-        <div className='model-detail-section-heading'>
-          <h2>{t('性能对比')}</h2>
-          <Select
-            aria-label={t('时间范围')}
-            value={hours}
-            onChange={setHours}
-            optionList={[24, 72].map((value) => ({
-              value,
-              label: t('最近 {{hours}} 小时', { hours: value }),
-            }))}
-          />
-        </div>
-        <div className='model-comparison-controls'>
-          <label>
-            {t('对比分组')}
-            <Select
-              multiple
-              filter
-              maxTagCount={2}
-              max={4}
-              aria-label={t('对比分组')}
-              placeholder={t('请选择分组')}
-              value={selected}
-              onChange={(values) =>
-                setSelection(selectComparisonGroups(names, values))
-              }
-              optionList={names.map((name) => ({ value: name, label: name }))}
-            />
-          </label>
-          <span>{t('最多同时对比 4 个分组；价格与健康记录可逐组查看。')}</span>
-        </div>
-        <GroupHealthStatus
-          loading={health.loading}
-          error={health.error}
-          onRetry={health.refresh}
+    <section id='performance' className='model-detail-section'>
+      <div className='model-detail-section-heading'>
+        <h2>{t('性能对比')}</h2>
+        <Select
+          aria-label={t('时间范围')}
+          value={hours}
+          onChange={setHours}
+          optionList={[24, 72].map((value) => ({
+            value,
+            label: t('最近 {{hours}} 小时', { hours: value }),
+          }))}
         />
-        <GroupHealthCollectionNote data={health.data} />
-        {!health.isAuthenticated && (
-          <p className='model-detail-caption'>
-            <Link to='/login'>{t('登录后查看可用分组的调用表现')}</Link>
-          </p>
-        )}
-        {health.data?.enabled === false && (
-          <p className='model-detail-caption'>
-            {t('管理员暂未开启分组健康展示')}
-          </p>
-        )}
-        {ready && (
-          <>
-            <div className='model-performance-grid'>
-              <ModelMetricChart
-                title={'Uptime · ' + t('可用率')}
-                groups={groups}
-                metric='uptime_rate'
-                t={t}
-              />
-              <ModelMetricChart
-                title={t('首字均值') + ' · s'}
-                groups={groups}
-                metric='avg_ttft_ms'
-                t={t}
-              />
-              <ModelMetricChart
-                title={t('输出速度') + ' · tok/s'}
-                groups={groups}
-                metric='avg_output_tps'
-                t={t}
-              />
-            </div>
-            {groups.some((group) => group.completion_count > 0) && (
-              <ModelMetricChart
-                title={t('平均完成') + ' · s'}
-                groups={groups}
-                metric='avg_completion_ms'
-                t={t}
-              />
-            )}
-            <GroupHealthLegend uptime />
-          </>
-        )}
-      </section>
-      <section id='usage' className='model-detail-section'>
-        <div className='model-detail-section-heading'>
-          <h2>{t(usingReference ? '模型用量参考' : '分组用量')}</h2>
-          {usingReference && (
-            <Select
-              aria-label={t('用量时间范围')}
-              value={usageDays}
-              onChange={setUsageDays}
-              optionList={[7, 30].map((value) => ({
-                value,
-                label: t('最近 {{days}} 天', { days: value }) + ' · UTC',
-              }))}
+      </div>
+      <div className='model-comparison-controls'>
+        <label>
+          {t('对比分组')}
+          <Select
+            multiple
+            filter
+            maxTagCount={2}
+            max={4}
+            aria-label={t('对比分组')}
+            placeholder={t('请选择分组')}
+            value={selected}
+            onChange={(values) =>
+              setSelection(selectComparisonGroups(names, values))
+            }
+            optionList={names.map((name) => ({ value: name, label: name }))}
+          />
+        </label>
+        <span>{t('最多同时对比 4 个分组；价格与健康记录可逐组查看。')}</span>
+      </div>
+      <GroupHealthStatus
+        loading={health.loading}
+        error={health.error}
+        onRetry={health.refresh}
+      />
+      <GroupHealthCollectionNote data={health.data} />
+      {!health.isAuthenticated && (
+        <p className='model-detail-caption'>
+          <Link to='/login'>{t('登录后查看可用分组的调用表现')}</Link>
+        </p>
+      )}
+      {health.data?.enabled === false && (
+        <p className='model-detail-caption'>
+          {t('管理员暂未开启分组健康展示')}
+        </p>
+      )}
+      {ready && (
+        <>
+          <div className='model-performance-grid'>
+            <ModelMetricChart
+              title={'Uptime · ' + t('可用率')}
+              groups={groups}
+              metric='uptime_rate'
+              t={t}
+            />
+            <ModelMetricChart
+              title={t('首字均值') + ' · s'}
+              groups={groups}
+              metric='avg_ttft_ms'
+              t={t}
+            />
+            <ModelMetricChart
+              title={t('输出速度') + ' · tok/s'}
+              groups={groups}
+              metric='avg_output_tps'
+              t={t}
+            />
+          </div>
+          {groups.some((group) => group.completion_count > 0) && (
+            <ModelMetricChart
+              title={t('平均完成') + ' · s'}
+              groups={groups}
+              metric='avg_completion_ms'
+              t={t}
             />
           )}
-          <div
-            className='model-usage-switch'
-            role='group'
-            aria-label={t('用量类型')}
-          >
-            {[
-              { value: 'total_tokens', label: 'Tokens' },
-              { value: 'request_count', label: t('请求次数') },
-            ].map(({ value, label }) => (
-              <button
-                key={value}
-                type='button'
-                aria-pressed={usageMetric === value}
-                onClick={() => setUsageMetric(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {ready ? (
-          <ModelMetricChart
-            title={usageMetric === 'total_tokens' ? 'Tokens' : t('请求次数')}
-            groups={usageGroups}
-            bucketSeconds={usingReference ? 86400 : 3600}
-            metric={usageMetric}
-            bar
-            t={t}
-          />
-        ) : (
-          <p className='model-detail-caption'>{t('请先加载分组调用表现')}</p>
-        )}
-      </section>
-    </>
+          <GroupHealthLegend uptime />
+        </>
+      )}
+    </section>
   );
 }

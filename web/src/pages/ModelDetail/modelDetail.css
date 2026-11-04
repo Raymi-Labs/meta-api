@@ -778,35 +778,6 @@ html.dark .model-metric-chart {
   font-weight: 600;
   color: var(--semi-color-text-0);
 }
-.model-usage-switch {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  padding: 3px;
-  border: 1px solid var(--detail-border);
-  border-radius: 10px;
-  background: var(--semi-color-fill-0);
-}
-.model-usage-switch button {
-  padding: 6px 14px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--detail-muted);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-.model-usage-switch button[aria-pressed='true'] {
-  background: var(--semi-color-bg-0);
-  box-shadow: 0 1px 4px #0001;
-  color: var(--semi-color-text-0);
-  font-weight: 600;
-}
-.model-usage-switch button:focus-visible {
-  outline: 2px solid var(--semi-color-primary);
-  outline-offset: 2px;
-}
 .model-metric-chart.is-usage .model-chart-legend {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
