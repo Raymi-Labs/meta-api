@@ -23,7 +23,6 @@ import {
   dashboardMetricValues,
   dashboardUsageSummary,
   dashboardCompactTokens,
-  dashboardMetricCoverage,
 } from '../src/helpers/dashboardMetrics.js';
 
 test('unit cost uses weighted totals and handles missing or zero usage', () => {
@@ -108,24 +107,7 @@ test('unified snapshot accepts negative net spend but rejects old, stale and par
   );
 });
 
-test('partial coverage is record-based and compact tokens retain meaningful scale', () => {
-  const t = (key, params) => (params ? JSON.stringify(params) : key);
-  const s = {
-    cache_included_records: 3,
-    cache_excluded_records: 1,
-    price_included_records: 2,
-    price_excluded_records: 2,
-  };
-  assert.match(dashboardMetricCoverage(s, 'cache', t), /部分记录.*75.0/);
-  assert.match(dashboardMetricCoverage(s, 'price', t), /50.0/);
-  assert.equal(
-    dashboardMetricCoverage(
-      { cache_included_records: 0, cache_excluded_records: 0 },
-      'cache',
-      t,
-    ),
-    null,
-  );
+test('compact tokens retain meaningful scale', () => {
   assert.equal(dashboardCompactTokens(12936310889, 'zh-CN'), '129.36亿');
   assert.equal(dashboardCompactTokens(12936310889, 'en'), '12.94B');
   assert.equal(dashboardCompactTokens(27082015, 'en'), '27,082,015');

@@ -185,6 +185,15 @@ try {
           (e) => e.getAttribute('aria-busy') === 'false',
         ),
       );
+      const bodyText = await page.$eval('body', (e) => e.textContent);
+      for (const removed of [
+        '部分记录',
+        '记录覆盖：',
+        '统计基于所选时段保留的结算日志',
+        '部分日志用量口径不明确',
+      ]) {
+        assert(!bodyText.includes(removed), `removed copy remains: ${removed}`);
+      }
     };
     await load('normal');
     await page.waitForFunction(() =>
@@ -227,15 +236,12 @@ try {
         ?.textContent.includes('-1.00'),
     );
     await load('unknown');
-    await page.waitForFunction(() =>
-      document.body.textContent.includes('部分日志用量口径不明确'),
-    );
     text = await page.$eval('.dashboard-stat-grid', (e) => e.textContent);
     assert(!text.includes('6.8291') && text.includes('—'));
     await load('partial');
     text = await page.$eval('.dashboard-stat-grid', (e) => e.textContent);
-    assert(text.includes('6.8291') && text.includes('部分记录'));
-    assert(text.includes('200/221') && text.includes('190/221'));
+    assert(text.includes('6.8291') && text.includes('81.1%'));
+    assert(!text.includes('200/221') && !text.includes('190/221'));
     assert(text.includes('129.36亿'));
     const tokenBox = await page.$eval('.dashboard-stat-token-value', (e) => ({
       title: e.title,

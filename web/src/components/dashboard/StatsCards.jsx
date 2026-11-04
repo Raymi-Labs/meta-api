@@ -72,16 +72,6 @@ export default function StatsCards({
                 {failed ? '—' : card.value}
               </Skeleton>
             </div>
-            {!busy && !failed && card.coverage && (
-              <div
-                className='dashboard-stat-coverage'
-                title={t(
-                  '覆盖率仅针对已识别为Token计费的候选记录，不包含按次、按时长或计费类型不明的记录。',
-                )}
-              >
-                {card.coverage}
-              </div>
-            )}
             {isCache && cacheError && !busy && !quotaError && (
               <button
                 className='dashboard-cache-retry'

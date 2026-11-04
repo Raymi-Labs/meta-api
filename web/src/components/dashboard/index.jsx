@@ -279,20 +279,6 @@ const DashboardContent = () => {
         retryCache={handleRefresh}
       />
 
-      <p className='text-xs text-gray-500 mb-4' role='note'>
-        {dashboardData.t(
-          '统计基于所选时段保留的结算日志；已删除或未记录的历史用量无法恢复。退款按发生时间冲减，非 Token 计费不参与综合单价。',
-        )}
-        {dashboardData.usageSummary?.unclassified_records > 0 && (
-          <span>
-            {' '}
-            {dashboardData.t(
-              '部分日志用量口径不明确；两个指标分别展示可核实部分，覆盖率按记录条数计算，不代表金额或Token覆盖率。总Token沿用日志展示口径。',
-            )}
-          </span>
-        )}
-      </p>
-
       {/* 模型数据分析 */}
       <div className='mb-4'>
         <div className='grid grid-cols-1 gap-4'>

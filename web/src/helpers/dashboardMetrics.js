@@ -79,22 +79,3 @@ export function dashboardCompactTokens(value, locale) {
         maximumFractionDigits: 2,
       }).format(value);
 }
-
-export function dashboardMetricCoverage(summary, kind, t) {
-  if (!summary) return null;
-  const included = summary[`${kind}_included_records`];
-  const excluded = summary[`${kind}_excluded_records`];
-  if (!Number.isSafeInteger(included) || !Number.isSafeInteger(excluded))
-    return null;
-  const total = included + excluded;
-  if (!total) return null;
-  return `${excluded > 0 ? t('部分记录') + ' · ' : ''}${t(
-    '记录覆盖：{{included}}/{{total}}（{{percent}}%），排除{{excluded}}条',
-    {
-      included,
-      total,
-      excluded,
-      percent: ((included / total) * 100).toFixed(1),
-    },
-  )}`;
-}

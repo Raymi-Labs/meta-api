@@ -101,13 +101,6 @@ html.dark .dashboard-overview {
   overflow-wrap: normal;
   font-size: clamp(18px, 1.7vw, 26px);
 }
-.dashboard-stat-coverage {
-  margin-top: 8px;
-  color: var(--overview-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
 .dashboard-overview .semi-card {
   background: var(--semi-color-bg-0);
   border: 1px solid var(--overview-border) !important;

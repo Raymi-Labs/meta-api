@@ -23,7 +23,6 @@ import { renderQuota } from '../../helpers/dashboardFormat';
 import {
   dashboardMetricValues,
   dashboardCompactTokens,
-  dashboardMetricCoverage,
 } from '../../helpers/dashboardMetrics';
 
 export const useDashboardStats = (
@@ -69,7 +68,6 @@ export const useDashboardStats = (
       },
       {
         id: 'cache',
-        coverage: dashboardMetricCoverage(summary, 'cache', t),
         title: t('缓存命中率'),
         value:
           values.cacheRate == null || values.tokens === 0
@@ -81,7 +79,6 @@ export const useDashboardStats = (
       },
       {
         id: 'unit-price',
-        coverage: dashboardMetricCoverage(summary, 'price', t),
         title: t('每百万 Token 综合单价'),
         value:
           values.unitPrice == null ? '—' : renderQuota(values.unitPrice, 4),
