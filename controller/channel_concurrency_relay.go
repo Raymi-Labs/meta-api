@@ -63,15 +63,17 @@ func selectChannelWithConcurrency(
 	}
 	if !middleware.ChannelConcurrencyEnabled() {
 		channel, apiErr := getChannel(c, info, retryParam)
+		if apiErr == nil && service.VMCapacityEnabled(channel) {
+			return nil, nil, buildChannelCapacityError(c, 503, "VM capacity requires channel concurrency control", time.Second), true
+		}
 		return channel, nil, apiErr, false
 	}
 
 	setting := operation_setting.GetChannelConcurrencySetting()
 	waitTimeout := time.Duration(setting.NormalizedWaitTimeoutMs()) * time.Millisecond
 	pollInterval := time.Duration(setting.NormalizedPollIntervalMs()) * time.Millisecond
-	rpmWindow := time.Duration(setting.NormalizedRpmWindowSeconds()) * time.Second
 	maxQueueLen := setting.NormalizedMaxQueueLength()
-	deadline := time.Now().Add(waitTimeout)
+	deadline := capacityDeadline(c, nil, waitTimeout)
 
 	// ---- 阶段1：亲和粘性优先（保上游 prompt cache 命中）----
 	// 仅在首轮（未发生真实上游失败）尝试。重试轮意味着亲和渠道可能真的故障了，
@@ -89,6 +91,7 @@ func selectChannelWithConcurrency(
 	}
 
 	// ---- 阶段2：正常负载均衡 + 并发控制（有界过载兜底）----
+	deadline = capacityDeadline(c, nil, waitTimeout)
 	// 本次请求内因“并发或 RPM 容量不足”而被临时排除的渠道集合。
 	blockedChannels := make(map[int]bool)
 	var blockSummary channelCapacityBlockSummary
@@ -116,13 +119,19 @@ func selectChannelWithConcurrency(
 		default:
 			// 同优先级候选按 max(并发占比, RPM 占比) 从低到高排列；压力相同时随机打散，
 			// 避免所有实例同时命中固定渠道。快照只负责排序，最终由原子准入裁决。
-			candidates = middleware.RankChannelsByCapacityPressure(candidates)
+			candidates = rankRelayChannels(c, candidates, info.OriginModelName)
 			for _, channel := range candidates {
-				maxConcurrency := middleware.ResolveChannelMaxConcurrency(channel)
-				rpmLimit := middleware.ResolveChannelRpmLimit(channel)
-				admission := middleware.AcquireChannelCapacityWithMetric(
-					channel.Id, maxConcurrency, rpmLimit, rpmWindow, c.GetString(common.RequestIdKey),
-				)
+				if service.VMCapacityEnabled(channel) {
+					deadline = capacityDeadline(c, channel, waitTimeout)
+				}
+				admission := acquireRelayChannelCapacity(c, channel, info.OriginModelName)
+				if service.VMCapacityEnabled(channel) && channel.GetSetting().UpstreamCapacity.PreferWait() && !admission.Acquired {
+					deadline = capacityDeadline(c, channel, waitTimeout)
+					admission = waitVMChannelCapacity(c, channel, info.OriginModelName, selectGroup, deadline)
+					if c.Request.Context().Err() != nil {
+						return nil, nil, buildClientCanceledError(), true
+					}
+				}
 				if !admission.Acquired {
 					if admission.Reason == middleware.ChannelAdmissionBackendUnavailable {
 						return nil, nil, buildChannelCapacityError(c, http.StatusServiceUnavailable, "channel capacity backend unavailable", admission.RetryAfter), true
@@ -217,6 +226,9 @@ func acquireFixedChannelCapacityWithWait(c *gin.Context, channel *model.Channel)
 		return nil, types.NewError(errors.New("channel is nil"), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 	}
 	if !middleware.ChannelConcurrencyEnabled() {
+		if service.VMCapacityEnabled(channel) {
+			return nil, buildChannelCapacityError(c, 503, "VM capacity requires channel concurrency control", time.Second)
+		}
 		return nil, nil
 	}
 	if remaining := service.ChannelRateLimitCooldownRemaining(channel.Id); remaining > 0 {
@@ -224,6 +236,17 @@ func acquireFixedChannelCapacityWithWait(c *gin.Context, channel *model.Channel)
 	}
 
 	setting := operation_setting.GetChannelConcurrencySetting()
+	if service.VMCapacityEnabled(channel) {
+		deadline := capacityDeadline(c, channel, time.Duration(setting.NormalizedWaitTimeoutMs())*time.Millisecond)
+		admission := waitVMChannelCapacity(c, channel, fixedCapacityModel(c), "", deadline)
+		if admission.Acquired {
+			return admission.Release, nil
+		}
+		if c.Request.Context().Err() != nil {
+			return nil, buildClientCanceledError()
+		}
+		return nil, buildChannelCapacityError(c, 503, "VM channel capacity unavailable", time.Second)
+	}
 	deadline := time.Now().Add(time.Duration(setting.NormalizedWaitTimeoutMs()) * time.Millisecond)
 	pollInterval := time.Duration(setting.NormalizedPollIntervalMs()) * time.Millisecond
 	rpmWindow := time.Duration(setting.NormalizedRpmWindowSeconds()) * time.Second
@@ -346,6 +369,8 @@ func (s *channelCapacityBlockSummary) Record(admission middleware.ChannelAdmissi
 	switch admission.Reason {
 	case middleware.ChannelAdmissionConcurrencyLimited:
 		s.ConcurrencyLimited = true
+	case middleware.ChannelAdmissionUpstreamCapacity:
+		s.ConcurrencyLimited = true
 	case middleware.ChannelAdmissionRpmLimited:
 		s.RpmLimited = true
 		if admission.RetryAfter > 0 && (s.RetryAfter <= 0 || admission.RetryAfter < s.RetryAfter) {
@@ -440,11 +465,16 @@ func tryStickToAffinityChannel(
 		return nil, nil, affinityStickSkip
 	}
 
-	maxConcurrency := middleware.ResolveChannelMaxConcurrency(affinityCh)
-	rpmLimit := middleware.ResolveChannelRpmLimit(affinityCh)
-	rpmWindow := time.Duration(setting.NormalizedRpmWindowSeconds()) * time.Second
 	// 亲和等待预算：不超过 AffinityWaitMs，也不超过总 deadline（把剩余时间留给降级阶段的等待）。
 	affinityDeadline := time.Now().Add(time.Duration(setting.NormalizedAffinityWaitMs()) * time.Millisecond)
+	if service.VMCapacityEnabled(affinityCh) {
+		if affinityCh.GetSetting().UpstreamCapacity.PreferWait() {
+			overallDeadline = capacityDeadline(c, affinityCh, time.Duration(setting.NormalizedWaitTimeoutMs())*time.Millisecond)
+			affinityDeadline = overallDeadline
+		} else {
+			affinityDeadline = time.Now()
+		}
+	}
 	if affinityDeadline.After(overallDeadline) {
 		affinityDeadline = overallDeadline
 	}
@@ -461,9 +491,14 @@ func tryStickToAffinityChannel(
 	}()
 
 	for {
-		admission := middleware.AcquireChannelCapacityWithMetric(
-			affinityCh.Id, maxConcurrency, rpmLimit, rpmWindow, c.GetString(common.RequestIdKey),
-		)
+		if service.VMCapacityEnabled(affinityCh) {
+			current, _, eligible := middleware.ResolveAffinityChannelForRelay(c, info.OriginModelName, info.UsingGroup, retryParam.ExcludeChannels)
+			if !eligible || current.Id != affinityCh.Id {
+				return nil, nil, affinityStickDegrade
+			}
+			affinityCh = current
+		}
+		admission := acquireRelayChannelCapacity(c, affinityCh, info.OriginModelName)
 		if admission.Acquired {
 			release := admission.Release
 			// 阶段1 绕过了 getChannel，需自己把亲和渠道写入 context 供后续转发链路使用。

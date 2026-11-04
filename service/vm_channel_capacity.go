@@ -39,6 +39,61 @@ type vmCapacityEntry struct {
 	Failed    bool               `json:"failed"`
 }
 
+type VMCapacityStatus struct {
+	Model    string              `json:"model"`
+	State    string              `json:"state"`
+	AgeMs    int64               `json:"age_ms"`
+	Snapshot *VMCapacitySnapshot `json:"snapshot,omitempty"`
+}
+
+// PeekVMChannelCapacity is read-only: opening the admin page must not trigger upstream probes.
+func PeekVMChannelCapacity(ctx context.Context, ch *model.Channel, requestedModel string) VMCapacityStatus {
+	modelName := ResolveChannelUpstreamModel(ch, requestedModel)
+	status := VMCapacityStatus{Model: modelName, State: "unknown"}
+	resource, key := vmCapacityKeys(ch, modelName)
+	var entry vmCapacityEntry
+	if common.RedisEnabled {
+		if common.RDB == nil {
+			return status
+		}
+		ctx, cancel := context.WithTimeout(ctx, 250*time.Millisecond)
+		defer cancel()
+		if n, err := common.RDB.Exists(ctx, resource+":busy").Result(); err != nil {
+			return status
+		} else if n > 0 {
+			status.State = "busy"
+			return status
+		}
+		raw, err := common.RDB.Get(ctx, key).Bytes()
+		if err != nil || common.Unmarshal(raw, &entry) != nil {
+			return status
+		}
+	} else {
+		vmCapacityLocal.Lock()
+		entry = vmCapacityLocal.entries[key]
+		busy := time.Now().Before(vmCapacityLocal.nextQuery[resource+":busy"])
+		vmCapacityLocal.Unlock()
+		if busy {
+			status.State = "busy"
+			return status
+		}
+	}
+	if entry.Failed {
+		status.State = "unavailable"
+		return status
+	}
+	if entry.Snapshot.ObservedAt.IsZero() {
+		return status
+	}
+	status.AgeMs = max(0, time.Since(entry.Snapshot.ObservedAt).Milliseconds())
+	status.State = "stale"
+	if validVMCapacity(entry.Snapshot, time.Now()) && time.Now().Before(entry.ExpiresAt) {
+		status.State = entry.Snapshot.StateQuality
+		status.Snapshot = &entry.Snapshot
+	}
+	return status
+}
+
 var vmCapacityLocal = struct {
 	sync.Mutex
 	entries    map[string]vmCapacityEntry
@@ -63,7 +118,7 @@ func vmCapacityURL(ch *model.Channel, modelName string) (string, error) {
 
 // Fingerprints invalidate cache on credential, proxy or mapping changes, without storing secrets in Redis keys.
 func vmCapacityKeys(ch *model.Channel, modelName string) (string, string) {
-	resource := fmt.Sprintf("%x", sha256.Sum256([]byte(strings.TrimRight(ch.GetBaseURL(), "/")+"\x00"+ch.Key)))
+	resource := fmt.Sprintf("%x", sha256.Sum256([]byte(strings.TrimSuffix(strings.TrimRight(ch.GetBaseURL(), "/"), "/v1")+"\x00"+ch.Key)))
 	fingerprint := fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s\x00%s\x00%s", ch.Id, resource, ch.GetSetting().Proxy, ch.GetModelMapping(), modelName))))
 	return "channel:vm-capacity:" + resource, "channel:vm-capacity:snapshot:" + fingerprint
 }

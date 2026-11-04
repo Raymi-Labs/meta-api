@@ -857,6 +857,12 @@ func AddChannel(c *gin.Context) {
 		}
 		channels = append(channels, *localChannel)
 	}
+	for i := range channels {
+		if err := service.ValidateVMCapacityChannel(&channels[i]); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
 	err = model.BatchInsertChannels(channels)
 	if err != nil {
 		common.ApiError(c, err)
@@ -1260,6 +1266,23 @@ func UpdateChannel(c *gin.Context) {
 		case "replace":
 			// 覆盖模式：直接使用新密钥（默认行为，不需要特殊处理）
 		}
+	}
+	resolvedCapacityChannel := channel.Channel
+	if resolvedCapacityChannel.Key == "" {
+		resolvedCapacityChannel.Key = originChannel.Key
+	}
+	if resolvedCapacityChannel.BaseURL == nil {
+		resolvedCapacityChannel.BaseURL = originChannel.BaseURL
+	}
+	if resolvedCapacityChannel.Setting == nil {
+		resolvedCapacityChannel.Setting = originChannel.Setting
+	}
+	if resolvedCapacityChannel.Type == 0 {
+		resolvedCapacityChannel.Type = originChannel.Type
+	}
+	if err := service.ValidateVMCapacityChannel(&resolvedCapacityChannel); err != nil {
+		common.ApiError(c, err)
+		return
 	}
 	err = channel.Update()
 	if err != nil {

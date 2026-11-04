@@ -283,6 +283,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	// lastRelayError 保留最近一次上游错误，避免重试找不到新渠道时用 (retry) 错误覆盖原始错误。
 	var lastRelayError *types.NewAPIError
+	vmCapacityRetries := 0
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		if c.Request.Context().Err() != nil {
@@ -398,6 +399,22 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			break
 		}
 
+		if service.IsVMChannelCapacityError(channel, newAPIError) {
+			service.AppendRequestFailureAttempt(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, false, "", channel.GetAutoBan()), newAPIError)
+			service.HoldVMChannelCapacity(channel, newAPIError.RetryAfter)
+			lastRelayError = newAPIError
+			if !vmCapacityRetrySafe(c, newAPIError) || vmCapacityRetries >= common.RetryTimes {
+				break
+			}
+			vmCapacityRetries++
+			retryParam.ResetRetryNextTry()
+			// This refusal did not execute the model. Keep affinity and avoid the ordinary
+			// rate-limit cooldown, ban and model-circuit side effects. Attempts stay bounded.
+			if service.VMCapacityEnabled(channel) && !channel.GetSetting().UpstreamCapacity.PreferWait() {
+				retryParam.ExcludeChannels = appendUniqueInt(retryParam.ExcludeChannels, channel.Id)
+			}
+			continue
+		}
 		newAPIError = service.NormalizeContentSafetyPolicyError(newAPIError)
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		newAPIError = service.NormalizeResponsesConversationStateError(newAPIError)

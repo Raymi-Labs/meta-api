@@ -362,6 +362,7 @@ const (
 	ChannelAdmissionConcurrencyLimited ChannelAdmissionRejectReason = "concurrency"
 	ChannelAdmissionRpmLimited         ChannelAdmissionRejectReason = "rpm"
 	ChannelAdmissionBackendUnavailable ChannelAdmissionRejectReason = "backend_unavailable"
+	ChannelAdmissionUpstreamCapacity   ChannelAdmissionRejectReason = "upstream_capacity"
 )
 
 // ChannelAdmissionResult 是一次并发 + RPM 原子准入结果。
@@ -389,6 +390,11 @@ type channelCapacityCandidate struct {
 // RankChannelsByCapacityPressure 按 max(并发使用率, RPM 使用率) 升序排列渠道。
 // 查询失败时退化为随机顺序，最终仍由原子准入保证不会超发。
 func RankChannelsByCapacityPressure(channels []*model.Channel) []*model.Channel {
+	return RankChannelsByCapacityPressureWithLimits(channels, nil)
+}
+
+// Limits are advisory for ordering; the caller must recheck before atomic admission.
+func RankChannelsByCapacityPressureWithLimits(channels []*model.Channel, limits map[int]int) []*model.Channel {
 	if len(channels) <= 1 {
 		return channels
 	}
@@ -411,10 +417,14 @@ func RankChannelsByCapacityPressure(channels []*model.Channel) []*model.Channel 
 	candidates := make([]channelCapacityCandidate, 0, len(ranked))
 	for _, channel := range ranked {
 		usage := usageByChannel[channel.Id]
+		limit := ResolveChannelMaxConcurrency(channel)
+		if dynamic, ok := limits[channel.Id]; ok {
+			limit = dynamic
+		}
 		candidates = append(candidates, channelCapacityCandidate{
 			channel:        channel,
 			inflight:       usage.Inflight,
-			maxConcurrency: ResolveChannelMaxConcurrency(channel),
+			maxConcurrency: limit,
 			rpmUsed:        usage.RpmUsed,
 			rpmLimit:       ResolveChannelRpmLimit(channel),
 		})
