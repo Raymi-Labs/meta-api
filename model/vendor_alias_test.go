@@ -106,32 +106,36 @@ func TestIdentityVendorMigrationCompatibility(t *testing.T) {
 }
 
 func TestIdentityVendorMigrationRollbackAndRename(t *testing.T) {
-	db := alibabaVendorTestDB(t, "sqlite")
-	require.NoError(t, db.Create(&Vendor{Id: 1, Name: "moonshotai", Status: 1}).Error)
-	require.NoError(t, db.Create(&Vendor{Id: 2, Name: "Moonshot", Status: 1}).Error)
-	require.NoError(t, db.Create(&Model{Id: 1, ModelName: "k3", VendorID: 2}).Error)
-	callback := "test:alias-failure"
-	require.NoError(t, db.Callback().Delete().Before("gorm:delete").Register(callback, func(tx *gorm.DB) {
-		if tx.Statement.Table == "vendors" {
-			tx.AddError(errors.New("fixture failure"))
-		}
-	}))
-	result, err := normalizeIdentityVendorMetadata(db)
-	require.Error(t, err)
-	require.Equal(t, vendorAliasNormalizationResult{}, result)
-	var v Vendor
-	var m Model
-	require.NoError(t, db.First(&v, 1).Error)
-	require.Equal(t, "moonshotai", v.Name)
-	require.NoError(t, db.First(&m, 1).Error)
-	require.Equal(t, 2, m.VendorID)
-	require.NoError(t, db.First(&Vendor{}, 2).Error)
-	require.NoError(t, db.Callback().Delete().Remove(callback))
-	_, err = normalizeIdentityVendorMetadata(db)
-	require.NoError(t, err)
-	require.NoError(t, db.First(&v, 1).Error)
-	require.Equal(t, "Moonshot AI", v.Name)
-	require.Equal(t, "Moonshot", v.Icon)
+	for _, dialect := range []string{"sqlite", "mysql", "postgres"} {
+		t.Run(dialect, func(t *testing.T) {
+			db := alibabaVendorTestDB(t, dialect)
+			require.NoError(t, db.Create(&Vendor{Id: 1, Name: "moonshotai", Status: 1}).Error)
+			require.NoError(t, db.Create(&Vendor{Id: 2, Name: "Moonshot", Status: 1}).Error)
+			require.NoError(t, db.Create(&Model{Id: 1, ModelName: "k3", VendorID: 2}).Error)
+			callback := "test:alias-failure"
+			require.NoError(t, db.Callback().Delete().Before("gorm:delete").Register(callback, func(tx *gorm.DB) {
+				if tx.Statement.Table == "vendors" {
+					tx.AddError(errors.New("fixture failure"))
+				}
+			}))
+			result, err := normalizeIdentityVendorMetadata(db)
+			require.Error(t, err)
+			require.Equal(t, vendorAliasNormalizationResult{}, result)
+			var v Vendor
+			var m Model
+			require.NoError(t, db.First(&v, 1).Error)
+			require.Equal(t, "moonshotai", v.Name)
+			require.NoError(t, db.First(&m, 1).Error)
+			require.Equal(t, 2, m.VendorID)
+			require.NoError(t, db.First(&Vendor{}, 2).Error)
+			require.NoError(t, db.Callback().Delete().Remove(callback))
+			_, err = normalizeIdentityVendorMetadata(db)
+			require.NoError(t, err)
+			require.NoError(t, db.First(&v, 1).Error)
+			require.Equal(t, "Moonshot AI", v.Name)
+			require.Equal(t, "Moonshot", v.Icon)
+		})
+	}
 }
 
 func TestIdentityVendorFallbackDoesNotCreateDuplicate(t *testing.T) {
