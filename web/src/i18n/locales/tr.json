@@ -1,5 +1,15 @@
 {
   "translation": {
+    "VM 实时容量": "Canlı VM kapasitesi",
+    "仅限单 Key Claude 渠道，需开启渠道并发控制。快照不可用时暂停派发；静态上限仍生效。": "Yalnızca tek anahtarlı Claude kanalları. Eşzamanlılık denetimini etkinleştirin. Geçerli anlık görüntü yoksa gönderim durur; sabit sınır geçerlidir.",
+    "满载处理": "Kapasite dolduğunda",
+    "缓存优先：有界等待当前渠道": "Önbellek öncelikli: bu kanalda sınırlı bekle",
+    "速度优先：尝试其他渠道": "Hız öncelikli: başka kanal dene",
+    "最大等待时间（毫秒）": "En uzun bekleme (ms)",
+    "静态上限 {{limit}}，快照年龄 {{age}}ms": "Sabit sınır {{limit}}, görüntü yaşı {{age}}ms",
+    "VM 当前可用 {{count}}": "VM kullanılabilir: {{count}}",
+    "容量状态未知": "Kapasite bilinmiyor",
+    "部分状态未知": "Kısmen bilinmiyor",
     "每次发票申请金额合计最低为人民币 20 元": "Her fatura başvurusunun toplam tutarı en az 20 CNY olmalıdır",
     "本轮模型": "Bu turun modelleri",
     "点击查看资料；不会改变调用名单。": "Ayrıntıları incelemek seçilen modelleri değiştirmez.",

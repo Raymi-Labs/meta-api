@@ -140,6 +140,29 @@ func TestVMCapacityConfiguredDeadlineCanBeShorterThanGlobal(t *testing.T) {
 	require.WithinDuration(t, start.Add(100*time.Millisecond), deadline, 20*time.Millisecond)
 }
 
+func TestVMCapacityCopyRejectsDuplicateUpstreamKey(t *testing.T) {
+	enableControllerCapacityForTest(t)
+	db := useControllerCapacityTestDB(t)
+	base, setting := "https://fixture.invalid", `{"upstream_capacity":{"enabled":true}}`
+	ch := &model.Channel{Id: 778906, Type: constant.ChannelTypeAnthropic, Status: common.ChannelStatusEnabled, Key: "fixture-copy", BaseURL: &base, Setting: &setting}
+	require.NoError(t, db.Create(ch).Error)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/channel/copy/778906", nil)
+	c.Params = gin.Params{{Key: "id", Value: "778906"}}
+	CopyChannel(c)
+	var response struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+	}
+	require.NoError(t, common.Unmarshal(w.Body.Bytes(), &response))
+	require.False(t, response.Success)
+	require.Contains(t, response.Message, "one channel per upstream key")
+	var count int64
+	require.NoError(t, db.Model(&model.Channel{}).Count(&count).Error)
+	require.EqualValues(t, 1, count)
+}
+
 func TestVMCapacityAdminStatsShowIdleZeroAndUnknownWithoutProbing(t *testing.T) {
 	enableControllerCapacityForTest(t)
 	db := useControllerCapacityTestDB(t)

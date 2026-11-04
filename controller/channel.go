@@ -857,7 +857,15 @@ func AddChannel(c *gin.Context) {
 		}
 		channels = append(channels, *localChannel)
 	}
+	capacityKeys := make(map[string]bool)
 	for i := range channels {
+		if service.VMCapacityEnabled(&channels[i]) {
+			if capacityKeys[channels[i].Key] {
+				common.ApiError(c, errors.New("VM capacity requires one channel per upstream key"))
+				return
+			}
+			capacityKeys[channels[i].Key] = true
+		}
 		if err := service.ValidateVMCapacityChannel(&channels[i]); err != nil {
 			common.ApiError(c, err)
 			return
@@ -1567,6 +1575,10 @@ func CopyChannel(c *gin.Context) {
 	}
 
 	// insert
+	if err := service.ValidateVMCapacityChannel(&clone); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if err := model.BatchInsertChannels([]model.Channel{clone}); err != nil {
 		common.SysError("failed to clone channel: " + err.Error())
 		c.JSON(http.StatusOK, gin.H{"success": false, "message": "复制渠道失败，请稍后重试"})

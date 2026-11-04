@@ -68,6 +68,8 @@ import {
   selectFilter,
 } from '../../../../helpers';
 import ReasoningAdaptationEditor from './ReasoningAdaptationEditor';
+import VMCapacityFields from './VMCapacityFields';
+import { normalizeVMCapacitySettings } from '../../../../helpers/channelCapacity';
 import { readReasoningAdaptation, buildReasoningAdaptation } from '../../../../helpers/channelReasoningAdaptation';
 
 import ModelSelectModal from './ModelSelectModal';
@@ -207,6 +209,7 @@ const EditChannelModal = (props) => {
     system_prompt: '',
     system_prompt_override: false,
     max_concurrency: 0,
+    upstream_capacity: normalizeVMCapacitySettings(),
     rpm_limit: 0,
     settings: '',
     // 客户端限制设置
@@ -547,6 +550,7 @@ const EditChannelModal = (props) => {
 
   // 渠道额外设置状态
   const [channelSettings, setChannelSettings] = useState({
+    upstream_capacity: normalizeVMCapacitySettings(),
     nonstream_response_header_timeout_sec: 0,
     force_format: false,
     cpa_user_identity_enabled: false,
@@ -848,6 +852,7 @@ const EditChannelModal = (props) => {
           data.system_prompt_override =
             parsedSettings.system_prompt_override || false;
           data.max_concurrency = Number(parsedSettings.max_concurrency) || 0;
+          data.upstream_capacity = normalizeVMCapacitySettings(parsedSettings.upstream_capacity);
           data.rpm_limit = Number(parsedSettings.rpm_limit) || 0;
           data.client_restriction_mode =
             parsedSettings.client_restriction_mode || '';
@@ -1043,6 +1048,7 @@ const EditChannelModal = (props) => {
         system_prompt: data.system_prompt,
         system_prompt_override: data.system_prompt_override || false,
         max_concurrency: data.max_concurrency || 0,
+        upstream_capacity: normalizeVMCapacitySettings(data.upstream_capacity),
         rpm_limit: data.rpm_limit || 0,
         crs_site_id: data.crs_site_id || 0,
         crs_platform: data.crs_platform || 'openai-responses',
@@ -1506,6 +1512,7 @@ const EditChannelModal = (props) => {
     // 重置渠道设置状态
     setChannelSettings({
       nonstream_response_header_timeout_sec: 0,
+      upstream_capacity: normalizeVMCapacitySettings(),
       force_format: false,
     cpa_user_identity_enabled: false,
     cpa_instance_id: '',
@@ -1951,6 +1958,7 @@ const EditChannelModal = (props) => {
       system_prompt: localInputs.system_prompt || '',
       system_prompt_override: localInputs.system_prompt_override || false,
       max_concurrency: Math.max(0, Number(localInputs.max_concurrency) || 0),
+      upstream_capacity: normalizeVMCapacitySettings(localInputs.upstream_capacity),
       rpm_limit: Math.max(0, Number(localInputs.rpm_limit) || 0),
       client_restriction_mode: localInputs.client_restriction_mode || '',
       client_restriction_clients: normalizedClientRestrictionClients,
@@ -4771,6 +4779,10 @@ const EditChannelModal = (props) => {
                         '该渠道的在途并发上限，0 表示使用全局默认值。需在「运营设置」开启渠道并发控制后生效；超过上限时请求会切换到其它未满渠道，全部满时进入有界等待或返回 503',
                       )}
                     />
+
+                    <VMCapacityFields value={channelSettings.upstream_capacity}
+                      channelType={inputs.type}
+                      onChange={(value) => handleChannelSettingsChange('upstream_capacity', value)} />
 
                     <Form.InputNumber
                       field='rpm_limit'
