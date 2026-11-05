@@ -182,6 +182,7 @@ html.dark .model-detail-page {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 20px;
 }
 .model-detail-section-heading h2 {
   margin: 0;
@@ -210,6 +211,9 @@ html.dark .model-detail-page {
   gap: 16px;
   margin-top: 16px;
   border-radius: var(--detail-control-radius);
+}
+.model-detail-section > .model-detail-settings {
+  margin: 0 0 20px;
 }
 .model-detail-settings label {
   display: flex;
@@ -625,7 +629,7 @@ html.dark .model-detail-page {
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin: 20px 0;
+  margin: 0 0 20px;
 }
 .model-comparison-controls label {
   display: flex;
@@ -1142,9 +1146,6 @@ html.dark .model-metric-chart {
 }
 .model-detail-modalities .model-detail-metadata {
   margin: 0 0 22px;
-}
-.model-official-pricing .model-detail-section-heading {
-  margin-bottom: 20px;
 }
 .model-section-title-with-help {
   display: inline-flex;
