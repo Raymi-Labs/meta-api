@@ -1,10 +1,10 @@
 name: Desktop browser login safety
 on:
   push:
-    branches: [main, codex/desktop-browser-login]
-    paths: ["model/desktop_login*", "controller/desktop_login*", "model/main.go", ".github/workflows/desktop-browser-login.yml"]
+    branches: [main, codex/desktop-browser-login, codex/canonical-login-origin]
+    paths: ["model/desktop_login*", "controller/desktop_login*", "common/login_origin*", "router/*login*", "router/web-router.go", "oauth/**", "web/src/helpers/canonicalLogin.js", "web/src/helpers/api.js", "web/src/App.jsx", "web/scripts/*login*", "web/scripts/oauth-navigation.test.mjs", "model/main.go", ".github/workflows/desktop-browser-login.yml"]
   pull_request:
-    paths: ["model/desktop_login*", "controller/desktop_login*", "model/main.go", ".github/workflows/desktop-browser-login.yml"]
+    paths: ["model/desktop_login*", "controller/desktop_login*", "common/login_origin*", "router/*login*", "router/web-router.go", "oauth/**", "web/src/helpers/canonicalLogin.js", "web/src/helpers/api.js", "web/src/App.jsx", "web/scripts/*login*", "web/scripts/oauth-navigation.test.mjs", "model/main.go", ".github/workflows/desktop-browser-login.yml"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,4 +42,9 @@ jobs:
         env:
           TEST_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/desktop_login_test?charset=utf8mb4&parseTime=true
           TEST_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=desktop_login_test sslmode=disable
-        run: go test -p 2 ./model ./controller -run '^TestDesktopLogin' -count=1 -timeout=180s -v
+        run: go test -p 2 ./model ./controller ./common ./router ./oauth -run 'TestDesktopLogin|TestCanonicalLogin|TestGoogleToken' -count=1 -timeout=180s -v
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Test canonical navigation and OAuth parameters without real authorization
+        run: node --test web/scripts/canonical-login.test.mjs web/scripts/oauth-navigation.test.mjs

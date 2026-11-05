@@ -4,6 +4,8 @@
 
 ## 部署内容
 
+四线路现统一使用meta-api.com进行浏览器授权。旧客户端仍可向vip查询/兑换，网页入口先转主站；第三方控制台须登记主站回调，见[统一登录部署说明](canonical-login-origin.md)。
+
 - 后端与网页必须一起更新：新增`desktop_login_grants`表及`/desktop-login`确认页。表通过既有普通/快速GORM迁移创建，字段为请求ID摘要、S256 challenge、提供商、显示码、状态、用户ID、过期时间；无明文verifier、Cookie或第三方token。
 - 复用现有GitHub提供商与slug为`google`的自定义OAuth。`ServerAddress`必须是用户实际访问的规范HTTPS站点，批准接口严格核对Origin，反向代理不得篡改浏览器Origin。
 - 保留现有session配置，多副本使用同一数据库及兼容的session签名设置。无需开放本地回调端口，也不用注册新的第三方回调URL。

@@ -14,6 +14,7 @@ import (
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,6 +57,9 @@ func (p *GitHubProvider) ExchangeToken(ctx context.Context, code string, c *gin.
 		"client_id":     common.GitHubClientId,
 		"client_secret": common.GitHubClientSecret,
 		"code":          code,
+	}
+	if common.CanonicalLoginOrigin(system_setting.ServerAddress) == common.MetaLoginOrigin {
+		values["redirect_uri"] = common.MetaLoginOrigin + "/oauth/github"
 	}
 	jsonData, err := json.Marshal(values)
 	if err != nil {
