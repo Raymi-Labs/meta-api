@@ -1218,6 +1218,33 @@
     "free_stream": "passed: body, usage, DONE, upstream cost=0, quota=0",
     "paid_search_rejected": "HTTP 400",
     "temporary_tokens": "deleted",
-    "release_version": "v1.20.6"
+    "release_version": "v1.20.6",
+    "manufacturer_and_free_metadata_checks": 53,
+    "frontend_zero_price_tests": 9,
+    "xingchen_retry": "After cooldown, one additional bounded request still returned upstream 429; no consumption log or charge. Channel remains enabled; no provider/privacy constraints bypassed.",
+    "release": {
+      "version": "v1.20.6",
+      "commit": "95632b7741c61ba9e778c2143ca5b2458ff552c5",
+      "workflow": "https://github.com/Raymi-Labs/meta-api/actions/runs/42086731557",
+      "url": "https://github.com/Raymi-Labs/meta-api/releases/tag/v1.20.6",
+      "all_jobs": "success",
+      "assets": 9,
+      "windows_checksums": "matched GitHub asset SHA256 digests",
+      "multi_arch_images": "amd64 and arm64 manifests verified by release pipeline"
+    },
+    "production": {
+      "version": "v1.20.6",
+      "image": "ghcr.io/raymi-labs/meta-api:sha-95632b7",
+      "image_manifest_digest": "sha256:6ca45c932f98b75e2bedef330c92f1d2e6a715ecc5aad2e9ac3b3ff9a05d59b9",
+      "protected_update": "success",
+      "schema_preflight_passes": 2,
+      "recovery_package_sealed": true,
+      "backup": "/opt/meta-api/backups/one-click/20261105-184945-v1.20.5-to-v1.20.6-2700763",
+      "previous_image": "ghcr.io/raymi-labs/meta-api:sha-b868199",
+      "postdeploy_checks": 15,
+      "postdeploy_all_passed": true,
+      "public_zero_reference_models": 9,
+      "temporary_tokens_remaining": 0
+    }
   }
 }
