@@ -47,6 +47,10 @@ import {
   formatPaymentMoney,
 } from '../../helpers/paymentCurrency';
 import {
+  getWalletCostReference,
+  isStripeBelowMinimum,
+} from '../../helpers/walletPaymentCosts';
+import {
   redirectToPayment,
   submitPaymentForm,
 } from '../../helpers/paymentNavigation';
@@ -64,7 +68,7 @@ import {
 } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
-import { Sparkles, BellRing } from 'lucide-react';
+import { Sparkles, BellRing, Receipt, FileText } from 'lucide-react';
 import { IconGift } from '@douyinfe/semi-icons';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
@@ -456,6 +460,10 @@ const TopUpContent = () => {
       const quote = await fetchQuotedAmount(topUpCount, payWay, {
         showErrorToast: true,
       });
+      if (isStripeBelowMinimum(payWay, quote)) {
+        showError(t('最低支付金额为 US$0.50，请增加充值额度。'));
+        return;
+      }
       if (
         aliveRef.current &&
         quote?.amount > 0 &&
@@ -463,7 +471,15 @@ const TopUpContent = () => {
         currentPaymentRef.current.way === payWay
       ) {
         paymentSessionRef.current++;
-        setConfirmedPayment({ count: topUpCount, way: payWay, quote });
+        setConfirmedPayment({
+          count: topUpCount,
+          way: payWay,
+          quote,
+          costReference:
+            payWay === 'stripe'
+              ? getWalletCostReference(topupInfo.cost_reference, quote)
+              : null,
+        });
         setOpen(true);
       }
     } catch (error) {
@@ -655,6 +671,7 @@ const TopUpContent = () => {
       setTopupInfo({
         amount_options: data.amount_options || [],
         discount: data.discount || {},
+        cost_reference: data.cost_reference || null,
       });
       let pMethods = Array.isArray(data.pay_methods)
         ? data.pay_methods
@@ -1032,6 +1049,7 @@ const TopUpContent = () => {
         payMethods={payMethods}
         amountNumber={confirmedPayment?.quote?.amount}
         discountRate={topupInfo?.discount?.[confirmedPayment?.count] || 1.0}
+        costReference={confirmedPayment?.costReference}
       />
       <TopupHistoryModal
         visible={openHistory}
@@ -1053,6 +1071,26 @@ const TopUpContent = () => {
         }}
       />
 
+      <header className='wallet-page-heading'>
+        <div>
+          <h1>{t('钱包管理')}</h1>
+          <p>{t('管理账户额度、充值与邀请奖励')}</p>
+        </div>
+        <Space wrap>
+          <Button
+            icon={<Receipt size={16} />}
+            onClick={() => openHistoryTab('records')}
+          >
+            {t('支付记录')}
+          </Button>
+          <Button
+            icon={<FileText size={16} />}
+            onClick={() => openHistoryTab('invoices')}
+          >
+            {t('发票管理')}
+          </Button>
+        </Space>
+      </header>
       <div className='wallet-content-grid'>
         <div>
           <RechargeCard
@@ -1083,6 +1121,7 @@ const TopUpContent = () => {
             setTopUpCount={setTopUpCount}
             setSelectedPreset={setSelectedPreset}
             renderAmount={renderAmount}
+            paymentQuote={paymentQuote}
             amountLoading={amountLoading}
             payMethods={payMethods}
             selectPayMethod={selectPayMethod}
@@ -1167,7 +1206,7 @@ const TopUpContent = () => {
             onOpenInviteCommissions={() => setOpenInviteCommissions(true)}
           />
           <Card
-            className='!rounded-xl shadow-sm border border-slate-200'
+            className='wallet-redemption-card'
             title={
               <Text type='tertiary' strong size='small'>
                 {t('兑换码充值')}

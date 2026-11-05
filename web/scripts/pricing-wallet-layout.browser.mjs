@@ -438,7 +438,9 @@ try {
 
     await page.goto(baseURL + '/console/topup', { waitUntil: 'networkidle0' });
     await page.waitForFunction(() =>
-      document.body.textContent.includes('到账额度：⚡10.00'),
+      document
+        .querySelector('.wallet-payment-summary')
+        ?.textContent.includes('⚡10.00'),
     );
     assert(
       await page.evaluate(() => document.body.textContent.includes('¥2.00')),
@@ -450,21 +452,14 @@ try {
         ),
       ),
     );
-    const geometry = await page.evaluate(() => {
-      const button = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent === '微信支付',
-      );
-      const note = Array.from(document.querySelectorAll('span')).find(
-        (e) => e.textContent === '预计支付金额会按当前支付方式实时计算',
-      );
-      return {
-        buttonBottom: button.getBoundingClientRect().bottom,
-        noteTop: note.getBoundingClientRect().top,
-      };
-    });
+    assert.equal(
+      await page.$$eval('.wallet-payment-method', (buttons) => buttons.length),
+      2,
+    );
     assert(
-      geometry.noteTop >= geometry.buttonBottom,
-      'Payment note must be below methods',
+      await page.$eval('.wallet-payment-method', (button) =>
+        button.textContent.includes('本站不另加充值手续费'),
+      ),
     );
     await page.screenshot({
       path: '/tmp/wallet-' + (mobile ? 'mobile' : 'desktop') + '.png',
