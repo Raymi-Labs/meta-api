@@ -23,7 +23,6 @@ import { CreditCard } from 'lucide-react';
 import { getEpayCryptoMethod } from '../../../helpers/epayMethods';
 import CryptoPaymentNotice from '../CryptoPaymentNotice';
 import PaymentMethodIcon from '../PaymentMethodIcon';
-import PaymentCostReference from '../PaymentCostReference';
 
 const { Text } = Typography;
 
@@ -42,7 +41,6 @@ const PaymentConfirmModal = ({
   // 新增：用于显示折扣明细
   amountNumber,
   discountRate,
-  costReference,
 }) => {
   const payMethod = payMethods.find((method) => method.type === payWay) || {
     type: payWay,
@@ -158,11 +156,6 @@ const PaymentConfirmModal = ({
           </div>
         </Card>
         {getEpayCryptoMethod(payWay) && <CryptoPaymentNotice method={payWay} />}
-        <PaymentCostReference
-          reference={costReference}
-          t={t}
-          renderQuotaWithAmount={renderQuotaWithAmount}
-        />
       </div>
     </Modal>
   );

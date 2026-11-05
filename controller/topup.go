@@ -70,7 +70,6 @@ func GetTopUpInfo(c *gin.Context) {
 		"waffo_pancake_min_topup": setting.WaffoPancakeMinTopUp,
 		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
 		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
-		"cost_reference":          getTopUpCostReference(c),
 	}
 	common.ApiSuccess(c, data)
 }

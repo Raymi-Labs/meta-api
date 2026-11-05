@@ -39,7 +39,7 @@ export default function WalletOverview({ user, loading, error, onRefresh, t }) {
   return (
     <section className='wallet-account-summary'>
       <div className='wallet-summary-heading'>
-        <h2>{t('当前余额')}</h2>
+        <h2>{t('账户统计')}</h2>
         <Button
           theme='borderless'
           icon={<RefreshCw size={14} />}
@@ -52,8 +52,8 @@ export default function WalletOverview({ user, loading, error, onRefresh, t }) {
         />
       </div>
       <div className='wallet-statistics'>
-        {stats.map(({ label, value, Icon }, index) => (
-          <div key={label} className={index === 0 ? 'wallet-main-balance' : ''}>
+        {stats.map(({ label, value, Icon }) => (
+          <div key={label}>
             {loading ? (
               <Skeleton.Title active style={{ width: '80%', height: 28 }} />
             ) : (
