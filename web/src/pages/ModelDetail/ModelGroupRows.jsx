@@ -269,6 +269,7 @@ export default function ModelGroupRows({
             {open && stats && !health.error && (
               <GroupHealthPanel
                 uptime
+                showDetails={false}
                 stats={stats}
                 metric={metric}
                 showTitle={false}

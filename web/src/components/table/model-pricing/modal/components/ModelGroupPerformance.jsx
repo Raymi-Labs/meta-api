@@ -82,6 +82,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
             {groups.map((stats) => (
               <GroupHealthPanel
                 uptime
+                showDetails={false}
                 key={`${modelName}:${stats.group}`}
                 stats={stats}
                 ratio={groupRatio?.[stats.group]}
@@ -144,6 +145,7 @@ const ModelGroupPerformance = ({ enabled, ...props }) => {
                   <span>{stats.group}</span>
                   <GroupHealthSummary
                     uptime
+                    showDetails={false}
                     stats={stats}
                     metric={resolveGroupHealthMetric(
                       stats,
