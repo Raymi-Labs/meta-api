@@ -1,5 +1,6 @@
 {
   "translation": {
+    "拒绝": "Deny",
     "授权请求无效，请从客户端重新发起": "Invalid authorization request. Start again from the desktop client.",
     "授权请求无效或已过期，请从客户端重新发起": "Authorization is invalid or expired. Start again from the desktop client.",
     "未能确认授权结果，请返回客户端查看；不要反复批准": "Unable to confirm authorization. Check the desktop client; do not repeatedly approve.",
