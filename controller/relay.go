@@ -137,6 +137,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		// Map "request body too large" to 413 so clients can handle it correctly
 		if common.IsRequestBodyTooLargeError(err) || errors.Is(err, common.ErrRequestBodyTooLarge) {
 			newAPIError = newRequestBodyTooLargeRelayError(c, 0)
+		} else if relayFormat == types.RelayFormatDecisions {
+			newAPIError = types.NewErrorWithStatusCode(err, types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 		} else {
 			newAPIError = types.NewError(err, types.ErrorCodeInvalidRequest)
 		}

@@ -12,6 +12,10 @@ func TestManufacturerPriceSources(t *testing.T) {
 		allowed   bool
 	}{
 		{"cohere/command-a", "https://docs.cohere.com/v2/docs/command-a", true},
+		{"typesafe/jev-1.14", "https://help.typesafe.ai/articles/5187202169-how-much-does-jev-cost", true},
+		{"typesafe/jev-1.13", "https://typesafe.ai/pricing", true},
+		{"typesafe/jev-1.14", "https://openrouter.ai/typesafe/jev-1.14", false},
+		{"typesafe/jev-1.14", "https://typesafe.ai.evil.test/pricing", false},
 		{"command-a-03-2025", "https://cohere.com/pricing", true},
 		{"gpt-example", "https://developers.openai.com/api/docs/models/gpt-example", true},
 		{"anthropic/claude-test", "https://platform.claude.com/docs", true},

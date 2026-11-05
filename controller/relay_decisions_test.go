@@ -136,6 +136,8 @@ func TestRelayDecisionsBilling(t *testing.T) {
 				if m == 0 {
 					require.Equal(t, 200, w.Code, w.Body.String())
 					require.Equal(t, 0.99, gjson.Get(w.Body.String(), "answers.q.noul").Float())
+				} else if m >= 3 {
+					require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
 				} else {
 					require.GreaterOrEqual(t, w.Code, 400, w.Body.String())
 				}

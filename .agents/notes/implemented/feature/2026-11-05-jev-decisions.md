@@ -12,6 +12,8 @@ OpenRouter 的 Jev 1.14/1.13 使用 Decisions 请求与实际 input_tokens/outpu
 
 广场/详情协议和多语言调用示例、后台测试共用 Decisions 契约。沿用 models 元数据与启用 abilities，不新建目录表。生产先部署兼容代码，再通过管理 API 配置价格、厂商/模型资料，最后启用渠道；凭据不出服务器。
 
+TypeSafe 原厂参考价沿用既有来源校验，明确认可 typesafe.ai 及其子域，仍拒绝 OpenRouter 转售价和伪装域名。Decisions 参数校验错误返回 400，不继承通用解析错误的默认 500；保持过大请求的 413。
+
 ## Existing notes audit
 
 - [OpenRouter 厂商接入](../../implemented/feature/2026-10-31-openrouter-vendor-onboarding.md)：部分重叠，复用分厂商渠道、完整模型 ID 与管理 API 写入；原自动路由/latest 排除继续保留。
@@ -29,6 +31,8 @@ OpenRouter 的 Jev 1.14/1.13 使用 Decisions 请求与实际 input_tokens/outpu
 Go common/dto/relay/controller/middleware/router/model/ratio_setting 回归与 Go 构建通过；新增边界覆盖未带令牌、非 OpenRouter、模型映射、覆盖策略、stream/null 拒绝、实际272输入/22输出只扣272 quota，以及缺失usage/503各一次上游调用后退款。SQLite 与 MySQL 8.0（生产 channels/abilities/options/models 空结构、utf8mb4_unicode_ci）均通过。后台测试选择 Decisions 而非 Chat。
 
 前端28项相关测试、完整构建及桌面/手机深色浏览器回归通过；七语言示例保留模型 ID、state/questions，不生成聊天模板。前端 prerender 因默认 Chromium 路径缺失跳过，实际浏览器测试使用本机 Chrome。现有 OpenRouter 凭据直连 1.14/1.13 均返回合法答案、272输入/22输出和 $0.000011424 成本，未将直连验收当作网关上线。
+
+v1.20.0 生产文本调用两个版本均成功，分别 272 输入/22 输出，实际各扣 190 quota，临时令牌已删除。线上验收发现首次目录读取仍处于一分钟缓存窗口，以及原厂域名尚未登记导致参考价隐藏；缓存过期后两个型号正确出现，来源规则补充 TypeSafe。流式请求已被拒绝且未扣费，但默认错误分类为 500，因此新增精确 400 断言补上缺口。
 
 ## Consequences
 
