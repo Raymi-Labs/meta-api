@@ -34,6 +34,21 @@ curl https://meta-api.com/v1/decisions \
 
 Jev Router 是动态选模入口，不继承本协议或固定价格。本次不自动加入 Router/latest；不新增数据库表或修改已有模型售价。
 
+## 生产接入记录（2026-11-06）
+
+生产已通过 `newapi-update sha-aaa02ae` 更新到 v1.20.2，完成在线备份、两次数据库迁移预检、健康检查和恢复包封存。实现提交为 `e1555e1ff`，价格来源及参数错误状态修复为 `aaa02ae63`。
+
+- 独立渠道 `OpenRouter · TypeSafe`（1653），厂商 TypeSafe（71），分组“企业级”；模型元数据 399/400 对应 1.14/1.13。
+- 两个型号均仅声明 `POST /v1/decisions`，上下文 262144；禁用自动上游型号同步，避免未经核价的新型号进入渠道。
+- 原厂输入 $0.042/M、输出免费；本站采用 ECB 2026-11-05 的 USD/CNY 6.668389166072702 快照和现有每能量 ¥0.2 口径，`ModelRatio=0.700180862438`、`CompletionRatio=0`，企业级倍率为 1。当前输入约 ¥0.280072344975/M，输出免费；这是接入时快照，不是自动跟随汇率的任务。
+- 渠道限定 TypeSafe、按价格排序，并保留调用者更严格的价格上限；最高输入 $0.042/M、输出和请求附加费上限均为 0。更严格的零输入限价已实测被上游拒绝。
+
+公网目录从 217 个型号增至 219 个，既有型号未移除。1.14 经 `meta-api.com`、1.13 经 `meta-api.vip` 的文本判断均成功，每次实际 272 输入/22 输出，各扣 190 quota，两条消费日志合计 380；输出未计费。流式请求返回 400、模型越权返回 403、无合格限价服务商返回 404，失败请求未产生消费扣费。临时验收令牌均已删除，后台两个型号的原生 Decisions 测试也通过。
+
+桌面及手机深色页面已检查模型资料、官方参考价、分组价格和七语言示例入口。图像及其余问题类型未做生产推理验收。服务器操作证据保存在 `/opt/meta-api/operations/jev-20261106/`，其中配置前价格快照、限价策略、部署日志和验收记录分开存放；凭据不进入仓库。
+
+[v1.20.2 Release](https://github.com/Raymi-Labs/meta-api/releases/tag/v1.20.2) 的 Linux 两架构程序、双架构 Docker 清单、Windows 安装/便携包、文档和管理包均已核实。[发布运行](https://github.com/Raymi-Labs/meta-api/actions/runs/42068369096) 首轮因 Ubuntu Azure 镜像下载交叉编译器反复重试，导致 Windows 上传等待 Linux Release 超时；后续单独重试 Linux 作业及原 Windows 上传，保留已有附件，最终全部作业成功。该附件恢复未再次改动生产版本。
+
 ## 来源
 
 - [OpenRouter Decisions API](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request)
