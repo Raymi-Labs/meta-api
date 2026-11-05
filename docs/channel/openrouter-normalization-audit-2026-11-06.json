@@ -1,0 +1,1223 @@
+{
+  "reviewed_at": "2026-11-06",
+  "currency": "USD",
+  "token_unit": 1000000,
+  "scope": "现有 OpenRouter 渠道短名和映射整理；免费变体零价恢复，付费售价与准入保留",
+  "summary": {
+    "channels_updated": 41,
+    "aliases_created": 88,
+    "metadata_created": 88,
+    "free_variants_restored": 8,
+    "free_variants_verified": 10
+  },
+  "channels": [
+    {
+      "channel_id": 1592,
+      "channel_name": "OpenRouter · Particle AI",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "particle-ai/particle-1"
+      ],
+      "models_after": [
+        "particle-1"
+      ],
+      "model_mapping": {
+        "particle-1": "particle-ai/particle-1"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1595,
+      "channel_name": "OpenRouter · XingChen",
+      "status_before": 2,
+      "status_after": 1,
+      "models_before": [
+        "xingchen-agi/xing4.0-29b-a4b:free"
+      ],
+      "models_after": [
+        "xing4.0-29b-a4b:free"
+      ],
+      "model_mapping": {
+        "xing4.0-29b-a4b:free": "xingchen-agi/xing4.0-29b-a4b:free"
+      },
+      "free_models_added": [
+        "xing4.0-29b-a4b:free"
+      ]
+    },
+    {
+      "channel_id": 1596,
+      "channel_name": "OpenRouter · Reflection",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "reflection/beam-1.0-501b-a23b"
+      ],
+      "models_after": [
+        "beam-1.0-501b-a23b"
+      ],
+      "model_mapping": {
+        "beam-1.0-501b-a23b": "reflection/beam-1.0-501b-a23b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1597,
+      "channel_name": "OpenRouter · Inception",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "inception/mercury-3",
+        "inception/mercury-2.5",
+        "inception/mercury-2"
+      ],
+      "models_after": [
+        "mercury-3",
+        "mercury-2.5",
+        "mercury-2"
+      ],
+      "model_mapping": {
+        "mercury-3": "inception/mercury-3",
+        "mercury-2.5": "inception/mercury-2.5",
+        "mercury-2": "inception/mercury-2"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1598,
+      "channel_name": "OpenRouter · PrismML",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "prism-ml/ternary-bonsai-2-9b",
+        "prism-ml/ternary-bonsai-2-27b"
+      ],
+      "models_after": [
+        "ternary-bonsai-2-9b",
+        "ternary-bonsai-2-27b"
+      ],
+      "model_mapping": {
+        "ternary-bonsai-2-9b": "prism-ml/ternary-bonsai-2-9b",
+        "ternary-bonsai-2-27b": "prism-ml/ternary-bonsai-2-27b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1599,
+      "channel_name": "OpenRouter · Moondream",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "moondream/moondream3-preview"
+      ],
+      "models_after": [
+        "moondream3-preview"
+      ],
+      "model_mapping": {
+        "moondream3-preview": "moondream/moondream3-preview"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1600,
+      "channel_name": "OpenRouter · Meta",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "meta/muse-spark-1.3",
+        "meta/muse-spark-1.2",
+        "meta/muse-spark-1.1"
+      ],
+      "models_after": [
+        "muse-spark-1.3",
+        "muse-spark-1.2",
+        "muse-spark-1.1"
+      ],
+      "model_mapping": {
+        "muse-spark-1.3": "meta/muse-spark-1.3",
+        "muse-spark-1.2": "meta/muse-spark-1.2",
+        "muse-spark-1.1": "meta/muse-spark-1.1"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1601,
+      "channel_name": "OpenRouter · NVIDIA",
+      "status_before": 2,
+      "status_after": 1,
+      "models_before": [
+        "nvidia/nemotron-3.5-super-vl",
+        "nvidia/nemotron-3.5-super-vl:free",
+        "nvidia/nemotron-3.5-lightning",
+        "nvidia/nemotron-3.5-lightning:free",
+        "nvidia/nemotron-3.5-content-safety",
+        "nvidia/nemotron-3-ultra-550b-a55b",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/nemotron-3-nano-30b-a3b"
+      ],
+      "models_after": [
+        "nemotron-3.5-super-vl:free",
+        "nemotron-3.5-lightning:free",
+        "nemotron-3-ultra-550b-a55b:free",
+        "nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      ],
+      "model_mapping": {
+        "nemotron-3.5-super-vl:free": "nvidia/nemotron-3.5-super-vl:free",
+        "nemotron-3.5-lightning:free": "nvidia/nemotron-3.5-lightning:free",
+        "nemotron-3-ultra-550b-a55b:free": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "nemotron-3-nano-omni-30b-a3b-reasoning:free": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      },
+      "free_models_added": [
+        "nemotron-3.5-super-vl:free",
+        "nemotron-3.5-lightning:free",
+        "nemotron-3-ultra-550b-a55b:free",
+        "nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      ]
+    },
+    {
+      "channel_id": 1602,
+      "channel_name": "OpenRouter · unbiased",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "unbiased/pareto-26.10"
+      ],
+      "models_after": [
+        "pareto-26.10"
+      ],
+      "model_mapping": {
+        "pareto-26.10": "unbiased/pareto-26.10"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1603,
+      "channel_name": "OpenRouter · LiquidAI",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "liquid/lfm-2.5-24b-a2b"
+      ],
+      "models_after": [
+        "lfm-2.5-24b-a2b",
+        "lfm-2.5-2.6b:free"
+      ],
+      "model_mapping": {
+        "lfm-2.5-24b-a2b": "liquid/lfm-2.5-24b-a2b",
+        "lfm-2.5-2.6b:free": "liquid/lfm-2.5-2.6b:free"
+      },
+      "free_models_added": [
+        "lfm-2.5-2.6b:free"
+      ]
+    },
+    {
+      "channel_id": 1604,
+      "channel_name": "OpenRouter · ScaleDown",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "scaledown/summarize",
+        "scaledown/extract"
+      ],
+      "models_after": [
+        "summarize",
+        "extract"
+      ],
+      "model_mapping": {
+        "summarize": "scaledown/summarize",
+        "extract": "scaledown/extract"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1605,
+      "channel_name": "OpenRouter · Mistral",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "mistralai/mistral-large-4-0",
+        "mistralai/mistral-small-2603",
+        "mistralai/ministral-14b-2512",
+        "mistralai/ministral-8b-2512",
+        "mistralai/ministral-3b-2512",
+        "mistralai/codestral-2508"
+      ],
+      "models_after": [
+        "mistral-large-4-0",
+        "mistral-small-2603",
+        "ministral-14b-2512",
+        "ministral-8b-2512",
+        "ministral-3b-2512",
+        "codestral-2508"
+      ],
+      "model_mapping": {
+        "mistral-large-4-0": "mistralai/mistral-large-4-0",
+        "mistral-small-2603": "mistralai/mistral-small-2603",
+        "ministral-14b-2512": "mistralai/ministral-14b-2512",
+        "ministral-8b-2512": "mistralai/ministral-8b-2512",
+        "ministral-3b-2512": "mistralai/ministral-3b-2512",
+        "codestral-2508": "mistralai/codestral-2508"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1606,
+      "channel_name": "OpenRouter · inclusionAI",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "inclusionai/ling-3.1-flash",
+        "inclusionai/ling-3.0-flash-vl",
+        "inclusionai/ling-3.0-flash"
+      ],
+      "models_after": [
+        "ling-3.1-flash",
+        "ling-3.0-flash-vl",
+        "ling-3.0-flash"
+      ],
+      "model_mapping": {
+        "ling-3.1-flash": "inclusionai/ling-3.1-flash",
+        "ling-3.0-flash-vl": "inclusionai/ling-3.0-flash-vl",
+        "ling-3.0-flash": "inclusionai/ling-3.0-flash"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1607,
+      "channel_name": "OpenRouter · Perceptron",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "perceptron/perceptron-mk1.5",
+        "perceptron/perceptron-mk1"
+      ],
+      "models_after": [
+        "perceptron-mk1.5",
+        "perceptron-mk1"
+      ],
+      "model_mapping": {
+        "perceptron-mk1.5": "perceptron/perceptron-mk1.5",
+        "perceptron-mk1": "perceptron/perceptron-mk1"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1608,
+      "channel_name": "OpenRouter · Fireworks",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "fireworks/ember-1"
+      ],
+      "models_after": [
+        "ember-1"
+      ],
+      "model_mapping": {
+        "ember-1": "fireworks/ember-1"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1609,
+      "channel_name": "OpenRouter · AionLabs",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "aion-labs/aion-3.5-mini",
+        "aion-labs/aion-3.5",
+        "aion-labs/aion-3.0-mini",
+        "aion-labs/aion-3.0",
+        "aion-labs/aion-2.0",
+        "aion-labs/aion-rp-llama-3.1-8b"
+      ],
+      "models_after": [
+        "aion-3.5-mini",
+        "aion-3.5",
+        "aion-3.0-mini",
+        "aion-3.0",
+        "aion-2.0",
+        "aion-rp-llama-3.1-8b"
+      ],
+      "model_mapping": {
+        "aion-3.5-mini": "aion-labs/aion-3.5-mini",
+        "aion-3.5": "aion-labs/aion-3.5",
+        "aion-3.0-mini": "aion-labs/aion-3.0-mini",
+        "aion-3.0": "aion-labs/aion-3.0",
+        "aion-2.0": "aion-labs/aion-2.0",
+        "aion-rp-llama-3.1-8b": "aion-labs/aion-rp-llama-3.1-8b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1610,
+      "channel_name": "OpenRouter · Upstage",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "upstage/solar-mini4",
+        "upstage/solar-pro4"
+      ],
+      "models_after": [
+        "solar-mini4",
+        "solar-pro4"
+      ],
+      "model_mapping": {
+        "solar-mini4": "upstage/solar-mini4",
+        "solar-pro4": "upstage/solar-pro4"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1611,
+      "channel_name": "OpenRouter · Cohere",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "cohere/command-a",
+        "cohere/command-r7b-12-2024",
+        "cohere/command-r-08-2024",
+        "cohere/command-r-plus-08-2024"
+      ],
+      "models_after": [
+        "command-a",
+        "command-r7b-12-2024",
+        "command-r-08-2024",
+        "command-r-plus-08-2024",
+        "north-mini-code:free"
+      ],
+      "model_mapping": {
+        "command-a": "cohere/command-a",
+        "command-r7b-12-2024": "cohere/command-r7b-12-2024",
+        "command-r-08-2024": "cohere/command-r-08-2024",
+        "command-r-plus-08-2024": "cohere/command-r-plus-08-2024",
+        "north-mini-code:free": "cohere/north-mini-code:free"
+      },
+      "free_models_added": [
+        "north-mini-code:free"
+      ]
+    },
+    {
+      "channel_id": 1612,
+      "channel_name": "OpenRouter · Inference.net",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "inference-net/schematron-v2-turbo",
+        "inference-net/schematron-v2-small"
+      ],
+      "models_after": [
+        "schematron-v2-turbo",
+        "schematron-v2-small"
+      ],
+      "model_mapping": {
+        "schematron-v2-turbo": "inference-net/schematron-v2-turbo",
+        "schematron-v2-small": "inference-net/schematron-v2-small"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1613,
+      "channel_name": "OpenRouter · Sakana",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "sakana/fugu-ultra-v2",
+        "sakana/fugu-max",
+        "sakana/fugu-ultra"
+      ],
+      "models_after": [
+        "fugu-ultra-v2",
+        "fugu-max",
+        "fugu-ultra"
+      ],
+      "model_mapping": {
+        "fugu-ultra-v2": "sakana/fugu-ultra-v2",
+        "fugu-max": "sakana/fugu-max",
+        "fugu-ultra": "sakana/fugu-ultra"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1614,
+      "channel_name": "OpenRouter · Nex AGI",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/nex-n2.5-pro"
+      ],
+      "models_after": [
+        "nex-n2.5-mini",
+        "nex-n2.5-pro"
+      ],
+      "model_mapping": {
+        "nex-n2.5-mini": "nex-agi/nex-n2.5-mini",
+        "nex-n2.5-pro": "nex-agi/nex-n2.5-pro"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1615,
+      "channel_name": "OpenRouter · IBM",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "ibm-granite/granite-4.2-8b"
+      ],
+      "models_after": [
+        "granite-4.2-8b"
+      ],
+      "model_mapping": {
+        "granite-4.2-8b": "ibm-granite/granite-4.2-8b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1616,
+      "channel_name": "OpenRouter · Dots Studio",
+      "status_before": 2,
+      "status_after": 1,
+      "models_before": [
+        "dots-studio/dots-3-note-preview:free"
+      ],
+      "models_after": [
+        "dots-3-note-preview:free"
+      ],
+      "model_mapping": {
+        "dots-3-note-preview:free": "dots-studio/dots-3-note-preview:free"
+      },
+      "free_models_added": [
+        "dots-3-note-preview:free"
+      ]
+    },
+    {
+      "channel_id": 1618,
+      "channel_name": "OpenRouter · Thinking Machines",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "thinkingmachines/inkling"
+      ],
+      "models_after": [
+        "inkling"
+      ],
+      "model_mapping": {
+        "inkling": "thinkingmachines/inkling"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1619,
+      "channel_name": "OpenRouter · Meituan",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "meituan/longcat-2.0"
+      ],
+      "models_after": [
+        "longcat-2.0"
+      ],
+      "model_mapping": {
+        "longcat-2.0": "meituan/longcat-2.0"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1622,
+      "channel_name": "OpenRouter · rekaai",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "rekaai/reka-flash-3"
+      ],
+      "models_after": [
+        "reka-flash-3"
+      ],
+      "model_mapping": {
+        "reka-flash-3": "rekaai/reka-flash-3"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1623,
+      "channel_name": "OpenRouter · Writer",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "writer/palmyra-x5"
+      ],
+      "models_after": [
+        "palmyra-x5"
+      ],
+      "model_mapping": {
+        "palmyra-x5": "writer/palmyra-x5"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1624,
+      "channel_name": "OpenRouter · Relace",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "relace/relace-search",
+        "relace/relace-apply-3"
+      ],
+      "models_after": [
+        "relace-search",
+        "relace-apply-3"
+      ],
+      "model_mapping": {
+        "relace-search": "relace/relace-search",
+        "relace-apply-3": "relace/relace-apply-3"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1625,
+      "channel_name": "OpenRouter · Amazon",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "amazon/nova-2-lite-v1",
+        "amazon/nova-lite-v1",
+        "amazon/nova-micro-v1",
+        "amazon/nova-pro-v1"
+      ],
+      "models_after": [
+        "nova-2-lite-v1",
+        "nova-lite-v1",
+        "nova-micro-v1",
+        "nova-pro-v1"
+      ],
+      "model_mapping": {
+        "nova-2-lite-v1": "amazon/nova-2-lite-v1",
+        "nova-lite-v1": "amazon/nova-lite-v1",
+        "nova-micro-v1": "amazon/nova-micro-v1",
+        "nova-pro-v1": "amazon/nova-pro-v1"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1627,
+      "channel_name": "OpenRouter · Perplexity",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "perplexity/sonar-pro-search",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity/sonar-pro",
+        "perplexity/sonar-deep-research",
+        "perplexity/sonar"
+      ],
+      "models_after": [
+        "sonar-pro-search",
+        "sonar-reasoning-pro",
+        "sonar-pro",
+        "sonar-deep-research",
+        "sonar"
+      ],
+      "model_mapping": {
+        "sonar-pro-search": "perplexity/sonar-pro-search",
+        "sonar-reasoning-pro": "perplexity/sonar-reasoning-pro",
+        "sonar-pro": "perplexity/sonar-pro",
+        "sonar-deep-research": "perplexity/sonar-deep-research",
+        "sonar": "perplexity/sonar"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1628,
+      "channel_name": "OpenRouter · TheDrummer",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "thedrummer/cydonia-24b-v4.1",
+        "thedrummer/skyfall-36b-v2",
+        "thedrummer/unslopnemo-12b"
+      ],
+      "models_after": [
+        "cydonia-24b-v4.1",
+        "skyfall-36b-v2",
+        "unslopnemo-12b"
+      ],
+      "model_mapping": {
+        "cydonia-24b-v4.1": "thedrummer/cydonia-24b-v4.1",
+        "skyfall-36b-v2": "thedrummer/skyfall-36b-v2",
+        "unslopnemo-12b": "thedrummer/unslopnemo-12b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1629,
+      "channel_name": "OpenRouter · Nous",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "nousresearch/hermes-4-405b",
+        "nousresearch/hermes-3-llama-3.1-70b",
+        "nousresearch/hermes-3-llama-3.1-405b"
+      ],
+      "models_after": [
+        "hermes-4-405b",
+        "hermes-3-llama-3.1-70b",
+        "hermes-3-llama-3.1-405b"
+      ],
+      "model_mapping": {
+        "hermes-4-405b": "nousresearch/hermes-4-405b",
+        "hermes-3-llama-3.1-70b": "nousresearch/hermes-3-llama-3.1-70b",
+        "hermes-3-llama-3.1-405b": "nousresearch/hermes-3-llama-3.1-405b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1630,
+      "channel_name": "OpenRouter · Venice",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "cognitivecomputations/dolphin-mistral-24b-venice-edition"
+      ],
+      "models_after": [
+        "dolphin-mistral-24b-venice-edition"
+      ],
+      "model_mapping": {
+        "dolphin-mistral-24b-venice-edition": "cognitivecomputations/dolphin-mistral-24b-venice-edition"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1631,
+      "channel_name": "OpenRouter · Morph",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "morph/morph-v3-large",
+        "morph/morph-v3-fast"
+      ],
+      "models_after": [
+        "morph-v3-large",
+        "morph-v3-fast"
+      ],
+      "model_mapping": {
+        "morph-v3-large": "morph/morph-v3-large",
+        "morph-v3-fast": "morph/morph-v3-fast"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1632,
+      "channel_name": "OpenRouter · Microsoft",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "microsoft/phi-4"
+      ],
+      "models_after": [
+        "phi-4"
+      ],
+      "model_mapping": {
+        "phi-4": "microsoft/phi-4"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1633,
+      "channel_name": "OpenRouter · anthracite-org",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "anthracite-org/magnum-v4-72b"
+      ],
+      "models_after": [
+        "magnum-v4-72b"
+      ],
+      "model_mapping": {
+        "magnum-v4-72b": "anthracite-org/magnum-v4-72b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1634,
+      "channel_name": "OpenRouter · Sao10K",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "sao10k/l3.1-euryale-70b",
+        "sao10k/l3-lunaris-8b"
+      ],
+      "models_after": [
+        "l3.1-euryale-70b",
+        "l3-lunaris-8b"
+      ],
+      "model_mapping": {
+        "l3.1-euryale-70b": "sao10k/l3.1-euryale-70b",
+        "l3-lunaris-8b": "sao10k/l3-lunaris-8b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1635,
+      "channel_name": "OpenRouter · Mancer",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "mancer/weaver"
+      ],
+      "models_after": [
+        "weaver"
+      ],
+      "model_mapping": {
+        "weaver": "mancer/weaver"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1636,
+      "channel_name": "OpenRouter · undi95",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "undi95/remm-slerp-l2-13b"
+      ],
+      "models_after": [
+        "remm-slerp-l2-13b"
+      ],
+      "model_mapping": {
+        "remm-slerp-l2-13b": "undi95/remm-slerp-l2-13b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1637,
+      "channel_name": "OpenRouter · gryphe",
+      "status_before": 2,
+      "status_after": 2,
+      "models_before": [
+        "gryphe/mythomax-l2-13b"
+      ],
+      "models_after": [
+        "mythomax-l2-13b"
+      ],
+      "model_mapping": {
+        "mythomax-l2-13b": "gryphe/mythomax-l2-13b"
+      },
+      "free_models_added": []
+    },
+    {
+      "channel_id": 1653,
+      "channel_name": "OpenRouter · TypeSafe",
+      "status_before": 1,
+      "status_after": 1,
+      "models_before": [
+        "typesafe/jev-1.14",
+        "typesafe/jev-1.13"
+      ],
+      "models_after": [
+        "jev-1.14",
+        "jev-1.13"
+      ],
+      "model_mapping": {
+        "jev-1.14": "typesafe/jev-1.14",
+        "jev-1.13": "typesafe/jev-1.13"
+      },
+      "free_models_added": []
+    }
+  ],
+  "aliases": {
+    "particle-ai/particle-1": "particle-1",
+    "xingchen-agi/xing4.0-29b-a4b:free": "xing4.0-29b-a4b:free",
+    "reflection/beam-1.0-501b-a23b": "beam-1.0-501b-a23b",
+    "inception/mercury-3": "mercury-3",
+    "inception/mercury-2.5": "mercury-2.5",
+    "inception/mercury-2": "mercury-2",
+    "prism-ml/ternary-bonsai-2-9b": "ternary-bonsai-2-9b",
+    "prism-ml/ternary-bonsai-2-27b": "ternary-bonsai-2-27b",
+    "moondream/moondream3-preview": "moondream3-preview",
+    "meta/muse-spark-1.3": "muse-spark-1.3",
+    "meta/muse-spark-1.2": "muse-spark-1.2",
+    "meta/muse-spark-1.1": "muse-spark-1.1",
+    "nvidia/nemotron-3.5-super-vl:free": "nemotron-3.5-super-vl:free",
+    "nvidia/nemotron-3.5-lightning:free": "nemotron-3.5-lightning:free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free": "nemotron-3-ultra-550b-a55b:free",
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": "nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "unbiased/pareto-26.10": "pareto-26.10",
+    "liquid/lfm-2.5-24b-a2b": "lfm-2.5-24b-a2b",
+    "liquid/lfm-2.5-2.6b:free": "lfm-2.5-2.6b:free",
+    "scaledown/summarize": "summarize",
+    "scaledown/extract": "extract",
+    "mistralai/mistral-large-4-0": "mistral-large-4-0",
+    "mistralai/mistral-small-2603": "mistral-small-2603",
+    "mistralai/ministral-14b-2512": "ministral-14b-2512",
+    "mistralai/ministral-8b-2512": "ministral-8b-2512",
+    "mistralai/ministral-3b-2512": "ministral-3b-2512",
+    "mistralai/codestral-2508": "codestral-2508",
+    "inclusionai/ling-3.1-flash": "ling-3.1-flash",
+    "inclusionai/ling-3.0-flash-vl": "ling-3.0-flash-vl",
+    "inclusionai/ling-3.0-flash": "ling-3.0-flash",
+    "perceptron/perceptron-mk1.5": "perceptron-mk1.5",
+    "perceptron/perceptron-mk1": "perceptron-mk1",
+    "fireworks/ember-1": "ember-1",
+    "aion-labs/aion-3.5-mini": "aion-3.5-mini",
+    "aion-labs/aion-3.5": "aion-3.5",
+    "aion-labs/aion-3.0-mini": "aion-3.0-mini",
+    "aion-labs/aion-3.0": "aion-3.0",
+    "aion-labs/aion-2.0": "aion-2.0",
+    "aion-labs/aion-rp-llama-3.1-8b": "aion-rp-llama-3.1-8b",
+    "upstage/solar-mini4": "solar-mini4",
+    "upstage/solar-pro4": "solar-pro4",
+    "cohere/command-a": "command-a",
+    "cohere/command-r7b-12-2024": "command-r7b-12-2024",
+    "cohere/command-r-08-2024": "command-r-08-2024",
+    "cohere/command-r-plus-08-2024": "command-r-plus-08-2024",
+    "cohere/north-mini-code:free": "north-mini-code:free",
+    "inference-net/schematron-v2-turbo": "schematron-v2-turbo",
+    "inference-net/schematron-v2-small": "schematron-v2-small",
+    "sakana/fugu-ultra-v2": "fugu-ultra-v2",
+    "sakana/fugu-max": "fugu-max",
+    "sakana/fugu-ultra": "fugu-ultra",
+    "nex-agi/nex-n2.5-mini": "nex-n2.5-mini",
+    "nex-agi/nex-n2.5-pro": "nex-n2.5-pro",
+    "ibm-granite/granite-4.2-8b": "granite-4.2-8b",
+    "dots-studio/dots-3-note-preview:free": "dots-3-note-preview:free",
+    "thinkingmachines/inkling": "inkling",
+    "meituan/longcat-2.0": "longcat-2.0",
+    "rekaai/reka-flash-3": "reka-flash-3",
+    "writer/palmyra-x5": "palmyra-x5",
+    "relace/relace-search": "relace-search",
+    "relace/relace-apply-3": "relace-apply-3",
+    "amazon/nova-2-lite-v1": "nova-2-lite-v1",
+    "amazon/nova-lite-v1": "nova-lite-v1",
+    "amazon/nova-micro-v1": "nova-micro-v1",
+    "amazon/nova-pro-v1": "nova-pro-v1",
+    "perplexity/sonar-pro-search": "sonar-pro-search",
+    "perplexity/sonar-reasoning-pro": "sonar-reasoning-pro",
+    "perplexity/sonar-pro": "sonar-pro",
+    "perplexity/sonar-deep-research": "sonar-deep-research",
+    "perplexity/sonar": "sonar",
+    "thedrummer/cydonia-24b-v4.1": "cydonia-24b-v4.1",
+    "thedrummer/skyfall-36b-v2": "skyfall-36b-v2",
+    "thedrummer/unslopnemo-12b": "unslopnemo-12b",
+    "nousresearch/hermes-4-405b": "hermes-4-405b",
+    "nousresearch/hermes-3-llama-3.1-70b": "hermes-3-llama-3.1-70b",
+    "nousresearch/hermes-3-llama-3.1-405b": "hermes-3-llama-3.1-405b",
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition": "dolphin-mistral-24b-venice-edition",
+    "morph/morph-v3-large": "morph-v3-large",
+    "morph/morph-v3-fast": "morph-v3-fast",
+    "microsoft/phi-4": "phi-4",
+    "anthracite-org/magnum-v4-72b": "magnum-v4-72b",
+    "sao10k/l3.1-euryale-70b": "l3.1-euryale-70b",
+    "sao10k/l3-lunaris-8b": "l3-lunaris-8b",
+    "mancer/weaver": "weaver",
+    "undi95/remm-slerp-l2-13b": "remm-slerp-l2-13b",
+    "gryphe/mythomax-l2-13b": "mythomax-l2-13b",
+    "typesafe/jev-1.14": "jev-1.14",
+    "typesafe/jev-1.13": "jev-1.13"
+  },
+  "free_variants": [
+    {
+      "model": "flint-v1.0:free",
+      "upstream_model": "recursive/flint-v1.0:free",
+      "channel_id": 1593,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "recursive/bf16"
+      ],
+      "sources": [
+        "https://openrouter.ai/recursive/flint-v1.0:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "recursive/bf16",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "xing4.0-29b-a4b:free",
+      "upstream_model": "xingchen-agi/xing4.0-29b-a4b:free",
+      "channel_id": 1595,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "phala"
+      ],
+      "sources": [
+        "https://openrouter.ai/xingchen-agi/xing4.0-29b-a4b:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "phala",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "nemotron-3.5-super-vl:free",
+      "upstream_model": "nvidia/nemotron-3.5-super-vl:free",
+      "channel_id": 1601,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "nvidia"
+      ],
+      "sources": [
+        "https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "nvidia",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "dots-3-note-preview:free",
+      "upstream_model": "dots-studio/dots-3-note-preview:free",
+      "channel_id": 1616,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "atlas-cloud/fp8"
+      ],
+      "sources": [
+        "https://openrouter.ai/dots-studio/dots-3-note-preview:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "atlas-cloud/fp8",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "lfm-2.5-2.6b:free",
+      "upstream_model": "liquid/lfm-2.5-2.6b:free",
+      "channel_id": 1603,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "liquid/fp8"
+      ],
+      "sources": [
+        "https://openrouter.ai/liquid/lfm-2.5-2.6b:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "liquid/fp8",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "nemotron-3.5-lightning:free",
+      "upstream_model": "nvidia/nemotron-3.5-lightning:free",
+      "channel_id": 1601,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "nvidia/nvfp4"
+      ],
+      "sources": [
+        "https://openrouter.ai/nvidia/nemotron-3.5-lightning:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "nvidia/nvfp4",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "north-mini-code:free",
+      "upstream_model": "cohere/north-mini-code:free",
+      "channel_id": 1611,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "cohere"
+      ],
+      "sources": [
+        "https://openrouter.ai/cohere/north-mini-code:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "cohere",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "nemotron-3.5-content-safety:free",
+      "upstream_model": "nvidia/nemotron-3.5-content-safety:free",
+      "channel_id": 1601,
+      "status": "paused",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [],
+      "sources": [
+        "https://openrouter.ai/nvidia/nemotron-3.5-content-safety:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "nvidia",
+          "status": -5,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "nemotron-3-ultra-550b-a55b:free",
+      "upstream_model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "channel_id": 1601,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "nvidia"
+      ],
+      "sources": [
+        "https://openrouter.ai/nvidia/nemotron-3-ultra-550b-a55b:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "nvidia",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    },
+    {
+      "model": "nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "upstream_model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "channel_id": 1601,
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "providers": [
+        "nvidia"
+      ],
+      "sources": [
+        "https://openrouter.ai/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      ],
+      "endpoint_quotes": [
+        {
+          "provider": "nvidia",
+          "status": 0,
+          "pricing": {
+            "prompt": "0",
+            "completion": "0",
+            "discount": 0
+          }
+        }
+      ]
+    }
+  ],
+  "unused_price_defaults_replaced": [
+    {
+      "key": "ModelRatio",
+      "model": "command-r-08-2024",
+      "unused_existing": 0.075,
+      "preserved_sale": 2.494830827067
+    },
+    {
+      "key": "ModelRatio",
+      "model": "command-r-plus-08-2024",
+      "unused_existing": 1.25,
+      "preserved_sale": 41.580513784461
+    }
+  ],
+  "preserved_channels": [
+    1461,
+    1593,
+    1594,
+    1626
+  ],
+  "verification": {
+    "effective_policy_checks": 120,
+    "model_helper_override_package_tests": "passed",
+    "public_enabled_aliases": 53,
+    "successful_free_models": 7,
+    "successful_free_billing": "zero upstream cost and zero gateway quota",
+    "xingchen_status": "initial nonstream returned upstream 429, subsequent stream/search encountered route protection 503; not counted as successful inference",
+    "unavailable_variant": "nvidia/nemotron-3.5-content-safety:free remains excluded; endpoint status -5",
+    "server_build": "passed after restoring existing frontend embed artifacts",
+    "free_stream": "passed: body, usage, DONE, upstream cost=0, quota=0",
+    "paid_search_rejected": "HTTP 400",
+    "temporary_tokens": "deleted",
+    "release_version": "v1.20.6"
+  }
+}

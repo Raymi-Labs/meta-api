@@ -51,3 +51,5 @@ Status: implemented
 账号归属按用户要求迁移，见[当前账号密钥迁移](../process/2026-11-01-openrouter-account-key-migration.md)；厂商分组与未审核暂停规则继续适用。
 
 [Claude 企业级接入](../process/2026-11-01-openrouter-claude-enterprise.md)按用户后续明确要求扩展此前排除的 Anthropic，单独配置渠道 1639，保留 14 个已有售价，仅新增 Opus 4.1 采用原厂美元价 ×33。其余厂商排除、batch 跳过和采购限价决定保持。
+
+[原生名称与免费变体整理](2026-11-06-openrouter-native-names-free-variants.md)按用户新要求部分接管对外命名和免费准入：短名通过渠道映射调用完整 OpenRouter ID；已核实双零价免费变体使用零采购上限恢复。其他付费限价和原有销售配置继续保留。

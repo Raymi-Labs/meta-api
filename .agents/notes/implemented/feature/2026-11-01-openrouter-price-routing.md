@@ -43,3 +43,5 @@ Status: implemented
 ## Gemini 和售价口径的后续范围
 
 [Gemini 语音、映射与汇率校正](2026-11-01-openrouter-gemini-audio-pricing.md)接管渠道 1638 和本批已核价型号的销售汇率修正；其他渠道命名及上游限价策略保持原决定。语音采用用户接受的调用前核价，不能宣传为上游硬限价。
+
+[原生名称与免费变体整理](2026-11-06-openrouter-native-names-free-variants.md)按用户新要求部分接管对外命名和免费准入：短名通过渠道映射调用完整 OpenRouter ID；已核实双零价免费变体使用零采购上限恢复。其他付费限价和原有销售配置继续保留。

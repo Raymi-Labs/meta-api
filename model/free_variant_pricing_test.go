@@ -71,3 +71,28 @@ func TestFlintFreeReferencePricing(t *testing.T) {
 		require.Empty(t, m.ManufacturerOfficialPricing().Tiers, address)
 	}
 }
+
+func TestReviewedOpenRouterFreeVariantIdentities(t *testing.T) {
+	for native, upstream := range verifiedOpenRouterFreeVariants {
+		for _, name := range []string{native, upstream} {
+			m := flintFreePricingModel()
+			m.ModelName = name
+			m.OfficialPricing.SourceURL = "https://openrouter.ai/" + upstream
+			require.Len(t, m.ManufacturerOfficialPricing().Tiers, 1, name)
+			m.OfficialPricing.SourceURL = "https://openrouter.ai/recursive/flint-v1.0:free"
+			if upstream != "recursive/flint-v1.0:free" {
+				require.Empty(t, m.ManufacturerOfficialPricing().Tiers, "another free model is not proof for %s", name)
+			}
+			m.OfficialPricing.SourceURL = "https://openrouter.ai/" + upstream
+			m.ModelName = "other/" + native
+			require.Empty(t, m.ManufacturerOfficialPricing().Tiers)
+		}
+	}
+}
+
+func TestJevNativeNamePreservesManufacturerPricing(t *testing.T) {
+	for _, name := range []string{"jev-1.13", "jev-1.14"} {
+		require.True(t, IsManufacturerPriceSource(name, "https://help.typesafe.ai/articles/5187202169-how-much-does-jev-cost"))
+		require.Equal(t, name, ManufacturerNativeModel("typesafe/"+name))
+	}
+}

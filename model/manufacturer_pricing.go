@@ -30,7 +30,7 @@ func manufacturerForPrice(name string) string {
 		return namespace // Never infer a different maker from a reseller's model suffix.
 	}
 	for _, rule := range []struct{ prefix, manufacturer string }{
-		{"nova-", "amazon"}, {"inkling", "thinkingmachines"}, {"gpt-", "openai"}, {"chatgpt-", "openai"}, {"o1", "openai"}, {"o3", "openai"}, {"o4", "openai"},
+		{"jev-", "typesafe"}, {"nova-", "amazon"}, {"inkling", "thinkingmachines"}, {"gpt-", "openai"}, {"chatgpt-", "openai"}, {"o1", "openai"}, {"o3", "openai"}, {"o4", "openai"},
 		{"claude-", "anthropic"}, {"gemini-", "google"}, {"gemma-", "google"}, {"veo-", "google"}, {"imagen-", "google"},
 		{"command-", "cohere"}, {"deepseek-", "deepseek"}, {"grok-", "x-ai"},
 		{"kimi-", "moonshotai"}, {"moonshot-", "moonshotai"}, {"mimo-", "xiaomi"},
@@ -98,16 +98,21 @@ func ManufacturerNativeModel(name string) string {
 }
 
 // A verified platform free variant is a reference for that exact service only,
-// not a manufacturer's general inference price. See the Flint decision note.
+// not a manufacturer's general inference price. Entries were checked against
+// the exact OpenRouter catalog and endpoint quotes on 2026-11-06.
+// See .agents/notes/implemented/feature/2026-11-06-openrouter-native-names-free-variants.md.
 func isVerifiedFreeVariantPricing(name string, price OfficialPricing) bool {
-	switch name {
-	case "flint-v1.0:free", "recursive/flint-v1.0:free":
-	default:
+	native := name
+	if _, suffix, ok := strings.Cut(name, "/"); ok {
+		native = suffix
+	}
+	upstream, ok := verifiedOpenRouterFreeVariants[native]
+	if !ok || (name != native && name != upstream) {
 		return false
 	}
 	u, err := url.Parse(price.SourceURL)
 	if err != nil || priceSourceHost(price.SourceURL) != "openrouter.ai" ||
-		u.Path != "/recursive/flint-v1.0:free" || u.RawQuery != "" || u.Fragment != "" {
+		u.Path != "/"+upstream || u.RawQuery != "" || u.Fragment != "" {
 		return false
 	}
 	if price.Currency != "USD" || len(price.Tiers) != 1 {
@@ -123,4 +128,18 @@ func isVerifiedFreeVariantPricing(name string, price OfficialPricing) bool {
 		}
 	}
 	return true
+}
+
+// Exact service identities; an open license or :free suffix alone is insufficient.
+var verifiedOpenRouterFreeVariants = map[string]string{
+	"flint-v1.0:free":                             "recursive/flint-v1.0:free",
+	"xing4.0-29b-a4b:free":                        "xingchen-agi/xing4.0-29b-a4b:free",
+	"nemotron-3.5-super-vl:free":                  "nvidia/nemotron-3.5-super-vl:free",
+	"dots-3-note-preview:free":                    "dots-studio/dots-3-note-preview:free",
+	"lfm-2.5-2.6b:free":                           "liquid/lfm-2.5-2.6b:free",
+	"nemotron-3.5-lightning:free":                 "nvidia/nemotron-3.5-lightning:free",
+	"north-mini-code:free":                        "cohere/north-mini-code:free",
+	"nemotron-3.5-content-safety:free":            "nvidia/nemotron-3.5-content-safety:free",
+	"nemotron-3-ultra-550b-a55b:free":             "nvidia/nemotron-3-ultra-550b-a55b:free",
+	"nemotron-3-nano-omni-30b-a3b-reasoning:free": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
 }
