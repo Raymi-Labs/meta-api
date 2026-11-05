@@ -1058,10 +1058,7 @@ try {
         official.includes('$0') &&
         official.includes('$75'),
     );
-    assert.equal(
-      await page.$eval('#official-pricing a', (el) => el.href),
-      'https://example.com/pricing',
-    );
+    assert.equal(await page.$('#official-pricing a'), null);
     await page.waitForSelector('.model-group-discount-lower');
     assert.equal(
       await page.$eval(

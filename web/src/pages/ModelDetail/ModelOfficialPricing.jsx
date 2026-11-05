@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { ArrowUpRight } from 'lucide-react';
 import ModelSectionHelp from './ModelSectionHelp';
 import {
   officialPriceColumns,
@@ -26,14 +25,12 @@ import {
   visibleOfficialNotes,
   OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
-  officialPricingSource,
 } from '../../helpers/modelOfficialPricing';
 
 export default function ModelOfficialPricing({ pricing, provenance, t }) {
   const tiers = visibleOfficialTiers(pricing);
   const notes = visibleOfficialNotes(pricing?.notes);
   const columns = officialPriceColumns(tiers);
-  const source = officialPricingSource(pricing?.source_url);
   return (
     <section
       id='official-pricing'
@@ -58,12 +55,6 @@ export default function ModelOfficialPricing({ pricing, provenance, t }) {
             {notes && <p className='model-official-notes'>{notes}</p>}
           </ModelSectionHelp>
         </h2>
-        {source && (
-          <a href={source} target='_blank' rel='noopener noreferrer'>
-            {t('价格来源')}
-            <ArrowUpRight size={15} />
-          </a>
-        )}
       </div>
       {tiers.length && columns.length ? (
         <div

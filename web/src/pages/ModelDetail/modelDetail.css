@@ -1143,12 +1143,8 @@ html.dark .model-metric-chart {
 .model-detail-modalities .model-detail-metadata {
   margin: 0 0 22px;
 }
-.model-official-pricing .model-detail-section-heading a {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--semi-color-primary);
-  font-size: 13px;
+.model-official-pricing .model-detail-section-heading {
+  margin-bottom: 20px;
 }
 .model-section-title-with-help {
   display: inline-flex;

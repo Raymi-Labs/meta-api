@@ -57,19 +57,6 @@ export function formatOfficialPrice(
   const symbol = { USD: '$', CNY: '¥', EUR: '€' }[currency];
   return `${symbol || currency + ' '}${value.toLocaleString('en-US', { maximumSignificantDigits })}`;
 }
-export function officialPricingSource(value) {
-  try {
-    const url = new URL(value);
-    return ['https:', 'http:'].includes(url.protocol) &&
-      !url.username &&
-      !url.password
-      ? url.href
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 // Retain raw metadata. Compare the shortest published retention separately
 // within each pricing condition and unit, never by price or array position.
 export function visibleOfficialTiers(pricing) {

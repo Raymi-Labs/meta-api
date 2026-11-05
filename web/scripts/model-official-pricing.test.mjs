@@ -4,7 +4,6 @@ import {
   OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
   officialPriceColumns,
-  officialPricingSource,
 } from '../src/helpers/modelOfficialPricing.js';
 test('official prices preserve missing, zero and tiny prices without billing conversion', () => {
   assert.equal(formatOfficialPrice(null, 'USD'), '—');
@@ -19,22 +18,6 @@ test('official prices preserve missing, zero and tiny prices without billing con
     ['input', 'output', 'cache_read'],
   );
 });
-test('official source is a link only and excludes active URLs and credentials', () => {
-  for (const v of [
-    undefined,
-    '',
-    'javascript:alert(1)',
-    'data:text/html,hi',
-    '/relative',
-    'https://user:pass@example.com',
-  ])
-    assert.equal(officialPricingSource(v), null);
-  assert.equal(
-    officialPricingSource('https://example.com/pricing'),
-    'https://example.com/pricing',
-  );
-});
-
 test('modality and character rates retain their units', () => {
   assert.equal(OFFICIAL_PRICE_UNITS.million_tokens, 'M tokens');
   assert.equal(OFFICIAL_PRICE_UNITS.million_characters, 'M characters');
