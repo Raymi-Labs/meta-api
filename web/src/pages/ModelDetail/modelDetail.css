@@ -287,32 +287,31 @@ html.dark .model-detail-page {
   color: var(--semi-color-text-0);
 }
 .model-detail-related {
-  display: grid;
+  --catalog-border: var(--detail-border);
+  --catalog-muted: var(--detail-muted);
+  --catalog-soft: var(--detail-soft);
+  --catalog-ink: var(--semi-color-text-0);
+  --catalog-accent: var(--semi-color-primary);
+}
+.model-detail-related .pricing-catalog-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
-.model-detail-related a {
-  border: 1px solid var(--detail-border);
-  border-radius: var(--detail-control-radius);
-  padding: 18px 20px;
+.model-detail-related .pricing-model-card {
+  padding: 16px;
+  border-radius: 20px;
+}
+.model-detail-related .pricing-model-identity h3 {
+  font-size: 15px;
+}
+.model-detail-related .pricing-card-performance > div {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--semi-color-text-0);
+  gap: 2px 6px;
 }
-.model-detail-related span {
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-.model-detail-related svg {
-  flex-shrink: 0;
-  color: var(--detail-muted);
-}
-.model-detail-related a:hover {
-  background: var(--semi-color-primary-light-default);
-  border-color: var(--semi-color-primary);
+.model-detail-related .pricing-model-description {
+  margin-top: 16px;
 }
 .model-detail-state {
   min-height: 340px;
@@ -503,7 +502,7 @@ html.dark .model-detail-page {
   .model-detail-section h2 {
     font-size: 18px;
   }
-  .model-detail-related {
+  .model-detail-related .pricing-catalog-grid {
     grid-template-columns: minmax(0, 1fr);
   }
   .model-detail-section {

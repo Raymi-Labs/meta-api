@@ -329,17 +329,17 @@ html.dark .pricing-page.pricing-catalog {
   flex: 1;
   min-width: 0;
 }
-.pricing-model-identity h2 {
+.pricing-model-identity :is(h2, h3) {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
-.pricing-model-identity h2 a {
+.pricing-model-identity :is(h2, h3) a {
   color: var(--catalog-ink);
 }
-.pricing-model-identity h2 a:hover {
+.pricing-model-identity :is(h2, h3) a:hover {
   color: var(--catalog-accent);
 }
 .pricing-model-card-header > .semi-button {

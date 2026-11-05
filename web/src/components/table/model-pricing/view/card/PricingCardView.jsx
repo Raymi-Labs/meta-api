@@ -60,6 +60,7 @@ import {
 
 const PricingCardView = ({
   filteredModels = [],
+  variant = 'catalog',
   loading,
   rowSelection,
   pageSize,
@@ -83,10 +84,14 @@ const PricingCardView = ({
   const showSkeleton = useMinimumLoadingTime(loading);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const paginatedModels = filteredModels.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const isRelated = variant === 'related';
+  const Title = isRelated ? 'h3' : 'h2';
+  const paginatedModels = isRelated
+    ? filteredModels
+    : filteredModels.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      );
 
   const health = useModelHealthSummaries(paginatedModels, !loading);
   if (showSkeleton) return <PricingCardSkeleton />;
@@ -148,14 +153,14 @@ const PricingCardView = ({
                     : model.model_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className='pricing-model-identity'>
-                  <h2>
+                  <Title>
                     <Link
                       to={buildModelDetailPath(model.model_name)}
                       state={{ catalogState }}
                     >
                       {model.display_name || model.model_name}
                     </Link>
-                  </h2>
+                  </Title>
                 </div>
                 <Button
                   size='small'
@@ -343,7 +348,7 @@ const PricingCardView = ({
           );
         })}
       </div>
-      {filteredModels.length > 0 && (
+      {!isRelated && filteredModels.length > 0 && (
         <div className='pricing-catalog-pagination'>
           <Pagination
             currentPage={currentPage}

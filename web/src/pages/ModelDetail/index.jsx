@@ -24,7 +24,6 @@ import { ArrowLeft, ArrowUpRight, Copy, SlidersHorizontal } from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import {
-  buildModelDetailPath,
   getModelNameFromDetailPath,
   sanitizeModelCatalogSnapshot,
 } from '../../helpers/modelDetailNavigation';
@@ -49,6 +48,8 @@ import ModelExchangeRate from './ModelExchangeRate';
 import ModelSectionHelp from './ModelSectionHelp';
 import { visibleOfficialTiers } from '../../helpers/modelOfficialPricing';
 import ModelOfficialPricing from './ModelOfficialPricing';
+import PricingCardView from '../../components/table/model-pricing/view/card/PricingCardView';
+import '../../components/table/model-pricing/layout/pricingCatalog.css';
 import './modelDetail.css';
 
 export default function ModelDetail() {
@@ -360,16 +361,24 @@ export default function ModelDetail() {
             <section id='related' className='model-detail-section'>
               <h2>{t('同厂商模型')}</h2>
               <div className='model-detail-related'>
-                {related.map((item) => (
-                  <Link
-                    key={item.model_name}
-                    to={buildModelDetailPath(item.model_name)}
-                    state={{ catalogState }}
-                  >
-                    <span>{item.display_name || item.model_name}</span>
-                    <ArrowUpRight size={16} aria-hidden='true' />
-                  </Link>
-                ))}
+                <PricingCardView
+                  variant='related'
+                  filteredModels={related}
+                  selectedGroup='all'
+                  groupRatio={data.groupRatio}
+                  timeRatioMap={data.timeRatioMap}
+                  copyText={data.copyText}
+                  currency={data.currency}
+                  siteDisplayType={data.siteDisplayType}
+                  tokenUnit={data.tokenUnit}
+                  displayPrice={data.displayPrice}
+                  showRatio={catalogState.showRatio}
+                  t={t}
+                  catalogState={sanitizeModelCatalogSnapshot({
+                    ...catalogState,
+                    ...data,
+                  })}
+                />
               </div>
             </section>
           )}

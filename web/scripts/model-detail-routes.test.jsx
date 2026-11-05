@@ -45,12 +45,17 @@ if (process.env.NEWAPI_MODEL_DETAIL_ROUTES_TEST === import.meta.url) {
     ({ default: App } = await import('../src/App'));
   });
   const originalStorage = globalThis.localStorage;
+  const originalWindow = globalThis.window;
   afterEach(() => {
     if (originalStorage === undefined) delete globalThis.localStorage;
     else globalThis.localStorage = originalStorage;
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
   });
   const renderPath = (path, pricing, user = null) => {
     globalThis.localStorage = { getItem: () => user && JSON.stringify(user) };
+    // App also reads the origin for canonical login routing during render.
+    globalThis.window = { location: new URL(path, 'http://localhost') };
     return renderToStaticMarkup(
       <StatusContext.Provider
         value={[
