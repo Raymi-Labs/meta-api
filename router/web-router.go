@@ -19,6 +19,13 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Use(middleware.GlobalWebRateLimit(frontendFS))
 	router.Use(middleware.Cache())
+	router.GET("/desktop-login", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		c.Header("Referrer-Policy", "no-referrer")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Content-Security-Policy", "frame-ancestors 'none'")
+		c.Data(http.StatusOK, "text/html; charset=utf-8", indexPage)
+	})
 	if imagePlaygroundIndex, err := buildFS.ReadFile("web/dist/image-playground/index.html"); err == nil {
 		registerImagePlaygroundIndexRoutes(router, imagePlaygroundIndex)
 	}

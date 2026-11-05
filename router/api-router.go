@@ -80,6 +80,11 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.POST("/user/reset", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.ResetPassword)
 		// OAuth routes - specific routes must come before :provider wildcard
 		apiRouter.GET("/oauth/state", middleware.CriticalRateLimit(), controller.GenerateOAuthCode)
+		apiRouter.GET("/desktop-auth/capabilities", controller.DesktopLoginCapabilities)
+		apiRouter.POST("/desktop-auth/start", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.StartDesktopLogin)
+		apiRouter.GET("/desktop-auth/info", middleware.CriticalRateLimit(), controller.DesktopLoginInfo)
+		apiRouter.POST("/desktop-auth/approve", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.ApproveDesktopLogin)
+		apiRouter.POST("/desktop-auth/exchange", middleware.DesktopLoginPollRateLimit(), anonymousRequestBodyLimit, controller.ExchangeDesktopLogin)
 		apiRouter.GET("/oauth/email/bind", middleware.CriticalRateLimit(), controller.EmailBind)
 		apiRouter.POST("/oauth/email/bind", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.EmailBind)
 		// Non-standard OAuth (WeChat, Telegram) - keep original routes

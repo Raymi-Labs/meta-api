@@ -1,5 +1,7 @@
 # 功能地图
 
+桌面浏览器登录：网站`/desktop-login`授权页复用已有GitHub/Google登录与next跳转 → `controller/desktop_login.go` → `model/desktop_login.go`短期授权表；PKCE绑定、session/Origin/CSRF/用户核对、原子消费后独立签发桌面session。无模型请求，不传长期凭据URL；部署由维护者完成，见[部署交付](installation/desktop-browser-login.md)。
+
 核对日期：2026-10-29。用于定位代码，不替代代码和现场验证；覆盖已核对的渠道运营、协议转换、令牌管理与支付能力，其他模块按任务逐步补充。更改相关功能时同步本表，不把历史方案写成当前能力。
 
 | 能力/入口 | 主要实现 | 接口与数据 | 边界 |

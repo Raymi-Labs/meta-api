@@ -48,6 +48,7 @@ const PasswordResetConfirm = lazy(
   () => import('./components/auth/PasswordResetConfirm'),
 );
 const OAuth2Callback = lazy(() => import('./components/auth/OAuth2Callback'));
+const DesktopLogin = lazy(() => import('./pages/DesktopLogin'));
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const About = lazy(() => import('./pages/About'));
@@ -333,6 +334,14 @@ function App() {
           element={
             <Suspense fallback={<Loading></Loading>} key={location.pathname}>
               <OAuth2Callback type='github'></OAuth2Callback>
+            </Suspense>
+          }
+        />
+        <Route
+          path='/desktop-login'
+          element={
+            <Suspense fallback={<Loading />}>
+              <DesktopLogin />
             </Suspense>
           }
         />

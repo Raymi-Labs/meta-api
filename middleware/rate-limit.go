@@ -172,6 +172,11 @@ func CriticalRateLimit() func(c *gin.Context) {
 	return defNext
 }
 
+// Desktop polling has a 3-second client cadence, separate from password limits.
+func DesktopLoginPollRateLimit() func(c *gin.Context) {
+	return rateLimitFactory(120, 60, "DL")
+}
+
 // Independent bounded public probes; never share model or account quotas.
 func RouteProbeRateLimit(stream bool) func(c *gin.Context) {
 	if stream {
