@@ -96,7 +96,7 @@ func ApproveDesktopLogin(c *gin.Context) {
 		desktopFailure(c, 400)
 		return
 	}
-	origin, err := url.Parse(system_setting.ServerAddress)
+	origin, err := url.Parse(common.CanonicalLoginOrigin(system_setting.ServerAddress))
 	if err != nil || origin.Scheme != "https" || c.GetHeader("Origin") != origin.Scheme+"://"+origin.Host {
 		desktopFailure(c, 403)
 		return

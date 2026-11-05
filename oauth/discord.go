@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/QuantumNous/new-api/common"
 	"net/http"
 	"net/url"
 	"strings"
@@ -54,7 +55,7 @@ func (p *DiscordProvider) ExchangeToken(ctx context.Context, code string, c *gin
 	logger.LogDebug(ctx, "[OAuth-Discord] ExchangeToken: code=%s...", code[:min(len(code), 10)])
 
 	settings := system_setting.GetDiscordSettings()
-	redirectUri := fmt.Sprintf("%s/oauth/discord", system_setting.ServerAddress)
+	redirectUri := fmt.Sprintf("%s/oauth/discord", common.CanonicalLoginOrigin(system_setting.ServerAddress))
 	values := url.Values{}
 	values.Set("client_id", settings.ClientId)
 	values.Set("client_secret", settings.ClientSecret)

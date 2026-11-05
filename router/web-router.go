@@ -16,6 +16,7 @@ import (
 
 func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 	frontendFS := common.EmbedFolder(buildFS, "web/dist")
+	router.Use(canonicalLoginNavigation())
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Use(middleware.GlobalWebRateLimit(frontendFS))
 	router.Use(middleware.Cache())
@@ -42,6 +43,21 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 		}
 		serveWebIndex(c, indexPage)
 	})
+}
+
+func canonicalLoginNavigation() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
+			if target := common.CanonicalLoginPage(c.Request.Host, c.Request.URL.Path, c.Request.URL.RawQuery); target != "" {
+				c.Header("Cache-Control", "no-store")
+				c.Header("Referrer-Policy", "no-referrer")
+				c.Redirect(http.StatusFound, target)
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	}
 }
 
 func shouldReturnRelayNotFound(requestURI string) bool {

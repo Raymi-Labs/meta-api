@@ -84,6 +84,19 @@ func TestDesktopLoginApprovalAndExchangeBoundary(t *testing.T) {
 	require.NotEmpty(t, result.Result().Cookies())
 	require.Contains(t, result.Body.String(), "oauth-fixture")
 	require.Equal(t, 410, call("POST", "/exchange", gin.H{"request_id": id, "verifier": verifier}, nil, "").Code)
+	// Older clients still start/exchange on vip, while approval now occurs on com.
+	for _, base := range []string{"https://meta-api.vip", "https://cn.meta-api.vip/", "https://nan.meta-api.vip", "https://meta-api.com"} {
+		system_setting.ServerAddress = base
+		id, g, err = model.NewDesktopLogin(model.DesktopLoginChallenge(verifier), "github")
+		require.NoError(t, err)
+		info = call("GET", "/info?request_id="+id, nil, seed.Result().Cookies(), "")
+		require.NoError(t, common.Unmarshal(info.Body.Bytes(), &decoded))
+		cookies = info.Result().Cookies()
+		approve = map[string]any{"request_id": id, "display_code": g.DisplayCode, "csrf": decoded.Data.CSRF, "user_id": user.Id}
+		require.Equal(t, 403, call("POST", "/approve", approve, cookies, "https://meta-api.vip").Code)
+		require.Equal(t, 200, call("POST", "/approve", approve, cookies, "https://meta-api.com").Code)
+		require.Equal(t, 200, call("POST", "/exchange", gin.H{"request_id": id, "verifier": verifier}, nil, "").Code)
+	}
 	id, g, err = model.NewDesktopLogin(model.DesktopLoginChallenge(verifier), "github")
 	require.NoError(t, err)
 	require.NoError(t, model.ApproveDesktopLogin(id, user.Id, g.DisplayCode, false))

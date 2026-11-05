@@ -36,6 +36,7 @@ import NotFound from './pages/NotFound';
 import Forbidden from './pages/Forbidden';
 import { StatusContext } from './context/Status';
 import { MODEL_DETAIL_ROUTE } from './helpers/modelDetailNavigation';
+import { canonicalLoginPage } from './helpers/canonicalLogin';
 
 import SetupCheck from './components/layout/SetupCheck';
 
@@ -119,6 +120,14 @@ function getCanonicalPathFromFullwidthQuestion(locationLike) {
 function App() {
   const location = useLocation();
   const [statusState] = useContext(StatusContext);
+  const loginDestination = canonicalLoginPage(
+    window.location.origin,
+    location.pathname,
+    location.search,
+  );
+  useEffect(() => {
+    if (loginDestination) window.location.replace(loginDestination);
+  }, [loginDestination]);
 
   useEffect(() => {
     const canonicalPath = getCanonicalPathFromFullwidthQuestion(
@@ -151,6 +160,7 @@ function App() {
     return false; // 默认不需要登录
   }, [statusState?.status?.HeaderNavModules]);
 
+  if (loginDestination) return <Loading />;
   return (
     <SetupCheck>
       <Routes>

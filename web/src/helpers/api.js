@@ -21,6 +21,11 @@ import { showError } from './toast';
 export { API, updateAPI } from './apiCore';
 import { API, updateAPI } from './apiCore';
 import { rememberOAuthLoginRedirect } from './authRedirect';
+import {
+  canonicalOAuthEntry,
+  loginOrigin,
+  META_LOGIN_ORIGIN,
+} from './canonicalLogin';
 
 // playground
 
@@ -115,6 +120,11 @@ export async function getOAuthState() {
 }
 
 async function prepareOAuthState(options = {}) {
+  const primary = canonicalOAuthEntry(window.location.origin, options);
+  if (primary) {
+    window.location.assign(primary);
+    return '';
+  }
   const { shouldLogout = false, postLoginPath = '' } = options;
   if (shouldLogout) {
     try {
@@ -165,9 +175,14 @@ export async function onOIDCClicked(
 export async function onGitHubOAuthClicked(github_client_id, options = {}) {
   const state = await prepareOAuthState(options);
   if (!state) return;
-  window.open(
-    `https://github.com/login/oauth/authorize?client_id=${github_client_id}&state=${state}&scope=user:email`,
-  );
+  const url = new URL('https://github.com/login/oauth/authorize');
+  url.searchParams.set('client_id', github_client_id);
+  url.searchParams.set('state', state);
+  url.searchParams.set('scope', 'user:email');
+  if (loginOrigin(window.location.origin) === META_LOGIN_ORIGIN) {
+    url.searchParams.set('redirect_uri', `${META_LOGIN_ORIGIN}/oauth/github`);
+  }
+  window.location.assign(url.toString());
 }
 
 export async function onLinuxDOOAuthClicked(
@@ -196,7 +211,7 @@ export async function onCustomOAuthClicked(provider, options = {}) {
   if (!state) return;
 
   try {
-    const redirect_uri = `${window.location.origin}/oauth/${provider.slug}`;
+    const redirect_uri = `${loginOrigin(window.location.origin)}/oauth/${provider.slug}`;
 
     // Check if authorization_endpoint is a full URL or relative path
     let authUrl;
@@ -226,7 +241,7 @@ export async function onCustomOAuthClicked(provider, options = {}) {
     );
     authUrl.searchParams.set('state', state);
 
-    window.open(authUrl.toString());
+    window.location.assign(authUrl.toString());
   } catch (error) {
     console.error('Failed to initiate custom OAuth:', error);
     showError('OAuth 登录失败：' + (error.message || '未知错误'));
