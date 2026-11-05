@@ -332,7 +332,9 @@ try {
       await page.$('.model-group-row [data-price-key="create-cache-1h"]'),
       null,
     );
-    await page.select('select[aria-label="接口协议"]', 'openai-response');
+    await page.click(
+      '.model-quickstart-protocols button[value="openai-response"]',
+    );
     await page.$eval('#quick-start', (el) => el.scrollIntoView());
     assert.equal(await page.$('#endpoints'), null);
     assert.doesNotMatch(
@@ -344,7 +346,10 @@ try {
       /该模型尚未声明支持此协议/,
     );
     assert.equal(
-      await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
+      await page.$eval(
+        '.model-quickstart-protocols button[aria-pressed="true"]',
+        (el) => el.value,
+      ),
       'openai-response',
     );
     if (screenshotDir)
@@ -357,7 +362,7 @@ try {
         ?.textContent.includes('/v1/responses'),
     );
     await page.evaluate(() => {
-      document.querySelector('.model-quickstart-code-heading button').click();
+      document.querySelector('.model-quickstart-copy').click();
     });
     await page.waitForFunction(() =>
       window.__protocolCopy?.includes('/v1/responses'),
@@ -370,10 +375,13 @@ try {
         ?.textContent.includes('fetch('),
     );
     assert.equal(
-      await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
+      await page.$eval(
+        '.model-quickstart-protocols button[aria-pressed="true"]',
+        (el) => el.value,
+      ),
       'openai-response',
     );
-    await page.select('select[aria-label="接口协议"]', 'openai');
+    await page.click('.model-quickstart-protocols button[value="openai"]');
     await page.waitForFunction(() =>
       document
         .querySelector('.model-quickstart pre')
@@ -389,7 +397,10 @@ try {
     });
     assert.equal(await page.$('#endpoints'), null);
     assert.equal(
-      await page.$eval('select[aria-label="接口协议"]', (el) => el.value),
+      await page.$eval(
+        '.model-quickstart-protocols button[aria-pressed="true"]',
+        (el) => el.value,
+      ),
       'openai',
       'legacy endpoint links retain the declared protocol default',
     );
@@ -409,7 +420,7 @@ try {
         throw e;
       });
     assert.deepEqual(
-      await page.$$eval('select[aria-label="接口协议"] option', (els) =>
+      await page.$$eval('.model-quickstart-protocols button', (els) =>
         els.map((el) => el.value),
       ),
       ['decisions'],

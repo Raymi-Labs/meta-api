@@ -25,6 +25,8 @@ import {
   MODEL_EXAMPLE_LANGUAGES,
 } from './modelQuickStartExamples';
 
+const PROTOCOL_DISPLAY_ORDER = ['openai', 'anthropic', 'openai-response'];
+
 const ModelQuickStart = ({
   modelData,
   initialEndpoint = '',
@@ -54,29 +56,56 @@ const ModelQuickStart = ({
     examples.find((example) => example.declared) ||
     examples[0];
 
+  const protocolOptions = [...examples].sort((a, b) => {
+    const rank = (item) => {
+      const index = PROTOCOL_DISPLAY_ORDER.indexOf(item.endpoint);
+      return index < 0 ? PROTOCOL_DISPLAY_ORDER.length : index;
+    };
+    return rank(a) - rank(b);
+  });
+
   return (
     <div className='model-quickstart'>
       <div className='model-quickstart-toolbar'>
-        {examples.length > 0 && (
-          <div className='model-quickstart-select'>
-            <select
+        {current && (
+          <div className='model-quickstart-controls'>
+            <div
+              className='model-quickstart-protocols'
+              role='group'
               aria-label={t('接口协议')}
-              value={current.endpoint}
-              onChange={(event) =>
-                setSelection({
-                  modelName: modelData.model_name,
-                  endpoint: event.target.value,
-                })
-              }
             >
-              {examples.map((example) => (
-                <option key={example.endpoint} value={example.endpoint}>
+              {protocolOptions.map((example) => (
+                <button
+                  key={example.endpoint}
+                  type='button'
+                  value={example.endpoint}
+                  aria-pressed={current.endpoint === example.endpoint}
+                  onClick={() =>
+                    setSelection({
+                      modelName: modelData.model_name,
+                      endpoint: example.endpoint,
+                    })
+                  }
+                >
                   {example.label}
-                  {!example.declared && ` · ${t('未声明')}`}
-                </option>
+                  {!example.declared && <small> · {t('未声明')}</small>}
+                </button>
               ))}
-            </select>
-            <ChevronDown size={16} aria-hidden='true' />
+            </div>
+            <div className='model-quickstart-select'>
+              <select
+                aria-label={t('代码语言')}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+              >
+                {MODEL_EXAMPLE_LANGUAGES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden='true' />
+            </div>
           </div>
         )}
         <div className='model-quickstart-actions'>
@@ -97,26 +126,15 @@ const ModelQuickStart = ({
       )}
       {current ? (
         <div className='model-quickstart-code'>
-          <div className='model-quickstart-code-heading'>
-            <div className='model-quickstart-select'>
-              <select
-                aria-label={t('代码语言')}
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-              >
-                {MODEL_EXAMPLE_LANGUAGES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} aria-hidden='true' />
-            </div>
-            <button type='button' onClick={() => copyText(current.code)}>
-              <Copy size={15} aria-hidden='true' />
-              {t('复制代码')}
-            </button>
-          </div>
+          <button
+            className='model-quickstart-copy'
+            type='button'
+            aria-label={t('复制代码')}
+            title={t('复制代码')}
+            onClick={() => copyText(current.code)}
+          >
+            <Copy size={15} aria-hidden='true' />
+          </button>
           <pre tabIndex={0} aria-label={`${language} · ${current.label}`}>
             <code>{current.code}</code>
           </pre>
