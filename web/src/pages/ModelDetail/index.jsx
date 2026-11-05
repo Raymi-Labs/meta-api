@@ -74,6 +74,7 @@ export default function ModelDetail() {
   const health = useGroupHealth({
     model: modelName,
     hours,
+    bucketSeconds: 1800,
     enabled: !!model && !data.loading,
   });
   const uptimeHealth = useGroupHealth({

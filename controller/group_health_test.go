@@ -34,7 +34,7 @@ func TestGroupHealthUsesCurrentMembershipAndModelPermissions(t *testing.T) {
 		_ = setting.UpdateUserUsableGroupsByJSONString(previousGroups)
 		_ = ratio_setting.UpdateGroupRatioByJSONString(previousRatios)
 	})
-	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ModelPermission{}, &model.GroupHealthMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ModelPermission{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"public":"Public","auto":"Auto","removed":"Removed"}`))
 	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"public":1,"own":1,"private":1,"auto":1}`))
 	user := model.User{Id: 1, Username: "health-reader", Group: "own", Role: common.RoleCommonUser, Status: common.UserStatusEnabled}
@@ -62,6 +62,22 @@ func TestGroupHealthUsesCurrentMembershipAndModelPermissions(t *testing.T) {
 		}
 		require.NoError(t, common.Unmarshal(w.Body.Bytes(), &body))
 		return w, body.Data
+	}
+	require.NoError(t, model.SaveGroupHealthHalfHourSnapshots(context.Background(), []model.GroupHealthMetric{
+		{ID: "half-public", GroupName: "public", ModelName: "normal", BucketTs: ts, RequestCount: 2, SuccessCount: 1},
+		{ID: "half-hidden", GroupName: "public", ModelName: "hidden", BucketTs: ts, RequestCount: 900, SuccessCount: 900},
+		{ID: "half-private", GroupName: "private", ModelName: "normal", BucketTs: ts, RequestCount: 800, SuccessCount: 800},
+	}))
+	for _, hours := range []string{"24", "72"} {
+		w, half := request("?bucket_seconds=1800&hours="+hours, 1)
+		require.Equal(t, http.StatusOK, w.Code)
+		require.Len(t, half.Groups, 2)
+		require.Len(t, half.Groups[1].Series, half.WindowHours*2)
+		require.EqualValues(t, 2, half.Groups[1].RequestCount)
+	}
+	for _, query := range []string{"?bucket_seconds=0", "?bucket_seconds=900", "?bucket_seconds=abc", "?bucket_seconds=1800&hours=12"} {
+		w, _ := request(query, 1)
+		require.Equal(t, http.StatusBadRequest, w.Code)
 	}
 	w, data := request("", 1)
 	require.Equal(t, http.StatusOK, w.Code)
@@ -119,7 +135,7 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 		_ = setting.UpdateUserUsableGroupsByJSONString(previousGroups)
 		_ = ratio_setting.UpdateGroupRatioByJSONString(previousRatios)
 	})
-	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ModelPermission{}, &model.GroupHealthMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ModelPermission{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"public":"Public"}`))
 	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"public":1,"own":1,"private":1}`))
 	require.NoError(t, db.Create(&model.User{Id: 1, Username: "metrics-reader", Group: "own", Role: common.RoleCommonUser, Status: common.UserStatusEnabled}).Error)

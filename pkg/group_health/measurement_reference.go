@@ -16,7 +16,11 @@ type MeasurementReferences struct {
 }
 
 func measurementStart(end int64) int64 {
-	return end/BucketSeconds*BucketSeconds - (MeasurementLookbackHours-1)*BucketSeconds
+	return measurementStartForBucket(end, BucketSeconds)
+}
+
+func measurementStartForBucket(end, seconds int64) int64 {
+	return end/seconds*seconds - MeasurementLookbackHours*3600 + seconds
 }
 
 func (r *MeasurementReferences) observe(row model.GroupHealthMetric, ts int64) {

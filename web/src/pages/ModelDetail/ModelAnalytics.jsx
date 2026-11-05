@@ -115,18 +115,21 @@ export default function ModelAnalytics({
           <div className='model-performance-grid'>
             <ModelMetricChart
               title={'Uptime · ' + t('可用率')}
+              bucketSeconds={1800}
               groups={groups}
               metric='uptime_rate'
               t={t}
             />
             <ModelMetricChart
               title={t('首字均值') + ' · s'}
+              bucketSeconds={1800}
               groups={groups}
               metric='avg_ttft_ms'
               t={t}
             />
             <ModelMetricChart
               title={t('输出速度') + ' · tok/s'}
+              bucketSeconds={1800}
               groups={groups}
               metric='avg_output_tps'
               t={t}
@@ -135,12 +138,13 @@ export default function ModelAnalytics({
           {groups.some((group) => group.completion_count > 0) && (
             <ModelMetricChart
               title={t('平均完成') + ' · s'}
+              bucketSeconds={1800}
               groups={groups}
               metric='avg_completion_ms'
               t={t}
             />
           )}
-          <GroupHealthLegend uptime />
+          <GroupHealthLegend uptime bucketSeconds={1800} />
         </>
       )}
     </section>

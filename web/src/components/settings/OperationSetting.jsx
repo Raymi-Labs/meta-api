@@ -95,7 +95,7 @@ const OperationSetting = () => {
     'channel_concurrency_setting.affinity_sticky_enabled': true,
     'channel_concurrency_setting.affinity_wait_ms': 2000,
     'monitor_setting.auto_test_channel_enabled': false,
-    'monitor_setting.auto_test_channel_minutes': 10 /* 签到设置 */,
+    'monitor_setting.auto_test_channel_minutes': 30 /* 签到设置 */,
     'monitor_setting.pre_disable_wait_enabled': false,
     'monitor_setting.pre_disable_wait_minutes': 10,
     /* 签到设置 */

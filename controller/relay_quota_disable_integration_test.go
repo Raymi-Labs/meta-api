@@ -42,7 +42,7 @@ func TestRelayQuotaDisablePreservesFinalCause(t *testing.T) {
 				require.NoError(t, err)
 				sqlDB.SetMaxOpenConns(1)
 				t.Cleanup(func() { sqlDB.Close() })
-				require.NoError(t, db.AutoMigrate(&model.Token{}, &model.User{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.UserSubscription{}, &model.SubscriptionPlan{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}))
+				require.NoError(t, db.AutoMigrate(&model.Token{}, &model.User{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.UserSubscription{}, &model.SubscriptionPlan{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 				oldSQLite := common.UsingSQLite
 				common.UsingSQLite = true
 				t.Cleanup(func() { common.UsingSQLite = oldSQLite })

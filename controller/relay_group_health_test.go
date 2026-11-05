@@ -45,7 +45,7 @@ func (w *healthCancelAfterWrite) WriteString(data string) (int, error) {
 
 func TestRelayGroupHealthRecordsCancellationStagesAndDelivery(t *testing.T) {
 	db := useControllerCapacityTestDB(t)
-	require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.ContentSafetyViolation{}, &model.GroupHealthMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.ContentSafetyViolation{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 	oldRedis, oldCount, oldRetry := common.RedisEnabled, constant.CountToken, common.RetryTimes
 	common.RedisEnabled, constant.CountToken, common.RetryTimes = false, false, 0
 	t.Cleanup(func() { common.RedisEnabled, constant.CountToken, common.RetryTimes = oldRedis, oldCount, oldRetry })

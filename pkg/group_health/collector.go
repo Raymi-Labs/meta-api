@@ -5,6 +5,7 @@ package grouphealth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -17,9 +18,10 @@ import (
 )
 
 const (
-	BucketSeconds = int64(3600)
-	FlushInterval = 5 * time.Second
-	maxHotBuckets = 8192
+	BucketSeconds         = int64(3600)
+	HalfHourBucketSeconds = int64(1800)
+	FlushInterval         = 5 * time.Second
+	maxHotBuckets         = 8192
 )
 
 // Outcome records only what the relay can establish. A disconnected client is
@@ -52,6 +54,7 @@ type bucketKey struct {
 }
 
 type collector struct {
+	bucketSeconds int64
 	mu            sync.Mutex
 	flushMu       sync.Mutex
 	buckets       map[bucketKey]model.GroupHealthMetric
@@ -62,16 +65,22 @@ type collector struct {
 	save          func(context.Context, []model.GroupHealthMetric) error
 }
 
-func newCollector(save func(context.Context, []model.GroupHealthMetric) error) *collector {
-	return &collector{buckets: make(map[bucketKey]model.GroupHealthMetric), persisted: make(map[bucketKey]int64), save: save}
+func newCollector(save func(context.Context, []model.GroupHealthMetric) error, seconds ...int64) *collector {
+	interval := BucketSeconds
+	if len(seconds) > 0 {
+		interval = seconds[0]
+	}
+	return &collector{bucketSeconds: interval, buckets: make(map[bucketKey]model.GroupHealthMetric), persisted: make(map[bucketKey]int64), save: save}
 }
 
 var defaultCollector = newCollector(model.SaveGroupHealthSnapshots)
+var halfHourCollector = newCollector(model.SaveGroupHealthHalfHourSnapshots, HalfHourBucketSeconds)
 var startOnce sync.Once
 
 func Record(sample Sample) {
 	startOnce.Do(func() { go run() })
 	defaultCollector.record(sample)
+	halfHourCollector.record(sample)
 }
 
 func (c *collector) record(sample Sample) {
@@ -87,7 +96,7 @@ func (c *collector) record(sample Sample) {
 	if sample.At.IsZero() {
 		sample.At = time.Now()
 	}
-	key := bucketKey{group: sample.Group, model: sample.Model, ts: sample.At.Unix() / BucketSeconds * BucketSeconds}
+	key := bucketKey{group: sample.Group, model: sample.Model, ts: sample.At.Unix() / c.bucketSeconds * c.bucketSeconds}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	row, exists := c.buckets[key]
@@ -178,7 +187,7 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 		return err
 	}
 	c.persistFailed.Store(false)
-	currentBucket := now.Unix() / BucketSeconds * BucketSeconds
+	currentBucket := now.Unix() / c.bucketSeconds * c.bucketSeconds
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, saved := range rows {
@@ -201,7 +210,7 @@ func (c *collector) flush(ctx context.Context, now time.Time) error {
 // only serves persisted snapshots and never
 // merges hot counters with DB rows (which would double-count).
 func Flush(ctx context.Context) error {
-	return defaultCollector.flush(ctx, time.Now())
+	return errors.Join(defaultCollector.flush(ctx, time.Now()), halfHourCollector.flush(ctx, time.Now()))
 }
 
 func CollectionIncomplete(now time.Time, windowHours ...int) bool {
@@ -218,13 +227,13 @@ func run() {
 	lastCleanup := time.Time{}
 	for now := range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-		if err := defaultCollector.flush(ctx, now); err != nil {
+		if err := errors.Join(defaultCollector.flush(ctx, now), halfHourCollector.flush(ctx, now)); err != nil {
 			common.SysError("failed to persist group health metrics: " + err.Error())
 		}
 		cancel()
 		if now.Sub(lastCleanup) >= time.Hour {
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-			if err := model.DeleteExpiredGroupHealthMetrics(ctx, now); err != nil {
+			if err := errors.Join(model.DeleteExpiredGroupHealthMetrics(ctx, now), model.DeleteExpiredGroupHealthHalfHourMetrics(ctx, now)); err != nil {
 				common.SysError("failed to clean group health metrics: " + err.Error())
 			} else {
 				lastCleanup = now

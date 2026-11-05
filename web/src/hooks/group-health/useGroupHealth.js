@@ -92,6 +92,7 @@ export function useGroupHealth({
   model,
   group,
   hours = 24,
+  bucketSeconds = 3600,
   enabled = true,
 } = {}) {
   const [userState] = useContext(UserContext);
@@ -100,7 +101,7 @@ export function useGroupHealth({
   const modelValue = model || '';
   const groupValue = group || '';
   const key = active
-    ? JSON.stringify([identity, modelValue, groupValue, hours])
+    ? JSON.stringify([identity, modelValue, groupValue, hours, bucketSeconds])
     : '';
   const subscribe = useCallback(
     (notify) => {
@@ -123,13 +124,14 @@ export function useGroupHealth({
         key,
         {
           ...(hours !== 24 ? { hours } : {}),
+          ...(bucketSeconds !== 3600 ? { bucket_seconds: bucketSeconds } : {}),
           ...(modelValue ? { model: modelValue } : {}),
           ...(groupValue ? { group: groupValue } : {}),
         },
         force,
       );
     },
-    [key, modelValue, groupValue, hours],
+    [key, modelValue, groupValue, hours, bucketSeconds],
   );
 
   useEffect(() => {

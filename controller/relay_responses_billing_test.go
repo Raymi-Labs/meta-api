@@ -144,7 +144,7 @@ func TestRelayResponsesInterruptedOutputRefundsAllFundingSources(t *testing.T) {
 				require.NoError(t, err)
 				sqlDB.SetMaxOpenConns(1)
 				t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
-				require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.Token{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.SubscriptionPlan{}, &model.UserSubscription{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}))
+				require.NoError(t, db.AutoMigrate(&model.Log{}, &model.User{}, &model.Token{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.SubscriptionPlan{}, &model.UserSubscription{}, &model.SubscriptionPreConsumeRecord{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 				oldLog, oldRedis, oldCount, oldRetry, oldBatch, oldConsume, oldSQLite := constant.ErrorLogEnabled, common.RedisEnabled, constant.CountToken, common.RetryTimes, common.BatchUpdateEnabled, common.LogConsumeEnabled, common.UsingSQLite
 				constant.ErrorLogEnabled, common.RedisEnabled, constant.CountToken, common.RetryTimes, common.BatchUpdateEnabled, common.LogConsumeEnabled, common.UsingSQLite = true, false, false, 3, false, true, true
 				t.Cleanup(func() {

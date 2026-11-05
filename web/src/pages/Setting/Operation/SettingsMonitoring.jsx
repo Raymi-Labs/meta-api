@@ -48,7 +48,7 @@ export default function SettingsMonitoring(props) {
     UserScopedCircuitBreakerTTLSeconds: 60,
     UserScopedCircuitBreakerFailureThreshold: 2,
     'monitor_setting.auto_test_channel_enabled': false,
-    'monitor_setting.auto_test_channel_minutes': 10,
+    'monitor_setting.auto_test_channel_minutes': 30,
     'monitor_setting.pre_disable_wait_enabled': false,
     'monitor_setting.pre_disable_wait_minutes': 10,
     'monitor_setting.pool_exhausted_notify_enabled': false,

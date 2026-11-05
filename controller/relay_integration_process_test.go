@@ -57,7 +57,7 @@ func useRelayMatrixProcessDB(t *testing.T) *gorm.DB {
 	sqlDB.SetMaxOpenConns(1)
 	model.DB, model.LOG_DB = db, db
 	common.MemoryCacheEnabled = false
-	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Midjourney{}, &model.Ability{}, &model.User{}, &model.Token{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.GroupHealthMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Midjourney{}, &model.Ability{}, &model.User{}, &model.Token{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 	// Keep this pointer and connection valid through the race detector's exit
 	// wait too. The process, rather than a test cleanup, owns their lifetime.
 	return db

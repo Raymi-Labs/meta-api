@@ -81,7 +81,12 @@ func GetGroupHealth(c *gin.Context) {
 	if modelName != "" && !grouphealth.IsModelAuthorized(modelName, user.Role) {
 		groups = nil
 	}
-	result, err := grouphealth.Query(c.Request.Context(), groups, modelName, user.Role, time.Now(), hours)
+	seconds, err := strconv.ParseInt(c.DefaultQuery("bucket_seconds", "3600"), 10, 64)
+	if err != nil || (seconds != grouphealth.BucketSeconds && seconds != grouphealth.HalfHourBucketSeconds) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "查询参数无效"})
+		return
+	}
+	result, err := grouphealth.QueryWithBucket(c.Request.Context(), groups, modelName, user.Role, time.Now(), hours, seconds)
 	if err != nil {
 		common.SysError("failed to query group health: " + err.Error())
 		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "message": "分组健康数据暂不可用"})

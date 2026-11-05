@@ -1,5 +1,6 @@
 {
   "translation": {
+    "每30分钟一个节点。有效调用不足30次时，按对应上游渠道测试补充，每个节点最多补一个样本；任一渠道通过即成功，仅有失败即失败。真实调用保留权重，无测试沿用样本门槛；测试不代表当前模型实测或持续在线。": "Un punto ogni 30 minuti. Sotto 30 richieste valide, i test dei canali aggiungono al massimo un campione per punto: basta un successo; solo errori indicano un fallimento. Le richieste reali mantengono il loro peso. Senza test si applica la soglia dei campioni. I test non dimostrano la misurazione di questo modello né la disponibilità continua.",
     "拒绝": "Deny",
     "授权请求无效，请从客户端重新发起": "Invalid authorization request. Start again from the desktop client.",
     "授权请求无效或已过期，请从客户端重新发起": "Authorization is invalid or expired. Start again from the desktop client.",

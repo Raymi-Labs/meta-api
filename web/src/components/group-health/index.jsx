@@ -435,7 +435,7 @@ export function GroupHealthPanel({
   );
 }
 
-export function GroupHealthLegend({ uptime = false }) {
+export function GroupHealthLegend({ uptime = false, bucketSeconds = 3600 }) {
   const { t } = useTranslation();
   return (
     <>
@@ -468,7 +468,7 @@ export function GroupHealthLegend({ uptime = false }) {
       </div>
       <div className='group-health-note'>
         {uptime ? (
-          <GroupUptimeNote />
+          <GroupUptimeNote bucketSeconds={bucketSeconds} />
         ) : (
           t(
             '计入统计少于 {{count}} 次时显示灰色；达到 {{count}} 次后按实际成功率着色。',
@@ -482,12 +482,14 @@ export function GroupHealthLegend({ uptime = false }) {
   );
 }
 
-export function GroupUptimeNote() {
+export function GroupUptimeNote({ bucketSeconds = 3600 }) {
   const { t } = useTranslation();
   return (
     <p className='group-health-note'>
       {t(
-        '有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。',
+        bucketSeconds === 1800
+          ? '每30分钟一个节点。有效调用不足30次时，按对应上游渠道测试补充，每个节点最多补一个样本；任一渠道通过即成功，仅有失败即失败。真实调用保留权重，无测试沿用样本门槛；测试不代表当前模型实测或持续在线。'
+          : '有效调用不足30次时，按对应上游渠道的测试补充：任一渠道通过即成功，测试可使用同渠道的其他模型；仅有失败即失败。每小时最多补一个样本，真实调用保留权重，无测试沿用样本门槛。历史成功测试按小时补证据，不代表当前模型实测或持续在线。',
       )}
     </p>
   );

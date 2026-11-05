@@ -142,6 +142,10 @@ export function chartDomain(values, metric) {
 }
 
 // Hourly observations must not be joined across missing buckets.
-export function contiguousChartPoints(previous, current) {
-  return previous != null && current > previous && current - previous <= 3600;
+export function contiguousChartPoints(previous, current, bucketSeconds = 3600) {
+  return (
+    previous != null &&
+    current > previous &&
+    current - previous <= bucketSeconds
+  );
 }

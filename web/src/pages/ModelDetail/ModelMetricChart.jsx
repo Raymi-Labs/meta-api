@@ -185,9 +185,13 @@ export default function ModelMetricChart({
                       }
                       const prior = previous;
                       previous = { ts, point, value };
-                      const joined = contiguousChartPoints(prior?.ts, ts);
+                      const joined = contiguousChartPoints(
+                        prior?.ts,
+                        ts,
+                        bucketSeconds,
+                      );
                       const next = chartDisplayValue(
-                        map.get(ts + 3600),
+                        map.get(ts + bucketSeconds),
                         metric,
                       );
                       const color = activeColor(point, groupIndex);

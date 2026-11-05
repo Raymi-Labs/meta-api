@@ -33,7 +33,7 @@ func TestRelayBoundedWalletReservation(t *testing.T) {
 	require.NoError(t, e)
 	sqlDB.SetMaxOpenConns(1)
 	t.Cleanup(func() { sqlDB.Close() })
-	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Token{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.UserSubscription{}, &model.GroupHealthMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Token{}, &model.Log{}, &model.ContentSafetyViolation{}, &model.PulseWalletReservation{}, &model.PulseFundingLedger{}, &model.UserSubscription{}, &model.GroupHealthMetric{}, &model.GroupHealthHalfHourMetric{}))
 	oldRedis, oldMemory, oldSQLite, oldCount, oldRetry, oldLog, oldConsume := common.RedisEnabled, common.MemoryCacheEnabled, common.UsingSQLite, constant.CountToken, common.RetryTimes, constant.ErrorLogEnabled, common.LogConsumeEnabled
 	common.RedisEnabled, common.MemoryCacheEnabled, common.UsingSQLite, constant.CountToken, common.RetryTimes, constant.ErrorLogEnabled, common.LogConsumeEnabled = false, false, true, true, 0, true, true
 	t.Cleanup(func() {

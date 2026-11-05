@@ -149,6 +149,8 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
         ).toBe(domain.ticks.length);
       }
       expect(contiguousChartPoints(0, 3600)).toBe(true);
+      expect(contiguousChartPoints(0, 1800, 1800)).toBe(true);
+      expect(contiguousChartPoints(0, 3600, 1800)).toBe(false);
       for (const [before, after] of [
         [null, 3600],
         [0, 7200],

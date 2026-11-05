@@ -121,12 +121,23 @@ type Result struct {
 
 func Query(ctx context.Context, groups []string, modelName string, role int, now time.Time, windowHours ...int) (Result, error) {
 	hours := 24
-	if len(windowHours) > 0 && windowHours[0] == 72 {
-		hours = 72
+	if len(windowHours) > 0 {
+		hours = windowHours[0]
 	}
+	return QueryWithBucket(ctx, groups, modelName, role, now, hours, BucketSeconds)
+}
+
+func QueryWithBucket(ctx context.Context, groups []string, modelName string, role int, now time.Time, hours int, seconds int64) (Result, error) {
+	if seconds != BucketSeconds && seconds != HalfHourBucketSeconds {
+		return Result{}, fmt.Errorf("invalid bucket seconds: %d", seconds)
+	}
+	if hours != 72 {
+		hours = 24
+	}
+
 	end := now.Unix()
-	start := end/BucketSeconds*BucketSeconds - int64(hours-1)*BucketSeconds
-	rows, err := model.QueryGroupHealthMetrics(ctx, groups, modelName, measurementStart(end), end)
+	start := end/seconds*seconds - int64(hours)*3600 + seconds
+	rows, err := model.QueryGroupHealthMetrics(ctx, groups, modelName, measurementStartForBucket(end, seconds), end, seconds)
 	if err != nil {
 		return Result{}, err
 	}
@@ -137,8 +148,11 @@ func Query(ctx context.Context, groups []string, modelName string, role int, now
 			visible = append(visible, row)
 		}
 	}
-	result := buildResult(groups, visible, start, end)
+	result := buildResultWithBucket(groups, visible, start, end, seconds)
 	result.CollectionIncomplete = CollectionIncomplete(now, hours)
+	if seconds == HalfHourBucketSeconds {
+		result.CollectionIncomplete = halfHourCollector.persistFailed.Load() || halfHourCollector.lastDrop.Load() > now.Add(-time.Duration(hours)*time.Hour).Unix()
+	}
 	return result, nil
 }
 
@@ -206,15 +220,24 @@ func QueryModels(ctx context.Context, groups, modelNames []string, role, hours i
 }
 
 func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int64) Result {
-	hours := int((end/BucketSeconds*BucketSeconds-start)/BucketSeconds) + 1
-	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: BucketSeconds, MetricScope: MetricScope, WindowScope: fmt.Sprintf("current_hour_and_previous_%d_hours", hours-1), WindowHours: hours, Groups: make([]Group, 0, len(groups))}
+	return buildResultWithBucket(groups, rows, start, end, BucketSeconds)
+}
+
+func buildResultWithBucket(groups []string, rows []model.GroupHealthMetric, start, end, seconds int64) Result {
+	count := int((end/seconds*seconds-start)/seconds) + 1
+	hours := count * int(seconds) / 3600
+	scope := fmt.Sprintf("current_hour_and_previous_%d_hours", hours-1)
+	if seconds == HalfHourBucketSeconds {
+		scope = fmt.Sprintf("current_half_hour_and_previous_%d_half_hours", count-1)
+	}
+	result := Result{Enabled: true, StartTime: start, EndTime: end, BucketSeconds: seconds, MetricScope: MetricScope, WindowScope: scope, WindowHours: hours, Groups: make([]Group, 0, len(groups))}
 	byGroup := make(map[string]map[int64]model.GroupHealthMetric, len(groups))
 	for _, group := range groups {
 		byGroup[group] = make(map[int64]model.GroupHealthMetric)
 	}
 	for _, row := range withProbeBuckets(rows) {
 		buckets, allowed := byGroup[row.GroupName]
-		if !allowed || row.BucketTs < measurementStart(end) || row.BucketTs > end {
+		if !allowed || row.BucketTs < measurementStartForBucket(end, seconds) || row.BucketTs > end {
 			continue
 		}
 		aggregate := buckets[row.BucketTs]
@@ -227,10 +250,10 @@ func buildResult(groups []string, rows []model.GroupHealthMetric, start, end int
 	ordered := append([]string(nil), groups...)
 	sort.Strings(ordered)
 	for _, name := range ordered {
-		group := Group{Group: name, Series: make([]Bucket, 0, hours)}
+		group := Group{Group: name, Series: make([]Bucket, 0, count)}
 		var total model.GroupHealthMetric
 		var latest MeasurementReferences
-		for ts := measurementStart(end); ts <= end; ts += BucketSeconds {
+		for ts := measurementStartForBucket(end, seconds); ts <= end; ts += seconds {
 			row := byGroup[name][ts]
 			latest.observe(row, ts)
 			if ts < start {
