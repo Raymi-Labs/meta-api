@@ -95,12 +95,32 @@ export default function ModelStickyBar({
             {t('对比')}
           </Link>
           <Link
-            to={playgroundPath}
+            to={
+              model.supported_endpoint_types?.includes('decisions')
+                ? '#quick-start'
+                : playgroundPath
+            }
             className='model-action-primary'
-            aria-label={t('在模型体验中测试')}
+            aria-label={t(
+              model.supported_endpoint_types?.includes('decisions')
+                ? '快速开始'
+                : '在模型体验中测试',
+            )}
           >
-            <span className='model-action-full'>{t('在模型体验中测试')}</span>
-            <span className='model-action-short'>{t('测试')}</span>
+            <span className='model-action-full'>
+              {t(
+                model.supported_endpoint_types?.includes('decisions')
+                  ? '快速开始'
+                  : '在模型体验中测试',
+              )}
+            </span>
+            <span className='model-action-short'>
+              {t(
+                model.supported_endpoint_types?.includes('decisions')
+                  ? '快速开始'
+                  : '测试',
+              )}
+            </span>
             <ArrowUpRight size={16} aria-hidden='true' />
           </Link>
         </div>

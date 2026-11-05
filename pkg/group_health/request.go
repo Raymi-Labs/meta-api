@@ -187,7 +187,7 @@ func SupportsRequest(method, path string) bool {
 	switch path {
 	case "/v1/chat/completions", "/v1/completions", "/v1/messages", "/v1/responses", "/v1/responses/compact",
 		"/v1/images/generations", "/v1/images/edits", "/v1/edits", "/pg/chat/completions",
-		"/v1/embeddings", "/v1/moderations", "/v1/rerank", "/v1/audio/speech", "/v1/audio/transcriptions", "/v1/audio/translations":
+		"/v1/embeddings", "/v1/moderations", "/v1/rerank", "/v1/decisions", "/v1/audio/speech", "/v1/audio/transcriptions", "/v1/audio/translations":
 		return true
 	}
 	return (strings.HasPrefix(path, "/v1beta/models/") || strings.HasPrefix(path, "/v1/models/")) &&

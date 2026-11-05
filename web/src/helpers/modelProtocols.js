@@ -18,6 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const MODEL_PROTOCOLS = Object.freeze([
   {
+    endpoint: 'decisions',
+    label: 'Decisions',
+    path: '/v1/decisions',
+    example: true,
+  },
+  {
     endpoint: 'openai',
     label: 'Chat Completions',
     path: '/v1/chat/completions',
@@ -90,7 +96,7 @@ export function canOfferTextProtocolExamples(model) {
     return false;
   if (
     declared.some((endpoint) =>
-      /image|video|audio|embed|rerank/i.test(endpoint),
+      /image|video|audio|embed|rerank|decisions/i.test(endpoint),
     )
   )
     return false;

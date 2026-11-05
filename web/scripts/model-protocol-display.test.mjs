@@ -177,3 +177,37 @@ test('Ali TTS exposes POST speech and model-bound GET duplex without chat templa
   assert.equal(canOfferTextProtocolExamples(input), false);
   assert.deepEqual(getModelProtocolOptions(input, true), []);
 });
+
+test('Jev offers Decisions only and never chat templates', () => {
+  const input = model(['decisions'], {
+    model_name: 'typesafe/jev-1.14',
+    input_modalities: ['text', 'image'],
+    output_modalities: ['text'],
+  });
+  assert.equal(canOfferTextProtocolExamples(input), false);
+  assert.deepEqual(
+    getModelEndpointRows(input).map((x) => [x.label, x.path]),
+    [['Decisions', '/v1/decisions']],
+  );
+  for (const language of [
+    'Python',
+    'TypeScript',
+    'Go',
+    'Java',
+    'C#',
+    'Ruby',
+    'cURL',
+  ]) {
+    const examples = getModelQuickStartExamples(
+      input,
+      'https://example.com',
+      '',
+      language,
+      { includeTextProtocolTemplates: true },
+    );
+    assert.equal(examples.length, 1);
+    assert.match(examples[0].code, /questions/);
+    assert.match(examples[0].code, /decisions/);
+    assert.doesNotMatch(examples[0].code, /chat\/completions/);
+  }
+});

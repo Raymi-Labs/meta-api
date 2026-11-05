@@ -52,9 +52,13 @@ const (
 	RelayModeGemini
 
 	RelayModeResponsesCompact
+	RelayModeDecisions
 )
 
 func Path2RelayMode(path string) int {
+	if path == "/v1/decisions" {
+		return RelayModeDecisions
+	}
 	relayMode := RelayModeUnknown
 	if strings.HasPrefix(path, "/v1/chat/completions") || strings.HasPrefix(path, "/pg/chat/completions") {
 		relayMode = RelayModeChatCompletions

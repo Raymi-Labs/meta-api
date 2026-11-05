@@ -7,6 +7,8 @@ import (
 
 func GuessRelayFormatFromRequest(req any) (types.RelayFormat, bool) {
 	switch req.(type) {
+	case *dto.DecisionsRequest, dto.DecisionsRequest:
+		return types.RelayFormatDecisions, true
 	case *dto.GeneralOpenAIRequest, dto.GeneralOpenAIRequest:
 		return types.RelayFormatOpenAI, true
 	case *dto.OpenAIResponsesRequest, dto.OpenAIResponsesRequest:

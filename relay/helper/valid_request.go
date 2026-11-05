@@ -24,6 +24,12 @@ func GetAndValidateRequest(c *gin.Context, format types.RelayFormat) (request dt
 	relayMode := relayconstant.Path2RelayMode(c.Request.URL.Path)
 
 	switch format {
+	case types.RelayFormatDecisions:
+		var decisions *dto.DecisionsRequest
+		if err = common.UnmarshalBodyReusable(c, &decisions); err == nil {
+			err = decisions.Validate()
+		}
+		request = decisions
 	case types.RelayFormatOpenAI:
 		request, err = GetAndValidateTextRequest(c, relayMode)
 	case types.RelayFormatGemini:

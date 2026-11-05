@@ -25,6 +25,7 @@ const originalText = (source, values) =>
   translateContentText(source, null, values);
 
 const ENDPOINTS = {
+  decisions: { label: 'Decisions', path: '/v1/decisions' },
   openai: { label: 'OpenAI Chat Completions', path: '/v1/chat/completions' },
   'openai-response': { label: 'OpenAI Responses', path: '/v1/responses' },
   anthropic: { label: 'Anthropic Messages', path: '/v1/messages' },
@@ -121,6 +122,18 @@ export function buildDocsRequestData(model, endpoint, baseUrl, stream = false) {
   let headers = ['Authorization: Bearer $NAN_API_KEY'];
   let body;
   switch (endpoint) {
+    case 'decisions':
+      body = {
+        model: name,
+        state: 'The order arrived damaged. Please arrange a replacement.',
+        questions: {
+          needs_support: {
+            type: 'noul',
+            instructions: 'Does the customer need help with an order?',
+          },
+        },
+      };
+      break;
     case 'openai':
       body = {
         model: name,

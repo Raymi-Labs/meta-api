@@ -99,6 +99,9 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if info.RelayMode == relayconstant.RelayModeDecisions {
+		return decisionsRequestURL(info)
+	}
 	if info.RelayMode == relayconstant.RelayModeRealtime {
 		if strings.HasPrefix(info.ChannelBaseUrl, "https://") {
 			baseUrl := strings.TrimPrefix(info.ChannelBaseUrl, "https://")
@@ -610,6 +613,13 @@ func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommo
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
+	if info.RelayMode == relayconstant.RelayModeDecisions {
+		var err error
+		requestBody, err = validateDecisionsBody(info, requestBody)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if isOpenRouterGeminiAudio(info) {
 		return channel.DoApiRequest(a, c, info, requestBody)
 	}
@@ -626,6 +636,8 @@ func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, request
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {
 	switch info.RelayMode {
+	case relayconstant.RelayModeDecisions:
+		return decisionsResponse(c, resp, info)
 	case relayconstant.RelayModeRealtime:
 		err, usage = OpenaiRealtimeHandler(c, info)
 	case relayconstant.RelayModeAudioSpeech:

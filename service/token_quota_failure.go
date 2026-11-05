@@ -27,7 +27,7 @@ func IsTokenQuotaInvocation(c *gin.Context) bool {
 		return false
 	}
 	switch path {
-	case "/v1/messages", "/v1/completions", "/v1/chat/completions", "/v1/responses", "/v1/responses/compact", "/v1/edits", "/v1/images/generations", "/v1/images/edits", "/v1/embeddings", "/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/speech", "/v1/rerank", "/v1/moderations", "/v1/videos", "/v1/video/generations":
+	case "/v1/messages", "/v1/completions", "/v1/chat/completions", "/v1/responses", "/v1/responses/compact", "/v1/edits", "/v1/images/generations", "/v1/images/edits", "/v1/embeddings", "/v1/audio/transcriptions", "/v1/audio/translations", "/v1/audio/speech", "/v1/rerank", "/v1/decisions", "/v1/moderations", "/v1/videos", "/v1/video/generations":
 		return true
 	}
 	if strings.HasPrefix(path, "/v1/engines/") && strings.HasSuffix(path, "/embeddings") {

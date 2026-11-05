@@ -658,6 +658,10 @@ func GenRelayInfo(c *gin.Context, relayFormat types.RelayFormat, request dto.Req
 	var info *RelayInfo
 	var err error
 	switch relayFormat {
+	case types.RelayFormatDecisions:
+		info = genBaseRelayInfo(c, request)
+		info.RelayMode = relayconstant.RelayModeDecisions
+		info.RelayFormat = types.RelayFormatDecisions
 	case types.RelayFormatOpenAI:
 		info = GenRelayInfoOpenAI(c, request)
 	case types.RelayFormatOpenAIAudio:

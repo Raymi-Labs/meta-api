@@ -15,6 +15,7 @@ const status = {
   }),
 };
 const entries = [
+  ['typesafe/jev-1.14', ['decisions']],
   ['gpt-chat-fixture', ['openai']],
   ['responses-fixture', ['openai', 'openai-response']],
   ['image-fixture', ['image-generation', 'openai']],
@@ -398,6 +399,42 @@ try {
       ),
       true,
     );
+    await page.goto(
+      baseURL + '/model/' + encodeURIComponent('typesafe/jev-1.14'),
+    );
+    await page
+      .waitForSelector('#quick-start .model-quickstart pre')
+      .catch(async (e) => {
+        console.error(await page.$eval('body', (el) => el.innerText), errors);
+        throw e;
+      });
+    assert.deepEqual(
+      await page.$$eval('select[aria-label="接口协议"] option', (els) =>
+        els.map((el) => el.value),
+      ),
+      ['decisions'],
+    );
+    const jevCode = await page.$eval(
+      '.model-quickstart pre',
+      (el) => el.textContent,
+    );
+    assert.match(jevCode, /\/v1\/decisions/);
+    assert.match(jevCode, /questions/);
+    assert.equal(
+      await page.$('.model-detail-header-actions a[href^="/playground"]'),
+      null,
+    );
+    assert.match(
+      await page.$eval(
+        '.model-detail-header-actions .model-action-primary',
+        (el) => el.textContent,
+      ),
+      /快速开始/,
+    );
+    if (screenshotDir)
+      await page.screenshot({
+        path: `${screenshotDir}/jev-${mobile ? 'mobile' : 'desktop'}.png`,
+      });
     assert.deepEqual(errors, []);
     assert.deepEqual(mutations, []);
     await page.close();

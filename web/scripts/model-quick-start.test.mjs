@@ -15,6 +15,7 @@ const model = (name, protocols) => ({
 
 const hostileName = `org/model%2Fpart'$(echo unsafe)"\\newline\n尾😀 #{raise 'unsafe'}\u2028`;
 const protocols = [
+  'decisions',
   'openai',
   'openai-response',
   'anthropic',
@@ -314,6 +315,7 @@ test('server address wins, invalid addresses fall back, and credentials are neve
 test('all copied protocols preserve exact model names and shell arguments without executing model text', () => {
   const name = `org/model%2Fpart'$(echo unsafe)"\\newline\n尾`;
   const protocols = [
+    'decisions',
     'openai',
     'openai-response',
     'anthropic',
@@ -325,7 +327,7 @@ test('all copied protocols preserve exact model names and shell arguments withou
     'https://example.com/v1',
     '',
   );
-  assert.equal(samples.length, 5);
+  assert.equal(samples.length, protocols.length);
   for (const sample of samples) {
     // Replace curl with an argument recorder; no network call is made.
     const result = spawnSync(

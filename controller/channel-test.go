@@ -68,6 +68,9 @@ func normalizeChannelTestEndpoint(channel *model.Channel, modelName, endpointTyp
 	if normalized != "" {
 		return normalized
 	}
+	if channel != nil && channel.Type == constant.ChannelTypeOpenRouter && common.IsJevDecisionModel(resolveChannelTestMappedModelName(channel, modelName)) {
+		return string(constant.EndpointTypeDecisions)
+	}
 	lowerModelName := strings.ToLower(strings.TrimSpace(modelName))
 	channelType := 0
 	if channel != nil {
@@ -206,7 +209,7 @@ func buildChannelStyleTestExecution(channel *model.Channel, modelName, endpointT
 	if streamOverride != nil {
 		isStream = *streamOverride
 	}
-	if forceNonStreamMiMoTTSTest(channel, modelName) {
+	if forceNonStreamMiMoTTSTest(channel, modelName) || resolvedEndpointType == string(constant.EndpointTypeDecisions) {
 		isStream = false
 	}
 	if strings.HasPrefix(requestPath, "/v1/responses/compact") {
@@ -226,6 +229,8 @@ func buildChannelStyleTestExecution(channel *model.Channel, modelName, endpointT
 func resolveRelayFormatForTest(requestPath string, endpointType string) types.RelayFormat {
 	if endpointType != "" {
 		switch constant.EndpointType(endpointType) {
+		case constant.EndpointTypeDecisions:
+			return types.RelayFormatDecisions
 		case constant.EndpointTypeOpenAI:
 			return types.RelayFormatOpenAI
 		case constant.EndpointTypeOpenAIResponse:
@@ -250,6 +255,8 @@ func resolveRelayFormatForTest(requestPath string, endpointType string) types.Re
 	}
 
 	switch {
+	case requestPath == "/v1/decisions":
+		return types.RelayFormatDecisions
 	case requestPath == "/v1/embeddings":
 		return types.RelayFormatEmbedding
 	case requestPath == "/v1/images/generations":
@@ -400,6 +407,8 @@ func executeChannelStyleTest(
 
 	var convertedRequest any
 	switch relayInfo.RelayMode {
+	case relayconstant.RelayModeDecisions:
+		convertedRequest = request
 	case relayconstant.RelayModeEmbeddings:
 		if embeddingReq, ok := request.(*dto.EmbeddingRequest); ok {
 			convertedRequest, err = adaptor.ConvertEmbeddingRequest(c, relayInfo, *embeddingReq)
@@ -1015,6 +1024,8 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 	// 根据端点类型构建不同的测试请求
 	if endpointType != "" {
 		switch constant.EndpointType(endpointType) {
+		case constant.EndpointTypeDecisions:
+			return &dto.DecisionsRequest{Model: model, State: json.RawMessage(`"Hello"`), Questions: map[string]json.RawMessage{"greeting": json.RawMessage(`{"type":"noul","instructions":"Is the text a greeting?"}`)}}
 		case constant.EndpointTypeEmbeddings:
 			// 返回 EmbeddingRequest
 			return &dto.EmbeddingRequest{

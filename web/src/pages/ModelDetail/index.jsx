@@ -168,6 +168,7 @@ export default function ModelDetail() {
   const priceMode = data.showWithRecharge ? data.priceConvertMode : 'base';
   const compareState = { catalogState: sanitizeModelCatalogSnapshot(data) };
   const comparePath = buildModelComparePath([model.model_name]);
+  const isDecisionModel = model.supported_endpoint_types?.includes('decisions');
   const playgroundPath = buildModelPlaygroundPath(
     model.model_name,
     selectedGroup === 'all' ? groups[0] : selectedGroup,
@@ -185,8 +186,11 @@ export default function ModelDetail() {
           >
             {t('对比')}
           </Link>
-          <Link to={playgroundPath} className='model-action-primary'>
-            {t('在模型体验中测试')}
+          <Link
+            to={isDecisionModel ? '#quick-start' : playgroundPath}
+            className='model-action-primary'
+          >
+            {t(isDecisionModel ? '快速开始' : '在模型体验中测试')}
             <ArrowUpRight size={16} aria-hidden='true' />
           </Link>
         </div>
