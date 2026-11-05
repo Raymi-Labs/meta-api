@@ -1,0 +1,61 @@
+{
+  "reviewed_at": "2026-11-06",
+  "currency": "USD",
+  "token_unit": 1000000,
+  "scope": "仅恢复渠道1594；保留现有glimpse别名、映射、售价和分组",
+  "source_verification": {
+    "platform_document_url": "https://platform.elorian.ai/docs",
+    "platform_asset_url": "https://platform.elorian.ai/assets/index-BqR8dLEQ.js",
+    "platform_asset_sha256": "a76c53fd49ac2c9d7879df06442223f2b459f15291300319ef65e70569f0f8d3",
+    "published_rates": {
+      "input": 0.6,
+      "cached_input": 0.06,
+      "output": 3
+    },
+    "pricing_context": "官方文档 API prices, per 1M tokens；原厂发布文章 Table 1 给出非缓存输入及输出价"
+  },
+  "models": [
+    {
+      "channel_id": 1594,
+      "channel_name": "OpenRouter · Elorian",
+      "model": "glimpse",
+      "upstream_model": "elorian/glimpse",
+      "status": "enabled",
+      "official_price": {
+        "prompt": 0.6,
+        "completion": 3,
+        "input_cache_read": 0.06,
+        "source": "https://elorian.ai/blog/introducing-glimpse"
+      },
+      "sources": [
+        "https://elorian.ai/blog/introducing-glimpse",
+        "https://platform.elorian.ai/docs"
+      ],
+      "providers": [
+        "together"
+      ],
+      "endpoint_source": "https://openrouter.ai/api/v1/models/elorian/glimpse/endpoints",
+      "endpoint_quotes": [
+        {
+          "provider": "together",
+          "service_tier": null,
+          "usd_per_million_tokens": {
+            "prompt": 0.6,
+            "completion": 3,
+            "input_cache_read": 0.06
+          },
+          "raw_pricing": {
+            "prompt": "0.0000006",
+            "completion": "0.000003",
+            "input_cache_read": "0.00000006",
+            "discount": 0
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "缓存价通过当日核价和Together允许列表约束；OpenRouter max_price没有独立缓存限价字段",
+    "仅验证短文本普通和流式流程；未覆盖图像、视频、长上下文与真实缓存命中"
+  ]
+}
