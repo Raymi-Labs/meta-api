@@ -8,6 +8,8 @@ OpenRouter 接入资料将聚合平台报价存入 official_pricing，公开 pri
 
 ## Decision
 
+[Flint 免费变体](2026-11-06-flint-free-reference-price.md)按用户要求为已核实的 OpenRouter Flint v1.0 免费服务增加精确零价展示例外，部分取代平台变体统一空态；不扩展厂家或自动同步来源，其他代理报价继续过滤。
+
 在公开 pricing 统一校验模型厂商与来源域名，缺少厂家来源的价格不输出，不参与任何官方折扣。原始资料保留供管理员核对，不批量删除生产数据。扩展同一后台同步：明确的厂商命名空间可查对应原生 ID；Cohere 的明确别名通过官方模型页身份和价格区块校验。旧 OpenRouter 来源允许被成功核验的厂家价替换，失败保留原数据但不公开为官方价；原人工厂家价、禁用同步和并发保护继续有效。
 
 ## Existing notes audit

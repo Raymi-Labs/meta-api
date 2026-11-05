@@ -127,3 +127,7 @@ xAI 价格从同一官方模型页面的公开静态目录读取，按精确 ID�
 Cohere 使用 `docs.cohere.com/v2/docs/` 的官方模型页，校验页面 Model ID、Pricing 区块、完整输入/输出及 USD / 1M tokens 单位。当前明确映射 Command A（`command-a` → `command-a-03-2025`）、Command R / R+ 08-2024、R7B 12-2024；不借用其他模型价格。金额由页面实时解析，不写死。
 
 已知厂家命名空间只在裸 ID 也属于同一厂家时解包，再由原官方适配器检查精确身份。`:free` 等平台变体不套用普通模型报价。旧 `openrouter.ai` 价格成功取得厂家价后可更新；网络失败保留旧资料但不公开为官方价。人工厂家价、关闭同步、并发保存继续保护。没有厂家公开 API 单价或尚无适配器的模型显示暂无数据，不能用其他托管商价格补齐。
+
+### 已核实免费变体
+
+`flint-v1.0:free` 与 `recursive/flint-v1.0:free` 可展示管理员核实的 OpenRouter 免费变体参考价，来源必须为该平台精确模型页，USD / million_tokens 单档输入、输出必须显式为0，其他费目只能未知或0。该例外不把本站零售价、开源许可或任意 `:free` 后缀推断为免费；不扩展普通厂家价格/自动同步的来源校验。2026-11-06 已核对 [OpenRouter 模型页](https://openrouter.ai/recursive/flint-v1.0:free)，资料是人工快照，免费端点仍有速率限制。见[决策](../.agents/notes/implemented/bug-fix/2026-11-06-flint-free-reference-price.md)。

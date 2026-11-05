@@ -82,7 +82,7 @@ func (p OfficialPricing) IsLegacyResellerPrice() bool {
 }
 
 func (m Model) ManufacturerOfficialPricing() OfficialPricing {
-	if m.NameRule == NameRuleExact && IsManufacturerPriceSource(m.ModelName, m.OfficialPricing.SourceURL) {
+	if m.NameRule == NameRuleExact && (IsManufacturerPriceSource(m.ModelName, m.OfficialPricing.SourceURL) || isVerifiedFreeVariantPricing(m.ModelName, m.OfficialPricing)) {
 		return m.OfficialPricing
 	}
 	return OfficialPricing{}
@@ -95,4 +95,32 @@ func ManufacturerNativeModel(name string) string {
 		return native
 	}
 	return name
+}
+
+// A verified platform free variant is a reference for that exact service only,
+// not a manufacturer's general inference price. See the Flint decision note.
+func isVerifiedFreeVariantPricing(name string, price OfficialPricing) bool {
+	switch name {
+	case "flint-v1.0:free", "recursive/flint-v1.0:free":
+	default:
+		return false
+	}
+	u, err := url.Parse(price.SourceURL)
+	if err != nil || priceSourceHost(price.SourceURL) != "openrouter.ai" ||
+		u.Path != "/recursive/flint-v1.0:free" || u.RawQuery != "" || u.Fragment != "" {
+		return false
+	}
+	if price.Currency != "USD" || len(price.Tiers) != 1 {
+		return false
+	}
+	tier := price.Tiers[0]
+	if tier.Unit != "million_tokens" || tier.Input == nil || tier.Output == nil || *tier.Input != 0 || *tier.Output != 0 {
+		return false
+	}
+	for _, extra := range []*float64{tier.CacheRead, tier.CacheWrite, tier.Price} {
+		if extra != nil && *extra != 0 {
+			return false
+		}
+	}
+	return true
 }
