@@ -28,4 +28,6 @@ Status: implemented
 
 ## Local progress
 
+发布前数据库矩阵：GitHub Actions 42005572249在SQLite、MySQL5.7（utf8mb4_unicode_ci）、PostgreSQL9.6实际运行TestDesktopLoginDatabaseMatrix与HTTP授权测试成功，未跳过外部数据库。新增拒绝按钮补齐17语言资源。服务器仍由用户部署，未连接生产SSH或执行迁移。网页新增防嵌入/Referrer策略也覆盖OAuth之后的SPA跳转。
+
 本地实现授权记录/原子状态转换、五个HTTP接口、独立浏览器确认页。模型层覆盖wrong verifier、wrong code、重放、12路消费竞争、取消、过期；控制器覆盖Origin、缺session、账号切换、重复批准、session签发、重复兑换及禁用用户。SQLite测试和网站Vite构建通过，MySQL5.7/PostgreSQL9.6通过独立CI矩阵另验，真实提供商流程留给用户部署后联调；不部署生产、不修改现有OAuth provider配置。用户明确要求先推送Meta、客户端合并发布，服务器最后由用户部署；安装包不宣称已具备线上可用性。17语言词条覆盖，非中文新增提示暂使用英语。
