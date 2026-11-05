@@ -174,7 +174,7 @@ try {
       healthRequests.push(u.search);
       const seconds = Number(u.searchParams.get('bucket_seconds') || 3600);
       const hours = Number(u.searchParams.get('hours') || 24);
-      const count = hours * 3600 / seconds;
+      const count = (hours * 3600) / seconds;
       const ref = unavailable
         ? undefined
         : {
@@ -209,7 +209,9 @@ try {
         last_valid: history,
         series: historical
           ? Array.from({ length: count }, (_, i) => ({
-              ts: Math.floor(Date.now() / (seconds * 1000)) * seconds - (count - 1 - i) * seconds,
+              ts:
+                Math.floor(Date.now() / (seconds * 1000)) * seconds -
+                (count - 1 - i) * seconds,
               avg_output_tps: null,
               last_valid: history,
             }))
@@ -391,8 +393,12 @@ try {
     {},
     card,
   );
-  assert.ok(healthRequests.some((q) => q.includes("bucket_seconds=1800")));
-  assert.ok(healthRequests.some((q) => q.includes("hours=72") && !q.includes("bucket_seconds")));
+  assert.ok(healthRequests.some((q) => q.includes('bucket_seconds=1800')));
+  assert.ok(
+    healthRequests.some(
+      (q) => q.includes('hours=72') && !q.includes('bucket_seconds'),
+    ),
+  );
   assert.deepEqual(errors, []);
   assert.deepEqual(writes, []);
   console.log(
