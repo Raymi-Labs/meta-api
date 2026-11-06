@@ -119,3 +119,39 @@ test('same-tab callback preserves existing state-scoped desktop return', () => {
     '/console',
   );
 });
+
+test('browser navigation converges once for every login entry, independent of backend Host', () => {
+  const requestId = 'a'.repeat(43);
+  for (const origin of [primary, ...aliases]) {
+    for (const path of [
+      '/login?next=%2Fconsole&code=SECRET&state=SECRET&token=SECRET',
+      '/register?aff=localtest&code=SECRET',
+      '/desktop-login?request_id=' + requestId + '&token=SECRET',
+    ]) {
+      let visible = new URL(path, origin);
+      const target = canonicalLoginPage(visible.origin, visible.pathname, visible.search);
+      if (origin === primary) {
+        assert.equal(target, '', 'primary page must not replace itself');
+      } else {
+        assert.ok(target);
+        assert.ok(!target.includes('SECRET'));
+        visible = new URL(target);
+        assert.equal(visible.origin, primary);
+        assert.equal(canonicalLoginPage(visible.origin, visible.pathname, visible.search), '');
+        if (visible.pathname === '/register') assert.equal(visible.searchParams.get('aff'), 'localtest');
+        if (visible.pathname === '/desktop-login') assert.equal(visible.searchParams.get('request_id'), requestId);
+      }
+    }
+  }
+});
+
+test('query parameters cannot impersonate the browser origin or opt out of alias navigation', () => {
+  const query = '?host=meta-api.com&origin=https%3A%2F%2Fmeta-api.com&redirected=1&next=%2F%2Fevil.test&aff=a&aff=b';
+  for (const origin of aliases) {
+    assert.equal(canonicalLoginPage(origin, '/login', query), primary + '/login');
+  }
+  assert.equal(canonicalLoginPage(primary, '/login', '?host=meta-api.vip'), '');
+  for (const origin of ['https://meta-api.com.evil.test', 'http://localhost:3000', 'https://custom.test']) {
+    assert.equal(canonicalLoginPage(origin, '/login', query), '');
+  }
+});

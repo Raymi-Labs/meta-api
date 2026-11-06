@@ -16,7 +16,6 @@ import (
 
 func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 	frontendFS := common.EmbedFolder(buildFS, "web/dist")
-	router.Use(canonicalLoginNavigation())
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Use(middleware.GlobalWebRateLimit(frontendFS))
 	router.Use(middleware.Cache())
@@ -43,21 +42,6 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte) {
 		}
 		serveWebIndex(c, indexPage)
 	})
-}
-
-func canonicalLoginNavigation() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead {
-			if target := common.CanonicalLoginPage(c.Request.Host, c.Request.URL.Path, c.Request.URL.RawQuery); target != "" {
-				c.Header("Cache-Control", "no-store")
-				c.Header("Referrer-Policy", "no-referrer")
-				c.Redirect(http.StatusFound, target)
-				c.Abort()
-				return
-			}
-		}
-		c.Next()
-	}
 }
 
 func shouldReturnRelayNotFound(requestURI string) bool {
@@ -87,7 +71,15 @@ func serveWebIndex(c *gin.Context, indexPage []byte) {
 		template = indexPage
 	}
 	html := service.RenderIndexWithMeta(common.InjectAnalyticsConfig(template), c.Request.URL.Path)
-	c.Header("Cache-Control", "no-cache")
+	// Browser origin, not a proxy-rewritten Host, owns canonical login navigation.
+	// App blocks alias login forms before moving to the primary origin.
+	switch strings.TrimSuffix(c.Request.URL.Path, "/") {
+	case "/login", "/register":
+		c.Header("Cache-Control", "no-store")
+		c.Header("Referrer-Policy", "no-referrer")
+	default:
+		c.Header("Cache-Control", "no-cache")
+	}
 	c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 }
 

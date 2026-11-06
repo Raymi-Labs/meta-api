@@ -1,6 +1,6 @@
 # 功能地图
 
-四线路登录主站：`web/src/helpers/canonicalLogin.js`与App入口、服务端`common/login_origin.go`和web路由共同将备用域名登录/注册/桌面授权页导航至meta-api.com；Google/GitHub当前页跳转，兑换回调与桌面批准Origin一致。API线路、旧回调code和Cookie不跨站转发。部署与Google/GitHub控制台登记见[说明](installation/canonical-login-origin.md)。
+四线路登录主站：`web/src/helpers/canonicalLogin.js`与App入口根据浏览器origin将备用域名登录/注册/桌面授权页导航至meta-api.com，跳转前不挂载认证表单；服务端直接提供HTML，不以代理Host或转发头重定向，避免主站自跳转。Google/GitHub当前页跳转，`common/login_origin.go`继续规范兑换回调与桌面批准Origin。登录/注册HTML不缓存、不发送Referrer；API线路、旧回调code和Cookie不跨站转发。部署及JS依赖见[说明](installation/canonical-login-origin.md)，[代理循环修复](../.agents/notes/implemented/bug-fix/2026-11-05-canonical-login-proxy-loop.md)。
 
 桌面浏览器登录：网站`/desktop-login`授权页复用已有GitHub/Google登录与next跳转 → `controller/desktop_login.go` → `model/desktop_login.go`短期授权表；PKCE绑定、session/Origin/CSRF/用户核对、原子消费后独立签发桌面session。无模型请求，不传长期凭据URL；部署由维护者完成，见[部署交付](installation/desktop-browser-login.md)。
 
