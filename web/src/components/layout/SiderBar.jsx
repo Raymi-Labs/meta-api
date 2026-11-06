@@ -50,6 +50,7 @@ const routerMap = {
   models: '/console/models',
   deployment: '/console/deployment',
   imagePlayground: '/console/image-playground',
+  overview: '/console/overview',
   personal: '/console/personal',
   pulse: '/console/pulse',
   pulseOps: '/console/pulse-ops',
@@ -157,6 +158,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   const financeItems = useMemo(() => {
     const items = [
+      { text: t('个人总览'), itemKey: 'overview', to: '/overview' },
       {
         text: t('钱包管理'),
         itemKey: 'topup',

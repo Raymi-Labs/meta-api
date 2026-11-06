@@ -199,6 +199,16 @@ code {
   overscroll-behavior-y: contain;
 }
 
+/* Sidebar items must size to content, not inherit a full-height navigation list. */
+.sidebar-nav .semi-navigation-item,
+.sidebar-nav .semi-navigation-sub-title {
+  height: auto !important;
+  min-height: 40px;
+}
+.sidebar-nav .semi-navigation-item-collapsed {
+  height: 44px !important;
+}
+
 .sidebar-nav::-webkit-scrollbar {
   display: none;
 }

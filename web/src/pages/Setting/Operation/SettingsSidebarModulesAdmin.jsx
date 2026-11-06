@@ -55,6 +55,7 @@ export default function SettingsSidebarModulesAdmin(props) {
       task: true,
     },
     personal: {
+      overview: true,
       enabled: true,
       topup: true,
       pulse: true,
@@ -198,7 +199,13 @@ export default function SettingsSidebarModulesAdmin(props) {
             midjourney: true,
             task: true,
           },
-          personal: { enabled: true, topup: true, pulse: true, personal: true },
+          personal: {
+            enabled: true,
+            overview: true,
+            topup: true,
+            pulse: true,
+            personal: true,
+          },
           admin: {
             enabled: true,
             upstreamAccounts: true,
@@ -253,6 +260,11 @@ export default function SettingsSidebarModulesAdmin(props) {
       title: t('个人中心区域'),
       description: t('用户个人功能'),
       modules: [
+        {
+          key: 'overview',
+          title: t('个人总览'),
+          description: t('个人用量与令牌概况'),
+        },
         { key: 'topup', title: t('钱包管理'), description: t('余额充值管理') },
         {
           key: 'pulse',

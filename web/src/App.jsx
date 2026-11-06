@@ -40,6 +40,7 @@ import { canonicalLoginPage } from './helpers/canonicalLogin';
 
 import SetupCheck from './components/layout/SetupCheck';
 
+const PersonalOverview = lazy(() => import('./pages/PersonalOverview'));
 const RegisterForm = lazy(() => import('./components/auth/RegisterForm'));
 const LoginForm = lazy(() => import('./components/auth/LoginForm'));
 const PasswordResetForm = lazy(
@@ -395,6 +396,18 @@ function App() {
                 <Setting />
               </Suspense>
             </AdminRoute>
+          }
+        />
+        <Route
+          path='/console/overview'
+          element={
+            <PrivateRoute
+              loginPath={buildAuthPathWithNext('/login', '/console/overview')}
+            >
+              <Suspense fallback={<Loading />}>
+                <PersonalOverview />
+              </Suspense>
+            </PrivateRoute>
           }
         />
         <Route

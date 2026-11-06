@@ -1,0 +1,293 @@
+.personal-overview {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  color: var(--semi-color-text-0);
+}
+.personal-overview h1,
+.personal-overview h2,
+.personal-overview p {
+  margin: 0;
+}
+.personal-overview a {
+  color: inherit;
+  text-decoration: none;
+}
+.personal-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 28px;
+}
+.personal-overview-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.personal-overview-avatar {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 17px;
+  background: var(--semi-color-primary-light-default);
+  color: var(--semi-color-primary);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 600;
+}
+.personal-overview h1 {
+  font-size: 27px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+}
+.personal-overview-identity p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--semi-color-text-2);
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.personal-overview-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.personal-overview-month,
+.personal-overview-tokens {
+  padding: 24px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 16px;
+  background: var(--semi-color-bg-1);
+  margin-bottom: 24px;
+}
+.personal-overview-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.personal-overview-section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.personal-overview-section-heading > span {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+}
+.personal-overview-section-heading a,
+.personal-overview-empty a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--semi-color-primary);
+}
+.personal-overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 22px;
+}
+.personal-overview-metrics > div,
+.personal-overview-token-stats > div {
+  min-width: 0;
+  border-right: 1px solid var(--semi-color-border);
+  padding-right: 16px;
+}
+.personal-overview-metrics > div:last-child,
+.personal-overview-token-stats > div:last-child {
+  border: 0;
+}
+.personal-overview-metrics span,
+.personal-overview-token-stats span {
+  display: block;
+  font-size: 13px;
+  color: var(--semi-color-text-2);
+  margin-bottom: 9px;
+}
+.personal-overview-metrics strong {
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.personal-overview strong[aria-busy='true'] {
+  color: var(--semi-color-text-3);
+}
+.personal-overview .personal-overview-note {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--semi-color-text-2);
+  margin-top: 16px;
+}
+.personal-overview-count {
+  color: var(--semi-color-text-2);
+  font-size: 14px;
+  font-weight: 400;
+}
+.personal-overview-token-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.personal-overview-token-stats strong {
+  font-size: 20px;
+  line-height: 1.5;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.personal-overview-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 12px;
+}
+.personal-overview table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  text-align: left;
+}
+.personal-overview th {
+  font-weight: 500;
+  color: var(--semi-color-text-2);
+  background: var(--semi-color-fill-0);
+}
+.personal-overview th,
+.personal-overview td {
+  padding: 14px 18px;
+  white-space: nowrap;
+}
+.personal-overview td {
+  border-top: 1px solid var(--semi-color-border);
+}
+.personal-overview td:first-child {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.personal-token-status {
+  border-radius: 6px;
+  background: var(--semi-color-fill-1);
+  padding: 4px 8px;
+  color: var(--semi-color-text-2);
+}
+.personal-token-status.enabled {
+  color: var(--semi-color-success);
+  background: var(--semi-color-success-light-default);
+}
+.personal-overview-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.personal-overview-shortcuts a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 12px;
+  background: var(--semi-color-bg-1);
+  font-size: 14px;
+}
+.personal-overview-shortcuts span {
+  flex: 1;
+}
+.personal-overview a:focus-visible,
+.personal-overview button:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 3px;
+}
+.personal-overview-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 12px 0;
+  color: var(--semi-color-danger);
+}
+.personal-overview-error button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  color: var(--semi-color-primary);
+  cursor: pointer;
+}
+.personal-overview-empty {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--semi-color-text-2);
+  font-size: 13px;
+  padding: 18px 0;
+}
+@media (max-width: 700px) {
+  .personal-overview {
+    padding: 24px 12px 36px;
+  }
+  .personal-overview-header {
+    align-items: flex-start;
+  }
+  .personal-overview h1 {
+    font-size: 24px;
+  }
+  .personal-overview-avatar {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    font-size: 22px;
+  }
+  .personal-overview-identity {
+    gap: 10px;
+  }
+  .personal-overview-month,
+  .personal-overview-tokens {
+    padding: 20px 16px;
+  }
+  .personal-overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .personal-overview-metrics > div:nth-child(2) {
+    border: 0;
+  }
+  .personal-overview-metrics strong {
+    font-size: 24px;
+  }
+  .personal-overview-token-stats {
+    gap: 12px;
+  }
+  .personal-overview-token-stats strong {
+    font-size: 17px;
+  }
+  .personal-overview-token-stats > div {
+    padding-right: 8px;
+  }
+  .personal-overview-shortcuts {
+    grid-template-columns: 1fr;
+  }
+  .personal-overview-settings {
+    font-size: 12px;
+    gap: 4px;
+  }
+}
+.personal-overview .usage-calendar-note {
+  margin: 0 0 24px;
+}
