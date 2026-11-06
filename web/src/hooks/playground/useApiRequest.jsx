@@ -44,6 +44,7 @@ export const useApiRequest = (
   setActiveDebugTab,
   sseSourceRef,
   saveMessages,
+  sessionId,
 ) => {
   const { t } = useTranslation();
 
@@ -217,6 +218,7 @@ export const useApiRequest = (
           headers: {
             'Content-Type': 'application/json',
             'New-Api-User': getUserIdFromLocalStorage(),
+            ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
           },
           body: JSON.stringify(payload),
           signal: controller.signal,
@@ -338,6 +340,7 @@ export const useApiRequest = (
       applyAutoCollapseLogic,
       saveMessages,
       sseSourceRef,
+      sessionId,
     ],
   );
 
@@ -358,6 +361,7 @@ export const useApiRequest = (
         headers: {
           'Content-Type': 'application/json',
           'New-Api-User': getUserIdFromLocalStorage(),
+          ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
         },
         method: 'POST',
         payload: JSON.stringify(payload),
@@ -523,6 +527,7 @@ export const useApiRequest = (
       completeMessage,
       t,
       applyAutoCollapseLogic,
+      sessionId,
     ],
   );
 
