@@ -75,6 +75,7 @@ Status: proposed
 
 ### 活跃笔记核对
 
+- [逐次尝试遥测与影子决策](../../implemented/feature/2026-11-06-route-attempt-telemetry-shadow.md)：已实现第 1 阶段的观测部分（逐次尝试、渠道短窗口、P95、采购倍率/故障域字段、影子推荐与对照）。本提案其余阶段（实际调度、独立售价、方案入口）仍为提案。
 - [首选组故障回退](../../implemented/feature/2026-10-24-preferred-group-fallback.md)、[单 Key 多模型分组](../../implemented/feature/2026-10-27-token-model-groups.md)：部分重叠，拥有现行路由/计费契约。本提案仅新增 opt-in 方案，尚不取代旧行为。
 - [现金收益后续设计](../feature/2026-11-03-upstream-cash-profit.md)：部分重叠，逐次上游成本与核账由该方案承接；本篇负责运行时预计成本选择与对客合同售价，不新建独立财务账本。
 - [健康最终结果分类](../../implemented/bug-fix/2026-10-22-group-health-outcome-accounting.md)：相邻基础，保持原公开分母与同组折叠。本篇新增尝试维度，不翻转旧统计决定。

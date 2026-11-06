@@ -139,6 +139,13 @@ type ChannelSettings struct {
 	// RpmLimit 覆盖该渠道的 RPM 上限（>0 时生效）。0/缺省表示沿用全局
 	// channel_concurrency_setting.default_rpm_limit；全局也为 0 时表示不限制。
 	RpmLimit int `json:"rpm_limit,omitempty"`
+	// RoutePurchaseRatio is the administrator-entered purchase cost of this
+	// channel relative to the model's base price (e.g. 0.8 = 80%). It is used
+	// only by shadow route decisions; 0/absent means unknown, never free.
+	RoutePurchaseRatio float64 `json:"route_purchase_ratio,omitempty"`
+	// RouteFaultDomain names the real upstream failure domain (supplier,
+	// account pool or region) so backups on the same domain can be identified.
+	RouteFaultDomain string `json:"route_fault_domain,omitempty"`
 }
 
 func (s ChannelSettings) Validate() error {

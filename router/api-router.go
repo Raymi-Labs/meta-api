@@ -323,6 +323,13 @@ func SetApiRouter(router *gin.Engine) {
 			desktopFeedbackRoute.PATCH("/:id", controller.UpdateDesktopFeedback)
 		}
 
+		routeInsightRoute := apiRouter.Group("/route_insight")
+		routeInsightRoute.Use(middleware.AdminAuth())
+		{
+			routeInsightRoute.GET("/channels", controller.GetRouteInsightChannels)
+			routeInsightRoute.GET("/shadow", controller.GetRouteInsightShadow)
+		}
+
 		channelConcurrencyRoute := apiRouter.Group("/channel_concurrency")
 		channelConcurrencyRoute.Use(middleware.AdminAuth())
 		{
