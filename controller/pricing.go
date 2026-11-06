@@ -47,6 +47,26 @@ func buildPricingTimeRatioMap(pricing []model.Pricing, usableGroup map[string]st
 	return result
 }
 
+// pricingVendorsForModels projects the shared catalog onto this response's
+// already-authorized models. Never filter the shared slice in place: an admin
+// request and an anonymous request may use the same cached vendor catalog.
+func pricingVendorsForModels(pricing []model.Pricing, vendors []model.PricingVendor) []model.PricingVendor {
+	used := make(map[int]bool, len(pricing))
+	for _, item := range pricing {
+		if item.VendorID > 0 {
+			used[item.VendorID] = true
+		}
+	}
+	result := make([]model.PricingVendor, 0)
+	for _, vendor := range vendors {
+		if used[vendor.ID] {
+			result = append(result, vendor)
+			delete(used, vendor.ID)
+		}
+	}
+	return result
+}
+
 func GetPricing(c *gin.Context) {
 	role := getRequestRole(c)
 	pricing := model.FilterPricingByVisibility(model.GetPricing(), role)
@@ -82,7 +102,7 @@ func GetPricing(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"success":            true,
 		"data":               pricing,
-		"vendors":            model.GetVendors(),
+		"vendors":            pricingVendorsForModels(pricing, model.GetVendors()),
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
