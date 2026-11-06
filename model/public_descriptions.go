@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -40,9 +41,33 @@ var publicDescriptionReviews = func() map[string]publicDescriptionReview {
 var providerDescriptionTemplate = regexp.MustCompile(`^([^\r\n]+) is an AI model provided by ([A-Za-z0-9_-]+(?:[. ][A-Za-z0-9_-]+)*)\.$`)
 var vendorAccessTemplate = regexp.MustCompile(`^通过 OpenRouter 接入的 ([^\r\n]+) 模型$`)
 
+// Ember's catalog reference is plain model text, not an external navigation link.
+// Check the actual hostname so lookalike domains and unrelated model docs survive.
+var emberReferenceLink = regexp.MustCompile(`\[([^\]\r\n]+)\]\((https?://[^)\s]+)\)(\.\)\.?)?`)
+
+func cleanEmberReferenceLinks(name, text string) string {
+	if name != "ember-1" && name != "fireworks/ember-1" {
+		return text
+	}
+	return emberReferenceLink.ReplaceAllStringFunc(text, func(link string) string {
+		parts := emberReferenceLink.FindStringSubmatch(link)
+		address, err := url.Parse(parts[2])
+		if err != nil || !strings.EqualFold(address.Hostname(), "openrouter.ai") {
+			return link
+		}
+		suffix := ""
+		// Some legacy translations duplicated the closing parenthesis after a period.
+		if parts[3] != "" {
+			suffix = "."
+		}
+		return parts[1] + suffix
+	})
+}
+
 // NormalizePublicModelDescription strips only a full catalog placeholder, not
 // normal prose that mentions an author, provider, license or technical limit.
 func NormalizePublicModelDescription(name, text string) string {
+	text = cleanEmberReferenceLinks(name, text)
 	trimmed := strings.TrimSpace(text)
 	if matches := providerDescriptionTemplate.FindStringSubmatch(trimmed); matches != nil {
 		if review, ok := publicDescriptionReviews[name]; ok {
@@ -60,6 +85,7 @@ func NormalizePublicModelDescription(name, text string) string {
 	return text
 }
 func normalizePublicDescriptionLocale(name, locale, text string) string {
+	text = cleanEmberReferenceLinks(name, text)
 	if review, ok := publicDescriptionReviews[name]; ok {
 		trimmed := strings.TrimSpace(text)
 		if providerDescriptionTemplate.MatchString(trimmed) || trimmed == strings.TrimSpace(review.OldTranslations[locale]) && trimmed != "" {

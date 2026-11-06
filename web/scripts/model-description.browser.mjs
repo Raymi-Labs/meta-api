@@ -52,7 +52,12 @@ const current = reviewed
   ? {
       model: reviewed.model,
       vendor: reviewed.author,
-      icon: reviewed.author === 'Google' ? 'Gemini' : 'Claude',
+      icon:
+        reviewed.author === 'Google'
+          ? 'Gemini'
+          : reviewed.author === 'Fireworks'
+            ? 'Fireworks'
+            : 'Claude',
       search: reviewed.title,
     }
   : cases[process.env.MODEL_DESCRIPTION_CASE || 'astra'];

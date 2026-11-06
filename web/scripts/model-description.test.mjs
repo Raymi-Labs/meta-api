@@ -61,7 +61,7 @@ test('reviewed public descriptions render every language without provider placeh
       'utf8',
     ),
   );
-  assert.equal(entries.length, 4);
+  assert.equal(entries.length, 5);
   for (const entry of entries) {
     const snapshot = {
       model_name: entry.model,
@@ -73,7 +73,7 @@ test('reviewed public descriptions render every language without provider placeh
       assert.equal(localized.description, entry.translations[locale]);
       assert(localized.description.length > 0);
       assert(
-        !/venice|qihang-ai|vivgrid|威尼斯|奏鸣曲|俳句/i.test(
+        !/venice|qihang-ai|vivgrid|openrouter\.ai|威尼斯|奏鸣曲|俳句/i.test(
           localized.description,
         ),
       );

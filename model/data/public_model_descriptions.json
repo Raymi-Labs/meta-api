@@ -178,5 +178,50 @@
       "bg": "Claude Haiku 4.5 (20251001) е модел, разработен от Anthropic. Вижте тази страница за наличните в момента възможности, интерфейси и цени."
     },
     "source": "Claude Haiku 4.5 (20251001) is a model developed by Anthropic. See this page for currently available capabilities, interfaces and pricing."
+  },
+  {
+    "model": "ember-1",
+    "title": "Ember-1",
+    "author": "Fireworks",
+    "old_source": "Ember-1 is a specialized reasoning model from Fireworks Research, built on [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). It is designed to make every token go further: it produces shorter reasoning traces, using roughly 40%...",
+    "old_translations": {
+      "bg": "Ember-1 е специализиран модел за разсъждаване на Fireworks Research, изграден върху [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Той е създаден да помага на всеки токен да постигне повече: генерира по-кратки следи от разсъждения, използвайки приблизително 40%...",
+      "de": "Ember-1 ist ein spezialisiertes Schlussfolgerungsmodell von Fireworks Research, das auf [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). basiert. Es wurde entwickelt, um jeden Token weiterzuentwickeln: Es erzeugt kürzere Schlussfolgerungsspuren und verwendet dabei etwa 40%...",
+      "en": "Ember-1 is a specialized reasoning model from Fireworks Research, built on [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). It is designed to make every token go further: it produces shorter reasoning traces, using roughly 40%...",
+      "es": "Ember-1 es un modelo de razonamiento especializado de Fireworks Research, construido sobre [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Está diseñado para hacer que cada token avance más: genera rastros de razonamiento más breves, utilizando aproximadamente 40%...",
+      "fr": "Ember-1 est un modèle de raisonnement spécialisé développé par Fireworks Research, fondé sur [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). Il est conçu pour faire progresser chaque token : il génère des traces de raisonnement plus courtes, en utilisant environ 40%...",
+      "it": "Ember-1 è un modello di ragionamento specializzato sviluppato da Fireworks Research, basato su [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). È progettato per far avanzare ulteriormente ogni token: genera tracce di ragionamento più brevi, utilizzando circa 40%...",
+      "ja": "Ember-1は、Fireworks Researchが開発した専用の推論モデルで、[Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).に基づいて構築されています。これは、各トークンをより効率的に活用することを目的としており、推論の痕跡を短くし、おおよそ40%…程度の計算量で実現します。",
+      "ko": "Ember-1는 Fireworks Research에서 개발한 특수한 추론 모델로, [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).)를 기반으로 구축되었습니다. 이 모델은 모든 토큰이 더 큰 성과를 낼 수 있도록 설계되었으며, 약 40%의…을 사용하여 보다 짧은 추론 흔적을 생성합니다.",
+      "nl": "Ember-1 is een gespecialiseerd redeneermodel van Fireworks Research, gebouwd op [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). Het is ontworpen om elke token verder te brengen: het produceert kortere redeneersporen, waarbij ongeveer 40%... wordt gebruikt.",
+      "pl": "Ember-1 to specjalistyczny model rozumowania opracowany przez Fireworks Research, oparty na [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Został zaprojektowany tak, aby każdy token dawał więcej: generuje krótsze ścieżki rozumowania, wykorzystując około 40%...",
+      "pt": "Ember-1 é um modelo de raciocínio especializado da Fireworks Research, construído com base em [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Ele foi projetado para levar cada token mais longe: produz rastros de raciocínio mais curtos, utilizando aproximadamente 40%...",
+      "ru": "Ember-1 — это специализированная модель аргументации компании Fireworks Research, построенная на основе [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Она разработана так, чтобы каждый токен продвигался дальше: она генерирует более короткие следы рассуждений, используя примерно 40%...",
+      "tr": "Ember-1, Fireworks Research tarafından geliştirilen ve [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).) üzerine kurulmuş özel bir akıl yürütme modelidir. Her tokenin daha da ileriye gitmesini sağlamak üzere tasarlanmıştır: yaklaşık 40%... kullanarak daha kısa akıl yürütme izleri üretir.",
+      "uk": "Ember-1 — це спеціалізована модель міркування від Fireworks Research, побудована на основі [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Вона розроблена для того, щоб кожен токен досягав більшого: вона формує коротші сліди міркувань, використовуючи приблизно 40%...",
+      "vi": "Ember-1 là một mô hình suy luận chuyên dụng của Fireworks Research, được xây dựng trên cơ sở [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Nó được thiết kế để giúp mỗi token đạt được hiệu quả cao hơn: mô hình này tạo ra các chuỗi suy luận ngắn hơn, đồng thời sử dụng khoảng 40%...",
+      "zh-CN": "Ember-1 是 Fireworks Research 推出的一款专用推理模型，基于 [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). 构建。它旨在让每个 token 的效用发挥到极致：生成更短的推理轨迹，使用的计算量约为 40%...",
+      "zh-TW": "Ember-1 是火燭研究推出的一種專用推理模型，基於 [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).。它旨在讓每個 token 的效能更進一步：能產生更短的推理痕跡，約使用 40%……"
+    },
+    "source": "Ember-1 is a specialized reasoning model from Fireworks Research, built on Kimi K3. It is designed to make every token go further: it produces shorter reasoning traces, using roughly 40%...",
+    "translations": {
+      "bg": "Ember-1 е специализиран модел за разсъждаване на Fireworks Research, изграден върху Kimi K3. Той е създаден да помага на всеки токен да постигне повече: генерира по-кратки следи от разсъждения, използвайки приблизително 40%...",
+      "de": "Ember-1 ist ein spezialisiertes Schlussfolgerungsmodell von Fireworks Research, das auf Kimi K3. basiert. Es wurde entwickelt, um jeden Token weiterzuentwickeln: Es erzeugt kürzere Schlussfolgerungsspuren und verwendet dabei etwa 40%...",
+      "en": "Ember-1 is a specialized reasoning model from Fireworks Research, built on Kimi K3. It is designed to make every token go further: it produces shorter reasoning traces, using roughly 40%...",
+      "es": "Ember-1 es un modelo de razonamiento especializado de Fireworks Research, construido sobre Kimi K3. Está diseñado para hacer que cada token avance más: genera rastros de razonamiento más breves, utilizando aproximadamente 40%...",
+      "fr": "Ember-1 est un modèle de raisonnement spécialisé développé par Fireworks Research, fondé sur Kimi K3. Il est conçu pour faire progresser chaque token : il génère des traces de raisonnement plus courtes, en utilisant environ 40%...",
+      "it": "Ember-1 è un modello di ragionamento specializzato sviluppato da Fireworks Research, basato su Kimi K3. È progettato per far avanzare ulteriormente ogni token: genera tracce di ragionamento più brevi, utilizzando circa 40%...",
+      "ja": "Ember-1は、Fireworks Researchが開発した専用の推論モデルで、Kimi K3.に基づいて構築されています。これは、各トークンをより効率的に活用することを目的としており、推論の痕跡を短くし、おおよそ40%…程度の計算量で実現します。",
+      "ko": "Ember-1는 Fireworks Research에서 개발한 특수한 추론 모델로, Kimi K3.를 기반으로 구축되었습니다. 이 모델은 모든 토큰이 더 큰 성과를 낼 수 있도록 설계되었으며, 약 40%의…을 사용하여 보다 짧은 추론 흔적을 생성합니다.",
+      "nl": "Ember-1 is een gespecialiseerd redeneermodel van Fireworks Research, gebouwd op Kimi K3. Het is ontworpen om elke token verder te brengen: het produceert kortere redeneersporen, waarbij ongeveer 40%... wordt gebruikt.",
+      "pl": "Ember-1 to specjalistyczny model rozumowania opracowany przez Fireworks Research, oparty na Kimi K3. Został zaprojektowany tak, aby każdy token dawał więcej: generuje krótsze ścieżki rozumowania, wykorzystując około 40%...",
+      "pt": "Ember-1 é um modelo de raciocínio especializado da Fireworks Research, construído com base em Kimi K3. Ele foi projetado para levar cada token mais longe: produz rastros de raciocínio mais curtos, utilizando aproximadamente 40%...",
+      "ru": "Ember-1 — это специализированная модель аргументации компании Fireworks Research, построенная на основе Kimi K3. Она разработана так, чтобы каждый токен продвигался дальше: она генерирует более короткие следы рассуждений, используя примерно 40%...",
+      "tr": "Ember-1, Fireworks Research tarafından geliştirilen ve Kimi K3. üzerine kurulmuş özel bir akıl yürütme modelidir. Her tokenin daha da ileriye gitmesini sağlamak üzere tasarlanmıştır: yaklaşık 40%... kullanarak daha kısa akıl yürütme izleri üretir.",
+      "uk": "Ember-1 — це спеціалізована модель міркування від Fireworks Research, побудована на основі Kimi K3. Вона розроблена для того, щоб кожен токен досягав більшого: вона формує коротші сліди міркувань, використовуючи приблизно 40%...",
+      "vi": "Ember-1 là một mô hình suy luận chuyên dụng của Fireworks Research, được xây dựng trên cơ sở Kimi K3. Nó được thiết kế để giúp mỗi token đạt được hiệu quả cao hơn: mô hình này tạo ra các chuỗi suy luận ngắn hơn, đồng thời sử dụng khoảng 40%...",
+      "zh-CN": "Ember-1 是 Fireworks Research 推出的一款专用推理模型，基于 Kimi K3. 构建。它旨在让每个 token 的效用发挥到极致：生成更短的推理轨迹，使用的计算量约为 40%...",
+      "zh-TW": "Ember-1 是火燭研究推出的一種專用推理模型，基於 Kimi K3.。它旨在讓每個 token 的效能更進一步：能產生更短的推理痕跡，約使用 40%……"
+    }
   }
 ]

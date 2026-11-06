@@ -79,7 +79,7 @@ func TestPublicDescriptionPricingAndGroupBoundaries(t *testing.T) {
 			body := read(id)
 			require.Equal(t, groups, body.Groups)
 			require.Equal(t, map[string]float64{"default": 1, "特殊": 0.6}, body.Ratios)
-			require.Len(t, body.Data, 4)
+			require.Len(t, body.Data, len(reviews))
 			require.Len(t, body.Vendors, 1)
 			require.NotContains(t, body.Vendors[0].Description, "OpenRouter")
 			for _, m := range body.Data {
