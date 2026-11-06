@@ -70,6 +70,7 @@ func pricingVendorsForModels(pricing []model.Pricing, vendors []model.PricingVen
 func GetPricing(c *gin.Context) {
 	role := getRequestRole(c)
 	pricing := model.FilterPricingByVisibility(model.GetPricing(), role)
+	pricing, publicVendors := model.PublicPricingMetadata(pricing, pricingVendorsForModels(pricing, model.GetVendors()))
 	userId, exists := c.Get("id")
 	usableGroup := map[string]string{}
 	groupRatio := map[string]float64{}
@@ -102,7 +103,7 @@ func GetPricing(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"success":            true,
 		"data":               pricing,
-		"vendors":            pricingVendorsForModels(pricing, model.GetVendors()),
+		"vendors":            publicVendors,
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),

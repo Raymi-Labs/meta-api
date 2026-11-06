@@ -134,3 +134,42 @@ func TestPricingVendorVisibilityFollowsResponseModels(t *testing.T) {
 	require.NotNil(t, empty.Vendors)
 	require.Empty(t, empty.Vendors)
 }
+
+func TestPublicPricingMetadataBoundaryPreservesAdminAndCache(t *testing.T) {
+	isolateOfficialAttributeRequests(t)
+	db := setupModelSyncTestDB(t)
+	conn, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	require.NoError(t, db.AutoMigrate(&model.Model{}, &model.Ability{}, &model.Channel{}, &model.ModelPermission{}))
+	model.InvalidateModelPermissionCache()
+	t.Cleanup(func() {
+		_ = db.Where("1 = 1").Delete(&model.Ability{}).Error
+		model.InvalidateModelPermissionCache()
+		model.RefreshPricing()
+	})
+	zero := 0.0
+	m := model.Model{ModelName: "flint-v1.0:free", Status: 1, NameRule: model.NameRuleExact, Description: "OpenRouter integration", OfficialPricing: model.OfficialPricing{Currency: "USD", SourceURL: "https://openrouter.ai/recursive/flint-v1.0:free", Notes: "OpenRouter 免费变体", Tiers: []model.OfficialPricingTier{{Label: "OpenRouter 免费变体", Unit: "million_tokens", Input: &zero, Output: &zero}}}}
+	require.NoError(t, db.Create(&m).Error)
+	require.NoError(t, db.Create(&model.Channel{Id: 777, Name: "private fixture", Type: 1, Key: "fixture", Status: 1, Group: "default", Models: m.ModelName}).Error)
+	require.NoError(t, db.Create(&model.Ability{ChannelId: 777, Model: m.ModelName, Group: "default", Enabled: true}).Error)
+	model.RefreshPricing()
+	cached, err := common.Marshal(model.GetPricing())
+	require.NoError(t, err)
+	for _, role := range []int{common.RoleGuestUser, common.RoleAdminUser, common.RoleCommonUser, common.RoleGuestUser} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/pricing", nil)
+		c.Set("role", role)
+		GetPricing(c)
+		require.NotContains(t, w.Body.String(), "OpenRouter")
+		require.NotContains(t, w.Body.String(), "openrouter.ai")
+		require.Contains(t, w.Body.String(), "flint-v1.0:free")
+	}
+	var stored model.Model
+	require.NoError(t, db.First(&stored, m.Id).Error)
+	require.Equal(t, m.OfficialPricing.Notes, stored.OfficialPricing.Notes)
+	current, err := common.Marshal(model.GetPricing())
+	require.NoError(t, err)
+	require.JSONEq(t, string(cached), string(current))
+}
