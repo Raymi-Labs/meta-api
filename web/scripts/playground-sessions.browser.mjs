@@ -141,23 +141,33 @@ try {
             JSON.parse(localStorage.getItem('user')),
           );
         if (u.pathname === '/api/user/models')
-          data = ['model-a', 'model-b', 'model-c', 'model-d', 'model-e'];
+          data =
+            u.searchParams.get('group') === 'limited'
+              ? ['model-a']
+              : ['model-a', 'model-b', 'model-c', 'model-d', 'model-e'];
         if (u.pathname === '/api/user/self/groups')
-          data = { default: { ratio: 1, desc: 'Default' } };
+          data = {
+            default: { ratio: 1, desc: 'Default' },
+            limited: { ratio: 2, desc: 'Limited' },
+          };
         if (u.pathname === '/api/pricing')
           body = {
             success: true,
             data: ['model-a', 'model-b', 'model-c', 'model-d', 'model-e'].map(
               (model_name) => ({
                 model_name,
-                enable_groups: ['default'],
+                enable_groups:
+                  model_name === 'model-a'
+                    ? ['default', 'limited']
+                    : ['default'],
+                quota_type: 0,
                 supported_endpoint_types: ['openai'],
                 output_modalities: ['text'],
                 model_ratio: 1,
                 completion_ratio: 2,
               }),
             ),
-            group_ratio: { default: 1 },
+            group_ratio: { default: 1, limited: 2 },
           };
         await req.respond({
           status: 200,
@@ -177,7 +187,9 @@ try {
             ? document.querySelector(scope)
             : document
           ).querySelectorAll('button'),
-        ].find((b) => b.innerText === text);
+        ].find(
+          (b) => b.innerText === text || b.getAttribute('aria-label') === text,
+        );
         if (!b) throw Error('Missing button ' + text);
         b.click();
       },
@@ -206,6 +218,66 @@ try {
   await page.goto(base + '/playground', { waitUntil: 'networkidle0' });
   await ready();
   assert.equal(calls.length, 0);
+  // Focused layout utilities are opt-in and must not issue model requests.
+  assert.equal(await page.$(active + ' .pg-workspace > .pg-settings'), null);
+  assert.equal(await page.$(active + ' .pg-workspace > .pg-code'), null);
+  await page.click('.pg-tool-rail [aria-label="参数"]');
+  await page.waitForSelector('.pg-sheet .pg-settings-scroll', {
+    visible: true,
+  });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('.pg-tool-rail [aria-label="参数"]')
+        ?.getAttribute('aria-expanded') === 'false',
+  );
+  await page.waitForSelector('.pg-sheet .pg-settings-scroll', { hidden: true });
+  await page.click('.pg-tool-rail [aria-label="请求代码"]');
+  await page.waitForSelector('.pg-sheet .pg-code-panel', { visible: true });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('.pg-tool-rail [aria-label="请求代码"]')
+        ?.getAttribute('aria-expanded') === 'false',
+  );
+  await page.waitForSelector('.pg-sheet .pg-code-panel', { hidden: true });
+  await clickText('对话列表');
+  await page.waitForFunction(
+    () => document.activeElement?.getAttribute('aria-label') === '搜索对话标题',
+  );
+  await page.keyboard.press('Escape');
+  assert.equal(
+    await page.$eval('.pg-conversation-list', (e) => e.hidden),
+    true,
+  );
+  await page.click(active + ' .pg-model-tab.is-active button[role=tab]');
+  await page.waitForSelector('.pg-model-options');
+  await clickText('model-b', '.pg-model-options');
+  await page.select(active + ' select[aria-label="当前分组"]', 'limited');
+  await page.waitForFunction(
+    (scope) =>
+      document
+        .querySelector(scope + ' .pg-model-tab.is-active')
+        ?.textContent.includes('model-a'),
+    {},
+    active,
+  );
+  assert.equal(
+    await page.$eval(active + ' .pg-top-ratio', (e) => e.textContent),
+    '2×',
+  );
+  await page.select(active + ' select[aria-label="当前分组"]', 'default');
+  await page.waitForSelector('.pg-model-options', { hidden: true });
+  await saved();
+  assert.equal(calls.length, 0);
+  await page.screenshot({ path: '/tmp/playground-focused-desktop-empty.png' });
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
   await send('First topic');
   await page.waitForFunction(() =>
     document.body.textContent.includes('answer-model-a'),
@@ -227,6 +299,7 @@ try {
   assert.equal(calls.length, 2);
   assert.notEqual(calls[1].session, firstID);
   assert(!JSON.stringify(calls[1].payload).includes('First topic'));
+  await clickText('对话列表');
   await page.click(
     '.pg-conversation-items>div:nth-child(2) .pg-conversation-select',
   );
@@ -287,6 +360,7 @@ try {
   held.splice(0).forEach((done) => done());
   hold = false;
   // Rename/search, export format and import with fresh IDs.
+  await clickText('对话列表');
   await page.click(
     '.pg-conversation-items>div.is-selected button[aria-label="重命名对话"]',
   );
@@ -340,6 +414,7 @@ try {
     () => document.querySelectorAll('.pg-conversation-items>div').length === 4,
   );
   assert.equal(calls.length, before);
+  await clickText('对话列表');
   await page.click(
     '.pg-conversation-items>div.is-selected button[aria-label="删除对话"]',
   );
@@ -347,6 +422,12 @@ try {
     () => document.querySelectorAll('.pg-conversation-items>div').length === 3,
   );
   await page.setViewport({ width: 390, height: 1000 });
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
+  await page.screenshot({ path: '/tmp/playground-focused-mobile.png' });
   await clickText('对话列表');
   await page.waitForSelector('.pg-conversation-list.is-open');
   await page.screenshot({
@@ -372,6 +453,9 @@ try {
   );
   assert.equal(calls.length, before);
   await page.setViewport({ width: 1440, height: 1000 });
+  await page.evaluate(() => document.body.setAttribute('theme-mode', 'dark'));
+  await page.screenshot({ path: '/tmp/playground-focused-dark.png' });
+  await page.evaluate(() => document.body.removeAttribute('theme-mode'));
   // Storage failure must be visible and recover without losing the draft.
   await page.evaluate(() => {
     window.originalPut = IDBObjectStore.prototype.put;
@@ -505,6 +589,13 @@ try {
   console.log(
     'PASS local conversations: independent context/IDs, background stream, send lock, reload interruption, account/tab isolation, rename/search/import/delete, storage failure, 5 models, nonstream stop, mobile.',
   );
+} catch (error) {
+  const page = (await browser?.pages())?.at(-1);
+  if (page) {
+    console.error((await page.$eval('body', (e) => e.innerText)).slice(-1800));
+    await page.screenshot({ path: '/tmp/playground-sessions-failure.png' });
+  }
+  throw error;
 } finally {
   await browser?.close();
   for (const socket of sockets) socket.destroy();

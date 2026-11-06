@@ -17,17 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useSyncExternalStore } from 'react';
+import React from 'react';
 import { SideSheet } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
 import './playgroundWorkspace.css';
 
-const subscribeCompact = (callback) => {
-  const query = window.matchMedia('(max-width: 1279px)');
-  query.addEventListener('change', callback);
-  return () => query.removeEventListener('change', callback);
-};
 export default function PlaygroundWorkspace({
   settings,
   code,
@@ -39,42 +34,33 @@ export default function PlaygroundWorkspace({
 }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const compact = useSyncExternalStore(
-    subscribeCompact,
-    () => window.matchMedia('(max-width: 1279px)').matches,
-    () => false,
-  );
   return (
     <div className='pg-workspace'>
-      {!isMobile && <aside className='pg-settings'>{settings}</aside>}
       <main className='pg-main'>{children}</main>
-      {!compact && <aside className='pg-code'>{code}</aside>}
-      {isMobile && (
-        <SideSheet
-          title={t('参数')}
-          visible={showSettings}
-          onCancel={onCloseSettings}
-          placement='left'
-          width='100%'
-          bodyStyle={{ padding: 0 }}
-          className='pg-sheet'
-        >
-          {settings}
-        </SideSheet>
-      )}
-      {compact && (
-        <SideSheet
-          title={t('请求代码')}
-          visible={showCode}
-          onCancel={onCloseCode}
-          placement='right'
-          width={isMobile ? '100%' : 420}
-          bodyStyle={{ padding: 0 }}
-          className='pg-sheet'
-        >
-          {code}
-        </SideSheet>
-      )}
+      <SideSheet
+        closeOnEsc
+        title={t('参数')}
+        visible={showSettings}
+        onCancel={onCloseSettings}
+        placement='left'
+        width={isMobile ? '100%' : 360}
+        bodyStyle={{ padding: 0 }}
+        className='pg-sheet'
+      >
+        {settings}
+      </SideSheet>
+      <SideSheet
+        closeOnEsc
+        title={t('请求代码')}
+        visible={showCode}
+        onCancel={onCloseCode}
+        placement='right'
+        width={isMobile ? '100%' : 480}
+        bodyStyle={{ padding: 0 }}
+        className='pg-sheet'
+      >
+        {code}
+      </SideSheet>
     </div>
   );
 }
