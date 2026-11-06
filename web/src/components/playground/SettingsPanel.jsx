@@ -48,6 +48,7 @@ const SettingsPanel = ({
   model,
   catalogState,
   comparison,
+  localSession = false,
 }) => {
   const { t } = useTranslation();
   const currentConfig = {
@@ -201,6 +202,7 @@ const SettingsPanel = ({
         </details>
       )}
       <ConfigManager
+        localSession={localSession}
         currentConfig={currentConfig}
         onConfigImport={onConfigImport}
         onConfigReset={onConfigReset}

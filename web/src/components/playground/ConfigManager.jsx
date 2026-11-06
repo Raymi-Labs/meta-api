@@ -37,6 +37,7 @@ const ConfigManager = ({
   onConfigReset,
   styleState,
   messages,
+  localSession = false,
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
@@ -45,7 +46,7 @@ const ConfigManager = ({
   const handleExport = () => {
     try {
       // 在导出前先保存当前配置，确保导出的是最新内容
-      saveConfig(currentConfig, owner);
+      if (!localSession) saveConfig(currentConfig, owner);
 
       exportConfig(currentConfig, messages);
       Toast.success({
@@ -117,7 +118,7 @@ const ConfigManager = ({
             type: 'danger',
           },
           onOk: () => {
-            clearConfig(owner);
+            if (!localSession) clearConfig(owner);
             onConfigReset({ resetMessages: true });
             Toast.success({
               content: t('配置和消息已全部重置'),
@@ -125,7 +126,7 @@ const ConfigManager = ({
             });
           },
           onCancel: () => {
-            clearConfig(owner);
+            if (!localSession) clearConfig(owner);
             onConfigReset({ resetMessages: false });
             Toast.success({
               content: t('配置已重置，对话消息已保留'),
@@ -138,6 +139,7 @@ const ConfigManager = ({
   };
 
   const getConfigStatus = () => {
+    if (localSession) return t('当前对话独立保存配置');
     if (hasStoredConfig(owner)) {
       const timestamp = getConfigTimestamp(owner);
       if (timestamp) {

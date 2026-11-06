@@ -24,6 +24,7 @@ import React, {
   useRef,
   useMemo,
   useState,
+  useLayoutEffect,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +71,7 @@ import {
 import ChatArea from '../../components/playground/ChatArea';
 import { SlidersHorizontal, Code2, RefreshCw, Copy } from 'lucide-react';
 import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
+import LocalConversations from '../../components/playground/LocalConversations';
 import ModelTabs from '../../components/playground/ModelTabs';
 import ParallelTextChat from '../../components/playground/ParallelTextChat';
 import { comparisonModelNames } from '../../helpers/playgroundParallel';
@@ -97,18 +99,29 @@ const generateAvatarDataUrl = (username) => {
   return `data:image/svg+xml;base64,${encodeToBase64(svg)}`;
 };
 
-const AccountPlayground = ({ owner }) => {
+const AccountPlayground = ({
+  owner,
+  session,
+  onSnapshot,
+  acquire,
+  release,
+  blocked,
+  active,
+}) => {
   const { t } = useTranslation();
   const [userState] = useContext(UserContext);
   const isMobile = useIsMobile();
   const styleState = { isMobile };
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const state = usePlaygroundState(owner);
-  const [parallelMode, setParallelMode] = useState(() =>
-    state.message.some((item) => item.parallelRound),
+  const state = usePlaygroundState(owner, session);
+  const [parallelMode, setParallelMode] = useState(
+    () =>
+      session.parallelMode || state.message.some((item) => item.parallelRound),
   );
-  const [parallelModels, setParallelModels] = useState([]);
+  const [parallelModels, setParallelModels] = useState(
+    session.parallelModels || [],
+  );
   const [inspectedModel, setInspectedModel] = useState('');
   const {
     inputs,
@@ -164,8 +177,8 @@ const AccountPlayground = ({ owner }) => {
     (item) => item.role === 'tool' || item.tool_calls?.length,
   );
   const hasParallelHistory = message.some((item) => item.parallelRound);
-  const [draft, setDraft] = useState('');
-  const [toolResults, setToolResults] = useState({});
+  const [draft, setDraft] = useState(session.draft || '');
+  const [toolResults, setToolResults] = useState(session.toolResults || {});
   const messageRef = useRef(message);
   messageRef.current = message;
   const sendingRef = useRef(false);
@@ -179,6 +192,38 @@ const AccountPlayground = ({ owner }) => {
   const generating = message.some((item) =>
     ['loading', 'incomplete'].includes(item.status),
   );
+  useLayoutEffect(() => {
+    onSnapshot(session.id, {
+      config: {
+        inputs,
+        parameterEnabled,
+        showDebugPanel,
+        customRequestMode,
+        customRequestBody,
+      },
+      messages: message,
+      draft,
+      parallelMode,
+      parallelModels,
+      toolResults,
+    });
+  }, [
+    session.id,
+    onSnapshot,
+    inputs,
+    parameterEnabled,
+    showDebugPanel,
+    customRequestMode,
+    customRequestBody,
+    message,
+    draft,
+    parallelMode,
+    parallelModels,
+    toolResults,
+  ]);
+  useEffect(() => {
+    if (!generating) release(session.id);
+  }, [generating, release, session.id]);
   useEffect(() => {
     if (!generating) sendingRef.current = false;
   }, [generating]);
@@ -194,6 +239,7 @@ const AccountPlayground = ({ owner }) => {
     setActiveDebugTab,
     sseSourceRef,
     saveMessagesImmediately,
+    session.id,
   );
 
   // 数据加载
@@ -211,9 +257,17 @@ const AccountPlayground = ({ owner }) => {
     modelsLoading,
     inputs,
     onChange: handleInputChange,
-    blocked: generating || pendingCalls.length > 0,
+    blocked: !active || generating || pendingCalls.length > 0,
     setCustomRequestMode,
   });
+  useEffect(() => {
+    if (active && searchParams.has('model') && !modelLink.pending) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('model');
+      next.delete('group');
+      setSearchParams(next, { replace: true });
+    }
+  }, [active, searchParams, modelLink.pending, setSearchParams]);
   const tabs = reconcileModelTabs(inputs.modelTabs, inputs.model, models);
   const currentModelAvailable =
     !modelsLoading &&
@@ -389,6 +443,7 @@ const AccountPlayground = ({ owner }) => {
       !activeRef.current ||
       owner !== getPlaygroundOwner() ||
       sendingRef.current ||
+      blocked ||
       generating ||
       (!canSend &&
         !(
@@ -445,6 +500,7 @@ const AccountPlayground = ({ owner }) => {
         return false;
       }
     }
+    if (!acquire(session.id)) return false;
     sendingRef.current = true;
     const next = [...nextMessages, createLoadingAssistantMessage()];
     setMessage(next);
@@ -677,6 +733,7 @@ const AccountPlayground = ({ owner }) => {
       aria-disabled={generating || pendingCalls.length > 0}
     >
       <OptimizedSettingsPanel
+        localSession
         inputs={inputs}
         model={selectedModel}
         comparison={
@@ -736,8 +793,8 @@ const AccountPlayground = ({ owner }) => {
       <PlaygroundWorkspace
         settings={settingsPanel}
         code={codePanel}
-        showSettings={showSettings}
-        showCode={showDebugPanel}
+        showSettings={active && showSettings}
+        showCode={active && showDebugPanel}
         onCloseSettings={() => setShowSettings(false)}
         onCloseCode={() => setShowDebugPanel(false)}
       >
@@ -805,6 +862,11 @@ const AccountPlayground = ({ owner }) => {
             disabled={generating || customRequestMode}
           />
         </div>
+        {message.some((m) => m.localInterrupted) && (
+          <div className='pg-load-state' role='status'>
+            {t('上次生成已中断，已保留收到的内容；不会自动重发请求。')}
+          </div>
+        )}
         {modelLink.notice && (
           <div className='pg-load-state' role='status'>
             <span>
@@ -841,6 +903,8 @@ const AccountPlayground = ({ owner }) => {
         {parallelMode ? (
           <ParallelTextChat
             owner={owner}
+            sessionId={session.id}
+            acquire={() => acquire(session.id)}
             messages={message}
             setMessages={setMessage}
             saveMessages={saveMessagesImmediately}
@@ -849,6 +913,7 @@ const AccountPlayground = ({ owner }) => {
             inputs={inputs}
             parameterEnabled={parameterEnabled}
             disabled={
+              blocked ||
               modelsLoading ||
               modelsError ||
               customRequestMode ||
@@ -876,6 +941,7 @@ const AccountPlayground = ({ owner }) => {
             onDraftChange={setDraft}
             generating={generating}
             disabled={
+              blocked ||
               !canSend ||
               editingMessageId !== null ||
               (!customRequestMode && pendingCalls.length > 0) ||
@@ -931,7 +997,13 @@ const Playground = () => {
       </Banner>
     );
   }
-  return <AccountPlayground key={owner} owner={owner} />;
+  return (
+    <LocalConversations
+      key={owner}
+      owner={owner}
+      renderConversation={(props) => <AccountPlayground {...props} />}
+    />
+  );
 };
 
 export default Playground;

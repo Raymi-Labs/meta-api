@@ -24,16 +24,29 @@ import {
   MESSAGE_STATUS,
 } from '../../constants/playground.constants';
 import {
-  loadConfig,
-  saveConfig,
-  loadMessages,
-  saveMessages,
-  clearMessages,
+  loadConfig as legacyLoadConfig,
+  saveConfig as legacySaveConfig,
+  loadMessages as legacyLoadMessages,
+  saveMessages as legacySaveMessages,
+  clearMessages as legacyClearMessages,
 } from '../../components/playground/configStorage';
 import { processIncompleteThinkTags } from '../../helpers';
 import { recoverParallelReplies } from '../../helpers/playgroundParallel';
 
-export const usePlaygroundState = (owner) => {
+export const usePlaygroundState = (owner, session = null) => {
+  // Multi-session snapshots are persisted by the account workspace; never write
+  // a selected conversation into the old single-conversation storage slot.
+  const loadConfig = () => session?.config || legacyLoadConfig(owner);
+  const loadMessages = () => session?.messages || legacyLoadMessages(owner);
+  const saveConfig = (value) => {
+    if (!session) legacySaveConfig(value, owner);
+  };
+  const saveMessages = (value) => {
+    if (!session) legacySaveMessages(value, owner);
+  };
+  const clearMessages = () => {
+    if (!session) legacyClearMessages(owner);
+  };
   const activeRef = useRef(true);
 
   // 使用惰性初始化，确保只在组件首次挂载时加载配置和消息

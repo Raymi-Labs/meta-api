@@ -42,7 +42,7 @@ import './parallelTextChat.css';
 
 const noop = () => {};
 
-function ReplyRequest({ task, owner, setMessages, controls }) {
+function ReplyRequest({ task, owner, setMessages, controls, sessionId }) {
   const connection = useRef(null);
   const alive = useRef(false);
   const update = useCallback(
@@ -58,6 +58,7 @@ function ReplyRequest({ task, owner, setMessages, controls }) {
     noop,
     connection,
     noop,
+    sessionId,
   );
   const handlers = useRef({ sendRequest, onStopGenerator });
   handlers.current = { sendRequest, onStopGenerator };
@@ -89,6 +90,7 @@ function ReplyRequest({ task, owner, setMessages, controls }) {
       const source = connection.current;
       connection.current = null;
       source?.close?.();
+      source?.abort?.();
       controls.current.delete(task.id);
     };
   }, [task, owner, controls, setMessages]);
@@ -97,6 +99,8 @@ function ReplyRequest({ task, owner, setMessages, controls }) {
 
 export default function ParallelTextChat({
   owner,
+  sessionId,
+  acquire = () => true,
   messages,
   setMessages,
   saveMessages,
@@ -193,6 +197,7 @@ export default function ParallelTextChat({
       );
       return { id: answer.id, payload: JSON.parse(JSON.stringify(payload)) };
     });
+    if (!acquire()) return;
     sending.current = true;
     snapshots.current = new Map(
       nextTasks.map((task) => [task.id, task.payload]),
@@ -219,6 +224,7 @@ export default function ParallelTextChat({
       !eligible.some((m) => m.value === payload.model)
     )
       return;
+    if (!acquire()) return;
     sending.current = true;
     const replacement = {
       ...createLoadingAssistantMessage(),
@@ -359,6 +365,7 @@ export default function ParallelTextChat({
           key={task.id}
           task={task}
           owner={owner}
+          sessionId={sessionId}
           setMessages={setMessages}
           controls={controls}
         />
