@@ -19,6 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
+import {
+  playgroundMoney,
+  readPlaygroundCurrency,
+} from '../../helpers/playgroundPresentation';
 
 // Reuse catalog prices and units; never turn this into an estimate of the
 // current request (output length, cache hits and final route are unknown).
@@ -48,11 +52,19 @@ export default function PlaygroundPriceSummary({ model, group, catalogState }) {
     t,
   );
   const items = pricing.items.slice(0, 2);
+  const currency = readPlaygroundCurrency();
   return (
     <div
       className='pg-top-prices'
       title={items
-        .map((x) => `${x.label}: ${x.value}${x.suffix || ''}`)
+        .map((x) => {
+          const money = playgroundMoney(
+            pricing.data.unitPricesUSD?.[x.key],
+            currency.status,
+            currency.displayType,
+          );
+          return `${x.label}: ${money?.primary || x.value} ${money?.cny || ''}${x.suffix || ''}`;
+        })
         .join(' · ')}
     >
       {pricing.data.isDynamicPricing ? (
@@ -60,12 +72,28 @@ export default function PlaygroundPriceSummary({ model, group, catalogState }) {
           {t('动态计费')} · {t('见价格详情')}
         </span>
       ) : (
-        items.map((item) => (
-          <span key={item.key}>
-            {item.label} <strong>{item.value}</strong>
-            <small>{item.suffix}</small>
-          </span>
-        ))
+        items.map((item) => {
+          const money = playgroundMoney(
+            pricing.data.unitPricesUSD?.[item.key],
+            currency.status,
+            currency.displayType,
+          );
+          return (
+            <span key={item.key}>
+              {item.label} <strong>{money?.primary || item.value}</strong>
+              {money?.cny && (
+                <small
+                  title={t(
+                    '人民币按标准充值比例换算，仅供参考，不含套餐或充值优惠。',
+                  )}
+                >
+                  {money.cny}
+                </small>
+              )}
+              <small>{item.suffix}</small>
+            </span>
+          );
+        })
       )}
     </div>
   );

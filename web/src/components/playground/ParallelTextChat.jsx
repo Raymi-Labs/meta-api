@@ -114,6 +114,7 @@ export default function ParallelTextChat({
   isMobile,
   selected,
   setSelected,
+  onInputChange,
 }) {
   const { t } = useTranslation();
   const [layout, setLayout] = useState('grid');
@@ -471,6 +472,16 @@ export default function ParallelTextChat({
         )}
       </div>
       <div className='pg-parallel-composer'>
+        <label className='pg-stream-toggle'>
+          <input
+            type='checkbox'
+            aria-label={t('流式输出')}
+            checked={inputs.stream}
+            disabled={generating || disabled}
+            onChange={(e) => onInputChange('stream', e.target.checked)}
+          />
+          {t('流式输出')}
+        </label>
         <textarea
           aria-label={t('请输入您的问题...')}
           value={draft}

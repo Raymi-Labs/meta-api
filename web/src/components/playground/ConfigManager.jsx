@@ -159,7 +159,7 @@ const ConfigManager = ({
       children: (
         <div className='flex items-center gap-2'>
           <Download size={14} />
-          {t('导出配置')}
+          {t('导出当前对话配置与消息')}
         </div>
       ),
     },
@@ -170,7 +170,7 @@ const ConfigManager = ({
       children: (
         <div className='flex items-center gap-2'>
           <Upload size={14} />
-          {t('导入配置')}
+          {t('导入并替换当前对话')}
         </div>
       ),
     },

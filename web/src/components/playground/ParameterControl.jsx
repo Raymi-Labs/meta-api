@@ -33,7 +33,7 @@ export default function ParameterControl({
   const parameters = [
     {
       key: 'temperature',
-      label: 'Temperature',
+      label: t('随机性'),
       min: 0,
       max: 2,
       step: 0.1,
@@ -41,7 +41,7 @@ export default function ParameterControl({
     },
     {
       key: 'top_p',
-      label: 'Top P',
+      label: t('核采样'),
       min: 0,
       max: 1,
       step: 0.05,
@@ -49,7 +49,7 @@ export default function ParameterControl({
     },
     {
       key: 'frequency_penalty',
-      label: 'Frequency penalty',
+      label: t('频率惩罚'),
       min: -2,
       max: 2,
       step: 0.1,
@@ -57,22 +57,31 @@ export default function ParameterControl({
     },
     {
       key: 'presence_penalty',
-      label: 'Presence penalty',
+      label: t('存在惩罚'),
       min: -2,
       max: 2,
       step: 0.1,
       hint: t('存在惩罚，鼓励讨论新话题'),
     },
-    { key: 'max_tokens', label: 'Max tokens', min: 1, step: 1 },
-    { key: 'seed', label: 'Seed', step: 1, hint: t('可选，用于复现结果') },
+    { key: 'max_tokens', label: t('最大输出Token'), min: 1, step: 1 },
+    {
+      key: 'seed',
+      label: t('随机种子'),
+      step: 1,
+      hint: t('可选，用于复现结果'),
+    },
   ];
   return (
     <div className='pg-parameter-list'>
+      <p className='pg-field-hint'>
+        {t('开启后才发送该参数；关闭时保留当前数值，实际行为使用模型默认值。')}
+      </p>
       {parameters.map((param) => (
         <div className='pg-parameter' key={param.key}>
           <div className='pg-parameter-heading'>
             <label htmlFor={`pg-${param.key}`}>
               {param.label}
+              <small className='pg-api-field'>{param.key}</small>
               {param.hint && (
                 <Tooltip content={param.hint}>
                   <Info size={12} />

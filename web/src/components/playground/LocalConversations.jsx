@@ -39,9 +39,11 @@ import {
   X,
 } from 'lucide-react';
 import './playgroundFocused.css';
+import { useIsMobile } from '../../hooks/common/useIsMobile';
 
 export default function LocalConversations({ owner, renderConversation }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [sessions, setSessions] = useState([]);
   const [active, setActive] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -392,7 +394,7 @@ export default function LocalConversations({ owner, renderConversation }) {
       {error && (
         <div role='alert' className='pg-local-warning'>
           {t(error)} <button onClick={persist}>{t('重试保存')}</button>
-          <button onClick={exportAll}>{t('导出对话')}</button>
+          <button onClick={exportAll}>{t('备份全部对话')}</button>
         </div>
       )}
       {busy && busy !== active && (
@@ -402,7 +404,7 @@ export default function LocalConversations({ owner, renderConversation }) {
         </div>
       )}
       <div className='pg-conversation-layout'>
-        {drawer && (
+        {drawer && isMobile && (
           <button
             className='pg-history-backdrop'
             onClick={closeHistory}
@@ -465,9 +467,9 @@ export default function LocalConversations({ owner, renderConversation }) {
               ))}
           </div>
           <div className='pg-conversation-backup'>
-            <button onClick={exportAll}>{t('导出对话')}</button>
+            <button onClick={exportAll}>{t('备份全部对话')}</button>
             <button onClick={() => fileInput.current.click()}>
-              {t('导入对话')}
+              {t('导入对话备份')}
             </button>
           </div>
           <input

@@ -25,6 +25,10 @@ import { getLobeHubIcon } from '../../helpers';
 import { formatModelTokenLimit } from '../../helpers/modelAttributes';
 import { buildModelDetailPath } from '../../helpers/modelDetailNavigation';
 import { getModelCatalogPricing } from '../../helpers/modelCatalogPricing';
+import {
+  playgroundMoney,
+  readPlaygroundCurrency,
+} from '../../helpers/playgroundPresentation';
 
 export default function ModelInfoCard({
   model,
@@ -57,6 +61,7 @@ export default function ModelInfoCard({
     );
   }, [model, group, catalog, t]);
   const icon = model?.icon || model?.vendor?.icon;
+  const currency = readPlaygroundCurrency();
   const rows = [
     {
       key: 'context',
@@ -100,16 +105,28 @@ export default function ModelInfoCard({
       <dl className='pg-model-facts'>
         {rows.map((row) => {
           const raw = pricing?.data?.unitPricesUSD?.[row.key];
-          const value =
-            typeof raw === 'number' && Number.isFinite(raw)
-              ? `$${Number(raw.toFixed(6))}`
-              : row.value;
+          const money = playgroundMoney(
+            raw,
+            currency.status,
+            currency.displayType,
+          );
+          const value = money?.primary || row.value;
           return (
             <div key={row.key}>
               <dt>{row.label}</dt>
               <dd>
                 {value}
                 <small>{row.suffix?.replace(' / 1M Tokens', '/1M')}</small>
+                {money?.cny && (
+                  <small
+                    className='pg-price-reference'
+                    title={t(
+                      '人民币按标准充值比例换算，仅供参考，不含套餐或充值优惠。',
+                    )}
+                  >
+                    {money.cny}
+                  </small>
+                )}
               </dd>
             </div>
           );
@@ -125,7 +142,10 @@ export default function ModelInfoCard({
           </button>
         ) : pricing ? (
           <>
-            {group} · USD
+            {group}
+            <p>
+              {t('人民币按标准充值比例换算，仅供参考，不含套餐或充值优惠。')}
+            </p>
             {pricing.data.isDynamicPricing && (
               <>
                 {' '}

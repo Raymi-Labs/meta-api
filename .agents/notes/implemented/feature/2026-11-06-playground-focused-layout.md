@@ -14,6 +14,8 @@ Status: implemented
 
 ## Existing notes audit
 
+[操作与价格补齐](../bug-fix/2026-11-06-playground-usability-followup.md)替代本篇的桌面遮罩抽屉与USD展示方式：桌面改为停靠侧板，分组显示真实名称，价格按站点币种及标准充值人民币参考显示；手机抽屉和聚焦结构继续保留。
+
 [本地会话](../../implemented/feature/2026-11-06-playground-local-conversations.md)继续管理生命周期；[三栏工作区](../../implemented/feature/2026-10-30-playground-workspace.md)的常驻参数/代码由本篇替代，功能与SDK导出保留。
 
 ## Alternatives considered

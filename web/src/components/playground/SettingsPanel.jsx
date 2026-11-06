@@ -21,7 +21,7 @@ import React from 'react';
 import { Select } from '@douyinfe/semi-ui';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { renderGroupOption, selectFilter } from '../../helpers';
+import { playgroundGroupOptions } from '../../helpers/playgroundPresentation';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
@@ -122,11 +122,10 @@ const SettingsPanel = ({
           {t('分组')}
           <Select
             aria-label={t('分组')}
-            filter={selectFilter}
+            filter
             value={inputs.group}
             onChange={(value) => onInputChange('group', value)}
-            optionList={groups}
-            renderOptionItem={renderGroupOption}
+            optionList={playgroundGroupOptions(groups)}
             disabled={customRequestMode}
             style={{ width: '100%' }}
           />
