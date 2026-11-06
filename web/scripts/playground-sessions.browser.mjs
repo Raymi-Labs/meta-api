@@ -134,7 +134,11 @@ try {
           data = {
             system_name: 'Fixture',
             quota_per_unit: 500000,
-            quota_display_type: 'USD',
+            quota_display_type: 'CUSTOM',
+            custom_currency_symbol: '⚡',
+            custom_currency_exchange_rate: 1,
+            price: 0.2,
+            server_address: 'https://meta-api.vip',
           };
         if (u.pathname === '/api/user/self')
           data = await page.evaluate(() =>
@@ -147,8 +151,9 @@ try {
               : ['model-a', 'model-b', 'model-c', 'model-d', 'model-e'];
         if (u.pathname === '/api/user/self/groups')
           data = {
-            default: { ratio: 1, desc: 'Default' },
-            limited: { ratio: 2, desc: 'Limited' },
+            default: { ratio: 1, desc: '说明不能当组名' },
+            limited: { ratio: 2, desc: '福利' },
+            福利: { ratio: 0.6, desc: '福利' },
           };
         if (u.pathname === '/api/pricing')
           body = {
@@ -158,8 +163,8 @@ try {
                 model_name,
                 enable_groups:
                   model_name === 'model-a'
-                    ? ['default', 'limited']
-                    : ['default'],
+                    ? ['default', 'limited', '福利']
+                    : ['default', '福利'],
                 quota_type: 0,
                 supported_endpoint_types: ['openai'],
                 output_modalities: ['text'],
@@ -167,7 +172,7 @@ try {
                 completion_ratio: 2,
               }),
             ),
-            group_ratio: { default: 1, limited: 2 },
+            group_ratio: { default: 1, limited: 2, 福利: 0.6 },
           };
         await req.respond({
           status: 200,
@@ -221,10 +226,65 @@ try {
   // Focused layout utilities are opt-in and must not issue model requests.
   assert.equal(await page.$(active + ' .pg-workspace > .pg-settings'), null);
   assert.equal(await page.$(active + ' .pg-workspace > .pg-code'), null);
+  const mainX = await page.$eval(
+    active + ' .pg-main',
+    (e) => e.getBoundingClientRect().x,
+  );
   await page.click('.pg-tool-rail [aria-label="参数"]');
-  await page.waitForSelector('.pg-sheet .pg-settings-scroll', {
+  await page.waitForSelector('.pg-docked-settings .pg-settings-scroll', {
     visible: true,
   });
+  assert(
+    await page.$eval(
+      active + ' .pg-main',
+      (e, x) => e.getBoundingClientRect().x > x + 200,
+      mainX,
+    ),
+  );
+  assert.equal(
+    await page.$$eval(
+      'input[type=checkbox]',
+      (els) => els.filter((e) => e.closest('.pg-stream-toggle')).length,
+    ),
+    1,
+  );
+  assert(
+    await page.$eval('.pg-docked-settings', (e) =>
+      e.textContent.includes('开启后才发送该参数'),
+    ),
+  );
+  assert(
+    await page.$eval('.pg-docked-settings', (e) =>
+      e.textContent.includes('随机性'),
+    ),
+  );
+  assert.equal(await page.$('.semi-sidesheet-mask'), null);
+  await page.screenshot({ path: '/tmp/playground-refined-settings.png' });
+  await page.setViewport({ width: 820, height: 1000 });
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+    'docked settings must fit a tablet viewport',
+  );
+  await page.screenshot({ path: '/tmp/playground-refined-tablet.png' });
+  await page.setViewport({ width: 1440, height: 1000 });
+  // Directly switch panels while settings is open; the rail must remain clickable.
+  await page.click('.pg-tool-rail [aria-label="请求代码"]');
+  await page.waitForSelector('.pg-docked-code .pg-code-panel', {
+    visible: true,
+  });
+  assert.equal(await page.$('.pg-docked-settings'), null);
+  assert(
+    await page.$eval('.pg-docked-code', (e) =>
+      e.textContent.includes('meta-api.com'),
+    ),
+  );
+  assert(
+    !(await page.$eval('.pg-docked-code', (e) =>
+      e.textContent.includes('meta-api.vip'),
+    )),
+  );
   await page.keyboard.press('Escape');
   await page.waitForFunction(
     () =>
@@ -232,9 +292,11 @@ try {
         .querySelector('.pg-tool-rail [aria-label="参数"]')
         ?.getAttribute('aria-expanded') === 'false',
   );
-  await page.waitForSelector('.pg-sheet .pg-settings-scroll', { hidden: true });
+  await page.waitForSelector('.pg-docked-settings', { hidden: true });
   await page.click('.pg-tool-rail [aria-label="请求代码"]');
-  await page.waitForSelector('.pg-sheet .pg-code-panel', { visible: true });
+  await page.waitForSelector('.pg-docked-code .pg-code-panel', {
+    visible: true,
+  });
   await page.keyboard.press('Escape');
   await page.waitForFunction(
     () =>
@@ -242,10 +304,20 @@ try {
         .querySelector('.pg-tool-rail [aria-label="请求代码"]')
         ?.getAttribute('aria-expanded') === 'false',
   );
-  await page.waitForSelector('.pg-sheet .pg-code-panel', { hidden: true });
+  await page.waitForSelector('.pg-docked-code .pg-code-panel', {
+    hidden: true,
+  });
   await clickText('对话列表');
   await page.waitForFunction(
     () => document.activeElement?.getAttribute('aria-label') === '搜索对话标题',
+  );
+  assert.equal(await page.$('.pg-history-backdrop'), null);
+  assert(
+    await page.$eval(
+      active + ' .pg-main',
+      (e, x) => e.getBoundingClientRect().x > x + 200,
+      mainX,
+    ),
   );
   await page.keyboard.press('Escape');
   assert.equal(
@@ -255,7 +327,26 @@ try {
   await page.click(active + ' .pg-model-tab.is-active button[role=tab]');
   await page.waitForSelector('.pg-model-options');
   await clickText('model-b', '.pg-model-options');
-  await page.select(active + ' select[aria-label="当前分组"]', 'limited');
+  await page.waitForSelector('.pg-model-options', { hidden: true });
+  const selectGroup = async (value) => {
+    await page.click(active + ' .pg-top-group .semi-select');
+    await page.waitForSelector('.semi-select-option-list');
+    const labels = await page.$$eval(
+      '.semi-select-option-list [role="option"]',
+      (els) => els.map((e) => e.textContent),
+    );
+    assert(!labels.some((x) => x.includes('说明不能当组名')));
+    await page.evaluate((value) => {
+      const e = [
+        ...document.querySelectorAll(
+          '.semi-select-option-list [role="option"]',
+        ),
+      ].find((e) => e.textContent.trim() === value);
+      if (!e) throw Error('Missing group ' + value);
+      e.click();
+    }, value);
+  };
+  await selectGroup('limited');
   await page.waitForFunction(
     (scope) =>
       document
@@ -268,10 +359,19 @@ try {
     await page.$eval(active + ' .pg-top-ratio', (e) => e.textContent),
     '2×',
   );
-  await page.select(active + ' select[aria-label="当前分组"]', 'default');
+  await selectGroup('default');
   await page.waitForSelector('.pg-model-options', { hidden: true });
   await saved();
   assert.equal(calls.length, 0);
+  assert(
+    await page.$eval(
+      '.pg-top-prices',
+      (e) => e.textContent.includes('⚡2') && e.textContent.includes('≈¥0.4'),
+    ),
+  );
+  assert(
+    !(await page.$eval('.pg-top-prices', (e) => e.textContent.includes('$'))),
+  );
   await page.screenshot({ path: '/tmp/playground-focused-desktop-empty.png' });
   assert(
     await page.evaluate(
@@ -422,6 +522,12 @@ try {
     () => document.querySelectorAll('.pg-conversation-items>div').length === 3,
   );
   await page.setViewport({ width: 390, height: 1000 });
+  await page.click('.pg-tool-rail [aria-label="参数"]');
+  await page.waitForSelector('.pg-sheet .pg-settings-scroll', {
+    visible: true,
+  });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.pg-sheet .pg-settings-scroll', { hidden: true });
   assert(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -445,6 +551,14 @@ try {
   assert.equal(
     await page.$$eval('.pg-conversation-items>div', (e) => e.length),
     1,
+  );
+  await page.waitForFunction(
+    (scope) =>
+      document
+        .querySelector(scope + ' .pg-top-group')
+        ?.textContent.includes('福利'),
+    {},
+    active,
   );
   assert(
     !(await page.$eval(active + ' .pg-messages', (e) =>

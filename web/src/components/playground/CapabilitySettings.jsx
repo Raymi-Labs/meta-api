@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Switch, TextArea } from '@douyinfe/semi-ui';
-import { Brain, Wrench, Radio, ChevronDown } from 'lucide-react';
+import { Brain, Wrench, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_TOOL_DEFINITIONS,
@@ -48,7 +48,7 @@ export default function CapabilitySettings({
       <div className='pg-capability-row'>
         <span>
           <Brain size={17} />
-          {t('深度思考')}
+          {t('思考强度')}
         </span>
         <select
           aria-label={t('思考强度')}
@@ -63,9 +63,11 @@ export default function CapabilitySettings({
           <option value='high'>{t('高')}</option>
         </select>
       </div>
-      {inputs.reasoningEffort && !noReasoning && (
+      {!noReasoning && (
         <p className='pg-field-hint'>
-          {t('通过 reasoning_effort 请求，支持的档位由模型与渠道决定。')}
+          {t(
+            '模型默认不发送思考参数；关闭与各强度需模型支持，不保证更高强度一定更快或更准确。',
+          )}
         </p>
       )}
       {!textOnly && (
@@ -139,19 +141,6 @@ export default function CapabilitySettings({
           )}
         </div>
       )}
-      <div className='pg-capability-row'>
-        <span>
-          <Radio size={17} />
-          {t('流式输出')}
-        </span>
-        <Switch
-          aria-label={t('流式输出')}
-          checked={inputs.stream}
-          onChange={(checked) => onInputChange('stream', checked)}
-          size='small'
-          disabled={disabled}
-        />
-      </div>
     </section>
   );
 }

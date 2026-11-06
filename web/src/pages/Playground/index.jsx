@@ -28,7 +28,8 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Toast, Banner, Button } from '@douyinfe/semi-ui';
+import { Toast, Banner, Button, Select } from '@douyinfe/semi-ui';
+import { playgroundGroupOptions } from '../../helpers/playgroundPresentation';
 
 import { getPlaygroundOwner } from '../../components/playground/configStorage';
 
@@ -817,7 +818,7 @@ const AccountPlayground = ({
           )}
           <div className='pg-top-group'>
             <label htmlFor={`pg-group-${session.id}`}>{t('分组')}</label>
-            <select
+            <Select
               id={`pg-group-${session.id}`}
               aria-label={t('当前分组')}
               value={inputs.group}
@@ -827,22 +828,13 @@ const AccountPlayground = ({
                 modelsLoading ||
                 customRequestMode
               }
-              onChange={(e) => {
+              filter
+              optionList={playgroundGroupOptions(groups)}
+              onChange={(value) => {
                 modelLink.dismiss();
-                handleInputChange('group', e.target.value);
+                handleInputChange('group', value);
               }}
-            >
-              {!groups.some((g) => g.value === inputs.group) && (
-                <option value={inputs.group}>
-                  {inputs.group || t('请选择分组')}
-                </option>
-              )}
-              {groups.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label || g.value}
-                </option>
-              ))}
-            </select>
+            />
             {Number.isFinite(
               catalogState.catalog?.groupRatio?.[inputs.group],
             ) && (
@@ -947,6 +939,7 @@ const AccountPlayground = ({
           )}
         {parallelMode ? (
           <ParallelTextChat
+            onInputChange={handleInputChange}
             owner={owner}
             sessionId={session.id}
             acquire={() => acquire(session.id)}

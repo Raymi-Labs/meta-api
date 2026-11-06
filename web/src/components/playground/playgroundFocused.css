@@ -115,7 +115,7 @@
   font-size: 13px;
   white-space: nowrap;
 }
-.pg-top-group select {
+.pg-top-group .semi-select {
   border: 1px solid var(--semi-color-border);
   border-radius: 10px;
   min-height: 40px;
@@ -124,6 +124,63 @@
   padding: 8px;
   background: var(--semi-color-bg-0);
   color: var(--semi-color-text-0);
+}
+.pg-top-group .semi-select-selection-text {
+  font-weight: 500;
+}
+.pg-docked-panel {
+  width: 340px;
+  flex: 0 0 340px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-0);
+  overflow: hidden;
+}
+.pg-docked-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--semi-color-border);
+}
+.pg-docked-panel > header button {
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+}
+.pg-docked-panel > .pg-settings-lock {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.pg-docked-code {
+  width: 400px;
+  flex-basis: 400px;
+  border-right: 0;
+  border-left: 1px solid var(--semi-color-border);
+}
+.pg-docked-code > .pg-code-panel {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+.pg-focused .pg-main {
+  flex: 1;
+  min-width: 0;
+}
+.pg-api-field {
+  display: block;
+  color: var(--semi-color-text-3);
+  font-weight: 400;
+  font-size: 11px;
+}
+.pg-capability-row > span {
+  flex-shrink: 0;
 }
 .pg-top-ratio {
   background: var(--semi-color-success-light-default);
@@ -145,6 +202,11 @@
 }
 .pg-top-prices small {
   margin-left: 3px;
+}
+.pg-model-facts .pg-price-reference {
+  display: block;
+  color: var(--semi-color-text-2);
+  font-weight: 400;
 }
 .pg-focused .pg-prompt-row,
 .pg-focused .pg-chat,
@@ -201,14 +263,11 @@
 }
 .pg-focused .pg-conversation-list.is-open {
   display: flex;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--pg-rail-width);
-  width: 300px;
+  position: relative;
+  width: 260px;
+  height: calc(100dvh - 64px);
   max-width: calc(100% - var(--pg-rail-width));
-  z-index: 10;
-  box-shadow: 8px 0 24px #0001;
+  z-index: 1;
   padding: 18px;
 }
 .pg-focused .pg-conversation-list[hidden] {
@@ -299,7 +358,7 @@
   .pg-top-group {
     flex: 1;
   }
-  .pg-top-group select {
+  .pg-top-group .semi-select {
     width: 130px;
     max-width: 36vw;
   }
@@ -331,6 +390,8 @@
     padding: 12px;
   }
   .pg-focused .pg-conversation-list.is-open {
+    position: absolute;
+    z-index: 10;
     left: 0;
     top: 58px;
     width: 300px;

@@ -26,6 +26,7 @@ import {
   showError,
 } from '../../helpers';
 import { API_ENDPOINTS } from '../../constants/playground.constants';
+import { playgroundDefaultGroup } from '../../helpers/playgroundPresentation';
 
 export const useDataLoader = (
   userState,
@@ -88,7 +89,10 @@ export const useDataLoader = (
         if (
           !options.some((option) => option.value === latestInputs.current.group)
         )
-          handleInputChange('group', options[0]?.value || '');
+          handleInputChange(
+            'group',
+            playgroundDefaultGroup(options, latestInputs.current.group),
+          );
       })
       .catch(() => {
         if (active) showError(t('加载分组失败'));

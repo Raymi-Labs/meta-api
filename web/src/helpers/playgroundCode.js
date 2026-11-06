@@ -33,6 +33,18 @@ export function getPlaygroundEndpoint(address) {
   try {
     const url = new URL(address);
     if (!['https:', 'http:'].includes(url.protocol)) return '';
+    if (
+      url.protocol === 'https:' &&
+      !url.port &&
+      [
+        'meta-api.vip',
+        'nan.meta-api.vip',
+        'cn.meta-api.vip',
+        'meta-api.com',
+      ].includes(url.hostname)
+    ) {
+      url.hostname = 'meta-api.com';
+    }
     url.username = '';
     url.password = '';
     url.search = '';
