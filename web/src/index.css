@@ -209,6 +209,24 @@ code {
   height: 44px !important;
 }
 
+/* Content-sized rows must center the actual text line, not stretch its wrapper
+   while the icon centers independently. Keep submenu list containers intact. */
+.sidebar-nav .semi-navigation-item-normal,
+.sidebar-nav .semi-navigation-sub-title,
+.sidebar-nav .semi-navigation-item-inner {
+  align-items: center;
+}
+.sidebar-nav .semi-navigation-sub-title > .semi-navigation-item-inner {
+  display: flex;
+}
+.sidebar-nav .semi-navigation-item-text {
+  display: flex;
+  align-items: center;
+}
+.sidebar-nav .semi-navigation-item-text > span {
+  min-width: 0;
+}
+
 .sidebar-nav::-webkit-scrollbar {
   display: none;
 }
