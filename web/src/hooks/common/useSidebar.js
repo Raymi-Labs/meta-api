@@ -40,6 +40,7 @@ export const DEFAULT_ADMIN_CONFIG = {
     task: true,
   },
   personal: {
+    overview: true,
     enabled: true,
     topup: true,
     pulse: true,
