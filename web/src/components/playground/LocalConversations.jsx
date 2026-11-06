@@ -31,6 +31,14 @@ import {
   sessionTitle,
 } from '../../helpers/playgroundSessions';
 import './localConversations.css';
+import {
+  Plus,
+  MessagesSquare,
+  SlidersHorizontal,
+  Code2,
+  X,
+} from 'lucide-react';
+import './playgroundFocused.css';
 
 export default function LocalConversations({ owner, renderConversation }) {
   const { t } = useTranslation();
@@ -42,6 +50,29 @@ export default function LocalConversations({ owner, renderConversation }) {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('');
   const [drawer, setDrawer] = useState(false);
+  const [panel, setPanel] = useState(null);
+  const historyButton = useRef(null),
+    historySearch = useRef(null);
+  const closeHistory = useCallback(() => {
+    setDrawer(false);
+    historyButton.current?.focus();
+  }, []);
+  useEffect(() => {
+    if (!drawer) return;
+    historySearch.current?.focus();
+    const escape = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeHistory();
+      }
+    };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [drawer, closeHistory]);
+  const openPanel = (value) => {
+    setDrawer(false);
+    setPanel((previous) => (previous === value ? null : value));
+  };
   const records = useRef([]),
     current = useRef(null),
     store = useRef(null),
@@ -226,6 +257,7 @@ export default function LocalConversations({ owner, renderConversation }) {
     setSessions([...records.current]);
     setActive(id);
     setDrawer(false);
+    setPanel(null);
     persist();
   };
   const add = () => {
@@ -309,12 +341,50 @@ export default function LocalConversations({ owner, renderConversation }) {
     (s) => s.id === active || s.id === busy,
   );
   return (
-    <div className='pg-conversations'>
-      <div className='pg-conversation-toolbar'>
-        <button onClick={() => setDrawer(!drawer)} aria-expanded={drawer}>
-          {t('对话列表')}
+    <div className='pg-conversations pg-focused'>
+      <nav className='pg-tool-rail' aria-label={t('模型体验工具')}>
+        <button
+          className='pg-rail-new'
+          onClick={add}
+          aria-label={t('新建对话')}
+          title={t('新建对话')}
+        >
+          <Plus size={21} />
+          <span>{t('新建')}</span>
         </button>
-        <button onClick={add}>{t('新建对话')}</button>
+        <span className='pg-rail-divider' />
+        <button
+          ref={historyButton}
+          onClick={() => {
+            setPanel(null);
+            setDrawer(!drawer);
+          }}
+          aria-expanded={drawer}
+          aria-controls='pg-local-history'
+          aria-label={t('对话列表')}
+        >
+          <MessagesSquare size={20} />
+          <span>{t('对话')}</span>
+        </button>
+        <button
+          onClick={() => openPanel('settings')}
+          aria-expanded={panel === 'settings'}
+          aria-label={t('参数')}
+        >
+          <SlidersHorizontal size={20} />
+          <span>{t('设置')}</span>
+        </button>
+        <button
+          className='pg-rail-code'
+          onClick={() => openPanel('code')}
+          aria-expanded={panel === 'code'}
+          aria-label={t('请求代码')}
+        >
+          <Code2 size={21} />
+          <span>{t('代码')}</span>
+        </button>
+      </nav>
+      <div className='pg-conversation-toolbar'>
         <span role='status'>
           {saving ? t('正在保存到本地…') : t('已保存在此浏览器')}
         </span>
@@ -332,11 +402,27 @@ export default function LocalConversations({ owner, renderConversation }) {
         </div>
       )}
       <div className='pg-conversation-layout'>
+        {drawer && (
+          <button
+            className='pg-history-backdrop'
+            onClick={closeHistory}
+            aria-label={t('关闭对话列表')}
+          />
+        )}
         <aside
+          id='pg-local-history'
+          hidden={!drawer}
           className={`pg-conversation-list ${drawer ? 'is-open' : ''}`}
           aria-label={t('本地对话')}
         >
+          <div className='pg-history-heading'>
+            <strong>{t('本地对话')}</strong>
+            <button onClick={closeHistory} aria-label={t('关闭对话列表')}>
+              <X size={18} />
+            </button>
+          </div>
           <input
+            ref={historySearch}
             aria-label={t('搜索对话标题')}
             placeholder={t('搜索对话标题')}
             value={filter}
@@ -408,6 +494,8 @@ export default function LocalConversations({ owner, renderConversation }) {
                 release,
                 blocked: !!busy && busy !== s.id,
                 active: s.id === active,
+                panel,
+                setPanel,
               })}
             </div>
           ))}

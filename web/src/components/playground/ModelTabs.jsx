@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState } from 'react';
 import { Modal, Input } from '@douyinfe/semi-ui';
-import { Plus, X, Search, Box } from 'lucide-react';
+import { Plus, X, Search, Box, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function ModelTabs({
@@ -48,11 +48,17 @@ export default function ModelTabs({
               role='tab'
               aria-selected={model === activeModel}
               disabled={disabled}
-              onClick={() => onSelect(model)}
+              onClick={() => {
+                if (model === activeModel) {
+                  setQuery('');
+                  setOpen(true);
+                } else onSelect(model);
+              }}
               title={model}
             >
               <Box size={15} />
               <span>{model}</span>
+              {model === activeModel && <ChevronDown size={13} />}
             </button>
             {tabs.length > 1 && (
               <button

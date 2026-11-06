@@ -1,0 +1,107 @@
+{
+  "operations": [
+    {
+      "path": "size",
+      "mode": "set",
+      "value": "1024x1024",
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": true,
+          "pass_missing_key": true
+        }
+      ]
+    },
+    {
+      "path": "quality",
+      "mode": "set",
+      "value": "high",
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": true,
+          "pass_missing_key": true
+        }
+      ]
+    },
+    {
+      "path": "output_format",
+      "mode": "set",
+      "value": "png",
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": true,
+          "pass_missing_key": true
+        }
+      ]
+    },
+    {
+      "path": "size",
+      "mode": "set",
+      "value": "512x512",
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": false,
+          "pass_missing_key": false
+        }
+      ]
+    },
+    {
+      "path": "quality",
+      "mode": "set",
+      "value": "medium",
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": false,
+          "pass_missing_key": false
+        }
+      ]
+    },
+    {
+      "path": "frame_count",
+      "mode": "set",
+      "value": 9,
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": false,
+          "pass_missing_key": false
+        }
+      ]
+    },
+    {
+      "path": "frame_duration_ms",
+      "mode": "set",
+      "value": 200,
+      "conditions": [
+        {
+          "path": "output_format",
+          "mode": "full",
+          "value": "gif",
+          "invert": false,
+          "pass_missing_key": false
+        }
+      ]
+    },
+    {
+      "path": "n",
+      "mode": "set",
+      "value": 1
+    }
+  ]
+}

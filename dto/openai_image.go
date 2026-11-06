@@ -62,12 +62,15 @@ type ImageRequest struct {
 	Moderation        json.RawMessage `json:"moderation,omitempty"`
 	OutputFormat      json.RawMessage `json:"output_format,omitempty"`
 	OutputCompression json.RawMessage `json:"output_compression,omitempty"`
-	PartialImages     json.RawMessage `json:"partial_images,omitempty"`
-	Stream            json.RawMessage `json:"stream,omitempty"`
-	Images            json.RawMessage `json:"images,omitempty"`
-	Mask              json.RawMessage `json:"mask,omitempty"`
-	InputFidelity     json.RawMessage `json:"input_fidelity,omitempty"`
-	Watermark         *bool           `json:"watermark,omitempty"`
+	// Animation controls are explicit: unknown Extra fields remain excluded.
+	FrameCount      *uint           `json:"frame_count,omitempty"`
+	FrameDurationMS *uint           `json:"frame_duration_ms,omitempty"`
+	PartialImages   json.RawMessage `json:"partial_images,omitempty"`
+	Stream          json.RawMessage `json:"stream,omitempty"`
+	Images          json.RawMessage `json:"images,omitempty"`
+	Mask            json.RawMessage `json:"mask,omitempty"`
+	InputFidelity   json.RawMessage `json:"input_fidelity,omitempty"`
+	Watermark       *bool           `json:"watermark,omitempty"`
 	// zhipu 4v
 	WatermarkEnabled json.RawMessage `json:"watermark_enabled,omitempty"`
 	UserId           json.RawMessage `json:"user_id,omitempty"`

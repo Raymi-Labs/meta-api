@@ -73,6 +73,7 @@ import { SlidersHorizontal, Code2, RefreshCw, Copy } from 'lucide-react';
 import PlaygroundWorkspace from '../../components/playground/PlaygroundWorkspace';
 import LocalConversations from '../../components/playground/LocalConversations';
 import ModelTabs from '../../components/playground/ModelTabs';
+import PlaygroundPriceSummary from '../../components/playground/PlaygroundPriceSummary';
 import ParallelTextChat from '../../components/playground/ParallelTextChat';
 import { comparisonModelNames } from '../../helpers/playgroundParallel';
 import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
@@ -107,6 +108,8 @@ const AccountPlayground = ({
   release,
   blocked,
   active,
+  panel,
+  setPanel,
 }) => {
   const { t } = useTranslation();
   const [userState] = useContext(UserContext);
@@ -129,7 +132,6 @@ const AccountPlayground = ({
     showDebugPanel,
     customRequestMode,
     customRequestBody,
-    showSettings,
     models,
     groups,
     status,
@@ -144,7 +146,6 @@ const AccountPlayground = ({
     saveMessagesImmediately,
     handleConfigImport,
     handleConfigReset,
-    setShowSettings,
     setModels,
     setGroups,
     setStatus,
@@ -793,10 +794,10 @@ const AccountPlayground = ({
       <PlaygroundWorkspace
         settings={settingsPanel}
         code={codePanel}
-        showSettings={active && showSettings}
-        showCode={active && showDebugPanel}
-        onCloseSettings={() => setShowSettings(false)}
-        onCloseCode={() => setShowDebugPanel(false)}
+        showSettings={active && panel === 'settings'}
+        showCode={active && panel === 'code'}
+        onCloseSettings={() => setPanel(null)}
+        onCloseCode={() => setPanel(null)}
       >
         <div className='pg-workspace-toolbar'>
           {!parallelMode && (
@@ -812,6 +813,49 @@ const AccountPlayground = ({
                 modelsLoading ||
                 customRequestMode
               }
+            />
+          )}
+          <div className='pg-top-group'>
+            <label htmlFor={`pg-group-${session.id}`}>{t('分组')}</label>
+            <select
+              id={`pg-group-${session.id}`}
+              aria-label={t('当前分组')}
+              value={inputs.group}
+              disabled={
+                generating ||
+                pendingCalls.length > 0 ||
+                modelsLoading ||
+                customRequestMode
+              }
+              onChange={(e) => {
+                modelLink.dismiss();
+                handleInputChange('group', e.target.value);
+              }}
+            >
+              {!groups.some((g) => g.value === inputs.group) && (
+                <option value={inputs.group}>
+                  {inputs.group || t('请选择分组')}
+                </option>
+              )}
+              {groups.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label || g.value}
+                </option>
+              ))}
+            </select>
+            {Number.isFinite(
+              catalogState.catalog?.groupRatio?.[inputs.group],
+            ) && (
+              <span className='pg-top-ratio'>
+                {catalogState.catalog.groupRatio[inputs.group]}×
+              </span>
+            )}
+          </div>
+          {!parallelMode && (
+            <PlaygroundPriceSummary
+              model={selectedModel}
+              group={inputs.group}
+              catalogState={catalogState}
             />
           )}
           <div
@@ -830,6 +874,7 @@ const AccountPlayground = ({
                 onClick={() => {
                   setParallelMode(mode);
                   setShowDebugPanel(false);
+                  setPanel(null);
                 }}
               >
                 {t(mode ? '多模型同时回答' : '单模型回答')}
@@ -839,7 +884,7 @@ const AccountPlayground = ({
           <div className='pg-workspace-actions'>
             <button
               className='pg-open-settings'
-              onClick={() => setShowSettings(true)}
+              onClick={() => setPanel('settings')}
               aria-label={t('参数')}
               title={t('参数')}
             >
@@ -847,7 +892,7 @@ const AccountPlayground = ({
             </button>
             <button
               className='pg-open-code'
-              onClick={() => setShowDebugPanel(true)}
+              onClick={() => setPanel('code')}
               aria-label={t('请求代码')}
               title={t('请求代码')}
             >
@@ -963,7 +1008,7 @@ const AccountPlayground = ({
               )
             }
             onInputChange={handleInputChange}
-            onOpenSettings={() => isMobile && setShowSettings(true)}
+            onOpenSettings={() => setPanel('settings')}
             customRequestMode={customRequestMode}
           />
         )}
