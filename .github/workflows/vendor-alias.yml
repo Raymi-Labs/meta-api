@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - "model/*vendor*"
+      - "model/public_descriptions*"
+      - "model/data/public_model_descriptions.json"
+      - "model/model_description_translation.go"
+      - "model/model_capability_sync.go"
+      - "controller/public_descriptions_test.go"
       - "model/pricing_default*"
       - "model/main.go"
       - "controller/vendor_meta.go"
@@ -53,4 +58,4 @@ jobs:
         env:
           TEST_ALIBABA_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/vendor_alias_test?charset=utf8mb4&parseTime=true
           TEST_ALIBABA_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=vendor_alias_test sslmode=disable
-        run: go test -p 2 ./model ./controller -run 'IdentityVendor|DefaultVendorFallback|PricingVendorSurvives' -count=1 -timeout=180s -v
+        run: go test -p 2 ./model ./controller -run 'PublicDescription|IdentityVendor|DefaultVendorFallback|PricingVendorSurvives' -count=1 -timeout=180s -v

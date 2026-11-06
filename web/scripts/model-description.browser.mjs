@@ -38,14 +38,33 @@ const cases = {
     search: '视觉推理',
   },
 };
-const current = cases[process.env.MODEL_DESCRIPTION_CASE || 'astra'];
+const reviewed = process.env.PUBLIC_DESCRIPTION_MODEL
+  ? JSON.parse(
+      fs.readFileSync(
+        path.join(root, '../model/data/public_model_descriptions.json'),
+        'utf8',
+      ),
+    ).find((entry) => entry.model === process.env.PUBLIC_DESCRIPTION_MODEL)
+  : null;
+if (process.env.PUBLIC_DESCRIPTION_MODEL)
+  assert.ok(reviewed, 'known reviewed model');
+const current = reviewed
+  ? {
+      model: reviewed.model,
+      vendor: reviewed.author,
+      icon: reviewed.author === 'Google' ? 'Gemini' : 'Claude',
+      search: reviewed.title,
+    }
+  : cases[process.env.MODEL_DESCRIPTION_CASE || 'astra'];
 assert.ok(current, 'known model fixture');
-const seed = JSON.parse(
-  fs.readFileSync(
-    path.join(root, '../model/data/model_description_translations.json'),
-    'utf8',
-  ),
-).find((entry) => entry.source.startsWith(current.prefix));
+const seed =
+  reviewed ||
+  JSON.parse(
+    fs.readFileSync(
+      path.join(root, '../model/data/model_description_translations.json'),
+      'utf8',
+    ),
+  ).find((entry) => entry.source.startsWith(current.prefix));
 assert.ok(seed, 'bundled source');
 const { config } = await loadConfigFromFile(
   { command: 'serve', mode: 'development' },

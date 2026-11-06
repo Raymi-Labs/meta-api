@@ -349,6 +349,7 @@ func SyncUpstreamModels(c *gin.Context) {
 	modelByName := make(map[string]upstreamModel)
 	for _, m := range modelsEnv.Data {
 		if m.ModelName != "" {
+			m.Description = model.NormalizePublicModelDescription(m.ModelName, m.Description)
 			modelByName[m.ModelName] = m
 		}
 	}
@@ -429,7 +430,7 @@ func SyncUpstreamModels(c *gin.Context) {
 			_ = model.DB.Transaction(func(tx *gorm.DB) error {
 				needUpdate := false
 				if containsField(ow.Fields, "description") {
-					local.Description = up.Description
+					local.Description = model.NormalizePublicModelDescription(local.ModelName, up.Description)
 					needUpdate = true
 				}
 				if containsField(ow.Fields, "icon") {
@@ -557,6 +558,7 @@ func SyncUpstreamPreview(c *gin.Context) {
 	upstreamNames := make([]string, 0, len(modelsEnv.Data))
 	for _, m := range modelsEnv.Data {
 		if m.ModelName != "" {
+			m.Description = model.NormalizePublicModelDescription(m.ModelName, m.Description)
 			modelByName[m.ModelName] = m
 			upstreamNames = append(upstreamNames, m.ModelName)
 		}
