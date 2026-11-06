@@ -128,6 +128,7 @@ func readModelCapabilityState(raw string) modelCapabilityState {
 }
 
 func modelCapabilityChanges(local Model, entry ModelCapabilityMetadata, source string) (map[string]interface{}, error) {
+	entry.Description = NormalizePublicModelDescription(local.ModelName, entry.Description)
 	state := readModelCapabilityState(local.ModelCapabilitySyncState)
 	changes := map[string]interface{}{}
 	released, applied := false, false

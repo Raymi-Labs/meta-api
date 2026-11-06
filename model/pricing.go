@@ -217,7 +217,7 @@ func updatePricing() {
 		vendorsList = append(vendorsList, PricingVendor{
 			ID:          v.Id,
 			Name:        v.Name,
-			Description: v.Description,
+			Description: NormalizePublicVendorDescription(v.Name, v.Description),
 			Icon:        v.Icon,
 		})
 	}

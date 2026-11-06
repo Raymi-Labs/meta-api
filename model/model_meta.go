@@ -63,6 +63,7 @@ type Model struct {
 }
 
 func (mi *Model) Insert() error {
+	normalizePublicModelMetadata(mi)
 	now := common.GetTimestamp()
 	mi.CreatedTime = now
 	mi.UpdatedTime = now
@@ -167,6 +168,7 @@ func (mi *Model) UpdateWithLocalizedMetadata(omitted []string, overrides map[str
 }
 
 func (mi *Model) updateMetadata(db *gorm.DB, omitted []string) error {
+	normalizePublicModelMetadata(mi)
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return db.Model(&Model{}).Where("id = ?", mi.Id).

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { SITE_LANGUAGES } from '../src/helpers/localeNormalize.js';
 import { localizeModelDescription } from '../src/helpers/modelDescription.js';
@@ -48,4 +49,36 @@ test('only edited language overrides are sent; clearing restores auto and read-o
     description_overrides: { en: null, ja: '新しい紹介', de: 'Deutsch' },
   });
   assert.deepEqual(omitUnchangedModelMetadata(initial, initial, initial), {});
+});
+
+test('reviewed public descriptions render every language without provider placeholders', () => {
+  const entries = JSON.parse(
+    fs.readFileSync(
+      new URL(
+        '../../model/data/public_model_descriptions.json',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  );
+  assert.equal(entries.length, 4);
+  for (const entry of entries) {
+    const snapshot = {
+      model_name: entry.model,
+      description: entry.source,
+      description_translations: entry.translations,
+    };
+    for (const [locale] of SITE_LANGUAGES) {
+      const localized = localizeModelDescription(snapshot, locale);
+      assert.equal(localized.description, entry.translations[locale]);
+      assert(localized.description.length > 0);
+      assert(
+        !/venice|qihang-ai|vivgrid|威尼斯|奏鸣曲|俳句/i.test(
+          localized.description,
+        ),
+      );
+      assert.equal(localized.model_name, entry.model);
+    }
+    assert.equal(snapshot.description, entry.source);
+  }
 });

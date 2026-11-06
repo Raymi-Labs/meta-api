@@ -126,9 +126,13 @@ func FillModelDescriptionTranslations(ctx context.Context, models []*Model) erro
 		if m == nil {
 			continue
 		}
+		normalizePublicModelMetadata(m)
 		m.DescriptionAutomatic = bundledModelDescriptions[ModelDescriptionHash(m.Description)].Clone()
 		if m.DescriptionAutomatic == nil {
 			m.DescriptionAutomatic = ModelDescriptions{}
+		}
+		for locale, text := range reviewedPublicTranslations(m.ModelName, m.Description) {
+			m.DescriptionAutomatic[locale] = text
 		}
 		m.DescriptionTranslations = m.DescriptionOverrides.Clone()
 		if m.DescriptionTranslations == nil {
@@ -177,6 +181,7 @@ func FillModelDescriptionTranslations(ctx context.Context, models []*Model) erro
 			if _, reviewed := m.DescriptionAutomatic[locale]; reviewed {
 				continue
 			}
+			text = normalizePublicDescriptionLocale(m.ModelName, locale, text)
 			m.DescriptionAutomatic[locale] = text
 			if _, manual := m.DescriptionTranslations[locale]; !manual {
 				m.DescriptionTranslations[locale] = text

@@ -27,6 +27,7 @@ type Vendor struct {
 // Insert 创建新的供应商记录
 func (v *Vendor) Insert() error {
 	v.Name = CanonicalVendorName(v.Name)
+	v.Description = NormalizePublicVendorDescription(v.Name, v.Description)
 	if duplicate, err := IsVendorNameDuplicated(0, v.Name); err != nil {
 		return err
 	} else if duplicate {
@@ -66,6 +67,7 @@ func IsVendorNameDuplicated(id int, name string) (bool, error) {
 // Update 更新供应商记录
 func (v *Vendor) Update() error {
 	v.Name = CanonicalVendorName(v.Name)
+	v.Description = NormalizePublicVendorDescription(v.Name, v.Description)
 	if duplicate, err := IsVendorNameDuplicated(v.Id, v.Name); err != nil {
 		return err
 	} else if duplicate {
@@ -87,6 +89,7 @@ func GetVendorByID(id int) (*Vendor, error) {
 	if err != nil {
 		return nil, err
 	}
+	v.Description = NormalizePublicVendorDescription(v.Name, v.Description)
 	return &v, nil
 }
 
@@ -94,6 +97,9 @@ func GetVendorByID(id int) (*Vendor, error) {
 func GetAllVendors(offset int, limit int) ([]*Vendor, error) {
 	var vendors []*Vendor
 	err := DB.Offset(offset).Limit(limit).Find(&vendors).Error
+	for _, v := range vendors {
+		v.Description = NormalizePublicVendorDescription(v.Name, v.Description)
+	}
 	return vendors, err
 }
 
@@ -111,6 +117,9 @@ func SearchVendors(keyword string, offset int, limit int) ([]*Vendor, int64, err
 	var vendors []*Vendor
 	if err := db.Offset(offset).Limit(limit).Order("id DESC").Find(&vendors).Error; err != nil {
 		return nil, 0, err
+	}
+	for _, v := range vendors {
+		v.Description = NormalizePublicVendorDescription(v.Name, v.Description)
 	}
 	return vendors, total, nil
 }

@@ -120,7 +120,7 @@ func parseModelCapabilities(data []byte) (map[string]model.ModelCapabilityMetada
 				releaseDate = ""
 			}
 			entry := model.ModelCapabilityMetadata{
-				Description: strings.TrimSpace(upstream.Description),
+				Description: model.NormalizePublicModelDescription(id, strings.TrimSpace(upstream.Description)),
 				// Family identifies a model series, not a capability or catalog tag.
 				// Retain explicit type metadata for task classification only.
 				Tags:            metadataTags(upstream.Type),

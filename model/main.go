@@ -381,6 +381,9 @@ func migrateDB() error {
 	if err := NormalizeAlibabaVendorMetadata(); err != nil {
 		return fmt.Errorf("failed to normalize Alibaba vendor metadata: %w", err)
 	}
+	if err := NormalizePublicDescriptions(); err != nil {
+		return fmt.Errorf("failed to normalize public descriptions: %w", err)
+	}
 	if err := MigrateWalletRedemptionTransferPolicy(); err != nil {
 		return fmt.Errorf("failed to migrate wallet redemption transfer policy: %w", err)
 	}
@@ -529,6 +532,9 @@ func migrateDBFast() error {
 	}
 	if err := NormalizeAlibabaVendorMetadata(); err != nil {
 		return fmt.Errorf("failed to normalize Alibaba vendor metadata: %w", err)
+	}
+	if err := NormalizePublicDescriptions(); err != nil {
+		return fmt.Errorf("failed to normalize public descriptions: %w", err)
 	}
 	if err := MigrateWalletRedemptionTransferPolicy(); err != nil {
 		return fmt.Errorf("failed to migrate wallet redemption transfer policy: %w", err)
