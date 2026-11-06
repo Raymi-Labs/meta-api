@@ -8,6 +8,8 @@ Status: implemented
 
 ## Decision
 
+公开展示由[本站与原厂资料边界](./2026-11-06-public-model-provenance.md)按用户最新要求收紧：保留本文核实快照及本站售价，但第三方变体来源不再输出为官方参考价。
+
 复用模型管理 official_pricing 和公开 pricing，不新增计费或页面。仅为已核实的 Flint v1.0 免费变体及其明确对外别名放行 OpenRouter 精确模型页的 USD / million_tokens 零价快照：输入、输出必须显式为0，其他费目只能未知或0，限定单档及精确模型规则。价格说明明确这是 OpenRouter 免费变体；厂家价和自动同步的来源校验保持原语义。通过管理 API 给两条模型资料写入同一核实快照，保留渠道状态及本站售价。
 
 ## Existing notes audit
