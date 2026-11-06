@@ -61,7 +61,7 @@ func TestPublicDescriptionMigrationCompatibility(t *testing.T) {
 			require.NoError(t, db.Order("id").Find(&baseline).Error)
 			result, err := normalizePublicDescriptions(db)
 			require.NoError(t, err)
-			require.EqualValues(t, 4, result.Models)
+			require.EqualValues(t, len(publicDescriptionReviews), result.Models)
 			require.EqualValues(t, 1, result.Vendors)
 			for _, before := range baseline {
 				var got Model
@@ -139,4 +139,20 @@ func TestPublicDescriptionReadFailureStillProvidesReviewedLocales(t *testing.T) 
 	require.Error(t, err, "fixture deliberately lacks cache table")
 	require.Equal(t, review.Source, m.Description)
 	require.Equal(t, review.Translations, m.DescriptionTranslations)
+}
+
+func TestPublicDescriptionEmberReferenceLinks(t *testing.T) {
+	for _, name := range []string{"ember-1", "fireworks/ember-1"} {
+		for _, source := range []string{"Based on [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3). Details.", "Based on [Kimi K3](https://openrouter.ai/moonshotai/kimi-k3).). Details."} {
+			want := "Based on Kimi K3. Details."
+			require.Equal(t, want, NormalizePublicModelDescription(name, source))
+			require.Equal(t, want, normalizePublicDescriptionLocale(name, "zh-CN", source))
+			require.Equal(t, want, NormalizePublicModelDescription(name, want))
+		}
+		for _, text := range []string{"[Kimi K3](https://openrouter.ai.example.com/model)", "[Fireworks](https://fireworks.ai/)", "Manual OpenRouter API comparison", "[Kimi K3](https://example.com/openrouter.ai)"} {
+			require.Equal(t, text, NormalizePublicModelDescription(name, text))
+		}
+	}
+	text := "[Kimi K3](https://openrouter.ai/moonshotai/kimi-k3)"
+	require.Equal(t, text, NormalizePublicModelDescription("unrelated", text))
 }
