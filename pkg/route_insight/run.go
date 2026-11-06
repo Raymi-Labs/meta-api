@@ -43,7 +43,16 @@ func Enabled() bool {
 }
 
 func start() {
+	if !enabled {
+		return
+	}
 	startOnce.Do(func() { go run() })
+}
+
+// Start launches flushing and the health snapshot loop at boot, so a fresh
+// instance reports real health before it has served any request itself.
+func Start() {
+	start()
 }
 
 func RecordAttempt(a Attempt) {
@@ -73,6 +82,7 @@ func FinishRequest(modelName string, delivered bool, attemptCount int) {
 // Health reads the shared background snapshot (all replicas, via the DB).
 // The request path never queries the database.
 func Health(channelID int, modelName string) RouteHealth {
+	start()
 	if at := snapshotAt.Load(); at == 0 || time.Now().Unix()-at > int64(staleAfter/time.Second) {
 		return RouteHealth{Status: StatusUnknown, Reason: "stale_snapshot"}
 	}
@@ -142,6 +152,17 @@ func run() {
 	defer flushTicker.Stop()
 	defer snapshotTicker.Stop()
 	lastCleanup := time.Time{}
+	refresh := func(now time.Time) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := refreshSnapshot(ctx, now); err != nil {
+			snapshotFailing.Store(true)
+			common.SysError("failed to refresh route insight snapshot: " + err.Error())
+			return
+		}
+		snapshotFailing.Store(false)
+	}
+	refresh(time.Now())
 	for {
 		select {
 		case now := <-flushTicker.C:
@@ -160,14 +181,34 @@ func run() {
 				cancel()
 			}
 		case now := <-snapshotTicker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			if err := refreshSnapshot(ctx, now); err != nil {
-				snapshotFailing.Store(true)
-				common.SysError("failed to refresh route insight snapshot: " + err.Error())
-			} else {
-				snapshotFailing.Store(false)
-			}
-			cancel()
+			refresh(now)
 		}
+	}
+}
+
+// HealthEntry seeds the snapshot in tests of other packages.
+type HealthEntry struct {
+	ChannelID int
+	Model     string
+	Health    RouteHealth
+}
+
+// SetHealthForTesting replaces the shared snapshot and returns a restore
+// function. It exists for cross-package tests; production never calls it.
+func SetHealthForTesting(entries ...HealthEntry) func() {
+	snapshotMu.Lock()
+	previous, previousAt := snapshot, snapshotAt.Load()
+	next := make(map[routeKey]RouteHealth, len(entries))
+	for _, entry := range entries {
+		next[routeKey{channelID: entry.ChannelID, model: entry.Model}] = entry.Health
+	}
+	snapshot = next
+	snapshotMu.Unlock()
+	snapshotAt.Store(time.Now().Unix())
+	return func() {
+		snapshotMu.Lock()
+		snapshot = previous
+		snapshotMu.Unlock()
+		snapshotAt.Store(previousAt)
 	}
 }

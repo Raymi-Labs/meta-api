@@ -24,6 +24,8 @@ type RetryParam struct {
 	// SameChannelFailoverDone 同渠道额度错误快速切换只允许触发一次，避免重试风暴。
 	SameChannelFailoverDone bool
 	baseURLChannelCache     map[string][]int
+	routeProbe              float64
+	routeProbeKey           int
 }
 
 func (p *RetryParam) GetRetry() int {
@@ -385,7 +387,17 @@ func CommitChannelCandidateSelection(param *RetryParam, selectGroup string) {
 }
 
 func buildChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
-	filters := make([]model.ChannelFilter, 0, 3)
+	filters := buildBaseChannelSelectionFilters(param)
+	if healthRoutingActive(param.Ctx) {
+		if avoid := routeHealthAvoidSet(param, filters); len(avoid) > 0 {
+			filters = append(filters, func(ch *model.Channel) bool { return ch != nil && !avoid[ch.Id] })
+		}
+	}
+	return filters
+}
+
+func buildBaseChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
+	filters := make([]model.ChannelFilter, 0, 4)
 	if clientFilter := buildClientFilter(param.Ctx); clientFilter != nil {
 		filters = append(filters, clientFilter)
 	}

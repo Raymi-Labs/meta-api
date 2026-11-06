@@ -41,6 +41,11 @@ func RequestRoutingGroups(c *gin.Context, preferredGroup string) []string {
 // Candidate discovery must not advance the request's group state: capacity
 // polling needs to revisit a group if its temporary exclusions are removed.
 func preferredGroupCandidates(param *RetryParam) ([]*model.Channel, string, error) {
+	if planRoutingActive(param.Ctx) {
+		if channels, group, ok := planRouteCandidates(param); ok {
+			return channels, group, nil
+		}
+	}
 	groups := RequestModelRoutingGroups(param.Ctx, param.TokenGroup, param.ModelName)
 	start := common.GetContextKeyInt(param.Ctx, constant.ContextKeyAutoGroupIndex)
 	if start < 0 {

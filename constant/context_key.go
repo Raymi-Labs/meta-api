@@ -23,6 +23,7 @@ const (
 	ContextKeyTokenChannelLimit        ContextKey = "token_channel_limit"
 	ContextKeyTokenCrossGroupRetry     ContextKey = "token_cross_group_retry"
 	ContextKeyTokenAutoGroupFallback   ContextKey = "token_auto_group_fallback"
+	ContextKeyRoutePlan                ContextKey = "route_plan" // *types.RoutePlanSnapshot locked at auth
 	ContextKeyTokenPackageEnabled      ContextKey = "token_package_enabled"
 	ContextKeyTokenBillingMode         ContextKey = "token_billing_mode"
 	ContextKeyTokenSourceType          ContextKey = "token_source_type"

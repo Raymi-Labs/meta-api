@@ -101,6 +101,12 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, m
 		other["billing_unit"] = "request"
 	}
 	other["user_group_ratio"] = userGroupRatio
+	if plan := relayInfo.RoutePlan; plan != nil {
+		// Customer-visible contract identity only; purchase cost stays admin-side.
+		other["route_plan_id"] = plan.ID
+		other["route_plan_version"] = plan.Version
+		other["route_plan_name"] = plan.Name
+	}
 	other["frt"] = float64(relayInfo.FirstResponseTime.UnixMilli() - relayInfo.StartTime.UnixMilli())
 	if !relayInfo.FirstEffectiveOutputTime.IsZero() && relayInfo.FirstEffectiveOutputTime.After(relayInfo.StartTime) {
 		other["first_effective_output_ms"] = float64(relayInfo.FirstEffectiveOutputTime.Sub(relayInfo.StartTime).Milliseconds())

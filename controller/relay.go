@@ -1084,6 +1084,10 @@ func RelayTask(c *gin.Context) {
 			OriginModelName:    relayInfo.OriginModelName,
 			PerCallBilling:     relayInfo.PriceData.UsePrice || common.StringsContains(constant.TaskPricePatches, relayInfo.OriginModelName) || billing_setting.GetBillingMode(relayInfo.OriginModelName) == billing_setting.BillingModeTieredExpr,
 		}
+		if plan := relayInfo.RoutePlan; plan != nil {
+			task.PrivateData.BillingContext.RoutePlanID = plan.ID
+			task.PrivateData.BillingContext.RoutePlanVersion = plan.Version
+		}
 		task.Quota = result.Quota
 		task.Data = result.TaskData
 		task.Action = relayInfo.Action

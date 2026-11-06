@@ -57,6 +57,7 @@ export const DEFAULT_ADMIN_CONFIG = {
     subscription: true,
     pulseOps: true,
     desktopFeedback: true,
+    smartRouting: true,
     setting: true,
   },
 };

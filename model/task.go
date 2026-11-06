@@ -123,6 +123,10 @@ type TaskBillingContext struct {
 	OtherRatios        map[string]float64 `json:"other_ratios,omitempty"`          // 附加倍率（时长、分辨率等）
 	OriginModelName    string             `json:"origin_model_name,omitempty"`     // 模型名称，必须为OriginModelName
 	PerCallBilling     bool               `json:"per_call_billing,omitempty"`      // 按次计费：跳过轮询阶段的差额结算
+	// RoutePlanID marks a contract-priced task: recalculation keeps the
+	// submit-time GroupRatio (the plan ratio) instead of the group ratio.
+	RoutePlanID      int   `json:"route_plan_id,omitempty"`
+	RoutePlanVersion int64 `json:"route_plan_version,omitempty"`
 }
 
 // GetUpstreamTaskID 获取上游真实 task ID（用于与 provider 通信）

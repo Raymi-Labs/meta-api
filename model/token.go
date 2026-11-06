@@ -43,6 +43,7 @@ type Token struct {
 	RoutingConfig           string         `json:"routing_config" gorm:"type:text"`
 	CrossGroupRetry         bool           `json:"cross_group_retry"`                        // 跨分组重试，仅auto分组有效
 	AutoGroupFallback       bool           `json:"auto_group_fallback" gorm:"default:false"` // 固定首选分组不可用时按自动分组顺序回退
+	RoutePlanId             int            `json:"route_plan_id" gorm:"type:int;default:0;index"`
 	MaxConcurrency          int            `json:"max_concurrency" gorm:"type:int;default:0"`
 	WindowRequestLimit      int            `json:"window_request_limit" gorm:"type:int;default:0"`
 	WindowSeconds           int64          `json:"window_seconds" gorm:"type:bigint;default:0"`
@@ -482,7 +483,7 @@ func (token *Token) Update() (err error) {
 		if err := tx.Model(token).Select("name", "status", "source_type", "billing_mode",
 			"sellable_token_product_id", "sellable_token_issuance_id", "expired_time", "remain_quota",
 			"unlimited_quota", "model_limits_enabled", "model_limits", "channel_limits_enabled", "channel_limits", "allow_ips", "group",
-			"cross_group_retry", "auto_group_fallback", "routing_config", "max_concurrency", "window_request_limit", "window_seconds",
+			"cross_group_retry", "auto_group_fallback", "routing_config", "route_plan_id", "max_concurrency", "window_request_limit", "window_seconds",
 			"package_enabled", "package_limit_quota", "package_period", "package_custom_seconds",
 			"package_used_quota", "package_next_reset_time", "package_period_mode").Updates(token).Error; err != nil {
 			return err

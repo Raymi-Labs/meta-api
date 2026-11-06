@@ -65,6 +65,7 @@ const Log = lazy(() => import('./pages/Log'));
 const Pulse = lazy(() => import('./pages/Pulse'));
 const PulseOps = lazy(() => import('./pages/PulseOps'));
 const DesktopFeedback = lazy(() => import('./pages/DesktopFeedback'));
+const SmartRouting = lazy(() => import('./pages/SmartRouting'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Chat2Link = lazy(() => import('./pages/Chat2Link'));
 const Midjourney = lazy(() => import('./pages/Midjourney'));
@@ -438,6 +439,16 @@ function App() {
                 <Pulse />
               </Suspense>
             </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/smart-routing'
+          element={
+            <AdminRoute>
+              <Suspense fallback={<Loading />} key={location.pathname}>
+                <SmartRouting />
+              </Suspense>
+            </AdminRoute>
           }
         />
         <Route

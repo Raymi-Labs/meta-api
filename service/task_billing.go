@@ -309,6 +309,9 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 	} else {
 		finalGroupRatio = groupRatio
 	}
+	if bc := task.PrivateData.BillingContext; bc != nil && bc.RoutePlanID > 0 {
+		finalGroupRatio = bc.GroupRatio
+	}
 	timeRatio := 1.0
 	if bc := task.PrivateData.BillingContext; bc != nil && bc.TimeRatio > 0 {
 		timeRatio = bc.TimeRatio

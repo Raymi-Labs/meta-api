@@ -7,6 +7,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -63,7 +64,11 @@ func GetRouteInsightChannels(c *gin.Context) {
 		"snapshot_at":      snapshotAt,
 		"snapshot_failing": snapshotFailing,
 		"latency_bounds":   routeinsight.LatencyBoundsMs,
-		"channels":         rows,
+		"routing":          operation_setting.GetRouteRoutingSetting(),
+		// Shadow and live routing read the memory channel cache only; without
+		// it (no Redis and MEMORY_CACHE_ENABLED unset) both silently skip.
+		"memory_cache_enabled": common.MemoryCacheEnabled,
+		"channels":             rows,
 	})
 }
 

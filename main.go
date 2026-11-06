@@ -106,6 +106,8 @@ func main() {
 
 	// 热更新配置
 	go model.SyncOptions(common.SyncFrequency)
+	// Route health snapshot and attempt flushing; observation only.
+	routeinsight.Start()
 
 	// 数据看板
 	go model.UpdateQuotaData()

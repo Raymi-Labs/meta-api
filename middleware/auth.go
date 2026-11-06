@@ -351,7 +351,7 @@ func TokenAuth() func(c *gin.Context) {
 
 		userGroup := userCache.Group
 		tokenGroup := token.Group
-		if tokenGroup != "" && token.RoutingConfig == "" {
+		if tokenGroup != "" && token.RoutingConfig == "" && token.RoutePlanId == 0 {
 			// check common.UserUsableGroups[userGroup]
 			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
 				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
@@ -386,6 +386,16 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 		return err
 	}
 	common.SetContextKey(c, constant.ContextKeyTokenRoutingConfig, token.RoutingConfig)
+	if token.RoutePlanId > 0 {
+		// Locked once per request: retries and group fallback keep this price.
+		plan, err := service.ResolveTokenRoutePlan(token, common.GetContextKeyString(c, constant.ContextKeyUserGroup))
+		if err != nil {
+			abortWithOpenAiMessage(c, http.StatusForbidden, err.Error(), types.ErrorCodeAccessDenied)
+			return err
+		}
+		common.SetContextKey(c, constant.ContextKeyRoutePlan, plan)
+		common.SetContextKey(c, constant.ContextKeyUsingGroup, plan.Groups[0])
+	}
 	c.Set("id", token.UserId)
 	c.Set("token_id", token.Id)
 	c.Set("token_key", token.Key)
@@ -413,6 +423,10 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 		common.SetContextKey(c, constant.ContextKeyTokenChannelLimitEnabled, false)
 	}
 	common.SetContextKey(c, constant.ContextKeyTokenGroup, token.Group)
+	if plan := service.ContextRoutePlan(c); plan != nil {
+		// The plan may have been edited since the token was saved.
+		common.SetContextKey(c, constant.ContextKeyTokenGroup, plan.Groups[0])
+	}
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
 	common.SetContextKey(c, constant.ContextKeyTokenAutoGroupFallback, token.AllowsGroupFallback())
 	if len(parts) > 1 {
