@@ -20,6 +20,8 @@ Status: implemented
 
 ## Related decisions
 
+[对话设置收敛](../feature/2026-11-07-playground-settings-simplification.md)替代本篇侧栏重复分组、常驻参数和说明：保留顶部组选择，低频区域折叠、帮助使用tooltip，价格口径继续有效。
+
 [聚焦布局](../../implemented/feature/2026-11-06-playground-focused-layout.md)部分取代其桌面抽屉与USD显示规则；[本地会话](../../implemented/feature/2026-11-06-playground-local-conversations.md)的保存、生成锁与权限不变。
 
 ## Verification

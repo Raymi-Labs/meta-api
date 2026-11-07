@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Select, Toast } from '@douyinfe/semi-ui';
+import { Button, Select, Toast, Modal, Tooltip } from '@douyinfe/semi-ui';
 import {
   Copy,
   Maximize2,
@@ -25,6 +25,7 @@ import {
   RotateCcw,
   Square,
   Plus,
+  Info,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApiRequest } from '../../hooks/playground/useApiRequest';
@@ -440,6 +441,11 @@ export default function ParallelTextChat({
       <div className='pg-parallel-selection'>
         <div className='pg-selection-heading'>
           <strong>{t('选择文本模型（最多5个）')}</strong>
+          <Tooltip content={t('每个模型独立调用和计费；同轮收到相同上下文。')}>
+            <button className='pg-info-button' aria-label={t('多模型调用说明')}>
+              <Info size={14} />
+            </button>
+          </Tooltip>
           <span>{t('已选 {{count}}/5', { count: chosenModels.length })}</span>
           <div
             className='pg-layout-switch'
@@ -481,7 +487,6 @@ export default function ParallelTextChat({
           }}
           style={{ width: '100%' }}
         />
-        <p>{t('每个模型独立调用和计费；同轮收到相同上下文。')}</p>
         {!plain && (
           <p role='alert'>
             {t(
@@ -597,10 +602,28 @@ export default function ParallelTextChat({
           <Button
             disabled={generating}
             onClick={() => {
-              setTasks([]);
-              snapshots.current.clear();
-              setMessages([]);
-              saveMessages([]);
+              Modal.confirm({
+                title: t('清空对话'),
+                content: t(
+                  '将删除当前对话的全部消息，无法撤销；其他对话和设置保留。',
+                ),
+                okText: t('清空对话'),
+                cancelText: t('取消'),
+                okButtonProps: { type: 'danger' },
+                onOk: () => {
+                  if (getPlaygroundOwner() !== owner) return;
+                  if (
+                    messageRef.current.some((m) =>
+                      ['loading', 'incomplete'].includes(m.status),
+                    )
+                  )
+                    return;
+                  setTasks([]);
+                  snapshots.current.clear();
+                  setMessages([]);
+                  saveMessages([]);
+                },
+              });
             }}
           >
             {t('清空对话')}

@@ -28,7 +28,7 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Toast, Banner, Button, Select } from '@douyinfe/semi-ui';
+import { Toast, Banner, Button, Select, Modal } from '@douyinfe/semi-ui';
 import { playgroundGroupOptions } from '../../helpers/playgroundPresentation';
 
 import { getPlaygroundOwner } from '../../components/playground/configStorage';
@@ -52,7 +52,10 @@ import { useDataLoader } from '../../hooks/playground/useDataLoader';
 import { usePlaygroundModelLink } from '../../hooks/playground/usePlaygroundModelLink';
 
 // Constants and utils
-import { MESSAGE_ROLES } from '../../constants/playground.constants';
+import {
+  MESSAGE_ROLES,
+  DEFAULT_CONFIG,
+} from '../../constants/playground.constants';
 import {
   getLogo,
   stringToColor,
@@ -715,10 +718,25 @@ const AccountPlayground = ({
   // 清空对话的处理函数
   const handleClearMessages = useCallback(() => {
     if (generating) return;
-    setMessage([]);
-    setToolResults({});
-    // 清空对话后保存，传入空数组
-    setTimeout(() => saveMessagesImmediately([]), 0);
+    Modal.confirm({
+      title: t('清空对话'),
+      content: t('将删除当前对话的全部消息，无法撤销；其他对话和设置保留。'),
+      okText: t('清空对话'),
+      cancelText: t('取消'),
+      okButtonProps: { type: 'danger' },
+      onOk: () => {
+        if (!activeRef.current || getPlaygroundOwner() !== owner) return;
+        if (
+          messageRef.current.some((m) =>
+            ['loading', 'incomplete'].includes(m.status),
+          )
+        )
+          return;
+        setMessage([]);
+        setToolResults({});
+        saveMessagesImmediately([]);
+      },
+    });
   }, [generating, setMessage, saveMessagesImmediately]);
 
   // 处理粘贴图片
@@ -811,6 +829,50 @@ const AccountPlayground = ({
         showSettings={active && panel === 'settings'}
         showCode={active && panel === 'code'}
         parallelMode={parallelMode}
+        settingsDisabled={
+          generating || blocked || pendingCalls.length > 0 || customRequestMode
+        }
+        onResetSettings={() => {
+          if (generating || blocked || pendingCalls.length || customRequestMode)
+            return;
+          Modal.confirm({
+            title: t('恢复默认'),
+            content: t(
+              '将清除系统提示词并重置生成参数、思考强度和工具设置；消息、模型与分组保留。',
+            ),
+            okText: t('恢复默认'),
+            cancelText: t('取消'),
+            onOk: () => {
+              if (!activeRef.current || getPlaygroundOwner() !== owner) return;
+              if (
+                messageRef.current.some((m) =>
+                  ['loading', 'incomplete'].includes(m.status),
+                )
+              )
+                return;
+              for (const key of [
+                'systemPrompt',
+                'temperature',
+                'top_p',
+                'max_tokens',
+                'frequency_penalty',
+                'presence_penalty',
+                'seed',
+                'reasoningEffort',
+                'toolsEnabled',
+                'toolsJson',
+                'toolChoice',
+              ])
+                handleInputChange(key, DEFAULT_CONFIG.inputs[key]);
+              for (const key of Object.keys(DEFAULT_CONFIG.parameterEnabled))
+                if (
+                  Boolean(parameterEnabled[key]) !==
+                  DEFAULT_CONFIG.parameterEnabled[key]
+                )
+                  handleParameterToggle(key);
+            },
+          });
+        }}
         onCloseSettings={() => setPanel(null)}
         onCloseCode={() => setPanel(null)}
       >

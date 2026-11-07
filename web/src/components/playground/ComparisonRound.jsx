@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { comparisonReplyState } from '../../helpers/playgroundParallel';
 
 // Presentation state never owns a request: switching tabs must not resend it.
@@ -32,6 +33,19 @@ export default function ComparisonRound({
   const [activeId, setActiveId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const root = useRef(null);
+  const scroller = useRef(null);
+  const [edges, setEdges] = useState({ left: false, right: false });
+  const measure = () => {
+    const el = scroller.current;
+    if (!el) return;
+    const next = {
+      left: el.scrollLeft > 1,
+      right: el.scrollWidth - el.clientWidth - el.scrollLeft > 1,
+    };
+    setEdges((prev) =>
+      prev.left === next.left && prev.right === next.right ? prev : next,
+    );
+  };
   const focusReturn = useRef(null);
   const active = replies.find((m) => m.id === activeId)?.id || replies[0]?.id;
   const expanded = replies.some((m) => m.id === expandedId) ? expandedId : null;
@@ -39,6 +53,14 @@ export default function ComparisonRound({
     setExpandedId(null);
     focusReturn.current?.focus();
   };
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  }, [layout, isMobile, expanded, replies.length]);
   useEffect(() => {
     if (!expanded) return;
     const onKey = (event) => {
@@ -57,6 +79,37 @@ export default function ComparisonRound({
       ref={root}
       className={`pg-answer-comparison ${expanded ? 'is-expanded' : ''}`}
     >
+      {!isMobile &&
+        layout === 'grid' &&
+        !expanded &&
+        (edges.left || edges.right) && (
+          <div className='pg-answer-scroll-actions'>
+            <button
+              aria-label={t('向左查看回答')}
+              disabled={!edges.left}
+              onClick={() =>
+                scroller.current?.scrollBy({
+                  left: -scroller.current.clientWidth * 0.8,
+                  behavior: 'smooth',
+                })
+              }
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <button
+              aria-label={t('向右查看回答')}
+              disabled={!edges.right}
+              onClick={() =>
+                scroller.current?.scrollBy({
+                  left: scroller.current.clientWidth * 0.8,
+                  behavior: 'smooth',
+                })
+              }
+            >
+              <ChevronRight size={17} />
+            </button>
+          </div>
+        )}
       {isMobile && !expanded && (
         <div
           className='pg-answer-tabs'
@@ -99,6 +152,8 @@ export default function ComparisonRound({
       )}
       <div
         className={`pg-round-answers is-${layout} ${preview ? 'is-preview' : ''} ${expanded ? 'is-expanded' : ''}`}
+        ref={scroller}
+        onScroll={measure}
         style={{ '--answer-columns': replies.length }}
       >
         {replies.map((reply) => (

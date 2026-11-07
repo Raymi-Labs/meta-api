@@ -371,10 +371,26 @@ export default function LocalConversations({ owner, renderConversation }) {
         <button
           onClick={() => openPanel('settings')}
           aria-expanded={panel === 'settings'}
-          aria-label={t('参数')}
+          aria-label={t('对话设置')}
+          title={
+            records.current
+              .find((s) => s.id === active)
+              ?.config?.inputs?.systemPrompt?.trim()
+              ? t('已设置系统提示词')
+              : t('对话设置')
+          }
         >
           <SlidersHorizontal size={20} />
           <span>{t('设置')}</span>
+          {records.current
+            .find((s) => s.id === active)
+            ?.config?.inputs?.systemPrompt?.trim() && (
+            <span
+              className='pg-prompt-dot'
+              role='img'
+              aria-label={t('已设置系统提示词')}
+            />
+          )}
         </button>
         <button
           className='pg-rail-code'

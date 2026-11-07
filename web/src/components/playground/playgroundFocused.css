@@ -231,6 +231,144 @@
   border-radius: 14px;
   padding: 16px 20px;
 }
+.pg-settings-scroll > .pg-settings-section {
+  border: 0;
+  border-bottom: 1px solid var(--semi-color-border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 16px 0;
+  margin: 0;
+  background: transparent;
+}
+.pg-settings-scroll .pg-system-prompt {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+.pg-settings-scroll details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.pg-settings-scroll details > summary::before {
+  content: '›';
+}
+.pg-settings-scroll details[open] > summary::before {
+  transform: rotate(90deg);
+}
+.pg-settings-scroll details > summary small {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--semi-color-text-2);
+  font-weight: 400;
+}
+.pg-model-details-fold .pg-model-card {
+  padding: 16px 0 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.pg-prompt-footer {
+  padding: 16px 0 4px;
+  gap: 20px;
+}
+.pg-info-button {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  color: var(--semi-color-text-2);
+  background: transparent;
+}
+.pg-effort-segments {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin: 8px 0 12px;
+  background: var(--semi-color-fill-0);
+  border-radius: 8px;
+}
+.pg-effort-segments button {
+  flex: 1;
+  padding: 7px 3px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+}
+.pg-effort-segments button[aria-pressed='true'] {
+  background: var(--semi-color-bg-0);
+  color: var(--semi-color-primary);
+  box-shadow: 0 1px 3px #0001;
+}
+.pg-config-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  font-size: 12px;
+}
+.pg-config-links button {
+  border: 0;
+  background: transparent;
+  color: var(--semi-color-primary);
+  padding: 2px;
+}
+.pg-docked-panel > header .pg-reset-settings {
+  font-size: 12px;
+  margin-left: auto;
+  color: var(--semi-color-text-2);
+}
+.pg-mobile-settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.pg-mobile-settings-heading button {
+  font-size: 12px;
+  color: var(--semi-color-text-2);
+}
+.pg-focused .pg-tool-rail button {
+  position: relative;
+}
+.pg-focused .pg-tool-rail .pg-prompt-dot {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--semi-color-primary);
+}
+.pg-focused .has-panel .pg-workspace-toolbar > .pg-top-prices {
+  display: none;
+}
+.pg-answer-scroll-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.pg-answer-scroll-actions button {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 6px;
+  background: var(--semi-color-bg-0);
+  width: 28px;
+  height: 28px;
+}
+.pg-model-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.pg-settings-scroll {
+  padding: 0 18px 18px;
+}
 .pg-focused .pg-composer-wrap {
   padding: 12px 24px 26px;
 }

@@ -18,8 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Switch, TextArea } from '@douyinfe/semi-ui';
-import { Brain, Wrench, ChevronDown } from 'lucide-react';
+import { Switch, TextArea, Tooltip } from '@douyinfe/semi-ui';
+import { Brain, Wrench, ChevronDown, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_TOOL_DEFINITIONS,
@@ -44,31 +44,46 @@ export default function CapabilitySettings({
   const toolsEnabled = inputs.toolsEnabled && !noTools;
   return (
     <section className='pg-settings-section pg-capabilities'>
-      <h3>{t('模型能力')}</h3>
       <div className='pg-capability-row'>
         <span>
           <Brain size={17} />
           {t('思考强度')}
         </span>
-        <select
-          aria-label={t('思考强度')}
-          value={noReasoning ? '' : inputs.reasoningEffort || ''}
-          disabled={disabled || noReasoning}
-          onChange={(e) => onInputChange('reasoningEffort', e.target.value)}
-        >
-          <option value=''>{noReasoning ? t('不支持') : t('模型默认')}</option>
-          <option value='none'>{t('关闭（需模型支持）')}</option>
-          <option value='low'>{t('低')}</option>
-          <option value='medium'>{t('中')}</option>
-          <option value='high'>{t('高')}</option>
-        </select>
-      </div>
-      {!noReasoning && (
-        <p className='pg-field-hint'>
-          {t(
+        <Tooltip
+          content={t(
             '模型默认不发送思考参数；关闭与各强度需模型支持，不保证更高强度一定更快或更准确。',
           )}
-        </p>
+        >
+          <button className='pg-info-button' aria-label={t('思考强度说明')}>
+            <Info size={14} />
+          </button>
+        </Tooltip>
+      </div>
+      {noReasoning ? (
+        <small>{t('不支持')}</small>
+      ) : (
+        <div
+          className='pg-effort-segments'
+          role='group'
+          aria-label={t('思考强度')}
+        >
+          {[
+            ['', t('默认')],
+            ['none', t('关')],
+            ['low', t('低')],
+            ['medium', t('中')],
+            ['high', t('高')],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              aria-pressed={(inputs.reasoningEffort || '') === value}
+              disabled={disabled}
+              onClick={() => onInputChange('reasoningEffort', value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       )}
       {!textOnly && (
         <div className='pg-capability-row'>
