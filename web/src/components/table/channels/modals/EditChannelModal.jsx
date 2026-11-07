@@ -3900,6 +3900,35 @@ const EditChannelModal = (props) => {
                       initValue={autoBan}
                     />
 
+                    <Form.InputNumber
+                      field='route_purchase_ratio'
+                      label={t('采购成本倍率')}
+                      min={0}
+                      step={0.01}
+                      onChange={(value) =>
+                        handleChannelSettingsChange('route_purchase_ratio', value)
+                      }
+                      style={{ width: '100%' }}
+                      placeholder={t('0 表示未知')}
+                      extraText={t(
+                        '相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。',
+                      )}
+                    />
+
+                    <Form.Input
+                      field='route_fault_domain'
+                      label={t('故障域')}
+                      placeholder={t('例如：供应商A-账号池1')}
+                      maxLength={64}
+                      onChange={(value) =>
+                        handleChannelSettingsChange('route_fault_domain', value)
+                      }
+                      showClear
+                      extraText={t(
+                        '标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。',
+                      )}
+                    />
+
                     {MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type) && (
                       <>
                         <Form.Switch
@@ -4811,35 +4840,6 @@ const EditChannelModal = (props) => {
                       placeholder={t('0 表示使用全局默认')}
                       extraText={t(
                         '该渠道在 RPM 统计窗口内允许进入的请求数，0 表示使用全局默认值；全局也为 0 时不限制',
-                      )}
-                    />
-
-                    <Form.InputNumber
-                      field='route_purchase_ratio'
-                      label={t('采购成本倍率')}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        handleChannelSettingsChange('route_purchase_ratio', value)
-                      }
-                      style={{ width: '100%' }}
-                      placeholder={t('0 表示未知')}
-                      extraText={t(
-                        '相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。',
-                      )}
-                    />
-
-                    <Form.Input
-                      field='route_fault_domain'
-                      label={t('故障域')}
-                      placeholder={t('例如：供应商A-账号池1')}
-                      maxLength={64}
-                      onChange={(value) =>
-                        handleChannelSettingsChange('route_fault_domain', value)
-                      }
-                      showClear
-                      extraText={t(
-                        '标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。',
                       )}
                     />
 
