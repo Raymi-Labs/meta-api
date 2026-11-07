@@ -1,0 +1,196 @@
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  min-width: 0;
+}
+.dashboard-wallet {
+  position: relative;
+  min-width: 0;
+}
+.dashboard-wallet-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dce6f2;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #eff7fc, #f5f8ff);
+}
+.dashboard-wallet-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: none;
+  padding: 7px 0;
+  cursor: pointer;
+  color: #66768a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.dashboard-wallet-trigger strong {
+  color: #253950;
+  font-size: 15px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-wallet-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 12px;
+  border-left: 1px solid #d9e1ec;
+  color: #7c899a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dashboard-wallet-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.dashboard-wallet-status.is-low {
+  color: #9e6c12;
+}
+.dashboard-wallet-status.is-urgent,
+.dashboard-wallet-status.is-empty {
+  color: #c15d35;
+}
+.dashboard-wallet-status.is-normal {
+  color: #3d7968;
+}
+.dashboard-wallet-topup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #347ad2;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.dashboard-wallet-popover {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 9px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 20px;
+  border: 1px solid var(--overview-border);
+  border-radius: 12px;
+  background: var(--semi-color-bg-0);
+  box-shadow: 0 12px 40px #21344924;
+}
+.dashboard-wallet-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--overview-muted);
+  font-size: 12px;
+}
+.dashboard-wallet-heading button,
+.dashboard-wallet-reason button {
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 5px;
+}
+.dashboard-wallet-amount {
+  font-size: 32px;
+  font-weight: 650;
+  margin: 10px 0 20px;
+  overflow-wrap: anywhere;
+}
+.dashboard-wallet-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dashboard-wallet-metrics > div {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--overview-soft);
+  min-width: 0;
+}
+.dashboard-wallet-metrics span {
+  display: block;
+  color: var(--overview-muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.dashboard-wallet-metrics strong {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.dashboard-wallet .dashboard-wallet-note,
+.dashboard-wallet .dashboard-wallet-reason {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--overview-muted);
+}
+.dashboard-wallet .dashboard-wallet-reason {
+  color: #a17430;
+}
+.dashboard-wallet-time {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--overview-muted);
+}
+html.dark .dashboard-wallet-strip {
+  background: linear-gradient(110deg, #202d38, #242c3c);
+  border-color: #354153;
+}
+html.dark .dashboard-wallet-trigger {
+  color: #abb9cb;
+}
+html.dark .dashboard-wallet-trigger strong {
+  color: #e1eaf6;
+}
+html.dark .dashboard-wallet-status {
+  border-color: #455064;
+}
+html.dark .dashboard-wallet-status.is-low {
+  color: #e6b768;
+}
+html.dark .dashboard-wallet-status.is-urgent,
+html.dark .dashboard-wallet-status.is-empty {
+  color: #f0a080;
+}
+html.dark .dashboard-wallet-status.is-normal {
+  color: #83c5b1;
+}
+html.dark .dashboard-wallet-topup {
+  color: #8ebcff;
+}
+@media (max-width: 767px) {
+  .dashboard-header-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .dashboard-header-right > .dashboard-wallet {
+    order: 2;
+    width: 100%;
+  }
+  .dashboard-wallet-strip {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  .dashboard-wallet-status {
+    flex: 1;
+  }
+  .dashboard-wallet-popover {
+    left: 0;
+    right: auto;
+  }
+}

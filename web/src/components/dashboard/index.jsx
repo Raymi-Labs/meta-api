@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { getRelativeTime } from '../../helpers/date';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
@@ -55,6 +55,7 @@ import {
 
 const DashboardContent = () => {
   // ========== Context ==========
+  const [walletRefreshVersion, setWalletRefreshVersion] = useState(0);
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
   const userChartLoadedRef = useRef(false);
@@ -119,6 +120,7 @@ const DashboardContent = () => {
   };
 
   const handleRefresh = async () => {
+    setWalletRefreshVersion((v) => v + 1);
     if (dashboardData.rangePreset !== 'custom') {
       dashboardData.selectRangePreset(dashboardData.rangePreset);
       return;
@@ -241,6 +243,7 @@ const DashboardContent = () => {
         onRangeChange={dashboardData.selectRangePreset}
         showSearchModal={dashboardData.showSearchModal}
         refresh={handleRefresh}
+        walletRefreshVersion={walletRefreshVersion}
         loading={dashboardData.loading}
         t={dashboardData.t}
       />

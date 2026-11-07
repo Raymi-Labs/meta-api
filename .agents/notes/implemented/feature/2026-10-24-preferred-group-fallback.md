@@ -38,7 +38,7 @@ Status: implemented
 
 ## Consequences
 
-[企业托管路由与独立报价提案](../../proposed/architecture/2026-11-05-managed-token-routing-and-pricing.md)探索新增可选策略；尚未实施，不改变本文的有序回退与实际分组计费。
+[企业托管路由与独立报价提案](../../rejected/architecture/2026-11-05-managed-token-routing-and-pricing.md)已否决；[智能路由总开关](../simplification/2026-11-07-withdraw-route-plans.md)只在本文的有序分组内跳过不健康渠道，不改变有序回退与实际分组计费。
 
 [亲和优先级回退](../bug-fix/2026-10-31-affinity-priority-fallback.md)把亲和尝试从普通优先级索引中分离，覆盖本篇的随机和容量候选入口；全局重试预算与候选无副作用约束保持。
 

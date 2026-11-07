@@ -55,6 +55,7 @@ const routerMap = {
   pulse: '/console/pulse',
   pulseOps: '/console/pulse-ops',
   desktopFeedback: '/console/desktop-feedback',
+  smartRouting: '/console/smart-routing',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -227,6 +228,12 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('用户管理'),
         itemKey: 'user',
         to: '/user',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('智能路由'),
+        itemKey: 'smartRouting',
+        to: '/smart-routing',
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {

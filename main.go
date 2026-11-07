@@ -24,6 +24,7 @@ import (
 	"github.com/QuantumNous/new-api/oauth"
 	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
 	perfmetrics "github.com/QuantumNous/new-api/pkg/perf_metrics"
+	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/router"
 	"github.com/QuantumNous/new-api/service"
@@ -67,6 +68,9 @@ func main() {
 		if err := grouphealth.Flush(ctx); err != nil {
 			common.SysError("failed to flush group health metrics on shutdown: " + err.Error())
 		}
+		if err := routeinsight.Flush(ctx); err != nil {
+			common.SysError("failed to flush route insight metrics on shutdown: " + err.Error())
+		}
 		cancel()
 		err := model.CloseDB()
 		if err != nil {
@@ -102,6 +106,8 @@ func main() {
 
 	// 热更新配置
 	go model.SyncOptions(common.SyncFrequency)
+	// Route health snapshot and attempt flushing; observation only.
+	routeinsight.Start()
 
 	// 数据看板
 	go model.UpdateQuotaData()

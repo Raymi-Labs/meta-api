@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-令牌使用可选 TEXT 字段 routing_config，以 JSON 字符串保存有序 groups 与 model_groups。空值保持旧路由，新配置只在显式分组范围内按顺序选渠道，模型映射进一步收窄范围；模型白名单仍由 model_limits 控制。服务端保存和请求时核对用户权限，配置解析失败拒绝，不回退全局范围。复用已有故障重试预算、容量、亲和、实际分组倍率和余额扣减。
+令牌使用可选 TEXT 字段 routing_config，以 JSON 字符串保存有序 groups 与 model_groups。空值保持旧路由，新配置只在显式分组范围内按顺序选渠道，模型映射进一步收窄范围；模型白名单仍由 model_limits 控制。服务端保存和请求时核对用户权限，配置解析失败拒绝，不回退全局范围（令牌显式开启 `auto_fallback` 时，在自身分组之后追加平台自动分组，见[多选分组选择器](2026-11-07-token-group-multi-picker.md)；旧 `auto_group_fallback` 不影响多分组令牌）。复用已有故障重试预算、容量、亲和、实际分组倍率和余额扣减。
 
 旧客户端更新缺少 routing_config 时保留原配置，显式空字符串退出新模式。可售令牌保持既有约束。测试目录支持组筛选，固定首选组旧令牌默认目录限该组；选定组的测试也固定在该组执行。新配置的普通模型目录、渠道列表和测试均按模型-组交集计算。
 
@@ -48,6 +48,6 @@ Status: implemented
 
 ## Consequences
 
-[企业托管路由提案](../../proposed/architecture/2026-11-05-managed-token-routing-and-pricing.md)拟复用本篇模型分组权限交集；尚未实施，当前配置顺序与计费契约保持。
+[企业托管路由提案](../../rejected/architecture/2026-11-05-managed-token-routing-and-pricing.md)曾拟复用本篇模型分组权限交集，已否决；多模型继续使用本篇的分组多选，当前配置顺序与计费契约保持。
 
 新配置增加一个 TEXT 字段和一份可选 JSON 契约，以兼容现有 Redis 字段缓存；目录通过实际模型/分组/渠道元组求交，避免笛卡尔积扩大范围。回滚旧程序会忽略新配置，因此创建新范围 Key 后不能直接降级到不理解该字段的版本。新字段不回写历史 Key、不拆分余额。

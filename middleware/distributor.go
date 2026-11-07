@@ -246,6 +246,9 @@ func tryAffinityChannel(c *gin.Context, modelName string, usingGroup string, cli
 	if service.IsChannelModelCircuitOpen(preferred, modelName) {
 		return nil, "", false
 	}
+	if service.RouteHealthAvoids(c, modelName, preferred.Id) {
+		return nil, "", false
+	}
 	if usingGroup == "auto" || service.HasTokenRoutingConfig(c) {
 		autoGroups := service.RequestModelRoutingGroups(c, usingGroup, modelName)
 		for _, group := range autoGroups {

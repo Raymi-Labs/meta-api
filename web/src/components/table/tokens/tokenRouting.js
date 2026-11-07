@@ -22,9 +22,10 @@ export const readTokenRouting = (raw) => {
     return {
       groups: Array.isArray(config.groups) ? config.groups : [],
       model_groups: config.model_groups || {},
+      auto_fallback: config.auto_fallback === true,
     };
   } catch {
-    return { groups: [], model_groups: {} };
+    return { groups: [], model_groups: {}, auto_fallback: false };
   }
 };
 
@@ -39,6 +40,8 @@ export const tokenRoutingPayload = (values) => {
         selected.has(name),
       ),
     ),
+    // The checkbox is the single source of truth for multi-group fallback.
+    ...(values.auto_group_fallback ? { auto_fallback: true } : {}),
   });
 };
 
@@ -46,5 +49,6 @@ export const tokenRoutingModelPreview = (values) => {
   if (!values?.routing_enabled) return '';
   return JSON.stringify({
     groups: readTokenRouting(values.routing_config).groups,
+    ...(values.auto_group_fallback ? { auto_fallback: true } : {}),
   });
 };

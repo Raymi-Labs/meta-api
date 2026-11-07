@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import WalletSummary from './WalletSummary';
 import { Button } from '@douyinfe/semi-ui';
 import {
   CalendarDays,
@@ -46,6 +47,7 @@ export default function DashboardHeader({
   showSearchModal,
   refresh,
   loading,
+  walletRefreshVersion,
   t,
 }) {
   return (
@@ -56,39 +58,42 @@ export default function DashboardHeader({
         <span aria-hidden='true'>—</span>
         <span>{displayTime(inputs.end_timestamp)}</span>
       </div>
-      <div className='dashboard-query-actions'>
-        <Button
-          icon={<SlidersHorizontal size={15} />}
-          aria-label={t('筛选')}
-          title={t('筛选')}
-          theme='outline'
-          type='tertiary'
-          onClick={showSearchModal}
-        />
-        <div className='dashboard-range-control'>
-          <select
-            className='dashboard-range-select'
-            aria-label={t('时间范围')}
-            value={rangePreset}
-            onChange={(event) => onRangeChange(event.target.value)}
-          >
-            <option value='today'>{t('今天')}</option>
-            <option value='24h'>{t('近24小时')}</option>
-            <option value='7d'>{t('最近7天')}</option>
-            <option value='30d'>{t('近30天')}</option>
-            <option value='custom'>{t('自定义')}</option>
-          </select>
-          <ChevronDown size={14} aria-hidden='true' />
+      <div className='dashboard-header-right'>
+        <WalletSummary refreshVersion={walletRefreshVersion} />
+        <div className='dashboard-query-actions'>
+          <Button
+            icon={<SlidersHorizontal size={15} />}
+            aria-label={t('筛选')}
+            title={t('筛选')}
+            theme='outline'
+            type='tertiary'
+            onClick={showSearchModal}
+          />
+          <div className='dashboard-range-control'>
+            <select
+              className='dashboard-range-select'
+              aria-label={t('时间范围')}
+              value={rangePreset}
+              onChange={(event) => onRangeChange(event.target.value)}
+            >
+              <option value='today'>{t('今天')}</option>
+              <option value='24h'>{t('近24小时')}</option>
+              <option value='7d'>{t('最近7天')}</option>
+              <option value='30d'>{t('近30天')}</option>
+              <option value='custom'>{t('自定义')}</option>
+            </select>
+            <ChevronDown size={14} aria-hidden='true' />
+          </div>
+          <Button
+            icon={<RefreshCw size={15} />}
+            aria-label={t('刷新')}
+            title={t('刷新')}
+            theme='borderless'
+            type='tertiary'
+            onClick={refresh}
+            loading={loading}
+          />
         </div>
-        <Button
-          icon={<RefreshCw size={15} />}
-          aria-label={t('刷新')}
-          title={t('刷新')}
-          theme='borderless'
-          type='tertiary'
-          onClick={refresh}
-          loading={loading}
-        />
       </div>
     </header>
   );

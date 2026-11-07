@@ -339,6 +339,11 @@ const NotificationSettings = ({
           description: t('客户端反馈'),
         },
         {
+          key: 'smartRouting',
+          title: t('智能路由'),
+          description: t('线路观测'),
+        },
+        {
           key: 'pulseOps',
           title: t('Pulse 运营'),
           description: t('周期与摄入监控'),

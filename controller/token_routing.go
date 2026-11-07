@@ -93,7 +93,9 @@ func tokenRoutingCatalog(userID int, token *model.Token) ([]tokenModelOption, er
 		if !acceptUnset && !hasConfiguredModelPrice(row.Model) {
 			continue
 		}
-		if config != nil && !common.StringsContains(config.GroupsForModel(row.Model), row.Group) {
+		// The queried groups already hold the token's groups plus any opted-in
+		// fallback groups; only an explicit per-model rule narrows further.
+		if config != nil && config.HasModelRule(row.Model) && !common.StringsContains(config.GroupsForModel(row.Model), row.Group) {
 			continue
 		}
 		option := byName[row.Model]

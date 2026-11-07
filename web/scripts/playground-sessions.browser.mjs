@@ -872,6 +872,13 @@ try {
     active + ' .pg-messages',
     (e) => e.textContent,
   );
+  await saved();
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ready();
+  assert.equal(
+    await page.$eval(active + ' .pg-messages', (e) => e.textContent),
+    beforeResetText,
+  );
   await page.click('.pg-tool-rail [aria-label="对话设置"]');
   await page.waitForSelector('.pg-docked-settings');
   await clickText('恢复默认', '.pg-docked-settings');

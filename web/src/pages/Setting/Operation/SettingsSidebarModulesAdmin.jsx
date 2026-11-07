@@ -71,6 +71,7 @@ export default function SettingsSidebarModulesAdmin(props) {
       user: true,
       subscription: true,
       desktopFeedback: true,
+      smartRouting: true,
       setting: true,
     },
   });
@@ -135,6 +136,7 @@ export default function SettingsSidebarModulesAdmin(props) {
         user: true,
         subscription: true,
         desktopFeedback: true,
+        smartRouting: true,
         setting: true,
       },
     };
@@ -216,6 +218,7 @@ export default function SettingsSidebarModulesAdmin(props) {
             user: true,
             subscription: true,
             desktopFeedback: true,
+            smartRouting: true,
             setting: true,
           },
         };
@@ -310,6 +313,11 @@ export default function SettingsSidebarModulesAdmin(props) {
           key: 'desktopFeedback',
           title: t('客户端反馈'),
           description: t('客户端反馈'),
+        },
+        {
+          key: 'smartRouting',
+          title: t('智能路由'),
+          description: t('线路观测'),
         },
         {
           key: 'setting',

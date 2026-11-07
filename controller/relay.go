@@ -62,7 +62,7 @@ func relayHandler(c *gin.Context, info *relaycommon.RelayInfo) *types.NewAPIErro
 
 func geminiRelayHandler(c *gin.Context, info *relaycommon.RelayInfo) *types.NewAPIError {
 	var err *types.NewAPIError
-	if strings.Contains(c.Request.URL.Path, "embed") {
+	if strings.HasSuffix(c.Request.URL.Path, ":embedContent") || strings.HasSuffix(c.Request.URL.Path, ":batchEmbedContents") {
 		err = relay.GeminiEmbeddingHandler(c, info)
 	} else {
 		err = relay.GeminiHelper(c, info)
@@ -153,13 +153,16 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	var healthRequest *grouphealth.Request
 	var healthWriter *groupHealthWriter
+	var routeTracker *routeAttemptTracker
 	if grouphealth.SupportsRequest(c.Request.Method, c.Request.URL.Path) {
 		healthRequest = grouphealth.NewRequest(relayInfo.OriginModelName, relayInfo.IsStream)
 		healthWriter = &groupHealthWriter{ResponseWriter: c.Writer}
 		c.Writer = healthWriter
+		routeTracker = newRouteAttemptTracker(relayInfo.OriginModelName)
 		defer func() {
 			healthRequest.ObserveUnrecordedFailure(relayInfo.UsingGroup, service.NormalizeClientCancellation(c, newAPIError))
 			healthRequest.Finish()
+			routeTracker.finishRequest(newAPIError == nil && healthWriter.delivered() && relayInfo.StreamStatus.IsSuccessful())
 			c.Writer = healthWriter.ResponseWriter
 		}()
 	}
@@ -314,6 +317,10 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			break
 		}
 
+		// Shadow routing sees the same permitted candidates before this attempt
+		// changes retry exclusions. Observation only; the selection stands.
+		routeTracker.begin(retryParam, channel, relayInfo.UsingGroup)
+
 		// 用闭包包裹本轮上游调用的完整生命周期，确保渠道并发名额 releaseSlot 无论走哪条
 		// 退出路径都释放一次，且在每轮迭代结束即释放（避免 for 循环内 defer 堆积到函数返回）。
 		// addUsedChannel 也置于 defer releaseSlot 之后，保证 acquire 成功到 defer 注册之间
@@ -375,6 +382,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		} else {
 			healthRequest.ObserveResult(relayInfo, healthErr, healthWriter.delivered(), time.Now())
 		}
+		routeTracker.finishAttempt(relayInfo, healthErr, healthWriter.delivered(), helper.IsDownstreamWriteError(healthErr),
+			newAPIError != nil && service.IsVMChannelCapacityError(channel, newAPIError))
 
 		if newAPIError == nil {
 			service.ClearUserScopedCircuit(c, channel)

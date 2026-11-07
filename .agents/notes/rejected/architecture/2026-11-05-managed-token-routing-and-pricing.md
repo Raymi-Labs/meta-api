@@ -1,6 +1,6 @@
 # Agent Note: 企业令牌的稳定性优先路由与独立报价
 
-Status: proposed
+Status: rejected — 2026-11-07 用户决定不做托管方案与独立售价：路由方案让产品多出一套与分组并行的概念；企业价格改用现有用户组专属倍率，多模型用现有分组多选，智能路由对所有令牌按原顺序生效。见[撤回记录](../../implemented/simplification/2026-11-07-withdraw-route-plans.md)
 
 ## Problem
 
@@ -75,8 +75,10 @@ Status: proposed
 
 ### 活跃笔记核对
 
+- [逐次尝试遥测与影子决策](../../implemented/feature/2026-11-06-route-attempt-telemetry-shadow.md)：已实现第 1 阶段的观测部分（逐次尝试、渠道短窗口、P95、采购倍率/故障域字段、影子推荐与对照）。本提案其余阶段仍为提案。
+- [路由方案与健康选路](../../implemented/simplification/2026-11-07-withdraw-route-plans.md)：已实现方案入口、锁定方案售价、可开关的组内健康选路与方案跨组健康/成本选路及管理界面。逐次采购成本账本、总时限预算、SLA、合成探测与按计费项独立价表仍为提案。
 - [首选组故障回退](../../implemented/feature/2026-10-24-preferred-group-fallback.md)、[单 Key 多模型分组](../../implemented/feature/2026-10-27-token-model-groups.md)：部分重叠，拥有现行路由/计费契约。本提案仅新增 opt-in 方案，尚不取代旧行为。
-- [现金收益后续设计](../feature/2026-11-03-upstream-cash-profit.md)：部分重叠，逐次上游成本与核账由该方案承接；本篇负责运行时预计成本选择与对客合同售价，不新建独立财务账本。
+- [现金收益后续设计](../../proposed/feature/2026-11-03-upstream-cash-profit.md)：部分重叠，逐次上游成本与核账由该方案承接；本篇负责运行时预计成本选择与对客合同售价，不新建独立财务账本。
 - [健康最终结果分类](../../implemented/bug-fix/2026-10-22-group-health-outcome-accounting.md)：相邻基础，保持原公开分母与同组折叠。本篇新增尝试维度，不翻转旧统计决定。
 - [VM 实时容量](../../implemented/feature/2026-11-04-vm2api-dynamic-channel-capacity.md)、[安全切换](../../implemented/bug-fix/2026-10-12-upstream-capability-failover.md)：复用约束，仍分别拥有准入和重试安全判定；本提案不取代它们。
 - 搜索同时命中的定价展示、厂商目录、令牌布局、视频定价及生产迁移笔记不拥有本次新策略，不修改或归档。未发现同主题的活跃智能成本路由提案，无完全吸收或过时提案需清理。

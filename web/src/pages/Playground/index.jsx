@@ -125,9 +125,10 @@ const AccountPlayground = ({
   const [searchParams, setSearchParams] = useSearchParams();
 
   const state = usePlaygroundState(owner, session);
-  const [parallelMode, setParallelMode] = useState(
-    () =>
-      session.parallelMode || state.message.some((item) => item.parallelRound),
+  const [parallelMode, setParallelMode] = useState(() =>
+    typeof session.parallelMode === 'boolean'
+      ? session.parallelMode
+      : state.message.some((item) => item.parallelRound),
   );
   const [parallelModels, setParallelModels] = useState(
     session.parallelModels || [],
@@ -500,8 +501,14 @@ const AccountPlayground = ({
         createMessage(MESSAGE_ROLES.USER, messageContent),
       ];
       try {
+        // Preserve every comparison answer in local history. Only selected
+        // answers enter the request; filtering must not replace persisted UI state.
+        const requestMessages =
+          !parallelMode && hasParallelHistory
+            ? sharedConversation(nextMessages)
+            : nextMessages;
         payload = buildApiPayload(
-          nextMessages,
+          requestMessages,
           null,
           effectiveInputs,
           parameterEnabled,
