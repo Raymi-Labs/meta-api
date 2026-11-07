@@ -13,7 +13,7 @@ func TestPublicPricingMetadataSanitizesWithoutMutatingOrRepricing(t *testing.T) 
 	price := 2.5
 	in := []Pricing{{ModelName: "gpt-4o", VendorID: 1, ModelRatio: 42, EnableGroup: []string{"优选"}, BillingExpr: "p * 5 + c * 10",
 		Description: "Fast text model. Served by OpenRouter.", DescriptionTranslations: ModelDescriptions{"zh-CN": "支持工具。通过 OpenRouter 接入。"},
-		FAQ:              ModelFAQ{{Question: "服务条件", Answer: "缓存有效期5分钟；OpenRouter 当前账号实测接入"}},
+		FAQ:              ModelFAQ{{Question: "服务条件", Answer: "缓存有效期5分钟；OpenRouter 当前账号实测接入", QuestionOverrides: ModelDescriptions{"en": "OpenRouter"}, AnswerAutomatic: ModelDescriptions{"en": "OpenRouter"}, AnswerTranslations: ModelDescriptions{"en": "Safe answer. Served by OpenRouter."}}},
 		OfficialPricing:  OfficialPricing{Currency: "USD", SourceURL: "https://developers.openai.com/api/docs/pricing", Notes: "缓存有效期5分钟；仅在 OpenRouter 当前账号实测成功后接入", Tiers: []OfficialPricingTier{{Label: "Standard ≤272K", Unit: "million_tokens", Input: &price}}},
 		AttributeSources: map[string]ModelAttributeSource{"description": {Kind: "community", URL: "https://openrouter.ai/openai/gpt-4o"}, "official_pricing": {Kind: "official", URL: "https://developers.openai.com/api/docs/pricing", SyncedAt: 123}},
 	}}

@@ -125,6 +125,14 @@ func PublicPricingMetadata(items []Pricing, vendors []PricingVendor) ([]Pricing,
 		item.FAQ = item.FAQ.Clone()
 		faq := make(ModelFAQ, 0, len(item.FAQ))
 		for _, entry := range item.FAQ {
+			// Only effective translations belong in the public catalog.
+			entry.QuestionOverrides, entry.AnswerOverrides = nil, nil
+			entry.QuestionAutomatic, entry.AnswerAutomatic = nil, nil
+			for _, translations := range []ModelDescriptions{entry.QuestionTranslations, entry.AnswerTranslations} {
+				for locale, text := range translations {
+					translations[locale] = publicMetadataText(text)
+				}
+			}
 			entry.Question, entry.Answer = publicMetadataText(entry.Question), publicMetadataText(entry.Answer)
 			if entry.Question != "" && entry.Answer != "" {
 				faq = append(faq, entry)

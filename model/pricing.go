@@ -150,6 +150,7 @@ func updatePricing() {
 		descriptionModels = append(descriptionModels, &allMeta[i])
 	}
 	_ = FillModelDescriptionTranslations(context.Background(), descriptionModels)
+	_ = FillModelFAQTranslations(context.Background(), descriptionModels)
 	metaMap := make(map[string]*Model)
 	prefixList := make([]*Model, 0)
 	suffixList := make([]*Model, 0)

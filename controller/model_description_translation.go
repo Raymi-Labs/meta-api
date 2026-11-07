@@ -138,17 +138,24 @@ func nextDescriptionTranslation(ctx context.Context, now int64) (*model.ModelDes
 	pricing := model.GetPricing()
 	sources := map[string]string{}
 	needed := map[string]bool{}
-	for _, m := range pricing {
-		source := model.CanonicalModelDescription(m.Description)
+	addSource := func(text string, translations model.ModelDescriptions) {
+		source := model.CanonicalModelDescription(text)
 		if source == "" || utf8.RuneCountInString(source) > 16000 {
-			continue
+			return
 		}
 		hash := model.ModelDescriptionHash(source)
 		sources[hash] = source
 		for _, locale := range model.ModelDescriptionLocales {
-			if strings.TrimSpace(m.DescriptionTranslations[locale]) == "" {
+			if strings.TrimSpace(translations[locale]) == "" {
 				needed[hash+":"+locale] = true
 			}
+		}
+	}
+	for _, m := range pricing {
+		addSource(m.Description, m.DescriptionTranslations)
+		for _, item := range m.FAQ {
+			addSource(item.Question, item.QuestionTranslations)
+			addSource(item.Answer, item.AnswerTranslations)
 		}
 	}
 	hashes := make([]string, 0, len(sources))

@@ -263,10 +263,14 @@ const EditModelModal = (props) => {
         ...values,
         display_name: (values.display_name || '').trim(),
         official_pricing: values.official_pricing || {},
-        faq: (values.faq || []).map(({ question, answer }) => ({
-          question: question.trim(),
-          answer: answer.trim(),
-        })),
+        faq: (values.faq || []).map(
+          ({ question, answer, question_overrides, answer_overrides }) => ({
+            question: question.trim(),
+            answer: answer.trim(),
+            question_overrides,
+            answer_overrides,
+          }),
+        ),
         release_date:
           values.name_rule === 0 ? (values.release_date || '').trim() : '',
         context_length: values.context_length || 0,

@@ -82,3 +82,34 @@ test('reviewed public descriptions render every language without provider placeh
     assert.equal(snapshot.description, entry.source);
   }
 });
+
+test('FAQ follows all site locales with immutable source fallback', () => {
+  const question_translations = Object.fromEntries(
+    SITE_LANGUAGES.map(([locale]) => [locale, `${locale} question`]),
+  );
+  const model = {
+    faq: [
+      {
+        question: 'Original question',
+        answer: 'Original answer',
+        question_translations,
+        answer_translations: { en: 'English answer' },
+      },
+    ],
+  };
+  for (const [locale] of SITE_LANGUAGES) {
+    const view = localizeModelDescription(model, locale);
+    assert.equal(view.faq[0].question, `${locale} question`);
+    assert.equal(
+      view.faq[0].answer,
+      locale === 'en' ? 'English answer' : 'Original answer',
+    );
+  }
+  assert.equal(
+    localizeModelDescription(localizeModelDescription(model, 'en'), 'ja').faq[0]
+      .answer,
+    'Original answer',
+  );
+  assert.equal(model.faq[0].question, 'Original question');
+  assert.deepEqual(localizeModelDescription({ faq: [] }, 'en').faq, []);
+});

@@ -247,3 +247,30 @@ func TestDescriptionTranslationAuthFailureBacksOffGlobally(t *testing.T) {
 	require.NoError(t, model.DB.First(&worker, model.ModelDescriptionWorkerID).Error)
 	require.Greater(t, worker.NextRunAt, time.Now().Unix()+1700)
 }
+
+func TestFAQUsesSharedTranslationWorker(t *testing.T) {
+	descriptionTestDB(t)
+	faq := model.ModelFAQ{{Question: "How to use API?", Answer: "Use https://example.com and `model-id`."}}
+	require.NoError(t, model.DB.Model(&model.Model{}).Where("model_name = ?", "gpt-description").Updates(map[string]interface{}{"description": "", "faq": faq}).Error)
+	model.RefreshPricing()
+	calls := 0
+	descriptionMockRelay(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		query, target := descriptionRequest(t, r)
+		descriptionResponse(w, target+": "+query)
+	})
+	for range 34 {
+		require.NoError(t, model.DB.Model(&model.ModelDescriptionWorker{}).Where("id = ?", model.ModelDescriptionWorkerID).Update("next_run_at", 0).Error)
+		require.NoError(t, runDescriptionTranslationStep(context.Background()))
+	}
+	require.Equal(t, 34, calls)
+	rows := model.GetPricing()
+	require.Len(t, rows, 1)
+	require.Len(t, rows[0].FAQ[0].QuestionTranslations, 17)
+	require.Len(t, rows[0].FAQ[0].AnswerTranslations, 17)
+	require.Contains(t, rows[0].FAQ[0].AnswerTranslations["en"], "https://example.com")
+	for range 3 {
+		model.GetPricing()
+	}
+	require.Equal(t, 34, calls)
+}

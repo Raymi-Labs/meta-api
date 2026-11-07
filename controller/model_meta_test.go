@@ -241,3 +241,24 @@ func TestModelReleaseDatePricingDoesNotInheritPatternDates(t *testing.T) {
 		}
 	}
 }
+
+func TestFAQTranslationMetadataRoundTrip(t *testing.T) {
+	var request modelMetaRequest
+	require.NoError(t, common.UnmarshalJsonStr(`{"faq":[{"question":"Q","answer":"A","question_overrides":{"en":"Manual"},"answer_overrides":{"ja":"回答"},"question_automatic":{"en":"untrusted"},"answer_translations":{"ja":"untrusted"}}]}`, &request))
+	saved, err := request.withDisplayMetadata(nil)
+	require.NoError(t, err)
+	require.Equal(t, "Manual", saved.FAQ[0].QuestionOverrides["en"])
+	require.Nil(t, saved.FAQ[0].QuestionAutomatic)
+	require.Nil(t, saved.FAQ[0].AnswerTranslations)
+	for _, payload := range []string{`{}`, `{"faq":null}`} {
+		var omitted modelMetaRequest
+		require.NoError(t, common.UnmarshalJsonStr(payload, &omitted))
+		got, err := omitted.withDisplayMetadata(&saved)
+		require.NoError(t, err)
+		require.Equal(t, saved.FAQ, got.FAQ)
+	}
+	require.NoError(t, common.UnmarshalJsonStr(`{"faq":[{"question":"Q","answer":"A","question_overrides":{"en":""}}]}`, &request))
+	cleared, err := request.withDisplayMetadata(&saved)
+	require.NoError(t, err)
+	require.Empty(t, cleared.FAQ[0].QuestionOverrides)
+}

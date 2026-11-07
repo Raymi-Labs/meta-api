@@ -28,6 +28,19 @@ export function localizeModelDescription(model, language) {
   return {
     ...model,
     description_original: original,
+    faq: (model.faq || []).map((item) => ({
+      ...item,
+      question_original: item.question_original ?? item.question,
+      answer_original: item.answer_original ?? item.answer,
+      question:
+        item.question_translations?.[normalizeLocale(language)]?.trim() ||
+        item.question_original ||
+        item.question,
+      answer:
+        item.answer_translations?.[normalizeLocale(language)]?.trim() ||
+        item.answer_original ||
+        item.answer,
+    })),
     description:
       typeof translated === 'string' && translated.trim()
         ? translated

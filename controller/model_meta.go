@@ -311,6 +311,7 @@ func DeleteModelMeta(c *gin.Context) {
 // enrichModels 批量填充附加信息：端点、渠道、分组、计费类型，避免 N+1 查询
 func enrichModels(models []*model.Model) {
 	_ = model.FillModelDescriptionTranslations(context.Background(), models)
+	_ = model.FillModelFAQTranslations(context.Background(), models)
 	for _, m := range models {
 		if m != nil {
 			m.AttributeSources = m.DisplayAttributeSources()

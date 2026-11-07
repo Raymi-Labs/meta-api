@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { TranslationEditor } from './ModelDescriptionEditor';
 import { Button, Input, TextArea, withField } from '@douyinfe/semi-ui';
 import { ArrowUp, ArrowDown, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -81,7 +82,13 @@ function ModelFAQEditor({ value, onChange }) {
             id={`model-faq-question-${index}`}
             value={item.question}
             maxLength={200}
-            onChange={(question) => update(index, { question })}
+            onChange={(question) =>
+              update(index, {
+                question,
+                question_automatic: {},
+                question_translations: {},
+              })
+            }
           />
           <label htmlFor={`model-faq-answer-${index}`} className='text-sm'>
             {t('回答内容')}
@@ -91,8 +98,41 @@ function ModelFAQEditor({ value, onChange }) {
             value={item.answer}
             maxLength={2000}
             rows={4}
-            onChange={(answer) => update(index, { answer })}
+            onChange={(answer) =>
+              update(index, {
+                answer,
+                answer_automatic: {},
+                answer_translations: {},
+              })
+            }
           />
+          <details>
+            <summary className='cursor-pointer text-sm'>
+              {t('自动翻译')}
+            </summary>
+            <div className='flex flex-col gap-3 pt-3'>
+              <label className='text-sm'>{t('问题标题')}</label>
+              <TranslationEditor
+                label={t('问题标题')}
+                value={item.question_overrides}
+                automatic={item.question_automatic}
+                maxLength={800}
+                onChange={(question_overrides) =>
+                  update(index, { question_overrides })
+                }
+              />
+              <label className='text-sm'>{t('回答内容')}</label>
+              <TranslationEditor
+                label={t('回答内容')}
+                value={item.answer_overrides}
+                automatic={item.answer_automatic}
+                maxLength={8000}
+                onChange={(answer_overrides) =>
+                  update(index, { answer_overrides })
+                }
+              />
+            </div>
+          </details>
         </div>
       ))}
       <Button

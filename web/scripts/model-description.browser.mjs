@@ -79,7 +79,7 @@ const server = await createServer({
   ...config,
   configFile: false,
   root,
-  server: { host: '127.0.0.1', port: 0, open: false, proxy: {} },
+  server: { host: '127.0.0.1', port: 0, open: false, proxy: {}, hmr: false },
   plugins: config.plugins
     .flat(Infinity)
     .filter((p) => p?.name !== '@code-inspector/vite'),
@@ -99,6 +99,24 @@ const item = {
   description_translations: seed.translations,
   description_automatic: seed.translations,
   description_overrides: {},
+  faq: [
+    {
+      question: 'FAQ source question',
+      answer: 'FAQ source answer',
+      question_automatic: Object.fromEntries(
+        SITE_LANGUAGES.map(([code]) => [code, `${code} FAQ question`]),
+      ),
+      answer_automatic: Object.fromEntries(
+        SITE_LANGUAGES.map(([code]) => [code, `${code} FAQ answer`]),
+      ),
+      question_translations: Object.fromEntries(
+        SITE_LANGUAGES.map(([code]) => [code, `${code} FAQ question`]),
+      ),
+      answer_translations: Object.fromEntries(
+        SITE_LANGUAGES.map(([code]) => [code, `${code} FAQ answer`]),
+      ),
+    },
+  ],
   name_rule: 0,
   status: 1,
   sync_official: 1,
@@ -139,7 +157,7 @@ try {
   );
   fs.writeFileSync(
     files[1],
-    `import React from 'react';import {createRoot} from 'react-dom/client';import {MemoryRouter,Routes,Route,Link} from 'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {UserContext} from './src/context/User';import {StatusContext} from './src/context/Status';import {ThemeProvider} from './src/context/Theme';import {changeSiteLanguage,SITE_LANGUAGES} from './src/helpers/siteLanguage';import {initialLocaleReady} from './src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false);return <><div style={{padding:16,display:'flex',gap:16,flexWrap:'wrap',borderBottom:'1px solid #eee'}}><b>元衡 API · 本地多语言验收</b><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><Link to="/pricing">模型广场</Link><button onClick={()=>setOpen(true)} data-edit>模型管理</button></div><Routes><Route path="/pricing" element={<Pricing/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:${JSON.stringify(current.model)}}} handleClose={()=>setOpen(false)} refresh={()=>{}}/></>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><UserContext.Provider value={[{user:{id:8,role:100,username:'fixture',group:'default'}},()=>{}]}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></UserContext.Provider></MemoryRouter>);`,
+    `import React from 'react';import {createRoot} from 'react-dom/client';import {MemoryRouter,Routes,Route,Link} from 'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import ModelCompare from './src/pages/ModelCompare';import EditModelModal from './src/components/table/models/modals/EditModelModal';import {UserContext} from './src/context/User';import {StatusContext} from './src/context/Status';import {ThemeProvider} from './src/context/Theme';import {changeSiteLanguage,SITE_LANGUAGES} from './src/helpers/siteLanguage';import {initialLocaleReady} from './src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false);return <><div style={{padding:16,display:'flex',gap:16,flexWrap:'wrap',borderBottom:'1px solid #eee'}}><b>元衡 API · 本地多语言验收</b><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><Link to="/pricing">模型广场</Link><Link data-compare to="/compare?model=${current.model}">Compare</Link><Link data-detail to="/model/${current.model}">Detail</Link><button onClick={()=>setOpen(true)} data-edit>模型管理</button></div><Routes><Route path="/pricing" element={<Pricing/>}/><Route path="/compare" element={<ModelCompare/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:${JSON.stringify(current.model)}}} handleClose={()=>setOpen(false)} refresh={()=>{}}/></>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><UserContext.Provider value={[{user:{id:8,role:100,username:'fixture',group:'default'}},()=>{}]}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></UserContext.Provider></MemoryRouter>);`,
   );
   browser = await puppeteer.launch({
     headless: true,
@@ -201,6 +219,8 @@ try {
     else if (u.pathname === '/api/models/' && r.method() === 'PUT') {
       const payload = JSON.parse(r.postData());
       writes.push(payload);
+      if (payload.faq)
+        item.faq = payload.faq.map((faq, i) => ({ ...item.faq[i], ...faq }));
       for (const [lang, text] of Object.entries(
         payload.description_overrides || {},
       )) {
@@ -284,6 +304,40 @@ try {
       seed.translations[locale],
     );
   }
+  for (const [locale] of SITE_LANGUAGES) {
+    await selectLanguage(locale);
+    await page.waitForFunction(
+      (locale) =>
+        document
+          .querySelector('#faq summary')
+          ?.textContent.includes(`${locale} FAQ question`),
+      {},
+      locale,
+    );
+    assert.equal(
+      await page.$eval('#faq details p', (el) => el.textContent),
+      `${locale} FAQ answer`,
+    );
+  }
+  await page.click('[data-compare]');
+  await selectLanguage('en');
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.model-faq summary')
+      ?.textContent.includes('en FAQ question'),
+  );
+  assert.equal(
+    await page.$eval('.model-faq details p', (el) => el.textContent),
+    'en FAQ answer',
+  );
+  await selectLanguage('ja');
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.model-faq summary')
+      ?.textContent.includes('ja FAQ question'),
+  );
+  await page.click('[data-detail]');
+  await page.waitForSelector('#faq');
   if (item.official_pricing) {
     assert.equal(
       await page.$$eval('#official-pricing tbody tr', (rows) => rows.length),
@@ -346,10 +400,35 @@ try {
       text,
     );
   };
+  await page.click('.model-faq-editor details summary');
+  const faqQuestion = await page.$(
+    '.model-faq-editor textarea[aria-label="问题标题"]',
+  );
+  assert.equal(
+    await faqQuestion.evaluate((el) => el.value),
+    'zh-CN FAQ question',
+  );
+  await faqQuestion.click({ clickCount: 3 });
+  await page.keyboard.press('Backspace');
+  await faqQuestion.type('人工 FAQ 问题');
+  await page.setViewport({ width: 390, height: 844 });
+  await page.screenshot({
+    path: path.join(artifacts, 'faq-translation-editor-mobile.png'),
+  });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+    true,
+  );
+  await page.setViewport({ width: 1440, height: 1000 });
   await clickText('提交');
   await page.waitForFunction(
     () => !document.querySelector('textarea[aria-label="多语言介绍"]'),
   );
+  assert.deepEqual(writes.at(-1).faq[0].question_overrides, {
+    'zh-CN': '人工 FAQ 问题',
+  });
   assert.deepEqual(writes.at(-1).description_overrides, {
     'zh-CN': '人工校正的中文模型介绍',
   });
@@ -360,6 +439,25 @@ try {
     () =>
       document.querySelector('textarea[aria-label="多语言介绍"]')?.value ===
       '人工校正的中文模型介绍',
+  );
+  await page.click('.model-faq-editor details summary');
+  assert.equal(
+    await page.$eval(
+      '.model-faq-editor textarea[aria-label="问题标题"]',
+      (el) => el.value,
+    ),
+    '人工 FAQ 问题',
+  );
+  await page.$eval('.model-faq-editor', (el) =>
+    [...el.querySelectorAll('button')]
+      .find((b) => b.textContent.trim() === '恢复自动' && !b.disabled)
+      .click(),
+  );
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '.model-faq-editor textarea[aria-label="问题标题"]',
+      )?.value === 'zh-CN FAQ question',
   );
   await clickText('恢复自动');
   await page.waitForFunction(
@@ -374,6 +472,7 @@ try {
     () => !document.querySelector('textarea[aria-label="多语言介绍"]'),
   );
   assert.deepEqual(writes.at(-1).description_overrides, { 'zh-CN': null });
+  assert.deepEqual(writes.at(-1).faq[0].question_overrides, {});
   assert.deepEqual(errors, []);
   assert.equal(external, 0);
   console.log(

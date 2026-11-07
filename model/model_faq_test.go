@@ -50,3 +50,21 @@ func TestModelFAQValidationAndStorage(t *testing.T) {
 	}
 	require.ErrorContains(t, tooLarge.Normalize(), "内容过长")
 }
+
+func TestFAQTranslationsStorageAndValidation(t *testing.T) {
+	f := ModelFAQ{{Question: "Question", Answer: "Answer", QuestionOverrides: ModelDescriptions{"en": " Manual ", "ja": " "}, QuestionAutomatic: ModelDescriptions{"en": "auto"}, QuestionTranslations: ModelDescriptions{"en": "effective"}}}
+	clone := f.Clone()
+	clone[0].QuestionOverrides["en"] = "changed"
+	require.Equal(t, " Manual ", f[0].QuestionOverrides["en"])
+	value, err := f.Value()
+	require.NoError(t, err)
+	require.NotContains(t, value, "automatic")
+	require.NotContains(t, value, "translations")
+	require.NoError(t, f.Normalize())
+	require.Equal(t, ModelDescriptions{"en": "Manual"}, f[0].QuestionOverrides)
+	require.Nil(t, f[0].QuestionAutomatic)
+	for _, overrides := range []ModelDescriptions{{"invalid": "text"}, {"en": strings.Repeat("a", 801)}, {"en": string([]byte{0xff})}} {
+		invalid := ModelFAQ{{Question: "Q", Answer: "A", QuestionOverrides: overrides}}
+		require.Error(t, invalid.Normalize())
+	}
+}

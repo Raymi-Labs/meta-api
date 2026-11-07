@@ -25,7 +25,13 @@ import {
   normalizeLocale,
 } from '../../../../helpers/localeNormalize';
 
-function ModelDescriptionEditor({ value, onChange, automatic = {} }) {
+export function TranslationEditor({
+  value,
+  onChange,
+  automatic = {},
+  label,
+  maxLength = 16000,
+}) {
   const { t, i18n } = useTranslation();
   const [locale, setLocale] = useState(() => normalizeLocale(i18n.language));
   const overrides = value || {};
@@ -38,7 +44,7 @@ function ModelDescriptionEditor({ value, onChange, automatic = {} }) {
     <div className='flex flex-col gap-3 min-w-0'>
       <div className='flex items-center gap-2 flex-wrap'>
         <Select
-          aria-label={t('介绍语言')}
+          aria-label={label || t('介绍语言')}
           value={locale}
           onChange={setLocale}
           style={{ minWidth: 170 }}
@@ -67,10 +73,10 @@ function ModelDescriptionEditor({ value, onChange, automatic = {} }) {
         </Button>
       </div>
       <TextArea
-        aria-label={t('多语言介绍')}
+        aria-label={label || t('多语言介绍')}
         value={text}
         rows={5}
-        maxLength={16000}
+        maxLength={maxLength}
         onChange={(text) => onChange({ ...overrides, [locale]: text })}
       />
       <p className='text-xs text-[var(--semi-color-text-2)]'>
@@ -79,4 +85,4 @@ function ModelDescriptionEditor({ value, onChange, automatic = {} }) {
     </div>
   );
 }
-export default withField(ModelDescriptionEditor);
+export default withField(TranslationEditor);
