@@ -430,7 +430,7 @@
   margin-bottom: 26px;
 }
 .pg-code-heading h2 {
-  font-family: Georgia, 'Noto Serif SC', serif;
+  font-family: inherit;
   font-size: 23px;
   font-weight: 600;
   letter-spacing: 0.3px;

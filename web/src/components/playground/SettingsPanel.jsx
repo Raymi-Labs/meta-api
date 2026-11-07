@@ -18,21 +18,22 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Select } from '@douyinfe/semi-ui';
-import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Tooltip } from '@douyinfe/semi-ui';
+import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { playgroundGroupOptions } from '../../helpers/playgroundPresentation';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
 import ModelInfoCard from './ModelInfoCard';
+import PlaygroundPriceSummary from './PlaygroundPriceSummary';
 import CapabilitySettings from './CapabilitySettings';
+import SystemPromptEditor from './SystemPromptEditor';
+import { formatModelTokenLimit } from '../../helpers/modelAttributes';
 
-const SettingsPanel = ({
+export default function SettingsPanel({
   inputs,
   parameterEnabled,
-  groups,
   styleState,
   showDebugPanel,
   customRequestMode,
@@ -49,7 +50,7 @@ const SettingsPanel = ({
   catalogState,
   comparison,
   localSession = false,
-}) => {
+}) {
   const { t } = useTranslation();
   const currentConfig = {
     inputs,
@@ -58,103 +59,44 @@ const SettingsPanel = ({
     customRequestMode,
     customRequestBody,
   };
+  const count = [
+    'temperature',
+    'top_p',
+    'max_tokens',
+    'frequency_penalty',
+    'presence_penalty',
+    'seed',
+  ].filter(
+    (key) =>
+      parameterEnabled[key] &&
+      inputs[key] !== null &&
+      inputs[key] !== undefined,
+  ).length;
+  const inspected = comparison ? comparison.model : model;
   return (
     <div className='pg-settings-scroll model-settings-scroll'>
-      {comparison ? (
-        <section className='pg-settings-section pg-comparison-inspector'>
-          <h3>{t('本轮模型')}</h3>
-          <p className='pg-field-hint'>
-            {t('点击查看资料；不会改变调用名单。')}
-          </p>
-          <div
-            className='pg-inspector-models'
-            role='group'
-            aria-label={t('查看模型资料')}
-          >
-            {comparison.names.map((name) => (
-              <button
-                key={name}
-                aria-pressed={comparison.inspected === name}
-                onClick={() => comparison.onInspect(name)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-          {!comparison.names.length && (
-            <p className='pg-field-hint'>{t('选择文本模型（最多5个）')}</p>
-          )}
-          {comparison.inspected && (
-            <details
-              key={comparison.inspected}
-              className='pg-inspector-details'
-            >
-              <summary>
-                {t('查看价格与能力')} · {comparison.inspected}
-              </summary>
-              <ModelInfoCard
-                model={comparison.model}
-                modelName={comparison.inspected}
-                group={inputs.group}
-                catalogState={catalogState}
-              />
-              <p className='pg-field-hint'>
-                {t('深度思考')}：
-                {comparison.model?.capabilities?.reasoning === false
-                  ? t('不支持')
-                  : comparison.model?.capabilities?.reasoning === true
-                    ? t('支持')
-                    : t('未知')}
-              </p>
-            </details>
-          )}
-        </section>
-      ) : (
-        <ModelInfoCard
-          model={model}
-          modelName={inputs.model}
-          group={inputs.group}
-          catalogState={catalogState}
+      <section className='pg-settings-section pg-prompt-settings'>
+        <SystemPromptEditor
+          value={inputs.systemPrompt}
+          onChange={(value) => onInputChange('systemPrompt', value)}
+          disabled={customRequestMode}
         />
-      )}
-      <section className='pg-settings-section pg-group-section'>
-        <label>
-          {t('分组')}
-          <Select
-            aria-label={t('分组')}
-            filter
-            value={inputs.group}
-            onChange={(value) => onInputChange('group', value)}
-            optionList={playgroundGroupOptions(groups)}
-            disabled={customRequestMode}
-            style={{ width: '100%' }}
-          />
-        </label>
       </section>
       {customRequestMode && (
-        <p className='pg-field-hint'>{t('已在自定义模式中忽略')}</p>
+        <p role='status' className='pg-field-hint'>
+          {t('已在自定义模式中忽略')}
+        </p>
       )}
-      {comparison && (
-        <section className='pg-settings-section pg-common-settings'>
-          <h3>{t('共用设置')}</h3>
-          <p className='pg-field-hint'>
-            {t('参数应用于本轮所有模型；明确不支持思考的模型会忽略思考强度。')}
-          </p>
-          <p className='pg-field-hint'>
-            {t('仅发送文本；各模型价格与能力请分别查看。')}
-          </p>
-          {(inputs.imageEnabled || inputs.toolsEnabled) && (
-            <button
-              className='pg-parallel-toggle'
-              onClick={() => {
-                onInputChange('imageEnabled', false);
-                onInputChange('toolsEnabled', false);
-              }}
-            >
-              {t('关闭图片和工具')}
-            </button>
-          )}
-        </section>
+      {comparison && (inputs.imageEnabled || inputs.toolsEnabled) && (
+        <button
+          className='pg-parallel-toggle'
+          onClick={() => {
+            onInputChange('imageEnabled', false);
+            onInputChange('toolsEnabled', false);
+          }}
+        >
+          {t('关闭图片和工具')}
+        </button>
       )}
       <CapabilitySettings
         inputs={inputs}
@@ -163,11 +105,30 @@ const SettingsPanel = ({
         onInputChange={onInputChange}
         disabled={customRequestMode}
       />
-      <section className='pg-settings-section pg-parameters'>
-        <h3>
-          <SlidersHorizontal size={15} />
-          {t('参数')}
-        </h3>
+      <details className='pg-settings-section pg-parameters'>
+        <summary>
+          <span>{t('生成参数')}</span>
+          <small>
+            {customRequestMode
+              ? t('已在自定义模式中忽略')
+              : count
+                ? t('已启用 {{count}} 项', { count })
+                : t('使用模型默认值')}
+          </small>
+        </summary>
+        <Tooltip
+          content={t(
+            '开启后才发送该参数；关闭时保留当前数值，实际行为使用模型默认值。',
+          )}
+        >
+          <button
+            className='pg-info-button'
+            aria-label={t('参数说明')}
+            type='button'
+          >
+            <Info size={14} />
+          </button>
+        </Tooltip>
         <ParameterControl
           inputs={inputs}
           parameterEnabled={parameterEnabled}
@@ -175,13 +136,10 @@ const SettingsPanel = ({
           onParameterToggle={onParameterToggle}
           disabled={customRequestMode}
         />
-      </section>
+      </details>
       {!comparison && (
         <details className='pg-settings-section pg-advanced'>
-          <summary>
-            {t('高级设置')}
-            <ChevronDown size={14} />
-          </summary>
+          <summary>{t('高级设置')}</summary>
           <ImageUrlInput
             imageUrls={inputs.imageUrls}
             imageEnabled={inputs.imageEnabled}
@@ -201,6 +159,7 @@ const SettingsPanel = ({
         </details>
       )}
       <ConfigManager
+        compact
         localSession={localSession}
         currentConfig={currentConfig}
         onConfigImport={onConfigImport}
@@ -208,7 +167,48 @@ const SettingsPanel = ({
         styleState={styleState}
         messages={messages}
       />
+      <details className='pg-settings-section pg-model-details-fold'>
+        <summary>
+          <span>{t('模型信息')}</span>
+          <small className='pg-model-summary'>
+            <span
+              title={t('上下文长度')}
+              aria-label={`${t('上下文长度')} ${formatModelTokenLimit(inspected?.context_length)}`}
+            >
+              {formatModelTokenLimit(inspected?.context_length)}
+            </span>
+            <PlaygroundPriceSummary
+              compact
+              model={inspected}
+              group={inputs.group}
+              catalogState={catalogState}
+            />
+          </small>
+        </summary>
+        {comparison && (
+          <div
+            className='pg-inspector-models'
+            role='group'
+            aria-label={t('查看模型资料')}
+          >
+            {comparison.names.map((name) => (
+              <button
+                key={name}
+                aria-pressed={comparison.inspected === name}
+                onClick={() => comparison.onInspect(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        <ModelInfoCard
+          model={inspected}
+          modelName={comparison ? comparison.inspected : inputs.model}
+          group={inputs.group}
+          catalogState={catalogState}
+        />
+      </details>
     </div>
   );
-};
-export default SettingsPanel;
+}

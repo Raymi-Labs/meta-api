@@ -73,9 +73,6 @@ export default function ParameterControl({
   ];
   return (
     <div className='pg-parameter-list'>
-      <p className='pg-field-hint'>
-        {t('开启后才发送该参数；关闭时保留当前数值，实际行为使用模型默认值。')}
-      </p>
       {parameters.map((param) => (
         <div className='pg-parameter' key={param.key}>
           <div className='pg-parameter-heading'>

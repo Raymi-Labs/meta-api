@@ -26,7 +26,12 @@ import {
 
 // Reuse catalog prices and units; never turn this into an estimate of the
 // current request (output length, cache hits and final route are unknown).
-export default function PlaygroundPriceSummary({ model, group, catalogState }) {
+export default function PlaygroundPriceSummary({
+  model,
+  group,
+  catalogState,
+  compact = false,
+}) {
   const { t } = useTranslation();
   const catalog = catalogState.catalog;
   if (
@@ -53,6 +58,33 @@ export default function PlaygroundPriceSummary({ model, group, catalogState }) {
   );
   const items = pricing.items.slice(0, 2);
   const currency = readPlaygroundCurrency();
+  if (compact) {
+    if (pricing.data.isDynamicPricing)
+      return <span className='pg-compact-price'>{t('动态计费')}</span>;
+    const amounts = items.map((item) => ({
+      ...item,
+      money: playgroundMoney(
+        pricing.data.unitPricesUSD?.[item.key],
+        currency.status,
+        currency.displayType,
+      ),
+    }));
+    const description = amounts
+      .map(
+        (item) =>
+          `${item.label} ${item.money?.primary || item.value}${item.suffix || ''}`,
+      )
+      .join(' · ');
+    return (
+      <span
+        className='pg-compact-price'
+        title={description}
+        aria-label={description}
+      >
+        {amounts.map((item) => item.money?.primary || item.value).join(' / ')}
+      </span>
+    );
+  }
   return (
     <div
       className='pg-top-prices'

@@ -11,6 +11,7 @@ const calls = [],
   held = [],
   errors = [];
 let hold = false;
+let failModel = null;
 const sockets = new Set();
 const server = createServer(async (req, res) => {
   if (req.url === '/pg/chat/completions') {
@@ -18,6 +19,12 @@ const server = createServer(async (req, res) => {
     for await (const part of req) body += part;
     const payload = JSON.parse(body);
     calls.push({ payload, session: req.headers['x-session-id'] });
+    if (payload.model === failModel) {
+      res
+        .writeHead(502, { 'Content-Type': 'application/json' })
+        .end(JSON.stringify({ error: { message: '模拟上游失败' } }));
+      return;
+    }
     const text = 'answer-' + payload.model;
     if (payload.stream === false) {
       res.setHeader('Content-Type', 'application/json');
@@ -230,7 +237,7 @@ try {
     active + ' .pg-main',
     (e) => e.getBoundingClientRect().x,
   );
-  await page.click('.pg-tool-rail [aria-label="参数"]');
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
   await page.waitForSelector('.pg-docked-settings .pg-settings-scroll', {
     visible: true,
   });
@@ -250,7 +257,7 @@ try {
   );
   assert(
     await page.$eval('.pg-docked-settings', (e) =>
-      e.textContent.includes('开启后才发送该参数'),
+      e.textContent.includes('生成参数'),
     ),
   );
   assert(
@@ -259,6 +266,43 @@ try {
     ),
   );
   assert.equal(await page.$('.semi-sidesheet-mask'), null);
+  assert.equal(await page.$('.pg-docked-settings .pg-group-section'), null);
+  assert.equal(await page.$eval('.pg-parameters', (e) => e.open), false);
+  assert.equal(
+    await page.$eval('.pg-model-details-fold', (e) => e.open),
+    false,
+  );
+  assert.equal(await page.$('.pg-main .pg-system-prompt'), null);
+  await page.click('.pg-docked-settings .pg-system-prompt');
+  await page.waitForSelector('textarea[aria-label="系统提示词"]', {
+    visible: true,
+  });
+  await page.type('textarea[aria-label="系统提示词"]', '仅用于设置回归');
+  await page.click('.semi-modal-close');
+  await page.waitForSelector('.semi-modal', { hidden: true });
+  await page.waitForSelector('.pg-prompt-dot');
+  await clickText('恢复默认', '.pg-docked-settings');
+  await page.waitForSelector('.semi-modal-confirm');
+  await clickText('取消', '.semi-modal-confirm');
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-confirm'),
+  );
+  assert(await page.$('.pg-prompt-dot'));
+  await clickText('恢复默认', '.pg-docked-settings');
+  await page.waitForSelector('.semi-modal-confirm');
+  await clickText('恢复默认', '.semi-modal-confirm');
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-confirm'),
+  );
+  await page.waitForSelector('.pg-prompt-dot', { hidden: true });
+  assert(
+    await page.$eval('.pg-top-group', (e) => e.textContent.includes('default')),
+  );
+  assert(
+    await page.$eval('.pg-model-tab.is-active', (e) =>
+      e.textContent.includes('model-a'),
+    ),
+  );
   await page.screenshot({ path: '/tmp/playground-refined-settings.png' });
   await page.setViewport({ width: 820, height: 1000 });
   assert(
@@ -270,6 +314,13 @@ try {
   await page.screenshot({ path: '/tmp/playground-refined-tablet.png' });
   await page.setViewport({ width: 1440, height: 1000 });
   // Directly switch panels while settings is open; the rail must remain clickable.
+  await page.waitForFunction(() => {
+    const el = document.querySelector('.pg-tool-rail [aria-label="请求代码"]');
+    const r = el.getBoundingClientRect();
+    return el.contains(
+      document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+    );
+  });
   await page.click('.pg-tool-rail [aria-label="请求代码"]');
   await page.waitForSelector('.pg-docked-code .pg-code-panel', {
     visible: true,
@@ -289,7 +340,7 @@ try {
   await page.waitForFunction(
     () =>
       document
-        .querySelector('.pg-tool-rail [aria-label="参数"]')
+        .querySelector('.pg-tool-rail [aria-label="对话设置"]')
         ?.getAttribute('aria-expanded') === 'false',
   );
   await page.waitForSelector('.pg-docked-settings', { hidden: true });
@@ -522,7 +573,7 @@ try {
     () => document.querySelectorAll('.pg-conversation-items>div').length === 3,
   );
   await page.setViewport({ width: 390, height: 1000 });
-  await page.click('.pg-tool-rail [aria-label="参数"]');
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
   await page.waitForSelector('.pg-sheet .pg-settings-scroll', {
     visible: true,
   });
@@ -663,9 +714,198 @@ try {
     () => !document.querySelector('.pg-local-warning'),
   );
   await saved();
+  await importText(
+    JSON.stringify({
+      format: 'meta-api-local-conversations',
+      version: 1,
+      sessions: [parallel],
+    }),
+  );
+  await page.waitForSelector(active + ' .pg-parallel-composer textarea');
+  await page.type(active + ' .pg-parallel-composer textarea', 'Compare layout');
+  await clickText('发送给 5 个模型', active);
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.pg-answer-comparison').length > 0 &&
+      document.querySelectorAll('.pg-parallel-reply').length >= 5 &&
+      [...document.querySelectorAll('.pg-reply-state')].filter((e) =>
+        e.textContent.includes('已完成'),
+      ).length >= 5,
+  );
+  assert.equal(
+    await page.$$eval('.pg-answer-comparison', (els) => els.length),
+    1,
+  );
+  assert(await page.$$eval('.pg-parallel-reply', (els) => els.length >= 5));
+  await page.screenshot({ path: '/tmp/playground-answer-columns.png' });
+  const layoutCalls = calls.length;
+  await page.click('[aria-label="向右查看回答"]');
+  await page.waitForFunction(
+    () => document.querySelector('.pg-round-answers').scrollLeft > 100,
+  );
+  await page.setViewport({ width: 390, height: 1000 });
+  await page.waitForSelector('.pg-answer-tabs');
+  await page.click('.pg-answer-tabs button:nth-child(3)');
+  assert.equal(
+    await page.$eval(
+      '.pg-answer-slot:not([hidden]) article',
+      (e) => e.dataset.model,
+    ),
+    'model-c',
+  );
+  assert.equal(calls.length, layoutCalls);
+  await page.screenshot({ path: '/tmp/playground-comparison-mobile.png' });
+  await page.setViewport({ width: 1440, height: 1000 });
+  await page.waitForSelector('.pg-answer-tabs', { hidden: true });
+  const retryScope = '.pg-parallel-reply[data-model="model-a"]';
+  failModel = 'model-a';
+  await clickText('重新生成', retryScope);
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '.pg-parallel-reply[data-model="model-a"] .pg-reply-state',
+      )?.textContent === '失败',
+  );
+  assert.equal(calls.length, layoutCalls + 1);
+  assert.equal(
+    await page.$$eval(
+      '.pg-reply-state',
+      (els) => els.filter((e) => e.textContent === '已完成').length,
+    ),
+    4,
+  );
+  failModel = null;
+  hold = true;
+  await clickText('重试', retryScope);
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '.pg-parallel-reply[data-model="model-a"] .pg-reply-state',
+      )?.textContent === '回答中',
+  );
+  assert(
+    await page.$$eval('.pg-answer-continue', (els) =>
+      els.every((e) => e.disabled),
+    ),
+  );
+  await clickText('停止生成', retryScope);
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '.pg-parallel-reply[data-model="model-a"] .pg-reply-state',
+      )?.textContent === '已停止',
+  );
+  hold = false;
+  held.splice(0).forEach((done) => done());
+  await clickText('重试', retryScope);
+  await page.waitForFunction(
+    () =>
+      document.querySelector(
+        '.pg-parallel-reply[data-model="model-a"] .pg-reply-state',
+      )?.textContent === '已完成',
+  );
+  assert.equal(calls.length, layoutCalls + 3);
+  assert(calls.slice(layoutCalls).every((c) => c.payload.model === 'model-a'));
+  await clickText('用这条继续', retryScope);
+  await page.type(active + ' .pg-parallel-composer textarea', 'Second round');
+  await clickText('发送给 5 个模型', active);
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.pg-comparison-round').length === 2 &&
+      [...document.querySelectorAll('.pg-reply-state')].every(
+        (e) => e.textContent === '已完成',
+      ),
+  );
+  assert(
+    calls
+      .slice(-5)
+      .every(
+        (c) =>
+          c.payload.messages.filter((m) => m.role === 'assistant').length ===
+            1 &&
+          c.payload.messages.find((m) => m.role === 'assistant').content ===
+            'answer-model-a',
+      ),
+  );
+  await page.evaluate(() =>
+    document.querySelector('.pg-parallel-messages').scrollTo(0, 0),
+  );
+  await page.click('.pg-answer-icon');
+  assert.equal(
+    await page.$$eval(
+      '.pg-round-answers.is-expanded .pg-answer-slot:not([hidden])',
+      (els) => els.length,
+    ),
+    1,
+  );
+  await page.keyboard.press('Escape');
+  await page.click('.pg-answer-continue');
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.pg-mode-switch button')].some(
+      (b) =>
+        b.getAttribute('aria-pressed') === 'true' &&
+        b.textContent.includes('单模型'),
+    ),
+  );
+  await send('Continue single');
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="停止生成"]'),
+  );
+  assert.equal(calls.at(-1).payload.model, 'model-a');
+  assert.equal(
+    calls.at(-1).payload.messages.filter((m) => m.role === 'assistant').length,
+    2,
+  );
+  assert.equal(
+    await page.$$eval('.pg-messages', (els) =>
+      els.reduce(
+        (n, e) => n + (e.textContent.match(/answer-model-b/g) || []).length,
+        0,
+      ),
+    ),
+    2,
+  );
   await page.screenshot({
     path: '/tmp/playground-local-conversations-desktop.png',
   });
+  const beforeResetText = await page.$eval(
+    active + ' .pg-messages',
+    (e) => e.textContent,
+  );
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
+  await page.waitForSelector('.pg-docked-settings');
+  await clickText('恢复默认', '.pg-docked-settings');
+  await page.waitForSelector('.semi-modal-confirm');
+  await clickText('恢复默认', '.semi-modal-confirm');
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-confirm'),
+  );
+  assert.equal(
+    await page.$eval(active + ' .pg-messages', (e) => e.textContent),
+    beforeResetText,
+  );
+  await page.click('.pg-docked-settings [aria-label="关闭设置"]');
+  await page.click(active + ' [aria-label="清空对话"]');
+  await page.waitForSelector('.semi-modal-confirm');
+  await clickText('取消', '.semi-modal-confirm');
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-confirm'),
+  );
+  assert.equal(
+    await page.$eval(active + ' .pg-messages', (e) => e.textContent),
+    beforeResetText,
+  );
+  await page.click(active + ' [aria-label="清空对话"]');
+  await page.waitForSelector('.semi-modal-confirm');
+  await clickText('清空对话', '.semi-modal-confirm');
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-modal-confirm'),
+  );
+  assert(
+    !(await page.$eval(active + ' .pg-messages', (e) =>
+      e.textContent.includes('answer-model-a'),
+    )),
+  );
   // Non-streaming request remains cancellable and cannot leak to a new session.
   const nonstream = {
     ...parallel,

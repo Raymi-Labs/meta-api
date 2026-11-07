@@ -28,7 +28,7 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Toast, Banner, Button, Select } from '@douyinfe/semi-ui';
+import { Toast, Banner, Button, Select, Modal } from '@douyinfe/semi-ui';
 import { playgroundGroupOptions } from '../../helpers/playgroundPresentation';
 
 import { getPlaygroundOwner } from '../../components/playground/configStorage';
@@ -52,7 +52,10 @@ import { useDataLoader } from '../../hooks/playground/useDataLoader';
 import { usePlaygroundModelLink } from '../../hooks/playground/usePlaygroundModelLink';
 
 // Constants and utils
-import { MESSAGE_ROLES } from '../../constants/playground.constants';
+import {
+  MESSAGE_ROLES,
+  DEFAULT_CONFIG,
+} from '../../constants/playground.constants';
 import {
   getLogo,
   stringToColor,
@@ -76,8 +79,11 @@ import LocalConversations from '../../components/playground/LocalConversations';
 import ModelTabs from '../../components/playground/ModelTabs';
 import PlaygroundPriceSummary from '../../components/playground/PlaygroundPriceSummary';
 import ParallelTextChat from '../../components/playground/ParallelTextChat';
-import { comparisonModelNames } from '../../helpers/playgroundParallel';
-import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
+import {
+  comparisonModelNames,
+  selectParallelReply,
+  sharedConversation,
+} from '../../helpers/playgroundParallel';
 import RequestCodePanel from '../../components/playground/RequestCodePanel';
 import {
   buildPlaygroundPreview,
@@ -387,18 +393,21 @@ const AccountPlayground = ({
     }
     try {
       if (parallelMode && !previewModelName) return null;
+      const baseConversation = hasParallelHistory
+        ? sharedConversation(message)
+        : message;
       const previewMessages =
         pendingCalls.length &&
         pendingCalls.every((call) => toolResults[call.id]?.trim())
           ? [
-              ...message,
+              ...baseConversation,
               ...pendingCalls.map((call) => ({
                 role: 'tool',
                 content: toolResults[call.id],
                 tool_call_id: call.id,
               })),
             ]
-          : message;
+          : baseConversation;
       return buildPlaygroundPreview(
         previewMessages,
         pendingCalls.length ? '' : draft,
@@ -702,10 +711,25 @@ const AccountPlayground = ({
   // 清空对话的处理函数
   const handleClearMessages = useCallback(() => {
     if (generating) return;
-    setMessage([]);
-    setToolResults({});
-    // 清空对话后保存，传入空数组
-    setTimeout(() => saveMessagesImmediately([]), 0);
+    Modal.confirm({
+      title: t('清空对话'),
+      content: t('将删除当前对话的全部消息，无法撤销；其他对话和设置保留。'),
+      okText: t('清空对话'),
+      cancelText: t('取消'),
+      okButtonProps: { type: 'danger' },
+      onOk: () => {
+        if (!activeRef.current || getPlaygroundOwner() !== owner) return;
+        if (
+          messageRef.current.some((m) =>
+            ['loading', 'incomplete'].includes(m.status),
+          )
+        )
+          return;
+        setMessage([]);
+        setToolResults({});
+        saveMessagesImmediately([]);
+      },
+    });
   }, [generating, setMessage, saveMessagesImmediately]);
 
   // 处理粘贴图片
@@ -797,6 +821,51 @@ const AccountPlayground = ({
         code={codePanel}
         showSettings={active && panel === 'settings'}
         showCode={active && panel === 'code'}
+        parallelMode={parallelMode}
+        settingsDisabled={
+          generating || blocked || pendingCalls.length > 0 || customRequestMode
+        }
+        onResetSettings={() => {
+          if (generating || blocked || pendingCalls.length || customRequestMode)
+            return;
+          Modal.confirm({
+            title: t('恢复默认'),
+            content: t(
+              '将清除系统提示词并重置生成参数、思考强度和工具设置；消息、模型与分组保留。',
+            ),
+            okText: t('恢复默认'),
+            cancelText: t('取消'),
+            onOk: () => {
+              if (!activeRef.current || getPlaygroundOwner() !== owner) return;
+              if (
+                messageRef.current.some((m) =>
+                  ['loading', 'incomplete'].includes(m.status),
+                )
+              )
+                return;
+              for (const key of [
+                'systemPrompt',
+                'temperature',
+                'top_p',
+                'max_tokens',
+                'frequency_penalty',
+                'presence_penalty',
+                'seed',
+                'reasoningEffort',
+                'toolsEnabled',
+                'toolsJson',
+                'toolChoice',
+              ])
+                handleInputChange(key, DEFAULT_CONFIG.inputs[key]);
+              for (const key of Object.keys(DEFAULT_CONFIG.parameterEnabled))
+                if (
+                  Boolean(parameterEnabled[key]) !==
+                  DEFAULT_CONFIG.parameterEnabled[key]
+                )
+                  handleParameterToggle(key);
+            },
+          });
+        }}
         onCloseSettings={() => setPanel(null)}
         onCloseCode={() => setPanel(null)}
       >
@@ -864,6 +933,15 @@ const AccountPlayground = ({
                   generating || pendingCalls.length > 0 || customRequestMode
                 }
                 onClick={() => {
+                  if (mode && !selectedParallelModels.length) {
+                    setParallelModels(
+                      comparisonModelNames(
+                        [inputs.model],
+                        models,
+                        catalogState.catalog,
+                      ),
+                    );
+                  }
                   setParallelMode(mode);
                   setShowDebugPanel(false);
                   setPanel(null);
@@ -891,13 +969,6 @@ const AccountPlayground = ({
               <Code2 size={18} />
             </button>
           </div>
-        </div>
-        <div className='pg-prompt-row'>
-          <SystemPromptEditor
-            value={inputs.systemPrompt}
-            onChange={(value) => handleInputChange('systemPrompt', value)}
-            disabled={generating || customRequestMode}
-          />
         </div>
         {message.some((m) => m.localInterrupted) && (
           <div className='pg-load-state' role='status'>
@@ -939,6 +1010,34 @@ const AccountPlayground = ({
           )}
         {parallelMode ? (
           <ParallelTextChat
+            onContinue={(reply) => {
+              if (
+                blocked ||
+                generating ||
+                modelsLoading ||
+                modelsError ||
+                getPlaygroundOwner() !== owner ||
+                reply.parallelGroup !== inputs.group ||
+                !models.some((m) => m.value === reply.parallelModel)
+              )
+                return;
+              const next = selectParallelReply(messageRef.current, reply.id);
+              if (!next) return;
+              setMessage(next);
+              saveMessagesImmediately(next);
+              modelLink.dismiss();
+              handleInputChange('model', reply.parallelModel);
+              handleInputChange(
+                'modelTabs',
+                reconcileModelTabs(
+                  inputs.modelTabs,
+                  reply.parallelModel,
+                  models,
+                ),
+              );
+              setParallelMode(false);
+              setPanel(null);
+            }}
             onInputChange={handleInputChange}
             owner={owner}
             sessionId={session.id}

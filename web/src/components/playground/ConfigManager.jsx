@@ -38,6 +38,7 @@ const ConfigManager = ({
   styleState,
   messages,
   localSession = false,
+  compact = false,
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
@@ -189,6 +190,34 @@ const ConfigManager = ({
       ),
     },
   ];
+
+  if (compact)
+    return (
+      <div className='pg-config-links'>
+        <button
+          onClick={handleExport}
+          title={t('导出当前对话配置与消息')}
+          aria-label={t('导出当前对话配置与消息')}
+        >
+          {t('导出配置')}
+        </button>
+        <span aria-hidden='true'>·</span>
+        <button
+          onClick={handleImportClick}
+          title={t('导入并替换当前对话')}
+          aria-label={t('导入并替换当前对话')}
+        >
+          {t('导入配置')}
+        </button>
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept='.json'
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+      </div>
+    );
 
   if (styleState.isMobile) {
     // 移动端显示简化的下拉菜单

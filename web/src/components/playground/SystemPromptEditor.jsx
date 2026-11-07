@@ -55,7 +55,7 @@ export default function SystemPromptEditor({ value = '', onChange, disabled }) {
           onChange={onChange}
           disabled={disabled}
           aria-label={t('系统提示词')}
-          placeholder={t('点击设置系统提示词')}
+          placeholder={t('例如：你是一名 Python 工程师，回答简洁。')}
           autosize={{ minRows: 8, maxRows: 16 }}
         />
         <div className='pg-prompt-footer'>

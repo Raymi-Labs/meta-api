@@ -30,8 +30,11 @@ export default function PlaygroundWorkspace({
   children,
   showSettings,
   showCode,
+  parallelMode = false,
   onCloseSettings,
   onCloseCode,
+  onResetSettings,
+  settingsDisabled = false,
 }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -48,14 +51,23 @@ export default function PlaygroundWorkspace({
     return () => window.removeEventListener('keydown', onKey);
   }, [isMobile, showSettings, showCode, onCloseSettings, onCloseCode]);
   return (
-    <div className='pg-workspace'>
+    <div
+      className={`pg-workspace${showSettings || showCode ? ' has-panel' : ''}`}
+    >
       {!isMobile && showSettings && (
         <aside
           className='pg-docked-panel pg-docked-settings'
-          aria-label={t('参数')}
+          aria-label={t('对话设置')}
         >
           <header>
-            <strong>{t('参数')}</strong>
+            <strong>{t('对话设置')}</strong>
+            <button
+              className='pg-reset-settings'
+              disabled={settingsDisabled}
+              onClick={onResetSettings}
+            >
+              {t('恢复默认')}
+            </button>
             <button onClick={onCloseSettings} aria-label={t('关闭设置')}>
               <X size={18} />
             </button>
@@ -63,7 +75,9 @@ export default function PlaygroundWorkspace({
           {settings}
         </aside>
       )}
-      <main className='pg-main'>{children}</main>
+      <main className={`pg-main${parallelMode ? ' is-parallel' : ''}`}>
+        {children}
+      </main>
       {!isMobile && showCode && (
         <aside
           className='pg-docked-panel pg-docked-code'
@@ -81,7 +95,14 @@ export default function PlaygroundWorkspace({
       {isMobile && (
         <SideSheet
           closeOnEsc
-          title={t('参数')}
+          title={
+            <div className='pg-mobile-settings-heading'>
+              <span>{t('对话设置')}</span>
+              <button disabled={settingsDisabled} onClick={onResetSettings}>
+                {t('恢复默认')}
+              </button>
+            </div>
+          }
           visible={showSettings}
           onCancel={onCloseSettings}
           placement='left'
