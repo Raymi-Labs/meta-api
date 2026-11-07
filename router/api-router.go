@@ -328,6 +328,7 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			routeInsightRoute.GET("/channels", controller.GetRouteInsightChannels)
 			routeInsightRoute.GET("/shadow", controller.GetRouteInsightShadow)
+			routeInsightRoute.GET("/groups", controller.GetRouteInsightGroups)
 		}
 
 		channelConcurrencyRoute := apiRouter.Group("/channel_concurrency")

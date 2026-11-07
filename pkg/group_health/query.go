@@ -372,3 +372,47 @@ func summarize(row model.GroupHealthMetric) Metrics {
 	}
 	return result
 }
+
+// GroupTotal is one group's all-model total for the admin overview.
+type GroupTotal struct {
+	Group string `json:"group"`
+	Metrics
+	UpdatedAt int64 `json:"updated_at"`
+}
+
+type GroupTotalsResult struct {
+	StartTime            int64        `json:"start_time"`
+	EndTime              int64        `json:"end_time"`
+	BucketSeconds        int64        `json:"bucket_seconds"`
+	WindowHours          int          `json:"window_hours"`
+	CollectionIncomplete bool         `json:"collection_incomplete"`
+	Groups               []GroupTotal `json:"groups"`
+}
+
+// AdminGroupTotals sums every recorded group over the current half hour and
+// the preceding half hours of the last `hours` (1–168). Admin-only: it applies
+// no usable-group or model-visibility filter, so it must never reach users.
+func AdminGroupTotals(ctx context.Context, now time.Time, hours int) (GroupTotalsResult, error) {
+	hours = max(1, min(hours, MeasurementLookbackHours))
+	end := now.Unix()
+	start := end/HalfHourBucketSeconds*HalfHourBucketSeconds - int64(hours)*3600 + HalfHourBucketSeconds
+	rows, err := model.SumGroupHealthMetricsByGroup(ctx, start, end, HalfHourBucketSeconds)
+	if err != nil {
+		return GroupTotalsResult{}, err
+	}
+	result := GroupTotalsResult{StartTime: start, EndTime: end, BucketSeconds: HalfHourBucketSeconds, WindowHours: hours, Groups: make([]GroupTotal, 0, len(rows))}
+	result.CollectionIncomplete = halfHourCollector.persistFailed.Load() || halfHourCollector.lastDrop.Load() > now.Add(-time.Duration(hours)*time.Hour).Unix()
+	for _, row := range rows {
+		if row.GroupName == "" || row.GroupName == "auto" {
+			continue
+		}
+		result.Groups = append(result.Groups, GroupTotal{Group: row.GroupName, Metrics: summarize(row), UpdatedAt: row.UpdatedAt})
+	}
+	sort.Slice(result.Groups, func(i, j int) bool {
+		if result.Groups[i].RequestCount != result.Groups[j].RequestCount {
+			return result.Groups[i].RequestCount > result.Groups[j].RequestCount
+		}
+		return result.Groups[i].Group < result.Groups[j].Group
+	})
+	return result, nil
+}

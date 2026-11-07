@@ -3,6 +3,7 @@ package routeinsight
 import (
 	"context"
 	"errors"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -93,6 +94,36 @@ func Health(channelID int, modelName string) RouteHealth {
 		return h
 	}
 	return RouteHealth{Status: StatusUnknown, Reason: "no_samples"}
+}
+
+type UnhealthyRoute struct {
+	ChannelID int    `json:"channel_id"`
+	Model     string `json:"model"`
+	Reason    string `json:"reason"`
+}
+
+// UnhealthyRoutes lists the snapshot's unhealthy channel/model routes. The
+// bool is false when the snapshot is missing or stale (state then unknown).
+func UnhealthyRoutes() ([]UnhealthyRoute, bool) {
+	start()
+	if at := snapshotAt.Load(); at == 0 || time.Now().Unix()-at > int64(staleAfter/time.Second) {
+		return nil, false
+	}
+	snapshotMu.RLock()
+	defer snapshotMu.RUnlock()
+	routes := make([]UnhealthyRoute, 0)
+	for key, health := range snapshot {
+		if health.Status == StatusUnhealthy {
+			routes = append(routes, UnhealthyRoute{ChannelID: key.channelID, Model: key.model, Reason: health.Reason})
+		}
+	}
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].ChannelID != routes[j].ChannelID {
+			return routes[i].ChannelID < routes[j].ChannelID
+		}
+		return routes[i].Model < routes[j].Model
+	})
+	return routes, true
 }
 
 // SnapshotState reports when the health snapshot was last rebuilt and whether

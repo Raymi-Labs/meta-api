@@ -30,7 +30,6 @@ import ApiInfoPanel from './ApiInfoPanel';
 import AnnouncementsPanel from './AnnouncementsPanel';
 import FaqPanel from './FaqPanel';
 import UptimePanel from './UptimePanel';
-import ChannelMonitorPanel from './ChannelMonitorPanel';
 import SearchModal from './modals/SearchModal';
 
 import { useDashboardData } from '../../hooks/dashboard/useDashboardData';
@@ -384,16 +383,6 @@ const DashboardContent = () => {
               t={dashboardData.t}
             />
           )}
-        </div>
-      )}
-
-      {/* 渠道监控面板 */}
-      {dashboardData.isAdminUser && (
-        <div className='mb-4'>
-          <ChannelMonitorPanel
-            CARD_PROPS={CARD_PROPS}
-            ILLUSTRATION_SIZE={ILLUSTRATION_SIZE}
-          />
         </div>
       )}
     </div>

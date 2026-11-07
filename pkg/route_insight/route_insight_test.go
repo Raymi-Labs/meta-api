@@ -299,3 +299,20 @@ func TestRefreshSnapshotMarksSlowFirstToken(t *testing.T) {
 		}
 	}
 }
+
+func TestUnhealthyRoutesFollowSnapshotFreshness(t *testing.T) {
+	restore := SetHealthForTesting(
+		HealthEntry{ChannelID: 2, Model: "b", Health: RouteHealth{Status: StatusUnhealthy, Reason: "slow_ttft"}},
+		HealthEntry{ChannelID: 1, Model: "a", Health: RouteHealth{Status: StatusUnhealthy, Reason: "low_success_rate"}},
+		HealthEntry{ChannelID: 3, Model: "a", Health: RouteHealth{Status: StatusHealthy}},
+	)
+	t.Cleanup(restore)
+	routes, fresh := UnhealthyRoutes()
+	require.True(t, fresh)
+	require.Equal(t, []UnhealthyRoute{{ChannelID: 1, Model: "a", Reason: "low_success_rate"}, {ChannelID: 2, Model: "b", Reason: "slow_ttft"}}, routes)
+
+	snapshotAt.Store(time.Now().Add(-time.Hour).Unix())
+	routes, fresh = UnhealthyRoutes()
+	require.False(t, fresh, "a stale snapshot is unknown, never an all-clear")
+	require.Nil(t, routes)
+}

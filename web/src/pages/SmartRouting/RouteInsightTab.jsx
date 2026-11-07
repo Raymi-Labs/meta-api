@@ -18,6 +18,7 @@ import { API } from '../../helpers/apiCore';
 import { isRoot } from '../../helpers/storage';
 import { showError, showSuccess } from '../../helpers/toast';
 import { formatLatency, formatPercent, statusColor } from './format';
+import GroupOverviewCard from './GroupOverviewCard';
 
 const { Text } = Typography;
 
@@ -35,6 +36,8 @@ export default function RouteInsightTab() {
   const [hours, setHours] = useState(24);
   const [modelInput, setModelInput] = useState('');
   const [modelFilter, setModelFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
+  const channelCard = useRef(null);
   const [channelData, setChannelData] = useState(null);
   const [shadowData, setShadowData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -110,6 +113,17 @@ export default function RouteInsightTab() {
       setSaving(false);
     }
   };
+
+  const selectGroup = (group) => {
+    setGroupFilter(group);
+    channelCard.current?.scrollIntoView?.({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+  const channelRows = (channelData?.channels || []).filter(
+    (row) => !groupFilter || row.group === groupFilter,
+  );
 
   const snapshotAge = channelData?.snapshot_at
     ? Math.max(0, Math.round(Date.now() / 1000 - channelData.snapshot_at))
@@ -227,6 +241,10 @@ export default function RouteInsightTab() {
         description={t(
           '影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。',
         )}
+      />
+      <GroupOverviewCard
+        selectedGroup={groupFilter}
+        onSelectGroup={selectGroup}
       />
       <Card
         title={t('路由开关')}
@@ -434,23 +452,40 @@ export default function RouteInsightTab() {
           empty={t('暂无数据')}
         />
       </Card>
-      <Card title={t('渠道逐次尝试')} style={{ width: '100%' }}>
-        <Table
-          size='small'
-          rowKey={(row) => `${row.model}-${row.channel_id}-${row.group}`}
-          loading={loading}
-          columns={channelColumns}
-          dataSource={channelData?.channels || []}
-          pagination={{ pageSize: 20 }}
-          scroll={{ x: 'max-content' }}
-          empty={t('暂无数据')}
-        />
-        <Text type='tertiary' size='small'>
-          {t(
-            '成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。',
-          )}
-        </Text>
-      </Card>
+      <div ref={channelCard} style={{ width: '100%', scrollMarginTop: 72 }}>
+        <Card
+          title={t('渠道逐次尝试')}
+          style={{ width: '100%' }}
+          headerExtraContent={
+            groupFilter && (
+              <Tag
+                color='blue'
+                closable
+                onClose={() => setGroupFilter('')}
+                size='large'
+              >
+                {t('分组：{{group}}', { group: groupFilter })}
+              </Tag>
+            )
+          }
+        >
+          <Table
+            size='small'
+            rowKey={(row) => `${row.model}-${row.channel_id}-${row.group}`}
+            loading={loading}
+            columns={channelColumns}
+            dataSource={channelRows}
+            pagination={{ pageSize: 20 }}
+            scroll={{ x: 'max-content' }}
+            empty={t('暂无数据')}
+          />
+          <Text type='tertiary' size='small'>
+            {t(
+              '成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。',
+            )}
+          </Text>
+        </Card>
+      </div>
       <Card title={t('最近分歧样本（本实例）')} style={{ width: '100%' }}>
         <Table
           size='small'

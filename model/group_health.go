@@ -126,6 +126,22 @@ func QueryGroupHealthMetricsForModels(ctx context.Context, groups, modelNames []
 	return rows, err
 }
 
+// SumGroupHealthMetricsByGroup totals every group across all models and
+// replicas in [start, end]. Admin overview only: no group or model filter.
+func SumGroupHealthMetricsByGroup(ctx context.Context, start, end, bucketSeconds int64) ([]GroupHealthMetric, error) {
+	rows := make([]GroupHealthMetric, 0)
+	db := DB
+	if bucketSeconds == 1800 {
+		db = db.Table(DB.NamingStrategy.TableName("GroupHealthHalfHourMetric"))
+	}
+	err := db.WithContext(ctx).Model(&GroupHealthMetric{}).
+		Select("group_name, SUM(request_count) AS request_count, SUM(success_count) AS success_count, SUM(service_failure_count) AS service_failure_count, SUM(excluded_user_error_count) AS excluded_user_error_count, SUM(client_canceled_count) AS client_canceled_count, SUM(ttft_sum_ms) AS ttft_sum_ms, SUM(ttft_count) AS ttft_count, SUM(completion_sum_ms) AS completion_sum_ms, SUM(completion_count) AS completion_count, MAX(updated_at) AS updated_at").
+		Where("bucket_ts >= ? AND bucket_ts <= ?", start, end).
+		Group("group_name").
+		Scan(&rows).Error
+	return rows, err
+}
+
 func DeleteExpiredGroupHealthHalfHourMetrics(ctx context.Context, now time.Time) error {
 	return DB.WithContext(ctx).Where("bucket_ts < ?", now.Add(-7*24*time.Hour).Unix()).Delete(&GroupHealthHalfHourMetric{}).Error
 }
