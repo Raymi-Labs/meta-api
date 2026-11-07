@@ -10,6 +10,7 @@ import {
   comparisonSections,
   comparisonModelNames,
   comparisonReplyState,
+  selectParallelReply,
 } from '../src/helpers/playgroundParallel.js';
 
 test('comparison selection respects live group permissions and rounds keep chosen history immutable', () => {
@@ -47,9 +48,88 @@ test('comparison selection respects live group permissions and rounds keep chose
   );
   assert.equal(
     comparisonReplyState({ ...history[1], status: 'loading' }),
-    '生成中',
+    '回答中',
   );
   assert.equal(JSON.stringify(history), before);
+});
+
+test('continuation preserves earlier choices, rejects in-flight or incomplete replies and never merges alternatives', () => {
+  const a = {
+    id: 'a',
+    role: 'assistant',
+    status: 'complete',
+    content: 'old chosen',
+    parallelRound: 'q',
+    parallelChosen: true,
+  };
+  const rows = [
+    { id: 'q', role: 'user', content: 'old question' },
+    a,
+    { ...a, id: 'b', content: 'old alternative', parallelChosen: false },
+    { id: 'q2', role: 'user', content: 'new question' },
+    {
+      ...a,
+      id: 'c',
+      content: 'new alternative',
+      parallelRound: 'q2',
+      parallelChosen: false,
+    },
+    {
+      ...a,
+      id: 'd',
+      content: 'new chosen',
+      parallelRound: 'q2',
+      parallelChosen: false,
+    },
+  ];
+  const next = selectParallelReply(rows, 'd');
+  assert.equal(next.length, rows.length);
+  assert.deepEqual(
+    sharedConversation(next).map((m) => m.content),
+    ['old question', 'old chosen', 'new question', 'new chosen'],
+  );
+  assert.equal(rows.at(-1).parallelChosen, false);
+  assert.equal(selectParallelReply(rows, 'a'), null);
+  assert.equal(selectParallelReply(rows, 'missing'), null);
+  for (const patch of [
+    { status: 'loading' },
+    { status: 'error' },
+    { parallelStopped: true },
+    { finishReason: 'length' },
+  ])
+    assert.equal(
+      selectParallelReply(
+        rows.map((m) => (m.id === 'd' ? { ...m, ...patch } : m)),
+        'd',
+      ),
+      null,
+    );
+  assert.equal(
+    selectParallelReply(
+      rows.map((m) => (m.id === 'c' ? { ...m, status: 'incomplete' } : m)),
+      'd',
+    ),
+    null,
+  );
+  assert.equal(
+    comparisonReplyState({ status: 'loading', reasoningEffort: 'high' }),
+    '等待回答…',
+  );
+  assert.equal(
+    comparisonReplyState({
+      status: 'incomplete',
+      reasoningContent: 'actual thought',
+    }),
+    '思考中',
+  );
+  assert.equal(
+    comparisonReplyState({
+      status: 'incomplete',
+      reasoningContent: 'thought',
+      content: 'answer',
+    }),
+    '回答中',
+  );
 });
 
 test('reload and import interrupt every in-flight branch without changing complete replies', () => {

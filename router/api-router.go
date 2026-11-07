@@ -534,6 +534,7 @@ func SetApiRouter(router *gin.Engine) {
 		dataRoute.PUT("/user-balance-trend/users/:id", middleware.AdminAuth(), controller.UpdateUserBalanceTrendUser)
 		dataRoute.GET("/self", middleware.UserAuth(), controller.GetUserQuotaDates)
 		dataRoute.GET("/self/activity", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GetMyActivity)
+		dataRoute.GET("/self/wallet", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GetMyWalletSummary)
 		dataRoute.GET("/self/month", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GetMyMonthUsage)
 		dataRoute.GET("/self/tokens", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.GetMyTokenSummary)
 

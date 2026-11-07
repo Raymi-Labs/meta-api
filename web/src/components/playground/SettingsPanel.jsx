@@ -28,6 +28,7 @@ import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
 import ModelInfoCard from './ModelInfoCard';
 import CapabilitySettings from './CapabilitySettings';
+import SystemPromptEditor from './SystemPromptEditor';
 
 const SettingsPanel = ({
   inputs,
@@ -60,6 +61,13 @@ const SettingsPanel = ({
   };
   return (
     <div className='pg-settings-scroll model-settings-scroll'>
+      <section className='pg-settings-section pg-prompt-settings'>
+        <SystemPromptEditor
+          value={inputs.systemPrompt}
+          onChange={(value) => onInputChange('systemPrompt', value)}
+          disabled={customRequestMode}
+        />
+      </section>
       {comparison ? (
         <section className='pg-settings-section pg-comparison-inspector'>
           <h3>{t('本轮模型')}</h3>

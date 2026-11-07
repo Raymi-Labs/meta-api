@@ -76,8 +76,11 @@ import LocalConversations from '../../components/playground/LocalConversations';
 import ModelTabs from '../../components/playground/ModelTabs';
 import PlaygroundPriceSummary from '../../components/playground/PlaygroundPriceSummary';
 import ParallelTextChat from '../../components/playground/ParallelTextChat';
-import { comparisonModelNames } from '../../helpers/playgroundParallel';
-import SystemPromptEditor from '../../components/playground/SystemPromptEditor';
+import {
+  comparisonModelNames,
+  selectParallelReply,
+  sharedConversation,
+} from '../../helpers/playgroundParallel';
 import RequestCodePanel from '../../components/playground/RequestCodePanel';
 import {
   buildPlaygroundPreview,
@@ -119,9 +122,10 @@ const AccountPlayground = ({
   const [searchParams, setSearchParams] = useSearchParams();
 
   const state = usePlaygroundState(owner, session);
-  const [parallelMode, setParallelMode] = useState(
-    () =>
-      session.parallelMode || state.message.some((item) => item.parallelRound),
+  const [parallelMode, setParallelMode] = useState(() =>
+    typeof session.parallelMode === 'boolean'
+      ? session.parallelMode
+      : state.message.some((item) => item.parallelRound),
   );
   const [parallelModels, setParallelModels] = useState(
     session.parallelModels || [],
@@ -387,18 +391,21 @@ const AccountPlayground = ({
     }
     try {
       if (parallelMode && !previewModelName) return null;
+      const baseConversation = hasParallelHistory
+        ? sharedConversation(message)
+        : message;
       const previewMessages =
         pendingCalls.length &&
         pendingCalls.every((call) => toolResults[call.id]?.trim())
           ? [
-              ...message,
+              ...baseConversation,
               ...pendingCalls.map((call) => ({
                 role: 'tool',
                 content: toolResults[call.id],
                 tool_call_id: call.id,
               })),
             ]
-          : message;
+          : baseConversation;
       return buildPlaygroundPreview(
         previewMessages,
         pendingCalls.length ? '' : draft,
@@ -491,8 +498,14 @@ const AccountPlayground = ({
         createMessage(MESSAGE_ROLES.USER, messageContent),
       ];
       try {
+        // Preserve every comparison answer in local history. Only selected
+        // answers enter the request; filtering must not replace persisted UI state.
+        const requestMessages =
+          !parallelMode && hasParallelHistory
+            ? sharedConversation(nextMessages)
+            : nextMessages;
         payload = buildApiPayload(
-          nextMessages,
+          requestMessages,
           null,
           effectiveInputs,
           parameterEnabled,
@@ -797,6 +810,7 @@ const AccountPlayground = ({
         code={codePanel}
         showSettings={active && panel === 'settings'}
         showCode={active && panel === 'code'}
+        parallelMode={parallelMode}
         onCloseSettings={() => setPanel(null)}
         onCloseCode={() => setPanel(null)}
       >
@@ -864,6 +878,15 @@ const AccountPlayground = ({
                   generating || pendingCalls.length > 0 || customRequestMode
                 }
                 onClick={() => {
+                  if (mode && !selectedParallelModels.length) {
+                    setParallelModels(
+                      comparisonModelNames(
+                        [inputs.model],
+                        models,
+                        catalogState.catalog,
+                      ),
+                    );
+                  }
                   setParallelMode(mode);
                   setShowDebugPanel(false);
                   setPanel(null);
@@ -891,13 +914,6 @@ const AccountPlayground = ({
               <Code2 size={18} />
             </button>
           </div>
-        </div>
-        <div className='pg-prompt-row'>
-          <SystemPromptEditor
-            value={inputs.systemPrompt}
-            onChange={(value) => handleInputChange('systemPrompt', value)}
-            disabled={generating || customRequestMode}
-          />
         </div>
         {message.some((m) => m.localInterrupted) && (
           <div className='pg-load-state' role='status'>
@@ -939,6 +955,34 @@ const AccountPlayground = ({
           )}
         {parallelMode ? (
           <ParallelTextChat
+            onContinue={(reply) => {
+              if (
+                blocked ||
+                generating ||
+                modelsLoading ||
+                modelsError ||
+                getPlaygroundOwner() !== owner ||
+                reply.parallelGroup !== inputs.group ||
+                !models.some((m) => m.value === reply.parallelModel)
+              )
+                return;
+              const next = selectParallelReply(messageRef.current, reply.id);
+              if (!next) return;
+              setMessage(next);
+              saveMessagesImmediately(next);
+              modelLink.dismiss();
+              handleInputChange('model', reply.parallelModel);
+              handleInputChange(
+                'modelTabs',
+                reconcileModelTabs(
+                  inputs.modelTabs,
+                  reply.parallelModel,
+                  models,
+                ),
+              );
+              setParallelMode(false);
+              setPanel(null);
+            }}
             onInputChange={handleInputChange}
             owner={owner}
             sessionId={session.id}

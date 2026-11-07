@@ -18,6 +18,8 @@ Status: implemented
 
 [并发文本](../../implemented/feature/2026-10-31-playground-parallel-text.md)保留5模型上限、独立请求、计费、停止/重试、相同历史和选答契约；本篇只扩展其信息结构。[工作区](../../implemented/feature/2026-10-30-playground-workspace.md)、[能力](../../implemented/feature/2026-10-30-playground-model-controls.md)、[SDK导出](../../implemented/feature/2026-10-31-playground-sdk-export.md)保留公共接口与账户隔离，无后端改动。
 
+[回答分栏与续聊](2026-11-07-playground-answer-columns.md)进一步替代本篇的双列/手机纵向展示方式；本篇的模型选择、资料查看与共用参数决定继续有效。
+
 ## Alternatives considered
 
 - 仅缩小现有卡片能节省空间，但仍保留两套模型选择和资料归属歧义。
