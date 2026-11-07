@@ -292,20 +292,6 @@ func parseTokenListQuery(c *gin.Context) (*int, *int, *int, *int, string, string
 	return balanceMin, balanceMax, usedBalanceMin, usedBalanceMax, packageMode, sortBy, sortOrder, nil
 }
 
-// validateTokenRoutePlanSelection applies a plan binding before group checks:
-// a plan grant, not the user's usable groups, authorizes the plan's pool.
-func validateTokenRoutePlanSelection(userID int, token *model.Token) error {
-	if token.RoutePlanId <= 0 {
-		token.RoutePlanId = 0
-		return nil
-	}
-	userGroup, err := model.GetUserGroup(userID, false)
-	if err != nil {
-		return err
-	}
-	return service.ValidateTokenRoutePlanForSave(userID, userGroup, token)
-}
-
 func validateTokenGroupSelection(userID int, group string) error {
 	group = strings.TrimSpace(group)
 	if group == "" {
@@ -732,15 +718,9 @@ func AddToken(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
 		return
 	}
-	if err := validateTokenRoutePlanSelection(c.GetInt("id"), &token); err != nil {
+	if err := validateTokenGroupSelection(c.GetInt("id"), token.Group); err != nil {
 		common.ApiError(c, err)
 		return
-	}
-	if token.RoutePlanId == 0 {
-		if err := validateTokenGroupSelection(c.GetInt("id"), token.Group); err != nil {
-			common.ApiError(c, err)
-			return
-		}
 	}
 	if err := validateTokenRoutingForSave(c.GetInt("id"), &token); err != nil {
 		common.ApiError(c, err)
@@ -811,7 +791,6 @@ func AddToken(c *gin.Context) {
 		CrossGroupRetry:      token.CrossGroupRetry,
 		AutoGroupFallback:    token.AutoGroupFallback,
 		RoutingConfig:        token.RoutingConfig,
-		RoutePlanId:          token.RoutePlanId,
 		MaxConcurrency:       token.MaxConcurrency,
 		WindowRequestLimit:   token.WindowRequestLimit,
 		WindowSeconds:        token.WindowSeconds,
@@ -860,8 +839,6 @@ func UpdateToken(c *gin.Context) {
 	payload := struct {
 		model.Token
 		RoutingConfig *string `json:"routing_config"`
-		// Omitted by older clients: keep the token's current plan binding.
-		RoutePlanId *int `json:"route_plan_id"`
 	}{}
 	err := c.ShouldBindJSON(&payload)
 	token := payload.Token
@@ -884,27 +861,16 @@ func UpdateToken(c *gin.Context) {
 			token.RoutingConfig = *payload.RoutingConfig
 		}
 		token.SourceType = cleanToken.SourceType
-		token.RoutePlanId = cleanToken.RoutePlanId
-		if payload.RoutePlanId != nil {
-			token.RoutePlanId = *payload.RoutePlanId
-		}
 		if cleanToken.SourceType == model.TokenSourceTypeSellableToken {
 			token.RoutingConfig = cleanToken.RoutingConfig
-			token.RoutePlanId = cleanToken.RoutePlanId
-		}
-		if err := validateTokenRoutePlanSelection(userId, &token); err != nil {
-			common.ApiError(c, err)
-			return
 		}
 		if err := validateTokenRoutingForSave(userId, &token); err != nil {
 			common.ApiError(c, err)
 			return
 		}
-		if token.RoutePlanId == 0 {
-			if err := validateTokenGroupSelection(userId, token.Group); err != nil {
-				common.ApiError(c, err)
-				return
-			}
+		if err := validateTokenGroupSelection(userId, token.Group); err != nil {
+			common.ApiError(c, err)
+			return
 		}
 		channelLimitsEnabled, channelLimits, err := normalizeTokenChannelLimitsForToken(userId, c.GetInt("role"), &token, cleanToken.ChannelLimits)
 		if err != nil {
@@ -971,7 +937,6 @@ func UpdateToken(c *gin.Context) {
 			cleanToken.CrossGroupRetry = token.CrossGroupRetry
 			cleanToken.AutoGroupFallback = token.AutoGroupFallback
 			cleanToken.RoutingConfig = token.RoutingConfig
-			cleanToken.RoutePlanId = token.RoutePlanId
 			cleanToken.MaxConcurrency = token.MaxConcurrency
 			cleanToken.WindowRequestLimit = token.WindowRequestLimit
 			cleanToken.WindowSeconds = token.WindowSeconds

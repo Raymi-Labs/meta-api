@@ -94,19 +94,6 @@ const renderStatus = (text, record, t) => {
 
 // 渲染分组列
 const renderGroupColumn = (text, record, t) => {
-  if (record?.route_plan_id > 0)
-    return (
-      <Tooltip
-        content={t('线路由平台在方案内自动选择，按方案价格计费')}
-        position='top'
-      >
-        <Tag color='light-blue'>
-          {record.route_plan_name
-            ? `${t('智能路由方案')}：${record.route_plan_name}`
-            : t('方案不可用')}
-        </Tag>
-      </Tooltip>
-    );
   if (record?.routing_config)
     return (
       <Space wrap spacing={4}>
@@ -149,16 +136,6 @@ const renderGroupColumn = (text, record, t) => {
 // Missing/invalid metadata (including an older backend) must not become 1x.
 const renderGroupRatio = (record, t) => {
   const ratio = record?.group_ratio;
-  if (record?.group_ratio_status === 'plan' && typeof ratio === 'number')
-    return (
-      <Tooltip
-        content={t(
-          '方案默认价格倍率，部分模型可能单独定价；实际扣费以使用日志为准。',
-        )}
-      >
-        <span>{`${ratio}x`}</span>
-      </Tooltip>
-    );
   const isFixed =
     !record?.routing_config &&
     record?.group_ratio_status === 'fixed' &&

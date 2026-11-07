@@ -128,10 +128,7 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	if ok {
 		actualGroupRatio = userGroupRatio
 	}
-	if relayInfo.RoutePlan != nil {
-		actualGroupRatio = RoutePlanRatio(relayInfo.RoutePlan, modelName)
-	}
-	timeRatioInfo := relayInfo.PricingTimeRatio()
+	timeRatioInfo := ratio_setting.ResolveTimeRatio(modelName, relayInfo.UsingGroup, relayInfo.UserGroup, relayInfo.StartTime)
 	relayInfo.PriceData.TimeRatioInfo = timeRatioInfo
 
 	quotaInfo := QuotaInfo{

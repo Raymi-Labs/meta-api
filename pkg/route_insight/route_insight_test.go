@@ -200,35 +200,3 @@ func TestShadowCollectorCountsAgreementAndRequests(t *testing.T) {
 	require.InDelta(t, 2.0, *reports[0].AvgAttempts, 1e-9)
 	require.Len(t, c.recentSamples("m"), 1, "only disagreements are sampled")
 }
-
-func TestTierKeepsEquivalentSetAndProbes(t *testing.T) {
-	health := map[int]RouteHealth{
-		1: {Status: StatusHealthy, Score: 0.95},
-		2: {Status: StatusHealthy, Score: 0.94},
-		3: {Status: StatusHealthy, Score: 0.95},
-		4: {Status: StatusUnhealthy, Score: 0.2},
-	}
-	lookup := func(id int) RouteHealth {
-		if h, ok := health[id]; ok {
-			return h
-		}
-		return RouteHealth{Status: StatusUnknown}
-	}
-	candidates := []Candidate{
-		{ChannelID: 1, Group: "a", PurchaseRatio: ratioPtr(0.5)},
-		{ChannelID: 2, Group: "a", PurchaseRatio: ratioPtr(0.5)},
-		{ChannelID: 3, Group: "b", PurchaseRatio: ratioPtr(0.5)},
-		{ChannelID: 4, Group: "a", PurchaseRatio: ratioPtr(0.1)},
-	}
-	tier, decision := Tier(candidates, lookup, 0.99, 5)
-	require.Equal(t, "cheapest_healthy", decision.Reason)
-	require.Len(t, tier, 2, "same group, same cost, equivalent health; the other group and the broken line are excluded")
-	tier, decision = Tier(candidates, lookup, 0.01, 5)
-	require.Equal(t, "probe", decision.Reason)
-	require.Equal(t, []Candidate{candidates[3]}, tier, "a won probe offers the unhealthy line alone")
-	tier, _ = Tier(candidates, lookup, 0.01, 0)
-	require.Len(t, tier, 2, "probe 0 disables exploration")
-	tier, decision = Tier(nil, lookup, 0, 5)
-	require.Empty(t, tier)
-	require.Equal(t, "no_candidates", decision.Reason)
-}

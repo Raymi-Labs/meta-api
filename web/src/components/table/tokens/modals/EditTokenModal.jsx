@@ -121,9 +121,6 @@ const EditTokenModal = (props) => {
     readStoredChannelLimitTagMode,
   );
   const [groupsLoading, setGroupsLoading] = useState(false);
-  // Routing plans this account is authorized for; empty hides the plan option.
-  const [routePlans, setRoutePlans] = useState([]);
-  const [selectedPlanId, setSelectedPlanId] = useState(0);
   const [groupsError, setGroupsError] = useState(false);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState(false);
@@ -154,7 +151,6 @@ const EditTokenModal = (props) => {
     group: '',
     routing_enabled: false,
     routing_config: '',
-    route_plan_id: 0,
     group_vendor: '',
     cross_group_retry: false,
     // New tokens require a choice before accepting a potentially different
@@ -679,20 +675,6 @@ const EditTokenModal = (props) => {
   };
 
   useEffect(() => {
-    if (!props.visiable) return undefined;
-    let cancelled = false;
-    setRoutePlans([]);
-    API.get('/api/route_plan/self', { disableDuplicate: true })
-      .then((res) => {
-        if (!cancelled && res.data?.success) setRoutePlans(res.data.data || []);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [props.visiable, userState?.user?.id]);
-
-  useEffect(() => {
     setAvailableGroups({ userId: null, groups: [] });
     if (props.visiable) loadGroups();
     return () => {
@@ -1035,16 +1017,14 @@ const EditTokenModal = (props) => {
       channelsError
     )
       return;
-    const usesPlan = Number(values.route_plan_id) > 0;
     if (
-      !usesPlan &&
       (!isEdit || values.group !== loadedTokenValuesRef.current?.group) &&
       !availableGroups.groups.some((group) => group.value === values.group)
     ) {
       showError(t('请选择令牌分组'));
       return;
     }
-    if (values.routing_enabled && !usesPlan) {
+    if (values.routing_enabled) {
       const config = readTokenRouting(tokenRoutingPayload(values));
       if (
         !config.groups.length ||
@@ -1056,7 +1036,6 @@ const EditTokenModal = (props) => {
     }
     if (
       !isEdit &&
-      !usesPlan &&
       !values.routing_enabled &&
       typeof values.auto_group_fallback !== 'boolean'
     ) {
@@ -1113,15 +1092,6 @@ const EditTokenModal = (props) => {
           localInputs.channel_limits_enabled =
             localInputs.channel_limits.length > 0;
           localInputs.routing_config = tokenRoutingPayload(values);
-          localInputs.route_plan_id = usesPlan
-            ? Number(values.route_plan_id)
-            : 0;
-          if (usesPlan) {
-            // The server applies the plan pool; manual routing does not apply.
-            localInputs.routing_config = '';
-            localInputs.auto_group_fallback = false;
-            localInputs.cross_group_retry = false;
-          }
           delete localInputs.routing_enabled;
           delete localInputs.group_vendor;
         } else {
@@ -1192,15 +1162,6 @@ const EditTokenModal = (props) => {
           localInputs.channel_limits_enabled =
             localInputs.channel_limits.length > 0;
           localInputs.routing_config = tokenRoutingPayload(values);
-          localInputs.route_plan_id = usesPlan
-            ? Number(values.route_plan_id)
-            : 0;
-          if (usesPlan) {
-            // The server applies the plan pool; manual routing does not apply.
-            localInputs.routing_config = '';
-            localInputs.auto_group_fallback = false;
-            localInputs.cross_group_retry = false;
-          }
           delete localInputs.routing_enabled;
           delete localInputs.group_vendor;
           const packageResult = normalizePackageFields(localInputs);
@@ -1297,7 +1258,7 @@ const EditTokenModal = (props) => {
                 modelsError ||
                 channelsLoading ||
                 channelsError ||
-                (isEdit ? !tokenReady : !selectedGroup && !selectedPlanId)
+                (isEdit ? !tokenReady : !selectedGroup)
               }
               loading={loading}
             >
@@ -1319,7 +1280,6 @@ const EditTokenModal = (props) => {
           }}
           onValueChange={(values, changedValues) => {
             setSelectedGroup(values.group || '');
-            setSelectedPlanId(Number(values.route_plan_id) || 0);
             if (
               Object.prototype.hasOwnProperty.call(
                 changedValues,
@@ -1466,75 +1426,15 @@ const EditTokenModal = (props) => {
                       noLabel
                       fieldStyle={{ display: 'none' }}
                       rules={
-                        isEdit || Number(values.route_plan_id) > 0
+                        isEdit
                           ? []
                           : [{ required: true, message: t('请选择令牌分组') }]
                       }
                     />
-                    {!isSellableToken &&
-                      (routePlans.length > 0 ||
-                        Number(values.route_plan_id) > 0) && (
-                        <div className='mb-3'>
-                          <Form.Select
-                            field='route_plan_id'
-                            label={t('路由方式')}
-                            style={{ width: '100%' }}
-                            optionList={[
-                              { value: 0, label: t('手动选择分组') },
-                              ...routePlans.map((plan) => ({
-                                value: plan.id,
-                                label: `${t('智能路由方案')}：${plan.name}`,
-                              })),
-                              ...(Number(values.route_plan_id) > 0 &&
-                              !routePlans.some(
-                                (plan) =>
-                                  plan.id === Number(values.route_plan_id),
-                              )
-                                ? [
-                                    {
-                                      value: Number(values.route_plan_id),
-                                      label: t('当前方案（已停用或无权限）'),
-                                    },
-                                  ]
-                                : []),
-                            ]}
-                          />
-                          {Number(values.route_plan_id) > 0 &&
-                            (() => {
-                              const plan = routePlans.find(
-                                (item) =>
-                                  item.id === Number(values.route_plan_id),
-                              );
-                              return (
-                                <div className='text-sm mt-1'>
-                                  {plan?.description && (
-                                    <div>{plan.description}</div>
-                                  )}
-                                  <div>
-                                    {plan
-                                      ? t(
-                                          '按方案价格计费：默认倍率 {{ratio}}，{{count}} 个模型单独定价。线路切换不改变单价。',
-                                          {
-                                            ratio: plan.sale_ratio,
-                                            count: Object.keys(
-                                              plan.model_ratios || {},
-                                            ).length,
-                                          },
-                                        )
-                                      : t(
-                                          '该方案已停用或你已无权使用，请求会被拒绝，请改选其他方式。',
-                                        )}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                        </div>
-                      )}
                     <div
                       style={{
                         display:
-                          Number(values.route_plan_id) > 0 ||
-                          (values.routing_enabled && !isSellableToken)
+                          values.routing_enabled && !isSellableToken
                             ? 'none'
                             : 'block',
                       }}
@@ -1587,39 +1487,33 @@ const EditTokenModal = (props) => {
                         }
                       />
                     </div>
-                    {values.routing_enabled &&
-                      !isSellableToken &&
-                      !(Number(values.route_plan_id) > 0) && (
-                        <div className='token-group-picker__selection'>
-                          {t('已选分组')}：
-                          {readTokenRouting(values.routing_config).groups.join(
-                            ' → ',
-                          )}
-                          <Button
-                            htmlType='button'
-                            theme='borderless'
-                            onClick={() => {
-                              advancedSectionRef.current.open = true;
-                              advancedSectionRef.current.scrollIntoView({
-                                block: 'nearest',
-                              });
-                            }}
-                          >
-                            {t('高级设置')}
-                          </Button>
-                        </div>
-                      )}
+                    {values.routing_enabled && !isSellableToken && (
+                      <div className='token-group-picker__selection'>
+                        {t('已选分组')}：
+                        {readTokenRouting(values.routing_config).groups.join(
+                          ' → ',
+                        )}
+                        <Button
+                          htmlType='button'
+                          theme='borderless'
+                          onClick={() => {
+                            advancedSectionRef.current.open = true;
+                            advancedSectionRef.current.scrollIntoView({
+                              block: 'nearest',
+                            });
+                          }}
+                        >
+                          {t('高级设置')}
+                        </Button>
+                      </div>
+                    )}
                     {!isEdit && (
                       <>
                         <div
                           ref={autoChoiceRef}
                           className='token-editor__auto-choice'
                           style={{
-                            display:
-                              values.routing_enabled ||
-                              Number(values.route_plan_id) > 0
-                                ? 'none'
-                                : 'block',
+                            display: values.routing_enabled ? 'none' : 'block',
                           }}
                         >
                           <Form.RadioGroup
@@ -1638,12 +1532,9 @@ const EditTokenModal = (props) => {
                             ]}
                             rules={[
                               {
-                                required:
-                                  !values.routing_enabled &&
-                                  !(Number(values.route_plan_id) > 0),
+                                required: !values.routing_enabled,
                                 validator: (_rule, value) =>
                                   values.routing_enabled ||
-                                  Number(values.route_plan_id) > 0 ||
                                   typeof value === 'boolean'
                                     ? Promise.resolve()
                                     : Promise.reject(

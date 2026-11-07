@@ -4,7 +4,7 @@ Status: implemented
 
 ## Problem
 
-[托管路由提案](../../proposed/architecture/2026-11-05-managed-token-routing-and-pricing.md)要求先测量、后改调度。现有分组健康按组/模型/小时记录，同组重试折叠为最终结果，没有渠道维度、短窗口和分位数，不能回答“哪条线路现在可靠、智能路由会不会选得更好”。没有这些数据，任何健康或成本选路都无法验证。
+[托管路由提案](../../rejected/architecture/2026-11-05-managed-token-routing-and-pricing.md)要求先测量、后改调度。现有分组健康按组/模型/小时记录，同组重试折叠为最终结果，没有渠道维度、短窗口和分位数，不能回答“哪条线路现在可靠、智能路由会不会选得更好”。没有这些数据，任何健康或成本选路都无法验证。
 
 ## Decision
 
@@ -14,7 +14,7 @@ Status: implemented
 - **存储**：`route_attempt_metrics` 按分钟、`route_shadow_metrics` 按小时；每进程 UUID 行幂等覆盖，查询汇总各副本，与 group health 同一模式。保留 3 天 / 30 天。
 - **健康快照**：后台每 15 秒从数据库读最近 15 分钟（含所有实例），按渠道+模型生成 5 分钟/15 分钟窗口。只有 success/service_failure/rate_limited 作为上游证据；unknown、用户、取消与本地失败不惩罚线路。证据少于 10 次为 unknown；Wilson 95% 下界低于 0.80 或 5 分钟内上游失败 ≥50%（至少 5 次）为 unhealthy。快照超过 2 分钟未更新时一律视为 unknown。阈值均为待校准初值。
 - **影子决策**：每次尝试前，在请求已获准的候选内（令牌路由组、渠道白名单、重试排除和生产相同过滤器；指定渠道和无内存缓存时跳过，不扫数据库）先选健康线路，健康分在 0.02 内视为等价，等价且都填了采购价时选最便宜；任一缺价按健康选并标记 cost_unknown；无健康数据保持生产顺序；不越权、不跨模型。
-- **成本与故障域**：渠道 `setting` 新增可选 `route_purchase_ratio`（相对模型基础价的采购倍率，缺省为未知，不当 0）和 `route_fault_domain`。销售分组倍率不作为成本。渠道编辑页可填写；数据在管理员「智能路由」页查看，实际选路见[路由方案与健康选路](2026-11-06-route-plans-health-routing.md)。
+- **成本与故障域**：渠道 `setting` 新增可选 `route_purchase_ratio`（相对模型基础价的采购倍率，缺省为未知，不当 0）和 `route_fault_domain`。销售分组倍率不作为成本。渠道编辑页可填写；数据在管理员「智能路由」页查看，实际选路见[智能路由总开关](../simplification/2026-11-07-withdraw-route-plans.md)。
 - **逻辑请求**：每个请求另记最终是否交付、尝试次数与是否重试。
 - **接口**：管理员 `GET /api/route_insight/channels?minutes=&model=`（渠道成功率、下界、P50/P95、当前状态、采购价、故障域）与 `GET /api/route_insight/shadow?hours=&model=`（同意/不同意次数、两者的失败率、跨组、避开不健康、更便宜、交付率、平均尝试数，以及本实例最近 200 条分歧样本）。
 - 开关：环境变量 `ROUTE_INSIGHT_ENABLED`，默认开启；关闭后既不记录也不计算影子决策。
@@ -35,4 +35,4 @@ Status: implemented
 
 ## Verification
 
-`go test ./controller/ ./service/ ./model/ ./middleware/ ./pkg/... ./router/ ./dto/` 全部通过（Go 1.26.10，SQLite）。新增 `pkg/route_insight/route_insight_test.go` 与 `service/route_shadow_test.go` 覆盖：直方图分位与溢出、样本不足保持 unknown、20/20 下界、5 分钟突发、429/本地写失败/容量拒绝/流超时分类、低价不健康不胜出、等价健康选最便宜、缺价不当最便宜、无数据保持生产顺序、两副本汇总与幂等重刷、重试前失败可见、过期快照、影子同意/分歧计数，以及候选遵守分组、排除、白名单、指定渠道和无缓存。`make verify-notes` 因本机无 bun 未运行。新表另在 PostgreSQL 16 实机验证（见[路由方案与健康选路](2026-11-06-route-plans-health-routing.md)），MySQL 未实机验证；未部署，未用真实流量校准阈值。
+`go test ./controller/ ./service/ ./model/ ./middleware/ ./pkg/... ./router/ ./dto/` 全部通过（Go 1.26.10，SQLite）。新增 `pkg/route_insight/route_insight_test.go` 与 `service/route_shadow_test.go` 覆盖：直方图分位与溢出、样本不足保持 unknown、20/20 下界、5 分钟突发、429/本地写失败/容量拒绝/流超时分类、低价不健康不胜出、等价健康选最便宜、缺价不当最便宜、无数据保持生产顺序、两副本汇总与幂等重刷、重试前失败可见、过期快照、影子同意/分歧计数，以及候选遵守分组、排除、白名单、指定渠道和无缓存。`make verify-notes` 因本机无 bun 未运行。新表另在 PostgreSQL 16 实机验证、并已在生产 MySQL 8.0.46 上完成迁移（见[撤回路由方案](../simplification/2026-11-07-withdraw-route-plans.md)），MySQL 未实机验证；未部署，未用真实流量校准阈值。

@@ -13,7 +13,6 @@ type tokenListItem struct {
 	*model.Token
 	GroupRatio       *float64 `json:"group_ratio"`
 	GroupRatioStatus string   `json:"group_ratio_status"`
-	RoutePlanName    string   `json:"route_plan_name,omitempty"`
 }
 
 func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
@@ -35,18 +34,6 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 			group := token.Group
 			if group == "" {
 				group = userGroup
-			}
-			if token.RoutePlanId > 0 {
-				// Plan tokens bill at the plan's default ratio; per-model
-				// overrides and the line pool stay out of the list view.
-				if plan, planErr := model.GetRoutePlanCached(token.RoutePlanId); planErr == nil && plan.AuthorizedFor(token.UserId, userGroup) {
-					ratio := plan.SaleRatio
-					item.GroupRatio = &ratio
-					item.GroupRatioStatus = "plan"
-					item.RoutePlanName = plan.Name
-				}
-				items = append(items, item)
-				continue
 			}
 			if token.RoutingConfig != "" {
 				groups, scopeErr := service.TokenConfiguredGroups(userGroup, token, "")

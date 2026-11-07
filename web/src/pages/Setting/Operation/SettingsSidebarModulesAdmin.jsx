@@ -317,7 +317,7 @@ export default function SettingsSidebarModulesAdmin(props) {
         {
           key: 'smartRouting',
           title: t('智能路由'),
-          description: t('线路观测与路由方案'),
+          description: t('线路观测'),
         },
         {
           key: 'setting',

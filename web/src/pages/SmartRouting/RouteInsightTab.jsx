@@ -23,7 +23,6 @@ const { Text } = Typography;
 
 const ROUTING_KEYS = {
   health: 'route_routing_setting.health_routing_enabled',
-  plan: 'route_routing_setting.plan_routing_enabled',
   probe: 'route_routing_setting.probe_percent',
 };
 
@@ -236,27 +235,9 @@ export default function RouteInsightTab() {
                   })
                 }
               />
-              <Text strong>{t('健康选路')}</Text>
+              <Text strong>{t('智能路由总开关')}</Text>
               <Text type='tertiary'>
                 {t('在当前分组内跳过不健康线路，不换分组、不改价格。')}
-              </Text>
-            </Space>
-            <Space>
-              <Switch
-                checked={routing.plan_routing_enabled}
-                disabled={!root || saving}
-                onChange={(checked) =>
-                  saveRouting(ROUTING_KEYS.plan, checked, {
-                    ...routing,
-                    plan_routing_enabled: checked,
-                  })
-                }
-              />
-              <Text strong>{t('方案智能路由')}</Text>
-              <Text type='tertiary'>
-                {t(
-                  '方案令牌跨分组按健康优先、成本其次选线路，始终按方案价格计费。',
-                )}
               </Text>
             </Space>
             <Space>

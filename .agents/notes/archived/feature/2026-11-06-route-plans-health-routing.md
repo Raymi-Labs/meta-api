@@ -1,10 +1,11 @@
 # Agent Note: 路由方案独立售价与健康选路
 
 Status: implemented
+Archived: 2026-11-07
 
 ## Problem
 
-[逐次尝试遥测与影子决策](2026-11-06-route-attempt-telemetry-shadow.md)只观测不调度。[托管路由提案](../../proposed/architecture/2026-11-05-managed-token-routing-and-pricing.md)的下一步要求：能按健康真正选路；企业客户换线路时单价不变；管理员能看数据、维护采购成本并管理方案。原有计费按实际落到的分组收费，自动换组会改变客户价格，因此不能直接把跨组健康/成本选路放给普通令牌。
+[逐次尝试遥测与影子决策](2026-11-06-route-attempt-telemetry-shadow.md)只观测不调度。[托管路由提案](../../rejected/architecture/2026-11-05-managed-token-routing-and-pricing.md)的下一步要求：能按健康真正选路；企业客户换线路时单价不变；管理员能看数据、维护采购成本并管理方案。原有计费按实际落到的分组收费，自动换组会改变客户价格，因此不能直接把跨组健康/成本选路放给普通令牌。
 
 ## Decision
 

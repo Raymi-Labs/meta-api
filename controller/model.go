@@ -213,12 +213,8 @@ func ListModels(c *gin.Context, modelType int) {
 			group = tokenGroup
 		}
 		var models []string
-		routingGroups := service.TokenRoutingGroups(userGroup, group,
-			common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback))
-		if plan := service.ContextRoutePlan(c); plan != nil {
-			routingGroups = plan.Groups
-		}
-		for _, routingGroup := range routingGroups {
+		for _, routingGroup := range service.TokenRoutingGroups(userGroup, group,
+			common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback)) {
 			for _, name := range model.GetGroupEnabledModels(routingGroup) {
 				if !common.StringsContains(models, name) {
 					models = append(models, name)

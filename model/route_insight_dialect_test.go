@@ -11,15 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRouteInsightTablesAcrossDialects exercises the new tables and the
-// token route_plan_id column on every configured database: AutoMigrate twice,
-// UUID-row upserts, window queries, GROUP BY counts and retention deletes.
+// TestRouteInsightTablesAcrossDialects exercises the route insight tables on
+// every configured database: AutoMigrate twice, UUID-row upserts, window
+// queries and retention deletes.
 func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 	oldPG, oldSQLite, oldMySQL, oldDB := common.UsingPostgreSQL, common.UsingSQLite, common.UsingMySQL, DB
 	t.Cleanup(func() {
 		common.UsingPostgreSQL, common.UsingSQLite, common.UsingMySQL, DB = oldPG, oldSQLite, oldMySQL, oldDB
 		initCol()
-		InvalidateRoutePlanCache()
 	})
 	for _, dialect := range []string{"sqlite", "mysql", "postgres"} {
 		t.Run(dialect, func(t *testing.T) {
@@ -47,19 +46,17 @@ func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 			t.Cleanup(func() { _ = sqlDB.Close() })
 			DB = db
 			initCol()
-			InvalidateRoutePlanCache()
-			for _, table := range []any{&RouteAttemptMetric{}, &RouteShadowMetric{}, &RoutePlan{}, &Token{}} {
+			for _, table := range []any{&RouteAttemptMetric{}, &RouteShadowMetric{}} {
 				_ = db.Migrator().DropTable(table)
 			}
 			t.Cleanup(func() {
-				for _, table := range []any{&RouteAttemptMetric{}, &RouteShadowMetric{}, &RoutePlan{}, &Token{}} {
+				for _, table := range []any{&RouteAttemptMetric{}, &RouteShadowMetric{}} {
 					_ = db.Migrator().DropTable(table)
 				}
 			})
 			for i := 0; i < 2; i++ {
-				require.NoError(t, db.AutoMigrate(&RouteAttemptMetric{}, &RouteShadowMetric{}, &RoutePlan{}, &Token{}))
+				require.NoError(t, db.AutoMigrate(&RouteAttemptMetric{}, &RouteShadowMetric{}))
 			}
-			require.True(t, db.Migrator().HasColumn(&Token{}, "route_plan_id"))
 
 			ctx := context.Background()
 			now := time.Now()
@@ -89,25 +86,6 @@ func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 			all, err := QueryRouteAttemptMetrics(ctx, 0, now.Unix(), "")
 			require.NoError(t, err)
 			require.Len(t, all, 1, "attempt rows older than 3 days are removed")
-
-			plan := &RoutePlan{Name: "跨库方案", Groups: `["g"]`, SaleRatio: 1.25, ModelRatios: `{"m":2}`, UserIds: `[1]`}
-			require.NoError(t, plan.Normalize(nil))
-			require.NoError(t, CreateRoutePlan(plan))
-			plan.Description = "更新"
-			require.NoError(t, UpdateRoutePlan(plan))
-			stored, err := GetRoutePlanByID(plan.Id)
-			require.NoError(t, err)
-			require.EqualValues(t, 2, stored.Version)
-			require.Equal(t, "跨库方案", stored.Name)
-			require.NoError(t, db.Create(&Token{Key: "route-dialect-key-1", Name: "a", RoutePlanId: plan.Id}).Error)
-			require.NoError(t, db.Create(&Token{Key: "route-dialect-key-2", Name: "b", RoutePlanId: plan.Id}).Error)
-			require.NoError(t, db.Create(&Token{Key: "route-dialect-key-3", Name: "c"}).Error)
-			counts, err := CountRoutePlanTokens()
-			require.NoError(t, err)
-			require.EqualValues(t, 2, counts[plan.Id])
-			require.Error(t, DeleteRoutePlan(plan.Id))
-			require.NoError(t, db.Model(&Token{}).Where("route_plan_id = ?", plan.Id).Update("route_plan_id", 0).Error)
-			require.NoError(t, DeleteRoutePlan(plan.Id))
 		})
 	}
 }

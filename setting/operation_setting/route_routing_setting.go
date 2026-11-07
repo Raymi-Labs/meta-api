@@ -2,18 +2,16 @@ package operation_setting
 
 import "github.com/QuantumNous/new-api/setting/config"
 
-// RouteRoutingSetting controls live use of route health. Both switches are off
-// by default: shadow measurement runs regardless, and nothing changes routing
+// RouteRoutingSetting controls live use of route health. The switch is off by
+// default: shadow measurement runs regardless, and nothing changes routing
 // until an administrator opts in after reviewing the shadow evidence.
 type RouteRoutingSetting struct {
-	// HealthRoutingEnabled lets ordinary tokens skip channels whose recent
-	// attempt evidence is unhealthy, inside the group the request already
-	// uses. Groups, prices and permissions are unchanged.
+	// HealthRoutingEnabled is the smart routing master switch: every token
+	// keeps its group order, but skips channels whose recent attempt evidence
+	// is unhealthy inside the group the request uses. Groups, prices and
+	// permissions are unchanged. (A former plan_routing_enabled key in the
+	// options table is ignored by the config loader.)
 	HealthRoutingEnabled bool `json:"health_routing_enabled"`
-	// PlanRoutingEnabled turns on cross-group health/cost ranking for tokens
-	// bound to a routing plan. When off, plan tokens fall back to the plan's
-	// group order (still billed at the plan price).
-	PlanRoutingEnabled bool `json:"plan_routing_enabled"`
 	// ProbePercent (0-20) of selections may still try an unhealthy/unknown
 	// route so it can recover (half-open). 0 disables probing.
 	ProbePercent int `json:"probe_percent"`

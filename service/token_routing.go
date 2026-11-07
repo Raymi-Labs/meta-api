@@ -62,18 +62,11 @@ func TokenConfiguredGroups(userGroup string, token *model.Token, modelName strin
 	return allowed, nil
 }
 
-// HasTokenRoutingConfig reports tokens that route over an ordered group list
-// instead of one group: a manual routing_config or a routing plan.
 func HasTokenRoutingConfig(c *gin.Context) bool {
-	return common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig) != "" || ContextRoutePlan(c) != nil
+	return common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig) != ""
 }
 
 func RequestModelRoutingGroups(c *gin.Context, group, name string) []string {
-	if plan := ContextRoutePlan(c); plan != nil {
-		// The plan grant is the permission for its pool; user usable groups do
-		// not narrow it. The slice is copied so callers cannot edit the snapshot.
-		return append([]string(nil), plan.Groups...)
-	}
 	if HasTokenRoutingConfig(c) {
 		groups, err := TokenConfiguredGroups(common.GetContextKeyString(c, constant.ContextKeyUserGroup),
 			&model.Token{RoutingConfig: common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig)}, name)

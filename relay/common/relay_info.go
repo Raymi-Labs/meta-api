@@ -15,7 +15,6 @@ import (
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/setting/model_setting"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -199,7 +198,6 @@ type RelayInfo struct {
 	UserId                   int
 	UsingGroup               string // 使用的分组，当auto跨分组重试时，会变动
 	UserGroup                string // 用户所在分组
-	RoutePlan                *types.RoutePlanSnapshot
 	TokenUnlimited           bool
 	StartTime                time.Time
 	FirstResponseTime        time.Time
@@ -588,7 +586,6 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserId:     common.GetContextKeyInt(c, constant.ContextKeyUserId),
 		UsingGroup: common.GetContextKeyString(c, constant.ContextKeyUsingGroup),
 		UserGroup:  common.GetContextKeyString(c, constant.ContextKeyUserGroup),
-		RoutePlan:  contextRoutePlan(c),
 		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
 		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
 
@@ -1039,22 +1036,4 @@ func RemoveGeminiDisabledFields(jsonData []byte) ([]byte, error) {
 		}
 	}
 	return result, nil
-}
-
-func contextRoutePlan(c *gin.Context) *types.RoutePlanSnapshot {
-	value, ok := common.GetContextKey(c, constant.ContextKeyRoutePlan)
-	if !ok {
-		return nil
-	}
-	plan, _ := value.(*types.RoutePlanSnapshot)
-	return plan
-}
-
-// PricingTimeRatio resolves time-of-day rules for the actual group, except
-// for routing plans whose contract price does not vary with the line used.
-func (info *RelayInfo) PricingTimeRatio() types.TimeRatioInfo {
-	if info == nil || info.RoutePlan != nil {
-		return types.TimeRatioInfo{}
-	}
-	return ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.UserGroup, info.StartTime)
 }

@@ -48,6 +48,6 @@ Status: implemented
 
 ## Consequences
 
-[企业托管路由提案](../../proposed/architecture/2026-11-05-managed-token-routing-and-pricing.md)拟复用本篇模型分组权限交集；尚未实施，当前配置顺序与计费契约保持。
+[企业托管路由提案](../../rejected/architecture/2026-11-05-managed-token-routing-and-pricing.md)曾拟复用本篇模型分组权限交集，已否决；多模型继续使用本篇的分组多选，当前配置顺序与计费契约保持。
 
 新配置增加一个 TEXT 字段和一份可选 JSON 契约，以兼容现有 Redis 字段缓存；目录通过实际模型/分组/渠道元组求交，避免笛卡尔积扩大范围。回滚旧程序会忽略新配置，因此创建新范围 Key 后不能直接降级到不理解该字段的版本。新字段不回写历史 Key、不拆分余额。

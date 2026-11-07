@@ -1,6 +1,8 @@
 package service
 
 import (
+	"math/rand"
+
 	"github.com/QuantumNous/new-api/model"
 	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
@@ -8,11 +10,19 @@ import (
 )
 
 func healthRoutingActive(c *gin.Context) bool {
-	if !routeinsight.Enabled() || !operation_setting.GetRouteRoutingSetting().HealthRoutingEnabled {
-		return false
+	return routeinsight.Enabled() && operation_setting.GetRouteRoutingSetting().HealthRoutingEnabled
+}
+
+// routeProbeDraw is drawn once per attempt (keyed by the exclusion count) so
+// every filter evaluation inside one selection sees the same decision, while
+// a retry after a failed probe draws again.
+func routeProbeDraw(param *RetryParam) float64 {
+	key := len(param.ExcludeChannels) + 1
+	if param.routeProbeKey != key {
+		param.routeProbe = rand.Float64()
+		param.routeProbeKey = key
 	}
-	// Plan tokens rank health themselves when plan routing is on.
-	return !planRoutingActive(c)
+	return param.routeProbe
 }
 
 // routeHealthAvoidSet lists channels the health router skips for this

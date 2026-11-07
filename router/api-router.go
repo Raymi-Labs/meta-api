@@ -323,16 +323,6 @@ func SetApiRouter(router *gin.Engine) {
 			desktopFeedbackRoute.PATCH("/:id", controller.UpdateDesktopFeedback)
 		}
 
-		apiRouter.GET("/route_plan/self", middleware.UserAuth(), controller.GetSelfRoutePlans)
-		routePlanRoute := apiRouter.Group("/route_plan")
-		routePlanRoute.Use(middleware.AdminAuth())
-		{
-			routePlanRoute.GET("/", controller.GetRoutePlans)
-			routePlanRoute.POST("/", controller.CreateRoutePlan)
-			routePlanRoute.PUT("/", controller.UpdateRoutePlan)
-			routePlanRoute.DELETE("/:id", controller.DeleteRoutePlan)
-		}
-
 		routeInsightRoute := apiRouter.Group("/route_insight")
 		routeInsightRoute.Use(middleware.AdminAuth())
 		{
