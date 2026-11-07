@@ -19,13 +19,11 @@ const (
 // position in the token's ordered routing groups; Priority is the channel
 // priority the production scheduler uses inside a group.
 type Candidate struct {
-	ChannelID     int      `json:"channel_id"`
-	ChannelName   string   `json:"channel_name"`
-	Group         string   `json:"group"`
-	GroupIndex    int      `json:"group_index"`
-	Priority      int64    `json:"priority"`
-	PurchaseRatio *float64 `json:"purchase_ratio,omitempty"`
-	FaultDomain   string   `json:"fault_domain,omitempty"`
+	ChannelID   int    `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+	Group       string `json:"group"`
+	GroupIndex  int    `json:"group_index"`
+	Priority    int64  `json:"priority"`
 }
 
 type Decision struct {

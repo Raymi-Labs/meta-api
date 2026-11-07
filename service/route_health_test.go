@@ -43,11 +43,10 @@ func seedRoutePool(t *testing.T) {
 	})
 	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Ability{}))
 	high, low := int64(10), int64(1)
-	cost := func(ratio string) *string { s := `{"route_purchase_ratio":` + ratio + `}`; return &s }
 	channels := []model.Channel{
-		{Id: 1, Name: "a-cheap-broken", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high, Setting: cost("0.3")},
-		{Id: 2, Name: "a-healthy", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &low, Setting: cost("0.9")},
-		{Id: 3, Name: "b-healthy-cheap", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high, Setting: cost("0.5")},
+		{Id: 1, Name: "a-cheap-broken", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high},
+		{Id: 2, Name: "a-healthy", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &low},
+		{Id: 3, Name: "b-healthy-cheap", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high},
 	}
 	require.NoError(t, db.Create(&channels).Error)
 	abilities := []model.Ability{

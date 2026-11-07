@@ -7460,8 +7460,6 @@
     "未知 / 用户 / 取消": "Inconnu / utilisateur / annulé",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Fin P95",
-    "采购成本倍率": "Ratio de coût d'achat",
-    "故障域": "Domaine de panne",
     "实际": "Réel",
     "影子推荐": "Choix fantôme",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Les décisions fantômes enregistrent seulement la route que le routage intelligent choisirait ; elles ne modifient pas l'ordonnancement. Les données insuffisantes ou périmées sont considérées comme inconnues.",
@@ -7482,9 +7480,6 @@
     "渠道逐次尝试": "Résultats par tentative et par canal",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Le taux de réussite ne compte que les résultats avec preuve amont ; P50/P95 sont des estimations prudentes.",
     "最近分歧样本（本实例）": "Désaccords récents (cette instance)",
-    "0 表示未知": "0 signifie inconnu",
-    "例如：供应商A-账号池1": "ex. Fournisseur A - pool de comptes 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Identifie le fournisseur amont réel, le pool de comptes ou la région, pour juger si les routes de secours sont indépendantes.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Le cache mémoire est désactivé (pas de Redis et MEMORY_CACHE_ENABLED non défini) : les décisions fantômes et le routage intelligent n'ont aucun effet.",
     "智能路由总开关": "Interrupteur général du routage intelligent",
     "选择模型回答": "Choose a model response",
@@ -7517,7 +7512,6 @@
     "整组不健康，换下一个分组": "Groupe entier défaillant, groupe suivant",
     "全部不健康，按原顺序": "Tout défaillant, ordre d’origine",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Choisit les canaux selon l’ordre d’origine des groupes et la priorité, canaux sains d’abord dans un groupe ; si tout un groupe est défaillant, le groupe suivant du jeton est utilisé directement et facturé au groupe réellement utilisé.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Les canaux dont le taux de réussite des 15 dernières minutes est inférieur à cette valeur (au moins 10 essais) sont considérés défaillants ; prise d’effet sous 15 secondes environ.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Coût d’achat relatif au prix de base du modèle, ex. 0.8 = 80 %. Actuellement affiché seulement dans l’observation des routes, sans effet sur le routage ni la facturation ; 0 signifie inconnu."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Les canaux dont le taux de réussite des 15 dernières minutes est inférieur à cette valeur (au moins 10 essais) sont considérés défaillants ; prise d’effet sous 15 secondes environ."
   }
 }

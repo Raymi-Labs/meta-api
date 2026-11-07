@@ -7128,8 +7128,6 @@
     "未知 / 用户 / 取消": "Sconosciuto / utente / annullato",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Completamento P95",
-    "采购成本倍率": "Fattore di costo d'acquisto",
-    "故障域": "Dominio di guasto",
     "实际": "Effettivo",
     "影子推荐": "Scelta ombra",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Le decisioni ombra registrano solo quale rotta sceglierebbe il routing intelligente; non modificano la pianificazione. Dati insufficienti o scaduti contano come sconosciuti.",
@@ -7150,9 +7148,6 @@
     "渠道逐次尝试": "Risultati per tentativo dei canali",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Il tasso di successo conta solo i risultati con evidenza upstream; P50/P95 sono stime prudenti.",
     "最近分歧样本（本实例）": "Discordanze recenti (questa istanza)",
-    "0 表示未知": "0 significa sconosciuto",
-    "例如：供应商A-账号池1": "es. Fornitore A - pool di account 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Identifica il fornitore upstream reale, il pool di account o la regione, per capire se le rotte di riserva sono indipendenti.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "La cache in memoria è disattivata (nessun Redis e MEMORY_CACHE_ENABLED non impostato), quindi decisioni ombra e routing intelligente non hanno effetto.",
     "智能路由总开关": "Interruttore generale del routing intelligente",
     "选择模型回答": "Choose a model response",
@@ -7185,7 +7180,6 @@
     "整组不健康，换下一个分组": "Intero gruppo non sano, gruppo successivo",
     "全部不健康，按原顺序": "Tutto non sano, ordine originale",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Sceglie i canali secondo l’ordine originale dei gruppi e la priorità, prima i canali sani del gruppo; se un intero gruppo non è sano, usa direttamente il gruppo successivo del token e fattura in base al gruppo effettivamente usato.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "I canali con tasso di successo degli ultimi 15 minuti inferiore a questo valore (almeno 10 tentativi) sono considerati non sani; si applica in circa 15 secondi.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Costo d’acquisto rispetto al prezzo base del modello, es. 0.8 significa 80%. Per ora mostrato solo nell’osservazione delle rotte, non influisce su routing o fatturazione; 0 significa sconosciuto."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "I canali con tasso di successo degli ultimi 15 minuti inferiore a questo valore (almeno 10 tentativi) sono considerati non sani; si applica in circa 15 secondi."
   }
 }

@@ -7340,8 +7340,6 @@
     "未知 / 用户 / 取消": "Unknown / user / canceled",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Completion P95",
-    "采购成本倍率": "Purchase cost ratio",
-    "故障域": "Failure domain",
     "实际": "Actual",
     "影子推荐": "Shadow pick",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Shadow decisions only record which route smart routing would pick; they do not change scheduling. Insufficient or stale data counts as unknown.",
@@ -7362,9 +7360,6 @@
     "渠道逐次尝试": "Per-attempt channel results",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Success rate counts only results with upstream evidence; P50/P95 are conservative estimates.",
     "最近分歧样本（本实例）": "Recent disagreements (this instance)",
-    "0 表示未知": "0 means unknown",
-    "例如：供应商A-账号池1": "e.g. Supplier A - account pool 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Identifies the real upstream supplier, account pool or region, to judge whether backup routes are independent.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Memory cache is off (no Redis and MEMORY_CACHE_ENABLED is not set), so shadow decisions and smart routing have no effect.",
     "智能路由总开关": "Smart routing master switch",
     "选择模型回答": "Choose a model response",
@@ -7397,7 +7392,6 @@
     "整组不健康，换下一个分组": "Whole group unhealthy, next group",
     "全部不健康，按原顺序": "All unhealthy, original order",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Picks channels by the original group order and priority, healthy channels first within a group; if a whole group is unhealthy, the token’s next group is used directly and billed at the group actually used.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Channels whose success rate over the last 15 minutes is below this value (with at least 10 samples) count as unhealthy; takes effect within about 15 seconds.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Purchase cost relative to the model base price, e.g. 0.8 means 80%. Currently only shown in route observation; it does not affect routing or billing. 0 means unknown."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Channels whose success rate over the last 15 minutes is below this value (with at least 10 samples) count as unhealthy; takes effect within about 15 seconds."
   }
 }

@@ -25,8 +25,7 @@ func useTestDB(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&model.RouteAttemptMetric{}, &model.RouteShadowMetric{}))
 }
 
-func ms(v int64) *int64           { return &v }
-func ratioPtr(v float64) *float64 { return &v }
+func ms(v int64) *int64 { return &v }
 
 func TestHistogramQuantileUsesConservativeBinUpperBound(t *testing.T) {
 	h := newHistogram()
@@ -102,7 +101,7 @@ func TestDecideKeepsOrderAndSkipsUnhealthy(t *testing.T) {
 	}
 	// Group a (index 0): 1 high priority, 2 and 3 low priority; group b: 4.
 	candidates := []Candidate{
-		{ChannelID: 1, Group: "a", GroupIndex: 0, Priority: 10, PurchaseRatio: ratioPtr(0.1)},
+		{ChannelID: 1, Group: "a", GroupIndex: 0, Priority: 10},
 		{ChannelID: 2, Group: "a", GroupIndex: 0, Priority: 5},
 		{ChannelID: 3, Group: "a", GroupIndex: 0, Priority: 5},
 		{ChannelID: 4, Group: "b", GroupIndex: 1, Priority: 10},

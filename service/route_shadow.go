@@ -42,12 +42,6 @@ func RouteShadowCandidates(param *RetryParam) ([]routeinsight.Candidate, bool) {
 }
 
 func RouteShadowCandidate(channel *model.Channel, group string, groupIndex int) routeinsight.Candidate {
-	setting := channel.GetSetting()
-	candidate := routeinsight.Candidate{ChannelID: channel.Id, ChannelName: channel.Name, Group: group, GroupIndex: groupIndex,
-		Priority: channel.GetPriority(), FaultDomain: setting.RouteFaultDomain}
-	if setting.RoutePurchaseRatio > 0 {
-		ratio := setting.RoutePurchaseRatio
-		candidate.PurchaseRatio = &ratio
-	}
-	return candidate
+	return routeinsight.Candidate{ChannelID: channel.Id, ChannelName: channel.Name, Group: group, GroupIndex: groupIndex,
+		Priority: channel.GetPriority()}
 }

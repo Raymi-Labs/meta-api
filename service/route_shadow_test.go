@@ -28,9 +28,8 @@ func TestRouteShadowCandidatesStayWithinPermittedScope(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Ability{}))
 
 	high, low := int64(10), int64(1)
-	costed := `{"route_purchase_ratio":0.5,"route_fault_domain":"supplier-a"}`
 	channels := []model.Channel{
-		{Id: 1, Name: "primary", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high, Setting: &costed},
+		{Id: 1, Name: "primary", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high},
 		{Id: 2, Name: "backup", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &low},
 		{Id: 3, Name: "other-group", Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Priority: &high},
 	}
@@ -57,13 +56,6 @@ func TestRouteShadowCandidatesStayWithinPermittedScope(t *testing.T) {
 	for _, candidate := range candidates {
 		ids[candidate.ChannelID] = true
 		require.Equal(t, "default", candidate.Group)
-		if candidate.ChannelID == 1 {
-			require.NotNil(t, candidate.PurchaseRatio)
-			require.Equal(t, 0.5, *candidate.PurchaseRatio)
-			require.Equal(t, "supplier-a", candidate.FaultDomain)
-		} else {
-			require.Nil(t, candidate.PurchaseRatio, "missing cost stays unknown")
-		}
 	}
 	require.True(t, ids[1] && ids[2])
 

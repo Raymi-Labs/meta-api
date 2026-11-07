@@ -182,19 +182,6 @@ export default function RouteInsightTab() {
       title: t('完成 P95'),
       render: (_, row) => formatLatency(row.duration_p95_ms),
     },
-    {
-      title: t('采购成本倍率'),
-      render: (_, row) =>
-        row.purchase_ratio == null ? (
-          <Text type='tertiary'>{t('未知')}</Text>
-        ) : (
-          row.purchase_ratio
-        ),
-    },
-    {
-      title: t('故障域'),
-      render: (_, row) => row.fault_domain || '-',
-    },
   ];
 
   const sampleColumns = [

@@ -7128,8 +7128,6 @@
     "未知 / 用户 / 取消": "Unbekannt / Nutzer / Abgebrochen",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Abschluss P95",
-    "采购成本倍率": "Einkaufskostenfaktor",
-    "故障域": "Fehlerdomäne",
     "实际": "Tatsächlich",
     "影子推荐": "Schattenwahl",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Schattenentscheidungen zeichnen nur auf, welche Route Smart Routing wählen würde; die Planung bleibt unverändert. Zu wenige oder veraltete Daten gelten als unbekannt.",
@@ -7150,9 +7148,6 @@
     "渠道逐次尝试": "Kanalergebnisse pro Versuch",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Die Erfolgsrate zählt nur Ergebnisse mit Upstream-Nachweis; P50/P95 sind konservative Schätzungen.",
     "最近分歧样本（本实例）": "Letzte Abweichungen (diese Instanz)",
-    "0 表示未知": "0 bedeutet unbekannt",
-    "例如：供应商A-账号池1": "z. B. Anbieter A – Kontopool 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Kennzeichnet den echten Upstream-Anbieter, Kontopool oder die Region, um zu beurteilen, ob Ersatzrouten unabhängig sind.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Der Speicher-Cache ist aus (kein Redis und MEMORY_CACHE_ENABLED nicht gesetzt); Schattenentscheidungen und Smart Routing wirken daher nicht.",
     "智能路由总开关": "Hauptschalter für Smart Routing",
     "选择模型回答": "Choose a model response",
@@ -7185,7 +7180,6 @@
     "整组不健康，换下一个分组": "Ganze Gruppe ungesund, nächste Gruppe",
     "全部不健康，按原顺序": "Alle ungesund, ursprüngliche Reihenfolge",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Wählt Kanäle nach der ursprünglichen Gruppenreihenfolge und Priorität, innerhalb einer Gruppe gesunde Kanäle zuerst; ist eine ganze Gruppe ungesund, wird direkt die nächste Gruppe des Tokens genutzt und nach der tatsächlich genutzten Gruppe abgerechnet.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanäle mit einer Erfolgsrate der letzten 15 Minuten unter diesem Wert (mindestens 10 Versuche) gelten als ungesund; wirkt nach etwa 15 Sekunden.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Einkaufskosten relativ zum Modellgrundpreis, z. B. 0.8 = 80 %. Wird derzeit nur in der Routenbeobachtung angezeigt und beeinflusst weder Routing noch Abrechnung; 0 bedeutet unbekannt."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanäle mit einer Erfolgsrate der letzten 15 Minuten unter diesem Wert (mindestens 10 Versuche) gelten als ungesund; wirkt nach etwa 15 Sekunden."
   }
 }

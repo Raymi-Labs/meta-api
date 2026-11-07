@@ -14,7 +14,7 @@ Status: implemented
 - **不健康判定**：最近 15 分钟上游证据成功率低于 `route_routing_setting.unhealthy_below_percent`（默认 90，后台可调 50–99，约 15 秒随健康快照刷新生效）；或最近 5 分钟至少 5 次证据中上游失败占比 ≥50%。Wilson 下界仅作展示。
 - **探测**：`probe_percent` 每次尝试抽签，中签时不跳过任何渠道。
 - **影子决策同算法**：`routeinsight.Decide` 用未经健康过滤的已授权候选模拟上述规则，产出等价档位（目标分组中剩余最高优先级的渠道集合）；实际渠道在档位内即算一致。原因码：ordered、skip_unhealthy、skip_group、all_unhealthy、no_data。不再按采购成本推荐，`cheaper_count`、`cost_unknown_count` 不再写入（旧列保留）。
-- **采购成本倍率与故障域**：只在线路观测中显示，不参与选路和计费。
+- **采购成本倍率与故障域**：不参与选路和计费，随后已从渠道设置和观测页移除，见[移除记录](../simplification/2026-11-07-remove-route-cost-fault-domain.md)。
 
 ## Alternatives considered
 

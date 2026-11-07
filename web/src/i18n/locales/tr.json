@@ -7128,8 +7128,6 @@
     "未知 / 用户 / 取消": "Bilinmeyen / kullanıcı / iptal",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Tamamlanma P95",
-    "采购成本倍率": "Satın alma maliyet oranı",
-    "故障域": "Arıza alanı",
     "实际": "Gerçek",
     "影子推荐": "Gölge seçim",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Gölge kararlar yalnızca akıllı yönlendirmenin hangi rotayı seçeceğini kaydeder; zamanlamayı değiştirmez. Yetersiz veya eski veriler bilinmeyen sayılır.",
@@ -7150,9 +7148,6 @@
     "渠道逐次尝试": "Kanal başına deneme sonuçları",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Başarı oranı yalnızca upstream kanıtı olan sonuçları sayar; P50/P95 temkinli tahminlerdir.",
     "最近分歧样本（本实例）": "Son ayrılıklar (bu örnek)",
-    "0 表示未知": "0 bilinmeyen demektir",
-    "例如：供应商A-账号池1": "örn. Tedarikçi A - hesap havuzu 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Gerçek upstream tedarikçisini, hesap havuzunu veya bölgeyi belirtir; yedek rotaların bağımsız olup olmadığını değerlendirmeye yarar.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bellek önbelleği kapalı (Redis yok ve MEMORY_CACHE_ENABLED ayarlı değil); gölge kararlar ve akıllı yönlendirme etkili olmaz.",
     "智能路由总开关": "Akıllı yönlendirme ana anahtarı",
     "选择模型回答": "Choose a model response",
@@ -7185,7 +7180,6 @@
     "整组不健康，换下一个分组": "Grubun tamamı sağlıksız, sonraki grup",
     "全部不健康，按原顺序": "Hepsi sağlıksız, özgün sıra",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Kanalları özgün grup sırası ve önceliğe göre seçer, grup içinde önce sağlıklı kanalları kullanır; grubun tamamı sağlıksızsa doğrudan token’ın sonraki grubunu kullanır ve gerçekten kullanılan gruba göre ücretlendirir.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Son 15 dakikadaki başarı oranı bu değerin altında olan (en az 10 deneme) kanallar sağlıksız sayılır; yaklaşık 15 saniyede geçerli olur.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Model temel fiyatına göre satın alma maliyeti, örn. 0.8 %80 demektir. Şimdilik yalnızca rota gözleminde gösterilir; yönlendirmeyi ve ücretlendirmeyi etkilemez. 0 bilinmeyen demektir."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Son 15 dakikadaki başarı oranı bu değerin altında olan (en az 10 deneme) kanallar sağlıksız sayılır; yaklaşık 15 saniyede geçerli olur."
   }
 }

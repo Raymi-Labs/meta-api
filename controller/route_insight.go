@@ -24,13 +24,11 @@ func boundedQueryInt(c *gin.Context, name string, fallback, max int) int {
 
 type routeInsightChannelRow struct {
 	routeinsight.ChannelReport
-	ChannelName   string   `json:"channel_name"`
-	PurchaseRatio *float64 `json:"purchase_ratio,omitempty"`
-	FaultDomain   string   `json:"fault_domain,omitempty"`
+	ChannelName string `json:"channel_name"`
 }
 
 // GetRouteInsightChannels is admin-only: it exposes per-channel attempt
-// evidence and administrator-entered purchase cost, never to end users.
+// evidence, never to end users.
 func GetRouteInsightChannels(c *gin.Context) {
 	minutes := boundedQueryInt(c, "minutes", 60, 3*24*60)
 	modelName := c.Query("model")
@@ -47,13 +45,7 @@ func GetRouteInsightChannels(c *gin.Context) {
 	for _, report := range reports {
 		row := routeInsightChannelRow{ChannelReport: report}
 		if channel, cacheErr := model.CacheGetChannel(report.ChannelID); cacheErr == nil && channel != nil {
-			setting := channel.GetSetting()
 			row.ChannelName = channel.Name
-			row.FaultDomain = setting.RouteFaultDomain
-			if setting.RoutePurchaseRatio > 0 {
-				ratio := setting.RoutePurchaseRatio
-				row.PurchaseRatio = &ratio
-			}
 		}
 		rows = append(rows, row)
 	}

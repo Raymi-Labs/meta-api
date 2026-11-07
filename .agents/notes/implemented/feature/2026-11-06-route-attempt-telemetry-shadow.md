@@ -14,7 +14,7 @@ Status: implemented
 - **存储**：`route_attempt_metrics` 按分钟、`route_shadow_metrics` 按小时；每进程 UUID 行幂等覆盖，查询汇总各副本，与 group health 同一模式。保留 3 天 / 30 天。
 - **健康快照**：后台每 15 秒从数据库读最近 15 分钟（含所有实例），按渠道+模型生成 5 分钟/15 分钟窗口。只有 success/service_failure/rate_limited 作为上游证据；unknown、用户、取消与本地失败不惩罚线路。证据少于 10 次为 unknown；不健康判定现为成功率低于后台阈值（默认 90%）或 5 分钟内上游失败 ≥50%（至少 5 次），见[有序健康选路](2026-11-07-ordered-health-routing.md)。快照超过 2 分钟未更新时一律视为 unknown。
 - **影子决策**：每次尝试前，在请求已获准的候选内（令牌路由组、渠道白名单、重试排除和生产相同过滤器；指定渠道和无内存缓存时跳过，不扫数据库）模拟智能路由总开关的规则（按原顺序、组内跳过不健康、整组不健康换下一组），实际渠道落在推荐档位内即算一致，见[有序健康选路](2026-11-07-ordered-health-routing.md)；不越权、不跨模型。最初版本按「健康优先、等价取最低采购价」推荐，已改。
-- **成本与故障域**：渠道 `setting` 新增可选 `route_purchase_ratio`（相对模型基础价的采购倍率，缺省为未知，不当 0）和 `route_fault_domain`。销售分组倍率不作为成本。渠道编辑页可填写，只在管理员「智能路由」页显示，不参与选路和计费。
+- **成本与故障域**：最初在渠道 `setting` 新增可选 `route_purchase_ratio` 与 `route_fault_domain`，后因不参与选路已移除，见[移除记录](../simplification/2026-11-07-remove-route-cost-fault-domain.md)。
 - **逻辑请求**：每个请求另记最终是否交付、尝试次数与是否重试。
 - **接口**：管理员 `GET /api/route_insight/channels?minutes=&model=`（渠道成功率、下界、P50/P95、当前状态、采购价、故障域）与 `GET /api/route_insight/shadow?hours=&model=`（同意/不同意次数、两者的失败率、跨组、避开不健康、更便宜、交付率、平均尝试数，以及本实例最近 200 条分歧样本）。
 - 开关：环境变量 `ROUTE_INSIGHT_ENABLED`，默认开启；关闭后既不记录也不计算影子决策。

@@ -7741,8 +7741,6 @@
     "未知 / 用户 / 取消": "Không rõ / người dùng / đã hủy",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Hoàn tất P95",
-    "采购成本倍率": "Hệ số chi phí mua",
-    "故障域": "Miền sự cố",
     "实际": "Thực tế",
     "影子推荐": "Lựa chọn bóng",
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Quyết định bóng chỉ ghi lại tuyến mà định tuyến thông minh sẽ chọn; không thay đổi việc điều phối. Dữ liệu không đủ hoặc đã cũ được coi là không rõ.",
@@ -7763,9 +7761,6 @@
     "渠道逐次尝试": "Kết quả từng lần thử theo kênh",
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Tỷ lệ thành công chỉ tính kết quả có bằng chứng upstream; P50/P95 là ước tính thận trọng.",
     "最近分歧样本（本实例）": "Khác biệt gần đây (phiên bản này)",
-    "0 表示未知": "0 nghĩa là không rõ",
-    "例如：供应商A-账号池1": "ví dụ: Nhà cung cấp A - nhóm tài khoản 1",
-    "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Xác định nhà cung cấp upstream thật, nhóm tài khoản hoặc khu vực, để đánh giá tuyến dự phòng có độc lập không.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bộ nhớ đệm đang tắt (không có Redis và chưa bật MEMORY_CACHE_ENABLED), nên quyết định bóng và định tuyến thông minh không có hiệu lực.",
     "智能路由总开关": "Công tắc tổng định tuyến thông minh",
     "选择模型回答": "Choose a model response",
@@ -7798,7 +7793,6 @@
     "整组不健康，换下一个分组": "Cả nhóm không khỏe, sang nhóm tiếp theo",
     "全部不健康，按原顺序": "Tất cả không khỏe, theo thứ tự gốc",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Chọn kênh theo thứ tự nhóm và độ ưu tiên gốc, trong nhóm ưu tiên kênh khỏe; nếu cả nhóm không khỏe thì dùng ngay nhóm tiếp theo của token và tính phí theo nhóm thực tế sử dụng.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kênh có tỷ lệ thành công 15 phút gần nhất thấp hơn giá trị này (tối thiểu 10 lần) được coi là không khỏe; có hiệu lực trong khoảng 15 giây.",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Chi phí mua so với giá gốc của mô hình, ví dụ 0.8 nghĩa là 80%. Hiện chỉ hiển thị trong quan sát tuyến, không ảnh hưởng định tuyến hay tính phí; 0 nghĩa là không rõ."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kênh có tỷ lệ thành công 15 phút gần nhất thấp hơn giá trị này (tối thiểu 10 lần) được coi là không khỏe; có hiệu lực trong khoảng 15 giây."
   }
 }

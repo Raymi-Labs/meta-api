@@ -211,8 +211,6 @@ const EditChannelModal = (props) => {
     max_concurrency: 0,
     upstream_capacity: normalizeVMCapacitySettings(),
     rpm_limit: 0,
-    route_purchase_ratio: 0,
-    route_fault_domain: '',
     settings: '',
     // 客户端限制设置
     client_restriction_mode: '',
@@ -856,9 +854,6 @@ const EditChannelModal = (props) => {
           data.max_concurrency = Number(parsedSettings.max_concurrency) || 0;
           data.upstream_capacity = normalizeVMCapacitySettings(parsedSettings.upstream_capacity);
           data.rpm_limit = Number(parsedSettings.rpm_limit) || 0;
-          data.route_purchase_ratio =
-            Number(parsedSettings.route_purchase_ratio) || 0;
-          data.route_fault_domain = parsedSettings.route_fault_domain || '';
           data.client_restriction_mode =
             parsedSettings.client_restriction_mode || '';
           data.client_restriction_clients =
@@ -889,8 +884,6 @@ const EditChannelModal = (props) => {
           data.system_prompt_override = false;
           data.max_concurrency = 0;
           data.rpm_limit = 0;
-          data.route_purchase_ratio = 0;
-          data.route_fault_domain = '';
           data.client_restriction_mode = '';
           data.client_restriction_clients = [];
           data.crs_site_id = 0;
@@ -915,8 +908,6 @@ const EditChannelModal = (props) => {
         data.system_prompt_override = false;
         data.max_concurrency = 0;
         data.rpm_limit = 0;
-        data.route_purchase_ratio = 0;
-        data.route_fault_domain = '';
         data.client_restriction_mode = '';
         data.client_restriction_clients = [];
         data.crs_site_id = 0;
@@ -1059,8 +1050,6 @@ const EditChannelModal = (props) => {
         max_concurrency: data.max_concurrency || 0,
         upstream_capacity: normalizeVMCapacitySettings(data.upstream_capacity),
         rpm_limit: data.rpm_limit || 0,
-        route_purchase_ratio: data.route_purchase_ratio || 0,
-        route_fault_domain: data.route_fault_domain || '',
         crs_site_id: data.crs_site_id || 0,
         crs_platform: data.crs_platform || 'openai-responses',
         crs_auto_manage: data.crs_auto_manage || false,
@@ -1971,11 +1960,6 @@ const EditChannelModal = (props) => {
       max_concurrency: Math.max(0, Number(localInputs.max_concurrency) || 0),
       upstream_capacity: normalizeVMCapacitySettings(localInputs.upstream_capacity),
       rpm_limit: Math.max(0, Number(localInputs.rpm_limit) || 0),
-      route_purchase_ratio: Math.max(
-        0,
-        Number(localInputs.route_purchase_ratio) || 0,
-      ),
-      route_fault_domain: (localInputs.route_fault_domain || '').trim(),
       client_restriction_mode: localInputs.client_restriction_mode || '',
       client_restriction_clients: normalizedClientRestrictionClients,
       crs_site_id: Math.max(0, Number(localInputs.crs_site_id) || 0),
@@ -3898,35 +3882,6 @@ const EditChannelModal = (props) => {
                         '仅当自动禁用开启时有效，关闭后不会自动禁用该渠道',
                       )}
                       initValue={autoBan}
-                    />
-
-                    <Form.InputNumber
-                      field='route_purchase_ratio'
-                      label={t('采购成本倍率')}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        handleChannelSettingsChange('route_purchase_ratio', value)
-                      }
-                      style={{ width: '100%' }}
-                      placeholder={t('0 表示未知')}
-                      extraText={t(
-                        '相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。',
-                      )}
-                    />
-
-                    <Form.Input
-                      field='route_fault_domain'
-                      label={t('故障域')}
-                      placeholder={t('例如：供应商A-账号池1')}
-                      maxLength={64}
-                      onChange={(value) =>
-                        handleChannelSettingsChange('route_fault_domain', value)
-                      }
-                      showClear
-                      extraText={t(
-                        '标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。',
-                      )}
                     />
 
                     {MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type) && (
