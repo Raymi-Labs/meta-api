@@ -663,9 +663,84 @@ try {
     () => !document.querySelector('.pg-local-warning'),
   );
   await saved();
+  await importText(
+    JSON.stringify({
+      format: 'meta-api-local-conversations',
+      version: 1,
+      sessions: [parallel],
+    }),
+  );
+  await page.waitForSelector(active + ' .pg-parallel-composer textarea');
+  await page.type(active + ' .pg-parallel-composer textarea', 'Compare layout');
+  await clickText('发送给 5 个模型', active);
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.pg-answer-comparison').length > 0 &&
+      document.querySelectorAll('.pg-parallel-reply').length >= 5 &&
+      [...document.querySelectorAll('.pg-reply-state')].filter((e) =>
+        e.textContent.includes('已完成'),
+      ).length >= 5,
+  );
+  assert.equal(
+    await page.$$eval('.pg-answer-comparison', (els) => els.length),
+    1,
+  );
+  assert(await page.$$eval('.pg-parallel-reply', (els) => els.length >= 5));
+  await page.screenshot({ path: '/tmp/playground-answer-columns.png' });
+  await page.click('.pg-answer-icon');
+  assert.equal(
+    await page.$$eval(
+      '.pg-round-answers.is-expanded .pg-answer-slot:not([hidden])',
+      (els) => els.length,
+    ),
+    1,
+  );
+  await page.keyboard.press('Escape');
+  await page.click('.pg-answer-continue');
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.pg-mode-switch button')].some(
+      (b) =>
+        b.getAttribute('aria-pressed') === 'true' &&
+        b.textContent.includes('单模型'),
+    ),
+  );
   await page.screenshot({
     path: '/tmp/playground-local-conversations-desktop.png',
   });
+  // Continuing with one model filters the wire payload, never the saved comparisons.
+  const beforeContinue = calls.length;
+  await send('Continue chosen answer');
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="停止生成"]'),
+  );
+  await saved();
+  assert.equal(calls.length, beforeContinue + 1);
+  const continuedAnswers = calls
+    .at(-1)
+    .payload.messages.filter((m) => m.role === 'assistant');
+  assert.equal(continuedAnswers.length, 1);
+  assert.equal(
+    continuedAnswers[0].content,
+    'answer-' + calls.at(-1).payload.model,
+  );
+  for (const name of ['model-a', 'model-b', 'model-c', 'model-d', 'model-e']) {
+    assert(
+      await page.$eval(
+        active + ' .pg-messages',
+        (el, text) => el.textContent.includes(text),
+        'answer-' + name,
+      ),
+      'unselected comparison retained: ' + name,
+    );
+  }
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ready();
+  assert(
+    await page.$eval(active + ' .pg-messages', (el) =>
+      el.textContent.includes('answer-model-e'),
+    ),
+    'comparison persists after reload',
+  );
   // Non-streaming request remains cancellable and cannot leak to a new session.
   const nonstream = {
     ...parallel,

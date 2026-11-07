@@ -30,6 +30,7 @@ export default function PlaygroundWorkspace({
   children,
   showSettings,
   showCode,
+  parallelMode = false,
   onCloseSettings,
   onCloseCode,
 }) {
@@ -63,7 +64,9 @@ export default function PlaygroundWorkspace({
           {settings}
         </aside>
       )}
-      <main className='pg-main'>{children}</main>
+      <main className={`pg-main${parallelMode ? ' is-parallel' : ''}`}>
+        {children}
+      </main>
       {!isMobile && showCode && (
         <aside
           className='pg-docked-panel pg-docked-code'

@@ -53,7 +53,11 @@ export function comparisonSections(messages) {
 export function comparisonReplyState(message) {
   if (message.parallelStopped) return '已停止';
   if (message.status === 'error') return '失败';
-  if (['loading', 'incomplete'].includes(message.status)) return '生成中';
+  if (['loading', 'incomplete'].includes(message.status)) {
+    if (message.content?.trim?.()) return '回答中';
+    if (message.reasoningContent?.trim?.()) return '思考中';
+    return '等待回答…';
+  }
   return canUseParallelReply(message) ? '已完成' : '未完成';
 }
 
@@ -126,6 +130,30 @@ export function sharedConversation(messages) {
   return messages.filter(
     (m) => !m.parallelRound || (m.parallelChosen && canUseParallelReply(m)),
   );
+}
+
+// Keep comparison history intact; only the chosen answers form future context.
+export function selectParallelReply(messages, id) {
+  if (messages.some((m) => ['loading', 'incomplete'].includes(m.status)))
+    return null;
+  const reply = messages.find((m) => m.id === id);
+  if (
+    !reply?.parallelRound ||
+    !canUseParallelReply(reply) ||
+    reply.parallelRound !== messages.at(-1)?.parallelRound
+  )
+    return null;
+  const next = messages.map((m) =>
+    m.parallelRound === reply.parallelRound
+      ? { ...m, parallelChosen: m.id === id }
+      : m,
+  );
+  try {
+    sharedConversation(next);
+  } catch {
+    return null;
+  }
+  return next;
 }
 
 // Existing request handlers update their last message. Give each one a private
