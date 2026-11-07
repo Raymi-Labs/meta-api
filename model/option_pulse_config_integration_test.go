@@ -89,7 +89,7 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 				}
 			})
 
-			t.Run("database_failure_rolls_back_bundle_and_log_guard", func(t *testing.T) {
+			t.Run("retired_usage_log_field_rejection_does_not_change_logs", func(t *testing.T) {
 				reset(t)
 				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseInternalURL": "http://original.internal:8088"}}))
 				before := pulseSavedOverrides(t)
@@ -116,24 +116,24 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 				reset(t)
 				common.LogConsumeEnabled = false
 				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{
-					"PulseUsageLogRequired": "true", "PulseBenefitEnabled": "true",
+					"PulseBenefitEnabled":    "true",
 					"PulseServiceHMACSecret": "config-test-worker", "PulseRollbackHMACSecret": "config-test-rollback",
 					"PulseBenefitMaxGrantQuota": "50", "PulseBenefitUserDailyQuota": "100", "PulseBenefitDailyQuota": "500",
 				}}))
-				require.True(t, common.LogConsumeEnabled)
+				require.False(t, common.LogConsumeEnabled)
+				require.NoError(t, UpdateOption("LogConsumeEnabled", "false"))
 				policy, err := loadPulseBenefitPolicy()
 				require.NoError(t, err)
 				require.EqualValues(t, 50, policy.maxGrant)
-				common.ReplacePulseConfig(map[string]string{"PulseUsageLogRequired": "false", "PulseBenefitEnabled": "false"})
-				require.Error(t, UpdateOption("LogConsumeEnabled", "false"), "stale instance must consult the database log guard")
+				common.ReplacePulseConfig(map[string]string{"PulseBenefitEnabled": "false"})
 				var logOption Option
 				require.NoError(t, db.Where(&Option{Key: "LogConsumeEnabled"}).First(&logOption).Error)
-				require.Equal(t, "true", logOption.Value)
+				require.Equal(t, "false", logOption.Value)
 				common.ReplacePulseConfig(nil)
 				common.LogConsumeEnabled = false
 				loadOptionsFromDatabase()
-				require.True(t, common.LogConsumeEnabled)
-				require.Error(t, UpdateOption("LogConsumeEnabled", "false"))
+				require.False(t, common.LogConsumeEnabled)
+				require.NoError(t, UpdateOption("LogConsumeEnabled", "false"))
 				policy, err = loadPulseBenefitPolicy()
 				require.NoError(t, err)
 				require.EqualValues(t, 500, policy.daily)
@@ -195,7 +195,7 @@ func setupPulseConfigIntegrationDB(t *testing.T, dialect string) *gorm.DB {
 	common.ReplacePulseConfig(nil)
 	common.OptionMap = map[string]string{}
 	for _, env := range []string{
-		"PULSE_ENV", "PULSE_USAGE_LOG_REQUIRED", "PULSE_INTERNAL_URL", "PULSE_USER_BFF_HMAC_SECRET", "PULSE_ADMIN_HMAC_SECRET",
+		"PULSE_ENV", "PULSE_INTERNAL_URL", "PULSE_USER_BFF_HMAC_SECRET", "PULSE_ADMIN_HMAC_SECRET",
 		"PULSE_SERVICE_HMAC_SECRET", "PULSE_SERVICE_HMAC_SECRET_PREVIOUS", "PULSE_ROLLBACK_HMAC_SECRET", "PULSE_ROLLBACK_HMAC_SECRET_PREVIOUS",
 		"PULSE_FORUM_SSO_SECRET", "PULSE_FORUM_SSO_SECRET_PREVIOUS", "PULSE_FORUM_SSO_CALLBACK_URL", "PULSE_BENEFIT_ENABLED",
 		"PULSE_BENEFIT_MAX_GRANT_QUOTA", "PULSE_BENEFIT_USER_DAILY_QUOTA", "PULSE_BENEFIT_DAILY_QUOTA",

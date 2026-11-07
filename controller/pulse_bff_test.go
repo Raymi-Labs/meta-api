@@ -103,6 +103,12 @@ func TestPulseBFFQueryAllowlist(t *testing.T) {
 	}
 }
 
+func TestPulseSummaryProjectionKeepsTicketsAndDropsRetiredEntitlements(t *testing.T) {
+	body, err := projectPulseSummary([]byte(`{"available_tickets":4,"lifetime_contribution_milli":900,"level":{"key":"gold"},"current_period":{"id":1},"ledger":[{"source_ref":"private"}]}`))
+	require.NoError(t, err)
+	require.JSONEq(t, `{"available_tickets":4}`, string(body))
+}
+
 func TestPulseBFFUpstreamFailuresDegradeToServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Setenv("PULSE_INTERNAL_URL", "http://pulse.example.test")

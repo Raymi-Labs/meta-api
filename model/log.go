@@ -78,6 +78,19 @@ func redactUserVisibleManageContent(content string) string {
 	return userVisibleAdminIdentityPattern.ReplaceAllString(content, "管理员")
 }
 
+func withoutRetiredPulseFunding(other map[string]interface{}) map[string]interface{} {
+	if len(other) == 0 {
+		return other
+	}
+	result := make(map[string]interface{}, len(other))
+	for key, value := range other {
+		if key != "pulse_funding" {
+			result[key] = value
+		}
+	}
+	return result
+}
+
 func formatUserLogs(logs []*Log, startIdx int) {
 	for i := range logs {
 		logs[i].ChannelName = ""
@@ -321,13 +334,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	logger.LogInfo(c, fmt.Sprintf("record consume log: userId=%d, params=%s", userId, common.GetJsonString(params)))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
-	snapshot := unknownPulseFunding(params.Quota)
-	if raw, exists := c.Get(PulseFundingContextKey); exists {
-		if verified, ok := raw.(PulseFundingSnapshot); ok && verified.Status == "verified" && verified.UserID == userId && verified.RequestID == requestId && verified.PaidQuota > 0 && verified.PaidQuota <= int64(params.Quota) && verified.PaidQuota+verified.UnknownQuota == int64(params.Quota) {
-			snapshot = verified
-		}
-	}
-	otherStr := common.MapToJsonStr(withPulseFunding(params.Other, snapshot))
+	otherStr := common.MapToJsonStr(withoutRetiredPulseFunding(params.Other))
 	// 判断是否需要记录 IP
 	needRecordIp := false
 	if settingMap, err := GetUserSetting(userId, false); err == nil {
@@ -410,7 +417,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		TokenId:   params.TokenId,
 		Group:     params.Group,
 		RequestId: params.RequestId,
-		Other:     common.MapToJsonStr(withPulseFunding(params.Other, unknownPulseFunding(params.Quota))),
+		Other:     common.MapToJsonStr(withoutRetiredPulseFunding(params.Other)),
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {

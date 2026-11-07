@@ -23,7 +23,7 @@ func seedPaidWallet(t *testing.T, id int) {
 	})
 }
 
-func TestPulseFundingSessionEqualPreconsumeStillFinalizesProof(t *testing.T) {
+func TestWalletFundingSessionSettlementDoesNotAddPulseLogMetadata(t *testing.T) {
 	truncate(t)
 	seedPaidWallet(t, 7401)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
@@ -38,21 +38,14 @@ func TestPulseFundingSessionEqualPreconsumeStillFinalizesProof(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		require.NoError(t, SettleBilling(ctx, info, 50))
 	}
-	value, exists := ctx.Get(model.PulseFundingContextKey)
-	require.True(t, exists)
-	snapshot := value.(model.PulseFundingSnapshot)
-	require.Equal(t, "verified", snapshot.Status)
-	require.EqualValues(t, 50, snapshot.PaidQuota)
 	require.Equal(t, 150, getUserQuota(t, 7401))
 	model.RecordConsumeLog(ctx, 7401, model.RecordConsumeLogParams{Quota: 50, ModelName: "paid-test", Other: map[string]interface{}{"pulse_funding": map[string]any{"paid_quota": 999}}})
 	var log model.Log
 	require.NoError(t, model.LOG_DB.Where("user_id = ?", 7401).First(&log).Error)
-	var decoded struct {
-		Funding model.PulseFundingSnapshot `json:"pulse_funding"`
-	}
+	var decoded map[string]any
 	require.NoError(t, common.UnmarshalJsonStr(log.Other, &decoded))
-	require.EqualValues(t, 50, decoded.Funding.PaidQuota)
-	require.Equal(t, snapshot.ProofRef, decoded.Funding.ProofRef)
+	_, exists := decoded["pulse_funding"]
+	require.False(t, exists)
 }
 
 func TestPulseFundingTokenFailureCannotRefundCommittedWallet(t *testing.T) {
@@ -88,11 +81,9 @@ func TestPulseFundingUnsupportedLifecyclesNeverEmitPaidProof(t *testing.T) {
 	require.NoError(t, model.LOG_DB.Where("user_id = ?", 7403).Find(&logs).Error)
 	require.Len(t, logs, 2)
 	for _, log := range logs {
-		var decoded struct {
-			Funding model.PulseFundingSnapshot `json:"pulse_funding"`
-		}
+		var decoded map[string]any
 		require.NoError(t, common.UnmarshalJsonStr(log.Other, &decoded))
-		require.Equal(t, "unknown", decoded.Funding.Status)
-		require.Zero(t, decoded.Funding.PaidQuota)
+		_, exists := decoded["pulse_funding"]
+		require.False(t, exists)
 	}
 }

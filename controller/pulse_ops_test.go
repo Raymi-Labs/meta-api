@@ -14,6 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPulseOperationsProjectionKeepsOnlyRewardRecoveryCounts(t *testing.T) {
+	body, err := projectPulseOperationsOverview([]byte(`{"observed_at":"2026-11-08T00:00:00Z","cursors":[{"name":"newapi"}],"periods":[{"usage_event_count":99}],"health":{"ingest_blocked":false},"snapshot":{"ingest_lag_seconds":200,"open_conflict_count":3,"settlement_retry_count":2,"settlement_dead_count":1}}`))
+	require.NoError(t, err)
+	require.JSONEq(t, `{"observed_at":"2026-11-08T00:00:00Z","snapshot":{"settlement_retry_count":2,"settlement_dead_count":1}}`, string(body))
+}
+
 // The admin secret is what the browser must never hold. Verify the proxy signs
 // with the admin role and the admin key, and forwards no browser credential.
 func TestPulseOpsSignsWithAdminRoleAndAdminSecret(t *testing.T) {
@@ -31,7 +37,7 @@ func TestPulseOpsSignsWithAdminRoleAndAdminSecret(t *testing.T) {
 		_, _ = mac.Write([]byte(canonical))
 		require.Equal(t, hex.EncodeToString(mac.Sum(nil)), r.Header.Get(pulseHeaderSignature))
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"periods":[]}`))
+		_, _ = w.Write([]byte(`{"observed_at":"2026-11-08T00:00:00Z","periods":[]}`))
 	}))
 	defer upstream.Close()
 	t.Setenv("PULSE_INTERNAL_URL", upstream.URL)
@@ -45,7 +51,7 @@ func TestPulseOpsSignsWithAdminRoleAndAdminSecret(t *testing.T) {
 	GetPulseOperationsOverview(c)
 
 	require.Equal(t, http.StatusOK, response.Code)
-	require.JSONEq(t, `{"periods":[]}`, response.Body.String())
+	require.JSONEq(t, `{"observed_at":"2026-11-08T00:00:00Z"}`, response.Body.String())
 }
 
 // The user-facing BFF secret must not grant operations access, so the two

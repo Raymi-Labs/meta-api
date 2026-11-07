@@ -34,7 +34,6 @@ services:
 #      - PULSE_ENV=production
 #      - PULSE_SERVICE_HMAC_SECRET=replace-with-a-strong-random-secret
 #      - PULSE_INTERNAL_URL=http://pulse-api:8088
-#      - PULSE_USAGE_LOG_REQUIRED=true # Pulse 依赖 LOG_DB 时禁止关闭消费日志
 #      - PULSE_USER_BFF_HMAC_SECRET=replace-with-a-different-strong-random-secret
 #      - PULSE_FORUM_SSO_SECRET=replace-with-a-strong-random-secret
 #      - PULSE_FORUM_SSO_CALLBACK_URL=https://forum.example.com/api/user-center/login/callback

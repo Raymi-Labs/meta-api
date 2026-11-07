@@ -46,7 +46,7 @@ func TestPaidFundingUnknownAndBonusNeverMintAllowance(t *testing.T) {
 	r, err := AdjustPulseWalletReservation(u.Id, "unknown-history", 100, "settled", true)
 	require.NoError(t, err)
 	require.Zero(t, r.PaidQuota)
-	require.Equal(t, "unknown", r.FundingSnapshot().Status)
+	require.Zero(t, r.PaidQuota)
 	require.Zero(t, readFundingUser(t, u.Id).PulsePaidQuota)
 }
 
@@ -61,8 +61,7 @@ func TestPaidFundingPartialSettlementAndRepeatedTransitions(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.EqualValues(t, 75, r.PaidQuota)
-	require.Equal(t, "verified", r.FundingSnapshot().Status)
-	require.NotEmpty(t, r.FundingSnapshot().ProofRef)
+	require.EqualValues(t, 75, r.PaidQuota)
 	after := readFundingUser(t, u.Id)
 	require.Equal(t, 125, after.Quota)
 	require.EqualValues(t, 25, after.PulsePaidQuota)
@@ -153,15 +152,12 @@ func TestPaidFundingRejectsCrossUserReceiptAndInsufficientReserveAtomically(t *t
 	require.Zero(t, count)
 }
 
-func TestPaidFundingLogMetadataCannotDeclareItsOwnProof(t *testing.T) {
+func TestRetiredPulseFundingMetadataIsStrippedFromNewLogs(t *testing.T) {
 	for _, quota := range []int{0, 1, 123456789} {
 		other := map[string]interface{}{"pulse_funding": map[string]any{"status": "verified", "paid_quota": quota, "proof_ref": "forged"}, "keep": "value"}
-		clean := withPulseFunding(other, unknownPulseFunding(quota))
-		snapshot, ok := clean["pulse_funding"].(PulseFundingSnapshot)
-		require.True(t, ok)
-		require.Equal(t, "unknown", snapshot.Status)
-		require.Zero(t, snapshot.PaidQuota)
-		require.EqualValues(t, quota, snapshot.UnknownQuota)
+		clean := withoutRetiredPulseFunding(other)
+		_, ok := clean["pulse_funding"]
+		require.False(t, ok)
 		require.Equal(t, "value", clean["keep"])
 		require.IsType(t, map[string]any{}, other["pulse_funding"], "caller's map must not be mutated")
 	}
@@ -191,7 +187,7 @@ func TestPaidFundingRealPaymentReplayAndBonusConsumption(t *testing.T) {
 	r, err = AdjustPulseWalletReservation(u.Id, "gift-cannot-loop", 50, "settled", true)
 	require.NoError(t, err)
 	require.Zero(t, r.PaidQuota)
-	require.Equal(t, "unknown", r.FundingSnapshot().Status)
+	require.Zero(t, r.PaidQuota)
 }
 
 func TestPaidFundingWalletCodeAndPaymentClawbackCloseEligibility(t *testing.T) {

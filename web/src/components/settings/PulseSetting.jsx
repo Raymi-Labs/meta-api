@@ -28,7 +28,6 @@ import {
   Modal,
   Select,
   Spin,
-  Switch,
   Tag,
   Typography,
 } from '@douyinfe/semi-ui';
@@ -279,23 +278,6 @@ const PulseSetting = () => {
               />
             </div>
           </div>
-          <div className='space-y-2'>
-            <div className='flex items-center gap-3'>
-              <Switch
-                aria-label={t('强制保留消费日志')}
-                checked={config.PulseUsageLogRequired === 'true'}
-                disabled={saving}
-                onChange={(value) =>
-                  setValue('PulseUsageLogRequired', String(value))
-                }
-              />
-              <Text>{t('强制保留消费日志')}</Text>
-            </div>
-            <Text type='tertiary' size='small'>
-              {t('为 Pulse 消费统计保留日志，生产环境请启用。')}
-            </Text>
-          </div>
-
           <Title heading={6}>{t('密钥与社区绑定')}</Title>
           <Text type='tertiary'>
             {t(

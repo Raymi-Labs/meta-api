@@ -1,4 +1,8 @@
-# Pulse 付费消费来源证明 v1
+# 历史：Pulse 付费消费来源证明 v1（已停用）
+
+本文记录的逐消费付费来源证明曾用于 Pulse 消费贡献与产券。Meta Pulse v0.2.88 已退役该权益路径，Meta API 不再向消费日志写入 `Other.pulse_funding`，不得再用此证明生成 Pulse 贡献、等级或抽奖券。历史日志中的字段仅供审计，不表示有效权益。
+
+文中描述的 `PulseFundingLedger`、`PulseWalletReservation`、`PulsePaidQuota` 与资金来源归因仍被 Meta API 的钱包预扣/结算/退款和现金核算使用，不得按本功能停用而删除。它们现在只服务 API 内部财务与钱包一致性，不由 Pulse 消费。
 
 Pulse 只对有正向付费来源证明的消费产生贡献与券。`quota > 0`、`transferable_quota`、用户曾充值以及充值日志本身，都不能证明某次消费使用了付费额度。
 

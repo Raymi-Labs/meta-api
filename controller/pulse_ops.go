@@ -29,7 +29,28 @@ func GetPulseOperationsOverview(c *gin.Context) {
 		writePulseBFFBadRequest(c, "运营概览不支持查询参数")
 		return
 	}
-	proxyPulseSignedRead(c, pulseAdminRole, pulseOpsConfig, pulseOpsOverviewPath, nil, pulseBFFHTTPClient)
+	proxyPulseSignedReadProjected(c, pulseAdminRole, pulseOpsConfig, pulseOpsOverviewPath, nil, pulseBFFHTTPClient, projectPulseOperationsOverview)
+}
+
+func projectPulseOperationsOverview(body []byte) ([]byte, error) {
+	var upstream struct {
+		ObservedAt string `json:"observed_at"`
+		Snapshot   *struct {
+			SettlementRetryCount int64 `json:"settlement_retry_count"`
+			SettlementDeadCount  int64 `json:"settlement_dead_count"`
+		} `json:"snapshot"`
+	}
+	if err := common.Unmarshal(body, &upstream); err != nil {
+		return nil, err
+	}
+	projected := map[string]any{"observed_at": upstream.ObservedAt}
+	if upstream.Snapshot != nil {
+		projected["snapshot"] = map[string]int64{
+			"settlement_retry_count": upstream.Snapshot.SettlementRetryCount,
+			"settlement_dead_count":  upstream.Snapshot.SettlementDeadCount,
+		}
+	}
+	return common.Marshal(projected)
 }
 
 func pulseOpsConfig() (*url.URL, string, error) {

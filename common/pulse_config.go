@@ -13,7 +13,6 @@ const PulseSettingsOptionKey = "PulseSettingsSecret"
 
 var pulseConfigEnv = map[string]string{
 	"PulseEnv":                        "PULSE_ENV",
-	"PulseUsageLogRequired":           "PULSE_USAGE_LOG_REQUIRED",
 	"PulseInternalURL":                "PULSE_INTERNAL_URL",
 	"PulseUserBFFHMACSecret":          "PULSE_USER_BFF_HMAC_SECRET",
 	"PulseAdminHMACSecret":            "PULSE_ADMIN_HMAC_SECRET",
@@ -76,7 +75,7 @@ func ResolvePulseConfig(overrides map[string]string) PulseConfig {
 				switch key {
 				case "PulseEnv":
 					value = "development"
-				case "PulseUsageLogRequired", "PulseBenefitEnabled":
+				case "PulseBenefitEnabled":
 					value = "false"
 				}
 			}
@@ -105,9 +104,4 @@ func (cfg PulseConfig) Production() bool {
 func (cfg PulseConfig) SecretUsable(secret string) bool {
 	secret = strings.TrimSpace(secret)
 	return secret != "" && (!cfg.Production() || (len(secret) >= 32 && secret != "replace-me"))
-}
-
-func PulseUsageLogsRequired() bool {
-	cfg := GetPulseConfig()
-	return strings.EqualFold(strings.TrimSpace(cfg["PulseUsageLogRequired"]), "true") || cfg["PulseBenefitEnabled"] == "true"
 }

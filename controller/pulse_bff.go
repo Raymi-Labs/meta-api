@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -43,7 +44,7 @@ func GetPulseSummary(c *gin.Context) {
 		writePulseBFFBadRequest(c, "summary 不支持查询参数")
 		return
 	}
-	proxyPulseRead(c, pulseBFFSummaryPath, nil, pulseBFFHTTPClient)
+	proxyPulseSignedReadProjected(c, pulseBFFRole, pulseBFFConfig, pulseBFFSummaryPath, nil, pulseBFFHTTPClient, projectPulseSummary)
 }
 
 // GetPulseRewards proxies the authenticated user's reward history. Only limit
@@ -80,6 +81,10 @@ func proxyPulseRead(c *gin.Context, upstreamPath string, query url.Values, clien
 // Pulse role. The role selects which HMAC secret signs the call, so the caller
 // decides the privilege level; the browser never sees either.
 func proxyPulseSignedRead(c *gin.Context, role string, config func() (*url.URL, string, error), upstreamPath string, query url.Values, client pulseHTTPDoer) {
+	proxyPulseSignedReadProjected(c, role, config, upstreamPath, query, client, nil)
+}
+
+func proxyPulseSignedReadProjected(c *gin.Context, role string, config func() (*url.URL, string, error), upstreamPath string, query url.Values, client pulseHTTPDoer, project func([]byte) ([]byte, error)) {
 	userID := c.GetInt("id")
 	if userID <= 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "未登录"})
@@ -139,7 +144,27 @@ func proxyPulseSignedRead(c *gin.Context, role string, config func() (*url.URL, 
 		writePulseBFFUnavailable(c)
 		return
 	}
+	if project != nil {
+		body, err = project(body)
+		if err != nil {
+			common.SysError("Pulse BFF 响应投影失败")
+			writePulseBFFUnavailable(c)
+			return
+		}
+	}
 	c.Data(http.StatusOK, "application/json; charset=utf-8", body)
+}
+
+func projectPulseSummary(body []byte) ([]byte, error) {
+	var upstream map[string]json.RawMessage
+	if err := common.Unmarshal(body, &upstream); err != nil {
+		return nil, err
+	}
+	projected := make(map[string]json.RawMessage, 1)
+	if tickets, ok := upstream["available_tickets"]; ok {
+		projected["available_tickets"] = tickets
+	}
+	return common.Marshal(projected)
 }
 
 func pulseBFFConfig() (*url.URL, string, error) {

@@ -20,7 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Banner,
   Button,
   Card,
   Empty,
@@ -29,22 +28,13 @@ import {
   Tag,
   Typography,
 } from '@douyinfe/semi-ui';
-import { Award, RefreshCw, Ticket, TrendingUp } from 'lucide-react';
+import { RefreshCw, Ticket } from 'lucide-react';
 import { API } from '../../helpers/apiCore';
 
 const { Text, Title } = Typography;
 
 const formatInteger = (value) =>
   new Intl.NumberFormat().format(Number.isFinite(Number(value)) ? value : 0);
-
-const formatExperience = (milli) => {
-  const value = Number(milli);
-  if (!Number.isFinite(value)) return '0';
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  }).format(value / 1000);
-};
 
 const formatDateTime = (value) => {
   if (!value) return '-';
@@ -178,20 +168,8 @@ const Pulse = () => {
             <Title heading={3} className='!mb-1'>
               {t('Meta Pulse')}
             </Title>
-            <Text type='secondary'>
-              {t('基于真实付费调用的经验值、等级与权益记录')}
-            </Text>
           </div>
-          <Tag color='blue' size='large'>
-            {t('只读灰度')}
-          </Tag>
         </div>
-
-        <Banner
-          type='info'
-          className='mb-5 !rounded-xl'
-          description={t('当前阶段仅展示数据，不提供抽取或兑换操作。')}
-        />
 
         {loading ? (
           <Card className='!rounded-2xl border-0 shadow-sm'>
@@ -218,17 +196,6 @@ const Pulse = () => {
         ) : (
           <>
             <div className='mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3'>
-              <StatCard
-                icon={<Award size={20} />}
-                label={t('等级')}
-                value={summary?.level?.name || t('未定级')}
-                hint={summary?.level?.key || '-'}
-              />
-              <StatCard
-                icon={<TrendingUp size={20} />}
-                label={t('经验值')}
-                value={formatExperience(summary?.lifetime_contribution_milli)}
-              />
               <StatCard
                 icon={<Ticket size={20} />}
                 label={t('可用奖励券')}

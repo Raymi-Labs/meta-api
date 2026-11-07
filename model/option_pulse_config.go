@@ -42,6 +42,9 @@ func loadPulseConfigOptions(options []*Option) {
 			return
 		}
 		for key, value := range persisted {
+			if key == "PulseUsageLogRequired" {
+				continue
+			}
 			if !common.IsPulseConfigKey(key) || key == common.PulseSettingsOptionKey {
 				common.SysLog("failed to load Meta Pulse settings: unknown configuration field")
 				return
@@ -54,15 +57,6 @@ func loadPulseConfigOptions(options []*Option) {
 
 func publishPulseConfig(values map[string]string) {
 	common.ReplacePulseConfig(values)
-	if common.PulseUsageLogsRequired() {
-		common.OptionMapRWMutex.Lock()
-		if common.OptionMap == nil {
-			common.OptionMap = make(map[string]string)
-		}
-		common.LogConsumeEnabled = true
-		common.OptionMap["LogConsumeEnabled"] = "true"
-		common.OptionMapRWMutex.Unlock()
-	}
 }
 
 func validatePulseConfig(cfg common.PulseConfig) error {
@@ -71,7 +65,7 @@ func validatePulseConfig(cfg common.PulseConfig) error {
 	default:
 		return errors.New("Pulse 运行环境必须为 production、development 或 test")
 	}
-	for _, key := range []string{"PulseUsageLogRequired", "PulseBenefitEnabled"} {
+	for _, key := range []string{"PulseBenefitEnabled"} {
 		if cfg[key] != "true" && cfg[key] != "false" {
 			return fmt.Errorf("%s 必须为 true 或 false", key)
 		}
@@ -120,9 +114,6 @@ func validatePulseConfig(cfg common.PulseConfig) error {
 		}
 	}
 	if cfg["PulseBenefitEnabled"] == "true" {
-		if cfg["PulseUsageLogRequired"] != "true" {
-			return errors.New("开启自动发奖前必须启用消费日志保护")
-		}
 		if strings.TrimSpace(cfg["PulseServiceHMACSecret"]) == "" || strings.TrimSpace(cfg["PulseRollbackHMACSecret"]) == "" {
 			return errors.New("开启自动发奖前必须配置独立的发奖密钥和撤销密钥")
 		}
@@ -188,12 +179,6 @@ func UpdatePulseConfig(update PulseConfigUpdate) error {
 		if err := tx.Model(&Option{}).Where(&Option{Key: common.PulseSettingsOptionKey}).Update("value", string(raw)).Error; err != nil {
 			return err
 		}
-		if common.ResolvePulseConfig(overrides)["PulseUsageLogRequired"] == "true" {
-			option := Option{Key: "LogConsumeEnabled", Value: "true"}
-			if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "key"}}, DoUpdates: clause.AssignmentColumns([]string{"value"})}).Create(&option).Error; err != nil {
-				return err
-			}
-		}
 		return nil
 	})
 	if validationErr != nil {
@@ -227,49 +212,4 @@ func applyPulseConfigUpdate(overrides map[string]string, update PulseConfigUpdat
 		overrides[key] = ""
 	}
 	return validatePulseConfig(common.ResolvePulseConfig(overrides))
-}
-
-// The legacy log toggle uses the same database lock as Pulse configuration so
-// an instance with a stale option cache cannot disable another instance's gate.
-func updatePulseConsumeLogOption(value string) error {
-	pulseConfigOptionMutex.Lock()
-	defer pulseConfigOptionMutex.Unlock()
-	initial := common.GetPulseConfigOverrides()
-	raw, err := common.Marshal(initial)
-	if err != nil {
-		return errors.New("无法保存消费日志设置")
-	}
-	var overrides map[string]string
-	var validationErr error
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
-		row := Option{Key: common.PulseSettingsOptionKey, Value: string(raw)}
-		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&row).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&Option{}).Where(&Option{Key: row.Key}).UpdateColumn("value", gorm.Expr("?", clause.Column{Name: "value"})).Error; err != nil {
-			return err
-		}
-		if err := tx.Where(&Option{Key: row.Key}).First(&row).Error; err != nil {
-			return err
-		}
-		if err := common.UnmarshalJsonStr(row.Value, &overrides); err != nil {
-			return err
-		}
-		cfg := common.ResolvePulseConfig(overrides)
-		if value != "true" && (strings.EqualFold(strings.TrimSpace(cfg["PulseUsageLogRequired"]), "true") || cfg["PulseBenefitEnabled"] == "true") {
-			validationErr = errors.New("Meta Pulse 已启用，不能关闭消费日志（Pulse 消费日志保护已开启）")
-			return validationErr
-		}
-		option := Option{Key: "LogConsumeEnabled", Value: value}
-		return tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "key"}}, DoUpdates: clause.AssignmentColumns([]string{"value"})}).Create(&option).Error
-	})
-	if validationErr != nil {
-		return validationErr
-	}
-	if err != nil {
-		return errors.New("保存消费日志设置失败，请检查数据库状态")
-	}
-	publishPulseConfig(overrides)
-	return updateOptionMap("LogConsumeEnabled", value)
 }

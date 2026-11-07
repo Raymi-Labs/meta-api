@@ -12,8 +12,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const PulseFundingContextKey = "newapi_verified_wallet_funding"
-
 // PulseFundingLedger is an append-only audit of proven paid allowance. Unknown
 // historical balances and gifts never create an allowance. Amounts are quota
 // integers, not display currency or transferable wallet credit.
@@ -29,7 +27,7 @@ type PulseFundingLedger struct {
 }
 
 // PulseWalletReservation follows one synchronous wallet request from reserve to
-// settle/refund. Its final snapshot is immutable; proof_ref deduplicates logs.
+// settle/refund so wallet and cash usage can be reconciled independently.
 type PulseWalletReservation struct {
 	ID              string `gorm:"primaryKey;type:varchar(64)"`
 	UserID          int    `gorm:"not null;index"`
@@ -41,33 +39,6 @@ type PulseWalletReservation struct {
 	CreatedAt       int64  `gorm:"not null"`
 	UpdatedAt       int64  `gorm:"not null"`
 	AvailableBefore int    `gorm:"-" json:"-"`
-}
-
-type PulseFundingSnapshot struct {
-	Version      int    `json:"version"`
-	Status       string `json:"status"`
-	PaidQuota    int64  `json:"paid_quota"`
-	NonPaidQuota int64  `json:"non_paid_quota"`
-	UnknownQuota int64  `json:"unknown_quota"`
-	ProofRef     string `json:"proof_ref,omitempty"`
-	Reason       string `json:"reason,omitempty"`
-	UserID       int    `json:"-"`
-	RequestID    string `json:"-"`
-}
-
-func unknownPulseFunding(quota int) PulseFundingSnapshot {
-	return PulseFundingSnapshot{Version: 1, Status: "unknown", UnknownQuota: int64(max(quota, 0)), Reason: "funding_source_not_attributed"}
-}
-
-// The log writer owns this reserved key. Callers cannot smuggle a paid claim
-// through arbitrary Other metadata, including upstream responses.
-func withPulseFunding(other map[string]interface{}, snapshot PulseFundingSnapshot) map[string]interface{} {
-	result := make(map[string]interface{}, len(other)+1)
-	for key, value := range other {
-		result[key] = value
-	}
-	result["pulse_funding"] = snapshot
-	return result
 }
 
 func lockPulseFundingUserTx(tx *gorm.DB, userID int) (*User, error) {
@@ -301,14 +272,6 @@ func adjustPulseWalletReservation(userID int, requestID string, target int, stat
 		}
 	}
 	return result, err
-}
-
-func (r PulseWalletReservation) FundingSnapshot() PulseFundingSnapshot {
-	if r.Status != "settled" || r.Quota <= 0 || r.PaidQuota <= 0 || r.PaidQuota > r.Quota {
-		return unknownPulseFunding(int(r.Quota))
-	}
-	return PulseFundingSnapshot{Version: 1, Status: "verified", PaidQuota: r.PaidQuota, UnknownQuota: r.Quota - r.PaidQuota,
-		ProofRef: "wallet:" + r.ID, UserID: r.UserID, RequestID: r.RequestID}
 }
 
 func adjustUnattributedWalletQuota(userID, delta int, reason string) error {

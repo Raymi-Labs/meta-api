@@ -272,7 +272,7 @@ export default function SettingsSidebarModulesAdmin(props) {
         {
           key: 'pulse',
           title: t('Meta Pulse'),
-          description: t('贡献、等级与权益记录'),
+          description: t('可用奖励券'),
         },
         {
           key: 'personal',

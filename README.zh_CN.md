@@ -380,7 +380,6 @@ docker run --name new-api -d --restart always \
 | `STREAM_SCANNER_MAX_BUFFER_MB`  | 流式扫描器单行最大缓冲（MB），图像生成等超大 `data:` 片段（如 4K 图片 base64）需适当调大 | `64`                 |
 | `MAX_REQUEST_BODY_MB`           | 请求体最大大小（MB，**解压后**计；防止超大请求/zip bomb 导致内存暴涨），超过将返回 `413` | `256`                |
 | `AZURE_DEFAULT_API_VERSION`     | Azure API 版本                                                                           | `2025-04-01-preview` |
-| `PULSE_USAGE_LOG_REQUIRED`      | Meta Pulse 依赖 LOG_DB 时设为 `true`，禁止后台关闭消费日志；未启用 Pulse 时可保持 `false` | `false`              |
 | `PULSE_BENEFIT_RATE_LIMIT_ENABLE` | 启用 Pulse Benefit 内部接口限流（按已验签服务身份） | `true` |
 | `PULSE_BENEFIT_RATE_LIMIT` | 每个服务身份在限流窗口内允许的 Benefit 请求数 | `600` |
 | `PULSE_BENEFIT_RATE_LIMIT_DURATION` | Benefit 限流窗口，单位秒 | `60` |

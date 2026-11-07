@@ -37,7 +37,6 @@ func setupPulseOptionTestDB(t *testing.T) {
 	common.RedisEnabled, common.RDB = false, nil
 	t.Setenv("PULSE_ENV", "development")
 	t.Setenv("PULSE_BENEFIT_ENABLED", "false")
-	t.Setenv("PULSE_USAGE_LOG_REQUIRED", "false")
 }
 
 func pulseSavedOverrides(t *testing.T) map[string]string {
@@ -104,10 +103,10 @@ func TestPulseOptionsValidationIsAtomicAndCannotUseGenericOptionEndpoint(t *test
 	}
 }
 
-func TestPulseOptionsEnablingRequiresProductionRedisAndProtectsConsumeLogs(t *testing.T) {
+func TestPulseBenefitDoesNotRequireOrEnableConsumeLogs(t *testing.T) {
 	setupPulseOptionTestDB(t)
 	update := PulseConfigUpdate{Config: map[string]string{
-		"PulseEnv": "production", "PulseUsageLogRequired": "true", "PulseBenefitEnabled": "true",
+		"PulseEnv": "production", "PulseBenefitEnabled": "true",
 		"PulseServiceHMACSecret": strings.Repeat("a", 32), "PulseRollbackHMACSecret": strings.Repeat("b", 32),
 		"PulseBenefitMaxGrantQuota": "50", "PulseBenefitUserDailyQuota": "100", "PulseBenefitDailyQuota": "500",
 	}}
@@ -121,8 +120,11 @@ func TestPulseOptionsEnablingRequiresProductionRedisAndProtectsConsumeLogs(t *te
 	common.RedisEnabled = true
 	common.LogConsumeEnabled = false
 	require.NoError(t, UpdatePulseConfig(update))
-	require.True(t, common.LogConsumeEnabled)
-	require.ErrorContains(t, UpdateOption("LogConsumeEnabled", "false"), "不能关闭消费日志")
+	require.False(t, common.LogConsumeEnabled)
+	require.NoError(t, UpdateOption("LogConsumeEnabled", "false"))
+	var logOption Option
+	require.NoError(t, DB.Where(&Option{Key: "LogConsumeEnabled"}).First(&logOption).Error)
+	require.Equal(t, "false", logOption.Value)
 	policy, err := loadPulseBenefitPolicy()
 	require.NoError(t, err)
 	require.Equal(t, int64(50), policy.maxGrant)
@@ -149,14 +151,9 @@ func TestPulseOptionSyncFailureRetainsLastConfiguration(t *testing.T) {
 	require.ErrorIs(t, err, ErrPulseBenefitPaused)
 }
 
-func TestPulseOptionsDatabaseFailureRollsBackBundleAndLogChange(t *testing.T) {
+func TestPulseOptionsRejectRetiredUsageLogSetting(t *testing.T) {
 	setupPulseOptionTestDB(t)
-	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseInternalURL": "http://original"}}))
-	before := pulseSavedOverrides(t)
-	require.NoError(t, DB.Exec(`CREATE TRIGGER fail_pulse_log BEFORE INSERT ON options WHEN NEW.key = 'LogConsumeEnabled' BEGIN SELECT RAISE(FAIL, 'test failure'); END`).Error)
-	require.Error(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseUsageLogRequired": "true", "PulseServiceHMACSecret": "never-commit-this-secret"}}))
-	require.Equal(t, before, pulseSavedOverrides(t))
-	require.Equal(t, before, common.GetPulseConfigOverrides())
+	require.Error(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseUsageLogRequired": "true"}}))
 }
 
 func TestPulseOptionsRejectSecretReuseAfterWhitespaceNormalization(t *testing.T) {
@@ -167,14 +164,23 @@ func TestPulseOptionsRejectSecretReuseAfterWhitespaceNormalization(t *testing.T)
 	}}), "必须使用不同密钥")
 }
 
-func TestPulseConsumeLogToggleChecksDatabaseGateDespiteStaleInstance(t *testing.T) {
+func TestPulseConsumeLogToggleIsIndependentOfPulseConfiguration(t *testing.T) {
 	setupPulseOptionTestDB(t)
-	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseUsageLogRequired": "true"}}))
-	common.ReplacePulseConfig(nil)
-	for _, value := range []string{"false", "FALSE", "garbage", " true "} {
-		require.ErrorContains(t, UpdateOption("LogConsumeEnabled", value), "不能关闭消费日志")
-	}
+	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseBenefitEnabled": "false"}}))
+	require.NoError(t, UpdateOption("LogConsumeEnabled", "false"))
 	var row Option
 	require.NoError(t, DB.Where(&Option{Key: "LogConsumeEnabled"}).First(&row).Error)
-	require.Equal(t, "true", row.Value)
+	require.Equal(t, "false", row.Value)
+}
+
+func TestPulseSettingsIgnoreRetiredUsageLogFieldInSavedBundle(t *testing.T) {
+	setupPulseOptionTestDB(t)
+	require.NoError(t, DB.Create(&Option{Key: common.PulseSettingsOptionKey, Value: `{"PulseEnv":"development","PulseUsageLogRequired":"true","PulseInternalURL":"http://pulse.internal"}`}).Error)
+	common.LogConsumeEnabled = false
+	loadOptionsFromDatabase()
+	require.Equal(t, "http://pulse.internal", common.GetPulseConfig()["PulseInternalURL"])
+	if _, ok := common.GetPulseConfig()["PulseUsageLogRequired"]; ok {
+		t.Fatal("retired usage-log setting was loaded")
+	}
+	require.False(t, common.LogConsumeEnabled)
 }

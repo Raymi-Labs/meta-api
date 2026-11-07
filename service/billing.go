@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
@@ -59,12 +58,6 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 
 		if err := relayInfo.Billing.Settle(actualQuota); err != nil {
 			return err
-		}
-
-		if session, ok := relayInfo.Billing.(*BillingSession); ok && ctx != nil {
-			if wallet, ok := session.funding.(*WalletFunding); ok && wallet.requestID != "" {
-				ctx.Set(model.PulseFundingContextKey, wallet.reservation.FundingSnapshot())
-			}
 		}
 
 		// 发送额度通知（订阅计费使用订阅剩余额度）

@@ -193,7 +193,7 @@ func TestPulseBenefitExternalDatabaseSafety(t *testing.T) {
 				receipt, err := AdjustPulseWalletReservation(user.Id, "equal-funding", 50, "settled", true)
 				require.NoError(t, err, "MySQL unchanged wallet fields must not reject finalization")
 				require.EqualValues(t, 50, receipt.PaidQuota)
-				require.Equal(t, "verified", receipt.FundingSnapshot().Status)
+				require.EqualValues(t, 50, receipt.PaidQuota)
 				require.NoError(t, db.Delete(&User{}, user.Id).Error)
 				_, err = AdjustPulseWalletReservation(user.Id, "deleted-funding", 10, "settled", true)
 				require.Error(t, err)

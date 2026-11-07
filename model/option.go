@@ -316,13 +316,6 @@ func SyncOptions(frequency int) {
 	}
 }
 
-func validatePulseUsageLogOption(key string, value string) error {
-	if key == "LogConsumeEnabled" && value != "true" && common.PulseUsageLogsRequired() {
-		return errors.New("Meta Pulse 已启用，不能关闭消费日志（Pulse 消费日志保护已开启）")
-	}
-	return nil
-}
-
 func isGroupGroupRatioOption(key string) bool {
 	return key == "GroupGroupRatio" || key == "group_ratio_setting.group_group_ratio"
 }
@@ -340,12 +333,6 @@ func UpdateOption(key string, value string) error {
 	}
 	if common.IsPulseConfigKey(key) {
 		return errors.New("请通过 Meta Pulse 专用设置一次性保存配置")
-	}
-	if key == "LogConsumeEnabled" {
-		return updatePulseConsumeLogOption(value)
-	}
-	if err := validatePulseUsageLogOption(key, value); err != nil {
-		return err
 	}
 	isTieredBillingField := key == "billing_setting.billing_mode" || key == "billing_setting.billing_expr"
 	if isTieredBillingField {
@@ -474,9 +461,6 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 		}
 	}
 	if err = setting.ValidateStripeDisplayOption(key, value); err != nil {
-		return err
-	}
-	if err = validatePulseUsageLogOption(key, value); err != nil {
 		return err
 	}
 	// Validate the combined settings before publishing either snapshot. This

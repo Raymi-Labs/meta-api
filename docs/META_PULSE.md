@@ -2,9 +2,9 @@
 
 Meta Pulse 是独立的增长与权益服务，不进入 new-api relay 请求主链路。中奖后，Pulse 将额度奖励自动发给已绑定的 new-api 账号，无需导入兑换码。内部奖励接口只用于内网或受控网关之间的服务调用，公网不应直接暴露。
 
-## 用户页展示
+## 用户页与运营页
 
-「Meta Pulse」用户页展示等级、经验值、可用奖励券和奖励历史，不展示账本、活动周期或本期数值。经验值沿用接口的累计 `lifetime_contribution_milli`，按千分单位换算；本次为展示名称调整，既有经验数据、等级计算、后台记账及奖励结算规则不变。
+用户页仅展示社区抽奖券余额及奖励记录。API 消费、退款或历史补录不产生 Pulse 贡献、经验、等级成长或抽奖券；社区经验等级按社区自身规则计算。运营页仅展示奖励结算重试和待恢复状态，不再展示 API 消费事件、摄入游标、消费贡献规则或消费产券进度。历史贡献和账本由 Pulse 保留为停用历史，不作为权益依据。
 
 ## 在管理面板配置 new-api
 
@@ -13,7 +13,6 @@ Meta Pulse 是独立的增长与权益服务，不进入 new-api relay 请求主
 | 配置 | 对应部署环境变量 | 用途 |
 |---|---|---|
 | 运行环境 | `PULSE_ENV` | 生产环境使用 `production`，执行强密钥和 Redis 防重放检查 |
-| 强制保留消费日志 | `PULSE_USAGE_LOG_REQUIRED` | Pulse 依赖消费日志时保持开启，阻止关闭消费日志 |
 | Pulse 内网地址 | `PULSE_INTERNAL_URL` | new-api 能访问的 Pulse 地址，例如 `http://pulse-api:8088` |
 | Pulse 用户侧密钥 | `PULSE_USER_BFF_HMAC_SECRET` | 与 Pulse 同名配置一致，用于用户摘要与奖励记录 |
 | Pulse 运营侧密钥 | `PULSE_ADMIN_HMAC_SECRET` | 与 Pulse 同名配置一致，用于运营概览 |
@@ -44,17 +43,17 @@ Meta Pulse 是独立的增长与权益服务，不进入 new-api relay 请求主
 
 三个上限均须为有效正整数，才能启用新奖励到账。每日上限按北京时间自然日累计毛发放额，撤销奖励不会恢复当天限额；限制在数据库事务中检查，Redis 不是额度事实源。
 
-先保持「允许新奖励到账」关闭，填写生产环境、消费日志保护、独立密钥和接收端限额，保存并核对各实例同步。待 Pulse 奖池、预算和社区绑定准备完成后，再进行受控的小额验收，按上线计划开启该开关与 Pulse 的新抽奖开关。生产验收应核对奖励凭证、账本和实际账户余额，不能只看前端成功提示。
+设置消费日志的开关只控制 Meta API 自身的日志留存，不受 Pulse Benefit 开关影响。填写生产环境、独立密钥和接收端限额，保存并核对各实例同步。社区赠券与抽奖由 Pulse/社区侧规则控制；生产验收应核对奖励凭证、账本和实际账户余额，不能只看前端成功提示。
 
 ## Pulse 与社区仍须分别配置
 
 new-api 页面只管理 new-api 自身的设置，不会写入其他服务：
 
-- Pulse 保留原有数据库密码和只读日志账号；配置 `NEWAPI_INTERNAL_BASE_URL`、与 new-api 一致的发奖/撤销密钥和额度换算单位。发奖密钥只交给 Worker，撤销密钥交给管理 API。`PULSE_ACTIONS_ENABLED`、`PULSE_REWARD_SHADOW_MODE`、奖池创建与数据库迁移仍在 Pulse 侧完成；开启抽奖不需要开启周期奖励 `PULSE_PERIOD_REWARDS_ENABLED`。
+- Pulse 保留原有数据库密码和只读日志账号配置，直至新版 Pulse 已部署并确认不再连接日志库后再回收专用读取权限；账号共用时先拆分权限。Pulse 配置 `NEWAPI_INTERNAL_BASE_URL`、与 new-api 一致的发奖/撤销密钥和额度换算单位。发奖密钥只交给 Worker，撤销密钥交给管理 API。`PULSE_ACTIONS_ENABLED`、奖池创建与数据库迁移仍在 Pulse 侧完成。
 - 社区插件的 `sso_hmac_secret` 对应 new-api 的论坛 SSO 密钥；`pulse_hmac_secret` 对应 Pulse 的 `PULSE_FORUM_HMAC_SECRET`，不是自动发奖密钥。插件的 `community_bff_hmac_secret` 与 Pulse 的 `PULSE_COMMUNITY_BFF_HMAC_SECRET` 使用另一组独立值，该值不属于 new-api 配置。
 - 原有绑定正常时保留已有 SSO 设置。论坛回调必须为 HTTPS，路径固定为 `/api/user-center/login/callback`，不允许用户名密码、query 或 fragment。
 
-完整付费来源与升级要求见 [PULSE_FUNDING_PROVENANCE.md](PULSE_FUNDING_PROVENANCE.md)。新奖池、奖项概率、预算和产券门槛按 Pulse 的上线文档操作。
+历史付费来源证明设计记录见 [PULSE_FUNDING_PROVENANCE.md](PULSE_FUNDING_PROVENANCE.md)，其中消费证明已停用，钱包和资金核算记录仍须保留。社区赠券、奖池和抽奖配置按 Pulse 的社区运营文档操作。
 
 ## 部署环境兼容与内部接口
 
