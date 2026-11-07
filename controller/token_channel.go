@@ -394,7 +394,7 @@ func buildTokenChannelOptionsForToken(userID int, token *model.Token) ([]tokenCh
 		for _, option := range options {
 			names := []string{}
 			for _, name := range option.MatchedModels {
-				if common.StringsContains(config.GroupsForModel(name), group) {
+				if !config.HasModelRule(name) || common.StringsContains(config.GroupsForModel(name), group) {
 					names = append(names, name)
 				}
 			}

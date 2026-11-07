@@ -47,8 +47,10 @@ func TokenConfiguredGroups(userGroup string, token *model.Token, modelName strin
 		return TokenRoutingGroups(userGroup, token.Group, token.AllowsGroupFallback()), nil
 	}
 	groups := config.Groups
+	modelRule := false
 	if modelName != "" {
 		groups = config.GroupsForModel(modelName)
+		modelRule = config.HasModelRule(modelName)
 	}
 	// Permission changes take effect without rewriting tokens. Never expand a
 	// revoked/empty scope to the legacy auto catalog.
@@ -57,6 +59,19 @@ func TokenConfiguredGroups(userGroup string, token *model.Token, modelName strin
 	for _, group := range groups {
 		if _, ok := usable[group]; ok && ratio_setting.ContainsGroupRatio(group) {
 			allowed = append(allowed, group)
+		}
+	}
+	// Opt-in automatic fallback stored in the routing config itself: after the
+	// token's own ordered groups, try the remaining platform auto groups. The
+	// legacy token.AutoGroupFallback flag never applies here (many existing
+	// multi-group tokens carry it set while it had no effect). A per-model
+	// rule is a deliberate narrowing and is never extended; an empty
+	// (revoked) scope stays empty; sellable tokens cannot hold a config.
+	if config.AutoFallback && token.SourceType != model.TokenSourceTypeSellableToken && !modelRule && len(allowed) > 0 {
+		for _, group := range GetUserAutoGroup(userGroup) {
+			if group != "" && group != "auto" && !common.StringsContains(allowed, group) && ratio_setting.ContainsGroupRatio(group) {
+				allowed = append(allowed, group)
+			}
 		}
 	}
 	return allowed, nil

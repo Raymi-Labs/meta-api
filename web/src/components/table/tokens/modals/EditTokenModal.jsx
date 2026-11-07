@@ -51,7 +51,11 @@ import {
 } from '@douyinfe/semi-ui';
 import { IconCreditCard, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
-import TokenGroupPicker from '../TokenGroupPicker';
+import TokenGroupMultiPicker from '../TokenGroupMultiPicker';
+import {
+  formPatchForSelection,
+  selectionFromForm,
+} from '../tokenGroupSelection';
 import TokenRoutingEditor from '../TokenRoutingEditor';
 import {
   readTokenRouting,
@@ -82,7 +86,6 @@ const EditTokenModal = (props) => {
   const isMobile = useIsMobile();
   const formApiRef = useRef(null);
   const nameFieldRef = useRef(null);
-  const autoChoiceRef = useRef(null);
   const loadedTokenValuesRef = useRef(null);
   const [models, setModels] = useState([]);
   const [availableGroups, setAvailableGroups] = useState({
@@ -153,9 +156,8 @@ const EditTokenModal = (props) => {
     routing_config: '',
     group_vendor: '',
     cross_group_retry: false,
-    // New tokens require a choice before accepting a potentially different
-    // fallback group's price. Existing tokens are restored by loadToken.
-    auto_group_fallback: isEdit ? false : undefined,
+    // Fallback is opt-in; the picker's checkbox explains the price impact.
+    auto_group_fallback: false,
     max_concurrency: 0,
     window_request_limit: 0,
     window_seconds: 0,
@@ -644,6 +646,13 @@ const EditTokenModal = (props) => {
         );
         data.group_vendor = resolveTokenGroupVendor(data.group);
         data.routing_enabled = !!data.routing_config;
+        if (data.routing_enabled) {
+          // Multi-group tokens keep fallback in the routing config; the legacy
+          // flag never applied to them, so it must not pre-check the box.
+          data.auto_group_fallback = readTokenRouting(
+            data.routing_config,
+          ).auto_fallback;
+        }
         loadedTokenValuesRef.current = { ...getInitValues(), ...data };
         applyLoadedTokenValues();
         await loadModels(data.group || '');
@@ -672,6 +681,117 @@ const EditTokenModal = (props) => {
     } finally {
       if (requestId === tokenRequestRef.current) setLoading(false);
     }
+  };
+
+  // Model -> groups catalog for the picker's model column, built from every
+  // explicit group this account may use. It only filters the group list.
+  const [modelCatalog, setModelCatalog] = useState({
+    data: null,
+    loading: false,
+    error: false,
+  });
+  const [modelVendors, setModelVendors] = useState({});
+  const catalogRequestRef = useRef(0);
+  const loadModelCatalog = async (force = false) => {
+    const names = (availableGroups.groups || [])
+      .map((group) => group.value)
+      .filter((name) => name && name !== 'auto')
+      .slice(0, 100);
+    const requestId = ++catalogRequestRef.current;
+    if (!names.length) {
+      setModelCatalog({
+        data: force ? {} : null,
+        loading: false,
+        error: false,
+      });
+      return;
+    }
+    setModelCatalog((prev) => ({ ...prev, loading: true, error: false }));
+    try {
+      const res = await API.get('/api/token/models', {
+        disableDuplicate: true,
+        params: {
+          detail: true,
+          // The server requires the draft's group to be the first listed one.
+          group: names[0],
+          routing_config: JSON.stringify({ groups: names }),
+        },
+      });
+      if (requestId !== catalogRequestRef.current) return;
+      if (!res.data?.success) throw new Error(res.data?.message);
+      setModelCatalog({
+        data: Object.fromEntries(
+          (Array.isArray(res.data.data) ? res.data.data : [])
+            .filter((item) => Array.isArray(item?.groups))
+            .map((item) => [item.name, item.groups]),
+        ),
+        loading: false,
+        error: false,
+      });
+    } catch {
+      if (requestId === catalogRequestRef.current)
+        setModelCatalog({ data: null, loading: false, error: true });
+    }
+  };
+  useEffect(() => {
+    if (props.visiable && availableGroups.userId === userState?.user?.id)
+      loadModelCatalog();
+    return () => {
+      catalogRequestRef.current += 1;
+    };
+  }, [props.visiable, availableGroups, userState?.user?.id]);
+  useEffect(() => {
+    if (!props.visiable) return undefined;
+    let cancelled = false;
+    API.get('/api/pricing', { disableDuplicate: true })
+      .then((res) => {
+        if (cancelled || !res.data?.success) return;
+        const vendorNames = new Map(
+          (res.data.vendors || []).map((vendor) => [vendor.id, vendor.name]),
+        );
+        setModelVendors(
+          Object.fromEntries(
+            (Array.isArray(res.data.data) ? res.data.data : [])
+              .filter((item) => vendorNames.has(item.vendor_id))
+              .map((item) => [
+                item.model_name,
+                vendorNames.get(item.vendor_id),
+              ]),
+          ),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [props.visiable]);
+
+  const applyGroupSelection = (next) => {
+    const api = formApiRef.current;
+    if (!api) return;
+    const patch = formPatchForSelection(
+      next,
+      api.getValues(),
+      readTokenRouting,
+    );
+    // routing_config before group: each setValue reloads models, and the last
+    // reload must see the final pair.
+    api.setValue('routing_enabled', patch.routing_enabled);
+    api.setValue('routing_config', patch.routing_config);
+    api.setValue('group', patch.group);
+  };
+  const syncRoutingFallback = (checked) => {
+    const api = formApiRef.current;
+    if (!api?.getValue('routing_enabled')) return;
+    const config = readTokenRouting(api.getValue('routing_config'));
+    api.setValue(
+      'routing_config',
+      JSON.stringify({
+        groups: config.groups,
+        model_groups: config.model_groups,
+        ...(checked ? { auto_fallback: true } : {}),
+      }),
+    );
   };
 
   useEffect(() => {
@@ -1034,14 +1154,6 @@ const EditTokenModal = (props) => {
         return;
       }
     }
-    if (
-      !isEdit &&
-      !values.routing_enabled &&
-      typeof values.auto_group_fallback !== 'boolean'
-    ) {
-      showError(t('请选择是否开启自动切换分组'));
-      return;
-    }
     submittingRef.current = true;
     const session = editorSessionRef.current;
     const isCurrentSession = () => session === editorSessionRef.current;
@@ -1366,18 +1478,6 @@ const EditTokenModal = (props) => {
                 ?.focus({ preventScroll: true });
               return;
             }
-            if (
-              !isEdit &&
-              !formApiRef.current?.getValue('routing_enabled') &&
-              typeof formApiRef.current?.getValue('auto_group_fallback') !==
-                'boolean'
-            ) {
-              autoChoiceRef.current?.scrollIntoView({ block: 'nearest' });
-              autoChoiceRef.current
-                ?.querySelector('input[type="radio"]')
-                ?.focus({ preventScroll: true });
-              return;
-            }
             if (quotaSectionRef.current) quotaSectionRef.current.open = true;
             if (advancedSectionRef.current)
               advancedSectionRef.current.open = true;
@@ -1431,139 +1531,80 @@ const EditTokenModal = (props) => {
                           : [{ required: true, message: t('请选择令牌分组') }]
                       }
                     />
-                    <div
-                      style={{
-                        display:
-                          values.routing_enabled && !isSellableToken
-                            ? 'none'
-                            : 'block',
-                      }}
-                    >
-                      <TokenGroupPicker
-                        key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
-                        userId={userState?.user?.id}
-                        groups={selectableGroups(values).filter(
-                          ({ value }) =>
-                            value !== 'auto' ||
-                            (isEdit &&
-                              loadedTokenValuesRef.current?.group === 'auto'),
-                        )}
-                        value={values.group}
-                        loading={groupsLoading || healthPending}
-                        error={groupsError}
-                        onRetry={loadGroups}
-                        onSelect={(group) =>
-                          formApiRef.current?.setValue('group', group)
-                        }
-                        details={
-                          <>
-                            <TokenGroupHealth
-                              group={values.group}
-                              stats={groupHealthByName.get(values.group)}
-                              loading={groupHealth.loading}
-                              error={groupHealth.error}
-                              onRetry={groupHealth.refresh}
-                              collectionEnabled={
-                                groupHealth.data?.enabled !== false
+                    <TokenGroupMultiPicker
+                      key={`${userState?.user?.id}:${props.editingToken.id ?? 'new'}:${props.visiable}`}
+                      userId={userState?.user?.id}
+                      multiple={!isSellableToken}
+                      groups={selectableGroups(values).filter(
+                        ({ value }) =>
+                          value !== 'auto' ||
+                          (isEdit &&
+                            loadedTokenValuesRef.current?.group === 'auto'),
+                      )}
+                      value={selectionFromForm(values, readTokenRouting)}
+                      onChange={applyGroupSelection}
+                      loading={groupsLoading || healthPending}
+                      error={groupsError}
+                      onRetry={loadGroups}
+                      catalog={modelCatalog.data}
+                      catalogLoading={modelCatalog.loading}
+                      catalogError={modelCatalog.error}
+                      onCatalogRetry={() => loadModelCatalog(true)}
+                      modelVendors={modelVendors}
+                      footer={
+                        !isSellableToken &&
+                        values.group !== 'auto' && (
+                          <div className='token-group-multi__fallback'>
+                            <Form.Checkbox
+                              field='auto_group_fallback'
+                              noLabel
+                              onChange={(event) =>
+                                syncRoutingFallback(!!event?.target?.checked)
                               }
-                              collectionData={groupHealth.data}
-                            />
-                            <div className='text-xs mt-2 break-words'>
-                              {t('支持模型')}：
-                              {modelsLoading ? (
-                                t('加载中...')
-                              ) : modelsError ? (
-                                t('暂不可用')
-                              ) : models.length ? (
-                                <TokenModelCopyList
-                                  key={values.group}
-                                  models={models}
-                                />
-                              ) : (
-                                t('暂无可用模型')
+                            >
+                              {t(
+                                '所选分组都不可用时，再按平台顺序尝试其他分组',
                               )}
-                            </div>
-                          </>
-                        }
-                      />
-                    </div>
-                    {values.routing_enabled && !isSellableToken && (
-                      <div className='token-group-picker__selection'>
-                        {t('已选分组')}：
-                        {readTokenRouting(values.routing_config).groups.join(
-                          ' → ',
-                        )}
-                        <Button
-                          htmlType='button'
-                          theme='borderless'
-                          onClick={() => {
-                            advancedSectionRef.current.open = true;
-                            advancedSectionRef.current.scrollIntoView({
-                              block: 'nearest',
-                            });
-                          }}
-                        >
-                          {t('高级设置')}
-                        </Button>
-                      </div>
-                    )}
-                    {!isEdit && (
-                      <>
-                        <div
-                          ref={autoChoiceRef}
-                          className='token-editor__auto-choice'
-                          style={{
-                            display: values.routing_enabled ? 'none' : 'block',
-                          }}
-                        >
-                          <Form.RadioGroup
-                            field='auto_group_fallback'
-                            label={t('故障时是否自动切换分组（Auto）？')}
-                            direction='vertical'
-                            options={[
-                              {
-                                value: true,
-                                label: t('开启，故障时尝试其他可用分组'),
-                              },
-                              {
-                                value: false,
-                                label: t('关闭，仅使用所选分组'),
-                              },
-                            ]}
-                            rules={[
-                              {
-                                required: !values.routing_enabled,
-                                validator: (_rule, value) =>
-                                  values.routing_enabled ||
-                                  typeof value === 'boolean'
-                                    ? Promise.resolve()
-                                    : Promise.reject(
-                                        t('请选择是否开启自动切换分组'),
-                                      ),
-                              },
-                            ]}
-                            extraText={t(
-                              '开启后，所选分组的模型不可用时，将按后台顺序尝试你有权限的其他分组。按实际使用分组计费，费用可能高于当前分组。',
-                            )}
+                            </Form.Checkbox>
+                            <Text type='tertiary' size='small'>
+                              {t(
+                                '按实际使用的分组计费，平台分组可能比你选的更贵。',
+                              )}
+                            </Text>
+                          </div>
+                        )
+                      }
+                      details={(group) => (
+                        <>
+                          <TokenGroupHealth
+                            group={group}
+                            stats={groupHealthByName.get(group)}
+                            loading={groupHealth.loading}
+                            error={groupHealth.error}
+                            onRetry={groupHealth.refresh}
+                            collectionEnabled={
+                              groupHealth.data?.enabled !== false
+                            }
+                            collectionData={groupHealth.data}
                           />
-                        </div>
-                        {values.routing_enabled && (
-                          <div className='token-editor__auto-choice text-sm'>
-                            {t(
-                              '自定义路由仅在你配置的分组范围内切换，按实际使用分组计费，费用可能高于首选分组。',
+                          <div className='text-xs mt-2 break-words'>
+                            {t('支持模型')}：
+                            {modelsLoading ? (
+                              t('加载中...')
+                            ) : modelsError ? (
+                              t('暂不可用')
+                            ) : models.length ? (
+                              <TokenModelCopyList
+                                key={values.group}
+                                models={models}
+                              />
+                            ) : (
+                              t('暂无可用模型')
                             )}
                           </div>
-                        )}
-                      </>
-                    )}
-                    {values.routing_enabled && groupsError && (
-                      <div role='alert'>
-                        {t('分组加载失败')}{' '}
-                        <Button htmlType='button' onClick={loadGroups}>
-                          {t('重试')}
-                        </Button>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    />
                     {modelsError && (
                       <div role='alert'>
                         {t('模型加载失败')}{' '}
@@ -1962,25 +2003,11 @@ const EditTokenModal = (props) => {
                             showClear
                             style={{ width: '100%' }}
                           />
+                          {/* Two or more groups chosen in the picker turn this on. */}
                           <Form.Switch
                             field='routing_enabled'
-                            label={t('按模型配置多个分组')}
-                            onChange={(enabled) => {
-                              if (
-                                enabled &&
-                                !formApiRef.current?.getValue('routing_config')
-                              ) {
-                                const group =
-                                  formApiRef.current?.getValue('group');
-                                formApiRef.current?.setValue(
-                                  'routing_config',
-                                  JSON.stringify({
-                                    groups:
-                                      group && group !== 'auto' ? [group] : [],
-                                  }),
-                                );
-                              }
-                            }}
+                            noLabel
+                            fieldStyle={{ display: 'none' }}
                           />
                           <Form.Input
                             field='routing_config'
@@ -1989,6 +2016,7 @@ const EditTokenModal = (props) => {
                           />
                           {values.routing_enabled && (
                             <TokenRoutingEditor
+                              showGroupSelect={false}
                               value={values.routing_config}
                               groups={selectableGroups(values)}
                               models={values.model_limits || []}
@@ -2029,22 +2057,6 @@ const EditTokenModal = (props) => {
                               )}
                             />
                           </div>
-                          {isEdit && (
-                            <div
-                              style={{
-                                display:
-                                  values.group === 'auto' ? 'none' : 'block',
-                              }}
-                            >
-                              <Form.Switch
-                                field='auto_group_fallback'
-                                label={t('故障时自动切换分组（Auto）')}
-                                extraText={t(
-                                  '优先使用所选分组；不可用时按后台顺序尝试其他可用分组，按实际使用分组计费。关闭后仅使用所选分组。',
-                                )}
-                              />
-                            </div>
-                          )}
                         </Col>
                         {isAdminUser && (
                           <Col span={24}>

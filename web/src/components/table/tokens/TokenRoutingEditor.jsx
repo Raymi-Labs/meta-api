@@ -39,6 +39,7 @@ export default function TokenRoutingEditor({
   modelGroups,
   onChange,
   disabled,
+  showGroupSelect = true,
 }) {
   const { t } = useTranslation();
   const labelId = useId();
@@ -81,40 +82,68 @@ export default function TokenRoutingEditor({
   const optionsByGroup = new Map(
     options.map((option) => [option.value, option]),
   );
-  const update = (next) => onChange(JSON.stringify(next));
+  // Keep keys the editor does not own (e.g. auto_fallback) when updating.
+  const update = (next) =>
+    onChange(
+      JSON.stringify({
+        ...next,
+        ...(config.auto_fallback ? { auto_fallback: true } : {}),
+      }),
+    );
   return (
     <div className='flex flex-col gap-3' data-testid='token-routing-editor'>
-      <Typography.Text strong id={labelId}>
-        {t('可用分组（可多选，按选择顺序路由）')}
-      </Typography.Text>
-      <Select
-        aria-labelledby={labelId}
-        multiple
-        filter={filterGroupOption}
-        renderSelectedItem={renderSelectedGroup}
-        dropdownStyle={{ width: 'min-content', maxWidth: 'calc(100vw - 32px)' }}
-        optionList={options}
-        value={config.groups}
-        disabled={disabled}
-        style={{ width: '100%' }}
-        placeholder={t('请选择令牌分组')}
-        onChange={(selected) =>
-          update({
-            groups: selected,
-            model_groups: Object.fromEntries(
-              Object.entries(config.model_groups).map(([name, assigned]) => [
-                name,
-                assigned.filter((group) => selected.includes(group)),
-              ]),
-            ),
-          })
-        }
-      />
-      <Typography.Text type='tertiary'>
-        {t(
-          '仅在所选分组内自动路由和重试，按实际使用分组计费；所有模型共用此 Key 的额度。',
-        )}
-      </Typography.Text>
+      {!showGroupSelect && (
+        <>
+          <Typography.Text strong>
+            {t('按模型指定分组（可选）')}
+          </Typography.Text>
+          <Typography.Text type='tertiary'>
+            {t(
+              '在模型限制列表里选好模型后，可为个别模型只使用部分分组；不设置的模型使用上面选的全部分组。',
+            )}
+          </Typography.Text>
+        </>
+      )}
+      {showGroupSelect && (
+        <Typography.Text strong id={labelId}>
+          {t('可用分组（可多选，按选择顺序路由）')}
+        </Typography.Text>
+      )}
+      {showGroupSelect && (
+        <Select
+          aria-labelledby={labelId}
+          multiple
+          filter={filterGroupOption}
+          renderSelectedItem={renderSelectedGroup}
+          dropdownStyle={{
+            width: 'min-content',
+            maxWidth: 'calc(100vw - 32px)',
+          }}
+          optionList={options}
+          value={config.groups}
+          disabled={disabled}
+          style={{ width: '100%' }}
+          placeholder={t('请选择令牌分组')}
+          onChange={(selected) =>
+            update({
+              groups: selected,
+              model_groups: Object.fromEntries(
+                Object.entries(config.model_groups).map(([name, assigned]) => [
+                  name,
+                  assigned.filter((group) => selected.includes(group)),
+                ]),
+              ),
+            })
+          }
+        />
+      )}
+      {showGroupSelect && (
+        <Typography.Text type='tertiary'>
+          {t(
+            '仅在所选分组内自动路由和重试，按实际使用分组计费；所有模型共用此 Key 的额度。',
+          )}
+        </Typography.Text>
+      )}
       {(models || []).map((name) => (
         <div key={name} className='flex flex-col gap-1'>
           <Typography.Text id={`${labelId}-${name}`}>

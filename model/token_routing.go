@@ -13,6 +13,9 @@ import (
 type TokenRoutingConfig struct {
 	Groups      []string            `json:"groups"`
 	ModelGroups map[string][]string `json:"model_groups,omitempty"`
+	// AutoFallback opts this multi-group token into trying the remaining
+	// platform auto groups after its own groups. Absent means off.
+	AutoFallback bool `json:"auto_fallback,omitempty"`
 }
 
 func ParseTokenRoutingConfig(raw string) (*TokenRoutingConfig, error) {
@@ -59,6 +62,16 @@ func ParseTokenRoutingConfig(raw string) (*TokenRoutingConfig, error) {
 		}
 	}
 	return config, nil
+}
+
+// HasModelRule reports whether the model has its own group list, which is a
+// deliberate narrowing: automatic group fallback never extends it.
+func (config *TokenRoutingConfig) HasModelRule(name string) bool {
+	if _, ok := config.ModelGroups[name]; ok {
+		return true
+	}
+	_, ok := config.ModelGroups[ratio_setting.FormatMatchingModelName(name)]
+	return ok
 }
 
 func (config *TokenRoutingConfig) GroupsForModel(name string) []string {

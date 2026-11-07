@@ -12,6 +12,8 @@ Status: implemented
 
 编辑已有令牌保留原值与开关；高级多分组配置继续覆盖 Auto，并在主区显示其范围及实际计费提示，不要求选择一个不生效的开关。单组/多组切换保留已作选择，但新建会话与身份变化不能继承上次同意。批量创建沿用本次选择；未选择不能发送写请求。
 
+后续由[多选分组选择器](../feature/2026-11-07-token-group-multi-picker.md)改为可选勾选框（默认不勾），创建与编辑都可修改，多分组令牌另存为 `routing_config.auto_fallback`。
+
 ## Existing capability review
 
 EditTokenModal → POST /api/token/ → controller/token.go → model.Token 已支持 false 持久化；service/token_group_fallback.go 与 service/token_routing.go 已限定备用范围并按实际组计费，无需后端、价格或 schema 改动。
