@@ -9,7 +9,9 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
+	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/config"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -100,4 +102,71 @@ func TestHealthRoutingSkipsUnhealthyOnlyWhenReplaceable(t *testing.T) {
 	require.Equal(t, 1, channel.Id, "a won probe lets the unhealthy line recover")
 	require.True(t, RouteHealthAvoids(routeParam().Ctx, "m", 1), "session affinity releases an unhealthy line")
 	require.False(t, RouteHealthAvoids(routeParam().Ctx, "m", 2))
+}
+
+func TestHealthRoutingSkipsWholeUnhealthyGroupInTokenOrder(t *testing.T) {
+	seedRoutePool(t)
+	oldRatios, oldUsable := ratio_setting.GroupRatio2JSONString(), setting.UserUsableGroups2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldRatios))
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(oldUsable))
+	})
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"pool-a":1,"pool-b":2}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"pool-a":"","pool-b":""}`))
+	unhealthy := routeinsight.RouteHealth{Status: routeinsight.StatusUnhealthy}
+	multiGroup := func() *RetryParam {
+		param := routeParam()
+		common.SetContextKey(param.Ctx, constant.ContextKeyUserGroup, "member")
+		common.SetContextKey(param.Ctx, constant.ContextKeyTokenRoutingConfig, `{"groups":["pool-a","pool-b"]}`)
+		return param
+	}
+
+	restore := routeinsight.SetHealthForTesting(
+		routeinsight.HealthEntry{ChannelID: 1, Model: "m", Health: unhealthy},
+		routeinsight.HealthEntry{ChannelID: 2, Model: "m", Health: unhealthy},
+		routeinsight.HealthEntry{ChannelID: 3, Model: "m", Health: healthy(0.99)},
+	)
+	t.Cleanup(restore)
+
+	channel, group, err := CacheGetRandomSatisfiedChannel(multiGroup())
+	require.NoError(t, err)
+	require.Equal(t, 1, channel.Id, "switch off: the token's first group is used as configured")
+	require.Equal(t, "pool-a", group)
+
+	setRouteRouting(t, map[string]string{"route_routing_setting.health_routing_enabled": "true", "route_routing_setting.probe_percent": "0"})
+	channel, group, err = CacheGetRandomSatisfiedChannel(multiGroup())
+	require.NoError(t, err)
+	require.Equal(t, 3, channel.Id, "a group with no healthy channel is skipped for the token's next group")
+	require.Equal(t, "pool-b", group)
+	candidates, group, err := CacheGetSatisfiedChannelCandidates(multiGroup())
+	require.NoError(t, err)
+	require.Equal(t, "pool-b", group, "capacity-admission candidates follow the same rule")
+	require.Len(t, candidates, 1)
+
+	channel, group, err = CacheGetRandomSatisfiedChannel(routeParam())
+	require.NoError(t, err)
+	require.Equal(t, 1, channel.Id, "a single-group token has no later group, so its group is still served")
+	require.Equal(t, "pool-a", group)
+
+	restore()
+	restore = routeinsight.SetHealthForTesting(
+		routeinsight.HealthEntry{ChannelID: 1, Model: "m", Health: unhealthy},
+		routeinsight.HealthEntry{ChannelID: 2, Model: "m", Health: unhealthy},
+		routeinsight.HealthEntry{ChannelID: 3, Model: "m", Health: unhealthy},
+	)
+	channel, group, err = CacheGetRandomSatisfiedChannel(multiGroup())
+	require.NoError(t, err)
+	require.Equal(t, 1, channel.Id, "when every group is unhealthy the normal order is kept")
+	require.Equal(t, "pool-a", group)
+
+	restore()
+	restore = routeinsight.SetHealthForTesting(
+		routeinsight.HealthEntry{ChannelID: 1, Model: "m", Health: unhealthy},
+		routeinsight.HealthEntry{ChannelID: 3, Model: "m", Health: healthy(0.99)},
+	)
+	channel, group, err = CacheGetRandomSatisfiedChannel(multiGroup())
+	require.NoError(t, err)
+	require.Equal(t, 2, channel.Id, "an unknown channel in the first group keeps the request in that group")
+	require.Equal(t, "pool-a", group)
+	restore()
 }

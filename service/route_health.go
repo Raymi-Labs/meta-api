@@ -26,10 +26,20 @@ func routeProbeDraw(param *RetryParam) float64 {
 }
 
 // routeHealthAvoidSet lists channels the health router skips for this
-// attempt. A channel is skipped only when it is unhealthy, did not win the
-// probe draw, and every routing group containing it still has another
-// non-unhealthy candidate, so health routing never empties a group that
-// production could otherwise serve. Unknown routes are never skipped.
+// attempt. The token's group order, priorities and weights are kept; health
+// only moves unhealthy channels behind the rest:
+//   - inside a group, an unhealthy channel is skipped while that group still
+//     has a non-unhealthy candidate for the model;
+//   - a group with no non-unhealthy candidate is skipped entirely when one of
+//     the token's later groups has one, so the request goes straight to the
+//     next group instead of failing first (billed at the group actually used,
+//     as with ordinary group fallback);
+//   - if no group has a non-unhealthy candidate, nothing is skipped.
+//
+// Unknown routes are never skipped, and a won probe draw skips nothing, so an
+// unhealthy route still receives a bounded trickle of traffic to recover.
+// A channel shared by several groups is skipped only if every group holding
+// it can do without it.
 func routeHealthAvoidSet(param *RetryParam, base []model.ChannelFilter) map[int]bool {
 	groups := RequestModelRoutingGroups(param.Ctx, param.TokenGroup, param.ModelName)
 	unhealthy := map[int]bool{}
@@ -52,21 +62,25 @@ func routeHealthAvoidSet(param *RetryParam, base []model.ChannelFilter) map[int]
 	if len(unhealthy) == 0 {
 		return nil
 	}
-	probe := routeProbeDraw(param) < float64(operation_setting.GetRouteRoutingSetting().ProbePercent)/100
+	if routeProbeDraw(param) < float64(operation_setting.GetRouteRoutingSetting().ProbePercent)/100 {
+		// One probe attempt keeps every unhealthy route reachable.
+		return nil
+	}
+	// laterHealthy[i]: some group after i still has a non-unhealthy candidate.
+	laterHealthy := make([]bool, len(groups))
+	for index := len(groups) - 2; index >= 0; index-- {
+		laterHealthy[index] = laterHealthy[index+1] || healthyCount[index+1] > 0
+	}
 	avoid := map[int]bool{}
 	for id := range unhealthy {
-		if probe {
-			// One probe attempt keeps every unhealthy route reachable.
-			continue
-		}
-		replaceable := true
+		skippable := true
 		for _, index := range groupsOf[id] {
-			if healthyCount[index] == 0 {
-				replaceable = false
+			if healthyCount[index] == 0 && !laterHealthy[index] {
+				skippable = false
 				break
 			}
 		}
-		if replaceable {
+		if skippable {
 			avoid[id] = true
 		}
 	}

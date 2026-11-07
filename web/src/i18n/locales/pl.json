@@ -7122,8 +7122,6 @@
     "一致时失败率": "Odsetek błędów przy zgodności",
     "分歧时失败率": "Odsetek błędów przy rozbieżności",
     "避开不健康": "Ominięte niesprawne",
-    "更便宜": "Taniej",
-    "无数据 / 缺成本": "Brak danych / brak kosztu",
     "尝试": "Próby",
     "成功率（下界）": "Skuteczność (dolna granica)",
     "上游失败 / 429": "Błędy upstream / 429",
@@ -7137,7 +7135,6 @@
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Decyzje cienia rejestrują tylko, którą trasę wybrałby inteligentny routing; nie zmieniają harmonogramu. Niewystarczające lub nieaktualne dane liczą się jako nieznane.",
     "路由开关": "Przełączniki routingu",
     "仅超级管理员可修改": "Zmieniać może tylko administrator główny",
-    "在当前分组内跳过不健康线路，不换分组、不改价格。": "Pomija niesprawne trasy w bieżącej grupie; nie zmienia grupy ani ceny.",
     "探测比例": "Udział sond",
     "允许少量请求尝试不健康或未知线路以便恢复，0 表示关闭。": "Pozwala części żądań próbować niesprawnych lub nieznanych tras, aby mogły się odbudować; 0 wyłącza.",
     "按模型筛选": "Filtruj wg modelu",
@@ -7154,7 +7151,6 @@
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Skuteczność liczy tylko wyniki z dowodem upstream; P50/P95 to ostrożne szacunki.",
     "最近分歧样本（本实例）": "Ostatnie rozbieżności (ta instancja)",
     "0 表示未知": "0 oznacza nieznane",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。": "Koszt zakupu względem ceny bazowej modelu, np. 0.8 oznacza 80%. Używany tylko do preferowania tańszych spośród równie sprawnych tras; 0 oznacza nieznane.",
     "例如：供应商A-账号池1": "np. Dostawca A - pula kont 1",
     "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Wskazuje rzeczywistego dostawcę upstream, pulę kont lub region, aby ocenić niezależność tras zapasowych.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Pamięć podręczna jest wyłączona (brak Redis i nieustawione MEMORY_CACHE_ENABLED), więc decyzje cienia i inteligentny routing nie działają.",
@@ -7182,6 +7178,14 @@
     "近24小时消耗": "Zużycie w ostatnich 24 h",
     "预计可用": "Szacowany pozostały czas",
     "按近24小时用量估算，退款冲减消耗，仅供参考；不随看板筛选变化。": "Orientacyjny szacunek na podstawie ostatnich 24 godzin, po odliczeniu zwrotów. Niezależny od filtrów panelu.",
-    "钱包余额为零不影响仍有额度的套餐。": "Zerowe saldo nie wpływa na plany z pozostałym limitem."
+    "钱包余额为零不影响仍有额度的套餐。": "Zerowe saldo nie wpływa na plany z pozostałym limitem.",
+    "不健康阈值": "Próg niesprawności",
+    "按原顺序": "Pierwotna kolejność",
+    "跳过不健康渠道": "Pominięcie niesprawnego kanału",
+    "整组不健康，换下一个分组": "Cała grupa niesprawna, kolejna grupa",
+    "全部不健康，按原顺序": "Wszystko niesprawne, pierwotna kolejność",
+    "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Wybiera kanały według pierwotnej kolejności grup i priorytetu, w grupie najpierw sprawne kanały; gdy cała grupa jest niesprawna, od razu używa kolejnej grupy tokenu i rozlicza według faktycznie użytej grupy.",
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanały, których skuteczność z ostatnich 15 minut jest niższa od tej wartości (co najmniej 10 prób), są uznawane za niesprawne; działa w ciągu około 15 sekund.",
+    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Koszt zakupu względem ceny bazowej modelu, np. 0.8 oznacza 80%. Obecnie tylko wyświetlany w obserwacji tras, nie wpływa na routing ani rozliczenia; 0 oznacza nieznane."
   }
 }

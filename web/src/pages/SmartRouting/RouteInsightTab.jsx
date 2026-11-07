@@ -24,6 +24,7 @@ const { Text } = Typography;
 const ROUTING_KEYS = {
   health: 'route_routing_setting.health_routing_enabled',
   probe: 'route_routing_setting.probe_percent',
+  threshold: 'route_routing_setting.unhealthy_below_percent',
 };
 
 export default function RouteInsightTab() {
@@ -40,6 +41,14 @@ export default function RouteInsightTab() {
   const [saving, setSaving] = useState(false);
   const generation = useRef(0);
   const root = isRoot();
+  const reasonLabel = (reason) =>
+    ({
+      ordered: t('按原顺序'),
+      skip_unhealthy: t('跳过不健康渠道'),
+      skip_group: t('整组不健康，换下一个分组'),
+      all_unhealthy: t('全部不健康，按原顺序'),
+      no_data: t('无数据'),
+    })[reason] || reason;
   const statusLabel = (status) =>
     ({ healthy: t('健康'), unhealthy: t('不健康'), unknown: t('未知') })[
       status
@@ -126,11 +135,10 @@ export default function RouteInsightTab() {
       title: t('避开不健康'),
       render: (_, row) => row.total.avoid_unhealthy,
     },
-    { title: t('更便宜'), render: (_, row) => row.total.cheaper },
     { title: t('跨分组'), render: (_, row) => row.total.cross_group },
     {
-      title: t('无数据 / 缺成本'),
-      render: (_, row) => `${row.total.no_data} / ${row.total.cost_unknown}`,
+      title: t('无数据'),
+      render: (_, row) => row.total.no_data,
     },
   ];
 
@@ -203,7 +211,7 @@ export default function RouteInsightTab() {
     {
       title: t('影子推荐'),
       render: (_, row) =>
-        `#${row.shadow.channel_id} (${row.shadow.group}) ${row.shadow.reason}`,
+        `#${row.shadow.channel_id} (${row.shadow.group}) ${reasonLabel(row.shadow.reason)}`,
     },
   ];
 
@@ -237,7 +245,9 @@ export default function RouteInsightTab() {
               />
               <Text strong>{t('智能路由总开关')}</Text>
               <Text type='tertiary'>
-                {t('在当前分组内跳过不健康线路，不换分组、不改价格。')}
+                {t(
+                  '按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。',
+                )}
               </Text>
             </Space>
             <Space>
@@ -264,6 +274,34 @@ export default function RouteInsightTab() {
               />
               <Text type='tertiary'>
                 {t('允许少量请求尝试不健康或未知线路以便恢复，0 表示关闭。')}
+              </Text>
+            </Space>
+            <Space>
+              <Text strong>{t('不健康阈值')}</Text>
+              <InputNumber
+                min={50}
+                max={99}
+                value={routing.unhealthy_below_percent}
+                disabled={!root || saving}
+                suffix='%'
+                style={{ width: 120 }}
+                onBlur={(event) => {
+                  const value = Math.min(
+                    99,
+                    Math.max(50, Number(event.target.value) || 90),
+                  );
+                  if (value !== routing.unhealthy_below_percent) {
+                    saveRouting(ROUTING_KEYS.threshold, value, {
+                      ...routing,
+                      unhealthy_below_percent: value,
+                    });
+                  }
+                }}
+              />
+              <Text type='tertiary'>
+                {t(
+                  '最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。',
+                )}
               </Text>
             </Space>
           </Space>

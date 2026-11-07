@@ -7122,8 +7122,6 @@
     "一致时失败率": "Tasso di errore se concordi",
     "分歧时失败率": "Tasso di errore se discordi",
     "避开不健康": "Non sane evitate",
-    "更便宜": "Più economica",
-    "无数据 / 缺成本": "Nessun dato / nessun costo",
     "尝试": "Tentativi",
     "成功率（下界）": "Tasso di successo (limite inferiore)",
     "上游失败 / 429": "Errori upstream / 429",
@@ -7137,7 +7135,6 @@
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Le decisioni ombra registrano solo quale rotta sceglierebbe il routing intelligente; non modificano la pianificazione. Dati insufficienti o scaduti contano come sconosciuti.",
     "路由开关": "Interruttori di routing",
     "仅超级管理员可修改": "Solo l'amministratore root può modificarli",
-    "在当前分组内跳过不健康线路，不换分组、不改价格。": "Salta le rotte non sane nel gruppo corrente; non cambia né il gruppo né il prezzo.",
     "探测比例": "Quota di sondaggio",
     "允许少量请求尝试不健康或未知线路以便恢复，0 表示关闭。": "Consente ad alcune richieste di provare rotte non sane o sconosciute perché possano recuperare; 0 lo disattiva.",
     "按模型筛选": "Filtra per modello",
@@ -7154,7 +7151,6 @@
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Il tasso di successo conta solo i risultati con evidenza upstream; P50/P95 sono stime prudenti.",
     "最近分歧样本（本实例）": "Discordanze recenti (questa istanza)",
     "0 表示未知": "0 significa sconosciuto",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。": "Costo d'acquisto rispetto al prezzo base del modello, es. 0.8 significa 80%. Usato solo per preferire rotte più economiche tra quelle ugualmente sane; 0 significa sconosciuto.",
     "例如：供应商A-账号池1": "es. Fornitore A - pool di account 1",
     "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Identifica il fornitore upstream reale, il pool di account o la regione, per capire se le rotte di riserva sono indipendenti.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "La cache in memoria è disattivata (nessun Redis e MEMORY_CACHE_ENABLED non impostato), quindi decisioni ombra e routing intelligente non hanno effetto.",
@@ -7182,6 +7178,14 @@
     "近24小时消耗": "Consumo nelle ultime 24 ore",
     "预计可用": "Durata stimata",
     "按近24小时用量估算，退款冲减消耗，仅供参考；不随看板筛选变化。": "Stima indicativa basata sulle ultime 24 ore, al netto dei rimborsi. Non dipende dai filtri della dashboard.",
-    "钱包余额为零不影响仍有额度的套餐。": "Un saldo nullo non influisce sui piani con quota residua."
+    "钱包余额为零不影响仍有额度的套餐。": "Un saldo nullo non influisce sui piani con quota residua.",
+    "不健康阈值": "Soglia non sano",
+    "按原顺序": "Ordine originale",
+    "跳过不健康渠道": "Salta canale non sano",
+    "整组不健康，换下一个分组": "Intero gruppo non sano, gruppo successivo",
+    "全部不健康，按原顺序": "Tutto non sano, ordine originale",
+    "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Sceglie i canali secondo l’ordine originale dei gruppi e la priorità, prima i canali sani del gruppo; se un intero gruppo non è sano, usa direttamente il gruppo successivo del token e fattura in base al gruppo effettivamente usato.",
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "I canali con tasso di successo degli ultimi 15 minuti inferiore a questo valore (almeno 10 tentativi) sono considerati non sani; si applica in circa 15 secondi.",
+    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Costo d’acquisto rispetto al prezzo base del modello, es. 0.8 significa 80%. Per ora mostrato solo nell’osservazione delle rotte, non influisce su routing o fatturazione; 0 significa sconosciuto."
   }
 }

@@ -7122,8 +7122,6 @@
     "一致时失败率": "Uyumda hata oranı",
     "分歧时失败率": "Ayrılıkta hata oranı",
     "避开不健康": "Kaçınılan sağlıksız",
-    "更便宜": "Daha ucuz",
-    "无数据 / 缺成本": "Veri yok / maliyet yok",
     "尝试": "Denemeler",
     "成功率（下界）": "Başarı oranı (alt sınır)",
     "上游失败 / 429": "Upstream hataları / 429",
@@ -7137,7 +7135,6 @@
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Gölge kararlar yalnızca akıllı yönlendirmenin hangi rotayı seçeceğini kaydeder; zamanlamayı değiştirmez. Yetersiz veya eski veriler bilinmeyen sayılır.",
     "路由开关": "Yönlendirme anahtarları",
     "仅超级管理员可修改": "Yalnızca kök yönetici değiştirebilir",
-    "在当前分组内跳过不健康线路，不换分组、不改价格。": "Mevcut grupta sağlıksız rotaları atlar; grubu veya fiyatı değiştirmez.",
     "探测比例": "Yoklama oranı",
     "允许少量请求尝试不健康或未知线路以便恢复，0 表示关闭。": "Bazı isteklerin sağlıksız veya bilinmeyen rotaları denemesine izin verir, böylece toparlanabilirler; 0 kapatır.",
     "按模型筛选": "Modele göre filtrele",
@@ -7154,7 +7151,6 @@
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Başarı oranı yalnızca upstream kanıtı olan sonuçları sayar; P50/P95 temkinli tahminlerdir.",
     "最近分歧样本（本实例）": "Son ayrılıklar (bu örnek)",
     "0 表示未知": "0 bilinmeyen demektir",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。": "Model temel fiyatına göre satın alma maliyeti, örn. 0.8 %80 demektir. Yalnızca eşit derecede sağlıklı rotalar arasında daha ucuz olanı tercih etmek için kullanılır; 0 bilinmeyen demektir.",
     "例如：供应商A-账号池1": "örn. Tedarikçi A - hesap havuzu 1",
     "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Gerçek upstream tedarikçisini, hesap havuzunu veya bölgeyi belirtir; yedek rotaların bağımsız olup olmadığını değerlendirmeye yarar.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bellek önbelleği kapalı (Redis yok ve MEMORY_CACHE_ENABLED ayarlı değil); gölge kararlar ve akıllı yönlendirme etkili olmaz.",
@@ -7182,6 +7178,14 @@
     "近24小时消耗": "Son 24 saat tüketimi",
     "预计可用": "Tahmini kalan süre",
     "按近24小时用量估算，退款冲减消耗，仅供参考；不随看板筛选变化。": "Son 24 saatten iadeler çıkarılarak hesaplanan yaklaşık değerdir. Panel filtrelerinden etkilenmez.",
-    "钱包余额为零不影响仍有额度的套餐。": "Sıfır bakiye, kotası kalan paketleri etkilemez."
+    "钱包余额为零不影响仍有额度的套餐。": "Sıfır bakiye, kotası kalan paketleri etkilemez.",
+    "不健康阈值": "Sağlıksız eşiği",
+    "按原顺序": "Özgün sıra",
+    "跳过不健康渠道": "Sağlıksız kanalı atla",
+    "整组不健康，换下一个分组": "Grubun tamamı sağlıksız, sonraki grup",
+    "全部不健康，按原顺序": "Hepsi sağlıksız, özgün sıra",
+    "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Kanalları özgün grup sırası ve önceliğe göre seçer, grup içinde önce sağlıklı kanalları kullanır; grubun tamamı sağlıksızsa doğrudan token’ın sonraki grubunu kullanır ve gerçekten kullanılan gruba göre ücretlendirir.",
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Son 15 dakikadaki başarı oranı bu değerin altında olan (en az 10 deneme) kanallar sağlıksız sayılır; yaklaşık 15 saniyede geçerli olur.",
+    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Model temel fiyatına göre satın alma maliyeti, örn. 0.8 %80 demektir. Şimdilik yalnızca rota gözleminde gösterilir; yönlendirmeyi ve ücretlendirmeyi etkilemez. 0 bilinmeyen demektir."
   }
 }

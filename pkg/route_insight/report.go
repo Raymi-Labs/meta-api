@@ -107,8 +107,6 @@ func ShadowReports(ctx context.Context, now time.Time, hours int, modelName stri
 		t.CrossGroupCount += row.CrossGroupCount
 		t.NoDataCount += row.NoDataCount
 		t.AvoidUnhealthyCount += row.AvoidUnhealthyCount
-		t.CheaperCount += row.CheaperCount
-		t.CostUnknownCount += row.CostUnknownCount
 		t.AgreeSuccessCount += row.AgreeSuccessCount
 		t.AgreeFailureCount += row.AgreeFailureCount
 		t.DisagreeSuccessCount += row.DisagreeSuccessCount

@@ -6,9 +6,10 @@ import (
 )
 
 // RouteShadowCandidates lists every channel the request is already permitted
-// to use (token routing groups, allowed/excluded channels and the same
-// selection filters as production). It never widens access, and returns
-// ok=false when the memory channel cache is unavailable.
+// to use (token routing groups in order, allowed/excluded channels and the
+// production availability filters, but not the health filter). It never
+// widens access, and returns ok=false when the memory channel cache is
+// unavailable.
 func RouteShadowCandidates(param *RetryParam) ([]routeinsight.Candidate, bool) {
 	if param == nil || param.Ctx == nil {
 		return nil, false
@@ -17,7 +18,9 @@ func RouteShadowCandidates(param *RetryParam) ([]routeinsight.Candidate, bool) {
 		return nil, false
 	}
 	groups := RequestModelRoutingGroups(param.Ctx, param.TokenGroup, param.ModelName)
-	filters := buildChannelSelectionFilters(param)
+	// Base filters only: the shadow applies health itself, so it must see the
+	// unhealthy channels the live switch would hide.
+	filters := buildBaseChannelSelectionFilters(param)
 	seen := map[int]bool{}
 	candidates := make([]routeinsight.Candidate, 0)
 	for index, group := range groups {

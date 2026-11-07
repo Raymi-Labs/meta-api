@@ -45,28 +45,32 @@ func TestHistogramQuantileUsesConservativeBinUpperBound(t *testing.T) {
 	require.Equal(t, newHistogram(), decodeHistogram("[1,2]"), "different bin layout is ignored, not guessed")
 }
 
-func TestEvaluateRequiresEvidenceAndUsesLowerBound(t *testing.T) {
+func TestEvaluateRequiresEvidenceAndUsesSuccessThreshold(t *testing.T) {
 	window := func(success, failure, unknown int64) Window {
 		w := newWindow()
 		w.Success, w.ServiceFailure, w.UnknownFailure = success, failure, unknown
 		w.Attempts = success + failure + unknown
 		return w
 	}
-	small := Evaluate(window(9, 0, 0), window(9, 0, 0))
-	require.Equal(t, StatusUnknown, small.Status, "9/9 is below the minimum sample size")
+	small := Evaluate(window(5, 4, 0), window(5, 4, 0), 0.9)
+	require.Equal(t, StatusUnknown, small.Status, "9 samples are below the minimum sample size")
 
-	perfect := Evaluate(window(20, 0, 0), window(20, 0, 0))
+	perfect := Evaluate(window(20, 0, 0), window(20, 0, 0), 0.9)
 	require.Equal(t, StatusHealthy, perfect.Status)
-	require.Less(t, perfect.Score, 0.9, "20/20 must not read as near-certain reliability")
+	require.Less(t, perfect.Score, 0.9, "the displayed score stays a conservative lower bound")
 
-	unknownOnly := Evaluate(window(0, 0, 50), window(0, 0, 50))
+	unknownOnly := Evaluate(window(0, 0, 50), window(0, 0, 50), 0.9)
 	require.Equal(t, StatusUnknown, unknownOnly.Status, "unknown outcomes are not upstream evidence")
 
-	low := Evaluate(window(10, 0, 0), window(14, 6, 0))
-	require.Equal(t, StatusUnhealthy, low.Status)
-	require.Equal(t, "low_success_lower_bound", low.Reason)
+	atThreshold := Evaluate(window(9, 1, 0), window(18, 2, 0), 0.9)
+	require.Equal(t, StatusHealthy, atThreshold.Status, "exactly 90% is not below the threshold")
+	below := Evaluate(window(8, 1, 0), window(17, 3, 0), 0.9)
+	require.Equal(t, StatusUnhealthy, below.Status, "85% is below 90%")
+	require.Equal(t, "low_success_rate", below.Reason)
+	require.Equal(t, StatusHealthy, Evaluate(window(8, 1, 0), window(17, 3, 0), 0.8).Status, "the threshold is configurable")
+	require.Equal(t, StatusUnhealthy, Evaluate(window(8, 1, 0), window(17, 3, 0), 0).Status, "0 falls back to the 90% default")
 
-	burst := Evaluate(window(2, 4, 0), window(200, 4, 0))
+	burst := Evaluate(window(2, 4, 0), window(200, 4, 0), 0.9)
 	require.Equal(t, StatusUnhealthy, burst.Status, "a 5-minute burst must not hide behind a good 15-minute history")
 	require.Equal(t, "recent_failure_burst", burst.Reason)
 }
@@ -86,50 +90,50 @@ func TestClassifyAttempt(t *testing.T) {
 	require.False(t, OutcomeCapacityRejected.IsUpstreamFailure(), "pre-execution refusal is tracked separately")
 }
 
-func TestDecideHealthBeforeCost(t *testing.T) {
-	health := map[int]RouteHealth{
-		1: {Status: StatusUnhealthy, Score: 0.5},
-		2: {Status: StatusHealthy, Score: 0.95},
-		3: {Status: StatusHealthy, Score: 0.94},
-		4: {Status: StatusHealthy, Score: 0.70 + 0.2},
-	}
-	lookup := func(id int) RouteHealth {
-		if h, ok := health[id]; ok {
-			return h
+func TestDecideKeepsOrderAndSkipsUnhealthy(t *testing.T) {
+	unhealthy, ok := RouteHealth{Status: StatusUnhealthy}, RouteHealth{Status: StatusHealthy}
+	lookup := func(table map[int]RouteHealth) func(int) RouteHealth {
+		return func(id int) RouteHealth {
+			if h, found := table[id]; found {
+				return h
+			}
+			return RouteHealth{Status: StatusUnknown}
 		}
-		return RouteHealth{Status: StatusUnknown}
+	}
+	// Group a (index 0): 1 high priority, 2 and 3 low priority; group b: 4.
+	candidates := []Candidate{
+		{ChannelID: 1, Group: "a", GroupIndex: 0, Priority: 10, PurchaseRatio: ratioPtr(0.1)},
+		{ChannelID: 2, Group: "a", GroupIndex: 0, Priority: 5},
+		{ChannelID: 3, Group: "a", GroupIndex: 0, Priority: 5},
+		{ChannelID: 4, Group: "b", GroupIndex: 1, Priority: 10},
 	}
 
-	cheapButBroken := []Candidate{
-		{ChannelID: 1, Group: "a", GroupIndex: 0, Priority: 10, PurchaseRatio: ratioPtr(0.1)},
-		{ChannelID: 2, Group: "b", GroupIndex: 1, Priority: 0, PurchaseRatio: ratioPtr(0.9)},
-	}
-	decision := Decide(cheapButBroken, lookup)
-	require.Equal(t, 2, decision.ChannelID, "low price must not offset failing health")
+	decision := Decide(candidates, lookup(map[int]RouteHealth{1: ok, 2: ok, 3: ok, 4: ok}))
+	require.Equal(t, []int{1}, decision.Tier, "all healthy: production order and priority")
+	require.Equal(t, "ordered", decision.Reason)
+
+	decision = Decide(candidates, lookup(map[int]RouteHealth{1: unhealthy, 2: ok, 3: ok, 4: ok}))
+	require.Equal(t, []int{2, 3}, decision.Tier, "skip the unhealthy top channel; weights choose within the next priority")
+	require.Equal(t, "skip_unhealthy", decision.Reason)
+	require.True(t, decision.includes(3))
+
+	decision = Decide(candidates, lookup(map[int]RouteHealth{1: unhealthy, 2: unhealthy, 3: unhealthy, 4: ok}))
+	require.Equal(t, []int{4}, decision.Tier, "a group with no healthy channel is skipped")
+	require.Equal(t, "skip_group", decision.Reason)
 	require.Equal(t, "b", decision.Group)
 
-	equivalent := []Candidate{
-		{ChannelID: 2, Group: "a", PurchaseRatio: ratioPtr(0.9)},
-		{ChannelID: 3, Group: "a", PurchaseRatio: ratioPtr(0.6)},
-		{ChannelID: 4, Group: "a", PurchaseRatio: ratioPtr(0.1)},
-	}
-	decision = Decide(equivalent, lookup)
-	require.Equal(t, 3, decision.ChannelID, "cheapest among equivalent healthy; 4 is healthy but clearly worse")
-	require.Equal(t, "cheapest_healthy", decision.Reason)
-
-	missingCost := []Candidate{{ChannelID: 2, Group: "a"}, {ChannelID: 3, Group: "a", PurchaseRatio: ratioPtr(0.1)}}
-	decision = Decide(missingCost, lookup)
-	require.Equal(t, 2, decision.ChannelID, "unknown cost is never treated as cheapest")
-	require.Equal(t, "best_health_cost_unknown", decision.Reason)
-
-	unknown := []Candidate{{ChannelID: 8, GroupIndex: 1, Priority: 5}, {ChannelID: 9, GroupIndex: 0, Priority: 0}}
-	decision = Decide(unknown, lookup)
-	require.Equal(t, 9, decision.ChannelID, "without data keep production group order")
-	require.Equal(t, "no_healthy_data", decision.Reason)
-
-	decision = Decide([]Candidate{{ChannelID: 1}}, lookup)
+	decision = Decide(candidates, lookup(map[int]RouteHealth{1: unhealthy, 2: unhealthy, 3: unhealthy, 4: unhealthy}))
+	require.Equal(t, []int{1}, decision.Tier, "everything unhealthy: keep the normal order")
 	require.Equal(t, "all_unhealthy", decision.Reason)
-	require.Equal(t, "no_candidates", Decide(nil, lookup).Reason)
+
+	decision = Decide(candidates, lookup(map[int]RouteHealth{1: unhealthy}))
+	require.Equal(t, []int{2, 3}, decision.Tier, "unknown channels are usable")
+
+	decision = Decide(candidates, lookup(nil))
+	require.Equal(t, []int{1}, decision.Tier)
+	require.Equal(t, "no_data", decision.Reason)
+
+	require.Equal(t, "no_candidates", Decide(nil, lookup(nil)).Reason)
 }
 
 func TestAttemptCollectorKeepsRetriedFailureAndMergesReplicas(t *testing.T) {
@@ -176,11 +180,10 @@ func TestShadowCollectorCountsAgreementAndRequests(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
 	c := newShadowCollector(model.SaveRouteShadowSnapshots)
-	c.observe(ShadowObservation{Model: "m", Decision: Decision{ChannelID: 1, Group: "a", Status: StatusHealthy, Reason: "best_health"},
-		ActualChannel: 1, ActualGroup: "a", ActualOutcome: OutcomeSuccess, At: now})
-	c.observe(ShadowObservation{Model: "m", Decision: Decision{ChannelID: 2, Group: "b", Status: StatusHealthy, Reason: "cheapest_healthy"},
-		ActualChannel: 1, ActualGroup: "a", ActualStatus: StatusUnhealthy, ActualOutcome: OutcomeServiceFailure,
-		ActualPurchase: ratioPtr(1), ShadowPurchase: ratioPtr(0.5), At: now})
+	c.observe(ShadowObservation{Model: "m", Decision: Decision{ChannelID: 1, Group: "a", Status: StatusHealthy, Reason: "ordered", Tier: []int{1, 5}},
+		ActualChannel: 5, ActualGroup: "a", ActualOutcome: OutcomeSuccess, At: now})
+	c.observe(ShadowObservation{Model: "m", Decision: Decision{ChannelID: 2, Group: "b", Status: StatusHealthy, Reason: "skip_group", Tier: []int{2}},
+		ActualChannel: 1, ActualGroup: "a", ActualStatus: StatusUnhealthy, ActualOutcome: OutcomeServiceFailure, At: now})
 	c.finishRequest("m", true, 2, now)
 	c.finishRequest("m", false, 0, now)
 	require.NoError(t, c.flush(ctx, now))
@@ -190,11 +193,10 @@ func TestShadowCollectorCountsAgreementAndRequests(t *testing.T) {
 	require.Len(t, reports, 1)
 	total := reports[0].Total
 	require.Equal(t, int64(2), total.DecisionCount)
-	require.Equal(t, int64(1), total.AgreeSuccessCount)
+	require.Equal(t, int64(1), total.AgreeSuccessCount, "any channel in the tier counts as agreement")
 	require.Equal(t, int64(1), total.DisagreeFailureCount)
 	require.Equal(t, int64(1), total.CrossGroupCount)
 	require.Equal(t, int64(1), total.AvoidUnhealthyCount)
-	require.Equal(t, int64(1), total.CheaperCount)
 	require.Equal(t, int64(1), total.RequestCount, "requests without attempts are not counted")
 	require.Equal(t, int64(1), total.RetriedCount)
 	require.InDelta(t, 2.0, *reports[0].AvgAttempts, 1e-9)

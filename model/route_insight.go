@@ -36,7 +36,9 @@ type RouteAttemptMetric struct {
 }
 
 // RouteShadowMetric compares the shadow recommendation with the channel the
-// production scheduler actually used. It never changes scheduling.
+// production scheduler actually used. It never changes scheduling. Former
+// cheaper_count/cost_unknown_count columns may remain in existing databases;
+// they are no longer written (shadow decisions no longer rank by cost).
 type RouteShadowMetric struct {
 	ID        string `gorm:"type:varchar(36);primaryKey" json:"-"`
 	BucketTs  int64  `gorm:"index:idx_route_shadow_window,priority:1" json:"bucket_ts"`
@@ -53,8 +55,6 @@ type RouteShadowMetric struct {
 	CrossGroupCount      int64 `gorm:"not null;default:0" json:"cross_group"`
 	NoDataCount          int64 `gorm:"not null;default:0" json:"no_data"`
 	AvoidUnhealthyCount  int64 `gorm:"not null;default:0" json:"avoid_unhealthy"`
-	CheaperCount         int64 `gorm:"not null;default:0" json:"cheaper"`
-	CostUnknownCount     int64 `gorm:"not null;default:0" json:"cost_unknown"`
 	AgreeSuccessCount    int64 `gorm:"not null;default:0" json:"agree_success"`
 	AgreeFailureCount    int64 `gorm:"not null;default:0" json:"agree_failure"`
 	DisagreeSuccessCount int64 `gorm:"not null;default:0" json:"disagree_success"`
@@ -90,7 +90,7 @@ func SaveRouteShadowSnapshots(ctx context.Context, rows []RouteShadowMetric) err
 		DoUpdates: clause.AssignmentColumns([]string{
 			"request_count", "delivered_count", "retried_count", "total_attempt_count",
 			"decision_count", "agree_count", "disagree_count", "cross_group_count", "no_data_count",
-			"avoid_unhealthy_count", "cheaper_count", "cost_unknown_count",
+			"avoid_unhealthy_count",
 			"agree_success_count", "agree_failure_count", "disagree_success_count", "disagree_failure_count", "updated_at",
 		}),
 	}).CreateInBatches(&rows, 100).Error

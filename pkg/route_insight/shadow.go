@@ -2,7 +2,6 @@ package routeinsight
 
 import (
 	"context"
-	"sort"
 	"sync"
 	"time"
 
@@ -38,26 +37,29 @@ type Decision struct {
 	Healthy        int          `json:"healthy"`
 	Unhealthy      int          `json:"unhealthy"`
 	Unknown        int          `json:"unknown"`
-	CostKnown      bool         `json:"cost_known"`
+	// Tier is every channel the router treats as an equally good pick (the
+	// highest remaining priority in the chosen group); weights choose among
+	// them, so production agrees when its channel is anywhere in the tier.
+	Tier []int `json:"tier"`
 }
 
-type scored struct {
-	Candidate
-	health RouteHealth
-}
-
-// Decide is pure: it ranks candidates on health first, then on configured
-// purchase cost among equivalent healthy routes. A sales group ratio is never
-// treated as cost, and missing cost is never treated as zero.
+// Decide simulates the smart routing switch, deterministically: keep the
+// token's group order and channel priorities; inside a group, unhealthy
+// channels go behind the rest; a group with no non-unhealthy candidate is
+// skipped when a later group has one; if every group is unhealthy, the first
+// group is used as usual. Unknown routes count as usable. Probing is not
+// simulated, and neither purchase cost nor small score differences are used.
 func Decide(candidates []Candidate, health func(channelID int) RouteHealth) Decision {
 	decision := Decision{CandidateCount: len(candidates), Reason: "no_candidates"}
 	if len(candidates) == 0 {
 		return decision
 	}
-	all := make([]scored, 0, len(candidates))
+	status := make(map[int]HealthStatus, len(candidates))
+	firstGroup, target := candidates[0].GroupIndex, -1
 	for _, candidate := range candidates {
-		h := health(candidate.ChannelID)
-		switch h.Status {
+		h := health(candidate.ChannelID).Status
+		status[candidate.ChannelID] = h
+		switch h {
 		case StatusHealthy:
 			decision.Healthy++
 		case StatusUnhealthy:
@@ -65,93 +67,83 @@ func Decide(candidates []Candidate, health func(channelID int) RouteHealth) Deci
 		default:
 			decision.Unknown++
 		}
-		all = append(all, scored{Candidate: candidate, health: h})
-	}
-	// Production order: earlier group first, then higher priority.
-	sort.SliceStable(all, func(i, j int) bool {
-		if all[i].GroupIndex != all[j].GroupIndex {
-			return all[i].GroupIndex < all[j].GroupIndex
+		if candidate.GroupIndex < firstGroup {
+			firstGroup = candidate.GroupIndex
 		}
-		return all[i].Priority > all[j].Priority
-	})
-	pick := func(s scored, reason string) Decision {
-		decision.ChannelID, decision.Group, decision.Reason, decision.Status = s.ChannelID, s.Group, reason, s.health.Status
-		decision.CostKnown = s.PurchaseRatio != nil
-		return decision
-	}
-	pool := filterStatus(all, StatusHealthy)
-	if len(pool) == 0 {
-		if unknown := filterStatus(all, StatusUnknown); len(unknown) > 0 {
-			// No evidence: keep the production order rather than explore.
-			return pick(unknown[0], "no_healthy_data")
+		if h != StatusUnhealthy && (target == -1 || candidate.GroupIndex < target) {
+			target = candidate.GroupIndex
 		}
-		best := all[0]
-		for _, s := range all[1:] {
-			if s.health.Score > best.health.Score {
-				best = s
+	}
+	reason := "ordered"
+	pool := make([]Candidate, 0, len(candidates))
+	if target == -1 {
+		target, reason = firstGroup, "all_unhealthy"
+		for _, candidate := range candidates {
+			if candidate.GroupIndex == target {
+				pool = append(pool, candidate)
 			}
 		}
-		return pick(best, "all_unhealthy")
-	}
-	bestScore := pool[0].health.Score
-	for _, s := range pool[1:] {
-		if s.health.Score > bestScore {
-			bestScore = s.health.Score
-		}
-	}
-	equivalent := make([]scored, 0, len(pool))
-	costKnown := true
-	for _, s := range pool {
-		if s.health.Score >= bestScore-ScoreTolerance {
-			equivalent = append(equivalent, s)
-			if s.PurchaseRatio == nil {
-				costKnown = false
+	} else {
+		for _, candidate := range candidates {
+			if candidate.GroupIndex == target && status[candidate.ChannelID] != StatusUnhealthy {
+				pool = append(pool, candidate)
 			}
 		}
 	}
-	if costKnown && len(equivalent) > 1 {
-		best := equivalent[0]
-		for _, s := range equivalent[1:] {
-			if *s.PurchaseRatio < *best.PurchaseRatio {
-				best = s
+	top := pool[0].Priority
+	for _, candidate := range pool[1:] {
+		if candidate.Priority > top {
+			top = candidate.Priority
+		}
+	}
+	for _, candidate := range pool {
+		if candidate.Priority == top {
+			decision.Tier = append(decision.Tier, candidate.ChannelID)
+		}
+	}
+	if reason == "ordered" {
+		if target != firstGroup {
+			reason = "skip_group"
+		} else {
+			for _, candidate := range candidates {
+				if candidate.GroupIndex == target && status[candidate.ChannelID] == StatusUnhealthy && candidate.Priority >= top {
+					reason = "skip_unhealthy"
+					break
+				}
 			}
 		}
-		return pick(best, "cheapest_healthy")
-	}
-	best := equivalent[0]
-	for _, s := range equivalent[1:] {
-		if s.health.Score > best.health.Score {
-			best = s
+		if decision.Healthy == 0 && decision.Unhealthy == 0 {
+			reason = "no_data"
 		}
 	}
-	reason := "best_health"
-	if !costKnown {
-		reason = "best_health_cost_unknown"
+	for _, candidate := range pool {
+		if candidate.ChannelID == decision.Tier[0] {
+			decision.ChannelID, decision.Group, decision.Status = candidate.ChannelID, candidate.Group, status[candidate.ChannelID]
+			break
+		}
 	}
-	return pick(best, reason)
+	decision.Reason = reason
+	return decision
 }
 
-func filterStatus(all []scored, status HealthStatus) []scored {
-	result := make([]scored, 0, len(all))
-	for _, s := range all {
-		if s.health.Status == status {
-			result = append(result, s)
+func (d Decision) includes(channelID int) bool {
+	for _, id := range d.Tier {
+		if id == channelID {
+			return true
 		}
 	}
-	return result
+	return false
 }
 
 // ShadowObservation joins one decision with what production actually did.
 type ShadowObservation struct {
-	Model          string
-	Decision       Decision
-	ActualChannel  int
-	ActualGroup    string
-	ActualStatus   HealthStatus
-	ActualOutcome  Outcome
-	ActualPurchase *float64
-	ShadowPurchase *float64
-	At             time.Time
+	Model         string
+	Decision      Decision
+	ActualChannel int
+	ActualGroup   string
+	ActualStatus  HealthStatus
+	ActualOutcome Outcome
+	At            time.Time
 }
 
 type RecentSample struct {
@@ -210,15 +202,12 @@ func (c *shadowCollector) observe(o ShadowObservation) {
 		return
 	}
 	row.DecisionCount++
-	if o.Decision.ChannelID == 0 || o.Decision.Reason == "no_healthy_data" {
+	if o.Decision.ChannelID == 0 || o.Decision.Reason == "no_data" {
 		row.NoDataCount++
-	}
-	if o.Decision.Reason == "best_health_cost_unknown" {
-		row.CostUnknownCount++
 	}
 	success := o.ActualOutcome == OutcomeSuccess
 	failure := o.ActualOutcome.IsUpstreamFailure()
-	if o.Decision.ChannelID == 0 || o.Decision.ChannelID == o.ActualChannel {
+	if o.Decision.ChannelID == 0 || o.Decision.includes(o.ActualChannel) {
 		row.AgreeCount++
 		if success {
 			row.AgreeSuccessCount++
@@ -236,11 +225,8 @@ func (c *shadowCollector) observe(o ShadowObservation) {
 	if o.Decision.Group != o.ActualGroup {
 		row.CrossGroupCount++
 	}
-	if o.ActualStatus == StatusUnhealthy && o.Decision.Status == StatusHealthy {
+	if o.ActualStatus == StatusUnhealthy {
 		row.AvoidUnhealthyCount++
-	}
-	if o.ShadowPurchase != nil && o.ActualPurchase != nil && *o.ShadowPurchase < *o.ActualPurchase {
-		row.CheaperCount++
 	}
 	sample := RecentSample{At: o.At.Unix(), Model: o.Model, ActualChannel: o.ActualChannel, ActualGroup: o.ActualGroup,
 		ActualStatus: o.ActualStatus, ActualOutcome: o.ActualOutcome, Shadow: o.Decision}

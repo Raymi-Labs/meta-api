@@ -83,12 +83,7 @@ func (t *routeAttemptTracker) finishAttempt(info *relaycommon.RelayInfo, err *ty
 	}
 	observation := routeinsight.ShadowObservation{Model: t.model, Decision: *t.shadow, ActualChannel: t.actual.ChannelID,
 		ActualGroup: info.UsingGroup, ActualStatus: routeinsight.Health(t.actual.ChannelID, t.model).Status,
-		ActualOutcome: outcome, ActualPurchase: t.actual.PurchaseRatio, At: now}
-	if t.shadow.ChannelID != 0 && t.shadow.ChannelID != t.actual.ChannelID {
-		if shadowChannel, cacheErr := model.CacheGetChannel(t.shadow.ChannelID); cacheErr == nil && shadowChannel != nil {
-			observation.ShadowPurchase = service.RouteShadowCandidate(shadowChannel, t.shadow.Group, 0).PurchaseRatio
-		}
-	}
+		ActualOutcome: outcome, At: now}
 	routeinsight.RecordShadow(observation)
 }
 

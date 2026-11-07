@@ -4,14 +4,14 @@ import (
 	"math"
 )
 
-// Health thresholds are initial, uncalibrated parameters for the shadow phase.
-// They must be tuned against observed baselines before any live routing use.
+// Health thresholds. The success-rate threshold is an administrator setting
+// (route_routing_setting.unhealthy_below_percent, default 90%); the others
+// are fixed initial values to be tuned against observed baselines.
 const (
-	MinSamples          = 10   // below this the route is unknown, never "healthy"
-	UnhealthyLowerBound = 0.80 // Wilson 95% lower bound on 15m evidence success
-	BurstMinSamples     = 5    // 5m burst detector needs at least this many
-	BurstFailureRate    = 0.5  // 5m upstream failure share that marks a burst
-	ScoreTolerance      = 0.02 // healthy routes within this score are "equivalent"
+	MinSamples            = 10   // below this the route is unknown, never "healthy"
+	DefaultUnhealthyBelow = 0.90 // success rate below this marks a route unhealthy
+	BurstMinSamples       = 5    // 5m burst detector needs at least this many
+	BurstFailureRate      = 0.5  // 5m upstream failure share that marks a burst
 )
 
 type HealthStatus string
@@ -93,7 +93,14 @@ type RouteHealth struct {
 	Long   Window       `json:"long"`  // last 15 minutes
 }
 
-func Evaluate(short, long Window) RouteHealth {
+// Evaluate classifies a route from its 5m and 15m windows. unhealthyBelow is
+// the success-rate threshold (0-1); 0 means DefaultUnhealthyBelow. Score is the
+// Wilson lower bound, kept for display only: routing uses the tiers, not
+// small score differences.
+func Evaluate(short, long Window, unhealthyBelow float64) RouteHealth {
+	if unhealthyBelow <= 0 || unhealthyBelow >= 1 {
+		unhealthyBelow = DefaultUnhealthyBelow
+	}
 	health := RouteHealth{Short: short, Long: long, Status: StatusUnknown, Reason: "insufficient_samples"}
 	if long.Evidence() < MinSamples {
 		return health
@@ -103,8 +110,8 @@ func Evaluate(short, long Window) RouteHealth {
 		health.Status, health.Reason = StatusUnhealthy, "recent_failure_burst"
 		return health
 	}
-	if health.Score < UnhealthyLowerBound {
-		health.Status, health.Reason = StatusUnhealthy, "low_success_lower_bound"
+	if rate := long.SuccessRate(); rate != nil && *rate < unhealthyBelow {
+		health.Status, health.Reason = StatusUnhealthy, "low_success_rate"
 		return health
 	}
 	health.Status, health.Reason = StatusHealthy, "ok"

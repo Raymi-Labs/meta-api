@@ -7735,8 +7735,6 @@
     "一致时失败率": "Tỷ lệ lỗi khi khớp",
     "分歧时失败率": "Tỷ lệ lỗi khi khác",
     "避开不健康": "Đã tránh tuyến không khỏe",
-    "更便宜": "Rẻ hơn",
-    "无数据 / 缺成本": "Không dữ liệu / chưa có chi phí",
     "尝试": "Lần thử",
     "成功率（下界）": "Tỷ lệ thành công (cận dưới)",
     "上游失败 / 429": "Lỗi upstream / 429",
@@ -7750,7 +7748,6 @@
     "影子决策只记录智能路由会选哪条线路，不改变调度；样本不足或数据过期视为未知。": "Quyết định bóng chỉ ghi lại tuyến mà định tuyến thông minh sẽ chọn; không thay đổi việc điều phối. Dữ liệu không đủ hoặc đã cũ được coi là không rõ.",
     "路由开关": "Công tắc định tuyến",
     "仅超级管理员可修改": "Chỉ quản trị viên gốc mới có thể thay đổi",
-    "在当前分组内跳过不健康线路，不换分组、不改价格。": "Bỏ qua tuyến không khỏe trong nhóm hiện tại; không đổi nhóm hay giá.",
     "探测比例": "Tỷ lệ thăm dò",
     "允许少量请求尝试不健康或未知线路以便恢复，0 表示关闭。": "Cho phép một số yêu cầu thử tuyến không khỏe hoặc không rõ để chúng phục hồi; 0 là tắt.",
     "按模型筛选": "Lọc theo mô hình",
@@ -7767,7 +7764,6 @@
     "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Tỷ lệ thành công chỉ tính kết quả có bằng chứng upstream; P50/P95 là ước tính thận trọng.",
     "最近分歧样本（本实例）": "Khác biệt gần đây (phiên bản này)",
     "0 表示未知": "0 nghĩa là không rõ",
-    "相对模型基础价的采购成本，如 0.8 表示 80%。仅用于智能路由在同等健康的线路中优先低成本；0 表示未知。": "Chi phí mua so với giá gốc của mô hình, ví dụ 0.8 nghĩa là 80%. Chỉ dùng để ưu tiên tuyến rẻ hơn trong số các tuyến khỏe như nhau; 0 nghĩa là không rõ.",
     "例如：供应商A-账号池1": "ví dụ: Nhà cung cấp A - nhóm tài khoản 1",
     "标识真实上游供应商、账号池或区域，便于判断备用线路是否独立。": "Xác định nhà cung cấp upstream thật, nhóm tài khoản hoặc khu vực, để đánh giá tuyến dự phòng có độc lập không.",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bộ nhớ đệm đang tắt (không có Redis và chưa bật MEMORY_CACHE_ENABLED), nên quyết định bóng và định tuyến thông minh không có hiệu lực.",
@@ -7795,6 +7791,14 @@
     "近24小时消耗": "Tiêu hao trong 24 giờ",
     "预计可用": "Thời gian còn lại ước tính",
     "按近24小时用量估算，退款冲减消耗，仅供参考；不随看板筛选变化。": "Ước tính tham khảo theo 24 giờ qua, trừ các khoản hoàn tiền. Không thay đổi theo bộ lọc bảng điều khiển.",
-    "钱包余额为零不影响仍有额度的套餐。": "Số dư ví bằng không không ảnh hưởng đến gói vẫn còn hạn mức."
+    "钱包余额为零不影响仍有额度的套餐。": "Số dư ví bằng không không ảnh hưởng đến gói vẫn còn hạn mức.",
+    "不健康阈值": "Ngưỡng không khỏe",
+    "按原顺序": "Thứ tự gốc",
+    "跳过不健康渠道": "Bỏ qua kênh không khỏe",
+    "整组不健康，换下一个分组": "Cả nhóm không khỏe, sang nhóm tiếp theo",
+    "全部不健康，按原顺序": "Tất cả không khỏe, theo thứ tự gốc",
+    "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Chọn kênh theo thứ tự nhóm và độ ưu tiên gốc, trong nhóm ưu tiên kênh khỏe; nếu cả nhóm không khỏe thì dùng ngay nhóm tiếp theo của token và tính phí theo nhóm thực tế sử dụng.",
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kênh có tỷ lệ thành công 15 phút gần nhất thấp hơn giá trị này (tối thiểu 10 lần) được coi là không khỏe; có hiệu lực trong khoảng 15 giây.",
+    "相对模型基础价的采购成本，如 0.8 表示 80%。目前只在线路观测中显示，不影响选路和计费；0 表示未知。": "Chi phí mua so với giá gốc của mô hình, ví dụ 0.8 nghĩa là 80%. Hiện chỉ hiển thị trong quan sát tuyến, không ảnh hưởng định tuyến hay tính phí; 0 nghĩa là không rõ."
   }
 }

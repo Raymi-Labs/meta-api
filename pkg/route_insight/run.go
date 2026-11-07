@@ -9,6 +9,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 )
 
 const (
@@ -135,9 +136,10 @@ func refreshSnapshot(ctx context.Context, now time.Time) error {
 				row.UnknownFailureCount, row.UserErrorCount, row.ClientCanceledCount, row.LocalDeliveryCount, ttft, duration)
 		}
 	}
+	threshold := float64(operation_setting.GetRouteRoutingSetting().UnhealthyBelowPercent) / 100
 	next := make(map[routeKey]RouteHealth, len(longWindows))
 	for key, long := range longWindows {
-		next[key] = Evaluate(*shortWindows[key], *long)
+		next[key] = Evaluate(*shortWindows[key], *long, threshold)
 	}
 	snapshotMu.Lock()
 	snapshot = next
