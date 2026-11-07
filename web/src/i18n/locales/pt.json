@@ -7180,6 +7180,12 @@
     "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Canais com taxa de sucesso dos últimos 15 minutos abaixo deste valor (com pelo menos 10 amostras) são considerados não saudáveis; vale em cerca de 15 segundos.",
     "上游失败 / 429 / 结果不明": "Falhas upstream / 429 / desconhecido",
     "用户错误 / 客户端取消": "Erros do usuário / cancelado pelo cliente",
-    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "A taxa de sucesso conta sucessos, falhas upstream, 429 e resultados desconhecidos (não retornados por completo e sem erro claro); exclui erros do usuário e cancelamentos do cliente. P50/P95 são estimativas conservadoras."
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "A taxa de sucesso conta sucessos, falhas upstream, 429 e resultados desconhecidos (não retornados por completo e sem erro claro); exclui erros do usuário e cancelamentos do cliente. P50/P95 são estimativas conservadoras.",
+    "成功率低": "Taxa de sucesso baixa",
+    "近期集中失败": "Pico recente de falhas",
+    "首字过慢": "Primeiro token lento",
+    "首字过慢倍数": "Fator de primeiro token lento",
+    "首字过慢下限": "Mínimo de primeiro token lento",
+    "最近 15 分钟首字 P75 达到同模型其他渠道的这个倍数、且不低于下限时，视为不健康；倍数填 0 关闭。双方各需至少 10 次首字样本。": "Um canal é considerado não saudável quando seu P75 do primeiro token em 15 minutos atinge este múltiplo dos outros canais do mesmo modelo e não fica abaixo do mínimo; fator 0 desativa. Ambos os lados precisam de pelo menos 10 amostras."
   }
 }

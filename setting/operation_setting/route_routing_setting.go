@@ -6,6 +6,11 @@ const (
 	defaultUnhealthyBelowPercent = 90
 	minUnhealthyBelowPercent     = 50
 	maxUnhealthyBelowPercent     = 99
+	defaultSlowTTFTRatio         = 2.0
+	minSlowTTFTRatio             = 1.2
+	maxSlowTTFTRatio             = 10.0
+	defaultSlowTTFTMinSeconds    = 10
+	maxSlowTTFTMinSeconds        = 120
 )
 
 // RouteRoutingSetting controls live use of route health. The switch is off by
@@ -25,9 +30,15 @@ type RouteRoutingSetting struct {
 	// UnhealthyBelowPercent marks a route unhealthy when its recent success
 	// rate (upstream evidence only, enough samples) is below this value.
 	UnhealthyBelowPercent int `json:"unhealthy_below_percent"`
+	// SlowTTFTRatio marks a route unhealthy when its 15-minute first-token
+	// P75 is at least this many times the same model's other channels (and at
+	// least SlowTTFTMinSeconds). 0 disables the rule.
+	SlowTTFTRatio      float64 `json:"slow_ttft_ratio"`
+	SlowTTFTMinSeconds int     `json:"slow_ttft_min_seconds"`
 }
 
-var routeRoutingSetting = RouteRoutingSetting{ProbePercent: 2, UnhealthyBelowPercent: defaultUnhealthyBelowPercent}
+var routeRoutingSetting = RouteRoutingSetting{ProbePercent: 2, UnhealthyBelowPercent: defaultUnhealthyBelowPercent,
+	SlowTTFTRatio: defaultSlowTTFTRatio, SlowTTFTMinSeconds: defaultSlowTTFTMinSeconds}
 
 func init() {
 	config.GlobalConfig.Register("route_routing_setting", &routeRoutingSetting)
@@ -49,6 +60,20 @@ func GetRouteRoutingSetting() RouteRoutingSetting {
 	}
 	if setting.UnhealthyBelowPercent > maxUnhealthyBelowPercent {
 		setting.UnhealthyBelowPercent = maxUnhealthyBelowPercent
+	}
+	switch {
+	case setting.SlowTTFTRatio <= 0:
+		setting.SlowTTFTRatio = 0 // disabled
+	case setting.SlowTTFTRatio < minSlowTTFTRatio:
+		setting.SlowTTFTRatio = minSlowTTFTRatio
+	case setting.SlowTTFTRatio > maxSlowTTFTRatio:
+		setting.SlowTTFTRatio = maxSlowTTFTRatio
+	}
+	if setting.SlowTTFTMinSeconds <= 0 {
+		setting.SlowTTFTMinSeconds = defaultSlowTTFTMinSeconds
+	}
+	if setting.SlowTTFTMinSeconds > maxSlowTTFTMinSeconds {
+		setting.SlowTTFTMinSeconds = maxSlowTTFTMinSeconds
 	}
 	return setting
 }

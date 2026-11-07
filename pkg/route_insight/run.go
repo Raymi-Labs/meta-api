@@ -136,11 +136,13 @@ func refreshSnapshot(ctx context.Context, now time.Time) error {
 				row.UnknownFailureCount, row.UserErrorCount, row.ClientCanceledCount, row.LocalDeliveryCount, ttft, duration)
 		}
 	}
-	threshold := float64(operation_setting.GetRouteRoutingSetting().UnhealthyBelowPercent) / 100
+	setting := operation_setting.GetRouteRoutingSetting()
+	threshold := float64(setting.UnhealthyBelowPercent) / 100
 	next := make(map[routeKey]RouteHealth, len(longWindows))
 	for key, long := range longWindows {
 		next[key] = Evaluate(*shortWindows[key], *long, threshold)
 	}
+	ApplySlowTTFT(next, longWindows, setting.SlowTTFTRatio, int64(setting.SlowTTFTMinSeconds)*1000)
 	snapshotMu.Lock()
 	snapshot = next
 	snapshotMu.Unlock()

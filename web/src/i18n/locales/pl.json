@@ -7180,6 +7180,12 @@
     "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanały, których skuteczność z ostatnich 15 minut jest niższa od tej wartości (co najmniej 10 prób), są uznawane za niesprawne; działa w ciągu około 15 sekund.",
     "上游失败 / 429 / 结果不明": "Błędy upstream / 429 / nieznane",
     "用户错误 / 客户端取消": "Błędy użytkownika / anulowane przez klienta",
-    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Skuteczność liczy sukcesy, błędy upstream, 429 i wyniki nieznane (niezwrócone w całości, bez wyraźnego błędu); błędy użytkownika i anulowania klienta są pomijane. P50/P95 to ostrożne szacunki."
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Skuteczność liczy sukcesy, błędy upstream, 429 i wyniki nieznane (niezwrócone w całości, bez wyraźnego błędu); błędy użytkownika i anulowania klienta są pomijane. P50/P95 to ostrożne szacunki.",
+    "成功率低": "Niska skuteczność",
+    "近期集中失败": "Niedawna seria błędów",
+    "首字过慢": "Wolny pierwszy token",
+    "首字过慢倍数": "Mnożnik wolnego pierwszego tokenu",
+    "首字过慢下限": "Próg wolnego pierwszego tokenu",
+    "最近 15 分钟首字 P75 达到同模型其他渠道的这个倍数、且不低于下限时，视为不健康；倍数填 0 关闭。双方各需至少 10 次首字样本。": "Kanał jest niesprawny, gdy jego P75 pierwszego tokenu z 15 minut osiąga tę wielokrotność pozostałych kanałów tego samego modelu i nie jest niższy od progu; mnożnik 0 wyłącza regułę. Obie strony potrzebują co najmniej 10 próbek."
   }
 }

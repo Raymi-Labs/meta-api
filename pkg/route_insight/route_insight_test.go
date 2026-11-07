@@ -221,3 +221,81 @@ func TestShadowCollectorCountsAgreementAndRequests(t *testing.T) {
 	require.InDelta(t, 2.0, *reports[0].AvgAttempts, 1e-9)
 	require.Len(t, c.recentSamples("m"), 1, "only disagreements are sampled")
 }
+
+func TestApplySlowTTFTComparesWithSameModelPeers(t *testing.T) {
+	ttftWindow := func(bin int, n int64) *Window {
+		w := newWindow()
+		w.TTFT[bin] = n
+		return &w
+	}
+	// Bins: 5 -> <=5s, 7 -> <=12s, 8 -> <=20s, 6 -> <=8s.
+	windows := map[routeKey]*Window{
+		{channelID: 1, model: "m"}:               ttftWindow(7, 20), // ~12s
+		{channelID: 2, model: "m"}:               ttftWindow(5, 30), // ~5s
+		{channelID: 3, model: "m"}:               ttftWindow(5, 30), // ~5s
+		{channelID: 4, model: "f"}:               ttftWindow(6, 20), // ~8s: 4x its peer but under the 10s floor
+		{channelID: 8, model: "f"}:               ttftWindow(3, 30), // ~2s
+		{channelID: 5, model: "slow-everywhere"}: ttftWindow(9, 30),
+		{channelID: 6, model: "slow-everywhere"}: ttftWindow(9, 30),
+		{channelID: 7, model: "m"}:               ttftWindow(8, 5), // too few samples
+	}
+	health := map[routeKey]RouteHealth{}
+	for key := range windows {
+		health[key] = RouteHealth{Status: StatusHealthy, Reason: "ok"}
+	}
+	health[routeKey{channelID: 3, model: "m"}] = RouteHealth{Status: StatusUnhealthy, Reason: "low_success_rate"}
+
+	ApplySlowTTFT(health, windows, 2, 10000)
+	slow := health[routeKey{channelID: 1, model: "m"}]
+	require.Equal(t, StatusUnhealthy, slow.Status)
+	require.Equal(t, "slow_ttft", slow.Reason)
+	require.Equal(t, int64(12000), *slow.TTFTP75Ms)
+	require.Equal(t, int64(5000), *slow.PeerTTFTP75Ms)
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 2, model: "m"}].Status)
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 4, model: "f"}].Status, "8s is under the 10s floor")
+	require.Equal(t, "low_success_rate", health[routeKey{channelID: 3, model: "m"}].Reason, "an existing reason is kept")
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 5, model: "slow-everywhere"}].Status, "a model slow on every channel is not penalized")
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 7, model: "m"}].Status, "fewer than 10 first-token samples")
+	require.Nil(t, health[routeKey{channelID: 7, model: "m"}].TTFTP75Ms)
+
+	for key := range windows {
+		health[key] = RouteHealth{Status: StatusHealthy}
+	}
+	ApplySlowTTFT(health, windows, 0, 10000)
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 1, model: "m"}].Status, "ratio 0 disables the rule")
+	ApplySlowTTFT(health, windows, 3, 10000)
+	require.Equal(t, StatusHealthy, health[routeKey{channelID: 1, model: "m"}].Status, "12s is not 3x 5s")
+
+	overflow := map[routeKey]*Window{{channelID: 1, model: "o"}: ttftWindow(12, 20), {channelID: 2, model: "o"}: ttftWindow(7, 20)}
+	h2 := map[routeKey]RouteHealth{{channelID: 1, model: "o"}: {Status: StatusHealthy}, {channelID: 2, model: "o"}: {Status: StatusHealthy}}
+	ApplySlowTTFT(h2, overflow, 2, 10000)
+	require.Equal(t, "slow_ttft", h2[routeKey{channelID: 1, model: "o"}].Reason, ">120s overflow counts as slow")
+}
+
+func TestRefreshSnapshotMarksSlowFirstToken(t *testing.T) {
+	useTestDB(t)
+	ctx := context.Background()
+	now := time.Now()
+	c := newAttemptCollector(model.SaveRouteAttemptSnapshots)
+	for i := 0; i < 20; i++ {
+		c.record(Attempt{ChannelID: 1, Group: "g", Model: "m", Outcome: OutcomeSuccess, TTFTMs: ms(15000), At: now})
+		c.record(Attempt{ChannelID: 2, Group: "g", Model: "m", Outcome: OutcomeSuccess, TTFTMs: ms(3000), At: now})
+	}
+	require.NoError(t, c.flush(ctx, now))
+	require.NoError(t, refreshSnapshot(ctx, now.Add(time.Second)))
+	snapshotAt.Store(time.Now().Unix())
+
+	slow := Health(1, "m")
+	require.Equal(t, StatusUnhealthy, slow.Status, "100% success but first token ~15s vs ~3s on the other channel")
+	require.Equal(t, "slow_ttft", slow.Reason)
+	require.Equal(t, StatusHealthy, Health(2, "m").Status)
+
+	reports, err := ChannelReports(ctx, now.Add(time.Second), 60, "m")
+	require.NoError(t, err)
+	for _, report := range reports {
+		if report.ChannelID == 1 {
+			require.Equal(t, int64(20000), *report.CurrentTTFTP75Ms)
+			require.Equal(t, int64(3000), *report.PeerTTFTP75Ms)
+		}
+	}
+}

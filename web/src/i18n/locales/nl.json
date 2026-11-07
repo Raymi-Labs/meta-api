@@ -7180,6 +7180,12 @@
     "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanalen met een slagingspercentage over de laatste 15 minuten onder deze waarde (minstens 10 pogingen) gelden als ongezond; actief binnen ongeveer 15 seconden.",
     "上游失败 / 429 / 结果不明": "Upstream-fouten / 429 / onbekend",
     "用户错误 / 客户端取消": "Gebruikersfouten / door client geannuleerd",
-    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Het slagingspercentage telt successen, upstream-fouten, 429 en onbekende resultaten (niet volledig teruggegeven, zonder duidelijke fout); gebruikersfouten en annuleringen door de client tellen niet mee. P50/P95 zijn voorzichtige schattingen."
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Het slagingspercentage telt successen, upstream-fouten, 429 en onbekende resultaten (niet volledig teruggegeven, zonder duidelijke fout); gebruikersfouten en annuleringen door de client tellen niet mee. P50/P95 zijn voorzichtige schattingen.",
+    "成功率低": "Laag slagingspercentage",
+    "近期集中失败": "Recente foutpiek",
+    "首字过慢": "Traag eerste token",
+    "首字过慢倍数": "Factor traag eerste token",
+    "首字过慢下限": "Ondergrens traag eerste token",
+    "最近 15 分钟首字 P75 达到同模型其他渠道的这个倍数、且不低于下限时，视为不健康；倍数填 0 关闭。双方各需至少 10 次首字样本。": "Een kanaal is ongezond als zijn P75 van het eerste token over 15 minuten dit veelvoud van de andere kanalen van hetzelfde model bereikt en minstens de ondergrens is; factor 0 schakelt dit uit. Beide kanten hebben minstens 10 metingen nodig."
   }
 }

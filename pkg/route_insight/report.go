@@ -22,6 +22,10 @@ type ChannelReport struct {
 	TTFTSamples   int64        `json:"ttft_samples"`
 	CurrentStatus HealthStatus `json:"current_status"`
 	CurrentReason string       `json:"current_reason"`
+	// Current 15-minute first-token P75 of this route and of the same model's
+	// other channels, when both have enough samples.
+	CurrentTTFTP75Ms *int64 `json:"current_ttft_p75_ms,omitempty"`
+	PeerTTFTP75Ms    *int64 `json:"peer_ttft_p75_ms,omitempty"`
 }
 
 // ChannelReports summarizes [now-minutes, now] per channel/group/model. The
@@ -54,7 +58,8 @@ func ChannelReports(ctx context.Context, now time.Time, minutes int, modelName s
 		report := ChannelReport{ChannelID: k.channelID, Group: k.group, Model: k.model, Window: *w,
 			SuccessRate: w.SuccessRate(), TTFTP50Ms: w.TTFT.Quantile(0.5), TTFTP95Ms: w.TTFT.Quantile(0.95),
 			DurationP50Ms: w.Duration.Quantile(0.5), DurationP95Ms: w.Duration.Quantile(0.95), TTFTSamples: w.TTFT.Count(),
-			CurrentStatus: current.Status, CurrentReason: current.Reason}
+			CurrentStatus: current.Status, CurrentReason: current.Reason,
+			CurrentTTFTP75Ms: current.TTFTP75Ms, PeerTTFTP75Ms: current.PeerTTFTP75Ms}
 		if w.Evidence() > 0 {
 			lower := w.WilsonLower()
 			report.WilsonLower = &lower

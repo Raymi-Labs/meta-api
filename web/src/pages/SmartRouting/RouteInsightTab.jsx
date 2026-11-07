@@ -25,6 +25,8 @@ const ROUTING_KEYS = {
   health: 'route_routing_setting.health_routing_enabled',
   probe: 'route_routing_setting.probe_percent',
   threshold: 'route_routing_setting.unhealthy_below_percent',
+  slowRatio: 'route_routing_setting.slow_ttft_ratio',
+  slowMin: 'route_routing_setting.slow_ttft_min_seconds',
 };
 
 export default function RouteInsightTab() {
@@ -49,6 +51,12 @@ export default function RouteInsightTab() {
       all_unhealthy: t('全部不健康，按原顺序'),
       no_data: t('无数据'),
     })[reason] || reason;
+  const unhealthyReasonLabel = (reason) =>
+    ({
+      low_success_rate: t('成功率低'),
+      recent_failure_burst: t('近期集中失败'),
+      slow_ttft: t('首字过慢'),
+    })[reason];
   const statusLabel = (status) =>
     ({ healthy: t('健康'), unhealthy: t('不健康'), unknown: t('未知') })[
       status
@@ -152,9 +160,19 @@ export default function RouteInsightTab() {
     {
       title: t('当前状态'),
       render: (_, row) => (
-        <Tag color={statusColor(row.current_status)}>
-          {statusLabel(row.current_status)}
-        </Tag>
+        <Space vertical align='start' spacing={2}>
+          <Tag color={statusColor(row.current_status)}>
+            {statusLabel(row.current_status)}
+            {row.current_status === 'unhealthy' &&
+              unhealthyReasonLabel(row.current_reason) &&
+              ` · ${unhealthyReasonLabel(row.current_reason)}`}
+          </Tag>
+          {row.current_reason === 'slow_ttft' && (
+            <Text type='tertiary' size='small'>
+              {`P75 ${formatLatency(row.current_ttft_p75_ms)} / ${formatLatency(row.peer_ttft_p75_ms)}`}
+            </Text>
+          )}
+        </Space>
       ),
     },
     { title: t('尝试'), render: (_, row) => row.window.attempts },
@@ -288,6 +306,54 @@ export default function RouteInsightTab() {
               <Text type='tertiary'>
                 {t(
                   '最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。',
+                )}
+              </Text>
+            </Space>
+            <Space>
+              <Text strong>{t('首字过慢倍数')}</Text>
+              <InputNumber
+                min={0}
+                max={10}
+                step={0.5}
+                value={routing.slow_ttft_ratio}
+                disabled={!root || saving}
+                style={{ width: 120 }}
+                onBlur={(event) => {
+                  const raw = Number(event.target.value);
+                  const value =
+                    raw <= 0 ? 0 : Math.min(10, Math.max(1.2, raw || 2));
+                  if (value !== routing.slow_ttft_ratio) {
+                    saveRouting(ROUTING_KEYS.slowRatio, value, {
+                      ...routing,
+                      slow_ttft_ratio: value,
+                    });
+                  }
+                }}
+              />
+              <Text strong>{t('首字过慢下限')}</Text>
+              <InputNumber
+                min={1}
+                max={120}
+                value={routing.slow_ttft_min_seconds}
+                disabled={!root || saving}
+                suffix='s'
+                style={{ width: 120 }}
+                onBlur={(event) => {
+                  const value = Math.min(
+                    120,
+                    Math.max(1, Number(event.target.value) || 10),
+                  );
+                  if (value !== routing.slow_ttft_min_seconds) {
+                    saveRouting(ROUTING_KEYS.slowMin, value, {
+                      ...routing,
+                      slow_ttft_min_seconds: value,
+                    });
+                  }
+                }}
+              />
+              <Text type='tertiary'>
+                {t(
+                  '最近 15 分钟首字 P75 达到同模型其他渠道的这个倍数、且不低于下限时，视为不健康；倍数填 0 关闭。双方各需至少 10 次首字样本。',
                 )}
               </Text>
             </Space>

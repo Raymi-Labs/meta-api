@@ -102,6 +102,10 @@ type RouteHealth struct {
 	Reason string       `json:"reason"`
 	Short  Window       `json:"short"` // last 5 minutes
 	Long   Window       `json:"long"`  // last 15 minutes
+	// TTFTP75Ms / PeerTTFTP75Ms are set when the route and its same-model
+	// peers both have enough first-token samples (see ApplySlowTTFT).
+	TTFTP75Ms     *int64 `json:"ttft_p75_ms,omitempty"`
+	PeerTTFTP75Ms *int64 `json:"peer_ttft_p75_ms,omitempty"`
 }
 
 // Evaluate classifies a route from its 5m and 15m windows. unhealthyBelow is

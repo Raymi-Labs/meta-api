@@ -7392,6 +7392,12 @@
     "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Channels whose success rate over the last 15 minutes is below this value (with at least 10 samples) count as unhealthy; takes effect within about 15 seconds.",
     "上游失败 / 429 / 结果不明": "Upstream failures / 429 / unknown",
     "用户错误 / 客户端取消": "User errors / client canceled",
-    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Success rate counts successes, upstream failures, 429 and unknown results (not fully returned, no clear error); user errors and client cancellations are excluded. P50/P95 are conservative estimates."
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Success rate counts successes, upstream failures, 429 and unknown results (not fully returned, no clear error); user errors and client cancellations are excluded. P50/P95 are conservative estimates.",
+    "成功率低": "Low success rate",
+    "近期集中失败": "Recent failure burst",
+    "首字过慢": "Slow first token",
+    "首字过慢倍数": "Slow first-token ratio",
+    "首字过慢下限": "Slow first-token floor",
+    "最近 15 分钟首字 P75 达到同模型其他渠道的这个倍数、且不低于下限时，视为不健康；倍数填 0 关闭。双方各需至少 10 次首字样本。": "A channel is unhealthy when its 15-minute first-token P75 reaches this multiple of the same model’s other channels and is at least the floor; set the ratio to 0 to turn this off. Each side needs at least 10 first-token samples."
   }
 }
