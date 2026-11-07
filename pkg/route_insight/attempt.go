@@ -39,10 +39,12 @@ const (
 	OutcomeLocalDelivery Outcome = "local_delivery"
 )
 
-// IsUpstreamFailure reports outcomes with evidence against the upstream route.
-// Unknown, user, cancel and local outcomes never penalize a channel.
+// IsUpstreamFailure reports outcomes with evidence against the upstream route,
+// including unknown outcomes (nothing delivered completely without a
+// classified cause). User errors, client cancellations, local delivery
+// failures and pre-execution capacity refusals never penalize a channel.
 func (o Outcome) IsUpstreamFailure() bool {
-	return o == OutcomeServiceFailure || o == OutcomeRateLimited
+	return o == OutcomeServiceFailure || o == OutcomeRateLimited || o == OutcomeUnknownFailure
 }
 
 type AttemptInput struct {

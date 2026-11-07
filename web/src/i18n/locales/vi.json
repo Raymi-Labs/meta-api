@@ -7737,8 +7737,6 @@
     "避开不健康": "Đã tránh tuyến không khỏe",
     "尝试": "Lần thử",
     "成功率（下界）": "Tỷ lệ thành công (cận dưới)",
-    "上游失败 / 429": "Lỗi upstream / 429",
-    "未知 / 用户 / 取消": "Không rõ / người dùng / đã hủy",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Hoàn tất P95",
     "实际": "Thực tế",
@@ -7759,7 +7757,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "Quan sát tuyến đang tắt (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Bóng so với thực tế",
     "渠道逐次尝试": "Kết quả từng lần thử theo kênh",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Tỷ lệ thành công chỉ tính kết quả có bằng chứng upstream; P50/P95 là ước tính thận trọng.",
     "最近分歧样本（本实例）": "Khác biệt gần đây (phiên bản này)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bộ nhớ đệm đang tắt (không có Redis và chưa bật MEMORY_CACHE_ENABLED), nên quyết định bóng và định tuyến thông minh không có hiệu lực.",
     "智能路由总开关": "Công tắc tổng định tuyến thông minh",
@@ -7793,6 +7790,9 @@
     "整组不健康，换下一个分组": "Cả nhóm không khỏe, sang nhóm tiếp theo",
     "全部不健康，按原顺序": "Tất cả không khỏe, theo thứ tự gốc",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Chọn kênh theo thứ tự nhóm và độ ưu tiên gốc, trong nhóm ưu tiên kênh khỏe; nếu cả nhóm không khỏe thì dùng ngay nhóm tiếp theo của token và tính phí theo nhóm thực tế sử dụng.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kênh có tỷ lệ thành công 15 phút gần nhất thấp hơn giá trị này (tối thiểu 10 lần) được coi là không khỏe; có hiệu lực trong khoảng 15 giây."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kênh có tỷ lệ thành công 15 phút gần nhất thấp hơn giá trị này (tối thiểu 10 lần) được coi là không khỏe; có hiệu lực trong khoảng 15 giây.",
+    "上游失败 / 429 / 结果不明": "Lỗi upstream / 429 / không rõ",
+    "用户错误 / 客户端取消": "Lỗi người dùng / client hủy",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Tỷ lệ thành công tính thành công, lỗi upstream, 429 và kết quả không rõ (không trả về đầy đủ và không có lỗi rõ ràng); không tính lỗi người dùng và client hủy. P50/P95 là ước tính thận trọng."
   }
 }

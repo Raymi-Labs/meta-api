@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -14,6 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
+
+// TestMain keeps the background flush/snapshot loop from starting: tests
+// drive collectors and refreshSnapshot directly, and a concurrent refresh
+// would race with snapshot assertions.
+func TestMain(m *testing.M) {
+	startOnce.Do(func() {})
+	os.Exit(m.Run())
+}
 
 func useTestDB(t *testing.T) {
 	t.Helper()
@@ -59,7 +68,15 @@ func TestEvaluateRequiresEvidenceAndUsesSuccessThreshold(t *testing.T) {
 	require.Less(t, perfect.Score, 0.9, "the displayed score stays a conservative lower bound")
 
 	unknownOnly := Evaluate(window(0, 0, 50), window(0, 0, 50), 0.9)
-	require.Equal(t, StatusUnknown, unknownOnly.Status, "unknown outcomes are not upstream evidence")
+	require.Equal(t, StatusUnhealthy, unknownOnly.Status, "answers that never complete count against the route")
+	cutOff := Evaluate(window(30, 0, 2), window(76, 0, 24), 0.9)
+	require.Equal(t, StatusUnhealthy, cutOff.Status, "24% cut-off streams with no classified error is unhealthy")
+	require.Equal(t, "low_success_rate", cutOff.Reason)
+	unknownBurst := Evaluate(window(2, 1, 3), window(200, 1, 3), 0.9)
+	require.Equal(t, "recent_failure_burst", unknownBurst.Reason, "unknown outcomes join the 5-minute burst detector")
+	notEvidence := newWindow()
+	notEvidence.UserError, notEvidence.ClientCanceled, notEvidence.LocalDelivery, notEvidence.CapacityRejected = 40, 40, 40, 40
+	require.Equal(t, StatusUnknown, Evaluate(notEvidence, notEvidence, 0.9).Status, "user, cancel, local and capacity outcomes are not evidence")
 
 	atThreshold := Evaluate(window(9, 1, 0), window(18, 2, 0), 0.9)
 	require.Equal(t, StatusHealthy, atThreshold.Status, "exactly 90% is not below the threshold")
@@ -85,7 +102,10 @@ func TestClassifyAttempt(t *testing.T) {
 	require.Equal(t, OutcomeSuccess, ClassifyAttempt(AttemptInput{Info: &relaycommon.RelayInfo{}, Delivered: true}))
 	timeout := &relaycommon.RelayInfo{StreamStatus: &relaycommon.StreamStatus{EndReason: relaycommon.StreamEndReasonTimeout, ErrorCount: 1}}
 	require.Equal(t, OutcomeServiceFailure, ClassifyAttempt(AttemptInput{Info: timeout, Delivered: true}))
-	require.False(t, OutcomeUnknownFailure.IsUpstreamFailure())
+	require.True(t, OutcomeUnknownFailure.IsUpstreamFailure(), "an answer that never completes counts against the route")
+	require.False(t, OutcomeClientCanceled.IsUpstreamFailure())
+	require.False(t, OutcomeLocalDelivery.IsUpstreamFailure())
+	require.False(t, OutcomeUserError.IsUpstreamFailure())
 	require.False(t, OutcomeCapacityRejected.IsUpstreamFailure(), "pre-execution refusal is tracked separately")
 }
 

@@ -164,14 +164,14 @@ export default function RouteInsightTab() {
         `${formatPercent(row.success_rate)} (${formatPercent(row.success_lower_bound)})`,
     },
     {
-      title: t('上游失败 / 429'),
+      title: t('上游失败 / 429 / 结果不明'),
       render: (_, row) =>
-        `${row.window.service_failure} / ${row.window.rate_limited}`,
+        `${row.window.service_failure} / ${row.window.rate_limited} / ${row.window.unknown_failure}`,
     },
     {
-      title: t('未知 / 用户 / 取消'),
+      title: t('用户错误 / 客户端取消'),
       render: (_, row) =>
-        `${row.window.unknown_failure} / ${row.window.user_error} / ${row.window.client_canceled}`,
+        `${row.window.user_error} / ${row.window.client_canceled}`,
     },
     {
       title: t('首字 P50 / P95'),
@@ -380,7 +380,9 @@ export default function RouteInsightTab() {
           empty={t('暂无数据')}
         />
         <Text type='tertiary' size='small'>
-          {t('成功率只计有上游证据的结果；P50/P95 为保守估计。')}
+          {t(
+            '成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。',
+          )}
         </Text>
       </Card>
       <Card title={t('最近分歧样本（本实例）')} style={{ width: '100%' }}>

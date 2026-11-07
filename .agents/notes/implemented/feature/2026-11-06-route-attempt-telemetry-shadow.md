@@ -12,7 +12,7 @@ Status: implemented
 
 - **逐次尝试**：`controller/relay.go` 重试循环在每次上游尝试后记录渠道/实际组/模型/结果，结果区分 success、service_failure、rate_limited（429）、capacity_rejected（VM 执行前拒绝）、unknown、user_error、client_canceled、local_delivery（本地写回失败）。重试成功不会抹掉前一次失败。成功尝试记录本次首字与完成耗时到固定区间直方图（`LatencyBoundsMs`），P50/P95 取所在区间上界，属保守估计。
 - **存储**：`route_attempt_metrics` 按分钟、`route_shadow_metrics` 按小时；每进程 UUID 行幂等覆盖，查询汇总各副本，与 group health 同一模式。保留 3 天 / 30 天。
-- **健康快照**：后台每 15 秒从数据库读最近 15 分钟（含所有实例），按渠道+模型生成 5 分钟/15 分钟窗口。只有 success/service_failure/rate_limited 作为上游证据；unknown、用户、取消与本地失败不惩罚线路。证据少于 10 次为 unknown；不健康判定现为成功率低于后台阈值（默认 90%）或 5 分钟内上游失败 ≥50%（至少 5 次），见[有序健康选路](2026-11-07-ordered-health-routing.md)。快照超过 2 分钟未更新时一律视为 unknown。
+- **健康快照**：后台每 15 秒从数据库读最近 15 分钟（含所有实例），按渠道+模型生成 5 分钟/15 分钟窗口。上游证据现为 success/service_failure/rate_limited/unknown（最初不含 unknown，后改，见[结果不明计为失败](../bug-fix/2026-11-07-route-health-counts-unknown.md)）；用户、取消、本地失败与容量拒绝不惩罚线路。证据少于 10 次为 unknown；不健康判定现为成功率低于后台阈值（默认 90%）或 5 分钟内上游失败 ≥50%（至少 5 次），见[有序健康选路](2026-11-07-ordered-health-routing.md)。快照超过 2 分钟未更新时一律视为 unknown。
 - **影子决策**：每次尝试前，在请求已获准的候选内（令牌路由组、渠道白名单、重试排除和生产相同过滤器；指定渠道和无内存缓存时跳过，不扫数据库）模拟智能路由总开关的规则（按原顺序、组内跳过不健康、整组不健康换下一组），实际渠道落在推荐档位内即算一致，见[有序健康选路](2026-11-07-ordered-health-routing.md)；不越权、不跨模型。最初版本按「健康优先、等价取最低采购价」推荐，已改。
 - **成本与故障域**：最初在渠道 `setting` 新增可选 `route_purchase_ratio` 与 `route_fault_domain`，后因不参与选路已移除，见[移除记录](../simplification/2026-11-07-remove-route-cost-fault-domain.md)。
 - **逻辑请求**：每个请求另记最终是否交付、尝试次数与是否重试。

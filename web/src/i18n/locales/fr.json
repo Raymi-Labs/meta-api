@@ -7456,8 +7456,6 @@
     "避开不健康": "Routes défaillantes évitées",
     "尝试": "Tentatives",
     "成功率（下界）": "Taux de réussite (borne inférieure)",
-    "上游失败 / 429": "Échecs amont / 429",
-    "未知 / 用户 / 取消": "Inconnu / utilisateur / annulé",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Fin P95",
     "实际": "Réel",
@@ -7478,7 +7476,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "L'observation des routes est désactivée (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Fantôme vs production",
     "渠道逐次尝试": "Résultats par tentative et par canal",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Le taux de réussite ne compte que les résultats avec preuve amont ; P50/P95 sont des estimations prudentes.",
     "最近分歧样本（本实例）": "Désaccords récents (cette instance)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Le cache mémoire est désactivé (pas de Redis et MEMORY_CACHE_ENABLED non défini) : les décisions fantômes et le routage intelligent n'ont aucun effet.",
     "智能路由总开关": "Interrupteur général du routage intelligent",
@@ -7512,6 +7509,9 @@
     "整组不健康，换下一个分组": "Groupe entier défaillant, groupe suivant",
     "全部不健康，按原顺序": "Tout défaillant, ordre d’origine",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Choisit les canaux selon l’ordre d’origine des groupes et la priorité, canaux sains d’abord dans un groupe ; si tout un groupe est défaillant, le groupe suivant du jeton est utilisé directement et facturé au groupe réellement utilisé.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Les canaux dont le taux de réussite des 15 dernières minutes est inférieur à cette valeur (au moins 10 essais) sont considérés défaillants ; prise d’effet sous 15 secondes environ."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Les canaux dont le taux de réussite des 15 dernières minutes est inférieur à cette valeur (au moins 10 essais) sont considérés défaillants ; prise d’effet sous 15 secondes environ.",
+    "上游失败 / 429 / 结果不明": "Échecs amont / 429 / inconnu",
+    "用户错误 / 客户端取消": "Erreurs utilisateur / annulé par le client",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Le taux de réussite compte les réussites, échecs amont, 429 et résultats inconnus (pas entièrement renvoyés, sans erreur claire) ; les erreurs utilisateur et annulations client sont exclues. P50/P95 sont des estimations prudentes."
   }
 }

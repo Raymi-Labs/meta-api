@@ -7124,8 +7124,6 @@
     "避开不健康": "Kaçınılan sağlıksız",
     "尝试": "Denemeler",
     "成功率（下界）": "Başarı oranı (alt sınır)",
-    "上游失败 / 429": "Upstream hataları / 429",
-    "未知 / 用户 / 取消": "Bilinmeyen / kullanıcı / iptal",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Tamamlanma P95",
     "实际": "Gerçek",
@@ -7146,7 +7144,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "Rota gözlemi kapalı (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Gölge ve üretim karşılaştırması",
     "渠道逐次尝试": "Kanal başına deneme sonuçları",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Başarı oranı yalnızca upstream kanıtı olan sonuçları sayar; P50/P95 temkinli tahminlerdir.",
     "最近分歧样本（本实例）": "Son ayrılıklar (bu örnek)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bellek önbelleği kapalı (Redis yok ve MEMORY_CACHE_ENABLED ayarlı değil); gölge kararlar ve akıllı yönlendirme etkili olmaz.",
     "智能路由总开关": "Akıllı yönlendirme ana anahtarı",
@@ -7180,6 +7177,9 @@
     "整组不健康，换下一个分组": "Grubun tamamı sağlıksız, sonraki grup",
     "全部不健康，按原顺序": "Hepsi sağlıksız, özgün sıra",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Kanalları özgün grup sırası ve önceliğe göre seçer, grup içinde önce sağlıklı kanalları kullanır; grubun tamamı sağlıksızsa doğrudan token’ın sonraki grubunu kullanır ve gerçekten kullanılan gruba göre ücretlendirir.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Son 15 dakikadaki başarı oranı bu değerin altında olan (en az 10 deneme) kanallar sağlıksız sayılır; yaklaşık 15 saniyede geçerli olur."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Son 15 dakikadaki başarı oranı bu değerin altında olan (en az 10 deneme) kanallar sağlıksız sayılır; yaklaşık 15 saniyede geçerli olur.",
+    "上游失败 / 429 / 结果不明": "Upstream hataları / 429 / belirsiz",
+    "用户错误 / 客户端取消": "Kullanıcı hataları / istemci iptali",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Başarı oranı başarıları, upstream hatalarını, 429’ları ve belirsiz sonuçları (tam dönmeyen ve net hatası olmayan) sayar; kullanıcı hataları ve istemci iptalleri hariçtir. P50/P95 temkinli tahminlerdir."
   }
 }

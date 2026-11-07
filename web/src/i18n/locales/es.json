@@ -7124,8 +7124,6 @@
     "避开不健康": "No saludables evitadas",
     "尝试": "Intentos",
     "成功率（下界）": "Tasa de éxito (límite inferior)",
-    "上游失败 / 429": "Fallos upstream / 429",
-    "未知 / 用户 / 取消": "Desconocido / usuario / cancelado",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Finalización P95",
     "实际": "Real",
@@ -7146,7 +7144,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "La observación de rutas está desactivada (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Sombra frente a producción",
     "渠道逐次尝试": "Resultados por intento de cada canal",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "La tasa de éxito solo cuenta resultados con evidencia upstream; P50/P95 son estimaciones conservadoras.",
     "最近分歧样本（本实例）": "Diferencias recientes (esta instancia)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "La caché en memoria está desactivada (sin Redis y sin MEMORY_CACHE_ENABLED), por lo que las decisiones sombra y el enrutamiento inteligente no tienen efecto.",
     "智能路由总开关": "Interruptor general de enrutamiento inteligente",
@@ -7180,6 +7177,9 @@
     "整组不健康，换下一个分组": "Grupo entero no saludable, siguiente grupo",
     "全部不健康，按原顺序": "Todo no saludable, orden original",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Elige canales según el orden original de grupos y la prioridad, primero los canales saludables del grupo; si todo un grupo no está saludable, usa directamente el siguiente grupo del token y factura según el grupo realmente usado.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Los canales cuya tasa de éxito de los últimos 15 minutos esté por debajo de este valor (con al menos 10 muestras) se consideran no saludables; se aplica en unos 15 segundos."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Los canales cuya tasa de éxito de los últimos 15 minutos esté por debajo de este valor (con al menos 10 muestras) se consideran no saludables; se aplica en unos 15 segundos.",
+    "上游失败 / 429 / 结果不明": "Fallos upstream / 429 / desconocido",
+    "用户错误 / 客户端取消": "Errores de usuario / cancelado por el cliente",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "La tasa de éxito cuenta éxitos, fallos upstream, 429 y resultados desconocidos (no devueltos por completo y sin error claro); excluye errores de usuario y cancelaciones del cliente. P50/P95 son estimaciones conservadoras."
   }
 }

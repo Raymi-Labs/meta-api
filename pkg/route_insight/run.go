@@ -198,6 +198,9 @@ type HealthEntry struct {
 // SetHealthForTesting replaces the shared snapshot and returns a restore
 // function. It exists for cross-package tests; production never calls it.
 func SetHealthForTesting(entries ...HealthEntry) func() {
+	// Tests own the snapshot: never let the background loop start and
+	// overwrite it (Health would otherwise launch the loop on first use).
+	startOnce.Do(func() {})
 	snapshotMu.Lock()
 	previous, previousAt := snapshot, snapshotAt.Load()
 	next := make(map[routeKey]RouteHealth, len(entries))

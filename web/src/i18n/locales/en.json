@@ -7336,8 +7336,6 @@
     "避开不健康": "Avoided unhealthy",
     "尝试": "Attempts",
     "成功率（下界）": "Success rate (lower bound)",
-    "上游失败 / 429": "Upstream failures / 429",
-    "未知 / 用户 / 取消": "Unknown / user / canceled",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Completion P95",
     "实际": "Actual",
@@ -7358,7 +7356,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "Route observation is off (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Shadow vs. production",
     "渠道逐次尝试": "Per-attempt channel results",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Success rate counts only results with upstream evidence; P50/P95 are conservative estimates.",
     "最近分歧样本（本实例）": "Recent disagreements (this instance)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Memory cache is off (no Redis and MEMORY_CACHE_ENABLED is not set), so shadow decisions and smart routing have no effect.",
     "智能路由总开关": "Smart routing master switch",
@@ -7392,6 +7389,9 @@
     "整组不健康，换下一个分组": "Whole group unhealthy, next group",
     "全部不健康，按原顺序": "All unhealthy, original order",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Picks channels by the original group order and priority, healthy channels first within a group; if a whole group is unhealthy, the token’s next group is used directly and billed at the group actually used.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Channels whose success rate over the last 15 minutes is below this value (with at least 10 samples) count as unhealthy; takes effect within about 15 seconds."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Channels whose success rate over the last 15 minutes is below this value (with at least 10 samples) count as unhealthy; takes effect within about 15 seconds.",
+    "上游失败 / 429 / 结果不明": "Upstream failures / 429 / unknown",
+    "用户错误 / 客户端取消": "User errors / client canceled",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Success rate counts successes, upstream failures, 429 and unknown results (not fully returned, no clear error); user errors and client cancellations are excluded. P50/P95 are conservative estimates."
   }
 }

@@ -7124,8 +7124,6 @@
     "避开不健康": "Ungesunde vermieden",
     "尝试": "Versuche",
     "成功率（下界）": "Erfolgsrate (Untergrenze)",
-    "上游失败 / 429": "Upstream-Fehler / 429",
-    "未知 / 用户 / 取消": "Unbekannt / Nutzer / Abgebrochen",
     "首字 P50 / P95": "TTFT P50 / P95",
     "完成 P95": "Abschluss P95",
     "实际": "Tatsächlich",
@@ -7146,7 +7144,6 @@
     "路由观测已关闭（ROUTE_INSIGHT_ENABLED=false）": "Routenbeobachtung ist aus (ROUTE_INSIGHT_ENABLED=false)",
     "影子决策对照": "Schatten vs. Produktion",
     "渠道逐次尝试": "Kanalergebnisse pro Versuch",
-    "成功率只计有上游证据的结果；P50/P95 为保守估计。": "Die Erfolgsrate zählt nur Ergebnisse mit Upstream-Nachweis; P50/P95 sind konservative Schätzungen.",
     "最近分歧样本（本实例）": "Letzte Abweichungen (diese Instanz)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Der Speicher-Cache ist aus (kein Redis und MEMORY_CACHE_ENABLED nicht gesetzt); Schattenentscheidungen und Smart Routing wirken daher nicht.",
     "智能路由总开关": "Hauptschalter für Smart Routing",
@@ -7180,6 +7177,9 @@
     "整组不健康，换下一个分组": "Ganze Gruppe ungesund, nächste Gruppe",
     "全部不健康，按原顺序": "Alle ungesund, ursprüngliche Reihenfolge",
     "按原分组顺序和优先级选渠道，组内先用健康渠道；整组都不健康时直接用令牌的下一个分组，按实际分组计费。": "Wählt Kanäle nach der ursprünglichen Gruppenreihenfolge und Priorität, innerhalb einer Gruppe gesunde Kanäle zuerst; ist eine ganze Gruppe ungesund, wird direkt die nächste Gruppe des Tokens genutzt und nach der tatsächlich genutzten Gruppe abgerechnet.",
-    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanäle mit einer Erfolgsrate der letzten 15 Minuten unter diesem Wert (mindestens 10 Versuche) gelten als ungesund; wirkt nach etwa 15 Sekunden."
+    "最近 15 分钟成功率低于此值（且至少 10 次）的渠道视为不健康，约 15 秒内生效。": "Kanäle mit einer Erfolgsrate der letzten 15 Minuten unter diesem Wert (mindestens 10 Versuche) gelten als ungesund; wirkt nach etwa 15 Sekunden.",
+    "上游失败 / 429 / 结果不明": "Upstream-Fehler / 429 / unklar",
+    "用户错误 / 客户端取消": "Nutzerfehler / vom Client abgebrochen",
+    "成功率计入成功、上游失败、429 和结果不明（未完整返回且无明确错误），不含用户错误和客户端取消；P50/P95 为保守估计。": "Die Erfolgsrate zählt Erfolge, Upstream-Fehler, 429 und unklare Ergebnisse (nicht vollständig geliefert, ohne klaren Fehler); Nutzerfehler und Client-Abbrüche zählen nicht. P50/P95 sind konservative Schätzungen."
   }
 }

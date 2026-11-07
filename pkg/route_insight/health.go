@@ -22,8 +22,10 @@ const (
 	StatusUnknown   HealthStatus = "unknown"
 )
 
-// Window aggregates attempt evidence. Unknown and local outcomes are kept for
-// reporting but excluded from the success-rate denominator.
+// Window aggregates attempt evidence. Success, upstream failure, 429 and
+// unknown outcomes form the success-rate denominator; user errors, client
+// cancellations, local delivery failures and pre-execution capacity refusals
+// are kept for reporting only.
 type Window struct {
 	Attempts         int64     `json:"attempts"`
 	Success          int64     `json:"success"`
@@ -56,9 +58,18 @@ func (w *Window) addRow(attempts, success, serviceFailure, rateLimited, capacity
 	w.Duration.Add(duration)
 }
 
-// Evidence counts outcomes that say something about the upstream route.
+// Evidence counts outcomes that say something about the upstream route. An
+// unknown outcome (no classified error, but nothing delivered completely,
+// e.g. a stream cut off mid-answer) counts as a failure: the customer did not
+// get an answer, and client cancellations and local write failures are
+// already separated out before this point.
 func (w Window) Evidence() int64 {
-	return w.Success + w.ServiceFailure + w.RateLimited
+	return w.Success + w.Failures()
+}
+
+// Failures counts evidence against the route.
+func (w Window) Failures() int64 {
+	return w.ServiceFailure + w.RateLimited + w.UnknownFailure
 }
 
 func (w Window) SuccessRate() *float64 {
@@ -106,7 +117,7 @@ func Evaluate(short, long Window, unhealthyBelow float64) RouteHealth {
 		return health
 	}
 	health.Score = long.WilsonLower()
-	if n := short.Evidence(); n >= BurstMinSamples && float64(short.ServiceFailure+short.RateLimited)/float64(n) >= BurstFailureRate {
+	if n := short.Evidence(); n >= BurstMinSamples && float64(short.Failures())/float64(n) >= BurstFailureRate {
 		health.Status, health.Reason = StatusUnhealthy, "recent_failure_burst"
 		return health
 	}
