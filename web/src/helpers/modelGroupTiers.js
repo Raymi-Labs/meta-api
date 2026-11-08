@@ -78,8 +78,18 @@ function matchingOfficialTier(tiers, index, official) {
   const conditions = tierConditions(tiers, index);
   if (conditions.length !== 1 || conditions[0].var !== 'len') return undefined;
   const condition = conditions[0];
-  const matches = official.filter((tier) => {
-    const match = tier.label.match(
+  // xAI publishes the same model once per region. The first region is the
+  // provider page's default region; keep the comparison in that region rather
+  // than mixing prices from different regional tiers.
+  const firstLabel = official[0]?.label || '';
+  const region = firstLabel.match(/^([^·]+?)\s*·\s*/)?.[1]?.trim();
+  const candidates = region
+    ? official.filter((tier) => tier.label?.startsWith(`${region} · `))
+    : official;
+  const regionPrefix = region ? `${region} · ` : '';
+  const matches = candidates.filter((tier) => {
+    const label = region ? tier.label.slice(regionPrefix.length) : tier.label;
+    const match = label.match(
       /^(?:Standard(?:\s*·\s*|\s+))?(?:Input\s+|输入\s*)?(≤|<=|<|≥|>=|>)\s*([\d.]+)([KM]?)(?:\s*(?:input\s+)?tokens)?(?:\\?\*? Permanent 50% off)?$/i,
     );
     if (!match) return false;
