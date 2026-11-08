@@ -62,24 +62,43 @@ export function findGroupNameConflicts(userGroupNames, channelGroupNames) {
     .sort();
 }
 
-// The server rejects a save that would make a name appear in both lists, so
-// when a name moves from one list to the other, the list losing it is saved
-// first. Other keys keep their order.
-export function orderGroupOptionSaves(keys, previous, next) {
-  const hasGroupRatio = keys.includes('GroupRatio');
-  const hasUserGroups = keys.includes('UserGroups');
-  if (!hasGroupRatio || !hasUserGroups) return keys;
-  const previousChannelGroups = new Set(
-    Object.keys(parseObject(previous.GroupRatio)),
+// Validate the rows before object serialization can discard empty or duplicate names.
+export function validateUserGroupRows(rows) {
+  const seen = new Set();
+  for (const row of rows) {
+    const name = (row.name || '').trim();
+    if (!name || [...name].length > 64 || seen.has(name)) return false;
+    seen.add(name);
+  }
+  return seen.has(DEFAULT_USER_GROUP);
+}
+
+export function serializeUserGroupRows(rows) {
+  if (!validateUserGroupRows(rows)) return null;
+  return JSON.stringify(
+    Object.fromEntries(
+      rows.map((row) => [row.name.trim(), row.description || '']),
+    ),
+    null,
+    2,
   );
-  const movesIntoUserGroups = userGroupNamesFromJSON(next.UserGroups).some(
-    (name) => name !== DEFAULT_USER_GROUP && previousChannelGroups.has(name),
-  );
-  const first = movesIntoUserGroups ? 'GroupRatio' : 'UserGroups';
-  const second = first === 'GroupRatio' ? 'UserGroups' : 'GroupRatio';
-  return [
-    first,
-    second,
-    ...keys.filter((key) => key !== 'GroupRatio' && key !== 'UserGroups'),
-  ];
+}
+
+// A final pair is validated and committed together, even when names cross both ways.
+export function buildGroupOptionUpdates(keys, next) {
+  if (keys.includes('UserGroups') && keys.includes('GroupRatio')) {
+    return [
+      {
+        key: 'UserChannelGroups',
+        value: JSON.stringify({
+          UserGroups: next.UserGroups,
+          GroupRatio: next.GroupRatio,
+        }),
+      },
+      ...keys
+        .filter((key) => key !== 'UserGroups' && key !== 'GroupRatio')
+        .map((key) => ({ key, value: next[key] })),
+    ];
+  }
+  return keys.map((key) => ({ key, value: next[key] }));
 }

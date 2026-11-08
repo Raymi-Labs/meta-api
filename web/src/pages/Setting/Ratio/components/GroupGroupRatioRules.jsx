@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {
   Button,
   Collapsible,
-  Input,
   InputNumber,
   Select,
   Tag,
@@ -16,6 +15,12 @@ import {
   IconChevronUp,
 } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
+
+import {
+  flattenRatioRules,
+  serializeGroupGroupRatio,
+} from '../../../../helpers/userGroupRules';
+export { serializeGroupGroupRatio } from '../../../../helpers/userGroupRules';
 
 const { Text } = Typography;
 
@@ -31,38 +36,15 @@ function parseJSON(str) {
   }
 }
 
-function flattenRules(nested) {
-  const rules = [];
-  for (const [userGroup, inner] of Object.entries(nested)) {
-    if (typeof inner !== 'object' || inner === null) continue;
-    for (const [usingGroup, ratio] of Object.entries(inner)) {
-      rules.push({
-        _id: uid(),
-        userGroup,
-        usingGroup,
-        ratio: typeof ratio === 'number' ? ratio : 1,
-      });
-    }
-  }
-  return rules;
-}
-
-function nestRules(rules) {
-  const result = {};
-  rules.forEach(({ userGroup, usingGroup, ratio }) => {
-    if (!userGroup || !usingGroup) return;
-    if (!result[userGroup]) result[userGroup] = {};
-    result[userGroup][usingGroup] = ratio;
-  });
-  return result;
-}
-
-export function serializeGroupGroupRatio(rules) {
-  const nested = nestRules(rules);
-  return JSON.stringify(nested, null, 2);
-}
-
-function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAdd, t }) {
+function GroupSection({
+  groupName,
+  items,
+  groupOptions,
+  onUpdate,
+  onRemove,
+  onAdd,
+  t,
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -82,11 +64,20 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
         onClick={() => setOpen(!open)}
       >
         <div className='flex items-center gap-2'>
-          {open ? <IconChevronUp size='small' /> : <IconChevronDown size='small' />}
+          {open ? (
+            <IconChevronUp size='small' />
+          ) : (
+            <IconChevronDown size='small' />
+          )}
           <Text strong>{groupName}</Text>
-          <Tag size='small' color='blue'>{items.length} {t('条规则')}</Tag>
+          <Tag size='small' color='blue'>
+            {items.length} {t('条规则')}
+          </Tag>
         </div>
-        <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
+        <div
+          className='flex items-center gap-1'
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             icon={<IconPlus />}
             size='small'
@@ -95,7 +86,7 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
           />
           <Popconfirm
             title={t('确认删除该分组的所有规则？')}
-            onConfirm={() => items.forEach((item) => onRemove(item._id))}
+            onConfirm={() => onRemove(items.map((item) => item._id))}
             position='left'
           >
             <Button
@@ -118,10 +109,11 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
               <Select
                 size='small'
                 filter
-                value={rule.usingGroup || undefined}
+                multiple
+                value={rule.usingGroups}
                 placeholder={t('选择使用分组')}
                 optionList={groupOptions}
-                onChange={(v) => onUpdate(rule._id, 'usingGroup', v)}
+                onChange={(v) => onUpdate(rule._id, 'usingGroups', v)}
                 style={{ flex: 1 }}
                 allowCreate
                 position='bottomLeft'
@@ -164,13 +156,16 @@ export default function GroupGroupRatioRules({
   onChange,
 }) {
   const { t } = useTranslation();
-  const [rules, setRules] = useState(() => flattenRules(parseJSON(value)));
-  const [newGroupName, setNewGroupName] = useState('');
+  const [rules, setRules] = useState(() =>
+    flattenRatioRules(parseJSON(value), uid),
+  );
+  const [newGroupName, setNewGroupName] = useState([]);
 
   const emitChange = useCallback(
     (newRules) => {
       setRules(newRules);
-      onChange?.(serializeGroupGroupRatio(newRules));
+      const serialized = serializeGroupGroupRatio(newRules);
+      onChange?.(serialized, serialized !== null);
     },
     [onChange],
   );
@@ -184,7 +179,9 @@ export default function GroupGroupRatioRules({
 
   const removeRule = useCallback(
     (id) => {
-      emitChange(rules.filter((r) => r._id !== id));
+      emitChange(
+        rules.filter((r) => !(Array.isArray(id) ? id : [id]).includes(r._id)),
+      );
     },
     [rules, emitChange],
   );
@@ -193,20 +190,24 @@ export default function GroupGroupRatioRules({
     (groupName) => {
       emitChange([
         ...rules,
-        { _id: uid(), userGroup: groupName, usingGroup: '', ratio: 1 },
+        { _id: uid(), userGroup: groupName, usingGroups: [], ratio: 1 },
       ]);
     },
     [rules, emitChange],
   );
 
   const addNewGroup = useCallback(() => {
-    const name = newGroupName.trim();
-    if (!name) return;
+    if (!newGroupName.length) return;
     emitChange([
       ...rules,
-      { _id: uid(), userGroup: name, usingGroup: '', ratio: 1 },
+      ...newGroupName.map((name) => ({
+        _id: uid(),
+        userGroup: name,
+        usingGroups: [],
+        ratio: 1,
+      })),
     ]);
-    setNewGroupName('');
+    setNewGroupName([]);
   }, [rules, emitChange, newGroupName]);
 
   const groupOptions = useMemo(
@@ -214,13 +215,12 @@ export default function GroupGroupRatioRules({
     [groupNames],
   );
   const userGroupOptions = useMemo(
-    () =>
-      (userGroupNames || groupNames).map((n) => ({ value: n, label: n })),
+    () => (userGroupNames || groupNames).map((n) => ({ value: n, label: n })),
     [userGroupNames, groupNames],
   );
 
   const grouped = useMemo(() => {
-    const map = {};
+    const map = Object.create(null);
     const order = [];
     rules.forEach((r) => {
       if (!r.userGroup) return;
@@ -246,7 +246,8 @@ export default function GroupGroupRatioRules({
             allowCreate
             placeholder={t('选择用户分组')}
             optionList={userGroupOptions}
-            value={newGroupName || undefined}
+            multiple
+            value={newGroupName}
             onChange={setNewGroupName}
             style={{ width: 200 }}
             position='bottomLeft'
@@ -261,6 +262,9 @@ export default function GroupGroupRatioRules({
 
   return (
     <div className='space-y-2'>
+      {serializeGroupGroupRatio(rules) === null && (
+        <Text type='danger'>{t('存在重复的分组名称：')}</Text>
+      )}
       {grouped.map((group) => (
         <GroupSection
           key={group.name}
@@ -280,7 +284,8 @@ export default function GroupGroupRatioRules({
           allowCreate
           placeholder={t('选择用户分组')}
           optionList={userGroupOptions}
-          value={newGroupName || undefined}
+          multiple
+          value={newGroupName}
           onChange={setNewGroupName}
           style={{ width: 200 }}
           position='bottomLeft'

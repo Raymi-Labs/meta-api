@@ -11,7 +11,7 @@ import (
 // the existing ordered, user-permitted auto catalog; auto itself grants no access.
 func TokenRoutingGroups(userGroup, preferredGroup string, fallback bool) []string {
 	if preferredGroup == "" {
-		preferredGroup = userGroup
+		preferredGroup = ResolveTokenGroup(userGroup, preferredGroup)
 	}
 	if preferredGroup == "auto" {
 		return GetUserAutoGroup(userGroup)

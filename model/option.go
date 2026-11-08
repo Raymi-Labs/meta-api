@@ -244,6 +244,8 @@ func InitOptionMap() {
 }
 
 func loadOptionsFromDatabase() {
+	groupOptionsMutex.Lock()
+	defer groupOptionsMutex.Unlock()
 	pulseConfigOptionMutex.Lock()
 	defer pulseConfigOptionMutex.Unlock()
 	tieredBillingOptionMutex.Lock()
@@ -322,6 +324,9 @@ func isGroupGroupRatioOption(key string) bool {
 }
 
 func UpdateOption(key string, value string) error {
+	if key == "UserGroups" || key == "GroupRatio" {
+		return updateSingleGroupOption(key, value)
+	}
 	if isGroupGroupRatioOption(key) {
 		var err error
 		value, err = ratio_setting.NormalizeGroupGroupRatioJSON(value)

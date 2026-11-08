@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // groupColumnSQL quotes the reserved `group` column. initCol normally sets
@@ -109,20 +111,25 @@ func ReassignUserGroup(from, to string) ([]int, error) {
 	}
 	col := groupColumnSQL()
 	var ids []int
-	if err := DB.Model(&User{}).Where(col+" = ?", from).Pluck("id", &ids).Error; err != nil {
-		return nil, err
-	}
-	if len(ids) == 0 {
-		return ids, nil
-	}
-	// Chunk to stay under SQLite's bound-parameter limit, and re-check the
-	// old group so a concurrent edit is not overwritten.
-	const chunkSize = 500
-	for start := 0; start < len(ids); start += chunkSize {
-		end := min(start+chunkSize, len(ids))
-		if err := DB.Model(&User{}).Where("id IN ? AND "+col+" = ?", ids[start:end], from).Update("group", to).Error; err != nil {
-			return nil, err
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&User{}).Clauses(clause.Locking{Strength: "UPDATE"}).Where(col+" = ?", from).Order("id").Pluck("id", &ids).Error; err != nil {
+			return err
 		}
+		const chunkSize = 500
+		for start := 0; start < len(ids); start += chunkSize {
+			end := min(start+chunkSize, len(ids))
+			result := tx.Model(&User{}).Where("id IN ? AND "+col+" = ?", ids[start:end], from).Update("group", to)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected != int64(end-start) {
+				return errors.New("user group changed during reassignment; retry")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	for _, id := range ids {
 		if err := userCacheInvalidator(id); err != nil {

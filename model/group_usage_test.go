@@ -1,19 +1,34 @@
 package model
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func setupGroupUsageTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	var dialector gorm.Dialector = sqlite.Open(":memory:")
+	driver := os.Getenv("GROUP_USAGE_TEST_DRIVER")
+	switch driver {
+	case "mysql":
+		dialector = mysql.Open(os.Getenv("GROUP_USAGE_TEST_DSN"))
+	case "postgres":
+		dialector = postgres.Open(os.Getenv("GROUP_USAGE_TEST_DSN"))
+	case "":
+	default:
+		t.Fatalf("unsupported group usage test driver %q", driver)
+	}
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	require.NoError(t, err)
 
 	originDB := DB
@@ -26,9 +41,9 @@ func setupGroupUsageTestDB(t *testing.T) *gorm.DB {
 	DB = db
 	LOG_DB = db
 	common.RedisEnabled = false
-	common.UsingSQLite = true
-	common.UsingMySQL = false
-	common.UsingPostgreSQL = false
+	common.UsingSQLite = driver == ""
+	common.UsingMySQL = driver == "mysql"
+	common.UsingPostgreSQL = driver == "postgres"
 	initCol()
 
 	t.Cleanup(func() {
@@ -41,6 +56,14 @@ func setupGroupUsageTestDB(t *testing.T) *gorm.DB {
 		initCol()
 	})
 
+	if driver != "" {
+		// Only a disposable database with this exact name may be reset by this suite.
+		require.Equal(t, "meta_group_test", db.Migrator().CurrentDatabase())
+		require.NoError(t, db.Migrator().DropTable(&User{}, &Token{}, &SubscriptionPlan{}, &Option{}))
+	}
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { sqlDB.Close() })
 	require.NoError(t, db.AutoMigrate(&User{}, &Token{}, &SubscriptionPlan{}))
 	return db
 }
@@ -146,4 +169,32 @@ func TestReassignUserGroupHandlesMoreUsersThanOneChunk(t *testing.T) {
 	counts, err := CountUsersByGroup()
 	require.NoError(t, err)
 	require.Equal(t, map[string]int64{"default": 1203}, counts)
+}
+
+func TestReassignUserGroupRollsBackAllChunksOnFailure(t *testing.T) {
+	db := setupGroupUsageTestDB(t)
+	for id := 1; id <= 501; id++ {
+		seedGroupUsageUser(t, db, id, "legacy")
+	}
+	old := userCacheInvalidator
+	invalidations := 0
+	userCacheInvalidator = func(int) error { invalidations++; return nil }
+	t.Cleanup(func() { userCacheInvalidator = old })
+	updates := 0
+	require.NoError(t, db.Callback().Update().Before("gorm:update").Register("audit_fail_second", func(tx *gorm.DB) {
+		if tx.Statement.Table == "users" {
+			updates++
+			if updates == 2 {
+				tx.AddError(errors.New("injected second chunk failure"))
+			}
+		}
+	}))
+	ids, err := ReassignUserGroup("legacy", "default")
+	require.Error(t, err)
+	counts, e := CountUsersByGroup()
+	require.NoError(t, e)
+	t.Logf("error=%v returned_ids=%d counts=%v cache_invalidations=%d", err, len(ids), counts, invalidations)
+	require.Equal(t, int64(501), counts["legacy"], "failed bulk move should not leave committed partial changes")
+	require.Empty(t, ids)
+	require.Zero(t, invalidations)
 }

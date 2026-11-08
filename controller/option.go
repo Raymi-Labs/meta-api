@@ -162,6 +162,14 @@ func UpdateOption(c *gin.Context) {
 			}
 		}
 	}
+	if option.Key == model.UserChannelGroupsOptionKey {
+		if err := model.UpdateUserChannelGroupOptions(option.Value.(string)); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		common.ApiSuccess(c, nil)
+		return
+	}
 	if option.Key == billing_setting.TieredBundleOptionKey {
 		if err = model.UpdateTieredBillingOptions(option.Value.(string)); err != nil {
 			c.JSON(http.StatusOK, gin.H{

@@ -350,7 +350,7 @@ func TokenAuth() func(c *gin.Context) {
 		userCache.WriteContext(c)
 
 		userGroup := userCache.Group
-		tokenGroup := token.Group
+		tokenGroup := service.ResolveTokenGroup(userGroup, token.Group)
 		if tokenGroup != "" && token.RoutingConfig == "" {
 			// check common.UserUsableGroups[userGroup]
 			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
@@ -412,7 +412,8 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	} else {
 		common.SetContextKey(c, constant.ContextKeyTokenChannelLimitEnabled, false)
 	}
-	common.SetContextKey(c, constant.ContextKeyTokenGroup, token.Group)
+	// Keep the effective inherited group consistent for relay retries and rate limits.
+	common.SetContextKey(c, constant.ContextKeyTokenGroup, service.ResolveTokenGroup(common.GetContextKeyString(c, constant.ContextKeyUserGroup), token.Group))
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
 	common.SetContextKey(c, constant.ContextKeyTokenAutoGroupFallback, token.AllowsGroupFallback())
 	if len(parts) > 1 {

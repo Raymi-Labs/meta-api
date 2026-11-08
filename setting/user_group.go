@@ -3,6 +3,7 @@ package setting
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -95,4 +96,22 @@ func UpdateUserGroupsByJSONString(jsonStr string) error {
 	defer userGroupsMutex.Unlock()
 	userGroups = parsed
 	return nil
+}
+
+// CheckUserChannelGroupConflict validates the final pair, not an intermediate edit.
+func CheckUserChannelGroupConflict(userGroups map[string]string, channelGroups map[string]float64) error {
+	conflicts := make([]string, 0)
+	for name := range userGroups {
+		if name == DefaultUserGroup {
+			continue
+		}
+		if _, ok := channelGroups[name]; ok {
+			conflicts = append(conflicts, name)
+		}
+	}
+	if len(conflicts) == 0 {
+		return nil
+	}
+	sort.Strings(conflicts)
+	return fmt.Errorf("用户分组与渠道分组不能重名：%s", strings.Join(conflicts, "、"))
 }

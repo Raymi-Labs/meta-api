@@ -246,3 +246,18 @@ func TestReassignUnregisteredUserGroup(t *testing.T) {
 	require.NoError(t, db.Where("type = ?", model.LogTypeManage).First(&log).Error)
 	require.Equal(t, "管理员将 2 个用户的用户分组从「OpenAI · 蒸馏」改为「default」", log.Content)
 }
+
+func TestUpdateUserChannelGroupsOption(t *testing.T) {
+	db := setupUserGroupControllerTest(t, `{"default":"","vip":""}`, `{"default":1,"premium":2}`)
+	require.NoError(t, db.AutoMigrate(&model.Option{}))
+	oldOptions := common.OptionMap
+	common.OptionMap = map[string]string{}
+	t.Cleanup(func() { common.OptionMap = oldOptions })
+	raw, err := common.Marshal(model.UserChannelGroupOptions{UserGroups: `{"default":"","premium":""}`, GroupRatio: `{"default":1,"vip":2}`})
+	require.NoError(t, err)
+	ctx, recorder := newUserGroupTestContext(t, http.MethodPut, "/api/option/", gin.H{"key": model.UserChannelGroupsOptionKey, "value": string(raw)})
+	UpdateOption(ctx)
+	require.Contains(t, recorder.Body.String(), `"success":true`)
+	require.True(t, setting.IsRegisteredUserGroup("premium"))
+	require.True(t, ratio_setting.ContainsGroupRatio("vip"))
+}

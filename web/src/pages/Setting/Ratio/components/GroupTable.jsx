@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   Button,
   Input,
@@ -74,19 +80,19 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const emitAndSet = useCallback((updater) => {
-    setRows((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      onChangeRef.current?.(serializeGroupTable(next));
-      return next;
-    });
-  }, []);
+  const initialRowsRef = useRef(rows);
+  useEffect(() => {
+    if (rows === initialRowsRef.current) return;
+    onChangeRef.current?.(serializeGroupTable(rows));
+  }, [rows]);
+  const emitAndSet = useCallback((updater) => setRows(updater), []);
 
   const updateRow = useCallback(
     (id, field, value) => {
-      emitAndSet((prev) =>
-        prev.map((r) => (r._id === id ? { ...r, [field]: value } : r)),
-      );
+      emitAndSet((prev) => {
+        if (prev.find((r) => r._id === id)?.[field] === value) return prev;
+        return prev.map((r) => (r._id === id ? { ...r, [field]: value } : r));
+      });
     },
     [emitAndSet],
   );

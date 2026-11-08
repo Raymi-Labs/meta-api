@@ -31,10 +31,7 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 			GroupRatioStatus: "unavailable",
 		}
 		if token != nil && err == nil && userGroup != "" && token.UserId == userID {
-			group := token.Group
-			if group == "" {
-				group = userGroup
-			}
+			group := service.ResolveTokenGroup(userGroup, token.Group)
 			if token.RoutingConfig != "" {
 				groups, scopeErr := service.TokenConfiguredGroups(userGroup, token, "")
 				if scopeErr == nil && len(groups) > 0 {

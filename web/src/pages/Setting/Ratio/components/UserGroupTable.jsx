@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Button,
   Input,
@@ -32,6 +38,8 @@ import CardTable from '../../../../components/common/ui/CardTable';
 import {
   DEFAULT_USER_GROUP,
   findGroupNameConflicts,
+  serializeUserGroupRows,
+  validateUserGroupRows,
 } from '../../../../helpers/userGroups';
 
 const { Text } = Typography;
@@ -54,19 +62,10 @@ function buildRows(userGroupsJSON) {
   }
   return Object.entries(map).map(([name, description]) => ({
     _id: uid(),
+    isDefault: name === DEFAULT_USER_GROUP,
     name,
     description: description ?? '',
   }));
-}
-
-function serializeRows(rows) {
-  const result = {};
-  rows.forEach((row) => {
-    const name = (row.name || '').trim();
-    if (!name) return;
-    result[name] = row.description || '';
-  });
-  return JSON.stringify(result, null, 2);
 }
 
 export default function UserGroupTable({
@@ -84,13 +83,17 @@ export default function UserGroupTable({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const emitAndSet = useCallback((updater) => {
-    setRows((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      onChangeRef.current?.(serializeRows(next));
-      return next;
-    });
-  }, []);
+  const valid = validateUserGroupRows(rows);
+  const initialRowsRef = useRef(rows);
+  useEffect(() => {
+    if (rows === initialRowsRef.current) return;
+    onChangeRef.current?.(
+      serializeUserGroupRows(rows),
+      validateUserGroupRows(rows),
+    );
+  }, [rows]);
+
+  const emitAndSet = useCallback((updater) => setRows(updater), []);
 
   const updateRow = useCallback(
     (id, field, fieldValue) => {
@@ -129,16 +132,16 @@ export default function UserGroupTable({
   );
 
   const usage = useMemo(() => {
-    const map = {};
+    const map = Object.create(null);
     (overview || []).forEach((item) => {
       map[item.name] = item;
     });
     return map;
   }, [overview]);
 
-  const names = useMemo(() => rows.map((row) => row.name), [rows]);
+  const names = useMemo(() => rows.map((row) => row.name.trim()), [rows]);
   const duplicateNames = useMemo(() => {
-    const counts = {};
+    const counts = Object.create(null);
     names.forEach((name) => {
       counts[name] = (counts[name] || 0) + 1;
     });
@@ -178,7 +181,7 @@ export default function UserGroupTable({
           <Input
             size='small'
             value={record.name}
-            disabled={record.name === DEFAULT_USER_GROUP}
+            disabled={record.isDefault}
             status={
               problemNamesRef.current.has(record.name) ? 'warning' : undefined
             }
@@ -218,7 +221,7 @@ export default function UserGroupTable({
         key: 'actions',
         width: 50,
         render: (_, record) => {
-          if (record.name === DEFAULT_USER_GROUP) return null;
+          if (record.isDefault) return null;
           const userCount = usage[record.name]?.user_count ?? 0;
           return (
             <Popconfirm
@@ -273,6 +276,11 @@ export default function UserGroupTable({
           {t('添加用户分组')}
         </Button>
       </div>
+      {!valid && (
+        <Text type='danger' size='small' className='mt-2 block'>
+          {t('请检查输入')}
+        </Text>
+      )}
       {duplicateNames.length > 0 && (
         <Text type='warning' size='small' className='mt-2 block'>
           {t('存在重复的分组名称：')}

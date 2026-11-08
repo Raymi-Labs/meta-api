@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Button,
   Col,
@@ -52,7 +58,7 @@ import UserGroupTable from './components/UserGroupTable';
 import {
   DEFAULT_USER_GROUP,
   findGroupNameConflicts,
-  orderGroupOptionSaves,
+  buildGroupOptionUpdates,
   userGroupNamesFromJSON,
 } from '../../../helpers/userGroups';
 
@@ -81,6 +87,10 @@ export default function GroupRatioSettings(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState('visual');
+  const [userGroupsValid, setUserGroupsValid] = useState(true);
+  const [ratioRulesValid, setRatioRulesValid] = useState(true);
+  const [usableRulesValid, setUsableRulesValid] = useState(true);
+  const validEditors = userGroupsValid && ratioRulesValid && usableRulesValid;
   const [showGuide, setShowGuide] = useState(false);
 
   const [inputs, setInputs] = useState({
@@ -153,6 +163,7 @@ export default function GroupRatioSettings(props) {
   );
 
   async function onSubmit() {
+    if (!validEditors) return showError(t('请检查输入'));
     if (editMode === 'manual') {
       try {
         await refForm.current.validate();
@@ -174,23 +185,25 @@ export default function GroupRatioSettings(props) {
       );
     }
 
-    // Saved one by one: when a name moves between the channel and user
-    // group lists, the list losing it must be saved first.
-    const keys = orderGroupOptionSaves(
+    const updates = buildGroupOptionUpdates(
       updateArray.map((item) => item.key),
-      inputsRow,
       inputs,
     );
 
     setLoading(true);
     let saved = 0;
     try {
-      for (const key of keys) {
+      for (const update of updates) {
+        const { key } = update;
         const value =
-          typeof inputs[key] === 'boolean' ? String(inputs[key]) : inputs[key];
+          typeof update.value === 'boolean'
+            ? String(update.value)
+            : update.value;
         const res = await API.put('/api/option/', { key, value });
         if (res === undefined) {
-          showError(keys.length > 1 ? t('部分保存失败，请重试') : t('保存失败'));
+          showError(
+            updates.length > 1 ? t('部分保存失败，请重试') : t('保存失败'),
+          );
           return;
         }
         if (!res.data.success) {
@@ -227,13 +240,22 @@ export default function GroupRatioSettings(props) {
     loadGroupUsage();
   }, [props.options, loadGroupUsage]);
 
-  const handleUserGroupsChange = useCallback((value) => {
-    setInputs((prev) => ({ ...prev, UserGroups: value }));
+  const handleUserGroupsChange = useCallback((value, valid = true) => {
+    setUserGroupsValid(valid);
+    if (!valid) return;
+    setInputs((prev) =>
+      prev.UserGroups === value ? prev : { ...prev, UserGroups: value },
+    );
   }, []);
 
   const handleGroupTableChange = useCallback(
     ({ GroupRatio, UserUsableGroups }) => {
-      setInputs((prev) => ({ ...prev, GroupRatio, UserUsableGroups }));
+      setInputs((prev) =>
+        prev.GroupRatio === GroupRatio &&
+        prev.UserUsableGroups === UserUsableGroups
+          ? prev
+          : { ...prev, GroupRatio, UserUsableGroups },
+      );
     },
     [],
   );
@@ -242,11 +264,15 @@ export default function GroupRatioSettings(props) {
     setInputs((prev) => ({ ...prev, AutoGroups: value }));
   }, []);
 
-  const handleGroupGroupRatioChange = useCallback((value) => {
+  const handleGroupGroupRatioChange = useCallback((value, valid = true) => {
+    setRatioRulesValid(valid);
+    if (!valid) return;
     setInputs((prev) => ({ ...prev, GroupGroupRatio: value }));
   }, []);
 
-  const handleSpecialUsableChange = useCallback((value) => {
+  const handleSpecialUsableChange = useCallback((value, valid = true) => {
+    setUsableRulesValid(valid);
+    if (!valid) return;
     setInputs((prev) => ({
       ...prev,
       'group_ratio_setting.group_special_usable_group': value,
@@ -258,8 +284,14 @@ export default function GroupRatioSettings(props) {
   const renderVisualMode = () => (
     <Form key='form-visual' values={inputs} style={{ marginBottom: 15 }}>
       <Form.Section text={t('渠道分组')}>
-        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('渠道分组决定令牌走哪些渠道和计费倍率，渠道在「渠道管理」中选择所属渠道分组。倍率用于计费乘数，勾选「用户可选」后用户可在创建令牌时选择该分组')}
+        <Text
+          type='tertiary'
+          size='small'
+          style={{ display: 'block', marginBottom: 12 }}
+        >
+          {t(
+            '渠道分组决定令牌走哪些渠道和计费倍率，渠道在「渠道管理」中选择所属渠道分组。倍率用于计费乘数，勾选「用户可选」后用户可在创建令牌时选择该分组',
+          )}
         </Text>
         <GroupTable
           key={`gt_${dv}`}
@@ -278,8 +310,14 @@ export default function GroupRatioSettings(props) {
             }}
           >
             <Text strong>{t('已删除但仍有令牌使用的渠道分组')}</Text>
-            <Text type='tertiary' size='small' style={{ display: 'block', margin: '4px 0 8px' }}>
-              {t('这些渠道分组已不在上表中，但仍有启用中的令牌在使用，这些令牌的请求会被拒绝。可以重新添加同名渠道分组，或通知用户改用其他分组。')}
+            <Text
+              type='tertiary'
+              size='small'
+              style={{ display: 'block', margin: '4px 0 8px' }}
+            >
+              {t(
+                '这些渠道分组已不在上表中，但仍有启用中的令牌在使用，这些令牌的请求会被拒绝。可以重新添加同名渠道分组，或通知用户改用其他分组。',
+              )}
             </Text>
             <div className='flex flex-wrap gap-2'>
               {staleTokenGroups.map((item) => (
@@ -295,8 +333,14 @@ export default function GroupRatioSettings(props) {
       </Form.Section>
 
       <Form.Section text={t('自动分组')}>
-        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('开启故障自动切组后，先使用首选分组，再按以下顺序尝试有权限的备用分组；旧 auto 令牌也沿用此顺序。')}
+        <Text
+          type='tertiary'
+          size='small'
+          style={{ display: 'block', marginBottom: 12 }}
+        >
+          {t(
+            '开启故障自动切组后，先使用首选分组，再按以下顺序尝试有权限的备用分组；旧 auto 令牌也沿用此顺序。',
+          )}
         </Text>
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
@@ -316,7 +360,9 @@ export default function GroupRatioSettings(props) {
                 />
               </div>
               <Text type='tertiary' size='small' style={{ marginTop: 4 }}>
-                {t('开启后，新建令牌默认启用自动切组；用户仍需选择首选分组，已有令牌保持原设置。')}
+                {t(
+                  '开启后，新建令牌默认启用自动切组；用户仍需选择首选分组，已有令牌保持原设置。',
+                )}
               </Text>
             </Form.Slot>
           </Col>
@@ -330,8 +376,14 @@ export default function GroupRatioSettings(props) {
       </Form.Section>
 
       <Form.Section text={t('用户分组')}>
-        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('用户分组表示用户身份（如 default、vip），在「用户管理」中分配或由订阅套餐升级。它决定用户能用哪些渠道分组以及特殊倍率，本身不对应渠道；名称不能与渠道分组重复（default 除外）。')}
+        <Text
+          type='tertiary'
+          size='small'
+          style={{ display: 'block', marginBottom: 12 }}
+        >
+          {t(
+            '用户分组表示用户身份（如 default、vip），在「用户管理」中分配或由订阅套餐升级。它决定用户能用哪些渠道分组以及特殊倍率，本身不对应渠道；名称不能与渠道分组重复（default 除外）。',
+          )}
         </Text>
         <UserGroupTable
           key={`ug_${dv}`}
@@ -344,8 +396,14 @@ export default function GroupRatioSettings(props) {
       </Form.Section>
 
       <Form.Section text={t('分组特殊倍率')}>
-        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('当某个分组的用户使用另一个分组的令牌时，可设置特殊倍率覆盖基础倍率。例如：vip 分组的用户使用 default 分组时倍率为 0.5')}
+        <Text
+          type='tertiary'
+          size='small'
+          style={{ display: 'block', marginBottom: 12 }}
+        >
+          {t(
+            '当某个分组的用户使用另一个分组的令牌时，可设置特殊倍率覆盖基础倍率。例如：vip 分组的用户使用 default 分组时倍率为 0.5',
+          )}
         </Text>
         <GroupGroupRatioRules
           key={`ggr_${dv}`}
@@ -357,8 +415,14 @@ export default function GroupRatioSettings(props) {
       </Form.Section>
 
       <Form.Section text={t('分组特殊可用分组')}>
-        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('为特定用户分组配置可用分组的增减规则。「添加」为该分组新增可用分组，「移除」移除默认可用分组，「追加」直接追加分组')}
+        <Text
+          type='tertiary'
+          size='small'
+          style={{ display: 'block', marginBottom: 12 }}
+        >
+          {t(
+            '为特定用户分组配置可用分组的增减规则。「添加」为该分组新增可用分组，「移除」移除默认可用分组，「追加」直接追加分组',
+          )}
         </Text>
         <GroupSpecialUsableRules
           key={`gsu_${dv}`}
@@ -413,9 +477,7 @@ export default function GroupRatioSettings(props) {
           <Col xs={24} sm={16}>
             <Form.TextArea
               label={t('用户可选分组')}
-              placeholder={t(
-                '为一个 JSON 文本，键为分组名称，值为分组描述',
-              )}
+              placeholder={t('为一个 JSON 文本，键为分组名称，值为分组描述')}
               extraText={t(
                 '用户新建令牌时可选的分组，格式为 JSON 字符串，例如：{"vip": "VIP 用户", "test": "测试"}，表示用户可以选择 vip 分组和 test 分组',
               )}
@@ -531,9 +593,7 @@ export default function GroupRatioSettings(props) {
                       return false;
                     }
                   },
-                  message: t(
-                    '必须是有效的 JSON 字符串数组，例如：["g1","g2"]',
-                  ),
+                  message: t('必须是有效的 JSON 字符串数组，例如：["g1","g2"]'),
                 },
               ]}
               onChange={(value) =>
@@ -635,24 +695,37 @@ export default function GroupRatioSettings(props) {
 
             <GuideSection title={t('核心概念')}>
               <Paragraph style={{ lineHeight: 1.8 }}>
-                <Text strong>{t('用户分组')}</Text>{' — '}
-                {t('在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。')}
+                <Text strong>{t('用户分组')}</Text>
+                {' — '}
+                {t(
+                  '在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。',
+                )}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
-                <Text strong>{t('渠道分组')}</Text>{' — '}
-                {t('在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。')}
+                <Text strong>{t('渠道分组')}</Text>
+                {' — '}
+                {t(
+                  '在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。',
+                )}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
-                <Text strong>{t('倍率')}</Text>{' — '}
+                <Text strong>{t('倍率')}</Text>
+                {' — '}
                 {t('计费乘数，倍率越低费用越低。例如倍率 0.5 表示半价。')}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
-                <Text strong>{t('用户可选')}</Text>{' — '}
-                {t('勾选后，该分组会出现在用户创建令牌时的下拉菜单中。未勾选的分组只能由管理员分配，用户自己无法选择。')}
+                <Text strong>{t('用户可选')}</Text>
+                {' — '}
+                {t(
+                  '勾选后，该分组会出现在用户创建令牌时的下拉菜单中。未勾选的分组只能由管理员分配，用户自己无法选择。',
+                )}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
-                <Text strong>{t('自动分组')}</Text>{' — '}
-                {t('开启故障自动切组后，首选分组不可用时按配置顺序选择备用分组。')}
+                <Text strong>{t('自动分组')}</Text>
+                {' — '}
+                {t(
+                  '开启故障自动切组后，首选分组不可用时按配置顺序选择备用分组。',
+                )}
               </Paragraph>
             </GuideSection>
           </div>
@@ -662,28 +735,49 @@ export default function GroupRatioSettings(props) {
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('创建和管理分组')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
-              {t('每个分组代表一个价格档位。管理员创建分组后，可以选择哪些档位对用户开放自选。')}
+              {t(
+                '每个分组代表一个价格档位。管理员创建分组后，可以选择哪些档位对用户开放自选。',
+              )}
             </Paragraph>
 
             <GuideSection title={t('查看示例')}>
-              <Paragraph size='small' type='tertiary' style={{ marginBottom: 8 }}>
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginBottom: 8 }}
+              >
                 {t('场景：站点提供两个价格档位，用户可以按需选择')}
               </Paragraph>
               <CodeBlock>
                 {`${t('分组名')}      ${t('倍率')}    ${t('用户可选')}    ${t('说明')}\n──────────────────────────────────────\nstandard  1.0     ${t('是')}        ${t('标准价格')}\npremium   0.5     ${t('是')}        ${t('高级套餐，半价优惠')}`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, lineHeight: 1.8 }}>
-                {t('两个分组都勾选了「用户可选」，所以用户创建令牌时可以看到这两个选项：')}
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, lineHeight: 1.8 }}
+              >
+                {t(
+                  '两个分组都勾选了「用户可选」，所以用户创建令牌时可以看到这两个选项：',
+                )}
               </Paragraph>
               <CodeBlock>
-                {t('用户创建令牌 → 选择分组下拉框：')}{'\n'}
-                {`  ├─ standard (${t('标准价格')})`}{'\n'}
+                {t('用户创建令牌 → 选择分组下拉框：')}
+                {'\n'}
+                {`  ├─ standard (${t('标准价格')})`}
+                {'\n'}
                 {`  └─ premium  (${t('高级套餐，半价优惠')})`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, lineHeight: 1.8 }}>
-                {t('选择 premium 创建的令牌，调用 API 时费用为 standard 的 50%。')}
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, lineHeight: 1.8 }}
+              >
+                {t(
+                  '选择 premium 创建的令牌，调用 API 时费用为 standard 的 50%。',
+                )}
               </Paragraph>
-              <Paragraph size='small' style={{ marginTop: 16, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 16, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('对比：不勾选「用户可选」的场景')}</Text>
               </Paragraph>
               <Paragraph size='small' style={{ marginTop: 4, lineHeight: 1.8 }}>
@@ -696,40 +790,70 @@ export default function GroupRatioSettings(props) {
                 {t('此时用户创建令牌时只能看到 standard 和 premium：')}
               </Paragraph>
               <CodeBlock>
-                {t('用户创建令牌 → 选择分组下拉框：')}{'\n'}
-                {`  ├─ standard (${t('标准价格')})`}{'\n'}
-                {`  └─ premium  (${t('高级套餐，半价优惠')})`}{'\n\n'}
+                {t('用户创建令牌 → 选择分组下拉框：')}
+                {'\n'}
+                {`  ├─ standard (${t('标准价格')})`}
+                {'\n'}
+                {`  └─ premium  (${t('高级套餐，半价优惠')})`}
+                {'\n\n'}
                 {`  ${t('不会出现')} default ${t('和')} vip`}
               </CodeBlock>
               <Paragraph size='small' style={{ marginTop: 8, lineHeight: 1.8 }}>
-                {t('未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。')}
+                {t(
+                  '未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。',
+                )}
               </Paragraph>
-              <Paragraph size='small' style={{ marginTop: 12, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 12, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('用户分组的联动作用')}</Text>
               </Paragraph>
               <Paragraph size='small' style={{ lineHeight: 1.8 }}>
-                {t('管理员给用户分配的分组（如 vip）不仅决定用户身份，还会影响后续两个功能：')}
+                {t(
+                  '管理员给用户分配的分组（如 vip）不仅决定用户身份，还会影响后续两个功能：',
+                )}
               </Paragraph>
               <Paragraph size='small' style={{ lineHeight: 1.8, marginTop: 4 }}>
-                {'1. '}<Text strong>{t('特殊倍率')}</Text>{' — '}
-                {t('可以根据用户分组设置不同的计费倍率。例如 vip 用户使用 standard 令牌时倍率从 1.0 降为 0.8。')}
+                {'1. '}
+                <Text strong>{t('特殊倍率')}</Text>
+                {' — '}
+                {t(
+                  '可以根据用户分组设置不同的计费倍率。例如 vip 用户使用 standard 令牌时倍率从 1.0 降为 0.8。',
+                )}
               </Paragraph>
               <Paragraph size='small' style={{ lineHeight: 1.8, marginTop: 2 }}>
-                {'2. '}<Text strong>{t('可用分组')}</Text>{' — '}
-                {t('可以根据用户分组增减令牌可选的分组范围。例如 vip 用户额外开放 premium 分组，或移除某个分组的选择权。')}
+                {'2. '}
+                <Text strong>{t('可用分组')}</Text>
+                {' — '}
+                {t(
+                  '可以根据用户分组增减令牌可选的分组范围。例如 vip 用户额外开放 premium 分组，或移除某个分组的选择权。',
+                )}
               </Paragraph>
-              <Paragraph size='small' type='tertiary' style={{ lineHeight: 1.8, marginTop: 6 }}>
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ lineHeight: 1.8, marginTop: 6 }}
+              >
                 {t('详见「特殊倍率」和「可用分组」标签页。')}
               </Paragraph>
             </GuideSection>
 
             <GuideSection title={t('JSON 格式参考')}>
               <Paragraph size='small' style={{ marginBottom: 4 }}>
-                <Text strong code>GroupRatio</Text>{' — '}{t('分组名称到倍率的映射')}
+                <Text strong code>
+                  GroupRatio
+                </Text>
+                {' — '}
+                {t('分组名称到倍率的映射')}
               </Paragraph>
               <CodeBlock>{`{"default": 1, "vip": 0.5, "standard": 1, "premium": 0.5}`}</CodeBlock>
               <Paragraph size='small' style={{ marginBottom: 4, marginTop: 8 }}>
-                <Text strong code>UserUsableGroups</Text>{' — '}{t('用户可选分组的名称和描述（只包含勾选了用户可选的分组）')}
+                <Text strong code>
+                  UserUsableGroups
+                </Text>
+                {' — '}
+                {t('用户可选分组的名称和描述（只包含勾选了用户可选的分组）')}
               </Paragraph>
               <CodeBlock>{`{"standard": "${t('标准价格')}", "premium": "${t('高级套餐，半价优惠')}"}`}</CodeBlock>
             </GuideSection>
@@ -740,24 +864,36 @@ export default function GroupRatioSettings(props) {
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('自动分组选择')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
-              {t('首选分组不可用时，按列表顺序尝试用户有权限的备用分组。旧 auto 令牌从列表第一项开始选择。')}
+              {t(
+                '首选分组不可用时，按列表顺序尝试用户有权限的备用分组。旧 auto 令牌从列表第一项开始选择。',
+              )}
             </Paragraph>
 
             <GuideSection title={t('查看示例')}>
-              <Paragraph size='small' type='tertiary' style={{ marginBottom: 6 }}>
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginBottom: 6 }}
+              >
                 {t('场景：设置自动选择优先级')}
               </Paragraph>
               <CodeBlock>
                 {`1. default    ${t('最高优先级')}\n2. vip`}
               </CodeBlock>
               <Paragraph size='small' style={{ marginTop: 6, lineHeight: 1.6 }}>
-                {t('默认开关只影响新建及初始令牌，不改变已有令牌；切组后按实际使用分组计费。')}
+                {t(
+                  '默认开关只影响新建及初始令牌，不改变已有令牌；切组后按实际使用分组计费。',
+                )}
               </Paragraph>
             </GuideSection>
 
             <GuideSection title={t('JSON 格式参考')}>
               <Paragraph size='small' style={{ marginBottom: 4 }}>
-                <Text strong code>AutoGroups</Text>{' — '}{t('有序字符串数组')}
+                <Text strong code>
+                  AutoGroups
+                </Text>
+                {' — '}
+                {t('有序字符串数组')}
               </Paragraph>
               <CodeBlock>{`["default", "vip"]`}</CodeBlock>
             </GuideSection>
@@ -768,42 +904,71 @@ export default function GroupRatioSettings(props) {
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('跨分组特殊倍率')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
-              {t('正常情况下，令牌的计费倍率由令牌所选的分组决定。特殊倍率可以根据「用户所在分组」进一步覆盖这个倍率。')}
+              {t(
+                '正常情况下，令牌的计费倍率由令牌所选的分组决定。特殊倍率可以根据「用户所在分组」进一步覆盖这个倍率。',
+              )}
             </Paragraph>
             <Paragraph style={{ marginTop: 8, lineHeight: 1.8 }}>
-              {t('简单来说：同一个令牌分组，不同等级的用户可以享受不同的价格。')}
+              {t(
+                '简单来说：同一个令牌分组，不同等级的用户可以享受不同的价格。',
+              )}
             </Paragraph>
 
             <GuideSection title={t('查看示例')}>
-              <Paragraph size='small' type='tertiary' style={{ marginBottom: 8 }}>
-                {t('场景：站点有 standard（倍率 1.0）和 premium（倍率 0.5）两个分组，希望 vip 用户使用 standard 令牌时也能享受折扣')}
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginBottom: 8 }}
+              >
+                {t(
+                  '场景：站点有 standard（倍率 1.0）和 premium（倍率 0.5）两个分组，希望 vip 用户使用 standard 令牌时也能享受折扣',
+                )}
               </Paragraph>
-              <Paragraph size='small' style={{ marginBottom: 8, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginBottom: 8, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('不配置特殊倍率时：')}</Text>
               </Paragraph>
               <CodeBlock>
                 {`${t('普通用户')} + standard ${t('令牌')} → ${t('倍率')} 1.0  (${t('原价')})\nvip ${t('用户')}  + standard ${t('令牌')} → ${t('倍率')} 1.0  (${t('原价，和普通用户一样')})`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, marginBottom: 8, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, marginBottom: 8, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('配置特殊倍率后：')}</Text>
               </Paragraph>
               <CodeBlock>
                 {`${t('用户分组')}    ${t('使用分组')}    ${t('倍率')}\n────────────────────────────\nvip       standard   0.8\nvip       premium    0.3`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, lineHeight: 1.8 }}
+              >
                 {t('配置后的效果：')}
               </Paragraph>
               <CodeBlock>
                 {`${t('普通用户')} + standard ${t('令牌')} → ${t('倍率')} 1.0  (${t('不变')})\nvip ${t('用户')}  + standard ${t('令牌')} → ${t('倍率')} 0.8  (${t('享受 8 折')})\nvip ${t('用户')}  + premium  ${t('令牌')} → ${t('倍率')} 0.3  (${t('从 0.5 降到 0.3')})`}
               </CodeBlock>
-              <Paragraph size='small' type='tertiary' style={{ marginTop: 10, lineHeight: 1.8 }}>
-                {t('只有配置了规则的组合才会覆盖，未配置的组合仍使用令牌分组的基础倍率。')}
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginTop: 10, lineHeight: 1.8 }}
+              >
+                {t(
+                  '只有配置了规则的组合才会覆盖，未配置的组合仍使用令牌分组的基础倍率。',
+                )}
               </Paragraph>
             </GuideSection>
 
             <GuideSection title={t('JSON 格式参考')}>
               <Paragraph size='small' style={{ marginBottom: 4 }}>
-                <Text strong code>GroupGroupRatio</Text>{' — '}{t('嵌套映射：用户分组 → 使用分组 → 倍率')}
+                <Text strong code>
+                  GroupGroupRatio
+                </Text>
+                {' — '}
+                {t('嵌套映射：用户分组 → 使用分组 → 倍率')}
               </Paragraph>
               <CodeBlock>{`{\n  "vip": {\n    "standard": 0.8,\n    "premium": 0.3\n  }\n}`}</CodeBlock>
             </GuideSection>
@@ -814,36 +979,60 @@ export default function GroupRatioSettings(props) {
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('特殊可用分组规则')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
-              {t('默认情况下，所有用户创建令牌时看到的可选分组列表是一样的（即「用户可选」列勾选的分组）。')}
+              {t(
+                '默认情况下，所有用户创建令牌时看到的可选分组列表是一样的（即「用户可选」列勾选的分组）。',
+              )}
             </Paragraph>
             <Paragraph style={{ marginTop: 8, lineHeight: 1.8 }}>
-              {t('通过此功能，可以根据用户所在分组，为不同等级的用户展示不同的可选列表。')}
+              {t(
+                '通过此功能，可以根据用户所在分组，为不同等级的用户展示不同的可选列表。',
+              )}
             </Paragraph>
 
             <GuideSection title={t('查看示例')}>
-              <Paragraph size='small' type='tertiary' style={{ marginBottom: 8 }}>
-                {t('场景：站点有 standard 和 premium 两个用户可选分组。希望 vip 用户额外看到 exclusive 分组，同时不再看到 standard 分组')}
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginBottom: 8 }}
+              >
+                {t(
+                  '场景：站点有 standard 和 premium 两个用户可选分组。希望 vip 用户额外看到 exclusive 分组，同时不再看到 standard 分组',
+                )}
               </Paragraph>
-              <Paragraph size='small' style={{ marginBottom: 8, lineHeight: 1.8 }}>
-                <Text strong>{t('不配置规则时，所有用户看到的下拉框一样：')}</Text>
+              <Paragraph
+                size='small'
+                style={{ marginBottom: 8, lineHeight: 1.8 }}
+              >
+                <Text strong>
+                  {t('不配置规则时，所有用户看到的下拉框一样：')}
+                </Text>
               </Paragraph>
               <CodeBlock>
                 {`${t('所有用户')} → ${t('创建令牌可选')}:\n  ├─ standard\n  └─ premium`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, marginBottom: 8, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, marginBottom: 8, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('为 vip 用户配置规则：')}</Text>
               </Paragraph>
               <CodeBlock>
                 {`${t('用户分组')}    ${t('操作')}        ${t('目标分组')}    ${t('描述')}\n──────────────────────────────────────────\nvip       ${t('添加')} (+:)   exclusive   ${t('专属分组')}\nvip       ${t('移除')} (-:)   standard    -`}
               </CodeBlock>
-              <Paragraph size='small' style={{ marginTop: 10, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 10, lineHeight: 1.8 }}
+              >
                 {t('配置后的效果：')}
               </Paragraph>
               <CodeBlock>
                 {`${t('普通用户')} → ${t('创建令牌可选')}:\n  ├─ standard\n  └─ premium\n\nvip ${t('用户')} → ${t('创建令牌可选')}:\n  ├─ premium     (${t('保留')})\n  └─ exclusive   (${t('新增')})\n\n  ${t('standard 已被移除，vip 用户看不到')}`}
               </CodeBlock>
 
-              <Paragraph size='small' style={{ marginTop: 14, lineHeight: 1.8 }}>
+              <Paragraph
+                size='small'
+                style={{ marginTop: 14, lineHeight: 1.8 }}
+              >
                 <Text strong>{t('三种操作的区别：')}</Text>
               </Paragraph>
               <CodeBlock>
@@ -853,11 +1042,19 @@ export default function GroupRatioSettings(props) {
 
             <GuideSection title={t('JSON 格式参考')}>
               <Paragraph size='small' style={{ marginBottom: 4 }}>
-                <Text strong code>group_special_usable_group</Text>
+                <Text strong code>
+                  group_special_usable_group
+                </Text>
               </Paragraph>
               <CodeBlock>{`{\n  "vip": {\n    "+:exclusive": "${t('专属分组')}",\n    "-:standard": "remove"\n  }\n}`}</CodeBlock>
-              <Paragraph size='small' type='tertiary' style={{ marginTop: 6, lineHeight: 1.6 }}>
-                {t('键的前缀 +: 表示添加，-: 表示移除，无前缀表示追加。值为分组描述（移除时填 "remove"）。')}
+              <Paragraph
+                size='small'
+                type='tertiary'
+                style={{ marginTop: 6, lineHeight: 1.6 }}
+              >
+                {t(
+                  '键的前缀 +: 表示添加，-: 表示移除，无前缀表示追加。值为分组描述（移除时填 "remove"）。',
+                )}
               </Paragraph>
             </GuideSection>
           </div>
@@ -869,12 +1066,18 @@ export default function GroupRatioSettings(props) {
   return (
     <Spin spinning={loading}>
       <div style={{ marginBottom: 15 }}>
-        <div className='flex items-center gap-3' style={{ marginTop: 12, marginBottom: 16 }}>
+        <div
+          className='flex items-center gap-3'
+          style={{ marginTop: 12, marginBottom: 16 }}
+        >
           <RadioGroup
             type='button'
             size='small'
             value={editMode}
-            onChange={(e) => setEditMode(e.target.value)}
+            onChange={(e) => {
+              if (!validEditors) return showError(t('请检查输入'));
+              setEditMode(e.target.value);
+            }}
           >
             <Radio value='visual'>{t('可视化编辑')}</Radio>
             <Radio value='manual'>{t('手动编辑')}</Radio>

@@ -21,7 +21,9 @@ import { describe, expect, test } from 'bun:test';
 import {
   buildUserGroupOptions,
   findGroupNameConflicts,
-  orderGroupOptionSaves,
+  buildGroupOptionUpdates,
+  serializeUserGroupRows,
+  validateUserGroupRows,
   userGroupNamesFromJSON,
 } from './userGroups';
 
@@ -67,32 +69,52 @@ describe('group name conflicts', () => {
   });
 });
 
-describe('group option save order', () => {
-  const keys = ['AutoGroups', 'UserGroups', 'GroupRatio', 'UserUsableGroups'];
-
-  test('saves channel groups first when a name moves into user groups', () => {
-    expect(
-      orderGroupOptionSaves(
-        keys,
-        { GroupRatio: '{"vip":1,"福利":0.6}' },
-        { UserGroups: '{"default":"","vip":""}' },
-      ),
-    ).toEqual(['GroupRatio', 'UserGroups', 'AutoGroups', 'UserUsableGroups']);
+describe('group editing validation and atomic saves', () => {
+  test('rejects duplicate normalized names, blanks, and overlong names before serialization', () => {
+    for (const invalid of [
+      [{ name: 'default' }, { name: 'vip' }, { name: ' vip ' }],
+      [{ name: 'default' }, { name: '  ' }],
+      [{ name: 'default' }, { name: 'x'.repeat(65) }],
+      [{ name: 'vip' }],
+    ]) {
+      expect(validateUserGroupRows(invalid)).toBe(false);
+      expect(serializeUserGroupRows(invalid)).toBeNull();
+    }
   });
-
-  test('saves user groups first otherwise', () => {
-    expect(
-      orderGroupOptionSaves(
-        keys,
-        { GroupRatio: '{"福利":0.6}' },
-        { UserGroups: '{"default":""}' },
-      ),
-    ).toEqual(['UserGroups', 'GroupRatio', 'AutoGroups', 'UserUsableGroups']);
-  });
-
-  test('leaves unrelated saves alone', () => {
-    expect(orderGroupOptionSaves(['AutoGroups', 'GroupRatio'], {}, {})).toEqual(
-      ['AutoGroups', 'GroupRatio'],
+  test('normalizes valid rows without losing data or special property names', () => {
+    const rows = [
+      { name: 'default' },
+      { name: ' vip ', description: 'VIP' },
+      { name: '__proto__', description: 'data' },
+    ];
+    expect(JSON.parse(serializeUserGroupRows(rows))).toEqual(
+      JSON.parse('{"default":"","vip":"VIP","__proto__":"data"}'),
     );
+  });
+  test('saves a two-way name swap as one final pair', () => {
+    const next = {
+      UserGroups: '{"default":"","premium":""}',
+      GroupRatio: '{"default":1,"vip":2}',
+      AutoGroups: '["vip"]',
+    };
+    const updates = buildGroupOptionUpdates(
+      ['GroupRatio', 'AutoGroups', 'UserGroups'],
+      next,
+    );
+    expect(updates).toEqual([
+      {
+        key: 'UserChannelGroups',
+        value: JSON.stringify({
+          UserGroups: next.UserGroups,
+          GroupRatio: next.GroupRatio,
+        }),
+      },
+      { key: 'AutoGroups', value: next.AutoGroups },
+    ]);
+  });
+  test('keeps unrelated or single-option changes on the existing API', () => {
+    expect(
+      buildGroupOptionUpdates(['UserGroups'], { UserGroups: '{}' }),
+    ).toEqual([{ key: 'UserGroups', value: '{}' }]);
   });
 });

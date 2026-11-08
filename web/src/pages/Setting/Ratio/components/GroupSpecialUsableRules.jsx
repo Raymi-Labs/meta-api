@@ -34,6 +34,12 @@ import {
 } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
 
+import {
+  flattenUsableRules,
+  serializeGroupSpecialUsable,
+} from '../../../../helpers/userGroupRules';
+export { serializeGroupSpecialUsable } from '../../../../helpers/userGroupRules';
+
 const { Text } = Typography;
 
 let _idCounter = 0;
@@ -43,54 +49,13 @@ const OP_ADD = 'add';
 const OP_REMOVE = 'remove';
 const OP_APPEND = 'append';
 
-function parsePrefix(rawKey) {
-  if (rawKey.startsWith('+:')) return { op: OP_ADD, groupName: rawKey.slice(2) };
-  if (rawKey.startsWith('-:')) return { op: OP_REMOVE, groupName: rawKey.slice(2) };
-  return { op: OP_APPEND, groupName: rawKey };
-}
-
-function toRawKey(op, groupName) {
-  if (op === OP_ADD) return `+:${groupName}`;
-  if (op === OP_REMOVE) return `-:${groupName}`;
-  return groupName;
-}
-
 function parseJSON(str) {
   if (!str || !str.trim()) return {};
-  try { return JSON.parse(str); } catch { return {}; }
-}
-
-function flattenRules(nested) {
-  const rules = [];
-  for (const [userGroup, inner] of Object.entries(nested)) {
-    if (typeof inner !== 'object' || inner === null) continue;
-    for (const [rawKey, desc] of Object.entries(inner)) {
-      const { op, groupName } = parsePrefix(rawKey);
-      rules.push({
-        _id: uid(),
-        userGroup,
-        op,
-        targetGroup: groupName,
-        description: op === OP_REMOVE ? 'remove' : (typeof desc === 'string' ? desc : ''),
-      });
-    }
+  try {
+    return JSON.parse(str);
+  } catch {
+    return {};
   }
-  return rules;
-}
-
-function nestRules(rules) {
-  const result = {};
-  rules.forEach(({ userGroup, op, targetGroup, description }) => {
-    if (!userGroup || !targetGroup) return;
-    if (!result[userGroup]) result[userGroup] = {};
-    result[userGroup][toRawKey(op, targetGroup)] = description;
-  });
-  return result;
-}
-
-export function serializeGroupSpecialUsable(rules) {
-  const nested = nestRules(rules);
-  return Object.keys(nested).length === 0 ? '' : JSON.stringify(nested, null, 2);
 }
 
 const OP_TAG_MAP = {
@@ -99,7 +64,16 @@ const OP_TAG_MAP = {
   [OP_APPEND]: { color: 'blue', label: '追加' },
 };
 
-function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, onAdd, t }) {
+function UsableGroupSection({
+  groupName,
+  items,
+  groupOptions,
+  opOptions,
+  onUpdate,
+  onRemove,
+  onAdd,
+  t,
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -119,11 +93,20 @@ function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, o
         onClick={() => setOpen(!open)}
       >
         <div className='flex items-center gap-2'>
-          {open ? <IconChevronUp size='small' /> : <IconChevronDown size='small' />}
+          {open ? (
+            <IconChevronUp size='small' />
+          ) : (
+            <IconChevronDown size='small' />
+          )}
           <Text strong>{groupName}</Text>
-          <Tag size='small' color='blue'>{items.length} {t('条规则')}</Tag>
+          <Tag size='small' color='blue'>
+            {items.length} {t('条规则')}
+          </Tag>
         </div>
-        <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
+        <div
+          className='flex items-center gap-1'
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             icon={<IconPlus />}
             size='small'
@@ -132,7 +115,7 @@ function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, o
           />
           <Popconfirm
             title={t('确认删除该分组的所有规则？')}
-            onConfirm={() => items.forEach((item) => onRemove(item._id))}
+            onConfirm={() => onRemove(items.map((item) => item._id))}
             position='left'
           >
             <Button
@@ -160,14 +143,22 @@ function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, o
                 style={{ width: 120 }}
                 renderSelectedItem={(optionNode) => {
                   const info = OP_TAG_MAP[optionNode.value] || {};
-                  return <Tag size='small' color={info.color}>{optionNode.label}</Tag>;
+                  return (
+                    <Tag size='small' color={info.color}>
+                      {optionNode.label}
+                    </Tag>
+                  );
                 }}
               />
-              <Input
+              <Select
+                multiple
+                filter
+                allowCreate
+                optionList={groupOptions}
                 size='small'
-                value={rule.targetGroup}
+                value={rule.targetGroups}
                 placeholder={t('分组名称')}
-                onChange={(v) => onUpdate(rule._id, 'targetGroup', v)}
+                onChange={(v) => onUpdate(rule._id, 'targetGroups', v)}
                 style={{ flex: 1 }}
               />
               {rule.op !== OP_REMOVE ? (
@@ -180,7 +171,9 @@ function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, o
                 />
               ) : (
                 <div style={{ flex: 1 }}>
-                  <Text type='tertiary' size='small'>-</Text>
+                  <Text type='tertiary' size='small'>
+                    -
+                  </Text>
                 </div>
               )}
               <Popconfirm
@@ -212,13 +205,16 @@ export default function GroupSpecialUsableRules({
   onChange,
 }) {
   const { t } = useTranslation();
-  const [rules, setRules] = useState(() => flattenRules(parseJSON(value)));
-  const [newGroupName, setNewGroupName] = useState('');
+  const [rules, setRules] = useState(() =>
+    flattenUsableRules(parseJSON(value), uid),
+  );
+  const [newGroupName, setNewGroupName] = useState([]);
 
   const emitChange = useCallback(
     (newRules) => {
       setRules(newRules);
-      onChange?.(serializeGroupSpecialUsable(newRules));
+      const serialized = serializeGroupSpecialUsable(newRules);
+      onChange?.(serialized, serialized !== null);
     },
     [onChange],
   );
@@ -229,7 +225,8 @@ export default function GroupSpecialUsableRules({
         rules.map((r) => {
           if (r._id !== id) return r;
           const updated = { ...r, [field]: val };
-          if (field === 'op' && val === OP_REMOVE) updated.description = 'remove';
+          if (field === 'op' && val === OP_REMOVE)
+            updated.description = 'remove';
           else if (field === 'op' && r.op === OP_REMOVE && val !== OP_REMOVE) {
             if (updated.description === 'remove') updated.description = '';
           }
@@ -241,7 +238,10 @@ export default function GroupSpecialUsableRules({
   );
 
   const removeRule = useCallback(
-    (id) => emitChange(rules.filter((r) => r._id !== id)),
+    (id) =>
+      emitChange(
+        rules.filter((r) => !(Array.isArray(id) ? id : [id]).includes(r._id)),
+      ),
     [rules, emitChange],
   );
 
@@ -249,20 +249,31 @@ export default function GroupSpecialUsableRules({
     (groupName) => {
       emitChange([
         ...rules,
-        { _id: uid(), userGroup: groupName, op: OP_APPEND, targetGroup: '', description: '' },
+        {
+          _id: uid(),
+          userGroup: groupName,
+          op: OP_APPEND,
+          targetGroups: [],
+          description: '',
+        },
       ]);
     },
     [rules, emitChange],
   );
 
   const addNewGroup = useCallback(() => {
-    const name = newGroupName.trim();
-    if (!name) return;
+    if (!newGroupName.length) return;
     emitChange([
       ...rules,
-      { _id: uid(), userGroup: name, op: OP_APPEND, targetGroup: '', description: '' },
+      ...newGroupName.map((name) => ({
+        _id: uid(),
+        userGroup: name,
+        op: OP_APPEND,
+        targetGroups: [],
+        description: '',
+      })),
     ]);
-    setNewGroupName('');
+    setNewGroupName([]);
   }, [rules, emitChange, newGroupName]);
 
   const groupOptions = useMemo(
@@ -270,8 +281,7 @@ export default function GroupSpecialUsableRules({
     [groupNames],
   );
   const userGroupOptions = useMemo(
-    () =>
-      (userGroupNames || groupNames).map((n) => ({ value: n, label: n })),
+    () => (userGroupNames || groupNames).map((n) => ({ value: n, label: n })),
     [userGroupNames, groupNames],
   );
 
@@ -285,7 +295,7 @@ export default function GroupSpecialUsableRules({
   );
 
   const grouped = useMemo(() => {
-    const map = {};
+    const map = Object.create(null);
     const order = [];
     rules.forEach((r) => {
       if (!r.userGroup) return;
@@ -311,7 +321,8 @@ export default function GroupSpecialUsableRules({
             allowCreate
             placeholder={t('选择用户分组')}
             optionList={userGroupOptions}
-            value={newGroupName || undefined}
+            multiple
+            value={newGroupName}
             onChange={setNewGroupName}
             style={{ width: 200 }}
             position='bottomLeft'
@@ -326,11 +337,15 @@ export default function GroupSpecialUsableRules({
 
   return (
     <div className='space-y-2'>
+      {serializeGroupSpecialUsable(rules) === null && (
+        <Text type='danger'>{t('存在重复的分组名称：')}</Text>
+      )}
       {grouped.map((group) => (
         <UsableGroupSection
           key={group.name}
           groupName={group.name}
           items={group.items}
+          groupOptions={groupOptions}
           opOptions={opOptions}
           onUpdate={updateRule}
           onRemove={removeRule}
@@ -345,7 +360,8 @@ export default function GroupSpecialUsableRules({
           allowCreate
           placeholder={t('选择用户分组')}
           optionList={userGroupOptions}
-          value={newGroupName || undefined}
+          multiple
+          value={newGroupName}
           onChange={setNewGroupName}
           style={{ width: 200 }}
           position='bottomLeft'

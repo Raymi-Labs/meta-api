@@ -168,3 +168,23 @@ func TestTokenListGroupRatioListAndSearch(t *testing.T) {
 		})
 	}
 }
+
+func TestTokenListIdentityGroupUsesAuthorizedDefaultRatio(t *testing.T) {
+	db := setupTokenControllerTestDB(t)
+	setupTokenListRatios(t)
+	old := setting.UserGroups2JSONString()
+	t.Cleanup(func() { require.NoError(t, setting.UpdateUserGroupsByJSONString(old)) })
+	require.NoError(t, setting.UpdateUserGroupsByJSONString(`{"default":"","identity":""}`))
+	require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("group", "identity").Error)
+	require.NoError(t, ratio_setting.UpdateGroupGroupRatioByJSONString(`{"identity":{"default":0.25}}`))
+	token := &model.Token{UserId: 1, Group: "", Key: "fixture"}
+	item := buildTokenListItems(1, []*model.Token{token})[0]
+	require.Equal(t, "fixed", item.GroupRatioStatus)
+	require.NotNil(t, item.GroupRatio)
+	require.Equal(t, 0.25, *item.GroupRatio)
+	require.Empty(t, item.Group)
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{}`))
+	item = buildTokenListItems(1, []*model.Token{token})[0]
+	require.Equal(t, "unavailable", item.GroupRatioStatus)
+	require.Nil(t, item.GroupRatio)
+}

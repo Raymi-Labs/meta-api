@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/QuantumNous/new-api/setting"
@@ -71,18 +69,20 @@ func GetUserGroupRatio(userGroup, group string) float64 {
 // default group is exempt: new users get it, and a token without a group uses
 // its user group name as the channel group.
 func CheckUserChannelGroupConflict(userGroups map[string]string, channelGroups map[string]float64) error {
-	conflicts := make([]string, 0)
-	for name := range userGroups {
-		if name == setting.DefaultUserGroup {
-			continue
-		}
-		if _, ok := channelGroups[name]; ok {
-			conflicts = append(conflicts, name)
-		}
+	return setting.CheckUserChannelGroupConflict(userGroups, channelGroups)
+}
+
+// ResolveTokenGroup preserves legacy inheritance and only gives registered,
+// identity-only groups an authorized default channel. Explicit choices never change.
+func ResolveTokenGroup(userGroup, tokenGroup string) string {
+	if tokenGroup != "" {
+		return tokenGroup
 	}
-	if len(conflicts) == 0 {
-		return nil
+	if userGroup == "auto" || ratio_setting.ContainsGroupRatio(userGroup) {
+		return userGroup
 	}
-	sort.Strings(conflicts)
-	return fmt.Errorf("用户分组与渠道分组不能重名：%s", strings.Join(conflicts, "、"))
+	if setting.IsRegisteredUserGroup(userGroup) && ratio_setting.ContainsGroupRatio(setting.DefaultUserGroup) && GroupInUserUsableGroups(userGroup, setting.DefaultUserGroup) {
+		return setting.DefaultUserGroup
+	}
+	return userGroup
 }
