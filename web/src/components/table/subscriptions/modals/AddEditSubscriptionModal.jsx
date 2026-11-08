@@ -40,6 +40,7 @@ import {
 } from '@douyinfe/semi-icons';
 import { Clock, RefreshCw } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../../helpers';
+import { buildUserGroupOptions } from '../../../../helpers/userGroups';
 import {
   quotaToDisplayAmount,
   displayAmountToQuota,
@@ -135,17 +136,25 @@ const AddEditSubscriptionModal = ({
   useEffect(() => {
     if (!visible) return;
     setGroupLoading(true);
-    API.get('/api/group')
+    // Upgrading changes the buyer's user group, so only registered user
+    // groups are offered (plus the plan's current value).
+    API.get('/api/group/user_groups')
       .then((res) => {
         if (res.data?.success) {
-          setGroupOptions(res.data?.data || []);
+          setGroupOptions(
+            buildUserGroupOptions(
+              res.data?.data || [],
+              editingPlan?.plan?.upgrade_group || '',
+              t('未登记'),
+            ),
+          );
         } else {
           setGroupOptions([]);
         }
       })
       .catch(() => setGroupOptions([]))
       .finally(() => setGroupLoading(false));
-  }, [visible]);
+  }, [visible, editingPlan?.plan?.id]);
 
   const submit = async (values) => {
     if (!values.title || values.title.trim() === '') {
@@ -354,8 +363,8 @@ const AddEditSubscriptionModal = ({
                       >
                         <Select.Option value=''>{t('不升级')}</Select.Option>
                         {(groupOptions || []).map((g) => (
-                          <Select.Option key={g} value={g}>
-                            {g}
+                          <Select.Option key={g.value} value={g.value}>
+                            {g.label}
                           </Select.Option>
                         ))}
                       </Form.Select>

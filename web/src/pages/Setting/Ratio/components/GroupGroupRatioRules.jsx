@@ -158,6 +158,9 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
 export default function GroupGroupRatioRules({
   value,
   groupNames = [],
+  // Names offered for the user-group side of a rule; channel groups are
+  // offered for the target side.
+  userGroupNames,
   onChange,
 }) {
   const { t } = useTranslation();
@@ -210,6 +213,11 @@ export default function GroupGroupRatioRules({
     () => groupNames.map((n) => ({ value: n, label: n })),
     [groupNames],
   );
+  const userGroupOptions = useMemo(
+    () =>
+      (userGroupNames || groupNames).map((n) => ({ value: n, label: n })),
+    [userGroupNames, groupNames],
+  );
 
   const grouped = useMemo(() => {
     const map = {};
@@ -237,7 +245,7 @@ export default function GroupGroupRatioRules({
             filter
             allowCreate
             placeholder={t('选择用户分组')}
-            optionList={groupOptions}
+            optionList={userGroupOptions}
             value={newGroupName || undefined}
             onChange={setNewGroupName}
             style={{ width: 200 }}
@@ -271,7 +279,7 @@ export default function GroupGroupRatioRules({
           filter
           allowCreate
           placeholder={t('选择用户分组')}
-          optionList={groupOptions}
+          optionList={userGroupOptions}
           value={newGroupName || undefined}
           onChange={setNewGroupName}
           style={{ width: 200 }}

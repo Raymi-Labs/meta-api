@@ -798,15 +798,18 @@ export const useUsersData = () => {
   // 拉取分组数据
   const fetchGroups = async () => {
     try {
-      let res = await API.get(`/api/group/`);
-      if (res === undefined) {
+      // Filter by user group, including legacy names still held by users.
+      let res = await API.get(`/api/group/user_groups`);
+      if (res === undefined || !res.data?.success) {
         return;
       }
       setGroupOptions(
-        res.data.data.map((group) => ({
-          label: group,
-          value: group,
-        })),
+        (res.data.data || [])
+          .filter((group) => group.registered || group.user_count > 0)
+          .map((group) => ({
+            label: group.name,
+            value: group.name,
+          })),
       );
     } catch (error) {
       showError(error.message);

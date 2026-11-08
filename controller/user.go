@@ -1054,6 +1054,11 @@ func UpdateUser(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserCannotCreateHigherLevel)
 		return
 	}
+	updatedUser.Group = strings.TrimSpace(updatedUser.Group)
+	if err := validateUserGroupAssignment(originUser.Group, updatedUser.Group); err != nil {
+		common.ApiErrorMsg(c, err.Error())
+		return
+	}
 	if updatedUser.Password == "$I_LOVE_U" {
 		updatedUser.Password = "" // rollback to what it should be
 	}
@@ -1061,6 +1066,15 @@ func UpdateUser(c *gin.Context) {
 	if err := updatedUser.Edit(updatePassword); err != nil {
 		common.ApiError(c, err)
 		return
+	}
+	if originUser.Group != updatedUser.Group {
+		model.RecordLogWithAdminInfo(originUser.Id, model.LogTypeManage,
+			fmt.Sprintf("管理员将用户分组从「%s」修改为「%s」", originUser.Group, updatedUser.Group),
+			map[string]interface{}{
+				"admin_id":       c.GetInt("id"),
+				"admin_username": c.GetString("username"),
+			},
+		)
 	}
 	if originUser.Quota != updatedUser.Quota {
 		model.RecordLogWithAdminInfo(originUser.Id, model.LogTypeManage,

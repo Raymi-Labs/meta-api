@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   API,
@@ -27,6 +27,7 @@ import {
   renderQuotaWithPrompt,
   getCurrencyConfig,
 } from '../../../../helpers';
+import { buildUserGroupOptions } from '../../../../helpers/userGroups';
 import {
   quotaToDisplayAmount,
   displayAmountToQuota,
@@ -69,7 +70,8 @@ const EditUserModal = (props) => {
   const [addQuotaLocal, setAddQuotaLocal] = useState('');
   const [addAmountLocal, setAddAmountLocal] = useState('');
   const isMobile = useIsMobile();
-  const [groupOptions, setGroupOptions] = useState([]);
+  const [userGroupItems, setUserGroupItems] = useState([]);
+  const [currentGroup, setCurrentGroup] = useState('');
   const [bindingModalVisible, setBindingModalVisible] = useState(false);
   const formApiRef = useRef(null);
 
@@ -91,14 +93,24 @@ const EditUserModal = (props) => {
     remark: '',
   });
 
+  // Only registered user groups can be assigned; channel groups live in a
+  // separate list. The user's current legacy value stays selectable.
   const fetchGroups = async () => {
     try {
-      let res = await API.get(`/api/group/`);
-      setGroupOptions(res.data.data.map((g) => ({ label: g, value: g })));
+      let res = await API.get(`/api/group/user_groups`);
+      if (res?.data?.success) {
+        setUserGroupItems(res.data.data || []);
+      } else {
+        showError(res?.data?.message);
+      }
     } catch (e) {
       showError(e.message);
     }
   };
+  const groupOptions = useMemo(
+    () => buildUserGroupOptions(userGroupItems, currentGroup, t('未登记')),
+    [userGroupItems, currentGroup, t],
+  );
 
   const handleCancel = () => props.handleClose();
 
@@ -109,6 +121,7 @@ const EditUserModal = (props) => {
     const { success, message, data } = res.data;
     if (success) {
       data.password = '';
+      setCurrentGroup(data.group || '');
       formApiRef.current?.setValues({ ...getInitValues(), ...data });
     } else {
       showError(message);
@@ -296,11 +309,13 @@ const EditUserModal = (props) => {
                       <Col span={24}>
                         <Form.Select
                           field='group'
-                          label={t('分组')}
+                          label={t('用户分组')}
                           placeholder={t('请选择分组')}
                           optionList={groupOptions}
-                          allowAdditions
-                          search
+                          extraText={t(
+                            '只能选择已登记的用户分组，可在「分组相关设置 → 用户分组」中添加',
+                          )}
+                          filter
                           rules={[{ required: true, message: t('请选择分组') }]}
                         />
                       </Col>

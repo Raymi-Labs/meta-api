@@ -30,6 +30,7 @@ import {
   Spin,
   Switch,
   Tabs,
+  Tag,
   Typography,
 } from '@douyinfe/semi-ui';
 import { IconChevronDown, IconChevronUp } from '@douyinfe/semi-icons';
@@ -47,12 +48,20 @@ import GroupTable from './components/GroupTable';
 import AutoGroupList from './components/AutoGroupList';
 import GroupGroupRatioRules from './components/GroupGroupRatioRules';
 import GroupSpecialUsableRules from './components/GroupSpecialUsableRules';
+import UserGroupTable from './components/UserGroupTable';
+import {
+  DEFAULT_USER_GROUP,
+  findGroupNameConflicts,
+  orderGroupOptionSaves,
+  userGroupNamesFromJSON,
+} from '../../../helpers/userGroups';
 
 const { Text, Title, Paragraph } = Typography;
 
 const OPTION_KEYS = [
   'GroupRatio',
   'UserUsableGroups',
+  'UserGroups',
   'GroupGroupRatio',
   'group_ratio_setting.group_special_usable_group',
   'AutoGroups',
@@ -77,6 +86,7 @@ export default function GroupRatioSettings(props) {
   const [inputs, setInputs] = useState({
     GroupRatio: '',
     UserUsableGroups: '',
+    UserGroups: '',
     GroupGroupRatio: '',
     'group_ratio_setting.group_special_usable_group': '',
     AutoGroups: '',
@@ -90,6 +100,57 @@ export default function GroupRatioSettings(props) {
     const ratioMap = parseJSONSafe(inputs.GroupRatio, {});
     return Object.keys(ratioMap);
   }, [inputs.GroupRatio]);
+
+  const userGroupNames = useMemo(() => {
+    const names = userGroupNamesFromJSON(inputs.UserGroups);
+    return names.length ? names : [DEFAULT_USER_GROUP];
+  }, [inputs.UserGroups]);
+
+  // Usage counts come from the server: users and plans per user group, and
+  // channel groups that enabled tokens use but that no longer exist.
+  const [userGroupOverview, setUserGroupOverview] = useState([]);
+  const [staleTokenGroups, setStaleTokenGroups] = useState([]);
+  const loadGroupUsage = useCallback(async () => {
+    try {
+      const [overviewRes, staleRes] = await Promise.all([
+        API.get('/api/group/user_groups'),
+        API.get('/api/group/stale_token_groups'),
+      ]);
+      if (overviewRes?.data?.success) {
+        setUserGroupOverview(overviewRes.data.data || []);
+      }
+      if (staleRes?.data?.success) {
+        setStaleTokenGroups(staleRes.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load group usage:', error);
+    }
+  }, []);
+
+  const handleReassignUserGroup = useCallback(
+    async (from, to) => {
+      try {
+        const res = await API.post('/api/group/user_groups/reassign', {
+          from,
+          to,
+        });
+        if (!res?.data?.success) {
+          showError(res?.data?.message || t('保存失败'));
+          return;
+        }
+        showSuccess(
+          t('已将 {{count}} 个用户改为「{{to}}」', {
+            count: res.data.data?.updated ?? 0,
+            to,
+          }),
+        );
+        await loadGroupUsage();
+      } catch (error) {
+        showError(t('保存失败，请重试'));
+      }
+    },
+    [loadGroupUsage, t],
+  );
 
   async function onSubmit() {
     if (editMode === 'manual') {
@@ -106,36 +167,47 @@ export default function GroupRatioSettings(props) {
       return showWarning(t('你似乎并没有修改什么'));
     }
 
-    const requestQueue = updateArray.map((item) => {
-      const value =
-        typeof inputs[item.key] === 'boolean'
-          ? String(inputs[item.key])
-          : inputs[item.key];
-      return API.put('/api/option/', { key: item.key, value });
-    });
+    const conflicts = findGroupNameConflicts(userGroupNames, groupNames);
+    if (conflicts.length) {
+      return showError(
+        t('用户分组与渠道分组不能重名：') + conflicts.join('、'),
+      );
+    }
+
+    // Saved one by one: when a name moves between the channel and user
+    // group lists, the list losing it must be saved first.
+    const keys = orderGroupOptionSaves(
+      updateArray.map((item) => item.key),
+      inputsRow,
+      inputs,
+    );
 
     setLoading(true);
+    let saved = 0;
     try {
-      const res = await Promise.all(requestQueue);
-      if (res.includes(undefined)) {
-        return showError(
-          requestQueue.length > 1
-            ? t('部分保存失败，请重试')
-            : t('保存失败'),
-        );
-      }
-      for (let i = 0; i < res.length; i++) {
-        if (!res[i].data.success) {
-          return showError(res[i].data.message);
+      for (const key of keys) {
+        const value =
+          typeof inputs[key] === 'boolean' ? String(inputs[key]) : inputs[key];
+        const res = await API.put('/api/option/', { key, value });
+        if (res === undefined) {
+          showError(keys.length > 1 ? t('部分保存失败，请重试') : t('保存失败'));
+          return;
         }
+        if (!res.data.success) {
+          showError(res.data.message);
+          return;
+        }
+        saved++;
       }
       showSuccess(t('保存成功'));
-      props.refresh();
     } catch (error) {
       console.error('Unexpected error:', error);
       showError(t('保存失败，请重试'));
     } finally {
       setLoading(false);
+      if (saved > 0) {
+        props.refresh();
+      }
     }
   }
 
@@ -152,7 +224,12 @@ export default function GroupRatioSettings(props) {
     if (refForm.current) {
       refForm.current.setValues(currentInputs);
     }
-  }, [props.options]);
+    loadGroupUsage();
+  }, [props.options, loadGroupUsage]);
+
+  const handleUserGroupsChange = useCallback((value) => {
+    setInputs((prev) => ({ ...prev, UserGroups: value }));
+  }, []);
 
   const handleGroupTableChange = useCallback(
     ({ GroupRatio, UserUsableGroups }) => {
@@ -180,9 +257,9 @@ export default function GroupRatioSettings(props) {
 
   const renderVisualMode = () => (
     <Form key='form-visual' values={inputs} style={{ marginBottom: 15 }}>
-      <Form.Section text={t('分组管理')}>
+      <Form.Section text={t('渠道分组')}>
         <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
-          {t('倍率用于计费乘数，勾选「用户可选」后用户可在创建令牌时选择该分组')}
+          {t('渠道分组决定令牌走哪些渠道和计费倍率，渠道在「渠道管理」中选择所属渠道分组。倍率用于计费乘数，勾选「用户可选」后用户可在创建令牌时选择该分组')}
         </Text>
         <GroupTable
           key={`gt_${dv}`}
@@ -190,6 +267,31 @@ export default function GroupRatioSettings(props) {
           userUsableGroups={inputs.UserUsableGroups}
           onChange={handleGroupTableChange}
         />
+        {staleTokenGroups.length > 0 && (
+          <div
+            className='mt-4'
+            style={{
+              border: '1px solid var(--semi-color-warning-light-active)',
+              background: 'var(--semi-color-warning-light-default)',
+              borderRadius: 8,
+              padding: '10px 12px',
+            }}
+          >
+            <Text strong>{t('已删除但仍有令牌使用的渠道分组')}</Text>
+            <Text type='tertiary' size='small' style={{ display: 'block', margin: '4px 0 8px' }}>
+              {t('这些渠道分组已不在上表中，但仍有启用中的令牌在使用，这些令牌的请求会被拒绝。可以重新添加同名渠道分组，或通知用户改用其他分组。')}
+            </Text>
+            <div className='flex flex-wrap gap-2'>
+              {staleTokenGroups.map((item) => (
+                <Tag key={item.name} size='large' color='orange'>
+                  {item.name}
+                  {' · '}
+                  {t('{{count}} 个令牌', { count: item.token_count })}
+                </Tag>
+              ))}
+            </div>
+          </div>
+        )}
       </Form.Section>
 
       <Form.Section text={t('自动分组')}>
@@ -227,6 +329,20 @@ export default function GroupRatioSettings(props) {
         />
       </Form.Section>
 
+      <Form.Section text={t('用户分组')}>
+        <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
+          {t('用户分组表示用户身份（如 default、vip），在「用户管理」中分配或由订阅套餐升级。它决定用户能用哪些渠道分组以及特殊倍率，本身不对应渠道；名称不能与渠道分组重复（default 除外）。')}
+        </Text>
+        <UserGroupTable
+          key={`ug_${dv}`}
+          value={inputs.UserGroups}
+          overview={userGroupOverview}
+          channelGroupNames={groupNames}
+          onChange={handleUserGroupsChange}
+          onReassign={handleReassignUserGroup}
+        />
+      </Form.Section>
+
       <Form.Section text={t('分组特殊倍率')}>
         <Text type='tertiary' size='small' style={{ display: 'block', marginBottom: 12 }}>
           {t('当某个分组的用户使用另一个分组的令牌时，可设置特殊倍率覆盖基础倍率。例如：vip 分组的用户使用 default 分组时倍率为 0.5')}
@@ -235,6 +351,7 @@ export default function GroupRatioSettings(props) {
           key={`ggr_${dv}`}
           value={inputs.GroupGroupRatio}
           groupNames={groupNames}
+          userGroupNames={userGroupNames}
           onChange={handleGroupGroupRatioChange}
         />
       </Form.Section>
@@ -247,6 +364,7 @@ export default function GroupRatioSettings(props) {
           key={`gsu_${dv}`}
           value={inputs['group_ratio_setting.group_special_usable_group']}
           groupNames={groupNames}
+          userGroupNames={userGroupNames}
           onChange={handleSpecialUsableChange}
         />
       </Form.Section>
@@ -313,6 +431,30 @@ export default function GroupRatioSettings(props) {
               ]}
               onChange={(value) =>
                 setInputs((prev) => ({ ...prev, UserUsableGroups: value }))
+              }
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} sm={16}>
+            <Form.TextArea
+              label={t('用户分组')}
+              placeholder={t('为一个 JSON 文本，键为用户分组名称，值为描述')}
+              extraText={t(
+                '用户分组名单，格式为 JSON 字符串，例如：{"default": "默认用户", "vip": "VIP 用户"}。必须包含 default，名称不能与渠道分组重复（default 除外）',
+              )}
+              field={'UserGroups'}
+              autosize={{ minRows: 4, maxRows: 12 }}
+              trigger='blur'
+              stopValidateWithError
+              rules={[
+                {
+                  validator: (rule, value) => verifyJSON(value),
+                  message: t('不是合法的 JSON 字符串'),
+                },
+              ]}
+              onChange={(value) =>
+                setInputs((prev) => ({ ...prev, UserGroups: value }))
               }
             />
           </Col>
@@ -494,11 +636,11 @@ export default function GroupRatioSettings(props) {
             <GuideSection title={t('核心概念')}>
               <Paragraph style={{ lineHeight: 1.8 }}>
                 <Text strong>{t('用户分组')}</Text>{' — '}
-                {t('由管理员分配，决定用户身份等级（如 default、vip）。')}
+                {t('在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。')}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
-                <Text strong>{t('令牌分组')}</Text>{' — '}
-                {t('用户创建令牌时选择的分组，决定该令牌的实际计费倍率。一个用户可以创建多个令牌，使用不同分组。')}
+                <Text strong>{t('渠道分组')}</Text>{' — '}
+                {t('在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。')}
               </Paragraph>
               <Paragraph style={{ lineHeight: 1.8, marginTop: 4 }}>
                 <Text strong>{t('倍率')}</Text>{' — '}
@@ -516,7 +658,7 @@ export default function GroupRatioSettings(props) {
           </div>
         </Tabs.TabPane>
 
-        <Tabs.TabPane tab={t('分组管理')} itemKey='groups'>
+        <Tabs.TabPane tab={t('渠道分组')} itemKey='groups'>
           <div style={{ paddingTop: 20 }}>
             <Title heading={5}>{t('创建和管理分组')}</Title>
             <Paragraph style={{ marginTop: 12, lineHeight: 1.8 }}>
@@ -560,7 +702,7 @@ export default function GroupRatioSettings(props) {
                 {`  ${t('不会出现')} default ${t('和')} vip`}
               </CodeBlock>
               <Paragraph size='small' style={{ marginTop: 8, lineHeight: 1.8 }}>
-                {t('default 和 vip 只能由管理员在「用户管理」中分配给用户。适用于按用户等级定价、内部测试等不希望用户自主选择的场景。')}
+                {t('未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。')}
               </Paragraph>
               <Paragraph size='small' style={{ marginTop: 12, lineHeight: 1.8 }}>
                 <Text strong>{t('用户分组的联动作用')}</Text>
