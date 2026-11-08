@@ -7,7 +7,8 @@ import {
 
 test('an unchanged form does not persist environment defaults or blank secrets', () => {
   const saved = {
-    PulseInternalURL: 'http://pulse-api:8088',
+    PulseForumSSOCallbackURL:
+      'https://forum.example/api/user-center/login/callback',
     PulseEnv: 'production',
     PulseBenefitEnabled: 'false',
   };

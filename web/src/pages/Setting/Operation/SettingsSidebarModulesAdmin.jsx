@@ -58,7 +58,6 @@ export default function SettingsSidebarModulesAdmin(props) {
       overview: true,
       enabled: true,
       topup: true,
-      pulse: true,
       personal: true,
     },
     admin: {
@@ -123,7 +122,6 @@ export default function SettingsSidebarModulesAdmin(props) {
       personal: {
         enabled: true,
         topup: true,
-        pulse: true,
         personal: true,
       },
       admin: {
@@ -205,7 +203,6 @@ export default function SettingsSidebarModulesAdmin(props) {
             enabled: true,
             overview: true,
             topup: true,
-            pulse: true,
             personal: true,
           },
           admin: {
@@ -269,11 +266,6 @@ export default function SettingsSidebarModulesAdmin(props) {
           description: t('个人用量与令牌概况'),
         },
         { key: 'topup', title: t('钱包管理'), description: t('余额充值管理') },
-        {
-          key: 'pulse',
-          title: t('Meta Pulse'),
-          description: t('可用奖励券'),
-        },
         {
           key: 'personal',
           title: t('个人设置'),

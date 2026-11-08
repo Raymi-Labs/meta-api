@@ -43,7 +43,6 @@ export const DEFAULT_ADMIN_CONFIG = {
     overview: true,
     enabled: true,
     topup: true,
-    pulse: true,
     personal: true,
   },
   admin: {
@@ -55,7 +54,6 @@ export const DEFAULT_ADMIN_CONFIG = {
     redemption: true,
     user: true,
     subscription: true,
-    pulseOps: true,
     desktopFeedback: true,
     smartRouting: true,
     setting: true,
@@ -68,6 +66,7 @@ export const migrateSidebarConfig = (savedConfig) => {
   if (!savedConfig || typeof savedConfig !== 'object') return savedConfig;
 
   const migrated = deepClone(savedConfig);
+  if (migrated.personal) delete migrated.personal.pulse;
   const admin = migrated.admin;
   if (admin && typeof admin === 'object') {
     if (
@@ -77,6 +76,7 @@ export const migrateSidebarConfig = (savedConfig) => {
       admin.upstreamAccounts = admin.profitBoard;
     }
     delete admin.profitBoard;
+    delete admin.pulseOps;
   }
   return migrated;
 };

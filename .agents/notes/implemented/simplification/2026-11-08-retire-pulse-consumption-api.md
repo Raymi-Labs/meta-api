@@ -2,13 +2,15 @@
 
 Status: implemented
 
+后续[板块清理决定](2026-11-08-remove-pulse-panels.md)替代本文保留页面与 BFF 的决定；资金及历史数据边界仍适用。
+
 ## Problem
 
 Meta Pulse v0.2.88 已停用 API 消费摄入和贡献权益，但 Meta API 仍强制保留消费日志，并继续生成用于 Pulse 付费消费映射的日志证明。用户页和运营页仍展示消费贡献、等级和摄入状态，造成权益已停用而产品侧仍暗示有效。移除这些专用依赖时不能影响 API 计费/退款、资金来源审计、现金核算、社区绑定或奖励结算恢复。
 
 ## Existing capabilities and impact
 
-已核对用户入口 [Pulse 页面](../../../../web/src/pages/Pulse/index.jsx)、运营入口 [PulseOps 页面](../../../../web/src/pages/PulseOps/index.jsx)、用户/运营 BFF、Pulse 设置页及 Benefit/SSO 路由。Pulse v0.2.88 的用户摘要仍携带历史贡献/等级字段；运营摘要仍返回历史周期、经济规则和摄入游标。BFF 现在分别投影为可用券余额，以及结算重试/死信数量与观测时间。
+已核对用户入口 Pulse 页面（后续已删除）、运营入口 PulseOps 页面（后续已删除）、用户/运营 BFF、Pulse 设置页及 Benefit/SSO 路由。Pulse v0.2.88 的用户摘要仍携带历史贡献/等级字段；运营摘要仍返回历史周期、经济规则和摄入游标。BFF 现在分别投影为可用券余额，以及结算重试/死信数量与观测时间。
 
 Pulse BFF、社区 SSO/绑定、Benefit 发放/查询/撤销和奖励幂等凭证继续保留。`PulseFundingLedger`、`PulsePaidQuota`、`PulseWalletReservation` 参与钱包预扣/退款和现金核算，继续保留。Meta API 停止将付费来源证明写入消费日志，并在新写日志时剥离客户端传入的旧 `pulse_funding` 元数据；日志自身、计费退款与资金来源审计继续运行。活跃笔记检索未发现针对 Pulse 消费贡献的既有笔记；既有现金账本笔记确认资金资格账本须保留。
 

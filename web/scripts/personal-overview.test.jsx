@@ -30,3 +30,19 @@ test('account overview never displays a complete email', () => {
   assert.equal(maskedEmail(undefined), '');
   assert.equal(maskedEmail('not-an-email'), '');
 });
+
+test('retired Pulse menus cannot be restored by saved preferences', () => {
+  for (const enabled of [true, false]) {
+    const saved = {
+      personal: { pulse: enabled, topup: false },
+      admin: { pulseOps: enabled, channel: false },
+    };
+    const merged = mergeAdminConfig(saved);
+    assert.equal(Object.hasOwn(merged.personal, 'pulse'), false);
+    assert.equal(Object.hasOwn(merged.admin, 'pulseOps'), false);
+    assert.equal(merged.personal.topup, false);
+    assert.equal(merged.admin.channel, false);
+    assert.equal(saved.personal.pulse, enabled);
+    assert.equal(saved.admin.pulseOps, enabled);
+  }
+});

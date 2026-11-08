@@ -7,9 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultSidebarConfigIncludesPulse(t *testing.T) {
-	var config map[string]map[string]bool
-	require.NoError(t, common.Unmarshal([]byte(generateDefaultSidebarConfig(common.RoleCommonUser)), &config))
-	require.True(t, config["personal"]["enabled"])
-	require.True(t, config["personal"]["pulse"])
+func TestDefaultSidebarConfigRetiresPulse(t *testing.T) {
+	for _, role := range []int{common.RoleCommonUser, common.RoleAdminUser, common.RoleRootUser} {
+		var config map[string]map[string]bool
+		require.NoError(t, common.Unmarshal([]byte(generateDefaultSidebarConfig(role)), &config))
+		require.True(t, config["personal"]["enabled"])
+		require.True(t, config["personal"]["topup"])
+		require.NotContains(t, config["personal"], "pulse")
+		require.NotContains(t, config["admin"], "pulseOps")
+	}
 }

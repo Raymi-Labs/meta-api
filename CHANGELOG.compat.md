@@ -1,5 +1,13 @@
 # 本地兼容更新
 
+## v1.27.0 — 2026-11-08
+
+- 移除 Meta API 用户中心「Meta Pulse」及管理端「Pulse 运营」板块、侧栏入口和菜单开关；旧菜单配置无法恢复已删除入口，券余额、抽奖和奖励记录继续在社区使用。
+- 删除这两个板块专用的只读 BFF 与内网地址、用户侧/运营侧密钥配置；保留社区身份认证、SSO 绑定及 Internal Benefit 发放、查询、撤销、幂等和待结算奖励恢复能力。
+- 系统设置保留奖励与社区对接配置；生成密钥迁至超级管理员设置接口，旧配置读取时忽略废弃项，保存时清理废弃键并保留有效密钥。
+- 不兼容范围：移除 `/console/pulse`、`/console/pulse-ops`、`/api/pulse/summary`、`/api/pulse/rewards`、`/api/pulse/ops/overview`；旧密钥生成地址迁至 `/api/option/pulse/secret/generate`，仅限超级管理员。自建调用方与书签需迁移。
+- `PULSE_INTERNAL_URL`、`PULSE_USER_BFF_HMAC_SECRET`、`PULSE_ADMIN_HMAC_SECRET` 在 Meta API 侧不再读取。无历史账本清空或删表，不改变模型调用、计费、退款及消费日志能力。本次发布不代表生产部署，日志库权限须在确认 Pulse 停止消费摄入后另行回收。
+
 ## v1.25.0 — 2026-11-08
 
 - 模型常见问题增加多语言翻译模块：问题和答案分别支持17种站点语言、翻译状态、人工校正及恢复自动，沿用已有系统翻译令牌与后台任务。

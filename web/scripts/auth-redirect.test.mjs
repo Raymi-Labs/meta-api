@@ -29,8 +29,8 @@ class MemoryStorage {
 const forumStart = '/api/forum/sso/start';
 
 assert.equal(
-  getSafeLoginRedirectPath('?next=%2Fconsole%2Fpulse%3Ftab%3Drewards'),
-  '/console/pulse?tab=rewards',
+  getSafeLoginRedirectPath('?next=%2Fconsole%2Foverview%3Ftab%3Drewards'),
+  '/console/overview?tab=rewards',
   '合法站内路径应保留',
 );
 assert.equal(
@@ -78,12 +78,12 @@ assert.equal(
 assert.deepEqual(clientNavigations, []);
 assert.deepEqual(documentNavigations, [forumStart]);
 assert.equal(
-  navigateToLoginRedirect('/console/pulse', (path) =>
+  navigateToLoginRedirect('/console/overview', (path) =>
     clientNavigations.push(path),
   ),
   'client',
 );
-assert.deepEqual(clientNavigations, ['/console/pulse']);
+assert.deepEqual(clientNavigations, ['/console/overview']);
 
 const storage = new MemoryStorage();
 assert.equal(

@@ -49,18 +49,7 @@ func SetApiRouter(router *gin.Engine) {
 			pulseBenefitRoute.POST("/rollback", middleware.PulseRollbackAuth(), middleware.PulseBenefitRateLimit(), controller.RollbackPulseBenefit)
 		}
 		apiRouter.GET("/forum/sso/start", middleware.CriticalRateLimit(), controller.ForumSSOStart)
-		pulseUserRoute := apiRouter.Group("/pulse")
-		pulseUserRoute.Use(middleware.UserAuth())
-		{
-			pulseUserRoute.GET("/summary", controller.GetPulseSummary)
-			pulseUserRoute.GET("/rewards", controller.GetPulseRewards)
-		}
-		pulseOpsRoute := apiRouter.Group("/pulse/ops")
-		pulseOpsRoute.Use(middleware.AdminAuth())
-		{
-			pulseOpsRoute.GET("/overview", controller.GetPulseOperationsOverview)
-			pulseOpsRoute.GET("/secret/generate", controller.GeneratePulseSecret)
-		}
+
 		apiRouter.POST("/usage/public_token", middleware.PublicTokenUsageRateLimit(), controller.GetPublicTokenUsage)
 		apiRouter.POST("/usage/public_token/batch", middleware.PublicTokenUsageRateLimit(), controller.GetPublicTokenBatchUsage)
 		apiRouter.POST("/usage/public_token/stats", middleware.PublicTokenUsageRateLimit(), controller.GetPublicTokenStats)
@@ -280,6 +269,7 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.GET("/announcement-email/jobs", controller.ListAnnouncementEmailJobs)
 			optionRoute.GET("/pulse", controller.GetPulseOptions)
 			optionRoute.PUT("/pulse", controller.UpdatePulseOptions)
+			optionRoute.GET("/pulse/secret/generate", controller.GeneratePulseSecret)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.GET("/channel_affinity_cache", controller.GetChannelAffinityCacheStats)
 			optionRoute.DELETE("/channel_affinity_cache", controller.ClearChannelAffinityCache)

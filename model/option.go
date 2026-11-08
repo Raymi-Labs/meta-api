@@ -256,7 +256,7 @@ func loadOptionsFromDatabase() {
 	loadTieredBillingOptions(options)
 	tieredBillingOptionMutex.Unlock()
 	for _, option := range options {
-		if common.IsPulseConfigKey(option.Key) || option.Key == "billing_setting.billing_mode" || option.Key == "billing_setting.billing_expr" {
+		if common.IsRetiredPulseConfigKey(option.Key) || common.IsPulseConfigKey(option.Key) || option.Key == "billing_setting.billing_mode" || option.Key == "billing_setting.billing_expr" {
 			continue
 		}
 		err := updateOptionMap(option.Key, option.Value)
@@ -331,7 +331,7 @@ func UpdateOption(key string, value string) error {
 	if err := setting.ValidateStripeDisplayOption(key, value); err != nil {
 		return err
 	}
-	if common.IsPulseConfigKey(key) {
+	if common.IsRetiredPulseConfigKey(key) || common.IsPulseConfigKey(key) {
 		return errors.New("请通过 Meta Pulse 专用设置一次性保存配置")
 	}
 	isTieredBillingField := key == "billing_setting.billing_mode" || key == "billing_setting.billing_expr"

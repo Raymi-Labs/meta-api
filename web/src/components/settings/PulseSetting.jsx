@@ -28,6 +28,7 @@ import {
   Modal,
   Select,
   Spin,
+  Switch,
   Tag,
   Typography,
 } from '@douyinfe/semi-ui';
@@ -52,16 +53,6 @@ const PulseSetting = () => {
   const [generatedSecret, setGeneratedSecret] = useState(null);
 
   const secretFields = [
-    {
-      key: 'PulseUserBFFHMACSecret',
-      label: t('Pulse 用户侧密钥'),
-      counterpart: 'PULSE_USER_BFF_HMAC_SECRET',
-    },
-    {
-      key: 'PulseAdminHMACSecret',
-      label: t('Pulse 运营侧密钥'),
-      counterpart: 'PULSE_ADMIN_HMAC_SECRET',
-    },
     {
       key: 'PulseServiceHMACSecret',
       label: t('Pulse 自动发奖密钥'),
@@ -163,7 +154,7 @@ const PulseSetting = () => {
   const generate = async (field) => {
     setGenerating(field.key);
     try {
-      const response = await API.get('/api/pulse/ops/secret/generate', {
+      const response = await API.get('/api/option/pulse/secret/generate', {
         skipErrorHandler: true,
       });
       if (!response.data.success) throw new Error(response.data.message);
@@ -252,16 +243,6 @@ const PulseSetting = () => {
             )}
           />
           <div className='grid gap-4 md:grid-cols-2'>
-            <div className='space-y-2'>
-              <label htmlFor='PulseInternalURL'>{t('Pulse 内网地址')}</label>
-              <Input
-                id='PulseInternalURL'
-                value={config.PulseInternalURL}
-                placeholder='http://pulse-api:8088'
-                disabled={saving}
-                onChange={(value) => setValue('PulseInternalURL', value)}
-              />
-            </div>
             <div className='space-y-2'>
               <label htmlFor='PulseEnv'>{t('Pulse 运行环境')}</label>
               <Select

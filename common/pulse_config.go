@@ -13,9 +13,6 @@ const PulseSettingsOptionKey = "PulseSettingsSecret"
 
 var pulseConfigEnv = map[string]string{
 	"PulseEnv":                        "PULSE_ENV",
-	"PulseInternalURL":                "PULSE_INTERNAL_URL",
-	"PulseUserBFFHMACSecret":          "PULSE_USER_BFF_HMAC_SECRET",
-	"PulseAdminHMACSecret":            "PULSE_ADMIN_HMAC_SECRET",
 	"PulseServiceHMACSecret":          "PULSE_SERVICE_HMAC_SECRET",
 	"PulseServiceHMACSecretPrevious":  "PULSE_SERVICE_HMAC_SECRET_PREVIOUS",
 	"PulseRollbackHMACSecret":         "PULSE_ROLLBACK_HMAC_SECRET",
@@ -104,4 +101,13 @@ func (cfg PulseConfig) Production() bool {
 func (cfg PulseConfig) SecretUsable(secret string) bool {
 	secret = strings.TrimSpace(secret)
 	return secret != "" && (!cfg.Production() || (len(secret) >= 32 && secret != "replace-me"))
+}
+
+// Retired settings are accepted only when reading historical configuration.
+func IsRetiredPulseConfigKey(key string) bool {
+	switch key {
+	case "PulseUsageLogRequired", "PulseInternalURL", "PulseUserBFFHMACSecret", "PulseAdminHMACSecret":
+		return true
+	}
+	return false
 }

@@ -82,7 +82,6 @@ const NotificationSettings = ({
       overview: true,
       enabled: true,
       topup: true,
-      pulse: true,
       personal: true,
     },
     admin: {
@@ -176,7 +175,6 @@ const NotificationSettings = ({
         enabled: true,
         overview: true,
         topup: true,
-        pulse: true,
         personal: true,
       },
       admin: {
@@ -298,11 +296,6 @@ const NotificationSettings = ({
         },
         { key: 'topup', title: t('钱包管理'), description: t('余额充值管理') },
         {
-          key: 'pulse',
-          title: t('Meta Pulse'),
-          description: t('可用奖励券'),
-        },
-        {
           key: 'personal',
           title: t('个人设置'),
           description: t('个人信息设置'),
@@ -342,11 +335,6 @@ const NotificationSettings = ({
           key: 'smartRouting',
           title: t('智能路由'),
           description: t('线路观测'),
-        },
-        {
-          key: 'pulseOps',
-          title: t('Pulse 运营'),
-          description: t('周期与摄入监控'),
         },
         {
           key: 'setting',

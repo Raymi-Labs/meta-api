@@ -52,8 +52,6 @@ const routerMap = {
   imagePlayground: '/console/image-playground',
   overview: '/console/overview',
   personal: '/console/personal',
-  pulse: '/console/pulse',
-  pulseOps: '/console/pulse-ops',
   desktopFeedback: '/console/desktop-feedback',
   smartRouting: '/console/smart-routing',
 };
@@ -166,11 +164,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         to: '/topup',
       },
       {
-        text: t('Meta Pulse'),
-        itemKey: 'pulse',
-        to: '/pulse',
-      },
-      {
         text: t('个人设置'),
         itemKey: 'personal',
         to: '/personal',
@@ -240,12 +233,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('客户端反馈'),
         itemKey: 'desktopFeedback',
         to: '/desktop-feedback',
-        className: isAdmin() ? '' : 'tableHiddle',
-      },
-      {
-        text: t('Pulse 运营'),
-        itemKey: 'pulseOps',
-        to: '/pulse-ops',
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {

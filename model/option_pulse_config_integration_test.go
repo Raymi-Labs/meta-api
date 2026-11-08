@@ -36,10 +36,10 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 			t.Run("partial_save_preserves_environment_and_latest_database_secret", func(t *testing.T) {
 				reset(t)
 				t.Setenv("PULSE_SERVICE_HMAC_SECRET", "config-test-environment-worker")
-				require.NoError(t, db.Create(&Option{Key: "PulseAdminHMACSecret", Value: "config-test-legacy-admin"}).Error)
+				require.NoError(t, db.Create(&Option{Key: "PulseRollbackHMACSecret", Value: "config-test-legacy-admin"}).Error)
 				loadOptionsFromDatabase()
 				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{
-					"PulseInternalURL": "http://pulse.internal:8088", "PulseServiceHMACSecret": "  ",
+					"PulseForumSSOCallbackURL": "https://pulse.internal:8088/api/user-center/login/callback", "PulseServiceHMACSecret": "  ",
 				}}))
 				require.NotContains(t, pulseSavedOverrides(t), "PulseServiceHMACSecret", "blank secret must not freeze environment fallback")
 				require.Equal(t, "config-test-environment-worker", common.GetPulseConfig()["PulseServiceHMACSecret"])
@@ -50,7 +50,7 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 				common.ReplacePulseConfig(stale)
 				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseBenefitMaxGrantQuota": "50"}}))
 				require.Equal(t, "config-test-latest-worker", common.GetPulseConfig()["PulseServiceHMACSecret"], "stale instance must merge the committed bundle")
-				require.Equal(t, "config-test-legacy-admin", common.GetPulseConfig()["PulseAdminHMACSecret"])
+				require.Equal(t, "config-test-legacy-admin", common.GetPulseConfig()["PulseRollbackHMACSecret"])
 				require.Equal(t, "50", pulseSavedOverrides(t)["PulseBenefitMaxGrantQuota"])
 			})
 
@@ -76,10 +76,10 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 				var count int64
 				require.NoError(t, db.Model(&Option{}).Count(&count).Error)
 				require.Zero(t, count, "failed initial save must roll back the locking row")
-				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseInternalURL": "http://original.internal:8088"}}))
+				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseForumSSOCallbackURL": "https://original.internal:8088/api/user-center/login/callback"}}))
 				before := pulseSavedOverrides(t)
 				for _, update := range []PulseConfigUpdate{
-					{Config: map[string]string{"PulseInternalURL": "http://changed.internal:8088", "PulseBenefitMaxGrantQuota": "1.5"}},
+					{Config: map[string]string{"PulseForumSSOCallbackURL": "https://changed.internal:8088/api/user-center/login/callback", "PulseBenefitMaxGrantQuota": "1.5"}},
 					{Config: map[string]string{"PulseServiceHMACSecret": "config-test-duplicate", "PulseRollbackHMACSecret": "config-test-duplicate"}},
 					{Config: map[string]string{"PulseServiceHMACSecret": "config-test-new-worker"}, ClearSecrets: []string{"PulseServiceHMACSecret"}},
 				} {
@@ -91,7 +91,7 @@ func TestPulseConfigDatabaseIntegration(t *testing.T) {
 
 			t.Run("retired_usage_log_field_rejection_does_not_change_logs", func(t *testing.T) {
 				reset(t)
-				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseInternalURL": "http://original.internal:8088"}}))
+				require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseForumSSOCallbackURL": "https://original.internal:8088/api/user-center/login/callback"}}))
 				before := pulseSavedOverrides(t)
 				common.LogConsumeEnabled = false
 				const callback = "test:pulse_config_log_insert_failure"

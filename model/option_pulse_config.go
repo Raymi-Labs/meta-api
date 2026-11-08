@@ -30,7 +30,7 @@ func loadPulseConfigOptions(options []*Option) {
 		if option.Key == common.PulseSettingsOptionKey {
 			bundle = option.Value
 		} else if common.IsPulseConfigKey(option.Key) && option.Value != "" {
-			// Preserve the original three console options. Historically an empty
+			// Preserve active legacy console options. Historically an empty
 			// legacy option meant environment fallback, unlike the new bundle.
 			values[option.Key] = option.Value
 		}
@@ -42,7 +42,7 @@ func loadPulseConfigOptions(options []*Option) {
 			return
 		}
 		for key, value := range persisted {
-			if key == "PulseUsageLogRequired" {
+			if common.IsRetiredPulseConfigKey(key) {
 				continue
 			}
 			if !common.IsPulseConfigKey(key) || key == common.PulseSettingsOptionKey {
@@ -80,12 +80,6 @@ func validatePulseConfig(cfg common.PulseConfig) error {
 			return fmt.Errorf("%s 必须为不超过系统整数范围的正整数额度", key)
 		}
 	}
-	if raw := cfg["PulseInternalURL"]; raw != "" {
-		u, err := url.Parse(raw)
-		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-			return errors.New("Pulse 内网地址必须为不含用户名、密码、查询参数或片段的 HTTP(S) 地址")
-		}
-	}
 	if raw := cfg["PulseForumSSOCallbackURL"]; raw != "" {
 		u, err := url.Parse(raw)
 		if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "/api/user-center/login/callback" {
@@ -93,7 +87,7 @@ func validatePulseConfig(cfg common.PulseConfig) error {
 		}
 	}
 	// All roles, including both rotation slots, remain distinct. Otherwise a
-	// compromised user/SSO key could grant credit or authorize a rollback.
+	// compromised SSO key could grant credit or authorize a rollback.
 	seen := make(map[string]string)
 	for key, value := range cfg {
 		value = strings.TrimSpace(value)
@@ -192,6 +186,11 @@ func UpdatePulseConfig(update PulseConfigUpdate) error {
 }
 
 func applyPulseConfigUpdate(overrides map[string]string, update PulseConfigUpdate) error {
+	for key := range overrides {
+		if common.IsRetiredPulseConfigKey(key) {
+			delete(overrides, key)
+		}
+	}
 	for key, value := range update.Config {
 		if !common.IsPulseConfigKey(key) || key == common.PulseSettingsOptionKey {
 			return fmt.Errorf("未知的 Pulse 配置项：%s", key)

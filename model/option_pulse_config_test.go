@@ -53,9 +53,9 @@ func TestPulseOptionsPreserveUntouchedEnvironmentAndClearExplicitly(t *testing.T
 	t.Setenv("PULSE_SERVICE_HMAC_SECRET", "existing-worker-secret")
 	t.Setenv("PULSE_ROLLBACK_HMAC_SECRET", "existing-rollback-secret")
 	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{
-		"PulseInternalURL": "http://pulse.internal:8088", "PulseServiceHMACSecret": "  ",
+		"PulseForumSSOCallbackURL": "https://pulse.internal:8088/api/user-center/login/callback", "PulseServiceHMACSecret": "  ",
 	}}))
-	require.Equal(t, map[string]string{"PulseInternalURL": "http://pulse.internal:8088"}, pulseSavedOverrides(t))
+	require.Equal(t, map[string]string{"PulseForumSSOCallbackURL": "https://pulse.internal:8088/api/user-center/login/callback"}, pulseSavedOverrides(t))
 	require.Equal(t, "existing-worker-secret", common.GetPulseConfig()["PulseServiceHMACSecret"])
 	t.Setenv("PULSE_SERVICE_HMAC_SECRET", "environment-rotation")
 	require.Equal(t, "environment-rotation", common.GetPulseConfig()["PulseServiceHMACSecret"])
@@ -68,9 +68,9 @@ func TestPulseOptionsPreserveUntouchedEnvironmentAndClearExplicitly(t *testing.T
 
 func TestPulseOptionsLoadLegacyValuesAndSaveUsesLatestDatabaseKeys(t *testing.T) {
 	setupPulseOptionTestDB(t)
-	require.NoError(t, DB.Create(&[]Option{{Key: "PulseInternalURL", Value: "http://legacy:8088"}, {Key: "PulseAdminHMACSecret", Value: "legacy-admin-secret"}}).Error)
+	require.NoError(t, DB.Create(&[]Option{{Key: "PulseForumSSOCallbackURL", Value: "https://legacy:8088/api/user-center/login/callback"}, {Key: "PulseRollbackHMACSecret", Value: "legacy-admin-secret"}}).Error)
 	loadOptionsFromDatabase()
-	require.Equal(t, "legacy-admin-secret", common.GetPulseConfig()["PulseAdminHMACSecret"])
+	require.Equal(t, "legacy-admin-secret", common.GetPulseConfig()["PulseRollbackHMACSecret"])
 	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseServiceHMACSecret": "first-worker-secret"}}))
 	stale := common.GetPulseConfigOverrides()
 	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseServiceHMACSecret": "latest-worker-secret"}}))
@@ -79,12 +79,12 @@ func TestPulseOptionsLoadLegacyValuesAndSaveUsesLatestDatabaseKeys(t *testing.T)
 	common.ReplacePulseConfig(stale)
 	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseBenefitMaxGrantQuota": "500"}}))
 	require.Equal(t, "latest-worker-secret", common.GetPulseConfig()["PulseServiceHMACSecret"])
-	require.Equal(t, "legacy-admin-secret", common.GetPulseConfig()["PulseAdminHMACSecret"])
+	require.Equal(t, "legacy-admin-secret", common.GetPulseConfig()["PulseRollbackHMACSecret"])
 }
 
 func TestPulseOptionsValidationIsAtomicAndCannotUseGenericOptionEndpoint(t *testing.T) {
 	setupPulseOptionTestDB(t)
-	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseInternalURL": "http://original:8088"}}))
+	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseForumSSOCallbackURL": "https://original:8088/api/user-center/login/callback"}}))
 	before := pulseSavedOverrides(t)
 	for _, update := range []PulseConfigUpdate{
 		{Config: map[string]string{"PulseBenefitEnabled": "true", "PulseServiceHMACSecret": "new-secret"}},
@@ -98,7 +98,7 @@ func TestPulseOptionsValidationIsAtomicAndCannotUseGenericOptionEndpoint(t *test
 		require.Equal(t, before, pulseSavedOverrides(t))
 		require.Equal(t, before, common.GetPulseConfigOverrides())
 	}
-	for _, key := range []string{"PulseBenefitEnabled", "PulseInternalURL", "PulseServiceHMACSecretPrevious", common.PulseSettingsOptionKey} {
+	for _, key := range []string{"PulseBenefitEnabled", "PulseForumSSOCallbackURL", "PulseServiceHMACSecretPrevious", common.PulseSettingsOptionKey} {
 		require.Error(t, UpdateOption(key, "true"))
 	}
 }
@@ -175,12 +175,42 @@ func TestPulseConsumeLogToggleIsIndependentOfPulseConfiguration(t *testing.T) {
 
 func TestPulseSettingsIgnoreRetiredUsageLogFieldInSavedBundle(t *testing.T) {
 	setupPulseOptionTestDB(t)
-	require.NoError(t, DB.Create(&Option{Key: common.PulseSettingsOptionKey, Value: `{"PulseEnv":"development","PulseUsageLogRequired":"true","PulseInternalURL":"http://pulse.internal"}`}).Error)
+	require.NoError(t, DB.Create(&Option{Key: common.PulseSettingsOptionKey, Value: `{"PulseEnv":"development","PulseUsageLogRequired":"true","PulseForumSSOCallbackURL":"https://pulse.internal/api/user-center/login/callback"}`}).Error)
 	common.LogConsumeEnabled = false
 	loadOptionsFromDatabase()
-	require.Equal(t, "http://pulse.internal", common.GetPulseConfig()["PulseInternalURL"])
+	require.Equal(t, "https://pulse.internal/api/user-center/login/callback", common.GetPulseConfig()["PulseForumSSOCallbackURL"])
 	if _, ok := common.GetPulseConfig()["PulseUsageLogRequired"]; ok {
 		t.Fatal("retired usage-log setting was loaded")
 	}
 	require.False(t, common.LogConsumeEnabled)
+}
+
+func TestRetiredPulseBFFConfigPreservesRewardsAndSSO(t *testing.T) {
+	setupPulseOptionTestDB(t)
+	retired := map[string]string{"PulseInternalURL": "http://old-pulse", "PulseUserBFFHMACSecret": "old-user-secret", "PulseAdminHMACSecret": "old-admin-secret", "PulseUsageLogRequired": "true"}
+	saved := map[string]string{"PulseServiceHMACSecret": "worker-secret", "PulseForumSSOSecret": "forum-secret"}
+	for key, value := range retired {
+		saved[key] = value
+		require.NoError(t, DB.Create(&Option{Key: key, Value: value}).Error)
+	}
+	raw, err := common.Marshal(saved)
+	require.NoError(t, err)
+	require.NoError(t, DB.Create(&Option{Key: common.PulseSettingsOptionKey, Value: string(raw)}).Error)
+	loadOptionsFromDatabase()
+	require.Equal(t, "worker-secret", common.GetPulseConfig()["PulseServiceHMACSecret"])
+	require.Equal(t, "forum-secret", common.GetPulseConfig()["PulseForumSSOSecret"])
+	for key := range retired {
+		require.NotContains(t, common.GetPulseConfig(), key)
+		require.NotContains(t, common.OptionMap, key)
+		require.Error(t, UpdateOption(key, "true"))
+		require.Error(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{key: "true"}}))
+	}
+	require.NoError(t, UpdatePulseConfig(PulseConfigUpdate{Config: map[string]string{"PulseBenefitMaxGrantQuota": "50"}}))
+	for key := range retired {
+		require.NotContains(t, pulseSavedOverrides(t), key)
+	}
+	common.ReplacePulseConfig(nil)
+	loadOptionsFromDatabase()
+	require.Equal(t, "worker-secret", common.GetPulseConfig()["PulseServiceHMACSecret"])
+	require.Equal(t, "forum-secret", common.GetPulseConfig()["PulseForumSSOSecret"])
 }

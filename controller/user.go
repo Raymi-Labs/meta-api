@@ -929,7 +929,6 @@ func generateDefaultSidebarConfig(userRole int) string {
 		"overview": true,
 		"enabled":  true,
 		"topup":    true,
-		"pulse":    true,
 		"personal": true,
 	}
 
