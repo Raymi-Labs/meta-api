@@ -15,7 +15,7 @@ func TestMyActivityAuthenticatedScope(t *testing.T) {
 	old := model.LOG_DB
 	model.LOG_DB = db
 	t.Cleanup(func() { model.LOG_DB = old })
-	require.NoError(t, db.AutoMigrate(&model.Log{}))
+	require.NoError(t, db.AutoMigrate(&model.Log{}, &model.QuotaData{}))
 	now := time.Now().Unix()
 	for _, id := range []int{71001, 71002} {
 		require.NoError(t, db.Create(&model.Log{UserId: id, Type: model.LogTypeConsume, CreatedAt: now}).Error)

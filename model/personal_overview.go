@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/pkg/cachex"
+	"github.com/samber/hot"
 )
 
 type PersonalMonthUsage struct {
@@ -18,57 +21,166 @@ type PersonalMonthUsage struct {
 	Summary    DashboardUsageSummary `json:"summary"`
 }
 
+var errUsageQueryBusy = errors.New("usage query busy")
+
+// usageSlotWait lets a personal query queue briefly behind another one
+// instead of failing at once; a full pool for longer is reported as busy.
+var usageSlotWait = 3 * time.Second
+
+func acquireUsageSlot(ctx context.Context, slots chan struct{}) (func(), error) {
+	timer := time.NewTimer(usageSlotWait)
+	defer timer.Stop()
+	select {
+	case slots <- struct{}{}:
+		return func() { <-slots }, nil
+	case <-timer.C:
+		return nil, errUsageQueryBusy
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// Separate from dashboardUsageSlots: an administrator's site-wide dashboard
+// scan must not turn every personal overview into a busy error.
+var personalUsageSlots = make(chan struct{}, 4)
+
+// A local day is cached only once it ended this long ago, so a log stamped
+// just before midnight but written just after it is still counted.
+const personalMonthSettleSeconds = 10 * 60
+const personalMonthCacheTTL = 32 * 24 * time.Hour
+
+// personalMonthPrefix holds the counters of the month's completed days up to
+// and including Through. Past days never change (refunds count on the day
+// they happen), so each day is scanned once instead of on every page view.
+type personalMonthPrefix struct {
+	Through    string                `json:"through"`
+	ActiveDays int                   `json:"active_days"`
+	Summary    DashboardUsageSummary `json:"summary"`
+}
+
+var personalMonthCacheOnce sync.Once
+var personalMonthCache *cachex.HybridCache[personalMonthPrefix]
+
+func getPersonalMonthCache() *cachex.HybridCache[personalMonthPrefix] {
+	personalMonthCacheOnce.Do(func() {
+		personalMonthCache = cachex.NewHybridCache[personalMonthPrefix](cachex.HybridCacheConfig[personalMonthPrefix]{
+			Namespace: cachex.Namespace("personal_month_prefix:v1"),
+			Redis:     common.RDB, RedisEnabled: func() bool { return common.RedisEnabled && common.RDB != nil },
+			RedisCodec: cachex.JSONCodec[personalMonthPrefix]{},
+			Memory: func() *hot.HotCache[string, personalMonthPrefix] {
+				return hot.NewHotCache[string, personalMonthPrefix](hot.LRU, 1024).WithTTL(personalMonthCacheTTL).WithJanitor().Build()
+			},
+		})
+	})
+	return personalMonthCache
+}
+
 // A fixed current calendar month, not a client-selectable unbounded query.
 // Reuse the dashboard accumulator to keep refunds, adjustments and token usage
-// identical. Active days use actual event timestamps, not rounded hour buckets.
+// identical. Each local day is scanned on its own, so active days use actual
+// event timestamps; completed days are cached and only today is read live.
 func GetPersonalMonthUsage(ctx context.Context, userID int, location *time.Location, now time.Time) (PersonalMonthUsage, error) {
 	if userID <= 0 || location == nil {
 		return PersonalMonthUsage{}, errors.New("invalid personal scope")
 	}
-	select {
-	case dashboardUsageSlots <- struct{}{}:
-		defer func() { <-dashboardUsageSlots }()
-	default:
-		return PersonalMonthUsage{}, errors.New("usage query busy")
-	}
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	local := now.In(location)
-	start := time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, location).Unix()
-	end := now.Unix() + 1
-	a := newDashboardUsageAccumulator(start, end, false)
-	rows, err := LOG_DB.WithContext(ctx).Table("logs").Select("user_id, username, token_id, token_name, created_at, type, model_name, quota, prompt_tokens, completion_tokens, COALESCE(other, '') AS other").Where("user_id = ? AND type IN ? AND created_at >= ? AND created_at < ?", userID, []int{LogTypeConsume, LogTypeRefund}, start, end).Limit(dashboardUsageRowLimit + 1).Rows()
+	release, err := acquireUsageSlot(ctx, personalUsageSlots)
 	if err != nil {
 		return PersonalMonthUsage{}, err
 	}
+	defer release()
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	local := now.In(location)
+	monthStart := time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, location)
+	month := local.Format("2006-01")
+	// No account name in the key; the zone decides the day boundaries.
+	key := fmt.Sprintf("%d:%s:%s", userID, location.String(), month)
+	cache := getPersonalMonthCache()
+	prefix := personalMonthPrefix{}
+	day := monthStart
+	if cached, found, err := cache.Get(key); err == nil && found && cached.Through != "" {
+		if through, err := time.ParseInLocation("2006-01-02", cached.Through, location); err == nil {
+			next := through.AddDate(0, 0, 1)
+			if !through.Before(monthStart) && next.Unix()+personalMonthSettleSeconds <= now.Unix() {
+				prefix, day = cached, next
+			}
+		}
+	}
+	// Extend the cached prefix one completed day at a time, saving after each,
+	// so a heavy account's first view converges even if one request times out.
+	for {
+		next := day.AddDate(0, 0, 1)
+		if next.Unix()+personalMonthSettleSeconds > now.Unix() {
+			break
+		}
+		summary, err := scanPersonalUsage(ctx, userID, day.Unix(), next.Unix())
+		if err != nil {
+			return PersonalMonthUsage{}, err
+		}
+		if err := addDashboardUsageCounters(&prefix.Summary, summary); err != nil {
+			return PersonalMonthUsage{}, err
+		}
+		if summary.Requests > 0 {
+			prefix.ActiveDays++
+		}
+		prefix.Through = day.Format("2006-01-02")
+		_ = cache.SetWithTTL(key, prefix, personalMonthCacheTTL)
+		day = next
+	}
+	// Today, and yesterday during the settle window, are always read live.
+	total, activeDays := prefix.Summary, prefix.ActiveDays
+	end := now.Unix() + 1
+	for day.Unix() < end {
+		next := day.AddDate(0, 0, 1)
+		summary, err := scanPersonalUsage(ctx, userID, day.Unix(), min(next.Unix(), end))
+		if err != nil {
+			return PersonalMonthUsage{}, err
+		}
+		if err := addDashboardUsageCounters(&total, summary); err != nil {
+			return PersonalMonthUsage{}, err
+		}
+		if summary.Requests > 0 {
+			activeDays++
+		}
+		day = next
+	}
+	total.StartTimestamp, total.EndTimestamp, total.Source = monthStart.Unix(), end, "retained_settlement_logs_v1"
+	finishDashboardUsageSummary(&total)
+	return PersonalMonthUsage{Month: month, Timezone: location.String(), AsOf: now.Unix(), ActiveDays: activeDays, Summary: total}, nil
+}
+
+// scanPersonalUsage returns the additive counters of one user's consume and
+// refund logs in [start, end). A request is a consume without task_id, so
+// Requests > 0 exactly when the window had activity.
+func scanPersonalUsage(ctx context.Context, userID int, start, end int64) (DashboardUsageSummary, error) {
+	a := newDashboardUsageAccumulator(start, end, false)
+	rows, err := LOG_DB.WithContext(ctx).Table("logs").Select("user_id, username, token_id, token_name, created_at, type, model_name, quota, prompt_tokens, completion_tokens, COALESCE(other, '') AS other").Where("user_id = ? AND type IN ? AND created_at >= ? AND created_at < ?", userID, []int{LogTypeConsume, LogTypeRefund}, start, end).Limit(dashboardUsageRowLimit + 1).Rows()
+	if err != nil {
+		return DashboardUsageSummary{}, err
+	}
 	defer rows.Close()
-	active := map[string]bool{}
 	for n := 0; rows.Next(); n++ {
 		if n >= dashboardUsageRowLimit {
-			return PersonalMonthUsage{}, errors.New("usage record limit exceeded")
+			return DashboardUsageSummary{}, errors.New("usage record limit exceeded")
 		}
 		if err := ctx.Err(); err != nil {
-			return PersonalMonthUsage{}, err
+			return DashboardUsageSummary{}, err
 		}
 		var row dashboardUsageLog
 		if err := LOG_DB.ScanRows(rows, &row); err != nil {
-			return PersonalMonthUsage{}, err
+			return DashboardUsageSummary{}, err
 		}
-		before := a.result.Summary.Requests
 		if err := a.add(row); err != nil {
-			return PersonalMonthUsage{}, err
-		}
-		if a.result.Summary.Requests > before {
-			active[time.Unix(row.CreatedAt, 0).In(location).Format("2006-01-02")] = true
+			return DashboardUsageSummary{}, err
 		}
 	}
 	if err := rows.Err(); err != nil {
-		return PersonalMonthUsage{}, err
+		return DashboardUsageSummary{}, err
 	}
 	if err := ctx.Err(); err != nil {
-		return PersonalMonthUsage{}, err
+		return DashboardUsageSummary{}, err
 	}
-	return PersonalMonthUsage{Month: local.Format("2006-01"), Timezone: location.String(), AsOf: now.Unix(), ActiveDays: len(active), Summary: a.finish().Summary}, nil
+	return a.result.Summary, nil
 }
 
 type PersonalTokenItem struct {

@@ -14,6 +14,7 @@ import (
 
 func TestPersonalMonthUsageRetainedSemantics(t *testing.T) {
 	setupCacheRateScanDB(t)
+	resetPersonalMonthCache(t)
 	location, err := time.LoadLocation("Europe/Berlin")
 	require.NoError(t, err)
 	// October includes a DST fallback: 31 days + 1 hour at month end.

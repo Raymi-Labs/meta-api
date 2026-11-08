@@ -34,3 +34,5 @@ Status: implemented
 ## Consequences
 
 基于留存消费记录而非永久审计，不能承诺历史全量。固定扫描上限对大账户会明确暂不可用，需要后续日汇总支持；不在失败时回退旧quota_data。增加只读接口无DB/schema/计费写入，合并不等于部署。
+
+后续：2026-11-08 调用量大的账号日历必定 503、本月用量过慢，日历历史改读每小时汇总、今天仍读留存记录，见[大账号修复](../bug-fix/2026-11-08-personal-overview-heavy-account.md)。

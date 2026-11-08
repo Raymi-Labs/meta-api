@@ -10,11 +10,18 @@ export function activityWeeks(days) {
   );
 }
 
+// Raw settlement logs, or settled hourly aggregates plus raw logs for today;
+// both count consume settlements without task adjustments.
+const ACTIVITY_SOURCES = [
+  'retained_settlement_logs_v1',
+  'settlement_hourly_v1',
+];
+
 export function validActivity(data) {
   if (
     !Number.isSafeInteger(data?.as_of) ||
     typeof data?.timezone !== 'string' ||
-    data?.source !== 'retained_settlement_logs_v1' ||
+    !ACTIVITY_SOURCES.includes(data?.source) ||
     !Array.isArray(data.days) ||
     data.days.length !== 365
   )

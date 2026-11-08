@@ -231,8 +231,8 @@ func (a *dashboardUsageAccumulator) add(row dashboardUsageLog) error {
 	return nil
 }
 
-func (a *dashboardUsageAccumulator) finish() DashboardUsage {
-	s := &a.result.Summary
+// finishDashboardUsageSummary derives the ratios from the additive counters.
+func finishDashboardUsageSummary(s *DashboardUsageSummary) {
 	if s.InputTokens > 0 {
 		rate := float64(s.CacheReadTokens) / float64(s.InputTokens)
 		s.CacheRate = &rate
@@ -241,6 +241,34 @@ func (a *dashboardUsageAccumulator) finish() DashboardUsage {
 		price := float64(s.TokenQuota) / float64(s.PricedTokens) * 1000000
 		s.UnitPrice = &price
 	}
+}
+
+// addDashboardUsageCounters adds src's counters into dst, leaving the window,
+// source and derived ratios alone, with the same exact-integer bound as add.
+func addDashboardUsageCounters(dst *DashboardUsageSummary, src DashboardUsageSummary) error {
+	dst.Quota += src.Quota
+	dst.Requests += src.Requests
+	dst.Tokens += src.Tokens
+	dst.TokenQuota += src.TokenQuota
+	dst.PricedTokens += src.PricedTokens
+	dst.OtherQuota += src.OtherQuota
+	dst.CacheReadTokens += src.CacheReadTokens
+	dst.InputTokens += src.InputTokens
+	dst.UnclassifiedRecords += src.UnclassifiedRecords
+	dst.CacheIncludedRecords += src.CacheIncludedRecords
+	dst.CacheExcludedRecords += src.CacheExcludedRecords
+	dst.PriceIncludedRecords += src.PriceIncludedRecords
+	dst.PriceExcludedRecords += src.PriceExcludedRecords
+	for _, value := range []int64{dst.Quota, dst.TokenQuota, dst.OtherQuota, dst.Tokens, dst.PricedTokens, dst.InputTokens, dst.CacheReadTokens} {
+		if value > 9007199254740991 || value < -9007199254740991 {
+			return errors.New("统计总量超出安全范围，请缩短时间范围")
+		}
+	}
+	return nil
+}
+
+func (a *dashboardUsageAccumulator) finish() DashboardUsage {
+	finishDashboardUsageSummary(&a.result.Summary)
 	for _, bucket := range a.buckets {
 		a.result.Rows = append(a.result.Rows, bucket)
 	}

@@ -17,6 +17,7 @@ const data = {
 };
 test('calendar preserves 365 dates across leap year and aligns weekdays', () => {
   assert(validActivity(data));
+  assert(validActivity({ ...data, source: 'settlement_hourly_v1' }));
   const weeks = activityWeeks(days);
   assert.equal(weeks.flat().filter(Boolean).length, 365);
   assert.equal(weeks[0][2].date, '2023-03-14');

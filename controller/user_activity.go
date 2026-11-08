@@ -1,10 +1,13 @@
 package controller
 
 import (
-	"github.com/QuantumNous/new-api/model"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/QuantumNous/new-api/logger"
+	"github.com/QuantumNous/new-api/model"
+	"github.com/gin-gonic/gin"
 )
 
 func GetMyActivity(c *gin.Context) {
@@ -24,6 +27,7 @@ func GetMyActivity(c *gin.Context) {
 	}
 	result, err := model.GetUserActivity(c.Request.Context(), id, zone, time.Now())
 	if err != nil {
+		logger.LogWarn(c, fmt.Sprintf("activity calendar unavailable for user %d: %v", id, err))
 		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "message": "activity temporarily unavailable"})
 		return
 	}

@@ -9,6 +9,7 @@ import (
 
 func TestUserActivityScopeDatesAndCounts(t *testing.T) {
 	setupCacheRateScanDB(t)
+	setActivityDataExport(t, false, 5)
 	location, err := time.LoadLocation("America/New_York")
 	require.NoError(t, err)
 	now := time.Date(2024, 3, 12, 12, 0, 0, 0, location)
@@ -50,6 +51,7 @@ func TestUserActivityScopeDatesAndCounts(t *testing.T) {
 }
 func TestUserActivityCacheIsolation(t *testing.T) {
 	setupCacheRateScanDB(t)
+	setActivityDataExport(t, false, 5)
 	userActivityCache.Lock()
 	userActivityCache.entries = make(map[string]userActivityCached)
 	userActivityCache.Unlock()

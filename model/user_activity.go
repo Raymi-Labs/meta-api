@@ -13,7 +13,25 @@ import (
 const userActivityDays = 365
 const userActivityRowLimit = 250000
 
+// Sources: raw settlement logs only, or settled hours of quota_data plus raw
+// logs for today and the unflushed tail. quota_data is written by
+// RecordConsumeLog only, so task adjustments are excluded the same way.
+const userActivitySourceLogs = "retained_settlement_logs_v1"
+const userActivitySourceHourly = "settlement_hourly_v1"
+
 var userActivitySlots = make(chan struct{}, 2)
+
+// userActivityHourlySplit is where raw logs take over from quota_data. Hourly
+// rows are flushed every DataExportInterval minutes, so an hour is read from
+// them only once it ended a full interval (plus a minute) ago, and never past
+// the hour that contains local midnight: today always comes from raw logs.
+func userActivityHourlySplit(todayStart, now int64, intervalMinutes int) int64 {
+	if intervalMinutes < 1 {
+		intervalMinutes = 1
+	}
+	settled := now - int64(intervalMinutes)*60 - 60
+	return min(settled-settled%3600, todayStart-todayStart%3600)
+}
 
 type UserActivityDay struct {
 	Date     string `json:"date"`
@@ -90,25 +108,54 @@ func scanUserActivity(ctx context.Context, userID int, location *time.Location, 
 	if userID <= 0 || location == nil || limit <= 0 {
 		return UserActivity{}, errors.New("invalid activity scope")
 	}
-	select {
-	case userActivitySlots <- struct{}{}:
-		defer func() { <-userActivitySlots }()
-	default:
-		return UserActivity{}, errors.New("activity query busy")
+	release, err := acquireUsageSlot(ctx, userActivitySlots)
+	if err != nil {
+		return UserActivity{}, err
 	}
+	defer release()
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 	local := now.In(location)
 	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, location)
 	start := today.AddDate(0, 0, -(userActivityDays - 1))
-	result := UserActivity{Source: "retained_settlement_logs_v1", Timezone: location.String(), AsOf: now.Unix(), Days: make([]UserActivityDay, userActivityDays)}
+	result := UserActivity{Source: userActivitySourceLogs, Timezone: location.String(), AsOf: now.Unix(), Days: make([]UserActivityDay, userActivityDays)}
 	indices := make(map[string]int, userActivityDays)
 	for i := range result.Days {
 		date := start.AddDate(0, 0, i).Format("2006-01-02")
 		result.Days[i].Date = date
 		indices[date] = i
 	}
-	rows, err := LOG_DB.WithContext(ctx).Table("logs").Select("created_at, COALESCE(other, '') AS other").Where("user_id = ? AND type = ? AND created_at >= ? AND created_at <= ?", userID, LogTypeConsume, start.Unix(), now.Unix()).Limit(limit + 1).Rows()
+	// A year of raw logs is far beyond the scan limit for a busy account, so
+	// read the settled history from the hourly aggregate when it is collected.
+	logsFrom := start.Unix()
+	if common.DataExportEnabled {
+		split := userActivityHourlySplit(today.Unix(), now.Unix(), common.DataExportInterval)
+		if split > logsFrom {
+			var hours []struct {
+				CreatedAt int64
+				Requests  int64
+			}
+			// An hour belongs to the local day it starts in; that is exact for
+			// whole-hour offsets, and half-hour zones shift at most 30 minutes.
+			if err := DB.WithContext(ctx).Table("quota_data").Select("created_at, SUM(count) AS requests").
+				Where("user_id = ? AND created_at >= ? AND created_at < ?", userID, logsFrom, split).
+				Group("created_at").Scan(&hours).Error; err != nil {
+				return UserActivity{}, err
+			}
+			for _, hour := range hours {
+				if hour.Requests < 0 {
+					return UserActivity{}, errors.New("activity hourly count is negative")
+				}
+				if index, ok := indices[time.Unix(hour.CreatedAt, 0).In(location).Format("2006-01-02")]; ok {
+					result.Days[index].Requests += hour.Requests
+					result.Total += hour.Requests
+				}
+			}
+			logsFrom = split
+			result.Source = userActivitySourceHourly
+		}
+	}
+	rows, err := LOG_DB.WithContext(ctx).Table("logs").Select("created_at, COALESCE(other, '') AS other").Where("user_id = ? AND type = ? AND created_at >= ? AND created_at <= ?", userID, LogTypeConsume, logsFrom, now.Unix()).Limit(limit + 1).Rows()
 	if err != nil {
 		return UserActivity{}, err
 	}
