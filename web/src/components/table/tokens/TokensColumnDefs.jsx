@@ -94,14 +94,57 @@ const renderStatus = (text, record, t) => {
 
 // 渲染分组列
 const renderGroupColumn = (text, record, t) => {
-  if (record?.routing_config)
+  if (record?.routing_config) {
+    const groups = readTokenRouting(record.routing_config).groups;
     return (
-      <Space wrap spacing={4}>
-        {readTokenRouting(record.routing_config).groups.map((group) => (
+      <Space spacing={4}>
+        {groups.slice(0, 2).map((group) => (
           <Tag key={group}>{group}</Tag>
         ))}
+        {groups.length > 2 && (
+          <Popover
+            trigger='click'
+            position='bottomLeft'
+            content={
+              <div
+                style={{
+                  padding: 12,
+                  maxWidth: 'min(360px, 80vw)',
+                  maxHeight: 280,
+                  overflowY: 'auto',
+                }}
+              >
+                <Space wrap spacing={4}>
+                  {groups.slice(2).map((group) => (
+                    <Tag
+                      key={group}
+                      style={{
+                        maxWidth: '100%',
+                        height: 'auto',
+                        whiteSpace: 'normal',
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      {group}
+                    </Tag>
+                  ))}
+                </Space>
+              </div>
+            }
+          >
+            <Button
+              size='small'
+              theme='borderless'
+              type='tertiary'
+              aria-label={t('展开更多')}
+            >
+              …
+            </Button>
+          </Popover>
+        )}
       </Space>
     );
+  }
   if (text === 'auto') {
     return (
       <Tooltip
