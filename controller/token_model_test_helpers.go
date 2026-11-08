@@ -25,6 +25,30 @@ type tokenModelOption struct {
 	Groups                 []string                `json:"groups"`
 	Name                   string                  `json:"name"`
 	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
+	// Vendor is the model-square vendor name, so the token group picker can
+	// filter by vendor without downloading the whole pricing catalog.
+	Vendor string `json:"vendor,omitempty"`
+}
+
+// fillTokenModelVendors reads the shared, one-minute pricing cache; a model
+// without vendor metadata keeps an empty vendor.
+func fillTokenModelVendors(options []tokenModelOption) {
+	if len(options) == 0 {
+		return
+	}
+	names := make(map[int]string)
+	for _, vendor := range model.GetVendors() {
+		names[vendor.ID] = vendor.Name
+	}
+	vendors := make(map[string]string)
+	for _, pricing := range model.GetPricing() {
+		if name, ok := names[pricing.VendorID]; ok {
+			vendors[pricing.ModelName] = name
+		}
+	}
+	for i := range options {
+		options[i].Vendor = vendors[options[i].Name]
+	}
 }
 
 type tokenAbilityEndpointRow struct {

@@ -34,6 +34,7 @@ import TokensActions from './TokensActions';
 import TokensFilters from './TokensFilters';
 import './tokensToolbar.css';
 import EditTokenModal from './modals/EditTokenModal';
+import { prefetchTokenGroupCatalog } from './tokenGroupCatalog';
 import TokenTestModal from './modals/TokenTestModal';
 import CCSwitchModal from './modals/CCSwitchModal';
 import { useTokensData } from '../../../hooks/tokens/useTokensData';
@@ -41,7 +42,7 @@ import { useFluentIntegration } from '../../../hooks/tokens/useFluentIntegration
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { createCardProPagination } from '../../../helpers/utils';
 
-function TokensPageContent() {
+function TokensPageContent({ userId }) {
   // openFluentNotificationRef 用于打破 TDZ 循环依赖：
   // useTokensData 需要在初始化时接收回调，但回调本身来自后续的 useFluentIntegration
   const openFluentNotificationRef = useRef(null);
@@ -49,6 +50,15 @@ function TokensPageContent() {
     openFluentNotificationRef.current?.(key),
   );
   const isMobile = useIsMobile();
+
+  // Warm the vendor/group catalog after the token list has had its turn, so
+  // the create/edit dialog opens with vendors ready.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchTokenGroupCatalog(userId).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [userId]);
 
   // FluentRead 集成（MutationObserver、Notification、模型加载全部在此 Hook 内管理）
   const { openFluentNotification } = useFluentIntegration({
@@ -252,7 +262,10 @@ function TokensPage() {
   const user = state?.user;
   if (!user?.id) return null;
   return (
-    <TokensPageContent key={`${user.id}:${user.role}:${user.group || ''}`} />
+    <TokensPageContent
+      key={`${user.id}:${user.role}:${user.group || ''}`}
+      userId={user.id}
+    />
   );
 }
 export default TokensPage;

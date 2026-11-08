@@ -78,6 +78,7 @@ func GetTokenModels(c *gin.Context) {
 			common.ApiError(c, optionErr)
 			return
 		}
+		fillTokenModelVendors(modelOptions)
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
 			"message": "",

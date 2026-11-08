@@ -31,3 +31,5 @@ Status: implemented
 ## Verification
 
 Go：新增 `service/token_routing_fallback_test.go`（旧标志不扩展多分组、`auto_fallback` 追加平台分组且保持自身顺序、模型规则不扩展、撤权为空不回填）；`controller`、`service`、`model`、`middleware`、`router`、`relay/...`、`pkg/...`、`setting/...` 共 36 个包通过，既有 `scoped_no_global_expansion` 仍通过。前端：新增 `tokenGroupSelection.test.js`（勾选顺序、auto 互斥、单选、上下移、按价格排序、厂商列表与按厂商/模型搜索、表单映射与 auto_fallback）及原有分组、收藏单测共 30 项通过；17 种语言资源检查、Prettier、Vite 生产构建与完整二进制构建通过。本地 SQLite 实机：搜索「sol」显示 OpenAI 并列出 gpt-6.1-sol、点 OpenAI 后只剩 6 个支持的分组、搜索「deep」显示 DeepSeek；勾两个分组、按价格排序、勾选自动切换后保存为 `{"groups":["OpenAI · 鹈鹕王","企业级"],"auto_fallback":true}`；模拟旧多分组令牌（旧标志为 1）编辑时勾选框不勾；取消一个分组后保存为单分组且 `routing_config` 清空；编辑窗口宽度下版面正常。实机发现并修复模型目录请求缺少首选分组导致加载失败。未部署。
+
+后续：2026-11-08 厂商改为随模型目录返回并在令牌页预加载、不再请求 `/api/pricing`，新令牌的自动切换改为默认勾选，见[厂商预加载](../bug-fix/2026-11-08-token-picker-vendor-prefetch.md)。

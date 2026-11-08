@@ -58,6 +58,11 @@ import {
 } from '../tokenGroupSelection';
 import TokenRoutingEditor from '../TokenRoutingEditor';
 import {
+  catalogGroupNames,
+  loadTokenGroupCatalog,
+  peekTokenGroupCatalog,
+} from '../tokenGroupCatalog';
+import {
   readTokenRouting,
   tokenRoutingPayload,
   tokenRoutingModelPreview,
@@ -156,8 +161,9 @@ const EditTokenModal = (props) => {
     routing_config: '',
     group_vendor: '',
     cross_group_retry: false,
-    // Fallback is opt-in; the picker's checkbox explains the price impact.
-    auto_group_fallback: false,
+    // New tokens fall back to platform groups by default; the picker's
+    // checkbox explains the price impact. Edits keep the stored value.
+    auto_group_fallback: true,
     max_concurrency: 0,
     window_request_limit: 0,
     window_seconds: 0,
@@ -683,8 +689,9 @@ const EditTokenModal = (props) => {
     }
   };
 
-  // Model -> groups catalog for the picker's model column, built from every
-  // explicit group this account may use. It only filters the group list.
+  // Model -> groups catalog (with vendors) for the picker's vendor column,
+  // built from every explicit group this account may use. It only filters the
+  // group list. The tokens page prefetches it; a cached copy shows at once.
   const [modelCatalog, setModelCatalog] = useState({
     data: null,
     loading: false,
@@ -693,10 +700,8 @@ const EditTokenModal = (props) => {
   const [modelVendors, setModelVendors] = useState({});
   const catalogRequestRef = useRef(0);
   const loadModelCatalog = async (force = false) => {
-    const names = (availableGroups.groups || [])
-      .map((group) => group.value)
-      .filter((name) => name && name !== 'auto')
-      .slice(0, 100);
+    const userId = userState?.user?.id;
+    const names = catalogGroupNames(availableGroups.groups);
     const requestId = ++catalogRequestRef.current;
     if (!names.length) {
       setModelCatalog({
@@ -704,32 +709,25 @@ const EditTokenModal = (props) => {
         loading: false,
         error: false,
       });
+      setModelVendors({});
       return;
     }
-    setModelCatalog((prev) => ({ ...prev, loading: true, error: false }));
+    const cached = !force && peekTokenGroupCatalog(userId, names);
+    if (cached) {
+      setModelCatalog({ data: cached.catalog, loading: false, error: false });
+      setModelVendors(cached.vendors);
+      if (cached.fresh) return;
+    } else {
+      setModelCatalog((prev) => ({ ...prev, loading: true, error: false }));
+    }
     try {
-      const res = await API.get('/api/token/models', {
-        disableDuplicate: true,
-        params: {
-          detail: true,
-          // The server requires the draft's group to be the first listed one.
-          group: names[0],
-          routing_config: JSON.stringify({ groups: names }),
-        },
-      });
+      const value = await loadTokenGroupCatalog(userId, names, { force });
       if (requestId !== catalogRequestRef.current) return;
-      if (!res.data?.success) throw new Error(res.data?.message);
-      setModelCatalog({
-        data: Object.fromEntries(
-          (Array.isArray(res.data.data) ? res.data.data : [])
-            .filter((item) => Array.isArray(item?.groups))
-            .map((item) => [item.name, item.groups]),
-        ),
-        loading: false,
-        error: false,
-      });
+      setModelCatalog({ data: value.catalog, loading: false, error: false });
+      setModelVendors(value.vendors);
     } catch {
-      if (requestId === catalogRequestRef.current)
+      // A stale cached copy stays usable; only an empty picker shows the error.
+      if (requestId === catalogRequestRef.current && !cached)
         setModelCatalog({ data: null, loading: false, error: true });
     }
   };
@@ -740,31 +738,6 @@ const EditTokenModal = (props) => {
       catalogRequestRef.current += 1;
     };
   }, [props.visiable, availableGroups, userState?.user?.id]);
-  useEffect(() => {
-    if (!props.visiable) return undefined;
-    let cancelled = false;
-    API.get('/api/pricing', { disableDuplicate: true })
-      .then((res) => {
-        if (cancelled || !res.data?.success) return;
-        const vendorNames = new Map(
-          (res.data.vendors || []).map((vendor) => [vendor.id, vendor.name]),
-        );
-        setModelVendors(
-          Object.fromEntries(
-            (Array.isArray(res.data.data) ? res.data.data : [])
-              .filter((item) => vendorNames.has(item.vendor_id))
-              .map((item) => [
-                item.model_name,
-                vendorNames.get(item.vendor_id),
-              ]),
-          ),
-        );
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [props.visiable]);
 
   const applyGroupSelection = (next) => {
     const api = formApiRef.current;
