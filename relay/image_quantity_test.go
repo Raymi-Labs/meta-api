@@ -91,6 +91,9 @@ func TestOutboundImageQuantityAfterOverrides(t *testing.T) {
 		{`{"n":129}`, false, true, 0},
 		{`{"n":0}`, false, false, 1},
 		{`{"n":2,"parameters":{"n":4}}`, false, false, 2},
+		{`{"n":"3"}`, false, false, 3},
+		{`{"n":"3","parameters":{"n":"4"}}`, true, false, 4},
+		{`{"n":"x"}`, false, true, 0},
 	} {
 		t.Run(tc.body, func(t *testing.T) {
 			body, count, _, err := normalizeOutboundImageQuantity([]byte(tc.body), tc.ali)
@@ -102,6 +105,9 @@ func TestOutboundImageQuantityAfterOverrides(t *testing.T) {
 			require.Equal(t, tc.count, count)
 			if tc.ali {
 				require.EqualValues(t, tc.count, gjson.GetBytes(body, "parameters.n").Int())
+			}
+			if !tc.ali {
+				require.Equal(t, gjson.Number, gjson.GetBytes(body, "n").Type)
 			}
 			if gjson.Get(tc.body, "input").Exists() {
 				require.Equal(t, "keep", gjson.GetBytes(body, "input.prompt").String())

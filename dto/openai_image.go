@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -30,22 +31,48 @@ func (i *ImageRequest) ImageBillingQuantity(ali bool) (count int, promptExtend b
 	if ali {
 		if raw, ok := i.Extra["parameters"]; ok {
 			var parameters struct {
-				N            *uint `json:"n"`
-				PromptExtend bool  `json:"prompt_extend"`
+				N            json.RawMessage `json:"n"`
+				PromptExtend bool            `json:"prompt_extend"`
 			}
 			if err := common.Unmarshal(raw, &parameters); err != nil {
 				return 0, false, fmt.Errorf("invalid image parameters: %w", err)
 			}
-			if parameters.N != nil {
-				if *parameters.N == 0 || *parameters.N > MaxImageN {
+			n, err := parseImageN(parameters.N, "parameters.n")
+			if err != nil {
+				return 0, false, err
+			}
+			if n != nil {
+				if *n == 0 || *n > MaxImageN {
 					return 0, false, fmt.Errorf("parameters.n must be between 1 and %d", MaxImageN)
 				}
-				count = int(*parameters.N)
+				count = int(*n)
 			}
 			promptExtend = parameters.PromptExtend
 		}
 	}
 	return count, promptExtend, nil
+}
+
+// parseImageN accepts a JSON integer or a quoted decimal integer: some SDKs
+// send "n":"1". Range checks stay with the callers; null or absent is nil.
+func parseImageN(raw json.RawMessage, field string) (*uint, error) {
+	value := strings.TrimSpace(string(raw))
+	if value == "" || value == "null" {
+		return nil, nil
+	}
+	if strings.HasPrefix(value, `"`) {
+		var text string
+		if err := common.UnmarshalJsonStr(value, &text); err != nil {
+			return nil, fmt.Errorf("%s must be an integer between 1 and %d", field, MaxImageN)
+		}
+		value = strings.TrimSpace(text)
+	}
+	n, err := strconv.ParseUint(value, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("%s must be an integer between 1 and %d", field, MaxImageN)
+	}
+	result := uint(n)
+	return &result, nil
 }
 
 type ImageRequest struct {
@@ -88,6 +115,25 @@ func (i *ImageRequest) UnmarshalJSON(data []byte) error {
 
 	// 用 struct tag 获取所有已定义字段名
 	knownFields := GetJSONFieldNames(reflect.TypeOf(*i))
+
+	// Normalize n before typed decoding so a quoted integer is accepted and a
+	// malformed value yields a client-facing message, not a Go decode error.
+	if raw, ok := rawMap["n"]; ok {
+		n, err := parseImageN(raw, "n")
+		if err != nil {
+			return err
+		}
+		if n == nil {
+			delete(rawMap, "n")
+		} else {
+			rawMap["n"] = json.RawMessage(strconv.FormatUint(uint64(*n), 10))
+		}
+		normalized, err := common.Marshal(rawMap)
+		if err != nil {
+			return err
+		}
+		data = normalized
+	}
 
 	// 再正常解析已定义字段
 	type Alias ImageRequest

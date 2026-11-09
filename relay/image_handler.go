@@ -217,7 +217,8 @@ func normalizeOutboundImageQuantity(body []byte, ali bool) ([]byte, int, bool, e
 	}
 	if ali {
 		body, err = sjson.SetBytes(body, "parameters.n", count)
-	} else if request.N != nil && *request.N == 0 {
+	} else if request.N != nil && (*request.N == 0 || gjson.GetBytes(body, "n").Type == gjson.String) {
+		// Upstreams expect a JSON integer; rewrite defaults and quoted values.
 		body, err = sjson.SetBytes(body, "n", count)
 	}
 	return body, count, extend, err
