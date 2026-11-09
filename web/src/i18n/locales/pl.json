@@ -7274,6 +7274,15 @@
     "按模型开放加速档位": "Włącz poziomy dla modeli",
     "加速档位配置必须是模型到档位列表的JSON对象": "Konfiguracja musi być obiektem JSON mapującym modele na listy poziomów",
     "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Przyspieszenie kosztuje 2× lub 6× standardowej ceny wybranej grupy, niezależnie od wysiłku rozumowania.",
-    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kosztuje 2×, ultrafast 6×; wpisuj tylko modele sprawdzone na tym kanale."
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kosztuje 2×, ultrafast 6×; wpisuj tylko modele sprawdzone na tym kanale.",
+    "客户端连接中断": "Połączenie klienta przerwane",
+    "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。": "Możliwe przyczyny: limit czasu klienta, ręczne zatrzymanie lub awaria sieci. Sam czas trwania nie wskazuje przyczyny.",
+    "断开阶段": "Etap rozłączenia",
+    "等待上游响应头时断开": "Rozłączenie podczas oczekiwania na nagłówki dostawcy",
+    "上游响应头已到，正文尚未到达时断开": "Rozłączenie po nagłówkach dostawcy, przed treścią odpowiedzi",
+    "接收上游正文期间断开": "Rozłączenie podczas odbierania treści odpowiedzi dostawcy",
+    "未观测到断开阶段": "Nie zaobserwowano etapu rozłączenia",
+    "断开时已耗时": "Czas do rozłączenia",
+    "上游正文已开始返回": "Rozpoczęto odbieranie treści odpowiedzi dostawcy"
   }
 }

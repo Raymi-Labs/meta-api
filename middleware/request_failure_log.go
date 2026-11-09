@@ -12,7 +12,10 @@ import (
 func RequestFailureLog() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
+		finishObservation := service.BeginRequestCancellationObservation(c, start)
+		defer finishObservation()
 		c.Next()
+		finishObservation()
 		if c.GetString(RouteTagKey) == "relay" {
 			service.RecordFinalRequestFailure(c, time.Since(start))
 			service.ObserveQuotaNoticeOutcome(c)

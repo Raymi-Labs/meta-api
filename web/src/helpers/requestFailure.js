@@ -105,3 +105,37 @@ export const buildRequestFailureReport = (record, t, isAdmin = false) => {
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n');
 };
+
+// Internal transport observations remain outside copyable public reports.
+export const getCancellationDetails = (other, t) => {
+  const diagnostic = other?.admin_info?.cancellation;
+  if (!diagnostic || other?.failure_class !== 'client_canceled') return [];
+  const phaseLabels = {
+    waiting_headers: '等待上游响应头时断开',
+    waiting_body: '上游响应头已到，正文尚未到达时断开',
+    receiving_body: '接收上游正文期间断开',
+  };
+  const details = [
+    {
+      key: t('断开阶段'),
+      value: t(phaseLabels[diagnostic.phase] || '未观测到断开阶段'),
+    },
+  ];
+  if (Number.isFinite(diagnostic.duration_ms) && diagnostic.duration_ms >= 0) {
+    details.push({
+      key: t('断开时已耗时'),
+      value: `${diagnostic.duration_ms} ms`,
+    });
+  }
+  details.push({
+    key: t('上游正文已开始返回'),
+    value: t(
+      diagnostic.upstream_response_started === true
+        ? '是'
+        : diagnostic.upstream_response_started === false
+          ? '否'
+          : '未知',
+    ),
+  });
+  return details;
+};

@@ -571,6 +571,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	if info.TaskRelayInfo != nil {
 		client = taskHeaderOverrideHTTPClient(client, info)
 	}
+	service.BeginCancellationHTTPAttempt(c)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, newDoRequestError(c, err)
@@ -578,6 +579,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	if resp == nil {
 		return nil, errors.New("resp is nil")
 	}
+	resp.Body = service.ObserveCancellationHTTPResponse(c, resp.Body)
 	service.RecordUpstreamRequestID(c, resp.Header)
 
 	_ = req.Body.Close()

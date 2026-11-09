@@ -110,7 +110,7 @@ func TestDescribeClientCancellation(t *testing.T) {
 	err := types.NewErrorWithStatusCode(fmt.Errorf("client canceled while receiving responses stream"), types.ErrorCodeDoRequestFailed, 500)
 	category, reason, _ := describeRequestFailure(err, true)
 	require.Equal(t, "client_canceled", category)
-	require.Equal(t, "客户端取消请求", reason)
+	require.Equal(t, "客户端连接中断", reason)
 }
 
 func TestFinalFailureKeepsUnbilledUsageSnapshotOnlyInAdminDiagnostics(t *testing.T) {

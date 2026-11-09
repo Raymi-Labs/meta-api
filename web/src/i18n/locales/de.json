@@ -7274,6 +7274,15 @@
     "按模型开放加速档位": "Stufen je Modell aktivieren",
     "加速档位配置必须是模型到档位列表的JSON对象": "Die Konfiguration muss ein JSON-Objekt mit Modellen und Stufenlisten sein",
     "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Beschleunigung kostet das 2- oder 6-Fache des Standardpreises der gewählten Gruppe, unabhängig vom Denkaufwand.",
-    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kostet 2×, ultrafast 6×; nur auf diesem Kanal geprüfte Modelle eintragen."
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kostet 2×, ultrafast 6×; nur auf diesem Kanal geprüfte Modelle eintragen.",
+    "客户端连接中断": "Client-Verbindung unterbrochen",
+    "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。": "Mögliche Ursachen sind ein Client-Timeout, ein manueller Stopp oder eine Netzwerkunterbrechung. Die Dauer allein bestimmt die Ursache nicht.",
+    "断开阶段": "Phase beim Verbindungsabbruch",
+    "等待上游响应头时断开": "Abbruch beim Warten auf Upstream-Antwortheader",
+    "上游响应头已到，正文尚未到达时断开": "Abbruch nach Upstream-Antwortheadern, vor dem Antwortinhalt",
+    "接收上游正文期间断开": "Abbruch beim Empfang des Upstream-Antwortinhalts",
+    "未观测到断开阶段": "Abbruchphase nicht beobachtet",
+    "断开时已耗时": "Verstrichene Zeit beim Abbruch",
+    "上游正文已开始返回": "Empfang des Upstream-Antwortinhalts begonnen"
   }
 }
