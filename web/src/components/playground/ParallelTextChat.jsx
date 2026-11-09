@@ -202,6 +202,7 @@ export default function ParallelTextChat({
         withModelCapabilities(
           {
             ...inputs,
+            serviceTier: 'default',
             model: answer.parallelModel,
             toolsEnabled: false,
             imageEnabled: false,

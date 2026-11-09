@@ -885,6 +885,12 @@ export const useLogsData = (admin = isAdmin()) => {
               .join(' · '),
           });
         }
+        if (['priority', 'ultrafast'].includes(other?.requested_service_tier) && Number.isFinite(other?.service_tier_multiplier)) {
+          expandDataLocal.push({
+            key: t('速度档位'),
+            value: `${other.requested_service_tier === 'priority' ? 'Fast' : 'UltraFast'} ×${other.service_tier_multiplier}`,
+          });
+        }
         if (other?.reasoning_effort) {
           expandDataLocal.push({
             key: t('Reasoning Effort'),

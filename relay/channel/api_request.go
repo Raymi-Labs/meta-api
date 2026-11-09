@@ -338,6 +338,11 @@ func attachNewAPIRequestIDHeader(header http.Header, info *common.RelayInfo) {
 }
 
 func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
+	var tierErr error
+	requestBody, tierErr = common.ValidatePaidServiceTierBody(info, requestBody)
+	if tierErr != nil {
+		return nil, tierErr
+	}
 	fullRequestURL, err := a.GetRequestURL(info)
 	if err != nil {
 		return nil, fmt.Errorf("get request url failed: %w", err)

@@ -192,6 +192,8 @@ type TokenCountMeta struct {
 }
 
 type RelayInfo struct {
+	ManagedServiceTier       bool
+	RequestedServiceTier     string
 	TokenId                  int
 	TokenKey                 string
 	TokenGroup               string

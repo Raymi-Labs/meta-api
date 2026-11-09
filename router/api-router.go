@@ -121,6 +121,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/invoices/self/:id/file", controller.DownloadUserInvoiceFile)
 				selfRoute.GET("/invoices/self/:id", controller.GetUserInvoiceRequestDetail)
 				selfRoute.GET("/models", controller.GetUserModels)
+				selfRoute.GET("/service-tiers", middleware.CriticalRateLimit(), controller.GetUserServiceTiers)
 				selfRoute.PUT("/self", controller.UpdateSelf)
 				selfRoute.DELETE("/self", controller.DeleteSelf)
 				selfRoute.GET("/token", controller.GenerateAccessToken)

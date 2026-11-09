@@ -547,3 +547,41 @@
     top: 58px;
   }
 }
+
+.pg-service-tier-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pg-service-tier-heading .pg-info-button {
+  position: static;
+}
+.pg-service-tier select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 6px;
+  background: var(--semi-color-bg-0);
+  color: var(--semi-color-text-0);
+  font: inherit;
+}
+.pg-service-tier select:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
+.pg-service-tier-error {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--semi-color-warning);
+}
+.pg-service-tier-error button {
+  background: none;
+  border: 0;
+  color: var(--semi-color-primary);
+  cursor: pointer;
+}

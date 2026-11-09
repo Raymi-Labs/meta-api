@@ -60,6 +60,15 @@ export const buildApiPayload = (
     stream: inputs.stream,
   };
 
+  if (inputs.serviceTier && inputs.serviceTier !== 'default') {
+    if (
+      !['priority', 'ultrafast'].includes(inputs.serviceTier) ||
+      inputs.serviceTierAllowed !== true
+    )
+      throw new Error('service tier unavailable');
+    payload.service_tier = inputs.serviceTier;
+  }
+
   // 添加启用的参数
   const parameterMappings = {
     temperature: 'temperature',

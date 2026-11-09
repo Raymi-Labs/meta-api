@@ -91,6 +91,7 @@ func InitChannelCache() {
 		}
 	}
 	channelsIDM = newChannelId2channel
+	refreshPaidServiceTierRegistryLocked()
 	channelSyncLock.Unlock()
 	common.SysLog("channels synced from database")
 }
@@ -396,5 +397,6 @@ func CacheUpdateChannel(channel *Channel) {
 
 	println("before:", channelsIDM[channel.Id].ChannelInfo.MultiKeyPollingIndex)
 	channelsIDM[channel.Id] = channel
+	refreshPaidServiceTierRegistryLocked()
 	println("after :", channelsIDM[channel.Id].ChannelInfo.MultiKeyPollingIndex)
 }

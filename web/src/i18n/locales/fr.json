@@ -7598,6 +7598,14 @@
     "用户分组名单，格式为 JSON 字符串，例如：{\"default\": \"默认用户\", \"vip\": \"VIP 用户\"}。必须包含 default，名称不能与渠道分组重复（default 除外）": "La liste des groupes d'utilisateurs sous forme de chaîne JSON, par exemple : {\"default\": \"Utilisateur par défaut\", \"vip\": \"Utilisateur VIP\"}. Elle doit contenir default, et les noms ne peuvent pas être identiques à ceux des groupes de canaux (sauf default)",
     "在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。": "Enregistré dans « Groupes d'utilisateurs », attribué par un administrateur dans la gestion des utilisateurs ou obtenu par un plan d'abonnement. Il détermine le niveau d'identité de l'utilisateur (par exemple default, vip) et ne correspond pas à un canal.",
     "在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。": "Géré dans « Groupes de canaux ». Un canal choisit le groupe de canaux auquel il appartient ; lors de la création d'un jeton, l'utilisateur choisit parmi les groupes de canaux marqués « Utilisateur facultatif ». Le groupe détermine par quels canaux les requêtes sont acheminées et leur taux de facturation. Un utilisateur peut créer plusieurs jetons avec des groupes différents.",
-    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "Les groupes de canaux sans « Utilisateur facultatif » n'apparaissent pas dans la liste déroulante de l'utilisateur et ne peuvent être ouverts à des groupes d'utilisateurs précis que via « Groupes spéciaux disponibles ». Cela convient aux cas comme l'ouverture de routes par niveau d'utilisateur ou les tests internes où l'utilisateur ne doit pas choisir librement."
+    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "Les groupes de canaux sans « Utilisateur facultatif » n'apparaissent pas dans la liste déroulante de l'utilisateur et ne peuvent être ouverts à des groupes d'utilisateurs précis que via « Groupes spéciaux disponibles ». Cela convient aux cas comme l'ouverture de routes par niveau d'utilisateur ou les tests internes où l'utilisateur ne doit pas choisir librement.",
+    "标准": "Standard",
+    "速度档位": "Niveau de vitesse",
+    "速度档位说明": "À propos des niveaux de vitesse",
+    "当前速度档位不可用": "Ce niveau de vitesse est indisponible",
+    "按模型开放加速档位": "Activer les niveaux par modèle",
+    "加速档位配置必须是模型到档位列表的JSON对象": "La configuration doit être un objet JSON associant les modèles aux listes de niveaux",
+    "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "L’accélération coûte 2× ou 6× le prix standard du groupe choisi, indépendamment de l’effort de raisonnement.",
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority coûte 2× et ultrafast 6× ; indiquez uniquement les modèles vérifiés sur ce canal."
   }
 }

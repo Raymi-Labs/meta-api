@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import useServiceTiers from '../../hooks/playground/useServiceTiers';
 import React, {
   useContext,
   useEffect,
@@ -169,7 +170,17 @@ const AccountPlayground = ({
   const selectedModel = catalogState.catalog?.models.find(
     (model) => model.model_name === inputs.model,
   );
-  const effectiveInputs = withModelCapabilities(inputs, selectedModel);
+  const serviceTierCapability = useServiceTiers(
+    inputs.model,
+    inputs.group,
+    owner,
+    active && !parallelMode && !customRequestMode,
+  );
+  const effectiveInputs = {
+    ...withModelCapabilities(inputs, selectedModel),
+    serviceTier: parallelMode ? 'default' : inputs.serviceTier,
+    serviceTierAllowed: serviceTierCapability.allows(inputs.serviceTier),
+  };
   const selectedParallelModels = comparisonModelNames(
     parallelModels,
     models,
@@ -417,6 +428,7 @@ const AccountPlayground = ({
               {
                 ...inputs,
                 model: previewModelName,
+                serviceTier: 'default',
                 toolsEnabled: false,
                 imageEnabled: false,
               },
@@ -440,6 +452,7 @@ const AccountPlayground = ({
     parallelMode,
     previewModelName,
     comparisonModel,
+    effectiveInputs.serviceTierAllowed,
   ]);
 
   const previewPayload = useMemo(constructPreviewPayload, [
@@ -451,6 +464,14 @@ const AccountPlayground = ({
     retryMessages = null,
     completingTools = false,
   ) {
+    if (
+      !parallelMode &&
+      !customRequestMode &&
+      !serviceTierCapability.allows(inputs.serviceTier)
+    ) {
+      Toast.error(t('当前速度档位不可用'));
+      return false;
+    }
     if (
       !activeRef.current ||
       owner !== getPlaygroundOwner() ||
@@ -767,6 +788,7 @@ const AccountPlayground = ({
     >
       <OptimizedSettingsPanel
         localSession
+        serviceTierCapability={serviceTierCapability}
         inputs={inputs}
         model={selectedModel}
         comparison={
@@ -921,6 +943,11 @@ const AccountPlayground = ({
           </div>
           {!parallelMode && (
             <PlaygroundPriceSummary
+              serviceTier={
+                serviceTierCapability.allows(inputs.serviceTier)
+                  ? inputs.serviceTier
+                  : 'default'
+              }
               model={selectedModel}
               group={inputs.group}
               catalogState={catalogState}
