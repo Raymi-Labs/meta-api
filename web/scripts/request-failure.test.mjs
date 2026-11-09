@@ -127,8 +127,9 @@ test('admin reports identify early rejections without exposing credentials or di
 });
 
 test('missing log identity has a readable fallback', async () => {
-  const { getRequestLogUserLabel } =
-    await import('../src/helpers/requestFailure.js');
+  const { getRequestLogUserLabel } = await import(
+    '../src/helpers/requestFailure.js'
+  );
   assert.equal(getRequestLogUserLabel({ user_id: 973 }), 'ID: 973');
   assert.equal(
     getRequestLogUserLabel({ user_id: 973, username: 'owner' }),
@@ -191,5 +192,42 @@ test('quota reasons distinguish request size and active holds in every locale', 
     assert.ok(report.includes(translation[keys[0]]));
     assert.ok(report.includes(translation[keys[1]]));
     assert.doesNotMatch(report, /536742306|bounded_chat_wallet/);
+  }
+});
+
+test('cancellation detail preserves false, unknown and duration without inferring cause', async () => {
+  const { getCancellationDetails } = await import(
+    '../src/helpers/requestFailure.js'
+  );
+  assert.deepEqual(getCancellationDetails({}, t), []);
+  for (const [phase, started, expected] of [
+    ['waiting_headers', false, '等待上游响应头时断开'],
+    ['waiting_body', false, '上游响应头已到，正文尚未到达时断开'],
+    ['receiving_body', true, '接收上游正文期间断开'],
+    ['unknown', null, '未观测到断开阶段'],
+  ]) {
+    const other = {
+      failure_class: 'client_canceled',
+      admin_info: {
+        cancellation: {
+          duration_ms: 45000,
+          phase,
+          upstream_response_started: started,
+        },
+      },
+    };
+    const details = getCancellationDetails(other, t);
+    assert.equal(details[0].value, expected);
+    assert.equal(details[1].value, '45000 ms');
+    assert.equal(
+      details[2].value,
+      started === null ? '未知' : started ? '是' : '否',
+    );
+    const report = buildRequestFailureReport(
+      { type: 5, created_at: 100, other: JSON.stringify(other) },
+      t,
+      true,
+    );
+    assert.doesNotMatch(report, /断开阶段|上游正文/);
   }
 });

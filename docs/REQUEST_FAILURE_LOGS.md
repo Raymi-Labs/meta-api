@@ -32,3 +32,15 @@
 管理员可在消费/失败日志 API 返回的 `other.admin_info.upstream_request_ids` 中查看共用 HTTP 出站入口最近五个实际响应的 `channel_id`、`request_id` 和 `request_id_header`。优先识别上游的 `X-Oneapi-Request-Id`，再识别已有供应商请求 ID 头；只保存长度不超过 256 字节且无控制字符的值。该列表不是最终响应 ID：后续连接失败或响应没有 ID 时不会补造条目。原有失败尝试诊断也识别该上游头。普通用户接口继续删除 `admin_info`。
 
 独立 SDK、WebSocket 的上游请求 ID 不承诺由此入口采集。升级不回填历史缺失的上游 ID，也不改变历史日志的本站 ID；发布后的 HTTP 契约需要部署新版本才生效。
+
+## 客户端连接中断诊断
+
+新日志用「客户端连接中断」描述 `client_canceled`，不认定用户主动停止。管理员展开失败日志可查看 `other.admin_info.cancellation`：
+
+- `duration_ms`：从失败日志中间件进入到服务端观察到取消的毫秒数，区别于包含后续收尾的 `latency_ms`。未安装观察器时回退为总耗时。
+- `upstream_response_started`：当前 HTTP 尝试是否实际读取过正文（true / false）；未覆盖的传输为 null，不能把未知当作未返回。
+- `phase`：`waiting_headers`（等待上游响应头）、`waiting_body`（响应头已到但正文未到）、`receiving_body`（已开始读取正文）、`unknown`（阶段未观测）。重试开始重置当前尝试，断开后的迟到数据不会覆盖快照。
+
+共用 HTTP 出站入口覆盖流式与非流式。正文包含上游心跳、错误响应，不能据此认定已收到模型有效输出或已交付客户端；SDK/WebSocket 独立出站、进入共用出站前的排队与历史日志没有阶段证据时保持未知。取消回调有调度误差。45 秒或几秒断开均不能单独证明超时或主动停止，仍需结合客户端配置与日志。
+
+管理员字段沿用既有权限隔离，不进入普通用户 API 或复制排查报告。无数据库迁移，不回填历史，不改变取消的重试、健康统计和费用语义。

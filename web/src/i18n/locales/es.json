@@ -7274,6 +7274,15 @@
     "按模型开放加速档位": "Activar niveles por modelo",
     "加速档位配置必须是模型到档位列表的JSON对象": "La configuración debe ser un objeto JSON que asocie modelos con listas de niveles",
     "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "La aceleración cuesta 2× o 6× el precio estándar del grupo elegido, independientemente del esfuerzo de razonamiento.",
-    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority cuesta 2× y ultrafast 6×; incluya solo modelos verificados en este canal."
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority cuesta 2× y ultrafast 6×; incluya solo modelos verificados en este canal.",
+    "客户端连接中断": "Conexión del cliente interrumpida",
+    "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。": "Puede deberse a un tiempo de espera del cliente, una parada manual o una interrupción de red. La duración por sí sola no determina la causa.",
+    "断开阶段": "Etapa de desconexión",
+    "等待上游响应头时断开": "Desconexión esperando las cabeceras de respuesta del proveedor",
+    "上游响应头已到，正文尚未到达时断开": "Desconexión tras las cabeceras del proveedor, antes del cuerpo",
+    "接收上游正文期间断开": "Desconexión durante la recepción del cuerpo del proveedor",
+    "未观测到断开阶段": "Etapa de desconexión no observada",
+    "断开时已耗时": "Tiempo transcurrido al desconectar",
+    "上游正文已开始返回": "Recepción del cuerpo del proveedor iniciada"
   }
 }

@@ -7274,6 +7274,15 @@
     "按模型开放加速档位": "Niveaus per model inschakelen",
     "加速档位配置必须是模型到档位列表的JSON对象": "De configuratie moet een JSON-object zijn met modellen en niveaulijsten",
     "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Versnelling kost 2× of 6× de standaardprijs van de gekozen groep, los van de redeneerinspanning.",
-    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kost 2× en ultrafast 6×; vermeld alleen modellen die op dit kanaal zijn geverifieerd."
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority kost 2× en ultrafast 6×; vermeld alleen modellen die op dit kanaal zijn geverifieerd.",
+    "客户端连接中断": "Clientverbinding onderbroken",
+    "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。": "Mogelijke oorzaken zijn een clienttime-out, handmatig stoppen of een netwerkonderbreking. De duur alleen bepaalt de oorzaak niet.",
+    "断开阶段": "Fase bij verbreking",
+    "等待上游响应头时断开": "Verbroken tijdens wachten op upstream-antwoordheaders",
+    "上游响应头已到，正文尚未到达时断开": "Verbroken na upstream-headers, vóór de antwoordinhoud",
+    "接收上游正文期间断开": "Verbroken tijdens ontvangst van upstream-antwoordinhoud",
+    "未观测到断开阶段": "Verbrekingsfase niet waargenomen",
+    "断开时已耗时": "Verstreken tijd bij verbreking",
+    "上游正文已开始返回": "Ontvangst van upstream-antwoordinhoud gestart"
   }
 }

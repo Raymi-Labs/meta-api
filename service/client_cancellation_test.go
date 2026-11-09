@@ -89,7 +89,7 @@ func TestCanceledResponseBodyProducesClientCancellationLog(t *testing.T) {
 	RecordFinalRequestFailure(ctx, 1460*time.Millisecond)
 	var row model.Log
 	require.NoError(t, model.LOG_DB.Where("request_id = ?", "req-stream-failure").First(&row).Error)
-	require.Equal(t, "客户端取消请求", row.Content)
+	require.Equal(t, "客户端连接中断", row.Content)
 	require.Zero(t, row.Quota)
 	other, parseErr := common.StrToMap(row.Other)
 	require.NoError(t, parseErr)

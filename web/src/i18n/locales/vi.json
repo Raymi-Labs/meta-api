@@ -7887,6 +7887,15 @@
     "按模型开放加速档位": "Bật mức tốc độ theo mô hình",
     "加速档位配置必须是模型到档位列表的JSON对象": "Cấu hình phải là đối tượng JSON ánh xạ mô hình tới danh sách mức tốc độ",
     "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Tăng tốc có giá gấp 2 hoặc 6 lần giá tiêu chuẩn của nhóm đã chọn, độc lập với mức suy luận.",
-    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority tính gấp 2, ultrafast gấp 6; chỉ nhập mô hình đã xác minh trên kênh này."
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority tính gấp 2, ultrafast gấp 6; chỉ nhập mô hình đã xác minh trên kênh này.",
+    "客户端连接中断": "Kết nối máy khách bị ngắt",
+    "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。": "Có thể do máy khách hết thời gian chờ, dừng thủ công hoặc mất mạng. Chỉ dựa vào thời gian không thể xác định nguyên nhân.",
+    "断开阶段": "Giai đoạn ngắt kết nối",
+    "等待上游响应头时断开": "Ngắt khi đang chờ tiêu đề phản hồi từ nhà cung cấp",
+    "上游响应头已到，正文尚未到达时断开": "Ngắt sau khi nhận tiêu đề, trước khi nhận nội dung từ nhà cung cấp",
+    "接收上游正文期间断开": "Ngắt khi đang nhận nội dung từ nhà cung cấp",
+    "未观测到断开阶段": "Chưa quan sát được giai đoạn ngắt",
+    "断开时已耗时": "Thời gian đã trôi qua khi ngắt",
+    "上游正文已开始返回": "Đã bắt đầu nhận nội dung từ nhà cung cấp"
   }
 }

@@ -128,7 +128,7 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 	case IsUpstreamCapabilityError(err):
 		return "unavailable", "上游渠道不支持当前模型或工具协议", "请稍后重试；若持续失败，请携带请求 ID 联系管理员。"
 	case types.ClassifyFailure(err) == types.FailureClientCanceled:
-		return "client_canceled", "客户端取消请求", "客户端已断开连接；请检查是否主动停止、客户端超时或网络中断。"
+		return "client_canceled", "客户端连接中断", "连接已中断，可能由客户端超时、主动停止或网络中断引起；仅凭耗时不能确定原因。"
 	case IsContentSafetyPolicyError(err) || code == "content_safety_cooldown" || code == string(types.ErrorCodeSensitiveWordsDetected):
 		return "content_policy", "请求被内容安全策略拒绝", "请调整请求内容，遵守使用政策；处于冷静期时请等待结束。"
 	case code == string(types.ErrorCodeConversationStateNotFound):
@@ -242,6 +242,7 @@ func RecordFinalRequestFailure(c *gin.Context, elapsed time.Duration) {
 		other["retry_after_seconds"] = int((retryAfter + time.Second - 1) / time.Second)
 	}
 	adminInfo := map[string]interface{}{"error_message": requestLogMessage(apiErr), "error_type": apiErr.GetErrorType(), "use_channel": c.GetStringSlice("use_channel")}
+	appendCancellationDiagnostics(c, apiErr, adminInfo, elapsed)
 	adminInfo["channel_name"] = c.GetString("channel_name")
 	adminInfo["channel_type"] = c.GetInt("channel_type")
 	if common.GetContextKeyBool(c, constant.ContextKeyChannelIsMultiKey) {

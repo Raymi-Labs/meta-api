@@ -43,7 +43,10 @@ import {
   renderModelPrice,
   renderTieredModelPrice,
 } from '../../helpers';
-import { getRequestFailureDetails } from '../../helpers/requestFailure';
+import {
+  getRequestFailureDetails,
+  getCancellationDetails,
+} from '../../helpers/requestFailure';
 import { getResponseModelInfo } from '../../helpers/responseModel';
 import {
   getCacheCreationBreakdown,
@@ -708,6 +711,9 @@ export const useLogsData = (admin = isAdmin()) => {
       }
       if (logs[i].type === 5) {
         expandDataLocal.push(...getRequestFailureDetails(logs[i], t));
+        if (isAdminUser) {
+          expandDataLocal.push(...getCancellationDetails(other, t));
+        }
         if (isAdminUser && other?.admin_info?.error_message) {
           expandDataLocal.push({
             key: t('管理员错误详情'),
