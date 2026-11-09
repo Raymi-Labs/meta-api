@@ -262,6 +262,8 @@ const (
 )
 
 type ChannelOtherSettings struct {
+	PaidServiceTiers map[string][]string `json:"paid_service_tiers,omitempty"`
+
 	VertexProjectID                       string         `json:"vertex_project_id,omitempty"`
 	AzureResponsesVersion                 string         `json:"azure_responses_version,omitempty"`
 	VertexKeyType                         VertexKeyType  `json:"vertex_key_type,omitempty"` // "json" or "api_key"

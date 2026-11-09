@@ -90,6 +90,10 @@ func diagnosticHashBytes(value []byte) string {
 func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, modelRatio, groupRatio, completionRatio float64,
 	cacheTokens int, cacheRatio float64, modelPrice float64, userGroupRatio float64) map[string]interface{} {
 	other := make(map[string]interface{})
+	if relayInfo.ManagedServiceTier {
+		other["requested_service_tier"] = relayInfo.RequestedServiceTier
+		other["service_tier_multiplier"] = relayInfo.ServiceTierMultiplier()
+	}
 	other["model_ratio"] = modelRatio
 	other["group_ratio"] = groupRatio
 	other["completion_ratio"] = completionRatio
@@ -386,6 +390,10 @@ func InjectTieredBillingInfo(other map[string]interface{}, relayInfo *relaycommo
 	snap := relayInfo.TieredBillingSnapshot
 	if snap == nil {
 		return
+	}
+	if relayInfo.ManagedServiceTier {
+		other["requested_service_tier"] = relayInfo.RequestedServiceTier
+		other["service_tier_multiplier"] = relayInfo.ServiceTierMultiplier()
 	}
 	other["billing_mode"] = "tiered_expr"
 	other["expr_b64"] = base64.StdEncoding.EncodeToString([]byte(snap.ExprString))

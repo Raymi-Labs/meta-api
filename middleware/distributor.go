@@ -26,6 +26,7 @@ import (
 )
 
 type ModelRequest struct {
+	ServiceTier        string          `json:"service_tier,omitempty"`
 	Model              string          `json:"model"`
 	Group              string          `json:"group,omitempty"`
 	Tools              json.RawMessage `json:"tools,omitempty"`
@@ -114,6 +115,10 @@ func Distribute() func(c *gin.Context) {
 		}
 
 		if shouldSelectChannel {
+			if tierErr := prepareServiceTier(c, modelRequest); tierErr != nil {
+				abortWithOpenAiMessage(c, tierErr.StatusCode, tierErr.Error(), tierErr.GetErrorCode())
+				return
+			}
 			if modelRequest.Model == "" {
 				abortWithOpenAiMessage(c, http.StatusBadRequest, i18n.T(c, i18n.MsgDistributorModelNameRequired))
 				return
@@ -160,6 +165,10 @@ func Distribute() func(c *gin.Context) {
 					return
 				}
 				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup, grouphealth.OutcomeServiceFailure)
+				if c.GetBool(service.ManagedServiceTierKey) && c.GetString(service.RequestedServiceTierKey) != "default" {
+					abortWithOpenAiMessage(c, http.StatusServiceUnavailable, "当前速度档位暂无可用渠道", types.ErrorCode("service_tier_unavailable"))
+					return
+				}
 				observeRouteOutage(c, modelRequest.Model, usingGroup, specificChannelID)
 				showGroup := usingGroup
 				if usingGroup == "auto" && selectGroup != "" {
@@ -235,6 +244,9 @@ func tryAffinityChannel(c *gin.Context, modelName string, usingGroup string, cli
 		return nil, "", false
 	}
 	if service.IsCodexAutoReviewRequestModel(modelName) && !constant.IsCodexAutoReviewCompatibleChannelType(preferred.Type) {
+		return nil, "", false
+	}
+	if !service.ChannelAllowsRequestedServiceTier(c, preferred, modelName) {
 		return nil, "", false
 	}
 	if !IsTokenChannelAllowed(c, preferred.Id) || !service.IsChannelAllowedForClient(preferred, clientID) {
@@ -601,6 +613,10 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 }
 
 func SetupContextForSelectedChannelKey(c *gin.Context, channel *model.Channel, modelName string, key string, index int) *types.NewAPIError {
+	if !service.ChannelAllowsRequestedServiceTier(c, channel, modelName) {
+		return types.NewErrorWithStatusCode(errors.New("requested service tier unavailable on selected channel"), types.ErrorCode("service_tier_unavailable"), http.StatusServiceUnavailable, types.ErrOptionWithSkipRetry())
+	}
+
 	c.Set("original_model", modelName) // for retry
 	if channel == nil {
 		return types.NewError(errors.New("channel is nil"), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())

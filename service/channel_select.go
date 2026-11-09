@@ -397,7 +397,8 @@ func buildChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
 }
 
 func buildBaseChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
-	filters := make([]model.ChannelFilter, 0, 4)
+	filters := make([]model.ChannelFilter, 0, 5)
+	filters = append(filters, func(ch *model.Channel) bool { return ChannelAllowsRequestedServiceTier(param.Ctx, ch, param.ModelName) })
 	if clientFilter := buildClientFilter(param.Ctx); clientFilter != nil {
 		filters = append(filters, clientFilter)
 	}

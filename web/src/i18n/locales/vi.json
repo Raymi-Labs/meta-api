@@ -7879,6 +7879,14 @@
     "用户分组名单，格式为 JSON 字符串，例如：{\"default\": \"默认用户\", \"vip\": \"VIP 用户\"}。必须包含 default，名称不能与渠道分组重复（default 除外）": "Danh sách nhóm người dùng dưới dạng chuỗi JSON, ví dụ: {\"default\": \"Người dùng mặc định\", \"vip\": \"Người dùng VIP\"}. Phải bao gồm default và tên không được trùng với nhóm kênh (trừ default)",
     "在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。": "Được đăng ký trong «Nhóm người dùng», do quản trị viên gán trong quản lý người dùng hoặc nâng cấp qua gói đăng ký. Quyết định cấp danh tính của người dùng (như default, vip) và bản thân không tương ứng với kênh.",
     "在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。": "Được quản lý trong «Nhóm kênh». Kênh chọn nhóm kênh mà nó thuộc về; khi tạo token, người dùng chọn từ các nhóm kênh được đánh dấu «Người dùng tùy chọn». Nhóm quyết định yêu cầu đi qua những kênh nào và tỷ lệ tính phí. Một người dùng có thể tạo nhiều token dùng các nhóm khác nhau.",
-    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "Nhóm kênh không được đánh dấu «Người dùng tùy chọn» sẽ không xuất hiện trong danh sách thả xuống của người dùng và chỉ có thể mở cho các nhóm người dùng cụ thể thông qua «Các nhóm đặc biệt có sẵn». Phù hợp với các trường hợp như mở tuyến theo cấp người dùng hoặc kiểm thử nội bộ khi không muốn người dùng tự do lựa chọn."
+    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "Nhóm kênh không được đánh dấu «Người dùng tùy chọn» sẽ không xuất hiện trong danh sách thả xuống của người dùng và chỉ có thể mở cho các nhóm người dùng cụ thể thông qua «Các nhóm đặc biệt có sẵn». Phù hợp với các trường hợp như mở tuyến theo cấp người dùng hoặc kiểm thử nội bộ khi không muốn người dùng tự do lựa chọn.",
+    "标准": "Tiêu chuẩn",
+    "速度档位": "Mức tốc độ",
+    "速度档位说明": "Thông tin mức tốc độ",
+    "当前速度档位不可用": "Mức tốc độ này không khả dụng",
+    "按模型开放加速档位": "Bật mức tốc độ theo mô hình",
+    "加速档位配置必须是模型到档位列表的JSON对象": "Cấu hình phải là đối tượng JSON ánh xạ mô hình tới danh sách mức tốc độ",
+    "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Tăng tốc có giá gấp 2 hoặc 6 lần giá tiêu chuẩn của nhóm đã chọn, độc lập với mức suy luận.",
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority tính gấp 2, ultrafast gấp 6; chỉ nhập mô hình đã xác minh trên kênh này."
   }
 }

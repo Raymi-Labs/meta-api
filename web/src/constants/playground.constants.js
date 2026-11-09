@@ -83,6 +83,7 @@ export const API_ENDPOINTS = {
 // ========== 配置默认值 ==========
 export const DEFAULT_CONFIG = {
   inputs: {
+    serviceTier: 'default',
     model: 'gpt-4o',
     modelTabs: [],
     systemPrompt: '',

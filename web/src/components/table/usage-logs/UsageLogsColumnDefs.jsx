@@ -498,6 +498,8 @@ function getUsageLogDetailSummary(record, text, billingDisplayMode, t) {
     return {
       segments: [
         ...renderTieredModelPriceSimple(summaryOpts),
+        ['priority', 'ultrafast'].includes(other?.requested_service_tier) && Number.isFinite(other?.service_tier_multiplier)
+          ? {text: `${other.requested_service_tier === 'priority' ? 'Fast' : 'UltraFast'} ×${other.service_tier_multiplier}`, tone:'primary'} : null,
         timeRatioSegment,
         imageGenerationSegment,
       ].filter(Boolean),

@@ -11,6 +11,7 @@ const calls = [],
   held = [],
   errors = [];
 let hold = false;
+let offeredTiers = ['default', 'priority', 'ultrafast'];
 let failModel = null;
 const sockets = new Set();
 const server = createServer(async (req, res) => {
@@ -151,6 +152,16 @@ try {
           data = await page.evaluate(() =>
             JSON.parse(localStorage.getItem('user')),
           );
+        if (u.pathname === '/api/user/service-tiers')
+          data = {
+            model: u.searchParams.get('model'),
+            group: u.searchParams.get('group'),
+            managed: true,
+            tiers: offeredTiers.map((id) => ({
+              id,
+              multiplier: { default: 1, priority: 2, ultrafast: 6 }[id],
+            })),
+          };
         if (u.pathname === '/api/user/models')
           data =
             u.searchParams.get('group') === 'limited'
@@ -946,6 +957,66 @@ try {
       e.textContent.includes('answer-model-a'),
     )),
   );
+  // Paid service tier UI sends exact values, persists intent, and never silently downgrades.
+  await page.setViewport({ width: 1440, height: 1000 });
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
+  await page.waitForSelector('#pg-service-tier:not(:disabled)');
+  await page.select('#pg-service-tier', 'priority');
+  await page.screenshot({ path: '/tmp/muze-service-tier-desktop.png' });
+  await send('Fast fixture');
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="停止生成"]'),
+  );
+  await saved();
+  assert.equal(calls.at(-1).payload.service_tier, 'priority');
+  await page.select('#pg-service-tier', 'ultrafast');
+  await send('UltraFast fixture');
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="停止生成"]'),
+  );
+  await saved();
+  assert.equal(calls.at(-1).payload.service_tier, 'ultrafast');
+  await page.setViewport({ width: 390, height: 900 });
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
+  await page.waitForFunction(() => {
+    const r = document
+      .querySelector('#pg-service-tier')
+      ?.getBoundingClientRect();
+    return r && r.left >= 0 && r.right <= innerWidth;
+  });
+  await page.waitForSelector('.semi-sidesheet', {visible:true});
+  await page.waitForFunction(()=>{const r=document.querySelector('#pg-service-tier')?.getBoundingClientRect();return r&&r.left>=0&&r.right<=innerWidth&&r.width>150;});
+  await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.setAttribute('theme-mode','dark');});
+  await page.screenshot({ path: '/tmp/muze-service-tier-mobile.png' });
+  const callsBeforeLostCapability = calls.length;
+  offeredTiers = ['default'];
+  await page.setViewport({ width: 1440, height: 1000 });
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ready();
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
+  await page.waitForSelector('#pg-service-tier[aria-invalid="true"]');
+  assert.equal(
+    await page.$eval('#pg-service-tier', (e) => e.value),
+    'ultrafast',
+  );
+  await page.click('.pg-docked-settings [aria-label="关闭设置"]');
+  await page.type(active + ' .pg-composer textarea', 'Must not downgrade');
+  await page.click(active + ' button[aria-label="发送"]');
+  assert.equal(calls.length, callsBeforeLostCapability);
+  await page.click('.pg-tool-rail [aria-label="对话设置"]');
+  await page.select('#pg-service-tier', 'default');
+  await page.click('.pg-docked-settings [aria-label="关闭设置"]');
+  await page.click(active + ' button[aria-label="发送"]');
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="停止生成"]'),
+  );
+  await saved();
+  assert.equal(calls.length, callsBeforeLostCapability + 1);
+  assert(!('service_tier' in calls.at(-1).payload));
   assert.deepEqual(errors, []);
   console.log(
     'PASS local conversations: independent context/IDs, background stream, send lock, reload interruption, account/tab isolation, rename/search/import/delete, storage failure, 5 models, nonstream stop, mobile.',

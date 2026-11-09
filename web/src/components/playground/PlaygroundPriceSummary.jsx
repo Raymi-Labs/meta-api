@@ -31,9 +31,16 @@ export default function PlaygroundPriceSummary({
   group,
   catalogState,
   compact = false,
+  serviceTier = 'default',
 }) {
   const { t } = useTranslation();
   const catalog = catalogState.catalog;
+  const tierLabel =
+    serviceTier === 'priority'
+      ? 'Fast ×2'
+      : serviceTier === 'ultrafast'
+        ? 'UltraFast ×6'
+        : '';
   if (
     catalogState.loading ||
     catalogState.error ||
@@ -60,7 +67,12 @@ export default function PlaygroundPriceSummary({
   const currency = readPlaygroundCurrency();
   if (compact) {
     if (pricing.data.isDynamicPricing)
-      return <span className='pg-compact-price'>{t('动态计费')}</span>;
+      return (
+        <span className='pg-compact-price'>
+          {t('动态计费')}
+          {tierLabel && ` · ${tierLabel}`}
+        </span>
+      );
     const amounts = items.map((item) => ({
       ...item,
       money: playgroundMoney(
@@ -101,7 +113,7 @@ export default function PlaygroundPriceSummary({
     >
       {pricing.data.isDynamicPricing ? (
         <span>
-          {t('动态计费')} · {t('见价格详情')}
+          {t('动态计费')} · {tierLabel || t('见价格详情')}
         </span>
       ) : (
         items.map((item) => {

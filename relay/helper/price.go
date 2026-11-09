@@ -196,6 +196,13 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 
 	// Check if this model uses tiered_expr billing
 	billingMode, exprStr := billing_setting.GetBillingConfig(info.OriginModelName)
+	if info.ServiceTierMultiplier() > 1 {
+		if billingMode != billing_setting.BillingModeTieredExpr || strings.Contains(exprStr, "service_tier") {
+			return types.PriceData{}, types.NewErrorWithStatusCode(fmt.Errorf("paid service tier requires a base expression without its own service_tier multiplier"), types.ErrorCode("service_tier_pricing_unavailable"), 503, types.ErrOptionWithSkipRetry())
+		}
+		_, baseExpr := billingexpr.ParseExprVersion(exprStr)
+		exprStr = fmt.Sprintf("(%s) * %g", baseExpr, info.ServiceTierMultiplier())
+	}
 	if billingMode == billing_setting.BillingModeTieredExpr {
 		if exprStr == "" {
 			return types.PriceData{}, fmt.Errorf("model %s is configured as tiered_expr but has no billing expression", info.OriginModelName)

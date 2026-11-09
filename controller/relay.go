@@ -152,6 +152,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}
 
 	var healthRequest *grouphealth.Request
+	relayInfo.ManagedServiceTier = c.GetBool(service.ManagedServiceTierKey)
+	relayInfo.RequestedServiceTier = c.GetString(service.RequestedServiceTierKey)
 	var healthWriter *groupHealthWriter
 	var routeTracker *routeAttemptTracker
 	if grouphealth.SupportsRequest(c.Request.Method, c.Request.URL.Path) {
@@ -609,7 +611,7 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 			// 不能继续反复返回 Context 中同一个渠道。
 			info.ChannelMeta = &relaycommon.ChannelMeta{}
 		} else if selected, err := model.CacheGetChannel(channelID); err == nil && selected != nil {
-			if service.IsChannelModelCircuitOpen(selected, retryParam.ModelName) {
+			if service.IsChannelModelCircuitOpen(selected, retryParam.ModelName) || !service.ChannelAllowsRequestedServiceTier(c, selected, retryParam.ModelName) {
 				retryParam.ExcludeChannels = appendUniqueInt(retryParam.ExcludeChannels, channelID)
 				info.ChannelMeta = &relaycommon.ChannelMeta{}
 			} else {
@@ -618,6 +620,9 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 		}
 	}
 	if info.ChannelMeta == nil {
+		if info.ManagedServiceTier && info.ServiceTierMultiplier() > 1 {
+			return nil, types.NewErrorWithStatusCode(fmt.Errorf("selected service tier channel cannot be verified"), types.ErrorCode("service_tier_unavailable"), http.StatusServiceUnavailable, types.ErrOptionWithSkipRetry())
+		}
 		autoBan := c.GetBool("auto_ban")
 		autoBanInt := 1
 		if !autoBan {

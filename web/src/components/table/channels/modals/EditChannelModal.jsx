@@ -224,6 +224,7 @@ const EditChannelModal = (props) => {
     is_enterprise_account: false,
     // 字段透传控制默认值
     allow_service_tier: false,
+    paid_service_tiers_json: '',
     disable_store: false, // false = 允许透传（默认开启）
     allow_safety_identifier: false,
     allow_include_obfuscation: false,
@@ -936,6 +937,7 @@ const EditChannelModal = (props) => {
             parsedSettings.openrouter_enterprise === true;
           // 读取字段透传控制设置
           data.allow_service_tier = parsedSettings.allow_service_tier || false;
+          data.paid_service_tiers_json = parsedSettings.paid_service_tiers ? JSON.stringify(parsedSettings.paid_service_tiers, null, 2) : '';
           data.disable_store = parsedSettings.disable_store || false;
           data.allow_safety_identifier =
             parsedSettings.allow_safety_identifier || false;
@@ -975,6 +977,7 @@ const EditChannelModal = (props) => {
           data.aws_key_type = 'ak_sk';
           data.is_enterprise_account = false;
           data.allow_service_tier = false;
+          data.paid_service_tiers_json = '';
           data.disable_store = false;
           data.allow_safety_identifier = false;
           data.allow_include_obfuscation = false;
@@ -996,6 +999,7 @@ const EditChannelModal = (props) => {
         data.aws_key_type = 'ak_sk';
         data.is_enterprise_account = false;
         data.allow_service_tier = false;
+          data.paid_service_tiers_json = '';
         data.disable_store = false;
         data.allow_safety_identifier = false;
         data.allow_include_obfuscation = false;
@@ -1979,6 +1983,15 @@ const EditChannelModal = (props) => {
 
     // 处理 settings 字段（包括企业账户设置和字段透传控制）
     let settings = parseChannelJsonObject(localInputs.settings);
+    if (localInputs.type === 1) {
+      try {
+        const tiers = JSON.parse(localInputs.paid_service_tiers_json || '{}');
+        if (!tiers || typeof tiers !== 'object' || Array.isArray(tiers)) throw new Error();
+        if (Object.keys(tiers).length) settings.paid_service_tiers = tiers;
+        else delete settings.paid_service_tiers;
+      } catch { showError(t('加速档位配置必须是模型到档位列表的JSON对象')); return; }
+    } else delete settings.paid_service_tiers;
+
 
     // type === 20: 设置企业账户标识，无论是true还是false都要传到后端
     if (localInputs.type === 20) {
@@ -2088,6 +2101,7 @@ const EditChannelModal = (props) => {
     delete localInputs.aws_key_type;
     // 清理字段透传控制的临时字段
     delete localInputs.allow_service_tier;
+    delete localInputs.paid_service_tiers_json;
     delete localInputs.disable_store;
     delete localInputs.allow_safety_identifier;
     delete localInputs.allow_include_obfuscation;
@@ -4241,6 +4255,14 @@ const EditChannelModal = (props) => {
                           )}
                         />
 
+                        <Form.TextArea
+                          field='paid_service_tiers_json'
+                          label={t('按模型开放加速档位')}
+                          placeholder={'{"gpt-6-astra":["priority","ultrafast"]}'}
+                          autosize={{minRows:2,maxRows:6}}
+                          onChange={value => setInputs(prev=>({...prev,paid_service_tiers_json:value}))}
+                          extraText={t('priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。')}
+                        />
                         <Form.Switch
                           field='disable_store'
                           label={t('禁用 store 透传')}

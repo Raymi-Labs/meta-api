@@ -121,6 +121,7 @@ export function convertPlaygroundPayload(payload, protocol = 'chat') {
   ]);
   if (protocol === 'responses') {
     allowed.add('reasoning_effort');
+    allowed.add('service_tier');
     allowed.add('response_format');
   } else allowed.add('stop');
   for (const [key, value] of Object.entries(source)) {
@@ -155,6 +156,7 @@ export function convertPlaygroundPayload(payload, protocol = 'chat') {
         ? source.stop
         : [source.stop];
   } else {
+    if (defined(source.service_tier)) body.service_tier = source.service_tier;
     if (defined(limit)) body.max_output_tokens = limit;
     if (source.reasoning_effort)
       body.reasoning = { effort: source.reasoning_effort };

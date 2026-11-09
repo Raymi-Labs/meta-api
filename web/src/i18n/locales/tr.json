@@ -7266,6 +7266,14 @@
     "用户分组名单，格式为 JSON 字符串，例如：{\"default\": \"默认用户\", \"vip\": \"VIP 用户\"}。必须包含 default，名称不能与渠道分组重复（default 除外）": "Kullanıcı grubu listesi JSON dizesi olarak, örneğin: {\"default\": \"Varsayılan kullanıcı\", \"vip\": \"VIP kullanıcı\"}. default içermelidir ve adlar kanal grubu adlarıyla aynı olamaz (default hariç)",
     "在「用户分组」中登记，由管理员在用户管理中分配或由订阅套餐升级，决定用户身份等级（如 default、vip），本身不对应渠道。": "\"Kullanıcı Grupları\"nda kaydedilir, yönetici tarafından kullanıcı yönetiminde atanır veya bir abonelik planıyla yükseltilir. Kullanıcının kimlik seviyesini (ör. default, vip) belirler ve kendisi bir kanala karşılık gelmez.",
     "在「渠道分组」中维护。渠道选择所属的渠道分组，用户创建令牌时从勾选了「用户可选」的渠道分组中选择，决定请求走哪些渠道和计费倍率。一个用户可以创建多个令牌，使用不同分组。": "\"Kanal Grupları\"nda yönetilir. Kanal ait olduğu kanal grubunu seçer; token oluştururken kullanıcılar \"Kullanıcı isteğe bağlı\" işaretli kanal grupları arasından seçim yapar. Grup, isteklerin hangi kanallara yönlendirileceğini ve faturalama oranını belirler. Bir kullanıcı farklı gruplar kullanan birden çok token oluşturabilir.",
-    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "\"Kullanıcı isteğe bağlı\" işaretlenmemiş kanal grupları kullanıcının açılır listesinde görünmez ve yalnızca \"Mevcut özel gruplar\" aracılığıyla belirli kullanıcı gruplarına açılabilir. Kullanıcı düzeyine göre hat açma veya kullanıcıların serbestçe seçmemesi gereken dahili testler gibi durumlar için uygundur."
+    "未勾选「用户可选」的渠道分组不会出现在用户的下拉框里，只能通过「分组特殊可用分组」开放给指定的用户分组。适用于按用户等级开放线路、内部测试等不希望用户自主选择的场景。": "\"Kullanıcı isteğe bağlı\" işaretlenmemiş kanal grupları kullanıcının açılır listesinde görünmez ve yalnızca \"Mevcut özel gruplar\" aracılığıyla belirli kullanıcı gruplarına açılabilir. Kullanıcı düzeyine göre hat açma veya kullanıcıların serbestçe seçmemesi gereken dahili testler gibi durumlar için uygundur.",
+    "标准": "Standart",
+    "速度档位": "Hız seviyesi",
+    "速度档位说明": "Hız seviyeleri hakkında",
+    "当前速度档位不可用": "Bu hız seviyesi kullanılamıyor",
+    "按模型开放加速档位": "Model başına seviyeleri aç",
+    "加速档位配置必须是模型到档位列表的JSON对象": "Ayarlar, modelleri seviye listeleriyle eşleyen bir JSON nesnesi olmalıdır",
+    "加速按所选分组普通价的2倍或6倍计费，与推理强度独立。": "Hızlandırma, seçilen grubun standart fiyatının 2 veya 6 katıdır ve akıl yürütme düzeyinden bağımsızdır.",
+    "priority按2倍、ultrafast按6倍计费；仅填写本渠道已验证支持的模型。": "priority 2×, ultrafast 6× ücretlidir; yalnızca bu kanalda doğrulanmış modelleri girin."
   }
 }

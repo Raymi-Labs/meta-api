@@ -21,6 +21,7 @@ import React from 'react';
 import { Tooltip } from '@douyinfe/semi-ui';
 import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ServiceTierControl from './ServiceTierControl';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
@@ -50,6 +51,7 @@ export default function SettingsPanel({
   catalogState,
   comparison,
   localSession = false,
+  serviceTierCapability,
 }) {
   const { t } = useTranslation();
   const currentConfig = {
@@ -98,6 +100,18 @@ export default function SettingsPanel({
           {t('关闭图片和工具')}
         </button>
       )}
+      {!comparison &&
+        !customRequestMode &&
+        serviceTierCapability &&
+        (serviceTierCapability.managed ||
+          (inputs.serviceTier && inputs.serviceTier !== 'default')) && (
+          <ServiceTierControl
+            value={inputs.serviceTier}
+            capability={serviceTierCapability}
+            onChange={(value) => onInputChange('serviceTier', value)}
+            disabled={customRequestMode}
+          />
+        )}
       <CapabilitySettings
         inputs={inputs}
         model={comparison ? null : model}
@@ -178,6 +192,11 @@ export default function SettingsPanel({
               {formatModelTokenLimit(inspected?.context_length)}
             </span>
             <PlaygroundPriceSummary
+              serviceTier={
+                !comparison && serviceTierCapability?.allows(inputs.serviceTier)
+                  ? inputs.serviceTier
+                  : 'default'
+              }
               compact
               model={inspected}
               group={inputs.group}
