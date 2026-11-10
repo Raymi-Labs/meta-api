@@ -18,6 +18,12 @@ Kling 无图请求同时更新真实 action（避免只改 context 导致走 ima
 
 模板只对已注册协议家族提供，不对安全识别范围内的 Runway/Luma/HappyHorse 等暗示可用。新模板在目录/详情标明视频参数计费，不把配置预览0元或文本Token首档当视频售价；尚未实现公开交互报价器。表单生成同步更新父表单，保存/重开保留完整表达式和现有附加规则，17种语言同步。
 
+## 同源成片接口鉴权
+
+豆包视频及火山通用渠道返回的结果可能是同源 `/v1/videos/{upstreamTaskID}/content`，而不是公开 CDN。下载代理只在配置上游的 scheme/host/port 与结果 URL 一致、路径与本任务精确匹配、无 userinfo/query/fragment 时发送已保存的提交 Key，并复用现有 `DoTaskContentRequest` 的头覆盖与跨域跳转保护。外部 CDN、其他任务和其他路径继续匿名下载。不能把所有结果 URL 都加上 Authorization，也不能为取片把视频提交协议改成 Sora。
+
+线上对照已复现：原上游 Key 直连同一任务返回 MP4，元衡返回上游401；无 Key 直连同样401。`TestDoubaoVideoProxyContentAuthentication` 在真实 VideoProxy 路径复现并覆盖密钥轮换后优先使用任务 Key、任务用户身份、CDN隔离及跳转拒绝；URL矩阵覆盖端口/协议/编码路径边界。本修复本地验证不等于已部署，线上仍需在发布后只下载原任务验收，不重新付费生成。
+
 ## Alternatives considered
 
 - 为每家复制计价流程可快速覆盖但会分裂金额口径，因此共享规范快照。

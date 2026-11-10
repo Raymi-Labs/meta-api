@@ -162,6 +162,10 @@ func VideoProxy(c *gin.Context) {
 		videoProxyError(c, http.StatusInternalServerError, "server_error", "Failed to create proxy request")
 		return
 	}
+	if isDoubaoTaskContentURL(channel.Type, baseURL, task.GetUpstreamTaskID(), req.URL) {
+		req.Header.Set("Authorization", "Bearer "+contentKey)
+		credentialedContent = true
+	}
 	if channel.Type == constant.ChannelTypeGemini {
 		// Provider results may point at an external signed CDN URL. Only the
 		// configured origin receives our credentials or channel-private overrides.
@@ -182,7 +186,7 @@ func VideoProxy(c *gin.Context) {
 	}
 
 	var releaseSlot func()
-	if channel.Type == constant.ChannelTypeGemini || channel.Type == constant.ChannelTypeVertexAi || channel.Type == constant.ChannelTypeOpenAI || channel.Type == constant.ChannelTypeSora {
+	if credentialedContent || channel.Type == constant.ChannelTypeGemini || channel.Type == constant.ChannelTypeVertexAi || channel.Type == constant.ChannelTypeOpenAI || channel.Type == constant.ChannelTypeSora {
 		var capacityErr *types.NewAPIError
 		releaseSlot, capacityErr = acquireFixedChannelCapacityWithWait(c, channel)
 		if capacityErr != nil {
@@ -266,4 +270,24 @@ func decodeVideoDataURL(dataURL string) (string, []byte, error) {
 		return "", nil, fmt.Errorf("invalid video base64 payload")
 	}
 	return mimeType, videoBytes, nil
+}
+
+// Only the configured origin's content endpoint for this task may receive the
+// saved submission key. Provider result URLs can otherwise be third-party CDNs.
+func isDoubaoTaskContentURL(channelType int, baseURL, taskID string, target *url.URL) bool {
+	if channelType != constant.ChannelTypeDoubaoVideo && channelType != constant.ChannelTypeVolcEngine {
+		return false
+	}
+	if target == nil || taskID == "" || strings.ContainsAny(taskID, "/\\?#%") {
+		return false
+	}
+	origin, err := url.Parse(baseURL)
+	if err != nil || (origin.Scheme != "https" && origin.Scheme != "http") || origin.Host == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" {
+		return false
+	}
+	if target.Scheme != origin.Scheme || !strings.EqualFold(target.Host, origin.Host) || target.User != nil || target.RawQuery != "" || target.Fragment != "" {
+		return false
+	}
+	expected := strings.TrimRight(origin.EscapedPath(), "/") + "/v1/videos/" + url.PathEscape(taskID) + "/content"
+	return target.EscapedPath() == expected
 }
