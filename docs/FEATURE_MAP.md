@@ -249,3 +249,5 @@
 共享控制台顶栏与公开页面顶栏在通知与账户之间复用 [HeaderBalance](../web/src/components/layout/headerbar/HeaderBalance.jsx)，读取 UserContext 并沿用钱包 renderQuota。登录才显示，未知金额为 —；点击进入现有钱包；跟随原账户/钱包刷新，不新增请求或轮询。币种和有效预警阈值沿用既有配置，不改计费、支付、权限或用户设置。见[决策](../.agents/notes/implemented/feature/2026-11-02-header-balance.md)。
 
 | 视频上游信息隔离 | [公开响应](../service/public_video.go)、[任务查询](../relay/relay_task.go)、[下载代理](../controller/video_proxy.go) | 普通用户只获得公开任务号、规范状态/媒体参数及元衡下载地址；原始上游数据保留给服务端/管理员 | 覆盖统一/兼容查询、用户任务列表、Sora提交及错误、下载响应头；取片校验所属用户或管理员，私有禁缓存；不新增匿名下载授权。见[决策](../.agents/notes/implemented/bug-fix/2026-11-10-video-public-boundary.md) |
+
+| 媒体Skill参数保留 | [视频参数](../scripts/meta-api-video/scripts/meta_api_video.py)、[合并包](../web/public/downloads/meta-api-imagegen-skill.zip)、[GIF配置说明](installation/gif-parameter-overrides.md) | 模型/时长/分辨率/比例/参考图不再被实测白名单拦截；显式视频协议与原生Gemini参考图；GIF自定义帧参数 | 真实能力由接口返回；保留Veo退役与一次提交、原凭据恢复/资源保护；线上渠道覆盖不自动迁移。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-media-skill-parameters.md) |

@@ -229,14 +229,19 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertFalse(self.state.exists())
 
-    def test_1080p_requires_explicit_video_15_model(self):
-        args = self.args("--model", "grok-imagine-video-1.5", "--resolution", "1080p", "--dry-run")
-        self.assertEqual(video.payload_for(args)["resolution"], "1080p")
-        self.assertEqual(self.run_request(args, []), 0)
-        with self.assertRaises(video.VideoError):
-            self.run_request(self.args("--resolution", "1080p"), [])
+    def test_user_video_parameters_and_new_models_are_forwarded(self):
+        for model in (*video.MODELS, "sora-2", "new-video-model"):
+            args = self.args("--model", model, "--resolution", "2160p", "--duration", "181", "--aspect-ratio", "4:3", "--dry-run")
+            body = video.payload_for(args)
+            self.assertEqual(body["model"], model)
+            self.assertEqual(body["resolution"], "2160p")
+            self.assertEqual(str(body.get("seconds", body.get("duration"))), "181")
+            self.assertEqual(body.get("aspect_ratio", body.get("metadata", {}).get("ratio")), "4:3")
+            self.assertNotIn("size", body)
+        body = video.payload_for(self.args("--model", "new-video-model", "--protocol", "xai", "--resolution", "1080p"))
+        self.assertIn("duration", body)
+        self.assertNotIn("seconds", body)
         self.assertEqual(self.calls, [])
-        self.assertFalse(self.state.exists())
 
     def test_compatible_video_profiles_use_seconds_and_size(self):
         for name, resolution, size in [("flow-video-gemini-omni-flash-1.1", "720p", "1280x720"), ("flow-video-gemini-omni-flash-1.1-1080p", "1080p", "1920x1080"), ("muse-video", "720p", "1280x720"), ("snow-grok-imagine-video", "720p", "1280x720")]:
@@ -246,8 +251,7 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(payload["size"], size)
             self.assertEqual(args.resolution, resolution)
             self.assertNotIn("duration", payload)
-        with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "muse-video", "--duration", "181"))
+        self.assertEqual(video.payload_for(self.args("--model", "muse-video", "--duration", "181"))["seconds"], "181")
 
     def test_muse_declared_range_preserves_request_and_rejects_invalid_specs(self):
         for duration in (4, 5, 8, 16, 30, 31, 60, 180):
@@ -257,12 +261,11 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(payload["size"], "1280x720")
         portrait = video.payload_for(self.args("--model", "muse-video", "--duration", "8", "--aspect-ratio", "9:16"))
         self.assertEqual(portrait["size"], "720x1280")
-        for options in (("--duration", "3"), ("--duration", "181"), ("--duration", "0"),
-                        ("--resolution", "1080p"), ("--resolution", "480p"), ("--aspect-ratio", "1:1")):
-            with self.subTest(options=options), self.assertRaises(video.VideoError):
-                self.run_request(self.args("--model", "muse-video", *options), [])
+        for options in (("--duration", "3"), ("--duration", "181"), ("--resolution", "1080p"), ("--aspect-ratio", "1:1")):
+            video.payload_for(self.args("--model", "muse-video", *options))
+        with self.assertRaises(video.VideoError):
+            video.payload_for(self.args("--model", "muse-video", "--duration", "0"))
         self.assertEqual(self.calls, [])
-        self.assertFalse(self.state.exists())
 
     def test_muse_long_request_single_submit_and_no_actual_duration_claim(self):
         args = self.args("--model", "muse-video", "--duration", "180")
@@ -378,21 +381,17 @@ class VideoTests(unittest.TestCase):
         self.assertNotIn("data:image", self.stdout.getvalue())
         self.assertFalse(self.state.exists())
         self.assertEqual(self.calls, [])
-        for options in [("--images", *paths, paths[0]), ("--image", paths[0], "--images", paths[1]),
-                        ("--prompt", "x" * 4001), ("--duration", "181")]:
-            with self.assertRaises(video.VideoError):
-                video.payload_for(self.args("--model", "muse-video", *options))
+        for model in video.MODELS:
+            body = video.payload_for(self.args("--model", model, "--images", *paths, paths[0], "--prompt", "x" * 4001))
+            self.assertEqual(len(body["images"]), 5)
         with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "grok-imagine-video", "--images", paths[0]))
+            video.payload_for(self.args("--image", paths[0], "--images", paths[1]))
 
-    def test_muse_image_size_limits(self):
+    def test_reference_memory_limits_are_local_protection(self):
         image = Path(self.tmp.name) / "large.png"
-        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 10_000_000)
-        with self.assertRaises(video.VideoError):
-            video.payload_for(self.args("--model", "muse-video", "--image", str(image)))
-        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 8_000_000)
-        with self.assertRaisesRegex(video.VideoError, "24 MB"):
-            video.payload_for(self.args("--model", "muse-video", "--images", str(image), str(image), str(image)))
+        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 17_000_000)
+        with self.assertRaisesRegex(video.VideoError, "memory"):
+            video.payload_for(self.args("--model", "muse-video", "--images", *([str(image)] * 4)))
         self.assertEqual(self.calls, [])
 
     def test_muse_long_default_wait_and_resume(self):
@@ -474,8 +473,8 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(list(Path(self.tmp.name).glob(".video-download-*")),[])
 
     def test_invalid_inputs_do_not_submit(self):
-        for extra in [("--model", "sora-2"), ("--prompt", " "), ("--duration", "0"),
-                      ("--duration", "16"), ("--base-url", "https://attacker.invalid"),
+        for extra in [("--model", "invalid model"), ("--prompt", " "), ("--duration", "0"),
+                      ("--duration", "-1"), ("--base-url", "https://attacker.invalid"),
                       ("--base-url", "https://key@meta-api.vip"), ("--base-url", "https://meta-api.vip/?key=x")]:
             with self.subTest(extra=extra), self.assertRaises(video.VideoError):
                 self.run_request(self.args(*extra), [])

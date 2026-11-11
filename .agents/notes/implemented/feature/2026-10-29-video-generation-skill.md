@@ -60,3 +60,7 @@ The combined installed image/video Skill keeps its existing credential integrati
 Validation: 43 standalone video tests, 47 combined video tests and 124 image tests (one platform-specific skip) pass. Both skill validators pass. Fresh archive extraction checks .com Seedance dry runs, source-byte parity and no credentials/state/network side effects. Tests exercise successful delivery, provider URL suppression, legacy-origin recovery and preservation of explicit Seedance settings and format validation. Server deployment remains a user action; an updated repository/archive does not imply the website has deployed it.
 
 User correction: fixed-profile rejection was too restrictive. Defaults remain unchanged; explicit positive integer duration, 1080p, supported CLI ratios and local reference images are forwarded. Provider acceptance is reported from the actual response, never inferred from the absence of a prior test. No new live generation was performed to broaden the client parameter handling. This supersedes the earlier fixed-profile guard, not single-submit, credential or recovery protections.
+
+## 参数策略取代说明（2026-11-11）
+
+历史固定profile/未实测型号门禁已由[参数策略](../bug-fix/2026-11-11-media-skill-parameters.md)取代。默认值与过去验收证据保留，但不用于禁止明确参数；未知型号可选择协议后提交，保留Veo退役、一次POST、凭据保护与恢复规则。

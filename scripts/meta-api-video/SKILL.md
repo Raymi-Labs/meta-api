@@ -1,29 +1,25 @@
 ---
 name: meta-api-video
-description: Generate YuanHeng videos from text or reference images, resume existing tasks and download completed MP4s without resubmitting. Supports Muse, Grok, Seedance 2.5 and verified Omni profiles; questions or installation do not authorize paid generation.
+description: Generate YuanHeng videos from text or reference images, resume existing tasks and download completed MP4s without resubmitting. Maps Muse, Grok, Seedance 2.5, Omni and explicit compatible model IDs; questions or installation do not authorize paid generation.
 ---
 
 # YuanHeng video
 
 Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependencies. Keep the conversation model unchanged. Use the user's YuanHeng origin (default https://meta-api.com) and `META_API_KEY` from the child process environment. Never put credentials in command arguments, saved state, logs or CDN URLs. No extra permission/quote API lookup is required by this workflow.
 
-## Supported input and acceptance boundaries
+## Parameters and request mapping
 
-- `doubao-seedance-2-5-260628` (Seedance 2.5): defaults to 4 seconds/720p/16:9. Honor explicit duration, resolution (including 1080p), ratio and PNG/JPEG/WebP reference images; send `seconds`, `resolution`, `metadata.ratio/generate_audio/watermark` and `images`. The user key needs the enterprise group. The 720p production sample succeeded; other parameters are not live-verified here, but that is evidence context, not a reason to reject or downgrade the user's request. Upstream validation remains authoritative.
-- New video tasks default to `https://meta-api.com`; explicitly supplied legacy YuanHeng origins remain supported. Resume/download-only always retain the saved origin and credential. Completed-task output uses the original gateway content URL and marks it as requiring authentication; provider URLs are never printed or followed.
+Preserve the user's model ID, duration, resolution, aspect ratio and references. A prior successful sample is evidence, never a capability gate. Defaults are preferences, not upper limits. Let the endpoint report unsupported settings; never downgrade, switch protocols or submit again automatically.
 
-- Muse `muse-video`: integer requests 4–180 seconds, default 4, 720p, 16:9 or 9:16. One first frame via `--image`, or 1–4 ordered files via `--images`, never both. PNG/JPEG/WebP, at most 10,000,000 bytes each and 24,000,000 total; prompt at most 4000 characters.
-- The first Muse image is the first frame; later images guide subjects, scenery or style, not the final frame. Do not silently resize, omit, combine or replace references.
-- Muse 60-second production acceptance through this YuanHeng workflow completed in 526 seconds, yielding an actual 60-second 1280x720/24fps MP4 with one audio track. Four inputs including WebP were accepted, but later reference elements did not visibly appear in sampled frames. Do not claim reliable four-image adherence. 180 seconds remains supplier-declared, not live-verified here.
-- Muse above 30 seconds is supplier-stitched from shorter segments, not a guaranteed continuous shot. Describe scenes in roughly 30-second sections. Actual durations can round upward; inspect the file rather than treating task seconds/size as output proof.
-- `grok-imagine-video`: 1–15 seconds, 480p/720p, default 1 second/480p/16:9 in this standalone package. The user's installed combined Skill retains its 5-second default. Optional PNG/JPEG `--image` is a first frame; a 1-second production test succeeded, actual 1.042 seconds, 736x400, 24fps.
-- `grok-imagine-video-1.5`: explicit selection, allows 1080p; single-image 1-second/480p recheck succeeded; other settings remain unverified. Grok uses the input image aspect ratio.
-- `flow-video-gemini-omni-flash-1.1`: 4 seconds/720p, text only; full YuanHeng chain verified, actual 4-second 1280x720/24fps.
-- `flow-video-gemini-omni-flash-1.1-1080p`: 4 seconds/1080p, text only; full chain verified, actual about 3.92 seconds/1920x1080/24fps, supplier-upscaled.
-- `snow-grok-imagine-video`: separate supplier alias, text only, 4 seconds/720p.
-- Veo Lite is retired: reject new submissions, retain GET-only recovery of existing tasks. Do not substitute it or reopen unrelated blocked providers.
+- Known Grok IDs default to xAI-style `duration/resolution/aspect_ratio/image`; standalone Grok defaults to 1 second/480p/16:9 (the installed combined Skill retains 5 seconds).
+- Seedance `doubao-seedance-2-5-260628` defaults to 4 seconds/720p/16:9 and uses `seconds/resolution/metadata` plus `images` references.
+- Muse and compatible Omni/Snow models use `seconds/resolution/aspect_ratio` and `input_reference` or `images`. Defaults remain 4 seconds/720p, except the named Omni1080p alias defaults to1080p. Standard size pairs are derived; other resolution/ratio tokens pass through without guessing pixel dimensions. `--size WIDTHxHEIGHT` is available when the endpoint needs explicit pixels.
+- Other full model IDs use the unified OpenAI video request format. Set `--protocol openai|xai|seedance` when the required format is known. `--protocol auto` selects only from existing known mappings; one POST is made to `/v1/videos` with no protocol fallback.
+- Positive integer duration and non-empty resolution/ratio format tokens are accepted. `--image` and `--images` encode local PNG/JPEG/WebP files; reference order is preserved. Keep local file/memory limits, not unverified provider limits.
+- Veo Lite remains retired by the user's explicit decision: existing tasks can be recovered, new submissions are rejected.
+- New tasks default to `https://meta-api.com`; explicit legacy YuanHeng origins remain valid. Resume/download-only retain the original origin and credential. Completed output shows only the original gateway content URL and `requires_authorization:true`, never provider URLs.
 
-When a user asks to animate an image without naming a provider, prefer the verified Muse single-image path and state the choice. Preserve explicit model choices. Do not infer broad stability from one successful sample or from an unspecified user report.
+Previous samples established selected Muse/Grok/Omni/Seedance generation and download paths, not every parameter combination. State an actual failure if the endpoint rejects a request; do not charge for extra exploratory tests unless asked. The user's key must have access to the selected model's group (Seedance currently enterprise).
 
 ## Generate and deliver
 
