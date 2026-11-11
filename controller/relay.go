@@ -1104,6 +1104,21 @@ func RelayTask(c *gin.Context) {
 
 // respondTaskError 统一输出 Task 错误响应（含 429 限流提示改写）
 func respondTaskError(c *gin.Context, taskErr *dto.TaskError) {
+	// Do not expose provider response bodies or transport URLs in public video
+	// errors (including the user-visible request failure record).
+	if c.Request != nil && (strings.HasPrefix(c.Request.URL.Path, "/v1/videos") ||
+		strings.HasPrefix(c.Request.URL.Path, "/v1/video/generations") ||
+		strings.HasPrefix(c.Request.URL.Path, "/kling/v1/videos") ||
+		strings.HasPrefix(c.Request.URL.Path, "/jimeng")) &&
+		(!taskErr.LocalError || taskErr.Code == "task_failed" || taskErr.Code == "invalid_response" || taskErr.Code == "model_mapping_failed" || taskErr.Code == "channel_not_found") {
+		copy := *taskErr
+		copy.Code = "video_request_failed"
+		copy.Message = "Video request failed; contact support with the request ID"
+		copy.Data = nil
+		copy.Error = nil
+		taskErr = &copy
+	}
+
 	cause := error(fmt.Errorf("%s", taskErr.Message))
 	// Keep authoritative local quota facts through the task DTO conversion.
 	if taskErr.LocalError && taskErr.Error != nil {

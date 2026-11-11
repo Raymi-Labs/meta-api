@@ -32,6 +32,7 @@ func (a *videoLookupAdaptor) FetchTask(baseURL, key string, body map[string]any,
 func videoTestContext() (*gin.Context, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Set("id", 42)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/v1/videos/task_vertex/content", nil)
 	ctx.Params = gin.Params{{Key: "task_id", Value: "task_vertex"}}
 	return ctx, recorder
@@ -47,7 +48,7 @@ func TestVertexVideoProxyServesStoredBase64(t *testing.T) {
 		`{"response":{"bytesBase64Encoded":"dmlkZW8","encoding":"webm"}}`,
 		`{"response":{"video":"data:video/mp4;base64,dmlkZW8="}}`,
 	} {
-		task := &model.Task{TaskID: "task_vertex", ChannelId: channel.Id, Status: model.TaskStatusSuccess, Data: []byte(payload)}
+		task := &model.Task{TaskID: "task_vertex", UserId: 42, ChannelId: channel.Id, Status: model.TaskStatusSuccess, Data: []byte(payload)}
 		require.NoError(t, db.Create(task).Error)
 		ctx, recorder := videoTestContext()
 		VideoProxy(ctx)
