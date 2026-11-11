@@ -163,19 +163,23 @@ def payload_for(args):
         raise VideoError("Unsupported video model; use a verified profile.")
     if not args.prompt or not args.prompt.strip():
         raise VideoError("A non-empty prompt is required.")
-    if args.images and args.model != "muse-video":
-        raise VideoError("Multiple references are supported only for Muse.")
+    if args.images and args.model not in {"muse-video", SEEDANCE_MODEL}:
+        raise VideoError("Multiple references are supported for Muse and Seedance.")
     if args.image and args.images:
         raise VideoError("Use either --image or --images, not both.")
     profile = COMPAT_PROFILES.get(args.model)
     args.duration = args.duration if args.duration is not None else (profile[0] if profile else 1)
     args.resolution = args.resolution or (profile[1] if profile else "480p")
     if args.model == SEEDANCE_MODEL:
-        if (args.duration, args.resolution, args.aspect_ratio) != (4, "720p", "16:9") or args.image:
-            raise VideoError("Seedance 2.5 currently has a verified text-only profile: 4 seconds, 720p, 16:9. Other settings are not verified.")
-        return {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration),
-                "resolution": args.resolution,
-                "metadata": {"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False}}
+        if args.duration <= 0:
+            raise VideoError("Duration must be a positive integer.")
+        payload = {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration),
+                   "resolution": args.resolution,
+                   "metadata": {"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False}}
+        refs = args.images or ([args.image] if args.image else [])
+        if refs:
+            payload["images"] = [reference_data_uri(f, allow_webp=True) for f in refs]
+        return payload
     if profile:
         if args.model == "muse-video":
             if not 4 <= args.duration <= 180 or args.resolution != "720p":
@@ -457,8 +461,8 @@ def parser():
     p.add_argument("--base-url", help="YuanHeng API origin, optional /v1 suffix")
     p.add_argument("--model", default=MODEL)
     p.add_argument("--prompt")
-    p.add_argument("--image", help="Local first frame: PNG/JPEG; Muse also accepts WebP")
-    p.add_argument("--images", nargs="+", help="Muse only: 1-4 ordered local PNG/JPEG/WebP references")
+    p.add_argument("--image", help="Local first frame: PNG/JPEG; Muse/Seedance also accept WebP")
+    p.add_argument("--images", nargs="+", help="Ordered local PNG/JPEG/WebP references; Muse accepts 1-4")
     p.add_argument("--duration", type=int, default=None)
     p.add_argument("--aspect-ratio", choices=["16:9", "9:16", "1:1"], default="16:9")
     p.add_argument("--resolution", choices=["480p", "720p", "1080p"], default=None)
