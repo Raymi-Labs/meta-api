@@ -67,6 +67,47 @@ class VideoTests(unittest.TestCase):
                          "task_id": "task_fixture", "phase": "queued", "model": video.MODEL,
                          "credential_fingerprint": hashlib.sha256(KEY.encode()).hexdigest()}, exclusive=True)
 
+    def test_com_origin_and_seedance_verified_payload(self):
+        self.assertEqual(video.normalize_origin("https://meta-api.com/v1"), "https://meta-api.com")
+        self.assertEqual(video.normalize_origin("https://meta-api.vip"), "https://meta-api.vip")
+        for bad in ("https://meta-api.com.evil.invalid", "https://meta-api.com:444", "http://meta-api.com", "https://key@meta-api.com"):
+            with self.assertRaises(video.VideoError):
+                video.normalize_origin(bad)
+        payload = video.payload_for(self.args("--model", video.SEEDANCE_MODEL))
+        self.assertEqual(payload, {"model": video.SEEDANCE_MODEL, "prompt": "private fixture prompt",
+            "seconds": "4", "resolution": "720p",
+            "metadata": {"ratio": "16:9", "generate_audio": True, "watermark": False}})
+        for extra in (("--duration", "8"), ("--resolution", "1080p"), ("--aspect-ratio", "9:16"), ("--image", "missing.png")):
+            with self.assertRaises(video.VideoError):
+                video.payload_for(self.args("--model", video.SEEDANCE_MODEL, *extra))
+
+    def test_seedance_com_delivery_hides_provider_and_posts_once(self):
+        target = Path(self.tmp.name) / "seedance.mp4"
+        with patch.object(video.urllib.request, "build_opener") as factory:
+            factory.return_value.open.return_value = self.response_for_download(self.mp4_fixture())
+            self.assertEqual(self.run_request(self.args("--model", video.SEEDANCE_MODEL, "--out", str(target)), [
+                {"id": "task_fixture"}, {"status": "queued"},
+                {"status": "completed", "metadata": {"url": "https://provider-secret.invalid/token"}}]), 0)
+            request = factory.return_value.open.call_args.args[0]
+            self.assertEqual(request.full_url, "https://meta-api.com/v1/videos/task_fixture/content")
+            self.assertEqual(request.get_header("Authorization"), "Bearer " + KEY)
+            self.assertEqual(request.get_method(), "GET")
+        self.assertEqual(sum(call[3] is not None for call in self.calls), 1)
+        self.assertTrue(all(call[0] == "https://meta-api.com" for call in self.calls))
+        self.assertNotIn("provider-secret", self.state.read_text() + self.stdout.getvalue())
+        self.assertEqual(target.read_bytes(), self.mp4_fixture())
+        self.assert_private()
+
+    def test_old_origin_resume_stays_on_original_gateway(self):
+        self.seed()
+        self.assertEqual(self.run_request(self.args("--resume"), [{"status": "completed",
+            "metadata": {"url": "https://meta-api.com/v1/videos/task_fixture/content"}}]), 0)
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["origin"], "https://meta-api.vip")
+        self.assertEqual(state["url"], "https://meta-api.vip/v1/videos/task_fixture/content")
+        self.assertTrue(state["authenticated_content"])
+        self.assertTrue(all(call[3] is None for call in self.calls))
+
     def test_generation_polls_once_per_state_and_returns_url(self):
         code = self.run_request(self.args(), [{"id": "task_fixture"}, {"status": "queued"},
                     {"status": "in_progress"}, {"status": "completed", "metadata": {"url": "https://example.invalid/video.mp4"}}])
@@ -129,14 +170,21 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(json.loads(self.state.read_text())["phase"], "failed")
         self.assertEqual(len(self.calls), 1)
 
-    def test_false_completion_and_unknown_status_rejected(self):
+    def test_unknown_status_rejected(self):
         self.seed()
-        for response in [{"status": "completed"}, {"status": "mystery"},
-                         {"status": "completed", "metadata": {"url": "file:///tmp/video"}},
-                         {"status": "completed", "metadata": {"url": "https://user:password@example.invalid/v"}}]:
-            with self.subTest(response=response), self.assertRaises(video.VideoError):
-                self.run_request(self.args("--resume"), [response])
+        with self.assertRaises(video.VideoError):
+            self.run_request(self.args("--resume"), [{"status": "mystery"}])
         self.assertNotIn('"phase": "completed"', self.state.read_text())
+
+    def test_completed_ignores_untrusted_or_missing_result_url(self):
+        for metadata in (None, {"url": "file:///private/provider"}, {"url": "https://user:password@provider.invalid/v"}):
+            self.seed()
+            self.assertEqual(self.run_request(self.args("--resume"), [{"status": "completed", "metadata": metadata}]), 0)
+            state = json.loads(self.state.read_text())
+            self.assertEqual(state["url"], "https://meta-api.vip/v1/videos/task_fixture/content")
+            self.assertTrue(state["authenticated_content"])
+            self.assertNotIn("provider", self.state.read_text())
+            self.state.unlink()
 
     def test_mismatched_task_response_is_not_delivered(self):
         self.seed()

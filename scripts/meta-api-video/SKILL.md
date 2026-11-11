@@ -1,13 +1,16 @@
 ---
 name: meta-api-video
-description: Generate YuanHeng videos from text or reference images, resume existing tasks and download completed MP4s without resubmitting. Supports Muse, Grok and verified Omni profiles; questions or installation do not authorize paid generation.
+description: Generate YuanHeng videos from text or reference images, resume existing tasks and download completed MP4s without resubmitting. Supports Muse, Grok, Seedance 2.5 and verified Omni profiles; questions or installation do not authorize paid generation.
 ---
 
 # YuanHeng video
 
-Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependencies. Keep the conversation model unchanged. Use the user's YuanHeng origin (default https://meta-api.vip) and `META_API_KEY` from the child process environment. Never put credentials in command arguments, saved state, logs or CDN URLs. No extra permission/quote API lookup is required by this workflow.
+Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependencies. Keep the conversation model unchanged. Use the user's YuanHeng origin (default https://meta-api.com) and `META_API_KEY` from the child process environment. Never put credentials in command arguments, saved state, logs or CDN URLs. No extra permission/quote API lookup is required by this workflow.
 
 ## Supported input and acceptance boundaries
+
+- `doubao-seedance-2-5-260628` (Seedance 2.5): verified text-only profile, 4 seconds/720p/16:9; sends `seconds`, `resolution`, and `metadata.ratio/generate_audio/watermark`. The user key needs the enterprise group. Original production sample: 1280×720, 4.042 seconds, 24fps; generation and authenticated download succeeded. Reference images and 1080p are not verified by this profile. Preserve an explicit unsupported request and explain the boundary rather than silently downgrade it.
+- New video tasks default to `https://meta-api.com`; explicitly supplied legacy YuanHeng origins remain supported. Resume/download-only always retain the saved origin and credential. Completed-task output uses the original gateway content URL and marks it as requiring authentication; provider URLs are never printed or followed.
 
 - Muse `muse-video`: integer requests 4–180 seconds, default 4, 720p, 16:9 or 9:16. One first frame via `--image`, or 1–4 ordered files via `--images`, never both. PNG/JPEG/WebP, at most 10,000,000 bytes each and 24,000,000 total; prompt at most 4000 characters.
 - The first Muse image is the first frame; later images guide subjects, scenery or style, not the final frame. Do not silently resize, omit, combine or replace references.
@@ -31,6 +34,15 @@ python3 scripts/meta_api_video.py --model muse-video --duration 60 \
   --images first.png character.jpg --resolution 720p --aspect-ratio 16:9 \
   --prompt 'Two scenes of about 30 seconds each: ...' \
   --state output/video/task.json --out output/video/result.mp4
+```
+
+Seedance example (same automatic polling and MP4 delivery):
+
+```bash
+python3 scripts/meta_api_video.py --base-url https://meta-api.com \
+  --model doubao-seedance-2-5-260628 --duration 4 --resolution 720p \
+  --prompt 'A white paper boat floating on a quiet pond.' \
+  --state output/video/seedance-task.json --out output/video/seedance.mp4
 ```
 
 Only one POST is issued. The task ID is saved before polling. Default wait is 1800 seconds for Muse over 30 seconds, otherwise 420; explicit --wait wins. Run in a managed tool session, never detached. Polling uses bounded backoff; up to three consecutive explicit unknown statuses with a matching ID are tolerated without another POST.
