@@ -146,7 +146,7 @@ def reference_data_uri(filename, max_bytes=20 * 1024 * 1024, allow_webp=False, b
     if budget is not None:
         budget[0] -= len(raw)
         if budget[0] < 0:
-            raise VideoError("Muse reference images exceed 24 MB in total.")
+            raise VideoError("Reference images exceed the local request-memory limit.")
     if raw.startswith(b"\x89PNG\r\n\x1a\n"):
         mime = "image/png"
     elif raw.startswith(b"\xff\xd8\xff"):
@@ -154,69 +154,62 @@ def reference_data_uri(filename, max_bytes=20 * 1024 * 1024, allow_webp=False, b
     elif allow_webp and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
         mime = "image/webp"
     else:
-        raise VideoError("Reference must be PNG/JPEG, or WebP for Muse.")
+        raise VideoError("Reference must be PNG, JPEG or WebP.")
     return "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
 
 
 def payload_for(args):
-    if args.model not in MODELS:
-        raise VideoError("Unsupported video model; use a verified profile.")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}", args.model):
+        raise VideoError("Supply a complete model ID.")
+    if args.model == "flow-video-veo-3.1-lite":
+        raise VideoError("Veo Lite is retired by user policy; only existing-task recovery is enabled.")
     if not args.prompt or not args.prompt.strip():
         raise VideoError("A non-empty prompt is required.")
-    if args.images and args.model not in {"muse-video", SEEDANCE_MODEL}:
-        raise VideoError("Multiple references are supported for Muse and Seedance.")
     if args.image and args.images:
         raise VideoError("Use either --image or --images, not both.")
     profile = COMPAT_PROFILES.get(args.model)
-    args.duration = args.duration if args.duration is not None else (profile[0] if profile else 1)
-    args.resolution = args.resolution or (profile[1] if profile else "480p")
-    if args.model == SEEDANCE_MODEL:
-        if args.duration <= 0:
-            raise VideoError("Duration must be a positive integer.")
-        payload = {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration),
-                   "resolution": args.resolution,
-                   "metadata": {"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False}}
-        refs = args.images or ([args.image] if args.image else [])
-        if refs:
-            payload["images"] = [reference_data_uri(f, allow_webp=True) for f in refs]
-        return payload
-    if profile:
-        if args.model == "muse-video":
-            if not 4 <= args.duration <= 180 or args.resolution != "720p":
-                raise VideoError("Muse accepts integer durations 4-180 seconds at 720p; 1080p output is not verified.")
-        elif args.duration != profile[0] or args.resolution != profile[1]:
-            raise VideoError("This model profile only supports the verified duration and resolution.")
-        if args.model != "muse-video" and bool(args.image) != profile[2]:
-            raise VideoError("This profile requires --image." if profile[2] else "This profile does not accept reference images.")
-        if args.aspect_ratio not in {"16:9", "9:16"}:
-            raise VideoError("This profile requires 16:9 or 9:16.")
-        width, height = (1920, 1080) if args.resolution == "1080p" else (1280, 720)
-        if args.aspect_ratio == "9:16":
-            width, height = height, width
-        payload = {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration), "size": f"{width}x{height}"}
-        if args.model == "muse-video":
-            if len(args.prompt) > 4000:
-                raise VideoError("Muse prompt exceeds 4000 characters.")
-            refs = args.images or ([args.image] if args.image else [])
-            if len(refs) > 4:
-                raise VideoError("Muse accepts at most 4 reference images.")
-            budget = [24_000_000]
-            encoded = [reference_data_uri(f, 10_000_000, True, budget) for f in refs]
-            if args.images:
-                payload["images"] = encoded
-            elif encoded:
-                payload["input_reference"] = encoded[0]
-        elif args.image:
-            payload["input_reference"] = reference_data_uri(args.image)
-        return payload
-    if args.resolution == "1080p" and args.model != "grok-imagine-video-1.5":
-        raise VideoError("1080p requires grok-imagine-video-1.5.")
-    if not 1 <= args.duration <= 15:
-        raise VideoError("Duration must be between 1 and 15 seconds; provider limits still apply.")
-    payload = {"model": args.model, "prompt": args.prompt.strip(), "duration": args.duration,
-               "aspect_ratio": args.aspect_ratio, "resolution": args.resolution}
-    if args.image:
-        payload["image"] = {"url": reference_data_uri(args.image)}
+    known_xai = args.model in {MODEL, "grok-imagine-video-1.5"}
+    args.duration = args.duration if args.duration is not None else (profile[0] if profile else (1 if known_xai else 4))
+    args.resolution = args.resolution or (profile[1] if profile else ("480p" if known_xai else "720p"))
+    if args.duration <= 0:
+        raise VideoError("Duration must be a positive integer.")
+    for value in (args.resolution, args.aspect_ratio):
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9:._-]{0,63}", value):
+            raise VideoError("Resolution and aspect ratio must be non-empty format tokens.")
+    if args.size and not re.fullmatch(r"[1-9][0-9]*x[1-9][0-9]*", args.size):
+        raise VideoError("Use --size WIDTHxHEIGHT.")
+    protocol = args.protocol
+    if protocol == "auto":
+        protocol = "seedance" if args.model == SEEDANCE_MODEL else ("xai" if known_xai else "openai")
+    refs = args.images or ([args.image] if args.image else [])
+    budget = [64 * 1024 * 1024]  # local request-memory protection, not a provider limit
+    encoded = [reference_data_uri(f, allow_webp=True, budget=budget) for f in refs]
+    payload = {"model": args.model, "prompt": args.prompt.strip(), "resolution": args.resolution}
+    if protocol == "seedance":
+        payload.update(seconds=str(args.duration), metadata={"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False})
+        if encoded:
+            payload["images"] = encoded
+    elif protocol == "xai":
+        payload.update(duration=args.duration, aspect_ratio=args.aspect_ratio)
+        if args.images:
+            payload["images"] = encoded
+        elif encoded:
+            payload["image"] = {"url": encoded[0]}
+    else:
+        payload.update(seconds=str(args.duration), aspect_ratio=args.aspect_ratio)
+        # Keep the familiar size field for known standard combinations only.
+        # Unknown resolutions/ratios remain explicit tokens, never a 720p fallback.
+        sizes = {("480p", "16:9"): "854x480", ("480p", "9:16"): "480x854",
+                 ("720p", "16:9"): "1280x720", ("720p", "9:16"): "720x1280",
+                 ("1080p", "16:9"): "1920x1080", ("1080p", "9:16"): "1080x1920"}
+        if (args.resolution, args.aspect_ratio) in sizes:
+            payload["size"] = sizes[(args.resolution, args.aspect_ratio)]
+        if args.images:
+            payload["images"] = encoded
+        elif encoded:
+            payload["input_reference"] = encoded[0]
+    if args.size:
+        payload["size"] = args.size
     return payload
 
 
@@ -460,12 +453,14 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--base-url", help="YuanHeng API origin, optional /v1 suffix")
     p.add_argument("--model", default=MODEL)
+    p.add_argument("--protocol", choices=["auto", "openai", "xai", "seedance"], default="auto", help="Request mapping chosen before the single POST; no automatic protocol retry")
+    p.add_argument("--size", help="Explicit WIDTHxHEIGHT, forwarded without changing resolution/ratio")
     p.add_argument("--prompt")
-    p.add_argument("--image", help="Local first frame: PNG/JPEG; Muse/Seedance also accept WebP")
-    p.add_argument("--images", nargs="+", help="Ordered local PNG/JPEG/WebP references; Muse accepts 1-4")
+    p.add_argument("--image", help="Local first reference: PNG/JPEG/WebP")
+    p.add_argument("--images", nargs="+", help="Ordered local PNG/JPEG/WebP references; actual support is determined by the endpoint")
     p.add_argument("--duration", type=int, default=None)
-    p.add_argument("--aspect-ratio", choices=["16:9", "9:16", "1:1"], default="16:9")
-    p.add_argument("--resolution", choices=["480p", "720p", "1080p"], default=None)
+    p.add_argument("--aspect-ratio", default="16:9")
+    p.add_argument("--resolution", default=None)
     p.add_argument("--state", default="output/video/task.json")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--out", help="Stream completed MP4 to a new local path and inspect media metadata")
