@@ -17,10 +17,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-HOSTS = {"meta-api.vip", "cn.meta-api.vip", "nan.meta-api.vip"}
+HOSTS = {"meta-api.com", "meta-api.vip", "cn.meta-api.vip", "nan.meta-api.vip"}
+SEEDANCE_MODEL = "doubao-seedance-2-5-260628"
 MODEL = "grok-imagine-video"
 MODELS = {MODEL, "grok-imagine-video-1.5"}
 COMPAT_PROFILES = {
+    SEEDANCE_MODEL: (4, "720p", False),
     "flow-video-gemini-omni-flash-1.1": (4, "720p", False),
     "flow-video-gemini-omni-flash-1.1-1080p": (4, "1080p", False),
     "muse-video": (4, "720p", False),
@@ -168,6 +170,12 @@ def payload_for(args):
     profile = COMPAT_PROFILES.get(args.model)
     args.duration = args.duration if args.duration is not None else (profile[0] if profile else 1)
     args.resolution = args.resolution or (profile[1] if profile else "480p")
+    if args.model == SEEDANCE_MODEL:
+        if (args.duration, args.resolution, args.aspect_ratio) != (4, "720p", "16:9") or args.image:
+            raise VideoError("Seedance 2.5 currently has a verified text-only profile: 4 seconds, 720p, 16:9. Other settings are not verified.")
+        return {"model": args.model, "prompt": args.prompt.strip(), "seconds": str(args.duration),
+                "resolution": args.resolution,
+                "metadata": {"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False}}
     if profile:
         if args.model == "muse-video":
             if not 4 <= args.duration <= 180 or args.resolution != "720p":
@@ -353,7 +361,7 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
             raise VideoError("Resume must use the original API origin.")
         identifier = task_id(state.get("task_id"))
     else:
-        origin = normalize_origin(args.base_url or "https://meta-api.vip")
+        origin = normalize_origin(args.base_url or "https://meta-api.com")
         payload = payload_for(args)
         if args.model == "muse-video":
             emit(warning="muse_actual_output_may_differ", requested_duration=args.duration,
@@ -422,24 +430,13 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
             if status not in {"queued", "in_progress", "completed", "failed"}:
                 raise VideoError("Unknown task status; keep the task ID and inspect logs.")
             if status == "completed":
-                metadata = response.get("metadata")
-                url = metadata.get("url") if isinstance(metadata, dict) else None
-                if state.get("model") in COMPAT_PROFILES or state.get("model") == "flow-video-veo-3.1-lite":
-                    url = url or response.get("url") or response.get("video_url")
-                    if not url:
-                        url = origin + "/v1/videos/" + identifier + "/content"
-                        state.update(phase="completed", url=url, authenticated_content=True)
-                        save_state(path, state)
-                        emit(phase="completed", task_id=identifier, content_url=url,
-                             requires_authorization=True, state_file=str(path))
-                        return download_artifact(args, state, key)
-                parsed = urllib.parse.urlsplit(url) if isinstance(url, str) else None
-                if (not parsed or parsed.scheme != "https" or not parsed.hostname or
-                        parsed.username or parsed.password or any(ord(c) < 32 for c in url)):
-                    raise VideoError("Completed task has no valid HTTPS video URL; keep the task ID.")
-                state.update(phase="completed", url=url)
+                # Delivery always uses the original gateway and credential. Never
+                # expose or follow upstream URLs, even on an older server response.
+                url = origin + "/v1/videos/" + identifier + "/content"
+                state.update(phase="completed", url=url, authenticated_content=True)
                 save_state(path, state)
-                emit(phase="completed", task_id=identifier, video_url=url, state_file=str(path))
+                emit(phase="completed", task_id=identifier, content_url=url,
+                     requires_authorization=True, state_file=str(path))
                 return download_artifact(args, state, key)
             state["phase"] = status
             save_state(path, state)
