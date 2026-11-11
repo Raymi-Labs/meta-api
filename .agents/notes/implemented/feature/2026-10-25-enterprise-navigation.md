@@ -14,6 +14,8 @@ Status: implemented
 
 ## Related decisions
 
+- 待实施的[企业工作空间提案](../../proposed/feature/2026-11-11-enterprise-workspace.md)增加登录后的组织管理；本笔记的公开介绍页继续保持现有行为。
+
 - 部分重叠：[公开首页](2026-10-24-public-home-redesign.md)，沿用公开壳与品牌来源，更新顶部入口组织，首页内容布局不变。
 - 复用：[通知铃铛](2026-10-25-public-notification-bell.md)，语言右侧保持真实未读和共享已读，不新增通知实现。
 - 复用：[全站语言](2026-10-25-site-language.md)，新增正文随同一语言状态切换，不新增翻译运行时。
