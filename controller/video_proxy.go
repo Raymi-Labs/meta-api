@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
@@ -48,6 +49,11 @@ func VideoProxy(c *gin.Context) {
 		return
 	}
 	if !exists || task == nil {
+		videoProxyError(c, http.StatusNotFound, "invalid_request_error", "Task not found")
+		return
+	}
+
+	if c.GetInt("id") <= 0 || (task.UserId != c.GetInt("id") && c.GetInt("role") < common.RoleAdminUser) {
 		videoProxyError(c, http.StatusNotFound, "invalid_request_error", "Task not found")
 		return
 	}
@@ -108,7 +114,7 @@ func VideoProxy(c *gin.Context) {
 				if apiErr.RetryAfter > 0 {
 					c.Header("Retry-After", fmt.Sprintf("%d", int((apiErr.RetryAfter+time.Second-1)/time.Second)))
 				}
-				videoProxyError(c, apiErr.StatusCode, "server_error", apiErr.Error())
+				videoProxyError(c, apiErr.StatusCode, "server_error", "Video content request failed")
 			} else {
 				videoProxyError(c, http.StatusBadGateway, "server_error", "Failed to resolve Gemini video URL")
 			}
@@ -124,7 +130,7 @@ func VideoProxy(c *gin.Context) {
 				if apiErr.RetryAfter > 0 {
 					c.Header("Retry-After", fmt.Sprintf("%d", int((apiErr.RetryAfter+time.Second-1)/time.Second)))
 				}
-				videoProxyError(c, apiErr.StatusCode, "server_error", apiErr.Error())
+				videoProxyError(c, apiErr.StatusCode, "server_error", "Video content request failed")
 			} else {
 				videoProxyError(c, http.StatusBadGateway, "server_error", "Failed to resolve Vertex video URL")
 			}
@@ -150,7 +156,7 @@ func VideoProxy(c *gin.Context) {
 			videoProxyError(c, http.StatusBadGateway, "server_error", "Failed to decode video content")
 			return
 		}
-		c.Header("Cache-Control", "public, max-age=86400")
+		c.Header("Cache-Control", "private, no-store")
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Data(http.StatusOK, mimeType, videoBytes)
 		return
@@ -227,7 +233,7 @@ func VideoProxy(c *gin.Context) {
 			if apiErr.RetryAfter > 0 {
 				c.Header("Retry-After", fmt.Sprintf("%d", int((apiErr.RetryAfter+time.Second-1)/time.Second)))
 			}
-			videoProxyError(c, http.StatusTooManyRequests, "server_error", apiErr.Error())
+			videoProxyError(c, http.StatusTooManyRequests, "server_error", "Video content request failed")
 			return
 		}
 		videoProxyError(c, http.StatusBadGateway, "server_error",
@@ -235,13 +241,24 @@ func VideoProxy(c *gin.Context) {
 		return
 	}
 
-	for key, values := range resp.Header {
-		for _, value := range values {
-			c.Writer.Header().Add(key, value)
-		}
+	// Upstream headers may contain private URLs (Location, Link), cookies,
+	// request IDs or provider-identifying filenames. Only publish media headers.
+	contentType := "video/mp4"
+	switch strings.ToLower(strings.TrimSpace(strings.Split(resp.Header.Get("Content-Type"), ";")[0])) {
+	case "video/mp4", "application/octet-stream":
+		contentType = "video/mp4"
+	case "video/webm":
+		contentType = "video/webm"
+	case "video/quicktime":
+		contentType = "video/quicktime"
+	default:
+		videoProxyError(c, http.StatusBadGateway, "server_error", "Invalid video content response")
+		return
 	}
+	c.Header("Content-Type", contentType)
+	c.Header("X-Content-Type-Options", "nosniff")
 
-	c.Writer.Header().Set("Cache-Control", "public, max-age=86400")
+	c.Writer.Header().Set("Cache-Control", "private, no-store")
 	c.Writer.WriteHeader(resp.StatusCode)
 	if _, err = io.Copy(c.Writer, resp.Body); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to stream video content: %s", err.Error()))
@@ -269,7 +286,12 @@ func decodeVideoDataURL(dataURL string) (string, []byte, error) {
 	if err != nil || len(videoBytes) == 0 {
 		return "", nil, fmt.Errorf("invalid video base64 payload")
 	}
-	return mimeType, videoBytes, nil
+	switch mediaType {
+	case "video/mp4", "video/webm", "video/quicktime":
+		return mediaType, videoBytes, nil
+	default:
+		return "", nil, fmt.Errorf("unsupported video media type")
+	}
 }
 
 // Only the configured origin's content endpoint for this task may receive the

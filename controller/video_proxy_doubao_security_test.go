@@ -32,11 +32,13 @@ func TestDoubaoVideoProxyContentAuthentication(t *testing.T) {
 				originHeaders := make(chan http.Header, 2)
 				externalHeaders := make(chan http.Header, 2)
 				external := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "video/mp4")
 					externalHeaders <- r.Header.Clone()
 					_, _ = io.WriteString(w, "cdn-video")
 				}))
 				defer external.Close()
 				origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "video/mp4")
 					originHeaders <- r.Header.Clone()
 					if r.URL.Path == "/v1/videos/upstream_task/content" {
 						if r.Header.Get("Authorization") != "Bearer saved-task-key" {
@@ -68,6 +70,7 @@ func TestDoubaoVideoProxyContentAuthentication(t *testing.T) {
 				c, recorder := videoTestContext()
 				c.Params = gin.Params{{Key: "task_id", Value: task.TaskID}}
 				c.Set("id", 9999)
+				c.Set("role", common.RoleAdminUser)
 				VideoProxy(c)
 				if scenario == "redirect-external" {
 					require.Equal(t, http.StatusBadGateway, recorder.Code)

@@ -41,12 +41,14 @@ func TestGeminiVideoProxyContentCredentialsStayAtConfiguredOrigin(t *testing.T) 
 			originRequests := make(chan geminiContentRequest, 4)
 			externalRequests := make(chan geminiContentRequest, 4)
 			external := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "video/mp4")
 				externalRequests <- geminiContentRequest{r.URL.Path, r.URL.RawQuery, r.Header.Clone()}
 				_, _ = io.WriteString(w, "external-video")
 			}))
 			defer external.Close()
 			externalURL := external.URL + "/signed?" + signedQuery
 			origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "video/mp4")
 				originRequests <- geminiContentRequest{r.URL.Path, r.URL.RawQuery, r.Header.Clone()}
 				switch r.URL.Path {
 				case "/cross-hop":
@@ -89,7 +91,8 @@ func TestGeminiVideoProxyContentCredentialsStayAtConfiguredOrigin(t *testing.T) 
 			require.NoError(t, db.Create(task).Error)
 			c, recorder := videoTestContext()
 			c.Params = gin.Params{{Key: "task_id", Value: task.TaskID}}
-			c.Set("id", 9999) // persisted task owner is authoritative
+			c.Set("id", 9999)
+			c.Set("role", common.RoleAdminUser) // persisted task owner is authoritative
 			VideoProxy(c)
 			if scenario == "cross-origin-redirect-no-overrides" {
 				require.Equal(t, http.StatusBadGateway, recorder.Code)

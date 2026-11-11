@@ -309,7 +309,11 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 	// 使用公开 task_xxxx ID 返回给客户端
 	dResp.ID = info.PublicTaskID
 	dResp.TaskID = info.PublicTaskID
-	c.JSON(http.StatusOK, dResp)
+	var publicVideo dto.OpenAIVideo
+	if err := common.Unmarshal(responseBody, &publicVideo); err != nil {
+		return "", nil, service.TaskErrorWrapper(err, "invalid_video_response", http.StatusBadGateway)
+	}
+	c.JSON(http.StatusOK, service.PublicVideo(&publicVideo, info.PublicTaskID, info.OriginModelName))
 	return upstreamID, responseBody, nil
 }
 

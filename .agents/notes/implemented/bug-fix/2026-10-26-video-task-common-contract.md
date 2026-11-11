@@ -51,3 +51,7 @@ common回归覆盖12个文本/图片反例，controller直接调用默认端点�
 ## Related notes
 
 扩展[H3基础链路](../../implemented/feature/2026-10-26-minimax-h3-video.md)；复用[任务资金](../../implemented/bug-fix/2026-10-24-task-submission-and-terminal-consistency.md)、[Vidu参数](../../implemented/bug-fix/2026-10-17-vidu-billed-fields.md)、[Kling密钥](../../implemented/bug-fix/2026-10-24-kling-key-consistency.md)。[通用提案](../../proposed/feature/2026-10-21-video-pricing-and-testing.md)仍保留实际用量/新协议范围。其他模型展示笔记无关。
+
+## 公开返回边界
+
+适配器转换仅作为内部数据，统一/兼容查询和普通用户列表在出站前投影为公开字段；原始URL、错误和Data不得直接返回。成片统一走元衡鉴权代理，见[视频公开边界](2026-11-10-video-public-boundary.md)。管理员原始排障与数据库中的轮询数据保留。

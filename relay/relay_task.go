@@ -367,7 +367,7 @@ func sunoFetchRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *dto.Ta
 			return
 		}
 		for _, task := range taskModels {
-			tasks = append(tasks, TaskModel2Dto(task))
+			tasks = append(tasks, PublicTaskModel2Dto(task))
 		}
 	} else {
 		tasks = make([]any, 0)
@@ -395,7 +395,7 @@ func sunoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *dt
 
 	respBody, err = common.Marshal(dto.TaskResponse[any]{
 		Code: "success",
-		Data: TaskModel2Dto(originTask),
+		Data: PublicTaskModel2Dto(originTask),
 	})
 	return
 }
@@ -438,7 +438,15 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				taskResp = service.TaskErrorWrapper(err, "convert_to_openai_video_failed", http.StatusInternalServerError)
 				return
 			}
-			respBody = openAIVideoData
+			var video dto.OpenAIVideo
+			if err := common.Unmarshal(openAIVideoData, &video); err != nil {
+				return nil, service.TaskErrorWrapper(err, "invalid_video_response", http.StatusInternalServerError)
+			}
+			video.Status = originTask.Status.ToVideoStatus()
+			respBody, err = common.Marshal(service.PublicVideo(&video, originTask.TaskID, originTask.Properties.OriginModelName))
+			if err != nil {
+				return nil, service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
+			}
 			return
 		}
 		taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("not_implemented:%s", originTask.Platform), "not_implemented", http.StatusNotImplemented)
@@ -448,7 +456,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	// 通用 TaskDto 格式
 	respBody, err = common.Marshal(dto.TaskResponse[any]{
 		Code: "success",
-		Data: TaskModel2Dto(originTask),
+		Data: PublicTaskModel2Dto(originTask),
 	})
 	if err != nil {
 		taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
@@ -534,14 +542,14 @@ func tryRealtimeFetch(c *gin.Context, task *model.Task, isOpenAIVideoAPI bool) [
 	}
 
 	// 非 OpenAI Video API: 构建自定义格式响应
-	format := detectVideoFormat(body)
+	format := "mp4" // do not expose provider-controlled MIME strings
 	out := map[string]any{
 		"error":    nil,
 		"format":   format,
 		"metadata": nil,
 		"status":   mapTaskStatusToSimple(task.Status),
 		"task_id":  task.TaskID,
-		"url":      task.GetResultURL(),
+		"url":      publicVideoResultURL(task),
 	}
 	respBody, _ := common.Marshal(dto.TaskResponse[any]{
 		Code: "success",
@@ -559,31 +567,6 @@ func acquireRealtimeTaskChannelCapacity(c *gin.Context, channel *model.Channel) 
 	}
 	admission := middleware.AcquireChannelCapacityForChannel(channel, c.GetString(common.RequestIdKey))
 	return admission.Release, admission.Acquired
-}
-
-// detectVideoFormat 从 Gemini/Vertex 原始响应中探测视频格式
-func detectVideoFormat(rawBody []byte) string {
-	var raw map[string]any
-	if err := common.Unmarshal(rawBody, &raw); err != nil {
-		return "mp4"
-	}
-	respObj, ok := raw["response"].(map[string]any)
-	if !ok {
-		return "mp4"
-	}
-	vids, ok := respObj["videos"].([]any)
-	if !ok || len(vids) == 0 {
-		return "mp4"
-	}
-	v0, ok := vids[0].(map[string]any)
-	if !ok {
-		return "mp4"
-	}
-	mt, ok := v0["mimeType"].(string)
-	if !ok || mt == "" || strings.Contains(mt, "mp4") {
-		return "mp4"
-	}
-	return mt
 }
 
 // mapTaskStatusToSimple 将内部 TaskStatus 映射为简化状态字符串
@@ -623,4 +606,36 @@ func TaskModel2Dto(task *model.Task) *dto.TaskDto {
 		Username:   task.Username,
 		Data:       task.Data,
 	}
+}
+
+// PublicTaskModel2Dto is used by non-admin task APIs. Keep TaskModel2Dto for
+// administrator diagnostics; neither projection mutates persisted task data.
+func PublicTaskModel2Dto(task *model.Task) *dto.TaskDto {
+	out := TaskModel2Dto(task)
+	if _, ok := GetTaskAdaptor(task.Platform).(channel.OpenAIVideoConverter); !ok {
+		return out
+	}
+	out.ChannelId = 0
+	out.Properties = model.Properties{OriginModelName: task.Properties.OriginModelName}
+	out.FailReason = ""
+	if task.Status == model.TaskStatusFailure {
+		out.FailReason = "Video generation failed; contact support with the task ID"
+	}
+	out.ResultURL = publicVideoResultURL(task)
+	var video dto.OpenAIVideo
+	// Optional media fields are best-effort; raw provider data is never returned.
+	_ = common.Unmarshal(task.Data, &video)
+	video.Status = task.Status.ToVideoStatus()
+	video.SetProgressStr(task.Progress)
+	video.CreatedAt = task.CreatedAt
+	video.CompletedAt = task.FinishTime
+	out.Data, _ = common.Marshal(service.PublicVideo(&video, task.TaskID, task.Properties.OriginModelName))
+	return out
+}
+
+func publicVideoResultURL(task *model.Task) string {
+	if task.Status != model.TaskStatusSuccess {
+		return ""
+	}
+	return service.VideoContentURL(task.TaskID)
 }
