@@ -9,7 +9,7 @@ Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependenci
 
 ## Supported input and acceptance boundaries
 
-- `doubao-seedance-2-5-260628` (Seedance 2.5): verified text-only profile, 4 seconds/720p/16:9; sends `seconds`, `resolution`, and `metadata.ratio/generate_audio/watermark`. The user key needs the enterprise group. Original production sample: 1280×720, 4.042 seconds, 24fps; generation and authenticated download succeeded. Reference images and 1080p are not verified by this profile. Preserve an explicit unsupported request and explain the boundary rather than silently downgrade it.
+- `doubao-seedance-2-5-260628` (Seedance 2.5): defaults to 4 seconds/720p/16:9. Honor explicit duration, resolution (including 1080p), ratio and PNG/JPEG/WebP reference images; send `seconds`, `resolution`, `metadata.ratio/generate_audio/watermark` and `images`. The user key needs the enterprise group. The 720p production sample succeeded; other parameters are not live-verified here, but that is evidence context, not a reason to reject or downgrade the user's request. Upstream validation remains authoritative.
 - New video tasks default to `https://meta-api.com`; explicitly supplied legacy YuanHeng origins remain supported. Resume/download-only always retain the saved origin and credential. Completed-task output uses the original gateway content URL and marks it as requiring authentication; provider URLs are never printed or followed.
 
 - Muse `muse-video`: integer requests 4–180 seconds, default 4, 720p, 16:9 or 9:16. One first frame via `--image`, or 1–4 ordered files via `--images`, never both. PNG/JPEG/WebP, at most 10,000,000 bytes each and 24,000,000 total; prompt at most 4000 characters.

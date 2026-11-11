@@ -77,9 +77,19 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(payload, {"model": video.SEEDANCE_MODEL, "prompt": "private fixture prompt",
             "seconds": "4", "resolution": "720p",
             "metadata": {"ratio": "16:9", "generate_audio": True, "watermark": False}})
-        for extra in (("--duration", "8"), ("--resolution", "1080p"), ("--aspect-ratio", "9:16"), ("--image", "missing.png")):
+        image = Path(self.tmp.name) / "reference.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\nprivate-reference")
+        payload = video.payload_for(self.args("--model", video.SEEDANCE_MODEL,
+            "--duration", "8", "--resolution", "1080p", "--aspect-ratio", "9:16", "--image", str(image)))
+        self.assertEqual(payload["seconds"], "8")
+        self.assertEqual(payload["resolution"], "1080p")
+        self.assertEqual(payload["metadata"]["ratio"], "9:16")
+        self.assertTrue(payload["images"][0].startswith("data:image/png;base64,"))
+        payload = video.payload_for(self.args("--model", video.SEEDANCE_MODEL, "--images", str(image), str(image)))
+        self.assertEqual(len(payload["images"]), 2)
+        for duration in ("0", "-1"):
             with self.assertRaises(video.VideoError):
-                video.payload_for(self.args("--model", video.SEEDANCE_MODEL, *extra))
+                video.payload_for(self.args("--model", video.SEEDANCE_MODEL, "--duration", duration))
 
     def test_seedance_com_delivery_hides_provider_and_posts_once(self):
         target = Path(self.tmp.name) / "seedance.mp4"
