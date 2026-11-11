@@ -2,8 +2,8 @@ package service
 
 import (
 	"net/url"
-	"strings"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 )
@@ -12,7 +12,9 @@ import (
 // Never derive a public result from provider URLs or untrusted forwarded headers.
 func VideoContentURL(taskID string) string {
 	path := dto.VideoContentPath(taskID)
-	origin, err := url.Parse(strings.TrimSpace(system_setting.ServerAddress))
+	// Reuse the established exact company-origin mapping for public video
+	// links without changing ServerAddress or unrelated callback configuration.
+	origin, err := url.Parse(common.CanonicalLoginOrigin(system_setting.ServerAddress))
 	if err != nil || (origin.Scheme != "https" && origin.Scheme != "http") || origin.Host == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" {
 		return path
 	}

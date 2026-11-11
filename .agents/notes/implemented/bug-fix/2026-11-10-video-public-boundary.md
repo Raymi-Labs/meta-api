@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-复用 `/v1/videos/{公开任务ID}/content`，公开输出使用字段白名单，成功时只返回基于管理员配置 ServerAddress 的元衡绝对地址；不信任请求 Host/Forwarded，配置非法时仅返回站内相对路径，不改变数据库原始数据。覆盖统一/兼容查询、普通用户列表、Sora/Muse 提交及视频上游错误。管理员列表保留排障信息。取片限任务所属用户或管理员，响应私有禁缓存，仅输出必要媒体头。
+复用 `/v1/videos/{公开任务ID}/content`，公开输出使用字段白名单，成功时只返回基于管理员配置 ServerAddress 的公开绝对地址：元衡自有HTTPS域名复用已有精确白名单归一到 `https://meta-api.com`，其他部署保留配置域名；不信任请求 Host/Forwarded，配置非法时仅返回站内相对路径，不改变数据库原始数据或全局 ServerAddress/支付回调配置。覆盖统一/兼容查询、普通用户列表、Sora/Muse 提交及视频上游错误。管理员列表保留排障信息。取片限任务所属用户或管理员，响应私有禁缓存，仅输出必要媒体头。
 
 ## Alternatives considered
 
@@ -18,7 +18,7 @@ Status: implemented
 
 ## Testing
 
-真实查询夹具先复现豆包/Sora统一及兼容端点的域名泄露，再验证白名单投影。新增本地测试覆盖 Gemini 实时查询、Muse/Sora提交、失败消息、普通列表、HTTP响应头、HTTP200 JSON错误体拒绝、跨用户取片拒绝，以及管理员取片仍按原任务身份向上游鉴权。原始 Data/PrivateData 不变。relay/controller/dto/service/全部视频适配器测试及39项视频客户端测试通过；未发付费请求。
+真实查询夹具先复现豆包/Sora统一及兼容端点的域名泄露，再验证白名单投影。新增本地测试覆盖 Gemini 实时查询、Muse/Sora提交、失败消息、普通列表、HTTP响应头、HTTP200 JSON错误体拒绝、跨用户取片拒绝，以及管理员取片仍按原任务身份向上游鉴权。原始 Data/PrivateData 不变。relay/controller/dto/service/全部视频适配器测试及39项视频客户端测试通过；未发付费请求。域名修正补测四个元衡别名均归一到 `.com`，自定义域名、非标准端口和伪后缀不被归一，且全局配置不变。
 
 ## Consequences
 
