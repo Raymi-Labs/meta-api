@@ -587,3 +587,13 @@ func LeaveEnterprise(userID, enterpriseID int) error {
 	purgeEnterpriseTokenCache(keys)
 	return nil
 }
+
+// GetEnterpriseMemberDetail 读取成员并带上账号的展示信息。
+func GetEnterpriseMemberDetail(enterpriseID, memberID int) (*EnterpriseMember, error) {
+	member, err := GetEnterpriseMember(enterpriseID, memberID)
+	if err != nil {
+		return nil, err
+	}
+	fillEnterpriseMemberUsers([]*EnterpriseMember{member})
+	return member, nil
+}

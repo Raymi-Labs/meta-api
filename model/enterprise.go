@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,6 +55,10 @@ var (
 	ErrEnterpriseInvitationMail = errors.New("当前账号邮箱与邀请邮箱不一致，请先绑定被邀请的邮箱")
 	ErrEnterpriseInvalidInput   = errors.New("参数无效")
 	ErrEnterpriseSelfOperation  = errors.New("不能对自己执行该操作，请联系企业所有者")
+	ErrEnterpriseBillingGroup   = errors.New("计费用户组不存在")
+	ErrEnterpriseTimezone       = errors.New("时区无效")
+	ErrEnterpriseOwnerAccount   = errors.New("所有者账号不存在或已被禁用")
+	ErrEnterpriseDisabled       = errors.New("企业功能未开启")
 )
 
 type Enterprise struct {
@@ -76,7 +81,8 @@ type Enterprise struct {
 	CreatedAt            int64 `json:"created_at" gorm:"not null"`
 	UpdatedAt            int64 `json:"updated_at" gorm:"not null"`
 
-	Models []string `json:"models" gorm:"-"`
+	Models    []string `json:"models" gorm:"-"`
+	OwnerName string   `json:"owner_name" gorm:"-"`
 }
 
 type EnterpriseMember struct {
@@ -145,6 +151,11 @@ func enterpriseModels() []any {
 		&Enterprise{}, &EnterpriseMember{}, &EnterpriseInvitation{}, &EnterpriseAuditEvent{},
 		&EnterpriseLedger{}, &EnterpriseReservation{}, &EnterpriseTokenBudget{}, &EnterpriseQuotaRequest{},
 	}
+}
+
+// MigrateEnterpriseTables 建立企业相关的表，供启动迁移之外的调用方（如其他包的测试）使用。
+func MigrateEnterpriseTables(db *gorm.DB) error {
+	return db.AutoMigrate(enterpriseModels()...)
 }
 
 // EnterpriseActor 描述一次操作的发起者。Platform 为真表示平台管理员在平台后台操作，
@@ -368,13 +379,13 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 		return nil, ErrEnterpriseInvalidInput
 	}
 	if billingGroup == "" || billingGroup == "auto" || !ratio_setting.ContainsGroupRatio(billingGroup) {
-		return nil, errors.New("计费用户组不存在")
+		return nil, ErrEnterpriseBillingGroup
 	}
 	if timezone == "" {
 		timezone = "Asia/Shanghai"
 	}
 	if _, err := time.LoadLocation(timezone); err != nil {
-		return nil, errors.New("时区无效")
+		return nil, ErrEnterpriseTimezone
 	}
 	now := time.Now().Unix()
 	ent := &Enterprise{Name: name, Status: EnterpriseStatusActive, OwnerUserId: ownerUserID, BillingGroup: billingGroup,
@@ -383,12 +394,12 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 		var owner User
 		if err := tx.Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("所有者账号不存在")
+				return ErrEnterpriseOwnerAccount
 			}
 			return err
 		}
 		if owner.Status != common.UserStatusEnabled {
-			return errors.New("所有者账号已被禁用")
+			return ErrEnterpriseOwnerAccount
 		}
 		if err := tx.Create(ent).Error; err != nil {
 			return err
@@ -445,7 +456,7 @@ func UpdateEnterpriseByPlatform(actorID, enterpriseID int, name, billingGroup st
 		return ErrEnterpriseInvalidInput
 	}
 	if billingGroup == "" || billingGroup == "auto" || !ratio_setting.ContainsGroupRatio(billingGroup) {
-		return errors.New("计费用户组不存在")
+		return ErrEnterpriseBillingGroup
 	}
 	return enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
 		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
@@ -478,7 +489,7 @@ func UpdateEnterpriseSettings(actor EnterpriseActor, enterpriseID int, in Enterp
 		return ErrEnterpriseInvalidInput
 	}
 	if _, err := time.LoadLocation(in.Timezone); err != nil || in.Timezone == "" {
-		return errors.New("时区无效")
+		return ErrEnterpriseTimezone
 	}
 	models := normalizeEnterpriseModels(in.Models)
 	if len(models) > 2000 {
@@ -540,7 +551,20 @@ func ListEnterprises(keyword string, offset, limit int) ([]*Enterprise, int64, e
 	for _, item := range items {
 		item.fill()
 	}
+	FillEnterpriseOwners(items...)
 	return items, total, nil
+}
+
+// FillEnterpriseOwners 为企业补上所有者的展示名。
+func FillEnterpriseOwners(items ...*Enterprise) {
+	ids := make([]int, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.OwnerUserId)
+	}
+	briefs := enterpriseUserBriefs(DB, ids)
+	for _, item := range items {
+		item.OwnerName = briefs[item.OwnerUserId].label()
+	}
 }
 
 // ListEnterpriseAuditEvents 企业操作记录，按时间倒序。
@@ -597,6 +621,129 @@ func enterpriseUserBriefs(tx *gorm.DB, ids []int) map[int]enterpriseUserBrief {
 	}
 	for _, row := range rows {
 		out[row.Id] = row
+	}
+	return out
+}
+
+// IsEnterpriseUserError 判断错误是否为可以原样展示给用户的企业业务错误；
+// 其余错误（数据库故障等）由接口层记录日志并返回通用提示。
+func IsEnterpriseUserError(err error) bool {
+	for _, known := range []error{
+		ErrEnterpriseNotFound, ErrEnterpriseForbidden, ErrEnterpriseFrozen, ErrEnterpriseAlreadyMember,
+		ErrEnterpriseOwnerRequired, ErrEnterpriseInvitation, ErrEnterpriseInvitationMail, ErrEnterpriseInvalidInput,
+		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
+		ErrEnterpriseDisabled, ErrEnterpriseInsufficientUnallocated, ErrEnterpriseDuplicateVoucher,
+		ErrEnterpriseReclaimExceeds, ErrEnterpriseRequestPending, ErrEnterpriseRequestState,
+		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap,
+	} {
+		if errors.Is(err, known) {
+			return true
+		}
+	}
+	return false
+}
+
+// ResolveEnterpriseOwnerCandidate 把平台后台填写的所有者标识（用户 ID、用户名或邮箱）解析为用户 ID。
+// 邮箱不是唯一列，匹配到多个账号时拒绝，要求改填用户名或 ID。
+func ResolveEnterpriseOwnerCandidate(identifier string) (int, error) {
+	identifier = strings.TrimSpace(identifier)
+	if identifier == "" {
+		return 0, ErrEnterpriseOwnerAccount
+	}
+	var ids []int
+	if id, err := strconv.Atoi(identifier); err == nil && id > 0 {
+		if err := DB.Model(&User{}).Where("id = ?", id).Limit(1).Pluck("id", &ids).Error; err != nil {
+			return 0, err
+		}
+		if len(ids) == 1 {
+			return ids[0], nil
+		}
+	}
+	if err := DB.Model(&User{}).Where("username = ?", identifier).Limit(1).Pluck("id", &ids).Error; err != nil {
+		return 0, err
+	}
+	if len(ids) == 1 {
+		return ids[0], nil
+	}
+	if email := normalizeEnterpriseEmail(identifier); strings.Contains(email, "@") {
+		if err := DB.Model(&User{}).Where("email = ?", email).Limit(2).Pluck("id", &ids).Error; err != nil {
+			return 0, err
+		}
+		if len(ids) == 1 {
+			return ids[0], nil
+		}
+	}
+	return 0, ErrEnterpriseOwnerAccount
+}
+
+// EnterpriseSummary 是企业后台总览的计数。
+type EnterpriseSummary struct {
+	Members            int64 `json:"members"`
+	PendingRequests    int64 `json:"pending_requests"`
+	PendingInvitations int64 `json:"pending_invitations"`
+}
+
+func GetEnterpriseSummary(enterpriseID int) (*EnterpriseSummary, error) {
+	out := &EnterpriseSummary{}
+	now := time.Now().Unix()
+	if err := DB.Model(&EnterpriseMember{}).Where("enterprise_id = ? AND status = ?", enterpriseID, EnterpriseMemberStatusActive).
+		Count(&out.Members).Error; err != nil {
+		return nil, err
+	}
+	if err := DB.Model(&EnterpriseQuotaRequest{}).
+		Where("enterprise_id = ? AND status = ? AND expires_at > ?", enterpriseID, EnterpriseRequestPending, now).
+		Count(&out.PendingRequests).Error; err != nil {
+		return nil, err
+	}
+	if err := DB.Model(&EnterpriseInvitation{}).
+		Where("enterprise_id = ? AND status = ? AND expires_at > ?", enterpriseID, EnterpriseInvitationPending, now).
+		Count(&out.PendingInvitations).Error; err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// EnterpriseContact 是通知收件人。
+type EnterpriseContact struct {
+	UserId int
+	Name   string
+	Email  string
+}
+
+// ListEnterpriseManagerContacts 返回企业所有者与管理员（有邮箱的），用于审批待办和企业余额提醒。
+// ownerOnly 为真时只返回所有者：管理员自己的申请只能由所有者处理。
+func ListEnterpriseManagerContacts(enterpriseID int, ownerOnly bool) ([]EnterpriseContact, error) {
+	roles := []string{EnterpriseRoleOwner, EnterpriseRoleAdmin}
+	if ownerOnly {
+		roles = roles[:1]
+	}
+	var userIDs []int
+	if err := DB.Model(&EnterpriseMember{}).
+		Where("enterprise_id = ? AND status = ? AND role IN ?", enterpriseID, EnterpriseMemberStatusActive, roles).
+		Pluck("user_id", &userIDs).Error; err != nil {
+		return nil, err
+	}
+	return enterpriseContacts(userIDs), nil
+}
+
+// GetEnterpriseContact 返回单个账号的通知收件信息；没有邮箱时 ok 为 false。
+func GetEnterpriseContact(userID int) (EnterpriseContact, bool) {
+	contacts := enterpriseContacts([]int{userID})
+	if len(contacts) == 0 {
+		return EnterpriseContact{}, false
+	}
+	return contacts[0], true
+}
+
+func enterpriseContacts(userIDs []int) []EnterpriseContact {
+	briefs := enterpriseUserBriefs(DB, userIDs)
+	out := make([]EnterpriseContact, 0, len(userIDs))
+	for _, id := range userIDs {
+		brief, ok := briefs[id]
+		if !ok || brief.Email == "" {
+			continue
+		}
+		out = append(out, EnterpriseContact{UserId: id, Name: brief.label(), Email: brief.Email})
 	}
 	return out
 }
