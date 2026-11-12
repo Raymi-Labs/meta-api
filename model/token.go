@@ -17,43 +17,46 @@ import (
 const TokenSourceTypeImagePlayground = "image_playground"
 
 type Token struct {
-	QuotaFailureCount       int            `json:"-" gorm:"not null;default:0"`
-	QuotaFailureVersion     int64          `json:"-" gorm:"not null;default:0"`
-	Id                      int            `json:"id"`
-	UserId                  int            `json:"user_id" gorm:"index"`
-	Key                     string         `json:"key" gorm:"type:varchar(128);uniqueIndex"`
-	Status                  int            `json:"status" gorm:"default:1"`
-	Name                    string         `json:"name" gorm:"index" `
-	SourceType              string         `json:"source_type" gorm:"type:varchar(32);default:'';index"`
-	BillingMode             string         `json:"billing_mode" gorm:"type:varchar(32);default:''"`
-	SellableTokenProductId  int            `json:"sellable_token_product_id" gorm:"type:int;default:0;index"`
-	SellableTokenIssuanceId int            `json:"sellable_token_issuance_id" gorm:"type:int;default:0;index"`
-	CreatedTime             int64          `json:"created_time" gorm:"bigint"`
-	AccessedTime            int64          `json:"accessed_time" gorm:"bigint"`
-	ExpiredTime             int64          `json:"expired_time" gorm:"bigint;default:-1"` // -1 means never expired
-	RemainQuota             int            `json:"remain_quota" gorm:"default:0"`
-	UnlimitedQuota          bool           `json:"unlimited_quota"`
-	ModelLimitsEnabled      bool           `json:"model_limits_enabled"`
-	ModelLimits             string         `json:"model_limits" gorm:"type:varchar(1024);default:''"`
-	ChannelLimitsEnabled    bool           `json:"channel_limits_enabled"`
-	ChannelLimits           string         `json:"channel_limits" gorm:"type:text"`
-	AllowIps                *string        `json:"allow_ips" gorm:"default:''"`
-	UsedQuota               int            `json:"used_quota" gorm:"default:0"` // used quota
-	Group                   string         `json:"group" gorm:"default:''"`
-	RoutingConfig           string         `json:"routing_config" gorm:"type:text"`
-	CrossGroupRetry         bool           `json:"cross_group_retry"`                        // 跨分组重试，仅auto分组有效
-	AutoGroupFallback       bool           `json:"auto_group_fallback" gorm:"default:false"` // 固定首选分组不可用时按自动分组顺序回退
-	MaxConcurrency          int            `json:"max_concurrency" gorm:"type:int;default:0"`
-	WindowRequestLimit      int            `json:"window_request_limit" gorm:"type:int;default:0"`
-	WindowSeconds           int64          `json:"window_seconds" gorm:"type:bigint;default:0"`
-	PackageEnabled          bool           `json:"package_enabled" gorm:"default:false"`
-	PackageLimitQuota       int            `json:"package_limit_quota" gorm:"default:0"`
-	PackagePeriod           string         `json:"package_period" gorm:"type:varchar(16);default:'none'"`
-	PackageCustomSeconds    int64          `json:"package_custom_seconds" gorm:"type:bigint;default:0"`
-	PackageUsedQuota        int            `json:"package_used_quota" gorm:"default:0"`
-	PackageNextResetTime    int64          `json:"package_next_reset_time" gorm:"bigint;default:0"`
-	PackagePeriodMode       string         `json:"package_period_mode" gorm:"type:varchar(16);default:'relative'"`
-	DeletedAt               gorm.DeletedAt `gorm:"index"`
+	QuotaFailureCount       int     `json:"-" gorm:"not null;default:0"`
+	QuotaFailureVersion     int64   `json:"-" gorm:"not null;default:0"`
+	Id                      int     `json:"id"`
+	UserId                  int     `json:"user_id" gorm:"index"`
+	Key                     string  `json:"key" gorm:"type:varchar(128);uniqueIndex"`
+	Status                  int     `json:"status" gorm:"default:1"`
+	Name                    string  `json:"name" gorm:"index" `
+	SourceType              string  `json:"source_type" gorm:"type:varchar(32);default:'';index"`
+	BillingMode             string  `json:"billing_mode" gorm:"type:varchar(32);default:''"`
+	SellableTokenProductId  int     `json:"sellable_token_product_id" gorm:"type:int;default:0;index"`
+	SellableTokenIssuanceId int     `json:"sellable_token_issuance_id" gorm:"type:int;default:0;index"`
+	CreatedTime             int64   `json:"created_time" gorm:"bigint"`
+	AccessedTime            int64   `json:"accessed_time" gorm:"bigint"`
+	ExpiredTime             int64   `json:"expired_time" gorm:"bigint;default:-1"` // -1 means never expired
+	RemainQuota             int     `json:"remain_quota" gorm:"default:0"`
+	UnlimitedQuota          bool    `json:"unlimited_quota"`
+	ModelLimitsEnabled      bool    `json:"model_limits_enabled"`
+	ModelLimits             string  `json:"model_limits" gorm:"type:varchar(1024);default:''"`
+	ChannelLimitsEnabled    bool    `json:"channel_limits_enabled"`
+	ChannelLimits           string  `json:"channel_limits" gorm:"type:text"`
+	AllowIps                *string `json:"allow_ips" gorm:"default:''"`
+	UsedQuota               int     `json:"used_quota" gorm:"default:0"` // used quota
+	Group                   string  `json:"group" gorm:"default:''"`
+	RoutingConfig           string  `json:"routing_config" gorm:"type:text"`
+	CrossGroupRetry         bool    `json:"cross_group_retry"`                        // 跨分组重试，仅auto分组有效
+	AutoGroupFallback       bool    `json:"auto_group_fallback" gorm:"default:false"` // 固定首选分组不可用时按自动分组顺序回退
+	MaxConcurrency          int     `json:"max_concurrency" gorm:"type:int;default:0"`
+	WindowRequestLimit      int     `json:"window_request_limit" gorm:"type:int;default:0"`
+	WindowSeconds           int64   `json:"window_seconds" gorm:"type:bigint;default:0"`
+	PackageEnabled          bool    `json:"package_enabled" gorm:"default:false"`
+	PackageLimitQuota       int     `json:"package_limit_quota" gorm:"default:0"`
+	PackagePeriod           string  `json:"package_period" gorm:"type:varchar(16);default:'none'"`
+	PackageCustomSeconds    int64   `json:"package_custom_seconds" gorm:"type:bigint;default:0"`
+	PackageUsedQuota        int     `json:"package_used_quota" gorm:"default:0"`
+	PackageNextResetTime    int64   `json:"package_next_reset_time" gorm:"bigint;default:0"`
+	PackagePeriodMode       string  `json:"package_period_mode" gorm:"type:varchar(16);default:'relative'"`
+	// 企业令牌的付款方归属，创建后不可更改；个人令牌两项均为 0。
+	EnterpriseId int            `json:"enterprise_id" gorm:"type:int;default:0;index"`
+	MembershipId int            `json:"membership_id" gorm:"type:int;default:0;index"`
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
 func normalizeTokenSort(sortBy string, sortOrder string) (string, string) {

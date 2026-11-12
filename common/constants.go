@@ -108,6 +108,10 @@ var QuotaForNewUser = 0
 var QuotaForInviter = 0
 var QuotaForInvitee = 0
 
+// EnterpriseEnabled 是否启用企业工作空间（企业钱包、成员额度、企业令牌）。
+// 默认 false：关闭时企业接口不可用，企业令牌的请求被拒绝，不会回退到个人钱包。
+var EnterpriseEnabled = false
+
 // InviterCommissionEnabled 是否启用“邀请充值返佣”功能。
 // 默认 false：不开启时不会创建返佣台账，也不会触发日批结算发放。
 var InviterCommissionEnabled = false
