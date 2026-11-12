@@ -46,6 +46,20 @@ func FinalizeConsumeLogAfterSettle(logContent string, other map[string]interface
 	return loggedQuota, logContent, other
 }
 
+// RecordRelayUsageStats 记一次同步请求的用量统计。企业请求花的是企业预算，
+// 只计个人的请求次数，不计入个人的已用额度；渠道统计照常。
+func RecordRelayUsageStats(info *relaycommon.RelayInfo, quota int) {
+	if info.EnterpriseId <= 0 {
+		UpdateUsageStats(info.UserId, info.ChannelId, quota, true)
+		return
+	}
+	model.UpdateUserRequestCount(info.UserId)
+	RecordChannelPeriodCount(info.ChannelId)
+	if quota != 0 {
+		model.UpdateChannelUsedQuota(info.ChannelId, quota)
+	}
+}
+
 func UpdateUsageStats(userId int, channelId int, quota int, countRequest bool) {
 	if countRequest {
 		model.UpdateUserUsedQuotaAndRequestCount(userId, quota)

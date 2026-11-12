@@ -211,7 +211,7 @@ func recordCashUsage(c *gin.Context, userID int, params RecordConsumeLogParams) 
 	if len(row.Model) > 255 {
 		row.Model = ""
 	}
-	if value, ok := params.Other["billing_source"].(string); ok && (value == "wallet" || value == "subscription" || value == "token") {
+	if value, ok := params.Other["billing_source"].(string); ok && (value == "wallet" || value == "subscription" || value == "token" || value == EnterpriseQuotaSource) {
 		row.FundingSource = value
 	}
 	if common.GetContextKeyInt(c, constant.ContextKeyChannelType) == constant.ChannelTypeOpenRouter {

@@ -123,12 +123,33 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 		return false
 	}
 
-	if err := PostConsumeQuota(relayInfo, feeQuota, 0, true); err != nil {
+	enterprise := relayInfo.EnterpriseId > 0
+	if enterprise {
+		// 企业请求的违规费从触发成员的企业预算扣，不动个人钱包。
+		// 事件键按请求唯一，同一请求重复进入也只扣一次；扣费允许成员预算为负。
+		if relayInfo.RequestId == "" {
+			logger.LogError(ctx, "failed to charge enterprise violation fee: request id is missing")
+			return false
+		}
+		sub := model.EnterpriseSubject{EnterpriseId: relayInfo.EnterpriseId, MemberId: relayInfo.EnterpriseMemberId,
+			UserId: relayInfo.UserId, TokenId: relayInfo.TokenId}
+		charge, err := model.ApplyEnterpriseCharge(sub, "vf:"+relayInfo.RequestId, model.EnterpriseChargeViolationFee, int64(feeQuota))
+		if err != nil {
+			logger.LogError(ctx, fmt.Sprintf("failed to charge enterprise violation fee: %s", err.Error()))
+			return false
+		}
+		if !charge.Changed {
+			return true
+		}
+		if err := model.DecreaseTokenQuota(relayInfo.TokenId, relayInfo.TokenKey, feeQuota); err != nil {
+			logger.LogError(ctx, fmt.Sprintf("failed to record enterprise token usage for violation fee: %s", err.Error()))
+		}
+	} else if err := PostConsumeQuota(relayInfo, feeQuota, 0, true); err != nil {
 		logger.LogError(ctx, fmt.Sprintf("failed to charge violation fee: %s", err.Error()))
 		return false
 	}
 
-	if relayInfo.BillingSource == BillingSourceToken {
+	if enterprise || relayInfo.BillingSource == BillingSourceToken {
 		model.UpdateUserRequestCount(relayInfo.UserId)
 	} else {
 		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, feeQuota)
@@ -149,6 +170,11 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 		"upstream_error_type":  oai.Type,
 		"upstream_error_code":  fmt.Sprintf("%v", oai.Code),
 		"violation_fee_marker": CSAMViolationMarker,
+	}
+	if enterprise {
+		other["billing_source"] = BillingSourceEnterprise
+		other["enterprise_id"] = relayInfo.EnterpriseId
+		other["enterprise_member_id"] = relayInfo.EnterpriseMemberId
 	}
 
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{

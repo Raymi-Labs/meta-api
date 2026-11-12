@@ -258,7 +258,7 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 	}
 	quota, logContent, other = FinalizeConsumeLogAfterSettle(logContent, other, actualQuota, relayInfo, settleErr)
 	if totalTokens != 0 {
-		UpdateUsageStats(relayInfo.UserId, relayInfo.ChannelId, quota, true)
+		RecordRelayUsageStats(relayInfo, quota)
 	}
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
@@ -383,7 +383,7 @@ func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 	}
 	quota, logContent, other = FinalizeConsumeLogAfterSettle(logContent, other, actualQuota, relayInfo, settleErr)
 	if totalTokens != 0 {
-		UpdateUsageStats(relayInfo.UserId, relayInfo.ChannelId, quota, true)
+		RecordRelayUsageStats(relayInfo, quota)
 	}
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
@@ -530,7 +530,7 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 	}
 	quota, logContent, other = FinalizeConsumeLogAfterSettle(logContent, other, actualQuota, relayInfo, settleErr)
 	if totalTokens != 0 || relayInfo.PriceData.UseAudioDurationPrice {
-		UpdateUsageStats(relayInfo.UserId, relayInfo.ChannelId, quota, true)
+		RecordRelayUsageStats(relayInfo, quota)
 	}
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,

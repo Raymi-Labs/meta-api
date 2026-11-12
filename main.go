@@ -150,6 +150,7 @@ func main() {
 	service.StartLogRetentionTask()
 	service.StartPulseBenefitLogTask()
 	service.StartQuotaNoticeTask()
+	service.StartEnterpriseMaintenanceTask()
 	service.StartAnnouncementEmailTask()
 	service.StartRouteOutageTask()
 

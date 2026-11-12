@@ -8,12 +8,14 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
+	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
@@ -25,10 +27,17 @@ import (
 const enterpriseUnsupported = "暂不支持企业额度"
 
 // relay 在企业接口之外再挂上全部调用入口，并准备一个可用渠道与三个模型。
-// 返回上游被调用的次数：企业资金来源接入之前，企业令牌的请求不应到达上游。
+// 上游恒返回 500，返回它被调用的次数：用来区分"请求被网关拦下"和"请求已受理并发往上游"。
 func (a *enterpriseAPI) relay() *atomic.Int32 {
 	a.t.Helper()
+	return a.relayTo(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusInternalServerError) })
+}
+
+// relayTo 与 relay 相同，但由调用方决定上游怎么回答。
+func (a *enterpriseAPI) relayTo(answer http.HandlerFunc) *atomic.Int32 {
+	a.t.Helper()
 	require.NoError(a.t, i18n.Init())
+	service.InitHttpClient()
 	oldSelfUse, oldMemory := operation_setting.SelfUseModeEnabled, common.MemoryCacheEnabled
 	operation_setting.SelfUseModeEnabled, common.MemoryCacheEnabled = true, false
 	model.InvalidateModelPermissionCache()
@@ -36,6 +45,8 @@ func (a *enterpriseAPI) relay() *atomic.Int32 {
 		operation_setting.SelfUseModeEnabled, common.MemoryCacheEnabled = oldSelfUse, oldMemory
 		model.InvalidateModelPermissionCache()
 	})
+	// 请求到达上游后会记录线路健康度；不让它的后台循环启动，否则会在测试结束后继续读已关闭的数据库。
+	a.t.Cleanup(routeinsight.SetHealthForTesting())
 	require.NoError(a.t, model.DB.AutoMigrate(&model.Ability{}, &model.Channel{}, &model.Model{}, &model.ModelPermission{},
 		&model.Vendor{}, &model.Log{}, &model.Task{}, &model.Midjourney{}, &model.UserSubscription{}, &model.ContentSafetyViolation{},
 		&model.ContentSafetyReviewCase{}, &model.ContentSafetyEvidence{}, &model.ContentSafetyNotification{}))
@@ -43,7 +54,7 @@ func (a *enterpriseAPI) relay() *atomic.Int32 {
 	calls := &atomic.Int32{}
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
-		w.WriteHeader(http.StatusInternalServerError)
+		answer(w, r)
 	}))
 	a.t.Cleanup(upstream.Close)
 	channel := model.Channel{Id: 1, Type: constant.ChannelTypeOpenAI, Status: common.ChannelStatusEnabled, Name: "local-test-channel",
@@ -215,10 +226,22 @@ func TestEnterpriseTokenTakesEffectImmediately(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, w.Code, w.Body.String())
 	require.NotContains(t, w.Body.String(), enterpriseUnsupported)
 
-	// 允许的模型能走到计费，但企业资金来源接入之前失败关闭：不请求上游，也不动个人钱包。
+	// 允许的模型由企业成员预算付款并发往上游；上游失败后预留全额释放，不动个人钱包。
+	require.Zero(t, calls.Load(), "被模型范围拦下的请求不应到达上游")
 	w = chat(staffToken, "model-b")
-	require.Equal(t, http.StatusForbidden, w.Code, w.Body.String())
-	require.Contains(t, w.Body.String(), enterpriseUnsupported)
+	require.NotEqual(t, http.StatusForbidden, w.Code, w.Body.String())
+	require.NotContains(t, w.Body.String(), enterpriseUnsupported)
+	require.Positive(t, calls.Load(), "企业请求应到达上游")
+	reached := calls.Load()
+	var holds []model.EnterpriseReservation
+	require.Eventually(t, func() bool {
+		holds = nil
+		require.NoError(t, model.DB.Find(&holds).Error)
+		return len(holds) == 1 && holds[0].Status == model.EnterpriseReservationRefunded
+	}, 2*time.Second, 5*time.Millisecond, "失败的企业请求应留下一条已释放的预留")
+	require.Equal(t, staffMember, holds[0].MemberId)
+	require.Equal(t, staffToken.Id, holds[0].TokenId)
+	require.Zero(t, holds[0].Quota)
 
 	// 显式空集合 = 全部禁止。
 	api.ok(owner.Id, user, http.MethodPut, memberModels, map[string]any{"model_mode": model.EnterpriseModelModeCustom, "models": []string{}})
@@ -269,12 +292,76 @@ func TestEnterpriseTokenTakesEffectImmediately(t *testing.T) {
 	require.Len(t, api.modelIDs(otherToken), 2)
 	require.Len(t, api.modelIDs(personalToken), 3)
 
-	require.Zero(t, calls.Load(), "企业请求不应到达上游")
+	require.Equal(t, reached, calls.Load(), "被拦下的请求都不应到达上游")
 	require.Equal(t, 100000, api.personalQuota(staff), "个人钱包零变动")
 	balance, err := model.GetEnterpriseBalance(ent)
 	require.NoError(t, err)
 	require.Zero(t, balance.MemberReserved)
 	require.Zero(t, balance.Consumed)
+}
+
+// 一次成功的企业请求：按真实用量从成员预算结算，日志标明付款方，个人钱包与个人已用额度不动。
+func TestEnterpriseRequestSettlesAgainstMemberBudget(t *testing.T) {
+	api := setupEnterpriseAPI(t, true)
+	calls := api.relayTo(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"chatcmpl-1","object":"chat.completion","created":1,"model":"model-a",` +
+			`"choices":[{"index":0,"message":{"role":"assistant","content":"hello"},"finish_reason":"stop"}],` +
+			`"usage":{"prompt_tokens":1000,"completion_tokens":2000,"total_tokens":3000}}`))
+	})
+	oldLog := common.LogConsumeEnabled
+	common.LogConsumeEnabled = true
+	t.Cleanup(func() { common.LogConsumeEnabled = oldLog })
+	root, owner, staff := api.user("root"), api.user("owner"), api.user("staff")
+	require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", staff.Id).Update("quota", 100000).Error)
+	ent := api.org(root, "甲公司", owner)
+	api.ok(root.Id, common.RoleRootUser, http.MethodPost, "/api/enterprise/admin/enterprises/"+strconv.Itoa(ent)+"/credit",
+		map[string]any{"amount": 50_000_000, "voucher": "BANK-SETTLE"})
+	member := api.join(ent, owner, staff, model.EnterpriseRoleMember, 20_000_000)
+	token := api.token(staff, "企业令牌", model.TokenPayerEnterprise, nil)
+
+	w := api.relayCall(token, http.MethodPost, "/v1/chat/completions", `{"model":"model-a","messages":[{"role":"user","content":"hi"}]}`)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	require.EqualValues(t, 1, calls.Load())
+
+	var hold model.EnterpriseReservation
+	require.NoError(t, model.DB.First(&hold).Error)
+	require.Equal(t, model.EnterpriseReservationSettled, hold.Status)
+	require.Positive(t, hold.Quota)
+	require.Equal(t, member, hold.MemberId)
+	require.Equal(t, token.Id, hold.TokenId)
+
+	var row model.EnterpriseMember
+	require.NoError(t, model.DB.First(&row, member).Error)
+	require.Equal(t, [3]int64{20_000_000 - hold.Quota, 0, hold.Quota}, [3]int64{row.Available, row.Reserved, row.Consumed})
+	balance, err := model.GetEnterpriseBalance(ent)
+	require.NoError(t, err)
+	require.True(t, balance.Balanced, "%+v", balance)
+	require.Equal(t, hold.Quota, balance.Consumed)
+
+	var entry model.Log
+	require.NoError(t, model.DB.Where("type = ?", model.LogTypeConsume).First(&entry).Error)
+	require.EqualValues(t, hold.Quota, entry.Quota)
+	require.Equal(t, staff.Id, entry.UserId)
+	require.Equal(t, token.Id, entry.TokenId)
+	var other map[string]any
+	require.NoError(t, common.UnmarshalJsonStr(entry.Other, &other))
+	require.Equal(t, service.BillingSourceEnterprise, other["billing_source"])
+	require.EqualValues(t, ent, other["enterprise_id"])
+	require.EqualValues(t, member, other["enterprise_member_id"])
+
+	var user model.User
+	require.NoError(t, model.DB.First(&user, staff.Id).Error)
+	require.Equal(t, 100000, user.Quota, "个人钱包零变动")
+	require.Zero(t, user.UsedQuota, "企业消费不计入个人已用额度")
+	require.Equal(t, 1, user.RequestCount)
+	var stored model.Token
+	require.NoError(t, model.DB.First(&stored, token.Id).Error)
+	require.EqualValues(t, hold.Quota, stored.UsedQuota)
+	require.Zero(t, stored.RemainQuota)
+	var channel model.Channel
+	require.NoError(t, model.DB.First(&channel, 1).Error)
+	require.EqualValues(t, hold.Quota, channel.UsedQuota)
 }
 
 func TestEnterpriseTokenPayerOverAPI(t *testing.T) {
@@ -372,7 +459,7 @@ func TestEnterpriseTokenPayerOverAPI(t *testing.T) {
 	require.Equal(t, false, usage.Data["unlimited_quota"])
 }
 
-// 企业资金来源接入之前，任何落到个人钱包结算路径的企业请求都必须报错而不是扣个人的钱。
+// 没有请求号（无法建立可对账预留）或落到个人钱包结算路径的企业请求都必须报错，而不是扣个人的钱。
 func TestEnterpriseRequestNeverFallsBackToPersonalWallet(t *testing.T) {
 	api := setupEnterpriseAPI(t, true)
 	staff := api.user("staff")

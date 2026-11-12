@@ -247,6 +247,12 @@ func appendBillingInfo(relayInfo *relaycommon.RelayInfo, other map[string]interf
 	if relayInfo.BillingSource != "" {
 		other["billing_source"] = relayInfo.BillingSource
 	}
+	if relayInfo.EnterpriseId > 0 {
+		// 企业请求不看个人计费偏好；企业与成员代次用于明细下钻和对账。
+		other["enterprise_id"] = relayInfo.EnterpriseId
+		other["enterprise_member_id"] = relayInfo.EnterpriseMemberId
+		return
+	}
 	if relayInfo.UserSetting.BillingPreference != "" {
 		other["billing_preference"] = relayInfo.UserSetting.BillingPreference
 	}

@@ -50,6 +50,9 @@ func setupEnterpriseAPI(t *testing.T, enabled bool) *enterpriseAPI {
 	oldDB, oldLogDB := model.DB, model.LOG_DB
 	oldSQLite, oldMySQL, oldPG, oldRedis := common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled
 	oldGlobal, oldCritical, oldEnabled := common.GlobalApiRateLimitEnable, common.CriticalRateLimitEnable, common.EnterpriseEnabled
+	// 搜索限流按账号编号在进程内计数，而每个测试的账号编号都从 1 开始；放宽后重复运行才不会互相限流。
+	oldSearchLimit := common.SearchRateLimitNum
+	common.SearchRateLimitNum = 1 << 20
 	oldGroupRatio := ratio_setting.GroupRatio2JSONString()
 	model.DB, model.LOG_DB = db, db
 	common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = true, false, false, false
@@ -59,6 +62,7 @@ func setupEnterpriseAPI(t *testing.T, enabled bool) *enterpriseAPI {
 		model.DB, model.LOG_DB = oldDB, oldLogDB
 		common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = oldSQLite, oldMySQL, oldPG, oldRedis
 		common.GlobalApiRateLimitEnable, common.CriticalRateLimitEnable, common.EnterpriseEnabled = oldGlobal, oldCritical, oldEnabled
+		common.SearchRateLimitNum = oldSearchLimit
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldGroupRatio))
 		_ = sqlDB.Close()
 	})

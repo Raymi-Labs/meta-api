@@ -119,7 +119,7 @@ func PrepareImageBilling(c *gin.Context, info *relaycommon.RelayInfo, count int,
 		common.GetContextKeyString(c, constant.ContextKeyTokenBillingMode) == model.TokenBillingModeTokenOnly {
 		reserve = info.PriceData.ConservativeQuotaToPreConsume
 	}
-	if base.FreeModel && reserve == 0 && info.Billing == nil {
+	if base.FreeModel && reserve == 0 && info.Billing == nil && info.EnterpriseId <= 0 {
 		return nil
 	}
 	if len(reserveQuota) > 0 && !reserveQuota[0] {

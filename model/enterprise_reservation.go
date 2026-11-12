@@ -23,6 +23,8 @@ const (
 	EnterpriseChargeManual       = "manual"
 
 	EnterpriseQuotaSource = "enterprise"
+	// 令牌上限的拒绝单独成一类：它的主体是令牌而不是成员，处理办法也不同（调上限而非申请额度）。
+	EnterpriseTokenQuotaSource = "enterprise_token"
 )
 
 var (
@@ -106,7 +108,7 @@ func applyEnterpriseTokenBudgetTx(tx *gorm.DB, sub EnterpriseSubject, delta int6
 		return ErrEnterpriseSubject
 	}
 	if enforce && delta > 0 && budget.LimitQuota > 0 && budget.UsedQuota+delta > budget.LimitQuota {
-		return &types.QuotaRejection{Source: EnterpriseQuotaSource, ResourceID: sub.TokenId,
+		return &types.QuotaRejection{Source: EnterpriseTokenQuotaSource, ResourceID: sub.TokenId,
 			Available: budget.LimitQuota - budget.UsedQuota, Required: delta, Known: true, Cause: ErrEnterpriseTokenCap}
 	}
 	return tx.Model(&EnterpriseTokenBudget{}).Where("token_id = ?", sub.TokenId).

@@ -55,6 +55,13 @@ func (s *BillingSession) Settle(actualQuota int) error {
 		}
 		s.fundingSettled = true
 	}
+	// 企业预留同样无论金额是否变化都要终结，否则会一直挂在途并被转入待对账。
+	if enterprise, ok := s.funding.(*EnterpriseFunding); ok && !s.fundingSettled {
+		if err := enterprise.resize(actualQuota, model.EnterpriseReservationSettled, false); err != nil {
+			return err
+		}
+		s.fundingSettled = true
+	}
 	delta := actualQuota - s.preConsumedQuota
 	tokenDelta := actualQuota - s.tokenConsumed
 	if delta == 0 && (tokenDelta == 0 || s.relayInfo.IsPlayground) {
@@ -149,6 +156,10 @@ func (s *BillingSession) needsRefundLocked() bool {
 	if s.tokenConsumed > 0 {
 		return true
 	}
+	// 企业预留哪怕金额为 0 也是一条开放记录，失败时必须显式释放。
+	if _, ok := s.funding.(*EnterpriseFunding); ok {
+		return true
+	}
 	if wallet, ok := s.funding.(*WalletFunding); ok && wallet.consumed > 0 {
 		return true
 	}
@@ -198,6 +209,12 @@ func (s *BillingSession) Reserve(targetQuota int) error {
 
 	if err := s.reserveFunding(delta); err != nil {
 		return err
+	}
+	if _, ok := s.funding.(*EnterpriseFunding); ok {
+		// 企业令牌的上限已在企业账本里随预留一起检查，令牌表不预扣。
+		s.preConsumedQuota += delta
+		s.syncRelayInfo()
+		return nil
 	}
 	if err := s.reserveToken(delta); err != nil {
 		s.rollbackFundingReserve(delta)
@@ -305,6 +322,11 @@ func (s *BillingSession) reserveFunding(delta int) error {
 	case *TokenFunding:
 		// Token-only packages reserve their quota in reserveToken below.
 		return nil
+	case *EnterpriseFunding:
+		if err := funding.PreConsume(delta); err != nil {
+			return enterpriseQuotaError(err)
+		}
+		return nil
 	default:
 		return types.NewError(fmt.Errorf("unsupported funding source: %s", s.funding.Source()), types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
@@ -327,6 +349,10 @@ func (s *BillingSession) rollbackFundingReserve(delta int) {
 	case *SubscriptionFunding:
 		if err := model.PostConsumeUserSubscriptionDelta(funding.subscriptionId, -int64(delta)); err != nil {
 			common.SysLog("error rolling back subscription funding reserve: " + err.Error())
+		}
+	case *EnterpriseFunding:
+		if err := funding.resize(funding.consumed-delta, model.EnterpriseReservationReserved, false); err != nil {
+			common.SysLog("error rolling back enterprise funding reserve: " + err.Error())
 		}
 	}
 }
@@ -411,9 +437,8 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 	}
 
 	if relayInfo.EnterpriseId > 0 {
-		// 企业请求只能由企业成员预算付款。企业资金来源接入之前一律拒绝，绝不回落到个人钱包或订阅。
-		return nil, types.NewErrorWithStatusCode(model.ErrEnterpriseUnsupported, types.ErrorCodeAccessDenied,
-			http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		// 企业请求只能由企业成员预算付款，计费偏好、订阅与个人钱包都不参与，失败也不回落。
+		return newEnterpriseSession(c, relayInfo, preConsumedQuota)
 	}
 
 	pref := common.NormalizeBillingPreference(relayInfo.UserSetting.BillingPreference)
