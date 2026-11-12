@@ -98,6 +98,11 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 		if err := common.UnmarshalBodyReusable(c, &body); err != nil {
 			return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
 		}
+		if body["model"] != "muse-video" && info.UpstreamModelName != "muse-video" {
+			if err := normalizeVideoDimensions(body, "720x1280"); err != nil {
+				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
+			}
+		}
 		if body["model"] == "muse-video" || info.UpstreamModelName == "muse-video" {
 			if err := normalizeMuseRequest(body); err != nil {
 				return service.TaskErrorWrapperLocal(err, "invalid_request", http.StatusBadRequest)
@@ -206,8 +211,8 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 				}
 				bodyMap["seconds"] = seconds
 				delete(bodyMap, "duration")
-				if req.Size == "" {
-					bodyMap["size"] = "720x1280"
+				if err := normalizeVideoDimensions(bodyMap, "720x1280"); err != nil {
+					return nil, err
 				}
 			}
 			if newBody, err := common.Marshal(bodyMap); err == nil {

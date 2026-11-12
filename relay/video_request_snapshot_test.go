@@ -277,3 +277,23 @@ func TestMuseLongVideoBillingPreservesRequestedSecondsAndReferences(t *testing.T
 	require.NoError(t, err)
 	require.Equal(t, float64(1440000000), cost)
 }
+
+func TestMuseExplicitDimensionsBillingMatchesWire(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("POST", "/v1/videos", strings.NewReader(`{"model":"muse-video","prompt":"scene","seconds":"181","resolution":"1080p","aspect_ratio":"21:9"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	defer common.CleanupBodyStorage(c)
+	info := &relaycommon.RelayInfo{OriginModelName: "muse-video", TaskRelayInfo: &relaycommon.TaskRelayInfo{}, ChannelMeta: &relaycommon.ChannelMeta{ChannelType: constant.ChannelTypeSora, UpstreamModelName: "muse-video", ChannelBaseUrl: "https://example.test", ApiKey: "fixture"}}
+	a := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora)))
+	a.Init(info)
+	require.Nil(t, a.ValidateRequestAndSetAction(c, info))
+	wire, err := PrepareVideoRequestSnapshot(c, info, a)
+	require.NoError(t, err)
+	var sent map[string]interface{}
+	require.NoError(t, common.Unmarshal(wire, &sent))
+	require.Equal(t, "2520x1080", sent["size"])
+	require.Equal(t, "1080p", sent["resolution"])
+	cost, _, err := billingexpr.RunExprWithRequest(`param("resolution") == "1080p" && param("size") == "2520x1080" ? tier("video", param("duration") * 1000) : tier("bad", -1)`, billingexpr.TokenParams{}, *info.BillingRequestInput)
+	require.NoError(t, err)
+	require.Equal(t, float64(181000), cost)
+}

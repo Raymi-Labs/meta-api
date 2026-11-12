@@ -253,3 +253,5 @@
 | 视频上游信息隔离 | [公开响应](../service/public_video.go)、[任务查询](../relay/relay_task.go)、[下载代理](../controller/video_proxy.go) | 普通用户只获得公开任务号、规范状态/媒体参数及元衡下载地址；原始上游数据保留给服务端/管理员 | 覆盖统一/兼容查询、用户任务列表、Sora提交及错误、下载响应头；取片校验所属用户或管理员，私有禁缓存；不新增匿名下载授权。见[决策](../.agents/notes/implemented/bug-fix/2026-11-10-video-public-boundary.md) |
 
 | 媒体Skill参数保留 | [视频参数](../scripts/meta-api-video/scripts/meta_api_video.py)、[合并包](../web/public/downloads/meta-api-imagegen-skill.zip)、[GIF配置说明](installation/gif-parameter-overrides.md) | 模型/时长/分辨率/比例/参考图不再被实测白名单拦截；显式视频协议与原生Gemini参考图；GIF自定义帧参数 | 真实能力由接口返回；保留Veo退役与一次提交、原凭据恢复/资源保护；线上渠道覆盖不自动迁移。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-media-skill-parameters.md) |
+
+| 视频尺寸与Muse参数一致性 | [规范化](../relay/channel/task/sora/video_dimensions.go)、[适配器](../relay/channel/task/sora/adaptor.go) | 显式ratio/resolution生成准确整数size，未知规格保留，矛盾字段拒绝；同一出站快照计费 | 无尺寸字段才用历史缺省；Muse仅格式/资源检查，线上报价覆盖仍单独约束。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-video-wire-dimensions.md) |

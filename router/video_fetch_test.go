@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -73,7 +74,7 @@ func TestVideoFetchRoutesReturnOwnedTaskWithoutGeneration(t *testing.T) {
 					require.Equal(t, "task_"+string(status), response["id"])
 					require.Equal(t, status.ToVideoStatus(), response["status"])
 					if status == model.TaskStatusSuccess {
-						require.Equal(t, resultURL, response["metadata"].(map[string]any)["url"])
+						require.Equal(t, service.VideoContentURL("task_"+string(status)), response["metadata"].(map[string]any)["url"])
 					}
 				} else {
 					require.Equal(t, "success", response["code"])
@@ -81,9 +82,10 @@ func TestVideoFetchRoutesReturnOwnedTaskWithoutGeneration(t *testing.T) {
 					require.Equal(t, "task_"+string(status), data["task_id"])
 					require.Equal(t, string(status), data["status"])
 					if status == model.TaskStatusSuccess {
-						require.Equal(t, resultURL, data["result_url"])
+						require.Equal(t, service.VideoContentURL("task_"+string(status)), data["result_url"])
 					}
 				}
+				require.NotContains(t, recorder.Body.String(), resultURL)
 				require.NotContains(t, recorder.Body.String(), "private-submission-key")
 				require.NotContains(t, recorder.Body.String(), "private-upstream-id")
 			})

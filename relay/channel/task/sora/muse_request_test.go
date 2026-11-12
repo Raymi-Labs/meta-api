@@ -38,7 +38,7 @@ func TestMuseLongMultiReferenceJSON(t *testing.T) {
 	}
 }
 func TestMuseRejectsUnsupportedOrConflictingInputs(t *testing.T) {
-	for _, fields := range []string{`"seconds":181`, `"seconds":3`, `"seconds":8.5`, `"seconds":"8.5"`, `"seconds":60,"duration":30`, `"resolution":"1080p"`, `"size":"1024x1024"`, `"images":[]`, `"images":["a","b","c","d","e"]`, `"images":["https://example.test/a"],"input_reference":"https://example.test/b"`, `"images":[null]`, `"input_reference":"file-123"`, `"input_reference":"data:image/png;base64,%%%"`, `"image":"https://example.test/a"`} {
+	for _, fields := range []string{`"seconds":0`, `"seconds":-1`, `"seconds":8.5`, `"seconds":"8.5"`, `"seconds":60,"duration":30`, `"resolution":10`, `"size":"bad"`, `"images":[]`, `"images":["a","b","c","d","e"]`, `"images":["https://example.test/a"],"input_reference":"https://example.test/b"`, `"images":[null]`, `"input_reference":"file-123"`, `"input_reference":"data:image/png;base64,%%%"`, `"image":"https://example.test/a"`} {
 		t.Run(fields, func(t *testing.T) {
 			var payload map[string]interface{}
 			require.NoError(t, common.Unmarshal([]byte(`{"prompt":"test",`+fields+`}`), &payload))
@@ -47,15 +47,15 @@ func TestMuseRejectsUnsupportedOrConflictingInputs(t *testing.T) {
 	}
 	var p map[string]interface{}
 	require.NoError(t, common.Unmarshal([]byte(`{"prompt":"`+strings.Repeat("字", 4001)+`"}`), &p))
-	require.Error(t, normalizeMuseRequest(p))
+	require.NoError(t, normalizeMuseRequest(p))
 }
 
 func TestMuseInlineImageByteBudgets(t *testing.T) {
 	encode := func(n int) string {
 		return "data:image/png;base64," + base64.StdEncoding.EncodeToString(make([]byte, n))
 	}
-	require.Error(t, normalizeMuseRequest(map[string]interface{}{"prompt": "test", "input_reference": encode(10_000_001)}))
-	reference := encode(8_000_001)
-	require.Error(t, normalizeMuseRequest(map[string]interface{}{"prompt": "test", "images": []interface{}{reference, reference, reference}}))
+	require.Error(t, normalizeMuseRequest(map[string]interface{}{"prompt": "test", "input_reference": encode(20*1024*1024 + 1)}))
+	reference := encode(17 * 1024 * 1024)
+	require.Error(t, normalizeMuseRequest(map[string]interface{}{"prompt": "test", "images": []interface{}{reference, reference, reference, reference}}))
 	require.NoError(t, normalizeMuseRequest(map[string]interface{}{"prompt": "test", "input_reference": encode(10_000_000)}))
 }
