@@ -15,7 +15,7 @@ import (
 )
 
 func metadataVendorName(provider string) string {
-	return map[string]string{"openai": "OpenAI", "anthropic": "Anthropic", "google": "Google", "deepseek": "DeepSeek", "xai": "xAI", "alibaba": "阿里巴巴", "alibaba-cn": "阿里巴巴", "moonshotai": "Moonshot", "moonshotai-cn": "Moonshot", "xiaomi": "小米 MiMo", "minimax": "MiniMax", "minimax-cn": "MiniMax", "zai": "智谱", "zhipuai": "智谱", "mistral": "Mistral", "inception": "Inception", "cohere": "Cohere"}[provider]
+	return map[string]string{"bytedance": "字节跳动", "openai": "OpenAI", "anthropic": "Anthropic", "google": "Google", "deepseek": "DeepSeek", "xai": "xAI", "alibaba": "阿里巴巴", "alibaba-cn": "阿里巴巴", "moonshotai": "Moonshot", "moonshotai-cn": "Moonshot", "xiaomi": "小米 MiMo", "minimax": "MiniMax", "minimax-cn": "MiniMax", "zai": "智谱", "zhipuai": "智谱", "mistral": "Mistral", "inception": "Inception", "cohere": "Cohere"}[provider]
 }
 
 // A reseller catalog can have a higher metadata priority than the original
@@ -576,6 +576,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			continue
 		}
 		switch {
+		case id == seedance25ID:
+			jobs = append(jobs, job{seedance25URL, id, "bytedance", parseSeedanceAttributes}, job{seedancePricingURL, id, "bytedance", parseSeedancePricing})
 		case strings.HasPrefix(id, "gpt-image-"):
 			provider = "openai-images"
 		case strings.HasPrefix(id, "claude-"):

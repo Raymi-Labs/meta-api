@@ -255,3 +255,5 @@
 | 媒体Skill参数保留 | [视频参数](../scripts/meta-api-video/scripts/meta_api_video.py)、[合并包](../web/public/downloads/meta-api-imagegen-skill.zip)、[GIF配置说明](installation/gif-parameter-overrides.md) | 模型/时长/分辨率/比例/参考图不再被实测白名单拦截；显式视频协议与原生Gemini参考图；GIF自定义帧参数 | 真实能力由接口返回；保留Veo退役与一次提交、原凭据恢复/资源保护；线上渠道覆盖不自动迁移。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-media-skill-parameters.md) |
 
 | 视频尺寸与Muse参数一致性 | [规范化](../relay/channel/task/sora/video_dimensions.go)、[适配器](../relay/channel/task/sora/adaptor.go) | 显式ratio/resolution生成准确整数size，未知规格保留，矛盾字段拒绝；同一出站快照计费 | 无尺寸字段才用历史缺省；Muse仅格式/资源检查，线上报价覆盖仍单独约束。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-video-wire-dimensions.md) |
+
+| Seedance 2.5 官方资料 | [官方解析](../controller/model_seedance_metadata.go)、[验证](../controller/model_seedance_metadata_test.go) | 复用管理员/定时资料同步及公开 pricing；精确 260628 型号官方模态、联网搜索与人民币在线推理四档价格 | 分辨率和输入视频条件保留；未知文本能力/token 限制不猜，官方 token 价不换算本站秒价；失败保留与人工覆盖继续生效。见[决策](../.agents/notes/implemented/bug-fix/2026-11-12-seedance-official-metadata.md) |
