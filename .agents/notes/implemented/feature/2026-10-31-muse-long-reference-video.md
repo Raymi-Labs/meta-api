@@ -30,3 +30,7 @@ JSON is the tested integration path; this change does not expand multipart valid
 ## Observed acceptance and current retail
 
 A single 60-second, four-reference request through the YuanHeng Skill completed in 526 seconds and downloaded successfully: actual 60 seconds, 1280x720, 24fps, one audio track. The supplier charged $12 balance; the site charged 120 credits under the then-current retail rate. The subsequent retail adjustment is 3 credits/requested second (RMB0.60 at normal recharge), so a new 60-second request costs 180 credits. Old requests are not repriced. Four references including WebP were accepted but sampled frames did not visibly follow references 2–4; acceptance is not a quality guarantee. 180 seconds remains untested because supplier balance before the test was $30.34, below the $36 precharge.
+
+## Capability validation correction (2026-11-11)
+
+The prior 4–180s/720p/four-reference/4000-character supplier assumptions are superseded by [wire consistency](../bug-fix/2026-11-11-video-wire-dimensions.md). Explicit parameters reach the upstream if format and gateway resource checks pass. Configured billing expressions remain authoritative and are not rewritten or bypassed by this change.
