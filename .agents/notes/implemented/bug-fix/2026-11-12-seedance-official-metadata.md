@@ -27,3 +27,5 @@ official-pricing-coverage、manufacturer-official-pricing 与本篇部分重叠�
 ## Consequences
 
 官网变更拒绝解析并保留原快照；官方能力不等于每个渠道的支持承诺。
+
+型号覆盖及共享抓取扩展见[全目录补齐](2026-11-13-model-metadata-coverage.md)，保持精确型号与厂家来源原则。

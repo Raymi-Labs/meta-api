@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -10,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -42,7 +45,7 @@ func TestSeedanceOfficialMetadata(t *testing.T) {
 		require.Equal(t, "million_tokens", p.OfficialPricing.Tiers[i].Unit)
 	}
 	require.True(t, model.IsManufacturerPriceSource(seedance25ID, p.OfficialPricing.SourceURL))
-	for _, id := range []string{"doubao-seedance-2-0-260128", "doubao-seedance-2-5-flash", "doubao-seedance-2-5-999999"} {
+	for _, id := range []string{"doubao-seedance-2-5-flash", "doubao-seedance-2-5-999999"} {
 		_, err = parseSeedanceAttributes(attrs, id, seedance25URL)
 		require.Error(t, err)
 		_, err = parseSeedancePricing(prices, id, seedancePricingURL)
@@ -87,7 +90,7 @@ func TestSeedanceSyncAndPublicProjection(t *testing.T) {
 	client.Transport = attributeTransport(func(r *http.Request) (*http.Response, error) {
 		body, status := `{"test":{"id":"test","models":{"unrelated":{"id":"unrelated","limit":{"context":1}}}}}`, 200
 		switch r.URL.String() {
-		case seedance25URL:
+		case seedanceFamilyURL:
 			body = string(attrs)
 		case seedancePricingURL:
 			body = string(prices)
@@ -122,4 +125,71 @@ func TestSeedanceSyncAndPublicProjection(t *testing.T) {
 	model.RefreshPricing()
 	out, _ = model.PublicPricingMetadata(model.GetPricing(), nil)
 	require.Equal(t, model.ModelModalities{"text"}, out[0].InputModalities)
+}
+
+func TestSeedanceFamilyCoverage(t *testing.T) {
+	attrs, err := os.ReadFile("testdata/seedance-family.html")
+	require.NoError(t, err)
+	prices, err := os.ReadFile("testdata/seedance-price.html")
+	require.NoError(t, err)
+	for id := range seedanceModels {
+		a, err := parseSeedanceAttributes(attrs, id, seedanceFamilyURL)
+		require.NoError(t, err, id)
+		p, err := parseSeedancePricing(prices, id, seedancePricingURL)
+		require.NoError(t, err, id)
+		require.NotEmpty(t, p.OfficialPricing.Tiers, id)
+		if strings.Contains(id, "-1-0-") {
+			require.Equal(t, model.ModelModalities{"text", "image"}, a.InputModalities)
+			require.Equal(t, model.ModelModalities{"video"}, a.OutputModalities)
+			require.False(t, a.Capabilities["web_search"])
+			require.Equal(t, "离线推理", p.OfficialPricing.Tiers[1].Label)
+		} else {
+			require.Len(t, a.InputModalities, 4)
+			require.Len(t, a.OutputModalities, 2)
+		}
+		if id == "doubao-seedance-2-0-260128" {
+			require.Len(t, p.OfficialPricing.Tiers, 6)
+			require.Equal(t, 26.0, *p.OfficialPricing.Tiers[4].Price)
+		}
+		if id == "doubao-seedance-2-0-fast-260128" {
+			require.Equal(t, 37.0, *p.OfficialPricing.Tiers[0].Price)
+		}
+		if id == "doubao-seedance-2-0-mini-260615" {
+			require.Equal(t, 23.0, *p.OfficialPricing.Tiers[0].Price)
+		}
+	}
+}
+
+func TestSeedanceFamilyFetchesSharedDocumentsOnce(t *testing.T) {
+	attrs, err := os.ReadFile("testdata/seedance-family.html")
+	require.NoError(t, err)
+	prices, err := os.ReadFile("testdata/seedance-price.html")
+	require.NoError(t, err)
+	old := getHTTPClient()
+	client := *old
+	httpClient = &client
+	t.Cleanup(func() { httpClient = old })
+	var calls atomic.Int32
+	client.Transport = attributeTransport(func(r *http.Request) (*http.Response, error) {
+		calls.Add(1)
+		body := attrs
+		if r.URL.String() == seedancePricingURL {
+			body = prices
+		} else if r.URL.String() != seedanceFamilyURL {
+			return nil, fmt.Errorf("unexpected document: %s", r.URL)
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(body)), Request: r}, nil
+	})
+	names := map[string]bool{}
+	for id := range seedanceModels {
+		names[id] = true
+	}
+	entries, warnings := fetchPublicModelDocuments(context.Background(), names)
+	require.Empty(t, warnings)
+	require.Len(t, entries, 6)
+	require.EqualValues(t, 2, calls.Load())
+	for id := range names {
+		require.NotEmpty(t, entries[id].OfficialPricing.Tiers, id)
+		require.NotEmpty(t, entries[id].InputModalities, id)
+	}
 }

@@ -13,60 +13,88 @@ const seedance25ID = "doubao-seedance-2-5-260628"
 const seedance25URL = "https://docs.volcengine.com/docs/ark/seedance-2-5?lang=zh"
 const seedancePricingURL = "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh"
 
-// Only the verified version is mapped to the manufacturer's family price row.
-// Future versions and flash variants require their own identity verification.
+const seedanceFamilyURL = "https://docs.volcengine.com/docs/ark/video-generation-tutorial?lang=zh"
+
+var seedanceModels = map[string]string{
+	seedance25ID:                          "doubao-seedance-2.5",
+	"doubao-seedance-2-0-260128":          "doubao-seedance-2.0",
+	"doubao-seedance-2-0-fast-260128":     "doubao-seedance-2.0-fast",
+	"doubao-seedance-2-0-mini-260615":     "doubao-seedance-2.0-mini",
+	"doubao-seedance-1-0-pro-250528":      "doubao-seedance-1.0-pro",
+	"doubao-seedance-1-0-pro-fast-251015": "doubao-seedance-1.0-pro-fast",
+}
+
 func parseSeedanceAttributes(data []byte, id, address string) (model.ModelCapabilityMetadata, error) {
 	empty := model.ModelCapabilityMetadata{}
-	if id != seedance25ID {
+	if seedanceModels[id] == "" {
 		return empty, errors.New("unknown Seedance version")
 	}
 	for _, table := range documentTables(data) {
 		if len(table) < 2 {
 			continue
 		}
-		ids := table[1]
-		if len(ids) < 3 || ids[0] != "Model ID" {
+		ids := []string{}
+		for _, v := range table[1] {
+			if v != "" {
+				ids = append(ids, v)
+			}
+		}
+		if len(ids) < 2 || ids[0] != "Model ID" {
 			continue
 		}
 		col := -1
-		for i, v := range ids {
+		for i, v := range ids[1:] {
 			if v == id {
 				col = i
 			}
 		}
-		if col < 2 || len(table[0]) != len(ids) || table[0][col] != "Seedance 2.5" {
+		if col < 0 {
 			continue
 		}
 		values := map[string]string{}
 		for _, row := range table[2:] {
-			// Do not consume irregular rowspan rows: a shifted column can describe
-			// a neighboring model. Simple capability rows have the identity width.
-			if len(row) == len(ids) && row[1] == "" {
-				values[row[0]] = row[col]
+			cells := []string{}
+			for _, v := range row {
+				if v != "" {
+					cells = append(cells, v)
+				}
 			}
+			n := len(ids) - 1
+			if len(cells) < n+1 {
+				continue
+			}
+			labels := cells[:len(cells)-n]
+			key := strings.Join(labels, " ")
+			values[key] = cells[len(cells)-n+col]
 		}
-		if values["文生视频"] != "✓" || values["首帧生视频"] != "✓" || values["生成有声视频"] != "✓" {
+		first := values["图生视频-首帧"]
+		if first == "" {
+			first = values["首帧生视频"]
+		}
+		if values["文生视频"] != "✓" || first != "✓" {
 			continue
 		}
-		// Reference counts explicitly establish all three reference modalities.
-		if values["参考素材数量上限"] != "50（30张图+10个视频+10个音频）" {
-			continue
+		e := model.ModelCapabilityMetadata{Provider: "bytedance", Tags: "video", InputModalities: model.ModelModalities{"text", "image"}, OutputModalities: model.ModelModalities{"video"}, Capabilities: model.ModelCapabilities{}}
+		// Conditional audio reference still establishes audio input, not standalone audio support.
+		if v := values["全模态参考 音频参考"]; v == "✓" || v == "✗（需搭配图片/视频）" {
+			e.InputModalities = append(e.InputModalities, "audio")
 		}
-		e := model.ModelCapabilityMetadata{Provider: "bytedance", Tags: "video", InputModalities: model.ModelModalities{"text", "image", "audio", "video"}, OutputModalities: model.ModelModalities{"video", "audio"}, Capabilities: model.ModelCapabilities{}}
-		if v := values["联网搜索工具"]; v == "✓" {
-			e.Capabilities["web_search"] = true
-		} else if v == "✗" {
-			e.Capabilities["web_search"] = false
+		if values["全模态参考 视频参考"] == "✓" {
+			e.InputModalities = append(e.InputModalities, "video")
+		}
+		if values["生成有声视频"] == "✓" {
+			e.OutputModalities = append(e.OutputModalities, "audio")
+		}
+		if v, ok := documentBool(values["联网搜索工具"]); ok {
+			e.Capabilities["web_search"] = v
 		}
 		return markOfficialAttributes(e, address), nil
 	}
 	return empty, errors.New("Seedance exact capability table missing or changed")
 }
 
-var seedance25PriceRow = regexp.MustCompile(`^输出视频分辨率为 480p，720p 输入不含视频：([0-9]+(?:\.[0-9]+)?) 输入包含视频：([0-9]+(?:\.[0-9]+)?) 输出视频分辨率为 1080p 输入不含视频：([0-9]+(?:\.[0-9]+)?) 输入包含视频：([0-9]+(?:\.[0-9]+)?)$`)
-
 func parseSeedancePricing(data []byte, id, address string) (model.ModelCapabilityMetadata, error) {
-	if id != seedance25ID {
+	if seedanceModels[id] == "" {
 		return model.ModelCapabilityMetadata{}, errors.New("unknown Seedance version")
 	}
 	for _, table := range documentTables(data) {
@@ -74,26 +102,52 @@ func parseSeedancePricing(data []byte, id, address string) (model.ModelCapabilit
 			continue
 		}
 		for _, row := range table[1:] {
-			if len(row) != 3 || row[0] != "doubao-seedance-2.5 按输出视频分辨率和输入是否包含视频区分定价" {
+			if len(row) != 3 || len(strings.Fields(row[0])) == 0 || strings.Fields(row[0])[0] != seedanceModels[id] {
 				continue
 			}
-			m := seedance25PriceRow.FindStringSubmatch(row[1])
-			if m == nil {
-				continue
-			}
-			p := model.OfficialPricing{Currency: "CNY", SourceURL: strings.Split(address, "?")[0], Notes: "在线推理；按实际视频 token 用量计费，包含输入视频时还计入输入视频时长并适用最低用量限制。官方 token 单价不能直接与本站按秒价格比较。"}
-			for i, label := range []string{"480p / 720p · 输入不含视频", "480p / 720p · 输入包含视频", "1080p · 输入不含视频", "1080p · 输入包含视频"} {
-				v, err := strconv.ParseFloat(m[i+1], 64)
-				if err != nil {
-					return model.ModelCapabilityMetadata{}, err
+			p := model.OfficialPricing{Currency: "CNY", SourceURL: strings.Split(address, "?")[0], Notes: "按实际视频 token 用量计费；输入视频可能影响用量及最低用量限制。官方 token 单价不能直接与本站按秒价格比较。"}
+			if strings.HasPrefix(seedanceModels[id], "doubao-seedance-1.0-") {
+				for i, label := range []string{"在线推理", "离线推理"} {
+					if !regexp.MustCompile(`^[0-9]+(?:\.[0-9]+)?$`).MatchString(row[i+1]) {
+						return model.ModelCapabilityMetadata{}, errors.New("invalid Seedance price")
+					}
+					v, err := strconv.ParseFloat(row[i+1], 64)
+					if err != nil {
+						return model.ModelCapabilityMetadata{}, err
+					}
+					p.Tiers = append(p.Tiers, model.OfficialPricingTier{Label: label, Unit: "million_tokens", Price: &v})
 				}
-				p.Tiers = append(p.Tiers, model.OfficialPricingTier{Label: label, Unit: "million_tokens", Price: &v})
+			} else {
+				pattern := regexp.MustCompile(`输出视频分辨率为 (480p，720p|1080p|4K) 输入不含视频：([0-9]+(?:\.[0-9]+)?) 输入包含视频：([0-9]+(?:\.[0-9]+)?)`)
+				matches := pattern.FindAllStringSubmatch(row[1], -1)
+				expected := []string{"480p，720p"}
+				if id == seedance25ID {
+					expected = append(expected, "1080p")
+				}
+				if seedanceModels[id] == "doubao-seedance-2.0" {
+					expected = append(expected, "1080p", "4K")
+				}
+				if len(matches) != len(expected) || strings.TrimSpace(pattern.ReplaceAllString(row[1], "")) != "" {
+					continue
+				}
+				for i, m := range matches {
+					if m[1] != expected[i] {
+						return model.ModelCapabilityMetadata{}, errors.New("Seedance resolution changed")
+					}
+					for j, label := range []string{"输入不含视频", "输入包含视频"} {
+						v, err := strconv.ParseFloat(m[j+2], 64)
+						if err != nil {
+							return model.ModelCapabilityMetadata{}, err
+						}
+						p.Tiers = append(p.Tiers, model.OfficialPricingTier{Label: strings.ReplaceAll(m[1], "，", " / ") + " · " + label, Unit: "million_tokens", Price: &v})
+					}
+				}
 			}
 			if err := p.Normalize(model.NameRuleExact); err != nil {
 				return model.ModelCapabilityMetadata{}, err
 			}
-			return officialPriceEntry("bytedance", strings.Split(address, "?")[0], p), nil
+			return officialPriceEntry("bytedance", p.SourceURL, p), nil
 		}
 	}
-	return model.ModelCapabilityMetadata{}, errors.New("Seedance CNY online price table missing or changed")
+	return model.ModelCapabilityMetadata{}, errors.New("Seedance CNY price table missing or changed")
 }

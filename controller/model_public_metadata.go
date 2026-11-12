@@ -576,8 +576,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			continue
 		}
 		switch {
-		case id == seedance25ID:
-			jobs = append(jobs, job{seedance25URL, id, "bytedance", parseSeedanceAttributes}, job{seedancePricingURL, id, "bytedance", parseSeedancePricing})
+		case seedanceModels[id] != "":
+			jobs = append(jobs, job{seedanceFamilyURL, id, "bytedance", parseSeedanceAttributes}, job{seedancePricingURL, id, "bytedance", parseSeedancePricing})
 		case strings.HasPrefix(id, "gpt-image-"):
 			provider = "openai-images"
 		case strings.HasPrefix(id, "claude-"):
@@ -641,6 +641,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 			provider = "mistralai"
 		case strings.HasPrefix(id, "qwen"), strings.HasPrefix(id, "wan"), strings.HasPrefix(id, "happyhorse-"), strings.HasPrefix(id, "HappyOyster-"), strings.HasPrefix(id, "z-image-"):
 			provider = "alibaba"
+			jobs = append(jobs, job{"https://help.aliyun.com/zh/model-studio/" + strings.ReplaceAll(id, ".", "-"), id, provider, parseAliyunModelAttributes})
 		}
 		if provider != "" {
 			if groups[provider] == nil {
@@ -678,13 +679,24 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 	results := make([]result, len(jobs))
 	queue := make(chan int)
 	var wg sync.WaitGroup
+	type fetchedDocument struct {
+		once sync.Once
+		data []byte
+		err  error
+	}
+	documents := map[string]*fetchedDocument{}
+	for _, j := range jobs {
+		documents[j.url] = &fetchedDocument{}
+	}
 	for i := 0; i < 6; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for index := range queue {
 				j := jobs[index]
-				data, err := fetchPublicModelDocument(ctx, j.url)
+				cached := documents[j.url]
+				cached.once.Do(func() { cached.data, cached.err = fetchPublicModelDocument(ctx, j.url) })
+				data, err := cached.data, cached.err
 				if err != nil {
 					results[index].warning = j.provider + ": " + j.url + ": " + err.Error()
 					continue

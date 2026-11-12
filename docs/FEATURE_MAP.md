@@ -256,4 +256,6 @@
 
 | 视频尺寸与Muse参数一致性 | [规范化](../relay/channel/task/sora/video_dimensions.go)、[适配器](../relay/channel/task/sora/adaptor.go) | 显式ratio/resolution生成准确整数size，未知规格保留，矛盾字段拒绝；同一出站快照计费 | 无尺寸字段才用历史缺省；Muse仅格式/资源检查，线上报价覆盖仍单独约束。见[决策](../.agents/notes/implemented/bug-fix/2026-11-11-video-wire-dimensions.md) |
 
-| Seedance 2.5 官方资料 | [官方解析](../controller/model_seedance_metadata.go)、[验证](../controller/model_seedance_metadata_test.go) | 复用管理员/定时资料同步及公开 pricing；精确 260628 型号官方模态、联网搜索与人民币在线推理四档价格 | 分辨率和输入视频条件保留；未知文本能力/token 限制不猜，官方 token 价不换算本站秒价；失败保留与人工覆盖继续生效。见[决策](../.agents/notes/implemented/bug-fix/2026-11-12-seedance-official-metadata.md) |
+| Seedance 系列官方资料 | [官方解析](../controller/model_seedance_metadata.go)、[验证](../controller/model_seedance_metadata_test.go) | 复用管理员/定时资料同步及公开 pricing；六个精确版本官方模态、联网搜索与人民币在线/离线分辨率价格 | 分辨率和输入视频条件保留；同源文档每轮只抓一次；未知文本能力/token 限制不猜，官方 token 价不换算本站秒价；失败保留与人工覆盖继续生效。见[决策](../.agents/notes/implemented/bug-fix/2026-11-12-seedance-official-metadata.md) |
+
+| 百炼独立模型属性 | [解析](../controller/model_aliyun_attributes.go)、[审计](audits/2026-11-13-model-metadata-coverage.md) | 原官方同步→精确型号标题→两列/四列能力表→原逐字段持久化和公开 pricing | 中英文模态、token 上限、三态能力；不从型号推断、不从简表拼价格，未知向量输出不伪装文本；同源失败与人工保护保留。见[决策](../.agents/notes/implemented/bug-fix/2026-11-13-model-metadata-coverage.md) |
