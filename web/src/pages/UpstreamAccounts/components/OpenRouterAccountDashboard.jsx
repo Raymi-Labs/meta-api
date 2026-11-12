@@ -10,14 +10,13 @@ import {
   Space,
   Spin,
   Switch,
-  Table,
   Tabs,
   TabPane,
   Typography,
 } from '@douyinfe/semi-ui';
 import { API, showError, showSuccess } from '../../../helpers';
 import OpenRouterCashDashboard from './OpenRouterCashDashboard';
-import { filterOpenRouterActivity, openRouterUSD } from '../openRouterFinance';
+import OpenRouterConsumption from './OpenRouterConsumption';
 
 const { Text } = Typography;
 const endpoint = '/api/upstream_accounts';
@@ -33,7 +32,7 @@ export default function OpenRouterAccountDashboard({
     [accounts],
   );
   const [selected, setSelected] = useState(0);
-  const [view, setView] = useState('profit');
+  const [view, setView] = useState('balance');
   const account = options.find((a) => a.id === selected);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -41,9 +40,6 @@ export default function OpenRouterAccountDashboard({
   const [refresh, setRefresh] = useState(0);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState('');
-  const [date, setDate] = useState('');
-  const [page, setPage] = useState(1);
   const sequence = useRef(0);
   const configIdentity = account
     ? `${account.id}:${account.enabled}:${account.access_token_masked}`
@@ -60,9 +56,6 @@ export default function OpenRouterAccountDashboard({
     setData(null);
     setError('');
     setLoading(false);
-    setDate('');
-    setSearch('');
-    setPage(1);
     if (!active || view !== 'balance' || !selected || !account?.enabled)
       return () => controller.abort();
     setLoading(true);
@@ -88,15 +81,6 @@ export default function OpenRouterAccountDashboard({
     };
   }, [selected, configIdentity, active, refresh, view]);
 
-  const rows = useMemo(
-    () => filterOpenRouterActivity(data?.activity, search, date),
-    [data, search, date],
-  );
-  const dates = [...new Set((data?.activity || []).map((r) => r.date))]
-    .sort()
-    .reverse();
-  const spend = rows.reduce((sum, r) => sum + r.usage, 0);
-  const credits = data?.credits;
   const save = async () => {
     if (!draft.name.trim() || (!draft.id && !draft.access_token.trim())) return;
     setSaving(true);
@@ -142,26 +126,6 @@ export default function OpenRouterAccountDashboard({
         await reloadAccounts();
       },
     });
-  const columns = [
-    { title: t('日期') + ' (UTC)', dataIndex: 'date', width: 120 },
-    { title: t('模型'), dataIndex: 'model', width: 230 },
-    { title: t('供应商'), dataIndex: 'provider_name', width: 150 },
-    { title: t('请求数'), dataIndex: 'requests', width: 100 },
-    { title: t('输入 Token'), dataIndex: 'prompt_tokens', width: 120 },
-    { title: t('输出 Token'), dataIndex: 'completion_tokens', width: 120 },
-    {
-      title: t('消费金额') + ' (USD)',
-      dataIndex: 'usage',
-      width: 140,
-      render: openRouterUSD,
-    },
-    {
-      title: t('BYOK 外部成本') + ' (USD)',
-      dataIndex: 'byok_usage_inference',
-      width: 170,
-      render: openRouterUSD,
-    },
-  ];
 
   return (
     <div className='mt-3 space-y-4'>
@@ -236,10 +200,10 @@ export default function OpenRouterAccountDashboard({
           contentStyle={{ display: 'none' }}
         >
           {[
+            ['balance', '模型消耗看板'],
             ['profit', '现金收益'],
             ['flow', '现金流'],
             ['review', '待核对'],
-            ['balance', '余额与消费'],
           ].map(([key, label]) => (
             <TabPane itemKey={key} tab={t(label)} key={key} />
           ))}
@@ -272,84 +236,7 @@ export default function OpenRouterAccountDashboard({
         <>
           {error && <Banner type='danger' description={error} />}
           <Spin spinning={loading}>
-            {data?.credits_error && (
-              <Banner type='danger' description={data.credits_error} />
-            )}
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4'>
-              {[
-                [t('累计购入额度'), credits?.total_credits],
-                [
-                  t('钱包余额'),
-                  credits ? credits.total_credits - credits.total_usage : null,
-                ],
-                [t('累计消费'), credits?.total_usage],
-                [t('筛选范围消费'), data?.activity ? spend : null],
-              ].map(([label, value]) => (
-                <Card key={label}>
-                  <Text type='tertiary'>{label} (USD)</Text>
-                  <div className='mt-2 text-2xl font-semibold tabular-nums'>
-                    {openRouterUSD(value)}
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <Card className='mt-4' title={t('OpenRouter 消费明细')}>
-              <Text type='tertiary'>
-                {t(
-                  '最近 30 个完整 UTC 日，按日期、模型及供应商汇总，不含今日实时用量。BYOK 外部成本不计入 OpenRouter 消费合计。',
-                )}
-              </Text>
-              <div className='my-4 flex flex-wrap gap-3'>
-                <Input
-                  aria-label={t('搜索模型或供应商')}
-                  placeholder={t('搜索模型或供应商')}
-                  value={search}
-                  showClear
-                  onChange={(v) => {
-                    setSearch(v);
-                    setPage(1);
-                  }}
-                />
-                <Select
-                  aria-label={t('日期')}
-                  value={date}
-                  style={{ minWidth: 160 }}
-                  optionList={[
-                    { label: t('全部日期'), value: '' },
-                    ...dates.map((v) => ({ label: v, value: v })),
-                  ]}
-                  onChange={(v) => {
-                    setDate(v);
-                    setPage(1);
-                  }}
-                />
-              </div>
-              {data?.activity_error ? (
-                <Banner type='danger' description={data.activity_error} />
-              ) : (
-                <Table
-                  columns={columns}
-                  dataSource={rows
-                    .slice((page - 1) * 20, page * 20)
-                    .map((r, i) => ({ ...r, key: (page - 1) * 20 + i }))}
-                  loading={loading}
-                  scroll={{ x: 1150 }}
-                  pagination={{
-                    currentPage: page,
-                    pageSize: 20,
-                    total: rows.length,
-                    onPageChange: setPage,
-                  }}
-                  empty={error ? t('加载失败') : t('暂无数据')}
-                />
-              )}
-              {data?.fetched_at && (
-                <Text type='tertiary' size='small'>
-                  {t('更新时间')}：
-                  {new Date(data.fetched_at * 1000).toLocaleString()}
-                </Text>
-              )}
-            </Card>
+            <OpenRouterConsumption data={data} loading={loading} t={t} />
           </Spin>
         </>
       )}

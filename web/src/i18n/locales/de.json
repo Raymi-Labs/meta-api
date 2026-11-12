@@ -7283,6 +7283,15 @@
     "接收上游正文期间断开": "Abbruch beim Empfang des Upstream-Antwortinhalts",
     "未观测到断开阶段": "Abbruchphase nicht beobachtet",
     "断开时已耗时": "Verstrichene Zeit beim Abbruch",
-    "上游正文已开始返回": "Empfang des Upstream-Antwortinhalts begonnen"
+    "上游正文已开始返回": "Empfang des Upstream-Antwortinhalts begonnen",
+    "上游消耗": "Upstream-Ausgaben",
+    "本站消耗": "Website-Verbrauch",
+    "上游请求数": "Upstream-Anfragen",
+    "本站请求数": "Website-Anfragen",
+    "模型消耗看板": "Modellverbrauch",
+    "按模型": "Nach Modell",
+    "按日期": "Nach Datum",
+    "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "Letzte 30 vollständige UTC-Tage. Upstream umfasst das Konto, die Website nur gespeicherte Protokolle aktuell zugeordneter Kanäle. Schlüsselwechsel, gelöschte Protokolle und externe Aufrufe können Abweichungen verursachen. Dies ist kein Cash-Gewinn.",
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Der Verbrauch verwendet die Kontingenteinheit der Plattform. Nicht zugeordnete Werte erscheinen als --. Externe BYOK-Kosten stehen separat."
   }
 }

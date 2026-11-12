@@ -7283,6 +7283,15 @@
     "接收上游正文期间断开": "Desconexión durante la recepción del cuerpo del proveedor",
     "未观测到断开阶段": "Etapa de desconexión no observada",
     "断开时已耗时": "Tiempo transcurrido al desconectar",
-    "上游正文已开始返回": "Recepción del cuerpo del proveedor iniciada"
+    "上游正文已开始返回": "Recepción del cuerpo del proveedor iniciada",
+    "上游消耗": "Gasto del proveedor",
+    "本站消耗": "Consumo del sitio",
+    "上游请求数": "Solicitudes al proveedor",
+    "本站请求数": "Solicitudes del sitio",
+    "模型消耗看板": "Consumo por modelo",
+    "按模型": "Por modelo",
+    "按日期": "Por fecha",
+    "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "Últimos 30 días UTC completos. El proveedor cubre la cuenta; el sitio usa registros conservados de canales asociados actualmente. Cambios de claves, eliminación de registros y llamadas externas pueden causar diferencias. No representa beneficio en efectivo.",
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "El consumo usa la unidad de cuota de la plataforma. Los valores sin correspondencia muestran --. Los costes BYOK externos se muestran aparte."
   }
 }

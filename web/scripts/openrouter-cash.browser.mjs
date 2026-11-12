@@ -209,6 +209,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       { id: 1, name: 'Cash QA', account_type: 'openrouter', enabled: true },
     ]),
   );
+  await tab('现金收益').click();
   await button('启用现金收益').click();
   await button('保存').click();
   await page.getByText('¥10.00', { exact: true }).first().waitFor();

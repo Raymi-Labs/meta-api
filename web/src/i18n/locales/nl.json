@@ -7283,6 +7283,15 @@
     "接收上游正文期间断开": "Verbroken tijdens ontvangst van upstream-antwoordinhoud",
     "未观测到断开阶段": "Verbrekingsfase niet waargenomen",
     "断开时已耗时": "Verstreken tijd bij verbreking",
-    "上游正文已开始返回": "Ontvangst van upstream-antwoordinhoud gestart"
+    "上游正文已开始返回": "Ontvangst van upstream-antwoordinhoud gestart",
+    "上游消耗": "Upstream-uitgaven",
+    "本站消耗": "Siteverbruik",
+    "上游请求数": "Upstream-aanvragen",
+    "本站请求数": "Siteaanvragen",
+    "模型消耗看板": "Modelverbruik",
+    "按模型": "Per model",
+    "按日期": "Per datum",
+    "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "Laatste 30 volledige UTC-dagen. Upstream omvat het account; de site gebruikt bewaarde logs van momenteel gekoppelde kanalen. Sleutelwijzigingen, verwijderde logs en externe oproepen kunnen verschillen veroorzaken. Dit is geen kaswinst.",
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Verbruik volgt de quota-eenheid van het platform. Niet gekoppelde waarden tonen --. Externe BYOK-kosten staan apart."
   }
 }

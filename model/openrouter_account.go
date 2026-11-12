@@ -37,6 +37,11 @@ type OpenRouterAccountActivity struct {
 }
 
 type OpenRouterAccountFinance struct {
+	SiteActivity  []OpenRouterSiteActivity    `json:"site_activity"`
+	SiteError     string                      `json:"site_error,omitempty"`
+	SiteChannels  int                         `json:"site_channels"`
+	StartDate     string                      `json:"start_date"`
+	EndDate       string                      `json:"end_date"`
 	Credits       *OpenRouterAccountCredits   `json:"credits"`
 	Activity      []OpenRouterAccountActivity `json:"activity"`
 	CreditsError  string                      `json:"credits_error,omitempty"`
@@ -213,5 +218,23 @@ func GetOpenRouterAccountFinance(ctx context.Context, id int) (*OpenRouterAccoun
 	if !account.Enabled {
 		return nil, errors.New("OpenRouter account disabled")
 	}
-	return fetchOpenRouterFinance(ctx, newOpenRouterAccountClient(), account.remoteObserverConfig()), nil
+	client := newOpenRouterAccountClient()
+	result := fetchOpenRouterFinance(ctx, client, account.remoteObserverConfig())
+	end := time.Now().UTC().Truncate(24 * time.Hour)
+	start := end.AddDate(0, 0, -30)
+	result.StartDate, result.EndDate = start.Format("2006-01-02"), end.AddDate(0, 0, -1).Format("2006-01-02")
+	if result.Activity != nil {
+		filtered := make([]OpenRouterAccountActivity, 0, len(result.Activity))
+		for _, row := range result.Activity {
+			if row.Date >= result.StartDate && row.Date <= result.EndDate {
+				filtered = append(filtered, row)
+			}
+		}
+		result.Activity = filtered
+	}
+	result.SiteActivity, result.SiteChannels, err = fetchOpenRouterSiteActivity(ctx, client, account, start, end)
+	if err != nil {
+		result.SiteError = err.Error()
+	}
+	return result, nil
 }

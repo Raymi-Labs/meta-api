@@ -7896,6 +7896,15 @@
     "接收上游正文期间断开": "Ngắt khi đang nhận nội dung từ nhà cung cấp",
     "未观测到断开阶段": "Chưa quan sát được giai đoạn ngắt",
     "断开时已耗时": "Thời gian đã trôi qua khi ngắt",
-    "上游正文已开始返回": "Đã bắt đầu nhận nội dung từ nhà cung cấp"
+    "上游正文已开始返回": "Đã bắt đầu nhận nội dung từ nhà cung cấp",
+    "上游消耗": "Chi phí thượng nguồn",
+    "本站消耗": "Mức dùng trên trang",
+    "上游请求数": "Yêu cầu thượng nguồn",
+    "本站请求数": "Yêu cầu trên trang",
+    "模型消耗看板": "Mức dùng theo mô hình",
+    "按模型": "Theo mô hình",
+    "按日期": "Theo ngày",
+    "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "30 ngày UTC đầy đủ gần nhất. Thượng nguồn bao gồm tài khoản; trang dùng nhật ký còn lưu của các kênh hiện thuộc tài khoản. Đổi khóa, xóa nhật ký và gọi bên ngoài có thể gây chênh lệch. Đây không phải lợi nhuận tiền mặt.",
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Mức dùng theo đơn vị hạn mức của nền tảng. Giá trị không khớp hiển thị --. Chi phí BYOK bên ngoài được tách riêng."
   }
 }

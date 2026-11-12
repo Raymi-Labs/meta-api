@@ -7283,6 +7283,15 @@
     "接收上游正文期间断开": "Rozłączenie podczas odbierania treści odpowiedzi dostawcy",
     "未观测到断开阶段": "Nie zaobserwowano etapu rozłączenia",
     "断开时已耗时": "Czas do rozłączenia",
-    "上游正文已开始返回": "Rozpoczęto odbieranie treści odpowiedzi dostawcy"
+    "上游正文已开始返回": "Rozpoczęto odbieranie treści odpowiedzi dostawcy",
+    "上游消耗": "Koszt dostawcy",
+    "本站消耗": "Zużycie witryny",
+    "上游请求数": "Żądania do dostawcy",
+    "本站请求数": "Żądania witryny",
+    "模型消耗看板": "Zużycie modeli",
+    "按模型": "Według modelu",
+    "按日期": "Według daty",
+    "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "Ostatnie 30 pełnych dni UTC. Dostawca obejmuje konto; witryna używa zachowanych logów aktualnie przypisanych kanałów. Zmiany kluczy, usunięte logi i wywołania zewnętrzne mogą powodować różnice. To nie jest zysk gotówkowy.",
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Zużycie jest podane w jednostce limitu platformy. Brak dopasowania oznaczono --. Zewnętrzne koszty BYOK są osobno."
   }
 }

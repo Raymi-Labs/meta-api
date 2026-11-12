@@ -127,6 +127,14 @@ createRoot(document.getElementById('root')).render(<App/>);`,
               selectedMode === 'partial'
                 ? 'OpenRouter HTTP 403: Management Key required'
                 : '',
+            start_date: '2026-10-03',
+            end_date: '2026-11-01',
+            site_activity: rows.map((r) => ({
+              date: r.date,
+              model: r.model,
+              quota: 500000,
+              requests: 1,
+            })),
             fetched_at: 1793616000,
           },
         },
@@ -157,6 +165,17 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     }
     await route.fulfill({ json: { success: true, data: accounts } });
   });
+  await page.addInitScript(() => {
+    localStorage.setItem('quota_per_unit', '500000');
+    localStorage.setItem('quota_display_type', 'CUSTOM');
+    localStorage.setItem(
+      'status',
+      JSON.stringify({
+        custom_currency_symbol: '⚡',
+        custom_currency_exchange_rate: 1,
+      }),
+    );
+  });
   await page.goto(`${base}/${path.basename(fixture)}/index.html`);
   await page
     .getByText('添加 OpenRouter Management Key 后查看充值、余额和消费明细', {
@@ -176,8 +195,12 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .getByRole('button')
     .filter({ hasText: /^保存$/ })
     .click();
-  await page.getByRole('tab', { name: '余额与消费', exact: true }).click();
-  await page.getByText('$50.000000', { exact: true }).waitFor();
+  await page.getByRole('tab', { name: '模型消耗看板', exact: true }).click();
+  await page.getByText('$40.000000', { exact: true }).waitFor();
+  await page.getByText('⚡25.000000', { exact: true }).waitFor();
+  await page.getByRole('button', { name: '按日期', exact: true }).click();
+  await page.getByText('2026-11-01', { exact: true }).waitFor();
+  await page.getByRole('button', { name: '按模型', exact: true }).click();
   assert.equal(saved[0].account_type, 'openrouter');
   assert.equal(await page.getByText('$2.500000', { exact: true }).count(), 1);
   await page
@@ -191,7 +214,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
   await page.getByText('model-24', { exact: true }).waitFor();
   await page
-    .getByRole('textbox', { name: '搜索模型或供应商', exact: true })
+    .getByRole('textbox', { name: '搜索模型', exact: true })
     .fill('model-01');
   await page.getByText('model-01', { exact: true }).waitFor();
   await page
@@ -203,7 +226,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     'model24 pagination/filter',
   );
   await page
-    .getByRole('textbox', { name: '搜索模型或供应商', exact: true })
+    .getByRole('textbox', { name: '搜索模型', exact: true })
     .fill('missing');
   await page
     .getByText('model-01', { exact: true })
@@ -213,9 +236,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     0,
     'model01 empty search',
   );
-  await page
-    .getByRole('textbox', { name: '搜索模型或供应商', exact: true })
-    .fill('');
+  await page.getByRole('textbox', { name: '搜索模型', exact: true }).fill('');
   await page.getByRole('button', { name: '编辑', exact: true }).click();
   await page
     .getByRole('textbox', { name: '账户名称', exact: true })
@@ -226,7 +247,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .click();
   await page.getByText('Primary renamed', { exact: true }).waitFor();
   assert.equal(saved.at(-1).access_token, '');
-  await page.getByText('$50.000000', { exact: true }).waitFor();
+  await page.getByText('$40.000000', { exact: true }).waitFor();
   await page.waitForFunction(
     () =>
       !document.querySelector('.semi-modal-mask') &&
@@ -261,18 +282,18 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .getByRole('button')
     .filter({ hasText: /^保存$/ })
     .click();
-  await page.getByText('$50.000000', { exact: true }).waitFor();
+  await page.getByText('$40.000000', { exact: true }).waitFor();
   mode = 'partial';
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await page
     .getByText('OpenRouter HTTP 403: Management Key required', { exact: true })
     .waitFor();
-  await page.getByText('$50.000000', { exact: true }).waitFor();
+  await page.getByText('$40.000000', { exact: true }).waitFor();
   mode = 'failure';
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await page.getByText('synthetic failure', { exact: true }).waitFor();
   assert.equal(
-    await page.getByText('$50.000000', { exact: true }).count(),
+    await page.getByText('$40.000000', { exact: true }).count(),
     0,
     'stale credits',
   );
@@ -286,9 +307,9 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     { id: 2, name: 'Secondary', account_type: 'openrouter', enabled: true },
   ];
   await page.evaluate((a) => window.qa.setAccounts(a), accounts);
-  await page.getByText('$200.000000', { exact: true }).waitFor();
+  await page.getByText('$190.000000', { exact: true }).waitFor();
   assert.equal(
-    await page.getByText('$50.000000', { exact: true }).count(),
+    await page.getByText('$40.000000', { exact: true }).count(),
     0,
     'stale credits',
   );
