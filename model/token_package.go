@@ -343,6 +343,16 @@ func ValidateTokenCanEnable(token *Token) (*Token, error) {
 	if !normalized.UnlimitedQuota && normalized.RemainQuota <= 0 {
 		return normalized, ErrTokenCannotEnableExhausted
 	}
+	if normalized.EnterpriseId > 0 {
+		// 企业令牌绑定创建时的成员代次；成员停用或退出后不能再启用，重新加入也不复活。
+		_, member, err := GetEnterpriseTokenContext(normalized.EnterpriseId, normalized.MembershipId, normalized.UserId)
+		if err != nil {
+			return normalized, err
+		}
+		if member.Status != EnterpriseMemberStatusActive {
+			return normalized, ErrEnterpriseMemberInactive
+		}
+	}
 	if normalized.PackageEnabled && normalized.PackageLimitQuota > 0 && normalized.PackageUsedQuota >= normalized.PackageLimitQuota {
 		return normalized, ErrTokenCannotEnablePackageExhausted
 	}

@@ -59,6 +59,7 @@ var (
 	ErrEnterpriseTimezone       = errors.New("时区无效")
 	ErrEnterpriseOwnerAccount   = errors.New("所有者账号不存在或已被禁用")
 	ErrEnterpriseDisabled       = errors.New("企业功能未开启")
+	ErrEnterpriseUnsupported    = errors.New("暂不支持企业额度")
 )
 
 type Enterprise struct {
@@ -634,7 +635,7 @@ func IsEnterpriseUserError(err error) bool {
 		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
 		ErrEnterpriseDisabled, ErrEnterpriseInsufficientUnallocated, ErrEnterpriseDuplicateVoucher,
 		ErrEnterpriseReclaimExceeds, ErrEnterpriseRequestPending, ErrEnterpriseRequestState,
-		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap,
+		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap, ErrEnterpriseUnsupported,
 	} {
 		if errors.Is(err, known) {
 			return true

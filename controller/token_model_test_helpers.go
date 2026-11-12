@@ -118,7 +118,11 @@ func resolveRequestedTokenGroups(userId int, requestedGroup string, fallback ...
 	if err != nil {
 		return nil, err
 	}
-	userGroup := userCache.Group
+	return resolveTokenGroupsForUserGroup(userCache.Group, requestedGroup, fallback...)
+}
+
+// resolveTokenGroupsForUserGroup 按给定用户组解析令牌分组的实际路由分组。
+func resolveTokenGroupsForUserGroup(userGroup string, requestedGroup string, fallback ...bool) ([]string, error) {
 	group := strings.TrimSpace(requestedGroup)
 	if group == "" {
 		group = userGroup
@@ -352,10 +356,20 @@ func prepareOwnedTokenContext(c *gin.Context, token *model.Token) error {
 	}
 	userCache.WriteContext(c)
 
-	usingGroup := userCache.Group
+	// 企业令牌与真实请求一致：成员与企业状态即时校验，用户组、可用额度换成企业的。
+	baseGroup := userCache.Group
+	enterprise, err := middleware.ResolveEnterpriseToken(token)
+	if err != nil {
+		return err
+	}
+	if enterprise != nil {
+		enterprise.WriteContext(c)
+		baseGroup = enterprise.Enterprise.BillingGroup
+	}
+	usingGroup := baseGroup
 	tokenGroup := strings.TrimSpace(token.Group)
 	if tokenGroup != "" && token.RoutingConfig == "" {
-		if _, ok := service.GetUserUsableGroups(userCache.Group)[tokenGroup]; !ok {
+		if _, ok := service.GetUserUsableGroups(baseGroup)[tokenGroup]; !ok {
 			return fmt.Errorf("无权访问 %s 分组", tokenGroup)
 		}
 		if tokenGroup != "auto" && !ratio_setting.ContainsGroupRatio(tokenGroup) {
@@ -364,7 +378,13 @@ func prepareOwnedTokenContext(c *gin.Context, token *model.Token) error {
 		usingGroup = tokenGroup
 	}
 	common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
-	return middlewareSetupContextForToken(c, token)
+	if err := middlewareSetupContextForToken(c, token); err != nil {
+		return err
+	}
+	if enterprise != nil {
+		enterprise.ApplyModelPolicy(c)
+	}
+	return nil
 }
 
 func middlewareSetupContextForToken(c *gin.Context, token *model.Token) error {

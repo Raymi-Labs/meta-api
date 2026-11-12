@@ -410,6 +410,12 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		return nil, types.NewError(fmt.Errorf("relayInfo is nil"), types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
 
+	if relayInfo.EnterpriseId > 0 {
+		// 企业请求只能由企业成员预算付款。企业资金来源接入之前一律拒绝，绝不回落到个人钱包或订阅。
+		return nil, types.NewErrorWithStatusCode(model.ErrEnterpriseUnsupported, types.ErrorCodeAccessDenied,
+			http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+	}
+
 	pref := common.NormalizeBillingPreference(relayInfo.UserSetting.BillingPreference)
 	if common.GetContextKeyString(c, constant.ContextKeyTokenBillingMode) == model.TokenBillingModeTokenOnly {
 		session := &BillingSession{

@@ -68,6 +68,80 @@ func GetEnterpriseTokenContext(enterpriseID, membershipID, userID int) (*Enterpr
 	return ent, member.fill(), nil
 }
 
+// ValidateEnterpriseToken 校验企业令牌当前是否可用于调用：功能已开启、成员关系有效、企业未冻结。
+// 每次请求都读主库，停用成员或冻结企业后立即生效。
+func ValidateEnterpriseToken(token *Token) (*Enterprise, *EnterpriseMember, error) {
+	if token == nil || token.EnterpriseId <= 0 || token.MembershipId <= 0 {
+		return nil, nil, ErrEnterpriseNotFound
+	}
+	if !common.EnterpriseEnabled {
+		return nil, nil, ErrEnterpriseDisabled
+	}
+	ent, member, err := GetEnterpriseTokenContext(token.EnterpriseId, token.MembershipId, token.UserId)
+	if err != nil {
+		return nil, nil, err
+	}
+	if member.Status != EnterpriseMemberStatusActive {
+		return nil, nil, ErrEnterpriseMemberInactive
+	}
+	if ent.Status != EnterpriseStatusActive {
+		return nil, nil, ErrEnterpriseFrozen
+	}
+	return ent, member, nil
+}
+
+// GetEnterprisePayer 返回账号当前可用于付款的企业与成员关系，供创建企业令牌等入口使用。
+func GetEnterprisePayer(userID int) (*Enterprise, *EnterpriseMember, error) {
+	if !common.EnterpriseEnabled {
+		return nil, nil, ErrEnterpriseDisabled
+	}
+	member, err := GetActiveEnterpriseMemberByUser(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if member == nil {
+		return nil, nil, ErrEnterpriseNotFound
+	}
+	ent, err := GetEnterpriseByID(member.EnterpriseId)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ent.Status != EnterpriseStatusActive {
+		return nil, nil, ErrEnterpriseFrozen
+	}
+	return ent, member, nil
+}
+
+// CreateEnterpriseToken 在成员行锁内创建企业令牌并写入令牌上限，令牌只会挂在仍然有效的成员代次上。
+// 企业令牌不使用令牌表的剩余额度：固定为不限额，实际可用额度由成员预算和企业账本里的令牌上限约束。
+func CreateEnterpriseToken(token *Token, limit int64) error {
+	if token == nil || token.UserId <= 0 || token.EnterpriseId <= 0 || token.MembershipId <= 0 ||
+		limit < 0 || limit > enterpriseMaxAmount {
+		return ErrEnterpriseInvalidInput
+	}
+	token.UnlimitedQuota, token.RemainQuota = true, 0
+	return DB.Transaction(func(tx *gorm.DB) error {
+		member, err := lockEnterpriseMemberTx(tx, token.MembershipId)
+		if err != nil {
+			return err
+		}
+		if member.EnterpriseId != token.EnterpriseId || member.UserId != token.UserId {
+			return ErrEnterpriseNotFound
+		}
+		if member.Status != EnterpriseMemberStatusActive {
+			return ErrEnterpriseMemberInactive
+		}
+		if err := tx.Create(token).Error; err != nil {
+			return err
+		}
+		if limit == 0 {
+			return nil
+		}
+		return tx.Create(&EnterpriseTokenBudget{TokenId: token.Id, EnterpriseId: member.EnterpriseId, MemberId: member.Id,
+			LimitQuota: limit, UpdatedAt: time.Now().Unix()}).Error
+	})
+}
+
 func fillEnterpriseMemberUsers(members []*EnterpriseMember) {
 	ids := make([]int, 0, len(members))
 	for _, m := range members {

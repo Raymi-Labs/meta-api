@@ -15,7 +15,7 @@ import (
 )
 
 func validateTokenRoutingForSave(userID int, token *model.Token) error {
-	userGroup, err := model.GetUserGroup(userID, false)
+	userGroup, err := tokenBaseGroup(userID, token)
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,17 @@ func tokenRoutingDraft(c *gin.Context, token *model.Token) error {
 }
 
 func tokenCatalogGroups(userID int, token *model.Token) ([]string, error) {
+	if token.EnterpriseId > 0 {
+		// 企业令牌的可用分组由企业计费用户组决定，与成员个人的用户组无关。
+		userGroup, err := tokenBaseGroup(userID, token)
+		if err != nil {
+			return nil, err
+		}
+		if token.RoutingConfig == "" {
+			return resolveTokenGroupsForUserGroup(userGroup, token.Group, token.AllowsGroupFallback())
+		}
+		return service.TokenConfiguredGroups(userGroup, token, "")
+	}
 	if token.RoutingConfig == "" {
 		return resolveRequestedTokenGroups(userID, token.Group, token.AllowsGroupFallback())
 	}
@@ -86,8 +97,15 @@ func tokenRoutingCatalog(userID int, token *model.Token) ([]tokenModelOption, er
 	byName := map[string]*tokenModelOption{}
 	limits := token.GetModelLimitsMap()
 	acceptUnset := shouldAcceptUnsetRatioModel(userID)
+	enterpriseAllows, err := tokenEnterpriseModelFilter(userID, token)
+	if err != nil {
+		return nil, err
+	}
 	for _, row := range rows {
 		if token.ModelLimitsEnabled && !limits[row.Model] && !limits[ratio_setting.FormatMatchingModelName(row.Model)] {
+			continue
+		}
+		if enterpriseAllows != nil && !enterpriseAllows(row.Model) {
 			continue
 		}
 		if !acceptUnset && !hasConfiguredModelPrice(row.Model) {

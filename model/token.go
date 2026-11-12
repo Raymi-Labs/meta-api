@@ -131,8 +131,8 @@ func (token *Token) GetIpLimits() []string {
 	return ipLimits
 }
 
-func GetAllUserTokens(userId int, startIdx int, num int, group string, balanceMin *int, balanceMax *int, usedBalanceMin *int, usedBalanceMax *int, packageMode string, sortBy string, sortOrder string) ([]*Token, int64, error) {
-	return SearchUserTokens(userId, "", "", startIdx, num, group, balanceMin, balanceMax, usedBalanceMin, usedBalanceMax, packageMode, sortBy, sortOrder)
+func GetAllUserTokens(userId int, startIdx int, num int, group string, balanceMin *int, balanceMax *int, usedBalanceMin *int, usedBalanceMax *int, packageMode string, sortBy string, sortOrder string, payer string) ([]*Token, int64, error) {
+	return SearchUserTokens(userId, "", "", startIdx, num, group, balanceMin, balanceMax, usedBalanceMin, usedBalanceMax, packageMode, sortBy, sortOrder, payer)
 }
 
 func normalizeTokenPackageMode(mode string) string {
@@ -185,7 +185,13 @@ func sanitizeLikePattern(input string) (string, error) {
 
 const searchHardLimit = 100
 
-func SearchUserTokens(userId int, keyword string, token string, offset int, limit int, group string, balanceMin *int, balanceMax *int, usedBalanceMin *int, usedBalanceMax *int, packageMode string, sortBy string, sortOrder string) (tokens []*Token, total int64, err error) {
+// 付款方筛选取值；空字符串表示不筛选。
+const (
+	TokenPayerPersonal   = "personal"
+	TokenPayerEnterprise = "enterprise"
+)
+
+func SearchUserTokens(userId int, keyword string, token string, offset int, limit int, group string, balanceMin *int, balanceMax *int, usedBalanceMin *int, usedBalanceMax *int, packageMode string, sortBy string, sortOrder string, payer string) (tokens []*Token, total int64, err error) {
 	// model 层强制截断
 	if limit <= 0 || limit > searchHardLimit {
 		limit = searchHardLimit
@@ -215,6 +221,12 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 	baseQuery := DB.Model(&Token{}).Where("user_id = ?", userId)
 	if group = strings.TrimSpace(group); group != "" {
 		baseQuery = baseQuery.Where(commonGroupCol+" = ?", group)
+	}
+	switch payer {
+	case TokenPayerEnterprise:
+		baseQuery = baseQuery.Where("enterprise_id > 0")
+	case TokenPayerPersonal:
+		baseQuery = baseQuery.Where("enterprise_id = 0")
 	}
 	switch normalizeTokenPackageMode(packageMode) {
 	case "package":

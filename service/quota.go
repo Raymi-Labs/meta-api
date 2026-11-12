@@ -574,6 +574,10 @@ func PreConsumeTokenQuota(relayInfo *relaycommon.RelayInfo, quota int) error {
 }
 
 func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQuota int, sendEmail bool) (err error) {
+	if relayInfo != nil && relayInfo.EnterpriseId > 0 {
+		// 这条路径只会动个人钱包、订阅和令牌表额度，企业请求走到这里说明漏接了企业资金来源，直接报错。
+		return model.ErrEnterpriseUnsupported
+	}
 
 	// 1) Consume from wallet quota OR subscription item
 	if relayInfo != nil && relayInfo.BillingSource == BillingSourceSubscription {
