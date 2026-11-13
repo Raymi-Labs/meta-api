@@ -20,7 +20,7 @@ GitHub Actions运行一次性MySQL5.7、MySQL8.0.46及PostgreSQL9.6，复用企�
 
 ## Verification
 
-本地model/service/router/middleware/controller完整回归通过；开关开关、成员与冻结状态下个人调用只扣个人钱包；增量迁移与额度筛选回归SQLite通过。前端语言检查、状态与筛选测试、Vite构建通过。三库CI已配置，远端执行结果尚待核对，不将配置文件视作成功证据。
+本地model/service/router/middleware/controller完整回归通过；开关开启/关闭、成员与冻结状态下个人调用只扣个人钱包；增量迁移与额度筛选回归SQLite通过。前端语言检查、状态与筛选测试、Vite构建通过。[最终CI](https://github.com/Raymi-Labs/meta-api/actions/runs/43408844494)在f854d065b上两组全部成功：MySQL5.7、8.0.46、PostgreSQL9.6模型及迁移/竞争测试和HTTP/计费/统计全量回归通过，测试容器清理完成。
 
 ## Related notes
 
