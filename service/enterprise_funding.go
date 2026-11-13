@@ -98,7 +98,11 @@ func newEnterpriseSession(c *gin.Context, info *relaycommon.RelayInfo, quota int
 		return nil, enterpriseDenied(model.ErrEnterpriseUnsupported)
 	}
 	quota = max(quota, 0)
-	sub := model.EnterpriseSubject{EnterpriseId: info.EnterpriseId, MemberId: info.EnterpriseMemberId, UserId: info.UserId, TokenId: info.TokenId}
+	sub := model.EnterpriseSubject{EnterpriseId: info.EnterpriseId, MemberId: info.EnterpriseMemberId, UserId: info.UserId, TokenId: info.TokenId,
+		ModelName: info.OriginModelName}
+	if c != nil {
+		sub.TokenName = c.GetString("token_name")
+	}
 
 	// 同步聊天沿用个人钱包的有界首笔预留；其他类型按各自的完整预估预留。金额为 0 也建预留，
 	// 这样免费请求同样受"额度为负后拒绝"约束，并且每个企业请求都有可对账的记录。

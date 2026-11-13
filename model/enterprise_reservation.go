@@ -41,15 +41,19 @@ var (
 type EnterpriseReservation struct {
 	Id           int64  `json:"id" gorm:"primaryKey"`
 	RequestId    string `json:"request_id" gorm:"type:varchar(96);not null;uniqueIndex"`
-	EnterpriseId int    `json:"enterprise_id" gorm:"not null;index:idx_enterprise_resv_ent,priority:1"`
+	EnterpriseId int    `json:"enterprise_id" gorm:"not null;index:idx_enterprise_resv_ent,priority:1;index:idx_enterprise_resv_time,priority:1"`
 	MemberId     int    `json:"member_id" gorm:"not null;index"`
 	UserId       int    `json:"user_id" gorm:"not null"`
 	TokenId      int    `json:"token_id" gorm:"not null;default:0"`
 	Kind         string `json:"kind" gorm:"type:varchar(16);not null"`
 	Quota        int64  `json:"quota" gorm:"not null;default:0"`
 	Status       string `json:"status" gorm:"type:varchar(16);not null;index:idx_enterprise_resv_ent,priority:2;index:idx_enterprise_resv_open,priority:1"`
-	CreatedAt    int64  `json:"created_at" gorm:"not null"`
-	UpdatedAt    int64  `json:"updated_at" gorm:"not null;index:idx_enterprise_resv_open,priority:2"`
+	// 受理时的模型与令牌名称快照。企业账单只查主库的这张表：日志库可能在另一台服务器，
+	// 不能联表，日志写入也可能遗漏；令牌改名或删除后账单仍显示当时的名称。
+	ModelName string `json:"model_name" gorm:"type:varchar(191);not null;default:''"`
+	TokenName string `json:"token_name" gorm:"type:varchar(191);not null;default:''"`
+	CreatedAt int64  `json:"created_at" gorm:"not null;index:idx_enterprise_resv_time,priority:2"`
+	UpdatedAt int64  `json:"updated_at" gorm:"not null;index:idx_enterprise_resv_open,priority:2"`
 
 	// 仅回传给调用方，不落库。
 	AvailableBefore int64 `json:"-" gorm:"-"`
@@ -77,6 +81,17 @@ type EnterpriseSubject struct {
 	MemberId     int
 	UserId       int
 	TokenId      int
+	// 仅在新建记录时写入账单快照，不参与主体校验。
+	ModelName string
+	TokenName string
+}
+
+// enterpriseSnapshotText 把快照文本截到列宽以内，避免超长名称让预留写入失败。
+func enterpriseSnapshotText(value string) string {
+	if runes := []rune(value); len(runes) > 191 {
+		return string(runes[:191])
+	}
+	return value
 }
 
 func (s EnterpriseSubject) valid() bool {
@@ -141,7 +156,8 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 		err = tx.Where("request_id = ?", requestID).First(&result).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			result = EnterpriseReservation{RequestId: requestID, EnterpriseId: sub.EnterpriseId, MemberId: sub.MemberId,
-				UserId: sub.UserId, TokenId: sub.TokenId, Kind: kind, Status: EnterpriseReservationReserved, CreatedAt: now, UpdatedAt: now}
+				UserId: sub.UserId, TokenId: sub.TokenId, Kind: kind, Status: EnterpriseReservationReserved,
+				ModelName: enterpriseSnapshotText(sub.ModelName), TokenName: enterpriseSnapshotText(sub.TokenName), CreatedAt: now, UpdatedAt: now}
 			created = true
 		} else if err != nil {
 			return err
@@ -270,7 +286,8 @@ func ApplyEnterpriseCharge(sub EnterpriseSubject, eventKey, kind string, delta i
 			return err
 		}
 		result = EnterpriseReservation{RequestId: eventKey, EnterpriseId: sub.EnterpriseId, MemberId: sub.MemberId, UserId: sub.UserId,
-			TokenId: sub.TokenId, Kind: kind, Quota: delta, Status: EnterpriseReservationSettled, CreatedAt: now, UpdatedAt: now,
+			TokenId: sub.TokenId, Kind: kind, Quota: delta, Status: EnterpriseReservationSettled,
+			ModelName: enterpriseSnapshotText(sub.ModelName), TokenName: enterpriseSnapshotText(sub.TokenName), CreatedAt: now, UpdatedAt: now,
 			AvailableBefore: member.Available, AvailableAfter: member.Available - delta, Changed: true}
 		return tx.Create(&result).Error
 	})

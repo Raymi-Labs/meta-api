@@ -14,6 +14,8 @@ func applyUserLogFilters(tx *gorm.DB, userID int, filters AdminLogQueryFilters) 
 	return applyAdminLogFilters(tx.Where("logs.user_id = ?", userID), AdminLogQueryFilters{
 		LogType: filters.LogType, StartTimestamp: filters.StartTimestamp, EndTimestamp: filters.EndTimestamp,
 		ModelName: filters.ModelName, TokenName: filters.TokenName, Group: filters.Group, RequestID: filters.RequestID,
+		// 付款方筛选只带令牌范围；渠道与厂商范围是管理员视图专用，不向本人接口开放。
+		Scope: LogScope{TokenIDs: filters.Scope.TokenIDs, ExcludeTokenIDs: filters.Scope.ExcludeTokenIDs},
 	}, false)
 }
 

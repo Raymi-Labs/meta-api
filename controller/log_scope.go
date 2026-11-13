@@ -71,6 +71,24 @@ func parseAdminLogScope(c *gin.Context) (model.LogScope, error) {
 	return scope, nil
 }
 
+// userLogPayerScope 把本人日志的付款方筛选换成令牌范围。日志库可能与主库分离，
+// 所以先在主库取出本人由企业付款的令牌，再让日志库按令牌过滤。
+func userLogPayerScope(c *gin.Context, userID int) (model.LogScope, error) {
+	payer, err := parseTokenPayer(c.Query("payer"))
+	if err != nil || payer == "" {
+		return model.LogScope{}, err
+	}
+	ids, err := model.GetUserEnterpriseTokenIDs(userID)
+	if err != nil {
+		return model.LogScope{}, errors.New("查询日志失败")
+	}
+	if payer == model.TokenPayerEnterprise {
+		// ids 为空时保持非 nil：没有企业令牌就是没有企业日志，不能退化成全部日志。
+		return model.LogScope{TokenIDs: ids}, nil
+	}
+	return model.LogScope{ExcludeTokenIDs: ids}, nil
+}
+
 func parseLogChannelIDs(raw string) ([]int, error) {
 	parts := strings.Split(raw, ",")
 	if len(parts) > 200 {

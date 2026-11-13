@@ -144,7 +144,7 @@ func (a *enterpriseAPI) enterpriseRoutes(enterpriseID int) [][2]string {
 			continue
 		}
 		path := strings.NewReplacer(":id", strconv.Itoa(enterpriseID), ":member_id", "1", ":invitation_id", "1",
-			":request_id", "1", ":reservation_id", "1").Replace(route.Path)
+			":request_id", "1", ":reservation_id", "1", ":token_id", "1").Replace(route.Path)
 		routes = append(routes, [2]string{route.Method, path})
 	}
 	require.GreaterOrEqual(a.t, len(routes), 30, "enterprise routes must be registered")

@@ -132,7 +132,8 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 			return false
 		}
 		sub := model.EnterpriseSubject{EnterpriseId: relayInfo.EnterpriseId, MemberId: relayInfo.EnterpriseMemberId,
-			UserId: relayInfo.UserId, TokenId: relayInfo.TokenId}
+			UserId: relayInfo.UserId, TokenId: relayInfo.TokenId,
+			ModelName: relayInfo.OriginModelName, TokenName: ctx.GetString("token_name")}
 		charge, err := model.ApplyEnterpriseCharge(sub, "vf:"+relayInfo.RequestId, model.EnterpriseChargeViolationFee, int64(feeQuota))
 		if err != nil {
 			logger.LogError(ctx, fmt.Sprintf("failed to charge enterprise violation fee: %s", err.Error()))

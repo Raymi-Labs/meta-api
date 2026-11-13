@@ -306,7 +306,12 @@ func GetEnterpriseOverview(c *gin.Context) {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, gin.H{"enterprise": ent, "balance": balance, "summary": summary})
+	spenders, err := model.ListEnterpriseTopSpenders(enterpriseID, 10)
+	if err != nil {
+		enterpriseApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"enterprise": ent, "balance": balance, "summary": summary, "top_spenders": spenders})
 }
 
 func ListEnterpriseMembers(c *gin.Context) {

@@ -36,10 +36,8 @@ func exportLogs(c *gin.Context, admin bool) {
 		fail(http.StatusUnauthorized, "请先登录")
 		return
 	}
-	start, errStart := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	end, errEnd := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	if errStart != nil || errEnd != nil || start <= 0 || end < start || end-start > 31*86400 {
-		fail(http.StatusBadRequest, "请选择有效时间范围，单次导出最多 31 天")
+	start, end, ok := csvExportRange(c)
+	if !ok {
 		return
 	}
 	logType, err := strconv.Atoi(c.DefaultQuery("type", "0"))
@@ -49,6 +47,13 @@ func exportLogs(c *gin.Context, admin bool) {
 	}
 	filters := model.AdminLogQueryFilters{LogType: logType, StartTimestamp: start, EndTimestamp: end,
 		ModelName: c.Query("model_name"), TokenName: c.Query("token_name"), Group: c.Query("group"), RequestID: c.Query("request_id")}
+	if !admin {
+		filters.Scope, err = userLogPayerScope(c, userID)
+		if err != nil {
+			fail(http.StatusBadRequest, err.Error())
+			return
+		}
+	}
 	if admin {
 		filters.Scope, err = parseAdminLogScope(c)
 		if err != nil {
@@ -64,6 +69,37 @@ func exportLogs(c *gin.Context, admin bool) {
 			}
 		}
 	}
+	headers := []string{"时间（UTC）", "类型", "令牌", "分组", "模型", "额度（quota）", "输入Token", "输出Token", "耗时（秒）", "流式", "请求ID", "内容"}
+	if admin {
+		headers = append(headers, "日志ID", "用户ID", "用户名", "渠道ID")
+	}
+	writeCSVExport(c, userID, "usage-logs.csv", headers, func(ctx context.Context, emit func([]string) error) error {
+		return model.WalkExportLogs(ctx, filters, userID, admin, func(row *model.Log) error {
+			values := []string{time.Unix(row.CreatedAt, 0).UTC().Format(time.RFC3339), strconv.Itoa(row.Type), logCSVText(row.TokenName), logCSVText(row.Group), logCSVText(row.ModelName), strconv.Itoa(row.Quota), strconv.Itoa(row.PromptTokens), strconv.Itoa(row.CompletionTokens), strconv.Itoa(row.UseTime), strconv.FormatBool(row.IsStream), logCSVText(row.RequestId), logCSVText(row.Content)}
+			if admin {
+				values = append(values, strconv.Itoa(row.Id), strconv.Itoa(row.UserId), logCSVText(row.Username), strconv.Itoa(row.ChannelId))
+			}
+			return emit(values)
+		})
+	})
+}
+
+// csvExportRange 校验导出的时间范围：必须给出起止时间，单次最多 31 天。
+func csvExportRange(c *gin.Context) (start, end int64, ok bool) {
+	start, errStart := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
+	end, errEnd := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if errStart != nil || errEnd != nil || start <= 0 || end < start || end-start > 31*86400 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请选择有效时间范围，单次导出最多 31 天"})
+		return 0, 0, false
+	}
+	return start, end, true
+}
+
+// writeCSVExport 先把导出写进临时文件再整体下发：中途失败仍能返回 JSON 错误，而不是半截 CSV。
+// 每个账号同时只能有一个导出。walk 通过 emit 逐行输出；只有以“导出超过”“导出文件超过”
+// 开头的错误会原样返回给调用方，其余一律用通用文案，不泄露 SQL 错误。
+func writeCSVExport(c *gin.Context, userID int, filename string, headers []string, walk func(ctx context.Context, emit func([]string) error) error) {
+	fail := func(status int, message string) { c.JSON(status, gin.H{"success": false, "message": message}) }
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
 	defer cancel()
 	release, acquired, err := service.AcquireLogExportLock(ctx, userID)
@@ -85,19 +121,11 @@ func exportLogs(c *gin.Context, admin bool) {
 	defer file.Close()
 	writer := csv.NewWriter(file)
 	_, err = file.WriteString("\xef\xbb\xbf")
-	headers := []string{"时间（UTC）", "类型", "令牌", "分组", "模型", "额度（quota）", "输入Token", "输出Token", "耗时（秒）", "流式", "请求ID", "内容"}
-	if admin {
-		headers = append(headers, "日志ID", "用户ID", "用户名", "渠道ID")
-	}
 	if err == nil {
 		err = writer.Write(headers)
 	}
 	if err == nil {
-		err = model.WalkExportLogs(ctx, filters, userID, admin, func(row *model.Log) error {
-			values := []string{time.Unix(row.CreatedAt, 0).UTC().Format(time.RFC3339), strconv.Itoa(row.Type), logCSVText(row.TokenName), logCSVText(row.Group), logCSVText(row.ModelName), strconv.Itoa(row.Quota), strconv.Itoa(row.PromptTokens), strconv.Itoa(row.CompletionTokens), strconv.Itoa(row.UseTime), strconv.FormatBool(row.IsStream), logCSVText(row.RequestId), logCSVText(row.Content)}
-			if admin {
-				values = append(values, strconv.Itoa(row.Id), strconv.Itoa(row.UserId), logCSVText(row.Username), strconv.Itoa(row.ChannelId))
-			}
+		err = walk(ctx, func(values []string) error {
 			if err := writer.Write(values); err != nil {
 				return err
 			}
@@ -123,7 +151,6 @@ func exportLogs(c *gin.Context, admin bool) {
 		err = ctx.Err()
 	}
 	if err != nil {
-		// Only intentional validation messages are exposed; never send SQL errors.
 		message := "导出失败，请缩小筛选范围后重试"
 		if strings.HasPrefix(err.Error(), "导出超过") || strings.HasPrefix(err.Error(), "导出文件超过") {
 			message = err.Error()
@@ -143,6 +170,6 @@ func exportLogs(c *gin.Context, admin bool) {
 	c.Header("Cache-Control", "no-store")
 	c.Header("X-Content-Type-Options", "nosniff")
 	c.DataFromReader(http.StatusOK, info.Size(), "text/csv; charset=utf-8", file, map[string]string{
-		"Content-Disposition": `attachment; filename="usage-logs.csv"`,
+		"Content-Disposition": `attachment; filename="` + filename + `"`,
 	})
 }
