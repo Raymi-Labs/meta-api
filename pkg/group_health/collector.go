@@ -242,3 +242,10 @@ func run() {
 		}
 	}
 }
+
+// UseManualFlushForTesting keeps recording and explicit Flush available without
+// starting a process-lifetime ticker. Cross-package suites must call it before
+// recording when their fixtures replace the global database between tests.
+func UseManualFlushForTesting() {
+	startOnce.Do(func() {})
+}
