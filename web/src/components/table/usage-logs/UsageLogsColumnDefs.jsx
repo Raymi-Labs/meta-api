@@ -665,7 +665,7 @@ export const getLogsColumns = ({
           record.type === 2 ||
           record.type === 5 ||
           record.type === 6 ? (
-          <div>
+          <div className='flex items-center gap-1'>
             <Tag
               color='grey'
               shape='circle'
@@ -676,6 +676,13 @@ export const getLogsColumns = ({
               {' '}
               {t(text)}{' '}
             </Tag>
+            {record.payer === 'enterprise' && (
+              <Tooltip content={record.enterprise_name || t('企业')}>
+                <Tag color='blue' shape='circle'>
+                  {t('企业')}
+                </Tag>
+              </Tooltip>
+            )}
           </div>
         ) : (
           <></>

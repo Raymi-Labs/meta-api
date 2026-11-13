@@ -27,6 +27,7 @@ import {
   filterTokenGroupsByVendor,
 } from '../tokens/tokenGroupUtils';
 import LogChannelPicker from './components/LogChannelPicker';
+import { useEnterpriseSelf } from '../../../hooks/enterprise/useEnterpriseSelf';
 
 const LogsFilters = ({
   formInitValues,
@@ -46,6 +47,7 @@ const LogsFilters = ({
   const [vendor, setVendor] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
+  const enterprise = useEnterpriseSelf();
   const withHistoricalOption = (options, search) => {
     const value = search.trim();
     return value && !options.some((option) => option.value === value)
@@ -65,7 +67,7 @@ const LogsFilters = ({
       stopValidateWithError={false}
     >
       <div
-        className={`usage-logs-filters${isAdminUser ? '' : ' usage-logs-filters-user'}`}
+        className={`usage-logs-filters${isAdminUser ? '' : ' usage-logs-filters-user'}${!isAdminUser && enterprise.isMember ? ' usage-logs-filters-payer' : ''}`}
       >
         <div className='usage-logs-filter-fields grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2'>
           {/* 时间选择器 */}
@@ -159,6 +161,21 @@ const LogsFilters = ({
             pure
             size={filterSize}
           />
+
+          {!isAdminUser && enterprise.isMember && (
+            <Form.Select
+              field='payer'
+              className='usage-logs-filter-payer'
+              placeholder={t('付款方')}
+              optionList={[
+                { label: t('企业'), value: 'enterprise' },
+                { label: t('个人'), value: 'personal' },
+              ]}
+              showClear
+              pure
+              size={filterSize}
+            />
+          )}
 
           {isAdminUser && (
             <>
