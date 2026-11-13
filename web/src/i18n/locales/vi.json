@@ -7905,6 +7905,10 @@
     "按模型": "Theo mô hình",
     "按日期": "Theo ngày",
     "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "30 ngày UTC đầy đủ gần nhất. Thượng nguồn bao gồm tài khoản; trang dùng nhật ký còn lưu của các kênh hiện thuộc tài khoản. Đổi khóa, xóa nhật ký và gọi bên ngoài có thể gây chênh lệch. Đây không phải lợi nhuận tiền mặt.",
-    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Mức dùng theo đơn vị hạn mức của nền tảng. Giá trị không khớp hiển thị --. Chi phí BYOK bên ngoài được tách riêng."
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Mức dùng theo đơn vị hạn mức của nền tảng. Giá trị không khớp hiển thị --. Chi phí BYOK bên ngoài được tách riêng.",
+    "后台每 5 分钟更新快照": "Ảnh chụp dữ liệu được cập nhật nền mỗi 5 phút",
+    "快照时间": "Thời gian chụp dữ liệu",
+    "正在后台准备快照，完成后自动显示": "Đang chuẩn bị ảnh chụp dữ liệu trong nền. Dữ liệu sẽ tự động hiển thị khi hoàn tất.",
+    "部分数据刷新失败，保留上次快照，请留意快照时间": "Không thể cập nhật một số dữ liệu. Giá trị trước đó được giữ lại; hãy kiểm tra thời gian chụp dữ liệu."
   }
 }

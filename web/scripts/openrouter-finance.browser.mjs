@@ -106,6 +106,13 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       const id = Number(url.pathname.split('/')[3]);
       const selectedMode = mode;
       if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      if (selectedMode === 'pending') {
+        mode = 'normal';
+        await route.fulfill({
+          json: { success: true, data: { refreshing: true } },
+        });
+        return;
+      }
       if (selectedMode === 'failure') {
         await route.fulfill({
           json: { success: false, message: 'synthetic failure' },
@@ -283,6 +290,13 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .filter({ hasText: /^保存$/ })
     .click();
   await page.getByText('$40.000000', { exact: true }).waitFor();
+  mode = 'pending';
+  await page.getByRole('button', { name: '刷新', exact: true }).click();
+  await page
+    .getByText('正在后台准备快照，完成后自动显示', { exact: true })
+    .waitFor();
+  await page.getByText('$40.000000', { exact: true }).waitFor();
+  await page.getByText('后台每 5 分钟更新快照', { exact: false }).waitFor();
   mode = 'partial';
   await page.getByRole('button', { name: '刷新', exact: true }).click();
   await page
@@ -294,8 +308,8 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.getByText('synthetic failure', { exact: true }).waitFor();
   assert.equal(
     await page.getByText('$40.000000', { exact: true }).count(),
-    0,
-    'stale credits',
+    1,
+    'failed refresh must retain displayed credits',
   );
   mode = 'empty';
   await page.getByRole('button', { name: '刷新', exact: true }).click();

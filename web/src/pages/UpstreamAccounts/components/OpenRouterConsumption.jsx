@@ -71,6 +71,24 @@ export default function OpenRouterConsumption({ data, loading, t }) {
   ];
   return (
     <div className='space-y-4'>
+      <Text type='tertiary'>
+        {t('后台每 5 分钟更新快照')}
+        {data?.fetched_at > 0 &&
+          ` · ${t('快照时间')}：${new Date(data.fetched_at * 1000).toLocaleString()}`}
+      </Text>
+      {data?.refreshing && (
+        <Banner
+          type='info'
+          description={t('正在后台准备快照，完成后自动显示')}
+        />
+      )}
+      {data?.refresh_error && (
+        <Banner
+          type='warning'
+          description={t('部分数据刷新失败，保留上次快照，请留意快照时间')}
+        />
+      )}
+
       {data?.credits_error && (
         <Banner type='warning' description={data.credits_error} />
       )}

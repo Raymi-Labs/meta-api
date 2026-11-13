@@ -37,6 +37,8 @@ type OpenRouterAccountActivity struct {
 }
 
 type OpenRouterAccountFinance struct {
+	Refreshing    bool                        `json:"refreshing"`
+	RefreshError  string                      `json:"refresh_error,omitempty"`
 	SiteActivity  []OpenRouterSiteActivity    `json:"site_activity"`
 	SiteError     string                      `json:"site_error,omitempty"`
 	SiteChannels  int                         `json:"site_channels"`
@@ -218,6 +220,10 @@ func GetOpenRouterAccountFinance(ctx context.Context, id int) (*OpenRouterAccoun
 	if !account.Enabled {
 		return nil, errors.New("OpenRouter account disabled")
 	}
+	return openRouterFinanceSnapshots.read(*account), nil
+}
+
+func collectOpenRouterAccountFinance(ctx context.Context, account UpstreamAccount) *OpenRouterAccountFinance {
 	client := newOpenRouterAccountClient()
 	result := fetchOpenRouterFinance(ctx, client, account.remoteObserverConfig())
 	end := time.Now().UTC().Truncate(24 * time.Hour)
@@ -232,9 +238,11 @@ func GetOpenRouterAccountFinance(ctx context.Context, id int) (*OpenRouterAccoun
 		}
 		result.Activity = filtered
 	}
-	result.SiteActivity, result.SiteChannels, err = fetchOpenRouterSiteActivity(ctx, client, account, start, end)
+	var err error
+	result.SiteActivity, result.SiteChannels, err = fetchOpenRouterSiteActivity(ctx, client, &account, start, end)
 	if err != nil {
 		result.SiteError = err.Error()
 	}
-	return result, nil
+	result.FetchedAt = common.GetTimestamp()
+	return result
 }

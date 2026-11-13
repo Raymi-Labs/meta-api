@@ -114,6 +114,7 @@ func main() {
 	model.StartUserBalanceSnapshotTask()
 	perfmetrics.Init()
 	model.StartUpstreamAccountSyncTask()
+	model.StartOpenRouterFinanceSnapshotTask()
 	model.StartCashAccountingService()
 
 	if os.Getenv("CHANNEL_UPDATE_FREQUENCY") != "" {

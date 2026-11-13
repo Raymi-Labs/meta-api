@@ -7292,6 +7292,10 @@
     "按模型": "Według modelu",
     "按日期": "Według daty",
     "最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。": "Ostatnie 30 pełnych dni UTC. Dostawca obejmuje konto; witryna używa zachowanych logów aktualnie przypisanych kanałów. Zmiany kluczy, usunięte logi i wywołania zewnętrzne mogą powodować różnice. To nie jest zysk gotówkowy.",
-    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Zużycie jest podane w jednostce limitu platformy. Brak dopasowania oznaczono --. Zewnętrzne koszty BYOK są osobno."
+    "本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Zużycie jest podane w jednostce limitu platformy. Brak dopasowania oznaczono --. Zewnętrzne koszty BYOK są osobno.",
+    "后台每 5 分钟更新快照": "Migawki są aktualizowane w tle co 5 minut",
+    "快照时间": "Czas migawki",
+    "正在后台准备快照，完成后自动显示": "Migawka jest przygotowywana w tle i pojawi się automatycznie.",
+    "部分数据刷新失败，保留上次快照，请留意快照时间": "Nie udało się odświeżyć części danych. Zachowano poprzednie wartości; sprawdź czas migawki."
   }
 }

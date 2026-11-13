@@ -33,6 +33,8 @@ Go model/controller/router 的 UpstreamAccount/OpenRouter 回归通过，涵盖�
 
 Bun 金额与筛选回归通过；真实 Chrome 组件验证创建/编辑/删除、20条分页、搜索与筛选重置、零值与BYOK独立口径、失败不补零、切换账户丢弃旧请求、390px窄屏。Semi 的受控分页不自动切片，页面显式切片但合计覆盖完整筛选结果。桌面与手机截图人工检查。全量前端构建、17语言资源检查、Chrome预渲染、verify-notes与release policy通过。
 
+消费看板读取路径采用[后台快照](../bug-fix/2026-11-13-openrouter-finance-snapshot.md)，官方接口和金额口径不变。
+
 ## Consequences
 
 新账户沿用既有创建时启用的默认行为，停用/启用仅在编辑提供，避免旧表布尔 default:true 对新建 false 的回填与表单承诺不符。
