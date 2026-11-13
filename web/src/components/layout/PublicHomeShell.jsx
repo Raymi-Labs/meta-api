@@ -31,6 +31,7 @@ import { StatusContext } from '../../context/Status';
 import { UserContext } from '../../context/User';
 import { API } from '../../helpers/apiCore';
 import { setStatusData, setUserData } from '../../helpers/data';
+import { readCurrentSiteStatus } from '../../helpers/siteStatusRequest';
 import { getLogo, getSystemName } from '../../helpers/storage';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { usePublicTranslation } from '../../helpers/publicLocale';
@@ -152,10 +153,13 @@ const PublicHomeShell = () => {
 
     const loadStatus = async () => {
       try {
-        const res = await API.get('/api/status', {
-          skipGlobalLoading: true,
-          skipErrorHandler: true,
-        });
+        const res = await readCurrentSiteStatus(() =>
+          API.get('/api/status', {
+            skipGlobalLoading: true,
+            skipErrorHandler: true,
+          }),
+        );
+        if (!res) return;
         if (res.data?.success) {
           statusDispatch({ type: 'set', payload: res.data.data });
           setStatusData(res.data.data);

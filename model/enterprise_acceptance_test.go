@@ -1,11 +1,15 @@
 package model
 
 import (
+	"context"
 	"reflect"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func TestEnterpriseIncrementalMigrationPreservesPersonalToken(t *testing.T) {
@@ -111,6 +115,56 @@ func TestEnterpriseOwnerRequiresUsableAccount(t *testing.T) {
 			stored, err := GetEnterpriseByID(ent.Id)
 			require.NoError(t, err)
 			require.Equal(t, owner.Id, stored.OwnerUserId)
+		})
+	}
+}
+
+func TestEnterpriseCreationSerializesWithOwnerDeletion(t *testing.T) {
+	for _, dialect := range enterpriseTestDialects {
+		t.Run(dialect, func(t *testing.T) {
+			enterpriseTestDB(t, dialect)
+			user := enterpriseTestUser(t, 999)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			original := DB
+			DB = DB.WithContext(ctx)
+			t.Cleanup(func() { DB = original })
+			entered, proceed := make(chan struct{}), make(chan struct{})
+			var release sync.Once
+			defer release.Do(func() { close(proceed) })
+			callback := "enterprise_owner_creation_fixture"
+			require.NoError(t, DB.Callback().Create().Before("gorm:create").Register(callback, func(tx *gorm.DB) {
+				if tx.Statement.Table == "enterprises" {
+					close(entered)
+					select {
+					case <-proceed:
+					case <-ctx.Done():
+						tx.AddError(ctx.Err())
+					}
+				}
+			}))
+			t.Cleanup(func() { require.NoError(t, original.Callback().Create().Remove(callback)) })
+			created, deleted := make(chan error, 1), make(chan error, 1)
+			go func() { _, err := CreateEnterprise(1, "并发开通", "default", "UTC", user.Id); created <- err }()
+			select {
+			case <-entered:
+			case <-ctx.Done():
+				t.Fatal(ctx.Err())
+			}
+			go func() { deleted <- user.Delete() }()
+			// 删除不能越过已读取Owner且尚未写企业的事务。
+			select {
+			case err := <-deleted:
+				t.Errorf("删除在开通事务完成前返回: %v", err)
+			case <-time.After(100 * time.Millisecond):
+			}
+			release.Do(func() { close(proceed) })
+			require.NoError(t, <-created)
+			if !t.Failed() {
+				require.ErrorIs(t, <-deleted, ErrEnterpriseOwnerRequired)
+			}
+			var alive User
+			require.NoError(t, DB.First(&alive, user.Id).Error)
 		})
 	}
 }

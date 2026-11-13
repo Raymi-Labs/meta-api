@@ -51,9 +51,12 @@ jobs:
           TEST_COMPAT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
         run: go test -p 2 ./model -run Enterprise -count=1 -timeout=180s -v
       - name: Verify HTTP, settlement and personal payer isolation
-        run: go test -p 2 ./router ./service ./controller ./middleware -count=1 -timeout=240s
+        run: |
+          go test -p 2 ./router ./service ./middleware -count=1 -timeout=240s
+          # Controller fixtures swap the global DB; do not start a process-lifetime telemetry loop.
+          ROUTE_INSIGHT_ENABLED=false go test -p 2 ./controller -count=1 -timeout=240s
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
       - name: Verify account switch and log filters
-        run: node --test web/scripts/enterprise-state.test.mjs web/scripts/usage-log-query.test.mjs
+        run: node --test web/scripts/enterprise-state.test.mjs web/scripts/enterprise-status.test.mjs web/scripts/usage-log-query.test.mjs

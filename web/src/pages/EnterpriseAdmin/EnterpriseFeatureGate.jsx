@@ -30,6 +30,10 @@ import { StatusContext } from '../../context/Status';
 import { enterpriseRequest } from '../../helpers/enterprise';
 import { isRoot } from '../../helpers/storage';
 import { showError } from '../../helpers/toast';
+import {
+  readCurrentSiteStatus,
+  invalidateSiteStatusReads,
+} from '../../helpers/siteStatusRequest';
 import { refreshEnterpriseSelf } from '../../hooks/enterprise/useEnterpriseSelf';
 
 export default function EnterpriseFeatureGate({ children }) {
@@ -60,7 +64,10 @@ export default function EnterpriseFeatureGate({ children }) {
     const id = ++sequence.current;
     setError(false);
     try {
-      const value = await enterpriseRequest('get', '/api/status');
+      const value = await readCurrentSiteStatus(() =>
+        enterpriseRequest('get', '/api/status'),
+      );
+      if (!value && id !== sequence.current) return;
       if (typeof value?.enterprise_enabled !== 'boolean') throw new Error();
       if (id === sequence.current) publish(value);
     } catch {
@@ -85,8 +92,9 @@ export default function EnterpriseFeatureGate({ children }) {
         key: 'EnterpriseEnabled',
         value: String(enabled),
       });
-      if (id !== sequence.current) return;
+      invalidateSiteStatusReads();
       publish({ ...status, enterprise_enabled: enabled });
+      if (id !== sequence.current) return;
       setConfirmClose(false);
       if (enabled) refreshEnterpriseSelf();
     } catch (e) {

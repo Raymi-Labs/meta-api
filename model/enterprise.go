@@ -395,7 +395,7 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 		Timezone: timezone, ModelMode: EnterpriseModelModeInherit, ModelList: "[]", CreatedAt: now, UpdatedAt: now}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		var owner User
-		if err := tx.Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrEnterpriseOwnerAccount
 			}

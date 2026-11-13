@@ -35,6 +35,7 @@ import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers/apiCore';
 import { setStatusData, setUserData } from '../../helpers/data';
+import { readCurrentSiteStatus } from '../../helpers/siteStatusRequest';
 import { getLogo, getSystemName } from '../../helpers/storage';
 import { showError } from '../../helpers/toast';
 import { UserContext } from '../../context/User';
@@ -119,7 +120,8 @@ const PageLayout = () => {
 
   const loadStatus = async () => {
     try {
-      const res = await API.get('/api/status');
+      const res = await readCurrentSiteStatus(() => API.get('/api/status'));
+      if (!res) return;
       const { success, data } = res.data;
       if (success) {
         statusDispatch({ type: 'set', payload: data });
