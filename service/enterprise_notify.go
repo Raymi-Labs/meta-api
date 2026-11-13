@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -45,11 +46,17 @@ func enterpriseMailBody(lines []string, link, action string) string {
 	return b.String()
 }
 
+// 测试里替换，避免真的发邮件、并让异步提醒变成同步执行。
+var (
+	enterpriseSendEmail = common.SendEmail
+	enterpriseAsync     = func(run func()) { gopool.Go(run) }
+)
+
 func sendEnterpriseMail(receiver, subject, content string) bool {
 	if receiver == "" {
 		return false
 	}
-	if err := common.SendEmail(subject, receiver, content); err != nil {
+	if err := enterpriseSendEmail(subject, receiver, content); err != nil {
 		logger.LogWarn(context.Background(), fmt.Sprintf("enterprise mail failed: subject=%q err=%v", subject, err))
 		return false
 	}
@@ -142,4 +149,90 @@ func NotifyEnterpriseRequestReviewed(ent *model.Enterprise, req *model.Enterpris
 	}
 	enterpriseMailAsync([]model.EnterpriseContact{contact}, subject,
 		enterpriseMailBody(lines, enterpriseLink(EnterpriseMyQuotaPath), "查看我的额度"))
+}
+
+// enterpriseMemberLowThreshold 成员低额提醒线沿用本人在个人设置里填的额度预警值，没填用平台默认值。
+func enterpriseMemberLowThreshold(info *relaycommon.RelayInfo) int64 {
+	if info.UserSetting.QuotaWarningThreshold > 0 {
+		return int64(info.UserSetting.QuotaWarningThreshold)
+	}
+	return int64(common.QuotaRemindThreshold)
+}
+
+// checkEnterpriseMemberLowBalance 在企业请求结算后调用。先看内存里的结算后余额，
+// 绝大多数请求到此为止，不产生额外的数据库写入。
+func checkEnterpriseMemberLowBalance(info *relaycommon.RelayInfo) {
+	session, ok := info.Billing.(*BillingSession)
+	if !ok || session == nil {
+		return
+	}
+	funding, ok := session.funding.(*EnterpriseFunding)
+	if !ok {
+		return
+	}
+	remindEnterpriseMemberIfLow(info, funding.availableAfter)
+}
+
+// remindEnterpriseMemberIfLow 按一次账本变更后的成员可用额度决定要不要提醒。
+func remindEnterpriseMemberIfLow(info *relaycommon.RelayInfo, availableAfter int64) {
+	threshold := enterpriseMemberLowThreshold(info)
+	if availableAfter >= threshold {
+		return
+	}
+	enterpriseID, memberID, userID := info.EnterpriseId, info.EnterpriseMemberId, info.UserId
+	enterpriseAsync(func() { notifyEnterpriseMemberLowBalance(enterpriseID, memberID, userID, threshold) })
+}
+
+// notifyEnterpriseMemberLowBalance 给成员本人发一次低额提醒。成员获得新额度后才会再次提醒。
+func notifyEnterpriseMemberLowBalance(enterpriseID, memberID, userID int, threshold int64) bool {
+	claimed, err := model.ClaimEnterpriseMemberLowBalance(memberID, threshold)
+	if err != nil {
+		logger.LogWarn(context.Background(), "enterprise member low balance notify failed: "+err.Error())
+		return false
+	}
+	if !claimed {
+		return false
+	}
+	contact, ok := model.GetEnterpriseContact(userID)
+	if !ok {
+		return false
+	}
+	ent, err := model.GetEnterpriseByID(enterpriseID)
+	if err != nil {
+		return false
+	}
+	member, err := model.GetEnterpriseMember(enterpriseID, memberID)
+	if err != nil {
+		return false
+	}
+	line := fmt.Sprintf("你在企业「%s」的额度即将用尽，当前可用 %s。", html.EscapeString(ent.Name), enterpriseQuotaText(member.Available))
+	if member.Available <= 0 {
+		line = fmt.Sprintf("你在企业「%s」的额度已用完，新的请求会被拒绝。", html.EscapeString(ent.Name))
+	}
+	return sendEnterpriseMail(contact.Email, fmt.Sprintf("%s：企业额度不足", common.SystemName),
+		enterpriseMailBody([]string{line}, enterpriseLink(EnterpriseMyQuotaPath), "申请额度"))
+}
+
+// notifyEnterpriseLowBalances 由后台任务调用：企业未分配余额低于企业自己设的提醒线时，
+// 提醒所有者与管理员一次。返回本轮提醒的企业数。
+func notifyEnterpriseLowBalances(limit int) int {
+	ents, err := model.ClaimEnterpriseLowBalances(limit)
+	if err != nil {
+		common.SysError("enterprise low balance sweep failed: " + err.Error())
+	}
+	for _, ent := range ents {
+		contacts, err := model.ListEnterpriseManagerContacts(ent.Id, false)
+		if err != nil {
+			common.SysError("enterprise low balance contacts failed: " + err.Error())
+			continue
+		}
+		line := fmt.Sprintf("企业「%s」未分配余额为 %s，已低于提醒线 %s。余额用完后将无法再给成员分配额度。",
+			html.EscapeString(ent.Name), enterpriseQuotaText(ent.Unallocated), enterpriseQuotaText(ent.LowBalanceThreshold))
+		subject := fmt.Sprintf("%s：「%s」企业余额不足", common.SystemName, ent.Name)
+		content := enterpriseMailBody([]string{line}, enterpriseLink(EnterpriseOverviewPath), "查看企业总览")
+		for _, contact := range contacts {
+			sendEnterpriseMail(contact.Email, subject, content)
+		}
+	}
+	return len(ents)
 }

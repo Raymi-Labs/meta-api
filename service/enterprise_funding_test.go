@@ -30,7 +30,10 @@ type enterpriseBilling struct {
 	user   *model.User
 	member *model.EnterpriseMember
 	token  *model.Token
+	mails  []enterpriseTestMail
 }
+
+type enterpriseTestMail struct{ receiver, subject, content string }
 
 func enterpriseTestUser(t *testing.T) *model.User {
 	t.Helper()
@@ -47,7 +50,16 @@ func newEnterpriseBilling(t *testing.T, allocated, tokenLimit int64) *enterprise
 	require.NoError(t, model.MigrateEnterpriseTables(model.DB))
 	oldEnabled, oldLog := common.EnterpriseEnabled, constant.ErrorLogEnabled
 	common.EnterpriseEnabled, constant.ErrorLogEnabled = true, false
+	f := &enterpriseBilling{t: t}
+	// 提醒邮件同步执行并截获：既不真的发信，也不会有后台协程在测试结束后继续读库。
+	oldSend, oldAsync := enterpriseSendEmail, enterpriseAsync
+	enterpriseAsync = func(run func()) { run() }
+	enterpriseSendEmail = func(subject, receiver, content string) error {
+		f.mails = append(f.mails, enterpriseTestMail{receiver, subject, content})
+		return nil
+	}
 	t.Cleanup(func() {
+		enterpriseSendEmail, enterpriseAsync = oldSend, oldAsync
 		common.EnterpriseEnabled, constant.ErrorLogEnabled = oldEnabled, oldLog
 		for _, table := range []string{"enterprises", "enterprise_members", "enterprise_invitations", "enterprise_audit_events",
 			"enterprise_ledgers", "enterprise_reservations", "enterprise_token_budgets", "enterprise_quota_requests",
@@ -56,7 +68,7 @@ func newEnterpriseBilling(t *testing.T, allocated, tokenLimit int64) *enterprise
 		}
 	})
 
-	f := &enterpriseBilling{t: t, owner: enterpriseTestUser(t), user: enterpriseTestUser(t)}
+	f.owner, f.user = enterpriseTestUser(t), enterpriseTestUser(t)
 	var err error
 	f.ent, err = model.CreateEnterprise(1, "测试企业"+common.GetUUID()[:6], "default", "", f.owner.Id)
 	require.NoError(t, err)

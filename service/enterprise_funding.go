@@ -25,6 +25,8 @@ type EnterpriseFunding struct {
 	subject   model.EnterpriseSubject
 	requestID string
 	consumed  int // 当前在途占用，与持久预留一致
+	// 最近一次账本变更后的成员可用额度，只用于判断要不要发低额提醒。
+	availableAfter int64
 }
 
 func (f *EnterpriseFunding) Source() string { return BillingSourceEnterprise }
@@ -35,6 +37,7 @@ func (f *EnterpriseFunding) resize(target int, state string, requireAvailable bo
 		return err
 	}
 	f.consumed = int(r.Quota)
+	f.availableAfter = r.AvailableAfter
 	return nil
 }
 
@@ -120,8 +123,9 @@ func newEnterpriseSession(c *gin.Context, info *relaycommon.RelayInfo, quota int
 
 	info.UserQuota = int(min(receipt.AvailableBefore, math.MaxInt32))
 	session := &BillingSession{
-		relayInfo:        info,
-		funding:          &EnterpriseFunding{subject: sub, requestID: info.RequestId, consumed: int(receipt.Quota)},
+		relayInfo: info,
+		funding: &EnterpriseFunding{subject: sub, requestID: info.RequestId, consumed: int(receipt.Quota),
+			availableAfter: receipt.AvailableAfter},
 		preConsumedQuota: int(receipt.Quota),
 		chatReservation:  bounded,
 	}

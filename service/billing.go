@@ -69,7 +69,8 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 			case BillingSourceSubscription:
 				checkAndSendSubscriptionQuotaNotify(relayInfo)
 			case BillingSourceEnterprise:
-				// 个人余额预警讲的是"请充值"，对企业成员不适用；企业低额提醒单独发。
+				// 个人余额预警讲的是"请充值"，对企业成员不适用；企业成员提醒的是"去申请额度"。
+				checkEnterpriseMemberLowBalance(relayInfo)
 			default:
 				checkAndSendQuotaNotify(relayInfo, actualQuota-preConsumed, preConsumed)
 			}

@@ -63,7 +63,7 @@ func runEnterpriseMaintenanceLoop(ctx context.Context, ticks <-chan time.Time, r
 	}
 }
 
-// runEnterpriseMaintenanceOnce 做两件事：
+// runEnterpriseMaintenanceOnce 做三件事（第三件是企业余额低于提醒线时邮件提醒所有者与管理员）：
 //  1. 超时未终结的预留转待对账并告警。额度继续计在成员在途里，不自动退款——
 //     结果不明时退款等于白送，由平台核实后按真实费用结算或释放。
 //  2. 已停用成员的残余额度（在途请求事后结算产生）并回企业未分配。
@@ -89,6 +89,9 @@ func runEnterpriseMaintenanceOnce(now time.Time) (review int64, swept int) {
 		common.SysError("enterprise member residue sweep failed: " + err.Error())
 	} else if swept > 0 {
 		common.SysLog(fmt.Sprintf("enterprise inactive member residues swept: %d", swept))
+	}
+	if notified := notifyEnterpriseLowBalances(enterpriseMaintenanceBatchSize); notified > 0 {
+		common.SysLog(fmt.Sprintf("enterprise low balance reminders sent: %d", notified))
 	}
 	return review, swept
 }

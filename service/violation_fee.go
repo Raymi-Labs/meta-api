@@ -142,6 +142,7 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 		if !charge.Changed {
 			return true
 		}
+		remindEnterpriseMemberIfLow(relayInfo, charge.AvailableAfter)
 		if err := model.DecreaseTokenQuota(relayInfo.TokenId, relayInfo.TokenKey, feeQuota); err != nil {
 			logger.LogError(ctx, fmt.Sprintf("failed to record enterprise token usage for violation fee: %s", err.Error()))
 		}
