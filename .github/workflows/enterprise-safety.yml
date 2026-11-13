@@ -1,0 +1,59 @@
+name: Enterprise workspace safety
+on:
+  push:
+    branches: [main, codex/enterprise-acceptance]
+    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
+  pull_request:
+    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enterprise-safety-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  database-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ['5.7', '8.0.46']
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ROOT_PASSWORD: fixture-only
+          MYSQL_DATABASE: enterprise_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pfixture-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: enterprise_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - name: Match MySQL utf8mb4 schema
+        run: docker exec '${{ job.services.mysql.id }}' mysql -uroot -pfixture-only -e 'ALTER DATABASE enterprise_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+      - name: Verify migrations, wallet concurrency and filtering on all databases
+        env:
+          TEST_COMPAT_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/enterprise_test?charset=utf8mb4&parseTime=true
+          TEST_COMPAT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
+        run: go test -p 2 ./model -run Enterprise -count=1 -timeout=180s -v
+      - name: Verify HTTP, settlement and personal payer isolation
+        run: go test -p 2 ./router ./service ./controller ./middleware -count=1 -timeout=240s
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify account switch and log filters
+        run: node --test web/scripts/enterprise-state.test.mjs web/scripts/usage-log-query.test.mjs

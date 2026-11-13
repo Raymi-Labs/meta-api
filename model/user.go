@@ -1733,7 +1733,12 @@ func (user *User) Delete() error {
 	if user.Id == 0 {
 		return errors.New("id 为空！")
 	}
-	if err := DB.Delete(user).Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := protectEnterpriseOwnerDeletionTx(tx, user.Id); err != nil {
+			return err
+		}
+		return tx.Delete(user).Error
+	}); err != nil {
 		return err
 	}
 
@@ -1747,6 +1752,9 @@ func (user *User) HardDelete() error {
 	}
 	var tokens []Token
 	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := protectEnterpriseOwnerDeletionTx(tx, user.Id); err != nil {
+			return err
+		}
 		if common.RedisEnabled {
 			if err := tx.Unscoped().Select("id", commonKeyCol).Where("user_id = ?", user.Id).Find(&tokens).Error; err != nil {
 				return err

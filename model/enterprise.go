@@ -510,8 +510,14 @@ func UpdateEnterpriseSettings(actor EnterpriseActor, enterpriseID int, in Enterp
 		if err != nil {
 			return err
 		}
-		if !actor.Platform && actorMember.Role != EnterpriseRoleOwner {
-			return ErrEnterpriseForbidden
+		if !actor.Platform {
+			if !EnterpriseRoleAtLeast(actorMember.Role, EnterpriseRoleAdmin) {
+				return ErrEnterpriseForbidden
+			}
+			// 管理员可以更新资料，但不能通过企业策略扩大自己的可用模型。
+			if actorMember.Role != EnterpriseRoleOwner && (in.ModelMode != ent.ModelMode || encoded != ent.ModelList) {
+				return ErrEnterpriseForbidden
+			}
 		}
 		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
 			"name": in.Name, "timezone": in.Timezone, "model_mode": in.ModelMode, "model_list": encoded,

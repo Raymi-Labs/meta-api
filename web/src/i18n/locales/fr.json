@@ -7772,6 +7772,11 @@
     "快照时间": "Date de l’instantané",
     "正在后台准备快照，完成后自动显示": "Préparation de l’instantané en arrière-plan. Il s’affichera automatiquement.",
     "部分数据刷新失败，保留上次快照，请留意快照时间": "Certaines données n’ont pas pu être actualisées. Les valeurs précédentes sont conservées ; vérifiez la date de l’instantané.",
-    "调整输入框高度": "Ajuster la hauteur de saisie"
+    "调整输入框高度": "Ajuster la hauteur de saisie",
+    "企业功能未开启": "Les fonctions entreprise sont désactivées",
+    "启用企业功能": "Activer les fonctions entreprise",
+    "关闭企业功能": "Désactiver les fonctions entreprise",
+    "关闭企业功能？": "Désactiver les fonctions entreprise ?",
+    "关闭后，企业令牌无法发起新请求；已有账单与在途结算保留，个人调用不受影响。": "Les jetons entreprise ne pourront plus lancer de requêtes. Les factures existantes et les règlements en cours seront conservés. Les requêtes personnelles ne sont pas affectées."
   }
 }

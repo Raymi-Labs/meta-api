@@ -137,11 +137,7 @@ const enterpriseUsageAggregates = "COALESCE(SUM(CASE WHEN status = '" + Enterpri
 	"COALESCE(SUM(CASE WHEN status IN ('" + EnterpriseReservationReserved + "', '" + EnterpriseReservationReview + "') THEN 1 ELSE 0 END), 0) AS pending_count"
 
 func GetEnterpriseUsageSummary(filter EnterpriseUsageFilter) (*EnterpriseUsageSummary, error) {
-	// 汇总自己按状态分列，筛选里的状态不参与；但非法取值仍与列表一样拒绝。
-	if _, err := filter.apply(DB.Model(&EnterpriseReservation{})); err != nil {
-		return nil, err
-	}
-	filter.Status = EnterpriseUsageStatusAll
+	// 列表、导出与汇总使用完全相同的状态和其他筛选。
 	base := func() (*gorm.DB, error) { return filter.apply(DB.Model(&EnterpriseReservation{})) }
 
 	out := &EnterpriseUsageSummary{AsOf: time.Now().Unix(), ByMember: []EnterpriseUsageGroup{}, ByModel: []EnterpriseUsageGroup{}}

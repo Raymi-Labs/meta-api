@@ -124,6 +124,7 @@ export default function EnterpriseSettings() {
   const { t } = useTranslation();
   const { enterpriseId, role, refreshSelf } = useOutletContext();
   const owner = role === 'owner';
+  const manager = owner || role === 'admin';
   const base = `/api/enterprises/${enterpriseId}`;
   const [form, setForm] = useState(null);
   const [options, setOptions] = useState([]);
@@ -200,7 +201,8 @@ export default function EnterpriseSettings() {
     if (
       form.model_mode === 'custom' &&
       form.models.length === 0 &&
-      confirmedEmpty !== true
+      confirmedEmpty !== true &&
+      owner
     ) {
       Modal.confirm({
         className: 'ec-modal',
@@ -263,7 +265,7 @@ export default function EnterpriseSettings() {
     <div className='em'>
       <div className='em-head'>
         <h1>{t('设置')}</h1>
-        {owner && form && (
+        {manager && form && (
           <Button
             theme='solid'
             type='primary'
@@ -283,7 +285,7 @@ export default function EnterpriseSettings() {
               {t('企业名称')}
               <Input
                 maxLength={64}
-                disabled={!owner}
+                disabled={!manager}
                 value={form.name}
                 onChange={(v) => patch({ name: v })}
               />
@@ -292,7 +294,7 @@ export default function EnterpriseSettings() {
               {t('时区')}
               <Select
                 filter
-                disabled={!owner}
+                disabled={!manager}
                 value={form.timezone}
                 optionList={zones.map((z) => ({ value: z, label: z }))}
                 onChange={(v) => patch({ timezone: v })}
@@ -313,7 +315,7 @@ export default function EnterpriseSettings() {
               <InputNumber
                 min={0}
                 precision={2}
-                disabled={!owner}
+                disabled={!manager}
                 value={form.threshold}
                 onChange={(v) => patch({ threshold: v })}
                 style={{ width: '100%' }}

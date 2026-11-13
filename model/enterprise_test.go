@@ -20,8 +20,10 @@ func enterpriseTestDB(t *testing.T, dialect string) {
 	quotaNoticeTestDB(t, dialect)
 	oldSQLite, oldMySQL, oldPG, oldRedis := common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled
 	common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = dialect == "sqlite", dialect == "mysql", dialect == "postgres", false
+	initCol()
 	t.Cleanup(func() {
 		common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = oldSQLite, oldMySQL, oldPG, oldRedis
+		initCol()
 	})
 	require.NoError(t, DB.AutoMigrate(&User{}, &Token{}))
 	require.NoError(t, DB.AutoMigrate(enterpriseModels()...))
@@ -96,10 +98,11 @@ func TestEnterpriseMembershipRules(t *testing.T) {
 			_, _, err = CreateEnterpriseInvitation(ownerActor, ent.Id, "x@example.com", EnterpriseRoleOwner, 0)
 			require.ErrorIs(t, err, ErrEnterpriseInvalidInput)
 
-			// 管理员不能任免管理员、不能转移所有权、不能改企业设置。
+			// 管理员不能任免管理员、不能转移所有权；可以改基础资料，不能改模型策略。
 			require.ErrorIs(t, SetEnterpriseMemberRole(adminActor, ent.Id, member.Id, EnterpriseRoleAdmin), ErrEnterpriseForbidden)
 			require.ErrorIs(t, TransferEnterpriseOwnership(adminActor, ent.Id, admin.Id), ErrEnterpriseForbidden)
-			require.ErrorIs(t, UpdateEnterpriseSettings(adminActor, ent.Id, EnterpriseSettingsInput{Name: "x", Timezone: "UTC", ModelMode: EnterpriseModelModeInherit}), ErrEnterpriseForbidden)
+			require.NoError(t, UpdateEnterpriseSettings(adminActor, ent.Id, EnterpriseSettingsInput{Name: "x", Timezone: "UTC", ModelMode: EnterpriseModelModeInherit}))
+			require.ErrorIs(t, UpdateEnterpriseSettings(adminActor, ent.Id, EnterpriseSettingsInput{Name: "x", Timezone: "UTC", ModelMode: EnterpriseModelModeCustom}), ErrEnterpriseForbidden)
 
 			// 所有者不能被降级、停用或直接退出。
 			require.ErrorIs(t, SetEnterpriseMemberRole(ownerActor, ent.Id, ownerMember.Id, EnterpriseRoleMember), ErrEnterpriseOwnerRequired)

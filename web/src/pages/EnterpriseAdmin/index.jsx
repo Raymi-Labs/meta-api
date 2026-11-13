@@ -37,6 +37,7 @@ import { isRoot } from '../../helpers/storage';
 import { renderQuota } from '../../helpers/render';
 import { showError, showSuccess } from '../../helpers/toast';
 import EnterpriseFormModal from './EnterpriseFormModal';
+import EnterpriseFeatureGate from './EnterpriseFeatureGate';
 import WalletModal from './WalletModal';
 import Reservations from './Reservations';
 import '../EnterpriseConsole/enterpriseMembers.css';
@@ -99,7 +100,7 @@ function StatusModal({ enterprise, onClose, onDone }) {
   );
 }
 
-export default function EnterpriseAdmin() {
+function EnterpriseAdminContent({ featureControl }) {
   const { t } = useTranslation();
   const root = isRoot();
   const [items, setItems] = useState([]);
@@ -241,6 +242,7 @@ export default function EnterpriseAdmin() {
       <div className='em-head'>
         <h1>{t('企业管理')}</h1>
         <div className='em-tools'>
+          {featureControl}
           <Input
             prefix={<IconSearch />}
             showClear
@@ -322,5 +324,15 @@ export default function EnterpriseAdmin() {
         onDone={load}
       />
     </div>
+  );
+}
+
+export default function EnterpriseAdmin() {
+  return (
+    <EnterpriseFeatureGate>
+      {(featureControl) => (
+        <EnterpriseAdminContent featureControl={featureControl} />
+      )}
+    </EnterpriseFeatureGate>
   );
 }

@@ -129,6 +129,26 @@ func TestEnterpriseUsageMatchesLedger(t *testing.T) {
 			}
 			require.EqualValues(t, 6, count(EnterpriseUsageFilter{Status: EnterpriseUsageStatusAll}))
 			require.EqualValues(t, 1, count(EnterpriseUsageFilter{Status: EnterpriseReservationRefunded}))
+			for _, status := range []string{EnterpriseReservationRefunded, EnterpriseReservationSettled, EnterpriseReservationReserved, EnterpriseReservationReview, EnterpriseUsageStatusAll} {
+				filter := EnterpriseUsageFilter{EnterpriseId: ent.Id, Status: status}
+				filtered, err := GetEnterpriseUsageSummary(filter)
+				require.NoError(t, err)
+				var consumed, pending, requests, pendingCount int64
+				require.NoError(t, WalkEnterpriseUsage(context.Background(), filter, func(row *EnterpriseReservation) error {
+					switch row.Status {
+					case EnterpriseReservationSettled:
+						consumed += row.Quota
+						if row.Kind == EnterpriseChargeRequest {
+							requests++
+						}
+					case EnterpriseReservationReserved, EnterpriseReservationReview:
+						pending += row.Quota
+						pendingCount++
+					}
+					return nil
+				}))
+				require.Equal(t, [4]int64{consumed, pending, requests, pendingCount}, [4]int64{filtered.NetConsumed, filtered.Pending, filtered.Requests, filtered.PendingCount}, status)
+			}
 			require.EqualValues(t, 4, count(EnterpriseUsageFilter{MemberId: m1.Id}))
 			require.EqualValues(t, 1, count(EnterpriseUsageFilter{MemberId: m2.Id}))
 			require.EqualValues(t, 3, count(EnterpriseUsageFilter{TokenId: 11}))

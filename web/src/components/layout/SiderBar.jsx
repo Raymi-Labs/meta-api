@@ -263,7 +263,8 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('企业管理'),
         itemKey: 'enterpriseAdmin',
         to: '/console/enterprise-admin',
-        className: isAdmin() && enterprise.enabled ? '' : 'tableHiddle',
+        className:
+          isRoot() || (isAdmin() && enterprise.enabled) ? '' : 'tableHiddle',
       },
       {
         text: t('系统设置'),

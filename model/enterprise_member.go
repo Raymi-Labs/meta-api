@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func enterpriseInvitationDigest(token string) string {
@@ -504,6 +505,16 @@ func TransferEnterpriseOwnership(actor EnterpriseActor, enterpriseID, memberID i
 		if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
 			return ErrEnterpriseNotFound
 		}
+		var targetUser User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&targetUser, target.UserId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEnterpriseOwnerAccount
+			}
+			return err
+		}
+		if targetUser.Status != common.UserStatusEnabled {
+			return ErrEnterpriseOwnerAccount
+		}
 		if target.Role == EnterpriseRoleOwner {
 			return nil
 		}
@@ -699,4 +710,24 @@ func GetEnterpriseMemberDetail(enterpriseID, memberID int) (*EnterpriseMember, e
 	}
 	fillEnterpriseMemberUsers([]*EnterpriseMember{member})
 	return member, nil
+}
+
+// Lock the account before checking ownership so transfer/create and deletion cannot
+// commit an owner pointing at a deleted account. Keep this guard active when the feature is off.
+func protectEnterpriseOwnerDeletionTx(tx *gorm.DB, userID int) error {
+	if !tx.Migrator().HasTable(&Enterprise{}) {
+		return nil
+	}
+	var user User
+	if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, userID).Error; err != nil {
+		return err
+	}
+	var count int64
+	if err := tx.Model(&Enterprise{}).Where("owner_user_id = ?", userID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrEnterpriseOwnerRequired
+	}
+	return nil
 }

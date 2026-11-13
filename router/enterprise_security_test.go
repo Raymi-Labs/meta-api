@@ -288,9 +288,10 @@ func TestEnterpriseQuotaFlowOverAPI(t *testing.T) {
 	api.denied(admin.Id, user, http.MethodPost, base+"/quota-requests/"+ownID+"/approve", nil, model.ErrEnterpriseSelfOperation)
 	api.ok(owner.Id, user, http.MethodPost, base+"/quota-requests/"+ownID+"/approve", nil)
 
-	// 设置只有所有者能改；所有者不能直接退出；停用后成员接口不再可用。
+	// 管理员可改基础资料，不能改企业模型策略；所有者不能直接退出。
 	settings := map[string]any{"name": "甲公司", "timezone": "Asia/Shanghai", "model_mode": model.EnterpriseModelModeInherit}
-	api.denied(admin.Id, user, http.MethodPut, base+"/settings", settings, model.ErrEnterpriseForbidden)
+	api.ok(admin.Id, user, http.MethodPut, base+"/settings", settings)
+	api.denied(admin.Id, user, http.MethodPut, base+"/settings", map[string]any{"name": "甲公司", "timezone": "Asia/Shanghai", "model_mode": model.EnterpriseModelModeCustom, "models": []string{}}, model.ErrEnterpriseForbidden)
 	api.ok(owner.Id, user, http.MethodPut, base+"/settings", settings)
 	api.denied(owner.Id, user, http.MethodPost, "/api/enterprise/self/leave", nil, model.ErrEnterpriseOwnerRequired)
 	api.ok(admin.Id, user, http.MethodPost, base+"/members/"+strconv.Itoa(staffMember)+"/disable", map[string]any{"reason": "离职"})

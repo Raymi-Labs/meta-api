@@ -7440,6 +7440,11 @@
     "快照时间": "Hora de la instantánea",
     "正在后台准备快照，完成后自动显示": "Preparando la instantánea en segundo plano. Se mostrará automáticamente.",
     "部分数据刷新失败，保留上次快照，请留意快照时间": "No se pudieron actualizar algunos datos. Se conservan los valores anteriores; compruebe la hora de la instantánea.",
-    "调整输入框高度": "Ajustar la altura del campo de entrada"
+    "调整输入框高度": "Ajustar la altura del campo de entrada",
+    "企业功能未开启": "Las funciones empresariales están desactivadas",
+    "启用企业功能": "Activar funciones empresariales",
+    "关闭企业功能": "Desactivar funciones empresariales",
+    "关闭企业功能？": "¿Desactivar funciones empresariales?",
+    "关闭后，企业令牌无法发起新请求；已有账单与在途结算保留，个人调用不受影响。": "Los tokens empresariales no podrán iniciar solicitudes nuevas. Se conservan las facturas existentes y las liquidaciones en curso. Las solicitudes personales no se ven afectadas."
   }
 }

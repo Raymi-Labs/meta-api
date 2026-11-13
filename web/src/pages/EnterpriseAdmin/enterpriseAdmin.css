@@ -27,3 +27,25 @@
     padding: 20px 16px 40px;
   }
 }
+
+.ea-disabled {
+  padding: 48px 0;
+  text-align: center;
+}
+.ea-disabled p {
+  margin: 0 0 20px;
+  color: var(--semi-color-text-1);
+}
+@media (max-width: 768px) {
+  .ea .em-tools {
+    width: 100%;
+  }
+  .ea .em-tools > .semi-input-wrapper {
+    flex: 1 0 100%;
+    order: 1;
+  }
+  .ea .em-tools > .semi-button {
+    order: 2;
+    max-width: 100%;
+  }
+}

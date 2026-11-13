@@ -250,19 +250,33 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 		}
 		baseQuery = baseQuery.Where(commonKeyCol+" LIKE ? ESCAPE '!'", tokenPattern)
 	}
-	// 额度筛选按“总额度 = remain_quota + used_quota”执行。
-	// 与“已使用余额筛选”配合后，可表达“总额度区间 + 已用额度区间”。
+	// 只有涉及额度筛选/排序且账号持有企业令牌时才查询企业预算。
+	// 企业额度不复制到个人字段，避免形成第二份账源；个人账号保持原查询路径。
+	totalQuota, usedQuota, remainQuota := "(remain_quota + used_quota)", "used_quota", "remain_quota"
+	if payer != TokenPayerPersonal && (balanceMin != nil || balanceMax != nil || usedBalanceMin != nil || usedBalanceMax != nil || strings.EqualFold(strings.TrimSpace(sortBy), "remain_quota")) {
+		var enterpriseCount int64
+		if err := DB.Model(&Token{}).Where("user_id = ? AND enterprise_id > 0", userId).Limit(1).Count(&enterpriseCount).Error; err != nil {
+			return nil, 0, err
+		}
+		if enterpriseCount > 0 {
+			limitExpr := "COALESCE((SELECT limit_quota FROM enterprise_token_budgets WHERE token_id = tokens.id), 0)"
+			usedExpr := "COALESCE((SELECT used_quota FROM enterprise_token_budgets WHERE token_id = tokens.id), 0)"
+			totalQuota = "(CASE WHEN enterprise_id > 0 THEN CASE WHEN " + limitExpr + " > 0 THEN " + limitExpr + " ELSE " + usedExpr + " END ELSE remain_quota + used_quota END)"
+			usedQuota = "(CASE WHEN enterprise_id > 0 THEN " + usedExpr + " ELSE used_quota END)"
+			remainQuota = "(CASE WHEN enterprise_id > 0 THEN CASE WHEN " + limitExpr + " > " + usedExpr + " THEN " + limitExpr + " - " + usedExpr + " ELSE 0 END ELSE remain_quota END)"
+		}
+	}
 	if balanceMin != nil {
-		baseQuery = baseQuery.Where("(remain_quota + used_quota) >= ?", *balanceMin)
+		baseQuery = baseQuery.Where(totalQuota+" >= ?", *balanceMin)
 	}
 	if balanceMax != nil {
-		baseQuery = baseQuery.Where("(remain_quota + used_quota) <= ?", *balanceMax)
+		baseQuery = baseQuery.Where(totalQuota+" <= ?", *balanceMax)
 	}
 	if usedBalanceMin != nil {
-		baseQuery = baseQuery.Where("used_quota >= ?", *usedBalanceMin)
+		baseQuery = baseQuery.Where(usedQuota+" >= ?", *usedBalanceMin)
 	}
 	if usedBalanceMax != nil {
-		baseQuery = baseQuery.Where("used_quota <= ?", *usedBalanceMax)
+		baseQuery = baseQuery.Where(usedQuota+" <= ?", *usedBalanceMax)
 	}
 
 	// 先查匹配总数（用于分页，受 maxTokens 上限保护，避免全表 COUNT）
@@ -273,7 +287,11 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 	}
 
 	// 再分页查数据
+	normalizedSort, normalizedOrder := normalizeTokenSort(sortBy, sortOrder)
 	orderClause := buildTokenOrderClause(sortBy, sortOrder)
+	if normalizedSort == "remain_quota" {
+		orderClause = remainQuota + " " + normalizedOrder + ", id DESC"
+	}
 	err = baseQuery.Order(orderClause).Offset(offset).Limit(limit).Find(&tokens).Error
 	if err != nil {
 		common.SysError("failed to search tokens: " + err.Error())
