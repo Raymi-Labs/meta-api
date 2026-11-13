@@ -16,6 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import ComposerResizeHandle, {
+  useComposerResize,
+} from './ComposerResizeHandle';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Select, Toast, Modal, Tooltip } from '@douyinfe/semi-ui';
 import {
@@ -129,6 +132,7 @@ export default function ParallelTextChat({
   onContinue,
 }) {
   const { t } = useTranslation();
+  const resize = useComposerResize();
   const [layout, setLayout] = useState('grid');
   const [tasks, setTasks] = useState([]);
   const modelPicker = useRef(null);
@@ -574,6 +578,7 @@ export default function ParallelTextChat({
         )}
       </div>
       <div className='pg-parallel-composer'>
+        <ComposerResizeHandle {...resize.handleProps} />
         <label className='pg-stream-toggle'>
           <input
             type='checkbox'
@@ -585,6 +590,7 @@ export default function ParallelTextChat({
           {t('流式输出')}
         </label>
         <textarea
+          {...resize.textareaProps}
           aria-label={t('请输入您的问题...')}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

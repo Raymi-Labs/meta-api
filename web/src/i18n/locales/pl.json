@@ -7296,6 +7296,7 @@
     "后台每 5 分钟更新快照": "Migawki są aktualizowane w tle co 5 minut",
     "快照时间": "Czas migawki",
     "正在后台准备快照，完成后自动显示": "Migawka jest przygotowywana w tle i pojawi się automatycznie.",
-    "部分数据刷新失败，保留上次快照，请留意快照时间": "Nie udało się odświeżyć części danych. Zachowano poprzednie wartości; sprawdź czas migawki."
+    "部分数据刷新失败，保留上次快照，请留意快照时间": "Nie udało się odświeżyć części danych. Zachowano poprzednie wartości; sprawdź czas migawki.",
+    "调整输入框高度": "Zmień wysokość pola wprowadzania"
   }
 }

@@ -18,6 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useRef, useEffect, useCallback } from 'react';
+import ComposerResizeHandle, {
+  useComposerResize,
+} from './ComposerResizeHandle';
 import { Toast } from '@douyinfe/semi-ui';
 import { ArrowUp, Square, Trash2, ImagePlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +40,7 @@ const CustomInputRender = ({
   customRequestMode,
 }) => {
   const { t } = useTranslation();
+  const resize = useComposerResize();
   const { onPasteImage, imageEnabled } = usePlayground();
   const containerRef = useRef(null);
   const handlePaste = useCallback(
@@ -118,7 +122,9 @@ const CustomInputRender = ({
   return (
     <div className='pg-composer-wrap' ref={containerRef}>
       <div className='pg-composer'>
+        <ComposerResizeHandle {...resize.handleProps} />
         <textarea
+          {...resize.textareaProps}
           aria-label={t('请输入您的问题...')}
           placeholder={t('请输入您的问题...')}
           value={draft}
