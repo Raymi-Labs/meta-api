@@ -23,6 +23,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Wallet,
+  KeyRound,
   Users,
   ClipboardCheck,
   ChartNoAxesCombined,
@@ -71,11 +72,12 @@ export function EnterpriseEntry({ user, workspace, t, contactHref }) {
   const entry = getEnterpriseEntry(user, workspace);
   return (
     <aside className='enterprise-entry' aria-label={t('企业工作空间')}>
-      <div className='enterprise-entry-heading'>
-        <h2>{t('企业工作空间')}</h2>
-        {entry.role && <span className='enterprise-role'>{t(entry.role)}</span>}
-      </div>
-      {entry.name && <p className='enterprise-name'>{entry.name}</p>}
+      {entry.member && (
+        <div className='enterprise-entry-heading'>
+          <p className='enterprise-name'>{entry.name}</p>
+          <span className='enterprise-role'>{t(entry.role)}</span>
+        </div>
+      )}
       {entry.frozen && <p className='enterprise-frozen'>{t('已冻结')}</p>}
       {entry.state === 'loading' ? (
         <p role='status'>{t('加载中...')}</p>
@@ -102,31 +104,28 @@ export function EnterpriseEntry({ user, workspace, t, contactHref }) {
             </Link>
           ) : (
             <>
-              <p className='enterprise-entry-note'>
-                {t('由平台开通企业，并指定所有者账号。')}
-              </p>
               <a
                 className='enterprise-button enterprise-primary'
                 href={contactHref}
               >
                 {t('联系开通')}
-                <ArrowUpRight size={18} aria-hidden='true' />
               </a>
             </>
           )}
           {entry.member && (
-            <Link className='enterprise-text-link' to='/console/token'>
+            <Link
+              className='enterprise-button enterprise-secondary'
+              to='/console/token'
+            >
               {t('令牌管理')}
-              <ArrowRight size={16} aria-hidden='true' />
             </Link>
           )}
           {!user?.id && (
             <Link
-              className='enterprise-text-link'
+              className='enterprise-button enterprise-secondary'
               to={buildAuthPathWithNext('/login', '/enterprise')}
             >
               {t('登录')}
-              <ArrowRight size={16} aria-hidden='true' />
             </Link>
           )}
         </div>
@@ -169,28 +168,39 @@ export default function Enterprise() {
           <p className='enterprise-lead'>
             {t('企业统一付款，成员按额度使用。')}
           </p>
-          <div className='enterprise-funding-flow' aria-label={t('额度分配')}>
-            <span>{t('未分配余额')}</span>
-            <div className='enterprise-flow-step'>
-              <ArrowRight size={18} aria-hidden='true' />
+          <EnterpriseEntry
+            user={userState?.user}
+            workspace={workspace}
+            t={t}
+            contactHref={contactHref}
+          />
+        </div>
+        <div className='enterprise-flow-panel'>
+          <ol className='enterprise-funding-flow' aria-label={t('额度分配')}>
+            <li>
+              <span className='enterprise-flow-icon'>
+                <Wallet size={22} aria-hidden='true' />
+              </span>
+              <span>{t('未分配余额')}</span>
+            </li>
+            <li>
+              <span className='enterprise-flow-icon'>
+                <Users size={22} aria-hidden='true' />
+              </span>
               <span>{t('成员额度')}</span>
-            </div>
-            <div className='enterprise-flow-step'>
-              <ArrowRight size={18} aria-hidden='true' />
+            </li>
+            <li>
+              <span className='enterprise-flow-icon'>
+                <KeyRound size={22} aria-hidden='true' />
+              </span>
               <span>{t('企业令牌')}</span>
-            </div>
-          </div>
+            </li>
+          </ol>
           <Link className='enterprise-text-link' to='/docs/api-examples'>
             {t('接入文档')}
             <ArrowUpRight size={16} aria-hidden='true' />
           </Link>
         </div>
-        <EnterpriseEntry
-          user={userState?.user}
-          workspace={workspace}
-          t={t}
-          contactHref={contactHref}
-        />
       </section>
 
       <section
