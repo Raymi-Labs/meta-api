@@ -56,4 +56,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verify account switch and log filters
-        run: node --test web/scripts/enterprise-state.test.mjs web/scripts/enterprise-status.test.mjs web/scripts/usage-log-query.test.mjs
+        run: node --test web/scripts/enterprise-approval.test.mjs web/scripts/enterprise-state.test.mjs web/scripts/enterprise-status.test.mjs web/scripts/usage-log-query.test.mjs
