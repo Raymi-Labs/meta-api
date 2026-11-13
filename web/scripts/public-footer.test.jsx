@@ -88,7 +88,7 @@ test('renders four footer columns with real product, developer, support and poli
     模型体验: loginPath('/playground'),
     'AI 图像创作': loginPath('/console/image-playground'),
     下载客户端: '/download',
-    企业定制: '/enterprise',
+    企业服务: '/enterprise',
     Skills: '/docs/image-generation',
     文档: '/docs',
     'API 参考': '/docs/api-examples',
@@ -143,7 +143,7 @@ test('disabled navigation modules hide their corresponding footer entries', () =
   assert.deepEqual(Object.fromEntries(entries), {
     元衡测试: '/',
     下载客户端: '/download',
-    企业定制: '/enterprise',
+    企业服务: '/enterprise',
     服务条款: '/user-agreement',
     隐私政策: '/privacy-policy',
     ...policyLinks,
@@ -217,7 +217,7 @@ test('download, legal and enterprise pages retain the directory even when the ho
     assert.match(html, /public-footer--directory/);
     assert.equal(entries.get('你的隐私选择'), '/privacy-choices');
     assert.equal(entries.get('下载客户端'), '/download');
-    assert.equal(entries.get('企业定制'), '/enterprise');
+    assert.equal(entries.get('企业服务'), '/enterprise');
     assert.equal(entries.has('快速开始'), false);
     assert.equal(entries.has('常见问题'), false);
   }

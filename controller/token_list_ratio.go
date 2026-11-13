@@ -50,31 +50,31 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 			GroupRatioStatus: "unavailable",
 			Payer:            tokenPayer(token),
 		}
-		userGroup, err := personalGroup, personalErr
+		billingGroup, err := personalGroup, personalErr
 		if token != nil && token.EnterpriseId > 0 {
-			userGroup, err = "", nil
+			billingGroup, err = "", nil
 			if ent := enterprises[token.EnterpriseId]; ent != nil {
-				userGroup = ent.BillingGroup
+				billingGroup = ent.BillingGroup
 				item.EnterpriseName = ent.Name
 			}
 			budget := budgets[token.Id]
 			item.EnterpriseLimitQuota, item.EnterpriseUsedQuota = budget.LimitQuota, budget.UsedQuota
 		}
-		if token != nil && err == nil && userGroup != "" && token.UserId == userID {
-			group := service.ResolveTokenGroup(userGroup, token.Group)
+		if token != nil && err == nil && personalErr == nil && billingGroup != "" && token.UserId == userID {
+			group := service.ResolveTokenGroup(personalGroup, token.Group)
 			if token.RoutingConfig != "" {
-				groups, scopeErr := service.TokenConfiguredGroups(userGroup, token, "")
+				groups, scopeErr := service.TokenConfiguredGroups(personalGroup, token, "")
 				if scopeErr == nil && len(groups) > 0 {
 					item.GroupRatioStatus = "auto"
 				}
 				items = append(items, item)
 				continue
 			}
-			if _, allowed := service.GetUserUsableGroups(userGroup)[group]; allowed {
+			if _, allowed := service.GetUserUsableGroups(personalGroup)[group]; allowed {
 				if group == "auto" {
 					item.GroupRatioStatus = "auto"
 				} else if ratio_setting.ContainsGroupRatio(group) {
-					ratio := service.GetUserGroupRatio(userGroup, group)
+					ratio := service.GetUserGroupRatio(billingGroup, group)
 					if ratio >= 0 && !math.IsNaN(ratio) && !math.IsInf(ratio, 0) {
 						item.GroupRatio = &ratio
 						item.GroupRatioStatus = "fixed"

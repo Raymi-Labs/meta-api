@@ -361,20 +361,15 @@ func TokenAuth() func(c *gin.Context) {
 		userCache.WriteContext(c)
 
 		userGroup := userCache.Group
-		// 企业令牌：先确认成员关系与企业状态，再确认该入口已对企业额度开放；
-		// 通过后改用企业的计费用户组，个人用户组与个人钱包不再参与本次请求。
+		// 企业令牌与个人令牌使用相同API入口；先确认成员关系与企业状态。
+		// 通过后只切换价格身份与付款方；个人授权组继续决定渠道范围。
 		enterprise, err := ResolveEnterpriseToken(token)
 		if err != nil {
 			abortEnterpriseToken(c, err)
 			return
 		}
 		if enterprise != nil {
-			if !EnterpriseTokenRouteAllowed(c.Request.Method, c.FullPath()) {
-				abortEnterpriseToken(c, model.ErrEnterpriseUnsupported)
-				return
-			}
 			enterprise.WriteContext(c)
-			userGroup = enterprise.Enterprise.BillingGroup
 		}
 		tokenGroup := service.ResolveTokenGroup(userGroup, token.Group)
 		if tokenGroup != "" && token.RoutingConfig == "" {

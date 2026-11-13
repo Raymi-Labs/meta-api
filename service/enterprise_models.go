@@ -3,15 +3,19 @@ package service
 import (
 	"sort"
 
-	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 )
 
-// EnterprisePlatformModels 返回平台对企业计费用户组开放的全部模型（对普通用户可见的），
-// 是企业"继承平台"时的范围，也是企业管理员挑选"指定模型"时的候选清单。
-func EnterprisePlatformModels(billingGroup string) []string {
+// EnterprisePlatformModels 返回指定账号授权组和平台角色可见的配置候选。
+// userGroup 不能是企业计费组；企业角色不等于平台角色。
+func EnterprisePlatformModels(userGroup string, role int) []string {
+	return enterprisePlatformModels(userGroup, role)
+}
+
+func enterprisePlatformModels(userGroup string, role int) []string {
 	seen := map[string]struct{}{}
-	for group := range GetUserUsableGroups(billingGroup) {
+	for group := range GetUserUsableGroups(userGroup) {
 		if group == "auto" {
 			continue
 		}
@@ -23,7 +27,7 @@ func EnterprisePlatformModels(billingGroup string) []string {
 	for name := range seen {
 		names = append(names, name)
 	}
-	names = model.FilterModelsByVisibility(names, common.RoleCommonUser)
+	names = model.FilterModelsByVisibility(names, role)
 	sort.Strings(names)
 	return names
 }
@@ -63,14 +67,21 @@ func EnterpriseModelPolicy(ent *model.Enterprise, member *model.EnterpriseMember
 
 // EnterpriseMemberModels 返回成员当前实际可用的模型清单（平台开放范围与企业、成员限制的交集）。
 func EnterpriseMemberModels(ent *model.Enterprise, member *model.EnterpriseMember) []string {
-	platform := EnterprisePlatformModels(ent.BillingGroup)
+	if ent == nil || member == nil || member.EnterpriseId != ent.Id {
+		return nil
+	}
+	user, err := model.GetUserCache(member.UserId)
+	if err != nil {
+		return nil
+	}
+	platform := enterprisePlatformModels(user.Group, user.Role)
 	allowed, restricted := EnterpriseModelPolicy(ent, member)
 	if !restricted {
 		return platform
 	}
 	out := make([]string, 0, len(platform))
 	for _, name := range platform {
-		if allowed[name] {
+		if allowed[name] || allowed[ratio_setting.FormatMatchingModelName(name)] {
 			out = append(out, name)
 		}
 	}

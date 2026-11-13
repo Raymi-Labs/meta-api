@@ -1,230 +1,182 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
-	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/system_setting"
-	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UpdateMidjourneyTaskBulk() {
-	//imageModel := "midjourney"
 	ctx := context.TODO()
 	for {
-		time.Sleep(time.Duration(15) * time.Second)
-
+		time.Sleep(15 * time.Second)
 		tasks := model.GetAllUnFinishTasks()
 		if len(tasks) == 0 {
 			continue
 		}
-
-		logger.LogInfo(ctx, fmt.Sprintf("检测到未完成的任务数有: %v", len(tasks)))
-		taskChannelM := make(map[int][]string)
-		taskM := make(map[string]*model.Midjourney)
-		nullTaskIds := make([]int, 0)
+		// Missing IDs are only legacy personal failures; incomplete enterprise sends
+		// remain unknown and must never be converted into refunds by this poller.
+		var nullPersonalIDs []int
 		for _, task := range tasks {
-			if task.MjId == "" {
-				// 统计失败的未完成任务
-				nullTaskIds = append(nullTaskIds, task.Id)
-				continue
+			if task.MjId == "" && task.EnterpriseId == 0 {
+				nullPersonalIDs = append(nullPersonalIDs, task.Id)
 			}
-			taskM[task.MjId] = task
-			taskChannelM[task.ChannelId] = append(taskChannelM[task.ChannelId], task.MjId)
 		}
-		if len(nullTaskIds) > 0 {
-			err := model.MjBulkUpdateByTaskIds(nullTaskIds, map[string]any{
-				"status":   "FAILURE",
-				"progress": "100%",
-			})
+		if len(nullPersonalIDs) > 0 {
+			if err := model.MjBulkUpdateByTaskIds(nullPersonalIDs, map[string]any{"status": "FAILURE", "progress": "100%"}); err != nil {
+				logger.LogError(ctx, "mark incomplete personal MJ tasks: "+err.Error())
+			}
+		}
+		batches, err := model.BuildMJPollingBatches(tasks)
+		if err != nil {
+			logger.LogError(ctx, err.Error())
+		}
+		for _, batch := range batches {
+			channel, err := model.CacheGetChannel(batch.ChannelID)
 			if err != nil {
-				logger.LogError(ctx, fmt.Sprintf("Fix null mj_id task error: %v", err))
-			} else {
-				logger.LogInfo(ctx, fmt.Sprintf("Fix null mj_id task success: %v", nullTaskIds))
-			}
-		}
-		if len(taskChannelM) == 0 {
-			continue
-		}
-
-		for channelId, taskIds := range taskChannelM {
-			logger.LogInfo(ctx, fmt.Sprintf("渠道 #%d 未完成的任务有: %d", channelId, len(taskIds)))
-			if len(taskIds) == 0 {
-				continue
-			}
-			midjourneyChannel, err := model.CacheGetChannel(channelId)
-			if err != nil {
-				logger.LogError(ctx, fmt.Sprintf("CacheGetChannel: %v", err))
-				err := model.MjBulkUpdate(taskIds, map[string]any{
-					"fail_reason": fmt.Sprintf("获取渠道信息失败，请联系管理员，渠道ID：%d", channelId),
-					"status":      "FAILURE",
-					"progress":    "100%",
-				})
-				if err != nil {
-					logger.LogInfo(ctx, fmt.Sprintf("UpdateMidjourneyTask error: %v", err))
+				// Apply only to this batch's personal rows, never all records sharing an
+				// upstream ID (which may belong to a different owner/key/payer).
+				if batch.Subject.EnterpriseId == 0 {
+					var ids []int
+					for _, rows := range batch.TasksByID {
+						for _, task := range rows {
+							ids = append(ids, task.Id)
+						}
+					}
+					if updateErr := model.MjBulkUpdateByTaskIds(ids, map[string]any{"fail_reason": "获取渠道信息失败，请联系管理员", "status": "FAILURE", "progress": "100%"}); updateErr != nil {
+						logger.LogError(ctx, "update personal MJ tasks: "+updateErr.Error())
+					}
 				}
 				continue
 			}
-			responseItems, attempted, err := fetchMidjourneyTaskUpdates(ctx, midjourneyChannel, taskIds)
+			items, attempted, err := relay.FetchMidjourneyPollingBatch(ctx, channel, batch)
+			if err != nil {
+				logger.LogError(ctx, fmt.Sprintf("MJ polling channel %d failed: %v", batch.ChannelID, err))
+				continue
+			}
 			if !attempted {
 				continue
 			}
-			if err != nil {
-				logger.LogError(ctx, fmt.Sprintf("Get Mjp Task error: %v", err))
-				continue
-			}
-
-			for _, responseItem := range responseItems {
-				task := taskM[responseItem.MjId]
-
-				useTime := (time.Now().UnixNano() / int64(time.Millisecond)) - task.SubmitTime
-				// 如果时间超过一小时，且进度不是100%，则认为任务失败
-				if useTime > 3600000 && task.Progress != "100%" {
-					responseItem.FailReason = "上游任务超时（超过1小时）"
-					responseItem.Status = "FAILURE"
-				}
-				if !checkMjTaskNeedUpdate(task, responseItem) {
-					continue
-				}
-				preStatus := task.Status
-				task.Code = 1
-				task.Progress = responseItem.Progress
-				task.PromptEn = responseItem.PromptEn
-				task.State = responseItem.State
-				task.SubmitTime = responseItem.SubmitTime
-				task.StartTime = responseItem.StartTime
-				task.FinishTime = responseItem.FinishTime
-				task.ImageUrl = responseItem.ImageUrl
-				task.Status = responseItem.Status
-				task.FailReason = responseItem.FailReason
-				if responseItem.Properties != nil {
-					propertiesStr, _ := common.Marshal(responseItem.Properties)
-					task.Properties = string(propertiesStr)
-				}
-				if responseItem.Buttons != nil {
-					buttonStr, _ := common.Marshal(responseItem.Buttons)
-					task.Buttons = string(buttonStr)
-				}
-				// 映射 VideoUrl
-				task.VideoUrl = responseItem.VideoUrl
-
-				// 映射 VideoUrls - 将数组序列化为 JSON 字符串
-				if responseItem.VideoUrls != nil && len(responseItem.VideoUrls) > 0 {
-					videoUrlsStr, err := common.Marshal(responseItem.VideoUrls)
-					if err != nil {
-						logger.LogError(ctx, fmt.Sprintf("序列化 VideoUrls 失败: %v", err))
-						task.VideoUrls = "[]" // 失败时设置为空数组
-					} else {
-						task.VideoUrls = string(videoUrlsStr)
-					}
-				} else {
-					task.VideoUrls = "" // 空值时清空字段
-				}
-
-				shouldReturnQuota := false
-				if (task.Progress != "100%" && responseItem.FailReason != "") || (task.Progress == "100%" && task.Status == "FAILURE") {
-					logger.LogInfo(ctx, task.MjId+" 构建失败，"+task.FailReason)
-					task.Progress = "100%"
-					if task.Quota != 0 {
-						shouldReturnQuota = true
-					}
-				}
-				won, err := task.UpdateWithStatus(preStatus)
-				if err != nil {
-					logger.LogError(ctx, "UpdateMidjourneyTask task error: "+err.Error())
-				} else if won && shouldReturnQuota {
-					err = model.IncreaseUserQuota(task.UserId, task.Quota, false)
-					if err != nil {
-						logger.LogError(ctx, "fail to increase user quota: "+err.Error())
-					}
-					model.RecordTaskBillingLog(model.RecordTaskBillingLogParams{
-						UserId:    task.UserId,
-						LogType:   model.LogTypeRefund,
-						Content:   "",
-						ChannelId: task.ChannelId,
-						ModelName: service.CovertMjpActionToModelName(task.Action),
-						Quota:     task.Quota,
-						Other: map[string]interface{}{
-							"task_id": task.MjId,
-							"reason":  "构图失败",
-						},
-					})
+			for _, item := range items {
+				for _, task := range batch.TasksByID[item.MjId] {
+					updateMidjourneyPolledTask(ctx, task, item)
 				}
 			}
 		}
 	}
 }
 
-func fetchMidjourneyTaskUpdates(ctx context.Context, channel *model.Channel, taskIDs []string) ([]dto.MidjourneyDto, bool, error) {
-	if channel == nil || service.IsChannelRateLimitCoolingDown(channel) {
-		return nil, false, nil
+// Each local row gets its own response value: a personal timeout cannot rewrite
+// the response subsequently applied to another row or an enterprise task.
+func updateMidjourneyPolledTask(ctx context.Context, task *model.Midjourney, responseItem dto.MidjourneyDto) {
+	if task == nil {
+		return
 	}
-	admission := middleware.AcquireChannelCapacityForChannel(
-		channel,
-		fmt.Sprintf("mj-poll:%d:%d", channel.Id, time.Now().UnixNano()),
-	)
-	if !admission.Acquired {
-		logger.LogDebug(ctx, fmt.Sprintf("skip midjourney polling for channel #%d: capacity unavailable", channel.Id))
-		return nil, false, nil
+	useTime := (time.Now().UnixNano() / int64(time.Millisecond)) - task.SubmitTime
+	// 如果时间超过一小时，且进度不是100%，则认为任务失败
+	if task.EnterpriseId == 0 && useTime > 3600000 && task.Progress != "100%" {
+		responseItem.FailReason = "上游任务超时（超过1小时）"
+		responseItem.Status = "FAILURE"
 	}
-	if admission.Release != nil {
-		defer admission.Release()
+	if !checkMjTaskNeedUpdate(task, responseItem) {
+		return
 	}
+	preStatus := task.Status
+	task.Code = 1
+	task.Progress = responseItem.Progress
+	task.PromptEn = responseItem.PromptEn
+	task.State = responseItem.State
+	task.SubmitTime = responseItem.SubmitTime
+	task.StartTime = responseItem.StartTime
+	task.FinishTime = responseItem.FinishTime
+	task.ImageUrl = responseItem.ImageUrl
+	task.Status = responseItem.Status
+	task.FailReason = responseItem.FailReason
+	if responseItem.Properties != nil {
+		propertiesStr, _ := common.Marshal(responseItem.Properties)
+		task.Properties = string(propertiesStr)
+	}
+	if responseItem.Buttons != nil {
+		buttonStr, _ := common.Marshal(responseItem.Buttons)
+		task.Buttons = string(buttonStr)
+	}
+	// 映射 VideoUrl
+	task.VideoUrl = responseItem.VideoUrl
 
-	requestURL := fmt.Sprintf("%s/mj/task/list-by-condition", channel.GetBaseURL())
-	body, err := common.Marshal(map[string]any{"ids": taskIDs})
-	if err != nil {
-		return nil, true, err
-	}
-	timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodPost, requestURL, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, true, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("mj-api-secret", channel.Key)
-
-	resp, err := service.GetHttpClient().Do(req)
-	if err != nil {
-		return nil, true, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusTooManyRequests {
-			apiErr := types.NewOpenAIError(
-				fmt.Errorf("midjourney polling upstream rate limited"),
-				types.ErrorCodeBadResponseStatusCode,
-				resp.StatusCode,
-			)
-			apiErr.UpstreamStatusCode = resp.StatusCode
-			apiErr.RetryAfter = service.ParseRetryAfter(resp.Header.Get("Retry-After"), time.Now())
-			service.RecordChannelRateLimitCooldown(nil, channel, apiErr)
+	// 映射 VideoUrls - 将数组序列化为 JSON 字符串
+	if responseItem.VideoUrls != nil && len(responseItem.VideoUrls) > 0 {
+		videoUrlsStr, err := common.Marshal(responseItem.VideoUrls)
+		if err != nil {
+			logger.LogError(ctx, fmt.Sprintf("序列化 VideoUrls 失败: %v", err))
+			task.VideoUrls = "[]" // 失败时设置为空数组
+		} else {
+			task.VideoUrls = string(videoUrlsStr)
 		}
-		return nil, true, fmt.Errorf("upstream returned status %d", resp.StatusCode)
+	} else {
+		task.VideoUrls = "" // 空值时清空字段
 	}
-	responseBody, err := io.ReadAll(resp.Body)
+
+	if task.EnterpriseId > 0 {
+		if task.Status == "SUCCESS" || task.Status == "FAILURE" {
+			task.Progress = "100%"
+		}
+		if _, err := task.UpdateWithStatus(preStatus); err != nil {
+			logger.LogError(ctx, "Update enterprise Midjourney task: "+err.Error())
+			return
+		}
+		// Persist the provider-confirmed outcome first. Settlement or
+		// correction failures remain recoverable by maintenance.
+		if err := model.SettleEnterpriseMJSubmission(task.Id, task.EnterpriseInitialQuota); err != nil {
+			logger.LogError(ctx, "Settle enterprise Midjourney task: "+err.Error())
+			return
+		}
+		if task.Status == "SUCCESS" || task.Status == "FAILURE" {
+			if _, err := model.FinalizeEnterpriseMJ(task.Id); err != nil {
+				logger.LogError(ctx, "Finalize enterprise Midjourney task: "+err.Error())
+			}
+		}
+		return
+	}
+	shouldReturnQuota := false
+	if (task.Progress != "100%" && responseItem.FailReason != "") || (task.Progress == "100%" && task.Status == "FAILURE") {
+		logger.LogInfo(ctx, task.MjId+" 构建失败，"+task.FailReason)
+		task.Progress = "100%"
+		if task.Quota != 0 {
+			shouldReturnQuota = true
+		}
+	}
+	won, err := task.UpdateWithStatus(preStatus)
 	if err != nil {
-		return nil, true, err
+		logger.LogError(ctx, "UpdateMidjourneyTask task error: "+err.Error())
+	} else if won && shouldReturnQuota {
+		err = model.IncreaseUserQuota(task.UserId, task.Quota, false)
+		if err != nil {
+			logger.LogError(ctx, "fail to increase user quota: "+err.Error())
+		}
+		model.RecordTaskBillingLog(model.RecordTaskBillingLogParams{
+			UserId:    task.UserId,
+			LogType:   model.LogTypeRefund,
+			Content:   "",
+			ChannelId: task.ChannelId,
+			ModelName: service.CovertMjpActionToModelName(task.Action),
+			Quota:     task.Quota,
+			Other: map[string]interface{}{
+				"task_id": task.MjId,
+				"reason":  "构图失败",
+			},
+		})
 	}
-	var responseItems []dto.MidjourneyDto
-	if err := common.Unmarshal(responseBody, &responseItems); err != nil {
-		return nil, true, fmt.Errorf("parse response: %w, body: %s", err, string(responseBody))
-	}
-	return responseItems, true, nil
 }
 
 func checkMjTaskNeedUpdate(oldTask *model.Midjourney, newTask dto.MidjourneyDto) bool {

@@ -277,7 +277,7 @@ print(response.choices[0].message.content)`
               <div className='yh-app-content'>
                 <div className='yh-app-heading'>
                   <div>
-                    <small>WORKSPACE</small>
+                    <small>{t('工作区')}</small>
                     <h3>{t('我的 AI 工具')}</h3>
                   </div>
                   <span className='yh-app-count'>03</span>
@@ -313,7 +313,7 @@ print(response.choices[0].message.content)`
         <div className='yh-container'>
           <div className='yh-section-heading'>
             <div>
-              <span className='yh-section-kicker'>MODEL ECOSYSTEM</span>
+              <span className='yh-section-kicker'>{t('模型生态')}</span>
               <h2 id='models-title'>{t('好模型，不必只选一个。')}</h2>
               <p>
                 {t(
@@ -350,7 +350,7 @@ print(response.choices[0].message.content)`
         <div className='yh-section-copy'>
           <span className='yh-section-kicker'>
             <Terminal size={16} />
-            BUILT FOR DEVELOPERS
+            {t('为开发者准备')}
           </span>
           <h2 id='developer-title'>
             {t('少一点配置，')}
@@ -458,7 +458,7 @@ print(response.choices[0].message.content)`
         aria-labelledby='faq-title'
       >
         <div>
-          <span className='yh-section-kicker'>GOOD TO KNOW</span>
+          <span className='yh-section-kicker'>{t('常见问题')}</span>
           <h2 id='faq-title'>
             {t('开始之前，')}
             <br />

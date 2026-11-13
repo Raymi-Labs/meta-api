@@ -40,6 +40,11 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 	}
 	other := make(map[string]interface{})
 	other["billing_unit"] = "task"
+	if info.EnterpriseId > 0 {
+		other["billing_source"] = BillingSourceEnterprise
+		other["enterprise_id"] = info.EnterpriseId
+		other["enterprise_member_id"] = info.EnterpriseMemberId
+	}
 	other["request_path"] = c.Request.URL.Path
 	if info.TaskBillingLogInfo != nil {
 		other["task_billing"] = info.TaskBillingLogInfo
@@ -65,6 +70,9 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 		Group:     info.UsingGroup,
 		Other:     other,
 	})
+	if info.BillingSource == BillingSourceEnterprise {
+		return
+	} // Task receipt owns durable usage statistics.
 	if info.BillingSource == BillingSourceToken {
 		model.UpdateUserRequestCount(info.UserId)
 	} else {
@@ -84,6 +92,9 @@ func taskIsSubscription(task *model.Task) bool {
 
 // taskAdjustFunding 调整任务的资金来源（钱包或订阅），delta > 0 表示扣费，delta < 0 表示退还。
 func taskAdjustFunding(task *model.Task, delta int) error {
+	if task.EnterpriseId > 0 || task.PrivateData.BillingSource == BillingSourceEnterprise {
+		return model.ErrEnterpriseUnsupported
+	}
 	if task.PrivateData.BillingSource == BillingSourceToken {
 		// Token-only tasks never charged the wallet; only the token ledger is
 		// adjusted by taskAdjustTokenQuota below.
@@ -164,6 +175,12 @@ func taskModelName(task *model.Task) string {
 // RefundTaskQuota 统一的任务失败退款逻辑。
 // 当异步任务失败时，将预扣的 quota 退还给用户（支持钱包和订阅），并退还令牌额度。
 func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) {
+	if task.EnterpriseId > 0 || task.PrivateData.BillingSource == BillingSourceEnterprise {
+		if err := finalizeEnterpriseTask(ctx, task); err != nil {
+			logger.LogError(ctx, err.Error())
+		}
+		return
+	}
 	quota := task.Quota
 	if quota == 0 {
 		return
@@ -203,6 +220,12 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) {
 // actualQuota 是任务完成后的实际应扣额度，与预扣额度 (task.Quota) 做差额结算。
 // reason 用于日志记录（例如 "token重算" 或 "adaptor调整"）。
 func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int, reason string) {
+	if task.EnterpriseId > 0 || task.PrivateData.BillingSource == BillingSourceEnterprise {
+		if actualQuota >= 0 {
+			task.EnterpriseFinalQuota = int64(actualQuota)
+		}
+		return
+	}
 	if actualQuota <= 0 {
 		return
 	}
@@ -283,6 +306,10 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 
 	// 获取模型价格和倍率
 	modelRatio, hasRatioSetting, _ := ratio_setting.GetModelRatio(modelName)
+	if task.EnterpriseId > 0 && task.PrivateData.BillingContext != nil {
+		modelRatio = task.PrivateData.BillingContext.ModelRatio
+		hasRatioSetting = true
+	}
 	// 只有配置了倍率(非固定价格)时才按 token 重新计费
 	if !hasRatioSetting || modelRatio <= 0 {
 		return
@@ -309,6 +336,9 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 	} else {
 		finalGroupRatio = groupRatio
 	}
+	if task.EnterpriseId > 0 && task.PrivateData.BillingContext != nil {
+		finalGroupRatio = task.PrivateData.BillingContext.GroupRatio
+	}
 	timeRatio := 1.0
 	if bc := task.PrivateData.BillingContext; bc != nil && bc.TimeRatio > 0 {
 		timeRatio = bc.TimeRatio
@@ -319,4 +349,35 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 
 	reason := fmt.Sprintf("token重算：tokens=%d, modelRatio=%.2f, groupRatio=%.2f, timeRatio=%.2f", totalTokens, modelRatio, finalGroupRatio, timeRatio)
 	RecalculateTaskQuota(ctx, task, actualQuota, reason)
+}
+
+func finalizeEnterpriseTask(ctx context.Context, task *model.Task) error {
+	if task.EnterpriseId <= 0 || task.ID <= 0 {
+		return model.ErrEnterpriseSubject
+	}
+	receipt, err := model.FinalizeEnterpriseTask(task.ID)
+	if err != nil {
+		return fmt.Errorf("enterprise task %s billing pending: %w", task.TaskID, err)
+	}
+	var stored model.Task
+	if err = model.DB.First(&stored, task.ID).Error; err != nil {
+		return err
+	}
+	task.Quota = stored.Quota
+	task.EnterpriseBillingPending = stored.EnterpriseBillingPending
+	if !receipt.Changed || receipt.Quota == 0 {
+		return nil
+	}
+	other := taskBillingOther(task)
+	other["billing_source"] = BillingSourceEnterprise
+	other["enterprise_id"] = task.EnterpriseId
+	other["enterprise_member_id"] = task.EnterpriseMemberId
+	other["task_id"] = task.TaskID
+	amount, kind := int(receipt.Quota), model.LogTypeConsume
+	if amount < 0 {
+		amount = -amount
+		kind = model.LogTypeRefund
+	}
+	model.RecordTaskBillingLog(model.RecordTaskBillingLogParams{UserId: task.UserId, LogType: kind, ChannelId: task.ChannelId, ModelName: taskModelName(task), Quota: amount, TokenId: task.PrivateData.TokenId, Group: task.Group, RequestId: task.PrivateData.RequestId, Other: other})
+	return nil
 }

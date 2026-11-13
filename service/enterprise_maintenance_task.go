@@ -72,6 +72,17 @@ func runEnterpriseMaintenanceOnce(now time.Time) (review int64, swept int) {
 		return 0, 0
 	}
 	defer enterpriseMaintenanceRunning.Store(false)
+	// Already accepted work remains payable even when new enterprise requests are disabled.
+	if model.DB.Migrator().HasTable(&model.Task{}) {
+		if _, err := model.ReconcileEnterpriseTasks(enterpriseMaintenanceBatchSize); err != nil {
+			common.SysError(err.Error())
+		}
+	}
+	if model.DB.Migrator().HasTable(&model.Midjourney{}) {
+		if _, err := model.ReconcileEnterpriseMJ(enterpriseMaintenanceBatchSize); err != nil {
+			common.SysError(err.Error())
+		}
+	}
 	if !common.EnterpriseEnabled {
 		return 0, 0
 	}

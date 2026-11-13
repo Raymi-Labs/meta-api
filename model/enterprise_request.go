@@ -149,8 +149,8 @@ func ReviewEnterpriseQuotaRequest(actor EnterpriseActor, enterpriseID, requestID
 		if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
 			return ErrEnterpriseRequestState
 		}
-		// 禁止自批；管理员的申请由所有者处理。
-		if !actor.Platform && actorMember.Id == target.Id {
+		// Owner已有本人预算分配权，允许处理本人申请；Admin仍须由Owner审批。
+		if !actor.Platform && actorMember.Id == target.Id && actorMember.Role != EnterpriseRoleOwner {
 			return ErrEnterpriseSelfOperation
 		}
 		if err := canManageEnterpriseMember(actor, actorMember, target); err != nil {

@@ -58,6 +58,11 @@ func VideoProxy(c *gin.Context) {
 		return
 	}
 
+	if c.GetInt("token_id") > 0 && !service.TaskPayerAllowed(c, task) {
+		videoProxyError(c, http.StatusNotFound, "invalid_request_error", "Task not found")
+		return
+	}
+
 	if task.Status != model.TaskStatusSuccess {
 		videoProxyError(c, http.StatusBadRequest, "invalid_request_error",
 			fmt.Sprintf("Task is not completed yet, current status: %s", task.Status))
@@ -70,6 +75,7 @@ func VideoProxy(c *gin.Context) {
 		videoProxyError(c, http.StatusInternalServerError, "server_error", "Failed to retrieve channel information")
 		return
 	}
+	channel = service.EnterpriseTaskChannel(channel, task)
 	baseURL := channel.GetBaseURL()
 	if baseURL == "" {
 		baseURL = "https://api.openai.com"

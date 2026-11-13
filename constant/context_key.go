@@ -71,6 +71,9 @@ const (
 	ContextKeyEnterpriseId       ContextKey = "enterprise_id"
 	ContextKeyEnterpriseMemberId ContextKey = "enterprise_member_id"
 	ContextKeyEnterpriseRole     ContextKey = "enterprise_role"
+	// 仅用于价格计算，不参与模型权限或渠道选路。
+	ContextKeyEnterpriseBillingGroup  ContextKey = "enterprise_billing_group"
+	ContextKeyPlaygroundPayerPrepared ContextKey = "playground_payer_prepared"
 	// 平台管理员在平台后台操作企业时为真，不受企业内角色约束。
 	ContextKeyEnterprisePlatform ContextKey = "enterprise_platform"
 

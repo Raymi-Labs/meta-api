@@ -13,7 +13,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
-	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -144,10 +143,6 @@ func TestEnterpriseTokenRouteEnumeration(t *testing.T) {
 	require.Positive(t, enterpriseToken.EnterpriseId)
 	require.Zero(t, personalToken.EnterpriseId)
 
-	open := map[string]bool{}
-	for _, route := range enterpriseOpenRoutes {
-		open[route] = true
-	}
 	fill := strings.NewReplacer(":model", "model-a", "*path", "model-a:generateContent", ":mode", "fast", ":task_id", "task_1",
 		":video_id", "video_1", ":id", "1")
 	seen := map[string]bool{}
@@ -163,25 +158,18 @@ func TestEnterpriseTokenRouteEnumeration(t *testing.T) {
 		if strings.HasPrefix(route.Path, "/jimeng") {
 			path += "?Action=CVSync2AsyncSubmitTask"
 		}
-		require.Equal(t, open[key], middleware.EnterpriseTokenRouteAllowed(route.Method, route.Path), key)
 
 		w := api.relayCall(enterpriseToken, route.Method, path, "{}")
-		if open[key] {
-			// 已开放的入口：通过鉴权，后面因为空请求体等原因失败与企业无关。
-			require.NotEqual(t, http.StatusUnauthorized, w.Code, "%s: %s", key, w.Body.String())
-			require.NotContains(t, w.Body.String(), enterpriseUnsupported, key)
-		} else {
-			require.Equal(t, http.StatusForbidden, w.Code, "%s: %s", key, w.Body.String())
-			require.Contains(t, w.Body.String(), enterpriseUnsupported, key)
-		}
-		// 个人令牌不受企业白名单影响。
+		require.NotEqual(t, http.StatusUnauthorized, w.Code, "%s: %s", key, w.Body.String())
+		require.NotContains(t, w.Body.String(), enterpriseUnsupported, key)
+		// 同一路由的个人令牌也不能受企业付款约束影响。
 		w = api.relayCall(personalToken, route.Method, path, "{}")
 		require.NotEqual(t, http.StatusUnauthorized, w.Code, "%s: %s", key, w.Body.String())
 		require.NotContains(t, w.Body.String(), enterpriseUnsupported, key)
 	}
 	require.GreaterOrEqual(t, checked, 80, "relay routes must be registered")
 	for _, route := range enterpriseOpenRoutes {
-		require.True(t, seen[route], "白名单里的 %s 不是已注册的调用入口", route)
+		require.True(t, seen[route], "既有同步入口 %s 必须保持注册", route)
 	}
 	require.Zero(t, calls.Load())
 	require.Equal(t, 100000, api.personalQuota(staff))

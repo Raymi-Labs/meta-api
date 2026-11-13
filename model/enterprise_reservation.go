@@ -218,6 +218,13 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 				return err
 			}
 		}
+		// Token statistics and enterprise settlement must commit together. Async
+		// recovery may replay this transaction after the HTTP process has exited.
+		if state == EnterpriseReservationSettled && result.TokenId > 0 && target != 0 {
+			if err := tx.Unscoped().Model(&Token{}).Where("id = ? AND enterprise_id = ? AND membership_id = ?", result.TokenId, sub.EnterpriseId, sub.MemberId).Update("used_quota", gorm.Expr("used_quota + ?", target)).Error; err != nil {
+				return err
+			}
+		}
 		result.Quota = target
 		// 待对账的预留被再次调整在途占用时保持待对账，只有终结才改变状态。
 		if state != EnterpriseReservationReserved || created {

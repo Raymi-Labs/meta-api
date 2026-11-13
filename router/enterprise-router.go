@@ -26,7 +26,7 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 		authed.POST("/self/requests/:request_id/cancel", controller.CancelEnterpriseSelfRequest)
 	}
 
-	// 企业后台：所有者与管理员。更细的权限（任免管理员、改设置、禁止自批等）在数据层事务内判定。
+	// 企业后台：所有者与管理员。更细的权限（任免管理员、改设置、禁止管理员自批等）在数据层事务内判定。
 	manageRoute := apiRouter.Group("/enterprises/:id", enabled, middleware.UserAuth(),
 		middleware.EnterpriseMemberAuth(model.EnterpriseRoleAdmin))
 	{

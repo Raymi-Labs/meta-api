@@ -25,6 +25,8 @@ import (
 // BillingSession 封装单次请求的预扣费/结算/退款生命周期。
 // 实现 relaycommon.BillingSettler 接口。
 type BillingSession struct {
+	realtimeQuota int
+
 	relayInfo        *relaycommon.RelayInfo
 	funding          FundingSource
 	preConsumedQuota int  // 实际预扣额度（信任用户可能为 0）
@@ -61,6 +63,8 @@ func (s *BillingSession) Settle(actualQuota int) error {
 			return err
 		}
 		s.fundingSettled = true
+		s.settled = true
+		return nil
 	}
 	delta := actualQuota - s.preConsumedQuota
 	tokenDelta := actualQuota - s.tokenConsumed
@@ -552,4 +556,28 @@ func synchronousFundingRequestID(info *relaycommon.RelayInfo) string {
 		return ""
 	}
 	return info.RequestId
+}
+
+// ReserveEnterpriseRealtime accumulates session usage under the same lock as
+// settlement. Initial admission holds are reused instead of charged twice.
+func (s *BillingSession) ReserveEnterpriseRealtime(quota int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	funding, ok := s.funding.(*EnterpriseFunding)
+	if !ok || s.settled || s.refunded || quota < 0 {
+		return model.ErrEnterpriseReservation
+	}
+	if quota > int(^uint(0)>>1)-s.realtimeQuota {
+		return model.ErrEnterpriseReservation
+	}
+	s.realtimeQuota += quota
+	if s.realtimeQuota <= s.preConsumedQuota {
+		return nil
+	}
+	if err := funding.PreConsume(s.realtimeQuota - s.preConsumedQuota); err != nil {
+		return enterpriseQuotaError(err)
+	}
+	s.preConsumedQuota = s.realtimeQuota
+	s.syncRelayInfo()
+	return nil
 }

@@ -594,7 +594,7 @@ func getTaskOriginModelName(c *gin.Context) string {
 
 	userId := c.GetInt("id")
 	task, exist, err := model.GetByTaskId(userId, taskId)
-	if err != nil || !exist || task == nil {
+	if err != nil || !exist || task == nil || !service.TaskPayerAllowed(c, task) {
 		return ""
 	}
 	return task.Properties.OriginModelName

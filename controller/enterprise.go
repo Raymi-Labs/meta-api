@@ -531,18 +531,23 @@ func ListEnterpriseAudit(c *gin.Context) {
 	enterprisePage(c, pageInfo, items, total, err)
 }
 
-// GetEnterpriseModelOptions 返回平台对企业开放的模型，供"指定模型"挑选。
+// GetEnterpriseModelOptions 按当前操作者的账号授权组和平台角色返回配置候选，
+// 不随企业计费组变化，也不是全部成员模型的并集；成员实际调用仍受自身授权约束。
 func GetEnterpriseModelOptions(c *gin.Context) {
-	enterpriseID, _, ok := enterpriseScope(c)
+	enterpriseID, actor, ok := enterpriseScope(c)
 	if !ok {
 		return
 	}
-	ent, err := model.GetEnterpriseByID(enterpriseID)
+	if _, err := model.GetEnterpriseByID(enterpriseID); err != nil {
+		enterpriseApiError(c, err)
+		return
+	}
+	user, err := model.GetUserCache(actor.UserId)
 	if err != nil {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, service.EnterprisePlatformModels(ent.BillingGroup))
+	common.ApiSuccess(c, service.EnterprisePlatformModels(user.Group, user.Role))
 }
 
 func UpdateEnterpriseSettings(c *gin.Context) {

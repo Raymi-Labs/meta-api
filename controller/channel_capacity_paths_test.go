@@ -78,6 +78,7 @@ func TestAcquireMidjourneyBoundChannelCapacityUsesOriginTaskChannel(t *testing.T
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Set("id", 7)
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/mj/submit/change", strings.NewReader(`{"taskId":"mj-origin","action":"UPSCALE","index":1}`))
 	ctx.Request.Header.Set("Content-Type", "application/json")
 

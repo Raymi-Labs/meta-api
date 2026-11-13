@@ -42,6 +42,13 @@ const (
 )
 
 type Task struct {
+	EnterpriseInitialRecorded bool  `json:"-" gorm:"not null;default:false"`
+	EnterpriseInitialQuota    int64 `json:"-" gorm:"not null;default:0"`
+	EnterpriseId              int   `json:"-" gorm:"not null;default:0;index"`
+	EnterpriseMemberId        int   `json:"-" gorm:"not null;default:0"`
+	EnterpriseBillingPending  bool  `json:"-" gorm:"not null;default:false;index"`
+	EnterpriseFinalQuota      int64 `json:"-" gorm:"not null;default:0"`
+
 	ID         int64                 `json:"id" gorm:"primary_key;AUTO_INCREMENT"`
 	CreatedAt  int64                 `json:"created_at" gorm:"index"`
 	UpdatedAt  int64                 `json:"updated_at"`
@@ -97,9 +104,10 @@ func (m Properties) Value() (driver.Value, error) {
 }
 
 type TaskPrivateData struct {
-	Key            string `json:"key,omitempty"`
-	UpstreamTaskID string `json:"upstream_task_id,omitempty"` // 上游真实 task ID
-	ResultURL      string `json:"result_url,omitempty"`       // 任务成功后的结果 URL（视频地址等）
+	EnterpriseBaseURL string `json:"enterprise_base_url,omitempty"`
+	Key               string `json:"key,omitempty"`
+	UpstreamTaskID    string `json:"upstream_task_id,omitempty"` // 上游真实 task ID
+	ResultURL         string `json:"result_url,omitempty"`       // 任务成功后的结果 URL（视频地址等）
 	// RequestId is the original new-api billing request ID. It is retained as
 	// a non-sensitive correlation key so asynchronous refund/delta logs can be
 	// reconciled with the original consume log by downstream read-only systems.
@@ -184,6 +192,13 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 		privateData.RequestId = relayInfo.RequestId
 	}
 	if relayInfo != nil && relayInfo.ChannelMeta != nil {
+		if relayInfo.EnterpriseId > 0 {
+			privateData.Key = relayInfo.ChannelMeta.ApiKey
+			privateData.EnterpriseBaseURL = relayInfo.ChannelMeta.ChannelBaseUrl
+			if privateData.EnterpriseBaseURL == "" {
+				privateData.EnterpriseBaseURL = constant.ChannelBaseURLs[relayInfo.ChannelMeta.ChannelType]
+			}
+		}
 		if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini || relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeVertexAi {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
 		}
@@ -207,16 +222,18 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 	}
 
 	t := &Task{
-		TaskID:      taskID,
-		UserId:      relayInfo.UserId,
-		Group:       relayInfo.UsingGroup,
-		SubmitTime:  time.Now().Unix(),
-		Status:      TaskStatusNotStart,
-		Progress:    "0%",
-		ChannelId:   relayInfo.ChannelId,
-		Platform:    platform,
-		Properties:  properties,
-		PrivateData: privateData,
+		TaskID:             taskID,
+		EnterpriseId:       relayInfo.EnterpriseId,
+		EnterpriseMemberId: relayInfo.EnterpriseMemberId,
+		UserId:             relayInfo.UserId,
+		Group:              relayInfo.UsingGroup,
+		SubmitTime:         time.Now().Unix(),
+		Status:             TaskStatusNotStart,
+		Progress:           "0%",
+		ChannelId:          relayInfo.ChannelId,
+		Platform:           platform,
+		Properties:         properties,
+		PrivateData:        privateData,
 	}
 	return t
 }
@@ -422,7 +439,24 @@ func (Task *Task) Update() error {
 // falls back to INSERT ON CONFLICT when the WHERE-guarded UPDATE matches
 // zero rows, which silently bypasses the CAS guard.
 func (t *Task) UpdateWithStatus(fromStatus TaskStatus) (bool, error) {
-	result := DB.Model(t).Where("status = ?", fromStatus).Select("*").Updates(t)
+	if t.EnterpriseId > 0 && (t.Status == TaskStatusSuccess || t.Status == TaskStatusFailure) {
+		if !t.EnterpriseBillingPending {
+			t.EnterpriseFinalQuota = int64(t.Quota)
+		}
+		if t.Status == TaskStatusFailure {
+			t.EnterpriseFinalQuota = 0
+		}
+		t.EnterpriseBillingPending = true
+	}
+
+	query := DB.Model(t).Where("status = ?", fromStatus).Select("*")
+	if t.EnterpriseId > 0 {
+		query = query.Where("status NOT IN ?", []TaskStatus{TaskStatusSuccess, TaskStatusFailure}).Omit("EnterpriseId", "EnterpriseMemberId", "EnterpriseInitialQuota", "EnterpriseInitialRecorded")
+		if t.Status != TaskStatusSuccess && t.Status != TaskStatusFailure {
+			query = query.Omit("EnterpriseBillingPending", "EnterpriseFinalQuota")
+		}
+	}
+	result := query.Updates(t)
 	if result.Error != nil {
 		return false, result.Error
 	}

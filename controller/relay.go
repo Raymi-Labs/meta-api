@@ -844,21 +844,12 @@ func acquireMidjourneyBoundChannelCapacity(c *gin.Context, info *relaycommon.Rel
 		// relay 层会按原有协议返回参数错误；此时不会访问上游，不应消费 RPM。
 		return nil, nil, true
 	}
-	taskID := strings.TrimSpace(request.TaskId)
-	if taskID == "" && info.RelayMode == relayconstant.RelayModeMidjourneySimpleChange {
-		if params := service.ConvertSimpleChangeParams(request.Content); params != nil {
-			taskID = strings.TrimSpace(params.TaskId)
-		}
-	}
-	if taskID == "" {
-		// action 等请求也可能完全由上游 customId 处理，此时仍使用正常选渠。
-		return nil, nil, false
-	}
-
-	originTask := model.GetByMJId(info.UserId, taskID)
-	if originTask == nil {
-		// relay 层会返回 task_not_found；没有实际上游请求。
+	originTask, originErr := relay.ResolveMidjourneyOriginTask(c, info.RelayMode, &request)
+	if originErr != nil {
 		return nil, nil, true
+	} // Relay returns the protocol error; no capacity is consumed.
+	if originTask == nil {
+		return nil, nil, false
 	}
 	channel, err := model.GetChannelById(originTask.ChannelId, true)
 	if err != nil || channel == nil || channel.Status != common.ChannelStatusEnabled {
@@ -873,7 +864,7 @@ func acquireMidjourneyBoundChannelCapacity(c *gin.Context, info *relaycommon.Rel
 }
 
 func acquireMidjourneyTaskChannelCapacity(c *gin.Context, info *relaycommon.RelayInfo) (func(), *types.NewAPIError) {
-	originTask := model.GetByMJId(c.GetInt("id"), c.Param("id"))
+	originTask := model.GetMJTaskForSubject(model.MJTaskSubject{UserId: c.GetInt("id"), EnterpriseId: info.EnterpriseId, MemberId: info.EnterpriseMemberId}, c.Param("id"))
 	if originTask == nil {
 		return nil, nil
 	}
@@ -962,7 +953,13 @@ func RelayTask(c *gin.Context) {
 	var taskErr *dto.TaskError
 	defer func() {
 		if taskErr != nil && relayInfo.Billing != nil {
-			relayInfo.Billing.Refund(c)
+			if relayInfo.EnterpriseId > 0 && c.GetBool("enterprise_task_submission_uncertain") {
+				if err := model.MarkEnterpriseTaskUncertain(model.EnterpriseSubject{EnterpriseId: relayInfo.EnterpriseId, MemberId: relayInfo.EnterpriseMemberId, UserId: relayInfo.UserId}, relayInfo.RequestId); err != nil {
+					common.SysError(err.Error())
+				}
+			} else {
+				relayInfo.Billing.Refund(c)
+			}
 		}
 	}()
 
@@ -1049,6 +1046,9 @@ func RelayTask(c *gin.Context) {
 			service.RecordUserScopedCircuitFailure(c, channel, apiErr)
 		}
 
+		if relayInfo.EnterpriseId > 0 && c.GetBool("enterprise_task_submission_uncertain") {
+			break
+		}
 		retryParam.ExcludeChannels = appendUniqueInt(retryParam.ExcludeChannels, channel.Id)
 		if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {
 			break
@@ -1064,10 +1064,13 @@ func RelayTask(c *gin.Context) {
 	// ── 成功：结算 + 日志 + 插入任务 ──
 	if taskErr == nil {
 		service.ClearUserScopedCircuit(c, lastTaskChannel)
-		if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
-			common.SysError("settle task billing error: " + settleErr.Error())
+		if relayInfo.EnterpriseId <= 0 {
+			if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
+				common.SysError("settle task billing error: " + settleErr.Error())
+			}
+			service.LogTaskConsumption(c, relayInfo)
+
 		}
-		service.LogTaskConsumption(c, relayInfo)
 
 		task := model.InitTask(result.Platform, relayInfo)
 		task.PrivateData.UpstreamTaskID = result.UpstreamTaskID
@@ -1091,10 +1094,27 @@ func RelayTask(c *gin.Context) {
 			PerCallBilling:     relayInfo.PriceData.UsePrice || common.StringsContains(constant.TaskPricePatches, relayInfo.OriginModelName) || billing_setting.GetBillingMode(relayInfo.OriginModelName) == billing_setting.BillingModeTieredExpr,
 		}
 		task.Quota = result.Quota
+		if task.EnterpriseId > 0 {
+			task.EnterpriseInitialQuota = int64(result.Quota)
+			task.EnterpriseFinalQuota = int64(result.Quota)
+			task.EnterpriseBillingPending = true
+		}
 		task.Data = result.TaskData
 		task.Action = relayInfo.Action
 		if insertErr := task.Insert(); insertErr != nil {
 			common.SysError("insert task error: " + insertErr.Error())
+			if relayInfo.EnterpriseId > 0 {
+				_ = model.MarkEnterpriseTaskUncertain(model.EnterpriseSubject{EnterpriseId: relayInfo.EnterpriseId, MemberId: relayInfo.EnterpriseMemberId, UserId: relayInfo.UserId}, relayInfo.RequestId)
+			}
+		} else if task.EnterpriseId > 0 {
+			if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
+				common.SysError("enterprise task initial billing pending: " + settleErr.Error())
+			} else {
+				service.LogTaskConsumption(c, relayInfo)
+				if _, err := model.FinalizeEnterpriseTask(task.ID); err != nil {
+					common.SysError(err.Error())
+				}
+			}
 		}
 	}
 

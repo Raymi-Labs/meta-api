@@ -185,11 +185,13 @@ export default function EnterpriseApprovals() {
     load();
     refreshSelf();
   };
-  // 自己的申请不能自己批；管理员和所有者的申请只有所有者能批。
+  // Owner可处理包括本人在内的申请；Admin只能处理其他普通成员的申请。
   const actionable = (r) =>
     r.status === 'pending' &&
-    r.member_id !== memberId &&
-    (role === 'owner' || r.member_role === 'member');
+    (role === 'owner' ||
+      (role === 'admin' &&
+        r.member_id !== memberId &&
+        r.member_role === 'member'));
 
   const columns = [
     {

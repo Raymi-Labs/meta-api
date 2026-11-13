@@ -15,39 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// enterpriseTokenRoutes 是对企业令牌开放的调用入口（方法 + 注册路由），默认拒绝：
-// 新增的令牌鉴权路由在接入企业资金来源之前不会被企业令牌调用。
-// 第一批：文本、生图、语音、向量与重排，以及模型列表。
-var enterpriseTokenRoutes = map[string]struct{}{
-	"GET /v1/models":                     {},
-	"GET /v1/models/:model":              {},
-	"GET /v1beta/models":                 {},
-	"GET /v1beta/openai/models":          {},
-	"POST /v1/messages":                  {},
-	"POST /v1/completions":               {},
-	"POST /v1/chat/completions":          {},
-	"POST /v1/responses":                 {},
-	"POST /v1/responses/compact":         {},
-	"POST /v1/edits":                     {},
-	"POST /v1/images/generations":        {},
-	"POST /v1/images/edits":              {},
-	"POST /v1/embeddings":                {},
-	"POST /v1/audio/transcriptions":      {},
-	"POST /v1/audio/translations":        {},
-	"POST /v1/audio/speech":              {},
-	"POST /v1/rerank":                    {},
-	"POST /v1/engines/:model/embeddings": {},
-	"POST /v1/models/*path":              {},
-	"POST /v1/moderations":               {},
-	"POST /v1beta/models/*path":          {},
-}
-
-// EnterpriseTokenRouteAllowed 判断某个注册路由是否已对企业令牌开放。
-func EnterpriseTokenRouteAllowed(method, fullPath string) bool {
-	_, ok := enterpriseTokenRoutes[method+" "+fullPath]
-	return ok
-}
-
 // EnterpriseTokenScope 是企业令牌在一次请求内的付款方上下文。
 type EnterpriseTokenScope struct {
 	Enterprise *model.Enterprise
@@ -66,14 +33,14 @@ func ResolveEnterpriseToken(token *model.Token) (*EnterpriseTokenScope, error) {
 	return &EnterpriseTokenScope{Enterprise: ent, Member: member}, nil
 }
 
-// WriteContext 把计费用户组换成企业的计费用户组，并写入企业归属。
-// 必须在个人用户上下文写入之后、令牌上下文写入之前调用，后续的分组校验、渠道选择与倍率都随之生效。
+// WriteContext 写入企业付款身份和预算，保留账号原有的授权分组。
+// 必须在个人用户上下文写入之后、令牌上下文写入之前调用。
 func (s *EnterpriseTokenScope) WriteContext(c *gin.Context) {
 	available := s.Member.Available
 	if available > math.MaxInt32 {
 		available = math.MaxInt32
 	}
-	common.SetContextKey(c, constant.ContextKeyUserGroup, s.Enterprise.BillingGroup)
+	common.SetContextKey(c, constant.ContextKeyEnterpriseBillingGroup, s.Enterprise.BillingGroup)
 	// 请求内展示与判断用的"可用额度"是成员预算，不是个人钱包。
 	common.SetContextKey(c, constant.ContextKeyUserQuota, int(available))
 	common.SetContextKey(c, constant.ContextKeyEnterpriseId, s.Enterprise.Id)

@@ -52,7 +52,7 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.
 	}
 
 	// check user group special ratio
-	userGroupRatio, ok := ratio_setting.GetGroupGroupRatio(relayInfo.UserGroup, relayInfo.UsingGroup)
+	userGroupRatio, ok := ratio_setting.GetGroupGroupRatio(relayInfo.BillingUserGroup(), relayInfo.UsingGroup)
 	if ok {
 		// user group special ratio
 		groupRatioInfo.GroupSpecialRatio = userGroupRatio
@@ -191,7 +191,7 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 	audioDurationPrice, useAudioDurationPrice := ratio_setting.GetAudioDurationPrice(info.OriginModelName)
 
 	groupRatioInfo := HandleGroupRatio(c, info)
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.UserGroup, info.StartTime)
+	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
 	// Check if this model uses tiered_expr billing
@@ -346,7 +346,7 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 // ModelPriceHelperPerCall 按次计费的 PriceHelper (MJ、Task)
 func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) types.PriceData {
 	groupRatioInfo := HandleGroupRatio(c, info)
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.UserGroup, info.StartTime)
+	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
 	modelPrice, success := ratio_setting.GetModelPrice(info.OriginModelName, true)
@@ -405,7 +405,7 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 		return types.PriceData{}, fmt.Errorf("model %s tiered task expr run failed: %w", info.OriginModelName, err)
 	}
 	groupRatioInfo := HandleGroupRatio(c, info)
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.UserGroup, info.StartTime)
+	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	quotaBeforeGroup := rawCost / 1_000_000 * common.QuotaPerUnit
 	quota, err := billingexpr.QuotaRoundChecked(quotaBeforeGroup * groupRatioInfo.GroupRatio * timeRatioInfo.EffectiveRatio())
 	if err != nil {

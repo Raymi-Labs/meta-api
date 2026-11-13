@@ -89,15 +89,9 @@ func enterpriseQuotaError(err error) *types.NewAPIError {
 	return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 }
 
-// enterpriseSettlementWired 只有结算链路已经接到企业账本的调用类型才允许建立企业预留。
-// 异步任务、实时语音、网页体验区的后结算仍然只认个人钱包，放行会造成"预留在企业、扣费在个人"。
-func enterpriseSettlementWired(info *relaycommon.RelayInfo) bool {
-	return info.TaskRelayInfo == nil && !info.IsPlayground && info.RelayFormat != types.RelayFormatOpenAIRealtime
-}
-
 // newEnterpriseSession 为企业请求建立预留。任何不满足条件的情况都直接拒绝，绝不回落到个人钱包或订阅。
 func newEnterpriseSession(c *gin.Context, info *relaycommon.RelayInfo, quota int) (*BillingSession, *types.NewAPIError) {
-	if info.RequestId == "" || info.EnterpriseMemberId <= 0 || info.UserId <= 0 || !enterpriseSettlementWired(info) {
+	if info.RequestId == "" || info.EnterpriseMemberId <= 0 || info.UserId <= 0 {
 		return nil, enterpriseDenied(model.ErrEnterpriseUnsupported)
 	}
 	quota = max(quota, 0)
