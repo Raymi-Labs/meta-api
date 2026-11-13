@@ -715,9 +715,6 @@ func GetEnterpriseMemberDetail(enterpriseID, memberID int) (*EnterpriseMember, e
 // Lock the account before checking ownership so transfer/create and deletion cannot
 // commit an owner pointing at a deleted account. Keep this guard active when the feature is off.
 func protectEnterpriseOwnerDeletionTx(tx *gorm.DB, userID int) error {
-	if !tx.Migrator().HasTable(&Enterprise{}) {
-		return nil
-	}
 	var user User
 	if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, userID).Error; err != nil {
 		return err

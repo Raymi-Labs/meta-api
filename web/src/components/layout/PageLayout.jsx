@@ -120,7 +120,9 @@ const PageLayout = () => {
 
   const loadStatus = async () => {
     try {
-      const res = await readCurrentSiteStatus(() => API.get('/api/status'));
+      const res = await readCurrentSiteStatus(() =>
+        API.get('/api/status', { disableDuplicate: true }),
+      );
       if (!res) return;
       const { success, data } = res.data;
       if (success) {

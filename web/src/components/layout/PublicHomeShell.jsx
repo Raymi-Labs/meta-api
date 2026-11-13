@@ -155,6 +155,7 @@ const PublicHomeShell = () => {
       try {
         const res = await readCurrentSiteStatus(() =>
           API.get('/api/status', {
+            disableDuplicate: true,
             skipGlobalLoading: true,
             skipErrorHandler: true,
           }),
