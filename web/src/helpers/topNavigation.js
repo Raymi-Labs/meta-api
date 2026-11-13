@@ -51,7 +51,7 @@ export const getTopNavigationLinks = (t, docsLink, headerNavModules) => {
       requireAuth: true,
     },
     {
-      text: t('企业定制'),
+      text: t('企业服务'),
       itemKey: 'enterprise',
       to: '/enterprise',
       prefetchApp: false,

@@ -84,7 +84,7 @@ const PublicFooter = ({
           to: protectedPath('/console/image-playground'),
         },
         { text: '下载客户端', to: '/download', prefetchApp: false },
-        { text: '企业定制', to: '/enterprise', prefetchApp: false },
+        { text: '企业服务', to: '/enterprise', prefetchApp: false },
         showDocs && { text: 'Skills', to: '/docs/image-generation' },
       ],
     },

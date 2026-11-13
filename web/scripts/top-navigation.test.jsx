@@ -52,7 +52,7 @@ before(async () => {
 
 const t = (key) => key;
 const login = (path) => `/login?next=${encodeURIComponent(path)}`;
-const labels = ['模型广场', '模型体验', '企业定制', '文档', '控制台'];
+const labels = ['模型广场', '模型体验', '企业服务', '文档', '控制台'];
 const readLinks = (html) =>
   [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map(
     ([, attributes, body]) => ({
@@ -149,7 +149,7 @@ test('pricing flags and console visibility hide only their corresponding entries
     renderNavigation({
       modules: { ...DEFAULT_HEADER_NAV_MODULES, console: false },
     }).map((link) => link.text),
-    ['模型广场', '企业定制', '文档'],
+    ['模型广场', '企业服务', '文档'],
   );
   assert.deepEqual(
     renderNavigation({
@@ -162,7 +162,7 @@ test('pricing flags and console visibility hide only their corresponding entries
         docs: false,
       },
     }).map((link) => ({ text: link.text, href: link.href })),
-    [{ text: '企业定制', href: '/enterprise' }],
+    [{ text: '企业服务', href: '/enterprise' }],
   );
 });
 
