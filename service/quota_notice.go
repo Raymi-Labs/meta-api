@@ -64,6 +64,13 @@ func MarkQuotaNoticeSettlement(c *gin.Context, info *relaycommon.RelayInfo) {
 		source = BillingSourceWallet
 	}
 	items := []model.QuotaNoticeResource{{Source: source, ResourceID: 0}}
+	if source == BillingSourceEnterprise {
+		// 企业的拒绝按成员、按令牌上限分别记录，成功结算要清掉同一作用域的失败信号。
+		items = []model.QuotaNoticeResource{{Source: BillingSourceEnterprise, ResourceID: info.EnterpriseMemberId}}
+		if info.TokenId > 0 {
+			items = append(items, model.QuotaNoticeResource{Source: model.EnterpriseTokenQuotaSource, ResourceID: info.TokenId})
+		}
+	}
 	if info.BillingSource == BillingSourceSubscription {
 		items = append(items, model.QuotaNoticeResource{Source: BillingSourceSubscription, ResourceID: info.SubscriptionId})
 	}
@@ -325,6 +332,12 @@ func quotaNoticeMessage(id int, resources []model.QuotaNoticeResource, medium st
 			link = "/console/token"
 		case "token_package":
 			label = "令牌套餐周期额度不足，请检查重置时间"
+			link = "/console/token"
+		case BillingSourceEnterprise:
+			label = "企业额度不足，请向企业管理员申请"
+			link = EnterpriseMyQuotaPath
+		case model.EnterpriseTokenQuotaSource:
+			label = "企业令牌已达到用量上限"
 			link = "/console/token"
 		}
 		line := fmt.Sprintf("%s；令牌 %s，模型 %s。", label, r.TokenName, r.ModelName)

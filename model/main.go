@@ -263,6 +263,9 @@ func migrateDB() error {
 	if err := DB.AutoMigrate(cashAccountingModels()...); err != nil {
 		return err
 	}
+	if err := DB.AutoMigrate(enterpriseModels()...); err != nil {
+		return err
+	}
 	if err := migratePrefillGroupUniqueness(DB); err != nil {
 		return err
 	}
@@ -394,6 +397,9 @@ func migrateDB() error {
 
 func migrateDBFast() error {
 	if err := DB.AutoMigrate(cashAccountingModels()...); err != nil {
+		return err
+	}
+	if err := DB.AutoMigrate(enterpriseModels()...); err != nil {
 		return err
 	}
 	if err := migratePrefillGroupUniqueness(DB); err != nil {

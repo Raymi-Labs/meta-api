@@ -136,6 +136,11 @@ func GetAllTokens(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	payer, err := parseTokenPayer(c.Query("payer"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	pageInfo := common.GetPageQuery(c)
 	tokens, total, err := model.GetAllUserTokens(
 		userId,
@@ -149,6 +154,7 @@ func GetAllTokens(c *gin.Context) {
 		packageMode,
 		sortBy,
 		sortOrder,
+		payer,
 	)
 	if err != nil {
 		common.ApiError(c, err)
@@ -170,6 +176,11 @@ func SearchTokens(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	payer, err := parseTokenPayer(c.Query("payer"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 
 	pageInfo := common.GetPageQuery(c)
 
@@ -187,6 +198,7 @@ func SearchTokens(c *gin.Context) {
 		packageMode,
 		sortBy,
 		sortOrder,
+		payer,
 	)
 	if err != nil {
 		common.ApiError(c, err)
@@ -292,13 +304,14 @@ func parseTokenListQuery(c *gin.Context) (*int, *int, *int, *int, string, string
 	return balanceMin, balanceMax, usedBalanceMin, usedBalanceMax, packageMode, sortBy, sortOrder, nil
 }
 
-func validateTokenGroupSelection(userID int, group string) error {
-	group = strings.TrimSpace(group)
+// validateTokenGroupSelection 校验令牌分组；token 为企业令牌时按企业计费用户组判断可用分组。
+func validateTokenGroupSelection(userID int, token *model.Token) error {
+	group := strings.TrimSpace(token.Group)
 	if group == "" {
 		return fmt.Errorf("令牌分组不能为空")
 	}
 
-	userGroup, err := model.GetUserGroup(userID, false)
+	userGroup, err := tokenBaseGroup(userID, token)
 	if err != nil {
 		return err
 	}
@@ -326,7 +339,7 @@ func GetToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    buildMaskedTokenResponse(token),
+		"data":    buildTokenListItems(userId, []*model.Token{token})[0],
 	})
 	return
 }
@@ -360,11 +373,12 @@ func GetTokenStatus(c *gin.Context) {
 	if expiredAt == -1 {
 		expiredAt = 0
 	}
+	_, _, available, _ := tokenQuotaTotals(token)
 	c.JSON(http.StatusOK, gin.H{
 		"object":          "credit_summary",
-		"total_granted":   token.RemainQuota,
+		"total_granted":   available,
 		"total_used":      0, // not supported currently
-		"total_available": token.RemainQuota,
+		"total_available": available,
 		"expires_at":      expiredAt * 1000,
 	})
 }
@@ -389,16 +403,18 @@ func GetTokenUsage(c *gin.Context) {
 		expiredAt = 0
 	}
 
+	granted, used, available, unlimited := tokenQuotaTotals(token)
 	c.JSON(http.StatusOK, gin.H{
 		"code":    true,
 		"message": "ok",
 		"data": gin.H{
 			"object":                  "token_usage",
 			"name":                    token.Name,
-			"total_granted":           token.RemainQuota + token.UsedQuota,
-			"total_used":              token.UsedQuota,
-			"total_available":         token.RemainQuota,
-			"unlimited_quota":         token.UnlimitedQuota,
+			"payer":                   tokenPayer(token),
+			"total_granted":           granted,
+			"total_used":              used,
+			"total_available":         available,
+			"unlimited_quota":         unlimited,
 			"model_limits":            token.GetModelLimitsMap(),
 			"model_limits_enabled":    token.ModelLimitsEnabled,
 			"max_concurrency":         token.MaxConcurrency,
@@ -505,19 +521,21 @@ func buildPublicTokenUsagePayload(token *model.Token) gin.H {
 		expiredAt = 0
 	}
 
+	granted, used, available, unlimited := tokenQuotaTotals(token)
 	payload := gin.H{
 		"token_id":                token.Id,
 		"masked_key":              maskPublicTokenKey(token.Key),
 		"name":                    token.Name,
 		"status":                  token.Status,
 		"group":                   token.Group,
+		"payer":                   tokenPayer(token),
 		"max_concurrency":         token.MaxConcurrency,
 		"window_request_limit":    token.WindowRequestLimit,
 		"window_seconds":          token.WindowSeconds,
-		"total_granted":           token.RemainQuota + token.UsedQuota,
-		"total_used":              token.UsedQuota,
-		"total_available":         token.RemainQuota,
-		"unlimited_quota":         token.UnlimitedQuota,
+		"total_granted":           granted,
+		"total_used":              used,
+		"total_available":         available,
+		"unlimited_quota":         unlimited,
 		"model_limits_enabled":    token.ModelLimitsEnabled,
 		"model_limits":            token.GetModelLimitsMap(),
 		"package_enabled":         token.PackageEnabled,
@@ -612,9 +630,10 @@ func buildBatchUsageSummary(tokens []*model.Token, invalid []string) gin.H {
 	totalUsed := 0
 	totalAvailable := 0
 	for _, token := range tokens {
-		totalGranted += token.RemainQuota + token.UsedQuota
-		totalUsed += token.UsedQuota
-		totalAvailable += token.RemainQuota
+		granted, used, available, _ := tokenQuotaTotals(token)
+		totalGranted += granted
+		totalUsed += used
+		totalAvailable += available
 	}
 
 	return gin.H{
@@ -708,17 +727,41 @@ func GetPublicTokenBatchUsage(c *gin.Context) {
 }
 
 func AddToken(c *gin.Context) {
-	token := model.Token{}
-	err := c.ShouldBindJSON(&token)
+	payload := struct {
+		model.Token
+		Payer                string `json:"payer"`
+		EnterpriseLimitQuota int64  `json:"enterprise_limit_quota"`
+	}{}
+	err := c.ShouldBindJSON(&payload)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
+	token := payload.Token
 	if len(token.Name) > 50 {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
 		return
 	}
-	if err := validateTokenGroupSelection(c.GetInt("id"), token.Group); err != nil {
+	// 付款方只在创建时决定，之后不可更改；请求体里的企业归属字段一律不采信。
+	token.UserId, token.EnterpriseId, token.MembershipId = c.GetInt("id"), 0, 0
+	payer, err := parseTokenPayer(payload.Payer)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if payer == model.TokenPayerEnterprise {
+		ent, member, err := model.GetEnterprisePayer(c.GetInt("id"))
+		if err != nil {
+			enterpriseApiError(c, err)
+			return
+		}
+		token.EnterpriseId, token.MembershipId = ent.Id, member.Id
+		if err := normalizeEnterpriseTokenDraft(&token, payload.EnterpriseLimitQuota); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
+	if err := validateTokenGroupSelection(c.GetInt("id"), &token); err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -801,13 +844,19 @@ func AddToken(c *gin.Context) {
 		PackagePeriodMode:    token.PackagePeriodMode,
 		PackageUsedQuota:     token.PackageUsedQuota,
 		PackageNextResetTime: token.PackageNextResetTime,
+		EnterpriseId:         token.EnterpriseId,
+		MembershipId:         token.MembershipId,
 	}
 	if err := model.ValidateTokenQuotaPackageRelation(&cleanToken); err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	err = cleanToken.Insert()
-	if err != nil {
+	if cleanToken.EnterpriseId > 0 {
+		if err := model.CreateEnterpriseToken(&cleanToken, payload.EnterpriseLimitQuota); err != nil {
+			enterpriseApiError(c, err)
+			return
+		}
+	} else if err = cleanToken.Insert(); err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -838,7 +887,8 @@ func UpdateToken(c *gin.Context) {
 	statusOnly := c.Query("status_only")
 	payload := struct {
 		model.Token
-		RoutingConfig *string `json:"routing_config"`
+		RoutingConfig        *string `json:"routing_config"`
+		EnterpriseLimitQuota *int64  `json:"enterprise_limit_quota"`
 	}{}
 	err := c.ShouldBindJSON(&payload)
 	token := payload.Token
@@ -855,6 +905,18 @@ func UpdateToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	// 付款方创建后不可改：归属字段始终取库里的值，请求体里的不采信。
+	token.UserId, token.EnterpriseId, token.MembershipId = userId, cleanToken.EnterpriseId, cleanToken.MembershipId
+	enterpriseLimit := int64(-1)
+	if cleanToken.EnterpriseId > 0 && statusOnly == "" {
+		if payload.EnterpriseLimitQuota != nil {
+			enterpriseLimit = *payload.EnterpriseLimitQuota
+		}
+		if err := normalizeEnterpriseTokenDraft(&token, max(enterpriseLimit, 0)); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
 	if statusOnly == "" {
 		token.RoutingConfig = cleanToken.RoutingConfig
 		if payload.RoutingConfig != nil {
@@ -868,7 +930,7 @@ func UpdateToken(c *gin.Context) {
 			common.ApiError(c, err)
 			return
 		}
-		if err := validateTokenGroupSelection(userId, token.Group); err != nil {
+		if err := validateTokenGroupSelection(userId, &token); err != nil {
 			common.ApiError(c, err)
 			return
 		}
@@ -954,6 +1016,13 @@ func UpdateToken(c *gin.Context) {
 			}
 		}
 	}
+	if enterpriseLimit >= 0 {
+		if err := model.SetEnterpriseTokenLimit(model.EnterpriseSubject{EnterpriseId: cleanToken.EnterpriseId,
+			MemberId: cleanToken.MembershipId, UserId: userId, TokenId: cleanToken.Id}, enterpriseLimit); err != nil {
+			enterpriseApiError(c, err)
+			return
+		}
+	}
 	err = cleanToken.Update()
 	if err != nil {
 		common.ApiError(c, err)
@@ -962,7 +1031,7 @@ func UpdateToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    buildMaskedTokenResponse(cleanToken),
+		"data":    buildTokenListItems(userId, []*model.Token{cleanToken})[0],
 	})
 }
 

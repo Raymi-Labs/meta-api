@@ -261,7 +261,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	if isImageRequest {
 		// ImageHelper reserves the validated outbound quantity after conversion
 		// and overrides, before each attempt. The refund defer below still owns it.
-	} else if priceData.FreeModel {
+	} else if priceData.FreeModel && relayInfo.EnterpriseId <= 0 {
+		// 企业请求即使免费也要建 0 额预留：额度为负的成员不能继续调用，且每个企业请求都有可对账的记录。
 		logger.LogInfo(c, fmt.Sprintf("模型 %s 免费，跳过预扣费", relayInfo.OriginModelName))
 	} else {
 		newAPIError = service.PreConsumeBilling(c, priceData.QuotaToPreConsume, relayInfo)

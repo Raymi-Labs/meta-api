@@ -28,6 +28,8 @@ export const buildUsageLogQuery = (values, admin) => {
     group: values.group,
     request_id: values.request_id,
   };
+  // 付款方只对本人日志有意义；管理员视图跨用户，不带这个条件。
+  if (!admin && values.payer) params.payer = values.payer;
   if (admin) {
     for (const key of [
       'username',

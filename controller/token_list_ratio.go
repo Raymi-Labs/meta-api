@@ -13,6 +13,11 @@ type tokenListItem struct {
 	*model.Token
 	GroupRatio       *float64 `json:"group_ratio"`
 	GroupRatioStatus string   `json:"group_ratio_status"`
+	// Payer 标明这把令牌由谁付款：personal（个人钱包）或 enterprise（企业额度）。
+	Payer                string `json:"payer"`
+	EnterpriseName       string `json:"enterprise_name,omitempty"`
+	EnterpriseLimitQuota int64  `json:"enterprise_limit_quota"`
+	EnterpriseUsedQuota  int64  `json:"enterprise_used_quota"`
 }
 
 func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
@@ -23,12 +28,37 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 
 	// Resolve once per page, not once per token. Failure must not hide the list
 	// or manufacture a default ratio for an unknown user's special pricing.
-	userGroup, err := model.GetUserGroup(userID, false)
-	usableGroups := service.GetUserUsableGroups(userGroup)
+	personalGroup, personalErr := model.GetUserGroup(userID, false)
+	enterprises := map[int]*model.Enterprise{}
+	enterpriseTokenIDs := make([]int, 0)
+	for _, token := range tokens {
+		if token == nil || token.EnterpriseId <= 0 || token.UserId != userID {
+			continue
+		}
+		enterpriseTokenIDs = append(enterpriseTokenIDs, token.Id)
+		if _, seen := enterprises[token.EnterpriseId]; !seen {
+			// 读取失败时保留 nil：该令牌显示为倍率不可用，绝不回退成个人用户组的倍率。
+			ent, _ := model.GetEnterpriseByID(token.EnterpriseId)
+			enterprises[token.EnterpriseId] = ent
+		}
+	}
+	budgets, _ := model.GetEnterpriseTokenBudgets(enterpriseTokenIDs)
+
 	for _, token := range tokens {
 		item := tokenListItem{
 			Token:            buildMaskedTokenResponse(token),
 			GroupRatioStatus: "unavailable",
+			Payer:            tokenPayer(token),
+		}
+		userGroup, err := personalGroup, personalErr
+		if token != nil && token.EnterpriseId > 0 {
+			userGroup, err = "", nil
+			if ent := enterprises[token.EnterpriseId]; ent != nil {
+				userGroup = ent.BillingGroup
+				item.EnterpriseName = ent.Name
+			}
+			budget := budgets[token.Id]
+			item.EnterpriseLimitQuota, item.EnterpriseUsedQuota = budget.LimitQuota, budget.UsedQuota
 		}
 		if token != nil && err == nil && userGroup != "" && token.UserId == userID {
 			group := service.ResolveTokenGroup(userGroup, token.Group)
@@ -40,7 +70,7 @@ func buildTokenListItems(userID int, tokens []*model.Token) []tokenListItem {
 				items = append(items, item)
 				continue
 			}
-			if _, allowed := usableGroups[group]; allowed {
+			if _, allowed := service.GetUserUsableGroups(userGroup)[group]; allowed {
 				if group == "auto" {
 					item.GroupRatioStatus = "auto"
 				} else if ratio_setting.ContainsGroupRatio(group) {

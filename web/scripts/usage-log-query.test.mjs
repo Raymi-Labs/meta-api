@@ -65,3 +65,15 @@ test('channel usage end minus one stays an inclusive second, with no rounding ex
   assert.equal(result.startTimestamp, 1793145600);
   assert.equal(result.endTimestamp, 1793149199);
 });
+test('payer filter only reaches self queries', () => {
+  const applied = normalizeUsageLogFilters({
+    dateRange: ['2026-11-12 00:00:00', '2026-11-12 01:00:00'],
+    payer: 'enterprise',
+  });
+  assert.equal(buildUsageLogQuery(applied, false).payer, 'enterprise');
+  assert.equal(Object.hasOwn(buildUsageLogQuery(applied, true), 'payer'), false);
+  const cleared = normalizeUsageLogFilters({
+    dateRange: ['2026-11-12 00:00:00', '2026-11-12 01:00:00'],
+  });
+  assert.equal(Object.hasOwn(buildUsageLogQuery(cleared, false), 'payer'), false);
+});

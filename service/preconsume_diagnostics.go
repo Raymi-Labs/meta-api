@@ -47,6 +47,9 @@ func capturePreconsumeDiagnostics(c *gin.Context, info *relaycommon.RelayInfo, r
 		if session.funding.Source() == BillingSourceWallet {
 			diagnostic["wallet_available_before"] = info.UserQuota
 		}
+		if session.funding.Source() == BillingSourceEnterprise {
+			diagnostic["enterprise_available_before"] = info.UserQuota
+		}
 		if session.trusted {
 			diagnostic["policy"] = "trusted_no_hold"
 		}
@@ -59,7 +62,7 @@ func capturePreconsumeDiagnostics(c *gin.Context, info *relaycommon.RelayInfo, r
 		diagnostic["source"] = rejection.Source
 		diagnostic["rejection_reason"] = rejection.RejectionReason()
 		if diagnostic["policy"] == "bounded_chat_wallet" {
-			if rejection.Source != BillingSourceWallet {
+			if rejection.Source != BillingSourceWallet && rejection.Source != BillingSourceEnterprise {
 				diagnostic["policy"] = "full_estimate"
 			} else if rejection.Known && rejection.Available <= int64(common.GetTrustQuota()) {
 				diagnostic["policy"] = "full_estimate_low_balance"

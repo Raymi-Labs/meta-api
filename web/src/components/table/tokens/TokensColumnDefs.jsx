@@ -492,6 +492,36 @@ const renderQuotaUsage = (text, record, t) => {
     Number(record?.package_next_reset_time || 0) > 0
       ? timestamp2string(Number(record.package_next_reset_time))
       : t('待初始化');
+  if (record.payer === 'enterprise') {
+    // 企业令牌不占个人钱包：上限与已用记在企业预算上，0 上限表示只受成员额度约束。
+    const limit = Number(record.enterprise_limit_quota || 0);
+    const spent = Number(record.enterprise_used_quota || 0);
+    if (limit <= 0) {
+      return (
+        <Tooltip content={`${t('已用额度')}: ${renderQuota(spent)}`}>
+          <span className='token-quota-value'>{t('不限')}</span>
+        </Tooltip>
+      );
+    }
+    const left = Math.max(0, limit - spent);
+    const leftPercent = (left / limit) * 100;
+    return (
+      <Tooltip content={`${t('已用额度')}: ${renderQuota(spent)}`}>
+        <div className='token-quota-value token-quota-progress'>
+          <div className='flex flex-col items-start'>
+            <span className='text-xs leading-none'>{`${renderQuota(left)} / ${renderQuota(limit)}`}</span>
+            <Progress
+              percent={leftPercent}
+              stroke={getProgressColor(leftPercent)}
+              aria-label='quota usage'
+              format={() => `${leftPercent.toFixed(0)}%`}
+              style={{ width: '100%', marginTop: '1px', marginBottom: 0 }}
+            />
+          </div>
+        </div>
+      </Tooltip>
+    );
+  }
   if (record.unlimited_quota) {
     const popoverContent = (
       <div className='text-xs p-2'>
@@ -572,7 +602,10 @@ const renderQuotaUsage = (text, record, t) => {
 
 // 将已用额度保存在独立字段中，便于跨 Token 更快比较。
 const renderUsedQuota = (text, record) => {
-  const used = parseInt(record.used_quota) || 0;
+  const used =
+    record.payer === 'enterprise'
+      ? Number(record.enterprise_used_quota || 0)
+      : parseInt(record.used_quota) || 0;
   return <span className='token-used-value'>{renderQuota(used)}</span>;
 };
 
@@ -773,14 +806,16 @@ const renderOperations = (
         </Dropdown>
       </SplitButtonGroup>
 
-      <Button
-        size='small'
-        type='tertiary'
-        data-onboarding='token-test-action'
-        onClick={() => openTestModal(record)}
-      >
-        {t('测试')}
-      </Button>
+      {record.payer !== 'enterprise' && (
+        <Button
+          size='small'
+          type='tertiary'
+          data-onboarding='token-test-action'
+          onClick={() => openTestModal(record)}
+        >
+          {t('测试')}
+        </Button>
+      )}
 
       {record.status === 1 ? (
         <Button
@@ -871,6 +906,7 @@ export const getTokensColumns = ({
   setEditingToken,
   setShowEdit,
   refresh,
+  showPayer = false,
 }) => {
   return [
     {
@@ -900,6 +936,20 @@ export const getTokensColumns = ({
       key: 'package_cycle_balance',
       render: (text, record) => renderPackageCycleBalance(text, record, t),
     },
+    ...(showPayer
+      ? [
+          {
+            title: t('付款方'),
+            dataIndex: 'payer',
+            key: 'payer',
+            render: (text) => (
+              <Tag color={text === 'enterprise' ? 'blue' : 'grey'}>
+                {text === 'enterprise' ? t('企业') : t('个人')}
+              </Tag>
+            ),
+          },
+        ]
+      : []),
     {
       title: t('分组'),
       dataIndex: 'group',

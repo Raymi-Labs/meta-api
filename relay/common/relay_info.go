@@ -275,6 +275,10 @@ type RelayInfo struct {
 	SubscriptionPlanTitle string
 	// RequestId is used for idempotent pre-consume/refund
 	RequestId string
+	// EnterpriseId / EnterpriseMemberId 大于 0 表示本次请求由企业成员预算付款（企业令牌），
+	// 个人钱包、订阅与令牌表额度都不得参与扣费。
+	EnterpriseId       int
+	EnterpriseMemberId int
 	// SubscriptionAmountTotal / SubscriptionAmountUsedAfterPreConsume are used to compute remaining in logs.
 	SubscriptionAmountTotal               int64
 	SubscriptionAmountUsedAfterPreConsume int64
@@ -590,6 +594,9 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserGroup:  common.GetContextKeyString(c, constant.ContextKeyUserGroup),
 		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
 		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
+
+		EnterpriseId:       common.GetContextKeyInt(c, constant.ContextKeyEnterpriseId),
+		EnterpriseMemberId: common.GetContextKeyInt(c, constant.ContextKeyEnterpriseMemberId),
 
 		OriginModelName: common.GetContextKeyString(c, constant.ContextKeyOriginalModel),
 

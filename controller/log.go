@@ -48,7 +48,15 @@ func GetUserLogs(c *gin.Context) {
 	modelName := c.Query("model_name")
 	group := c.Query("group")
 	requestId := c.Query("request_id")
-	logs, total, err := model.GetUserLogs(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId)
+	scope, err := userLogPayerScope(c, userId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	logs, total, err := model.GetUserLogsFiltered(userId, model.AdminLogQueryFilters{
+		Scope: scope, LogType: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp,
+		ModelName: modelName, TokenName: tokenName, Group: group, RequestID: requestId,
+	}, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -144,7 +152,12 @@ func GetLogsSelfStat(c *gin.Context) {
 	channel, _ := strconv.Atoi(c.Query("channel"))
 	group := c.Query("group")
 	requestID := c.Query("request_id")
-	quotaNum, err := model.SumUsedQuota(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group, requestID, false)
+	scope, err := userLogPayerScope(c, c.GetInt("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	quotaNum, err := model.SumUsedQuota(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group, requestID, false, scope)
 	if err != nil {
 		common.ApiError(c, err)
 		return

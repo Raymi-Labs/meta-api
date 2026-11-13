@@ -9,9 +9,12 @@ import (
 
 // LogScope is display/query-only: never use these filters for channel routing.
 // A nil ChannelIDs slice means unrestricted; an empty non-nil slice matches nothing.
+// TokenIDs follows the same rule; ExcludeTokenIDs removes rows of those tokens.
 type LogScope struct {
-	Vendor     string
-	ChannelIDs []int
+	Vendor          string
+	ChannelIDs      []int
+	TokenIDs        []int
+	ExcludeTokenIDs []int
 }
 
 // Keep aliases consistent with web/src/components/table/tokens/tokenGroupUtils.js.
@@ -38,6 +41,16 @@ func applyLogScope(tx *gorm.DB, scopes ...LogScope) *gorm.DB {
 			} else {
 				tx = tx.Where("logs.channel_id IN ?", scope.ChannelIDs)
 			}
+		}
+		if scope.TokenIDs != nil {
+			if len(scope.TokenIDs) == 0 {
+				tx = tx.Where("1 = 0")
+			} else {
+				tx = tx.Where("logs.token_id IN ?", scope.TokenIDs)
+			}
+		}
+		if len(scope.ExcludeTokenIDs) > 0 {
+			tx = tx.Where("logs.token_id NOT IN ?", scope.ExcludeTokenIDs)
 		}
 		vendor := strings.ToLower(strings.TrimSpace(scope.Vendor))
 		if vendor == "" {

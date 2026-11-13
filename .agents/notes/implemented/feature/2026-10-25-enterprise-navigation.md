@@ -14,7 +14,7 @@ Status: implemented
 
 ## Related decisions
 
-- 待实施的[企业工作空间提案](../../proposed/feature/2026-11-11-enterprise-workspace.md)增加登录后的组织管理；本笔记的公开介绍页继续保持现有行为。
+- [企业工作空间](2026-11-11-enterprise-workspace.md)增加登录后的组织管理，并在公开介绍页为企业成员加一个“进入工作台”按钮；访客和非成员看到的页面不变。
 
 - 部分重叠：[公开首页](2026-10-24-public-home-redesign.md)，沿用公开壳与品牌来源，更新顶部入口组织，首页内容布局不变。
 - 复用：[通知铃铛](2026-10-25-public-notification-bell.md)，语言右侧保持真实未读和共享已读，不新增通知实现。

@@ -132,6 +132,12 @@
   .usage-logs-filters-user .usage-logs-filter-actions {
     grid-column: span 4;
   }
+  /* 企业成员多一个付款方筛选：第二行改成 2+2+2+2+4，仍然占满一行。 */
+  .usage-logs-filters-payer .usage-logs-filter-group,
+  .usage-logs-filters-payer .usage-logs-filter-request,
+  .usage-logs-filters-payer .usage-logs-filter-payer {
+    grid-column: span 2;
+  }
 }
 .usage-logs-table {
   border: 1px solid var(--semi-color-border);

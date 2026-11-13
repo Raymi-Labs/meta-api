@@ -44,6 +44,7 @@ export const normalizeUsageLogFilters = (values) => {
     'group_vendor',
     'group',
     'request_id',
+    'payer',
   ])
     result[key] = values[key] || '';
   return result;

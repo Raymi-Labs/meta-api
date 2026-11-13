@@ -161,6 +161,7 @@ func InitOptionMap() {
 	// - InviterRechargeSecondLevelCommissionRate: 二级比例（如 0.05 = 5%）
 	// - InviterCommissionDailyCap: 单日上限（0 表示不限）
 	common.OptionMap["InviterCommissionEnabled"] = strconv.FormatBool(common.InviterCommissionEnabled)
+	common.OptionMap["EnterpriseEnabled"] = strconv.FormatBool(common.EnterpriseEnabled)
 	common.OptionMap["InviterRechargeCommissionRate"] = strconv.FormatFloat(common.InviterRechargeCommissionRate, 'f', -1, 64)
 	common.OptionMap["InviterRechargeSecondLevelCommissionRate"] = strconv.FormatFloat(common.InviterRechargeSecondLevelCommissionRate, 'f', -1, 64)
 	common.OptionMap["InviterCommissionDailyCap"] = strconv.Itoa(common.InviterCommissionDailyCap)
@@ -611,6 +612,8 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 			ratio_setting.SetExposeRatioEnabled(boolValue)
 		case "InviterCommissionEnabled":
 			common.InviterCommissionEnabled = boolValue
+		case "EnterpriseEnabled":
+			common.EnterpriseEnabled = boolValue
 		case "QuotaStabilityEnabled":
 			common.QuotaStabilityEnabled = boolValue
 		case "QuotaInsufficientDBRecheckEnabled":

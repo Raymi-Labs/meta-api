@@ -169,6 +169,7 @@ export const useLogsData = (admin = isAdmin()) => {
     group_vendor: '',
     group: usageLink?.group || '',
     request_id: '',
+    payer: '',
     dateRange: usageLink
       ? [timestamp2string(usageLink.start), timestamp2string(usageLink.end - 1)]
       : [
@@ -530,6 +531,7 @@ export const useLogsData = (admin = isAdmin()) => {
       endTimestamp,
       group,
       request_id,
+      payer,
       logType: currentLogType,
     } = normalizeLogQueryValues();
     const query = buildQueryString({
@@ -540,6 +542,7 @@ export const useLogsData = (admin = isAdmin()) => {
       end_timestamp: endTimestamp,
       group,
       request_id,
+      payer,
     });
     let url = `/api/log/self/stat?${query}`;
     let res = await API.get(url);

@@ -56,7 +56,24 @@ func GetTokenModels(c *gin.Context) {
 		}
 		models, err = resolveTokenAllowedModels(userId, token)
 	} else {
-		if raw := c.Query("routing_config"); raw != "" {
+		payer, payerErr := parseTokenPayer(c.Query("payer"))
+		if payerErr != nil {
+			common.ApiError(c, payerErr)
+			return
+		}
+		if payer == model.TokenPayerEnterprise {
+			// 企业付款的草稿：分组与模型目录按企业计费用户组和企业模型限制计算。
+			token = &model.Token{UserId: userId, Group: requestedGroup, AutoGroupFallback: fallback}
+			if err := enterprisePayerDraft(userId, token); err != nil {
+				enterpriseApiError(c, err)
+				return
+			}
+			if err := tokenRoutingDraft(c, token); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+			models, err = resolveTokenAllowedModels(userId, token)
+		} else if raw := c.Query("routing_config"); raw != "" {
 			token = &model.Token{Group: requestedGroup, RoutingConfig: raw}
 			if err := tokenRoutingDraft(c, token); err != nil {
 				common.ApiError(c, err)
@@ -113,6 +130,15 @@ func TestToken(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "令牌已被禁用或已耗尽，无法测试",
+			"time":    0.0,
+		})
+		return
+	}
+	if token.EnterpriseId > 0 {
+		// 控制台测试入口会按模型走到视频、任务等多种调用类型，企业额度尚未全部接入，先整体关闭。
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": model.ErrEnterpriseUnsupported.Error(),
 			"time":    0.0,
 		})
 		return

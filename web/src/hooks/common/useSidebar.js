@@ -56,6 +56,7 @@ export const DEFAULT_ADMIN_CONFIG = {
     subscription: true,
     desktopFeedback: true,
     smartRouting: true,
+    enterpriseAdmin: true,
     setting: true,
   },
 };

@@ -20,10 +20,12 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { renderQuota } from '../../../helpers';
+import { useEnterpriseSelf } from '../../../hooks/enterprise/useEnterpriseSelf';
 import './headerBalance.css';
 
 // This is a view of the shared account snapshot, not another balance fetcher.
 export default function HeaderBalance({ user, loading, t }) {
+  const enterprise = useEnterpriseSelf();
   if (!user) return null;
   const quota = user.quota;
   const quotaPerUnit = Number(localStorage.getItem('quota_per_unit'));
@@ -46,16 +48,46 @@ export default function HeaderBalance({ user, loading, t }) {
   const low = known && (quota <= 0 || quota < threshold);
   const amount = known ? renderQuota(quota) : '—';
   const label = `${t('余额')} ${amount}`;
+  const enterpriseAvailable = enterprise.data?.member?.available;
+  const enterpriseKnown =
+    known &&
+    typeof enterpriseAvailable === 'number' &&
+    Number.isFinite(enterpriseAvailable);
+  const enterpriseLow = enterpriseKnown && enterpriseAvailable <= 0;
+  const enterpriseLabel = enterpriseKnown
+    ? [
+        `${t('企业')} ${renderQuota(enterpriseAvailable)}`,
+        enterprise.data?.enterprise?.name,
+        t('我的额度'),
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
   return (
-    <Link
-      to='/console/topup'
-      className={`header-balance${low ? ' header-balance-low' : ''}`}
-      title={`${label} · ${t('钱包管理')}${low ? ` · ${t('余额不足')}` : ''}`}
-      aria-label={`${label} · ${t('钱包管理')}${low ? ` · ${t('余额不足')}` : ''}`}
-      aria-busy={loading || undefined}
-    >
-      <span className='header-balance-label'>{t('余额')}</span>
-      <span className='header-balance-amount'>{amount}</span>
-    </Link>
+    <>
+      {enterpriseKnown && (
+        <Link
+          to='/console/enterprise'
+          className={`header-balance header-balance-enterprise${enterpriseLow ? ' header-balance-low' : ''}`}
+          title={enterpriseLabel}
+          aria-label={enterpriseLabel}
+        >
+          <span className='header-balance-label'>{t('企业')}</span>
+          <span className='header-balance-amount'>
+            {renderQuota(enterpriseAvailable)}
+          </span>
+        </Link>
+      )}
+      <Link
+        to='/console/topup'
+        className={`header-balance${low ? ' header-balance-low' : ''}`}
+        title={`${label} · ${t('钱包管理')}${low ? ` · ${t('余额不足')}` : ''}`}
+        aria-label={`${label} · ${t('钱包管理')}${low ? ` · ${t('余额不足')}` : ''}`}
+        aria-busy={loading || undefined}
+      >
+        <span className='header-balance-label'>{t('余额')}</span>
+        <span className='header-balance-amount'>{amount}</span>
+      </Link>
+    </>
   );
 }

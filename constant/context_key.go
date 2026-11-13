@@ -66,6 +66,14 @@ const (
 	ContextKeyUsingGroup  ContextKey = "group"
 	ContextKeyUserName    ContextKey = "username"
 
+	/* enterprise related keys */
+	// 企业令牌请求与企业后台接口共用：付款企业、成员关系与企业内角色。
+	ContextKeyEnterpriseId       ContextKey = "enterprise_id"
+	ContextKeyEnterpriseMemberId ContextKey = "enterprise_member_id"
+	ContextKeyEnterpriseRole     ContextKey = "enterprise_role"
+	// 平台管理员在平台后台操作企业时为真，不受企业内角色约束。
+	ContextKeyEnterprisePlatform ContextKey = "enterprise_platform"
+
 	ContextKeyLocalCountTokens ContextKey = "local_count_tokens"
 
 	ContextKeySystemPromptOverride   ContextKey = "system_prompt_override"

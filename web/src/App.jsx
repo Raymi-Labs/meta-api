@@ -84,6 +84,25 @@ const PersonalSetting = lazy(
   () => import('./components/settings/PersonalSetting'),
 );
 const Setup = lazy(() => import('./pages/Setup'));
+const EnterpriseQuota = lazy(() => import('./pages/EnterpriseQuota'));
+const EnterpriseConsoleLayout = lazy(
+  () => import('./pages/EnterpriseConsole/EnterpriseConsoleLayout'),
+);
+const EnterpriseOverview = lazy(
+  () => import('./pages/EnterpriseConsole/Overview'),
+);
+const EnterpriseMembers = lazy(
+  () => import('./pages/EnterpriseConsole/Members'),
+);
+const EnterpriseApprovals = lazy(
+  () => import('./pages/EnterpriseConsole/Approvals'),
+);
+const EnterpriseUsage = lazy(() => import('./pages/EnterpriseConsole/Usage'));
+const EnterpriseSettings = lazy(
+  () => import('./pages/EnterpriseConsole/Settings'),
+);
+const EnterpriseInvite = lazy(() => import('./pages/EnterpriseInvite'));
+const EnterpriseAdmin = lazy(() => import('./pages/EnterpriseAdmin'));
 
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
@@ -249,6 +268,85 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path='/enterprise/invite'
+          element={
+            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+              <EnterpriseInvite />
+            </Suspense>
+          }
+        />
+        <Route
+          path='/console/enterprise-admin'
+          element={
+            <AdminRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <EnterpriseAdmin />
+              </Suspense>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path='/console/enterprise'
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <EnterpriseQuota />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/enterprise/console'
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>}>
+                <EnterpriseConsoleLayout />
+              </Suspense>
+            </PrivateRoute>
+          }
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseOverview />
+              </Suspense>
+            }
+          />
+          <Route
+            path='members'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseMembers />
+              </Suspense>
+            }
+          />
+          <Route
+            path='approvals'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseApprovals />
+              </Suspense>
+            }
+          />
+          <Route
+            path='usage'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseUsage />
+              </Suspense>
+            }
+          />
+          <Route
+            path='settings'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseSettings />
+              </Suspense>
+            }
+          />
+        </Route>
         <Route
           path='/console/playground'
           element={

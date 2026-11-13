@@ -80,6 +80,7 @@ export const useTokensData = (openFluentNotification) => {
     searchKeyword: '',
     searchToken: '',
     searchGroup: '',
+    searchPayer: '',
     searchPackageMode: '',
     searchBalanceMin: '',
     searchBalanceMax: '',
@@ -114,6 +115,7 @@ export const useTokensData = (openFluentNotification) => {
       searchKeyword: formValues.searchKeyword || '',
       searchToken: formValues.searchToken || '',
       searchGroup: formValues.searchGroup || '',
+      searchPayer: formValues.searchPayer || '',
       searchPackageMode: formValues.searchPackageMode || '',
       searchBalanceMin:
         formValues.searchBalanceMin === null ||
@@ -149,6 +151,7 @@ export const useTokensData = (openFluentNotification) => {
       values.searchKeyword !== '' ||
       values.searchToken !== '' ||
       values.searchGroup !== '' ||
+      Boolean(values.searchPayer) ||
       values.searchPackageMode !== '' ||
       values.searchBalanceMin !== '' ||
       values.searchBalanceMax !== '' ||
@@ -425,6 +428,7 @@ export const useTokensData = (openFluentNotification) => {
       searchKeyword,
       searchToken,
       searchGroup,
+      searchPayer,
       searchPackageMode,
       searchBalanceMin,
       searchBalanceMax,
@@ -445,6 +449,7 @@ export const useTokensData = (openFluentNotification) => {
       keyword: searchKeyword,
       token: searchToken,
       group: searchGroup,
+      payer: searchPayer || undefined,
       p: normalizedPage,
       size: normalizedSize,
       ...resolveTokenSort(searchAmountSort),

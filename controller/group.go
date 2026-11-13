@@ -38,7 +38,17 @@ func GetUserGroups(c *gin.Context) {
 	usableGroups := make(map[string]map[string]interface{})
 	userGroup := ""
 	userId := c.GetInt("id")
-	userGroup, _ = model.GetUserGroup(userId, false)
+	if strings.TrimSpace(c.Query("payer")) == model.TokenPayerEnterprise {
+		// 企业付款的令牌：可选分组与倍率按企业计费用户组计算。
+		ent, _, err := model.GetEnterprisePayer(userId)
+		if err != nil {
+			enterpriseApiError(c, err)
+			return
+		}
+		userGroup = ent.BillingGroup
+	} else {
+		userGroup, _ = model.GetUserGroup(userId, false)
+	}
 	userUsableGroups := service.GetUserUsableGroups(userGroup)
 	for groupName, _ := range ratio_setting.GetGroupRatioCopy() {
 		// UserUsableGroups contains the groups that the user can use

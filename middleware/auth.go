@@ -241,8 +241,19 @@ func TokenAuthQuery() func(c *gin.Context) {
 		}
 
 		userCache.WriteContext(c)
+		enterprise, err := ResolveEnterpriseToken(token)
+		if err != nil {
+			abortEnterpriseToken(c, err)
+			return
+		}
+		if enterprise != nil {
+			enterprise.WriteContext(c)
+		}
 		if err := SetupContextForToken(c, token); err != nil {
 			return
+		}
+		if enterprise != nil {
+			enterprise.ApplyModelPolicy(c)
 		}
 		c.Next()
 	}
@@ -350,6 +361,21 @@ func TokenAuth() func(c *gin.Context) {
 		userCache.WriteContext(c)
 
 		userGroup := userCache.Group
+		// 企业令牌：先确认成员关系与企业状态，再确认该入口已对企业额度开放；
+		// 通过后改用企业的计费用户组，个人用户组与个人钱包不再参与本次请求。
+		enterprise, err := ResolveEnterpriseToken(token)
+		if err != nil {
+			abortEnterpriseToken(c, err)
+			return
+		}
+		if enterprise != nil {
+			if !EnterpriseTokenRouteAllowed(c.Request.Method, c.FullPath()) {
+				abortEnterpriseToken(c, model.ErrEnterpriseUnsupported)
+				return
+			}
+			enterprise.WriteContext(c)
+			userGroup = enterprise.Enterprise.BillingGroup
+		}
 		tokenGroup := service.ResolveTokenGroup(userGroup, token.Group)
 		if tokenGroup != "" && token.RoutingConfig == "" {
 			// check common.UserUsableGroups[userGroup]
@@ -371,6 +397,9 @@ func TokenAuth() func(c *gin.Context) {
 		err = SetupContextForToken(c, token, parts...)
 		if err != nil {
 			return
+		}
+		if enterprise != nil {
+			enterprise.ApplyModelPolicy(c)
 		}
 		service.MarkTokenQuotaIdentity(c, token)
 		c.Next()

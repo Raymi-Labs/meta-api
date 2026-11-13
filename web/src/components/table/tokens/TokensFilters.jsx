@@ -28,6 +28,7 @@ import {
 } from '@douyinfe/semi-ui';
 import { IconSearch, IconFilter } from '@douyinfe/semi-icons';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
+import { useEnterpriseSelf } from '../../../hooks/enterprise/useEnterpriseSelf';
 
 const TokensFilters = ({
   formInitValues,
@@ -46,11 +47,16 @@ const TokensFilters = ({
   const [activeAdvancedCount, setActiveAdvancedCount] = useState(0);
   const [activeBasicCount, setActiveBasicCount] = useState(
     () =>
-      [formInitValues.searchToken, formInitValues.searchGroup].filter(
+      [
+        formInitValues.searchToken,
+        formInitValues.searchGroup,
+        formInitValues.searchPayer,
+      ].filter(
         (value) => value !== '' && value !== null && value !== undefined,
       ).length,
   );
   const { Text } = Typography;
+  const enterprise = useEnterpriseSelf();
 
   const getAdvancedCount = () => {
     if (!formApiRef.current) return 0;
@@ -126,7 +132,7 @@ const TokensFilters = ({
       onSubmit={() => searchTokens(1)}
       onValueChange={(values) => {
         setActiveBasicCount(
-          [values.searchToken, values.searchGroup].filter(
+          [values.searchToken, values.searchGroup, values.searchPayer].filter(
             (value) => value !== '' && value !== null && value !== undefined,
           ).length,
         );
@@ -205,6 +211,28 @@ const TokensFilters = ({
               }}
             />
           </div>
+
+          {enterprise.isMember && (
+            <div className='tokens-filter-row__field'>
+              <Form.Select
+                field='searchPayer'
+                placeholder={t('付款方')}
+                optionList={[
+                  { label: t('企业'), value: 'enterprise' },
+                  { label: t('个人'), value: 'personal' },
+                ]}
+                className='w-full'
+                showClear
+                pure
+                size='small'
+                onChange={() => {
+                  setTimeout(() => {
+                    searchTokens(1);
+                  }, 100);
+                }}
+              />
+            </div>
+          )}
 
           <div className='tokens-filter-row__buttons'>
             <Button

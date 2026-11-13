@@ -138,8 +138,17 @@ func ListModels(c *gin.Context, modelType int) {
 	}
 
 	modelLimitEnable := common.GetContextKeyBool(c, constant.ContextKeyTokenModelLimitEnabled)
-	if raw := common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig); raw != "" {
+	// 企业令牌一律走令牌目录：分组取企业计费用户组，并与企业、成员的模型限制求交集，
+	// 列出的就是这把令牌实际能调用的模型。
+	enterpriseID := common.GetContextKeyInt(c, constant.ContextKeyEnterpriseId)
+	if raw := common.GetContextKeyString(c, constant.ContextKeyTokenRoutingConfig); raw != "" || enterpriseID > 0 {
 		token := &model.Token{Group: common.GetContextKeyString(c, constant.ContextKeyTokenGroup), RoutingConfig: raw, ModelLimitsEnabled: modelLimitEnable}
+		if enterpriseID > 0 {
+			token.UserId = c.GetInt("id")
+			token.EnterpriseId = enterpriseID
+			token.MembershipId = common.GetContextKeyInt(c, constant.ContextKeyEnterpriseMemberId)
+			token.AutoGroupFallback = common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback)
+		}
 		if limits, ok := c.Get("token_model_limit"); ok {
 			if allowed, ok := limits.(map[string]bool); ok {
 				names := []string{}

@@ -1,0 +1,160 @@
+.em {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.em-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.em-head h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.em-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.em-tools .semi-input-wrapper {
+  width: 220px;
+}
+.em-card {
+  overflow: hidden;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 16px;
+  background: var(--semi-color-bg-1);
+}
+.em-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.em-who strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.em-who span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--semi-color-text-2);
+}
+.em-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.em-num.neg {
+  color: var(--semi-color-danger);
+}
+.em-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+.ec-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.ec-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ec-field-head em {
+  font-size: 12px;
+  font-style: normal;
+  color: var(--semi-color-text-2);
+}
+.ec-invite-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ec-invite-result .semi-input-wrapper {
+  width: 100%;
+}
+.em-reason {
+  min-width: 140px;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+.em-pane {
+  padding: 16px 0 24px;
+}
+.em-card .semi-table-thead th,
+.em-pane .semi-table-thead th,
+.es-flush .semi-table-thead th {
+  white-space: nowrap;
+}
+.em-card .semi-table-pagination-outer {
+  padding: 0 16px;
+}
+.em-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.em-sub {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+@media (max-width: 768px) {
+  .em-tools {
+    width: 100%;
+  }
+  .em-tools .semi-input-wrapper {
+    flex: 1;
+    width: auto;
+  }
+  .em-card,
+  .em-pane {
+    overflow-x: auto;
+  }
+  .em-pane .semi-table-wrapper {
+    min-width: 480px;
+  }
+  /* 窄屏下表格保持可读宽度，横向滑动，而不是把文字挤成竖排。 */
+  .em-card .semi-table-wrapper,
+  .es-flush .semi-table-wrapper {
+    min-width: 720px;
+  }
+  .em-card .semi-table-pagination-outer,
+  .es-flush .semi-table-pagination-outer {
+    position: sticky;
+    left: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: calc(100vw - 34px);
+    max-width: 100%;
+  }
+  .em-card .semi-table-pagination-info,
+  .es-flush .semi-table-pagination-info {
+    white-space: nowrap;
+  }
+  .es-flush .semi-table-pagination-outer {
+    width: calc(100vw - 66px);
+  }
+}
+/* 弹窗默认宽 448px，手机上会超出屏幕。 */
+@media (max-width: 480px) {
+  .ec-modal .semi-modal {
+    width: calc(100vw - 32px);
+  }
+}

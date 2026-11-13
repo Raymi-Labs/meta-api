@@ -1733,7 +1733,17 @@ func (user *User) Delete() error {
 	if user.Id == 0 {
 		return errors.New("id 为空！")
 	}
-	if err := DB.Delete(user).Error; err != nil {
+	// Inspect schema before BEGIN: MySQL 8 metadata reads can establish a stale
+	// repeatable-read snapshot before the account lock is acquired.
+	hasEnterprise := DB.Migrator().HasTable(&Enterprise{})
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if hasEnterprise {
+			if err := protectEnterpriseOwnerDeletionTx(tx, user.Id); err != nil {
+				return err
+			}
+		}
+		return tx.Delete(user).Error
+	}); err != nil {
 		return err
 	}
 
@@ -1746,7 +1756,13 @@ func (user *User) HardDelete() error {
 		return errors.New("id 为空！")
 	}
 	var tokens []Token
+	hasEnterprise := DB.Migrator().HasTable(&Enterprise{})
 	err := DB.Transaction(func(tx *gorm.DB) error {
+		if hasEnterprise {
+			if err := protectEnterpriseOwnerDeletionTx(tx, user.Id); err != nil {
+				return err
+			}
+		}
 		if common.RedisEnabled {
 			if err := tx.Unscoped().Select("id", commonKeyCol).Where("user_id = ?", user.Id).Find(&tokens).Error; err != nil {
 				return err

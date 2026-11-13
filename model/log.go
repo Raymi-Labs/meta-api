@@ -40,6 +40,10 @@ type Log struct {
 	Ip               string `json:"ip" gorm:"index;default:''"`
 	RequestId        string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	Other            string `json:"other"`
+
+	// 付款方只在本人日志里按令牌归属回填，不落库。
+	Payer          string `json:"payer,omitempty" gorm:"-"`
+	EnterpriseName string `json:"enterprise_name,omitempty" gorm:"-"`
 }
 
 type PublicTokenLogItem struct {
@@ -496,10 +500,15 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 const logSearchCountLimit = 10000
 
 func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string) (logs []*Log, total int64, err error) {
-	tx, err := applyUserLogFilters(LOG_DB, userId, AdminLogQueryFilters{
+	return GetUserLogsFiltered(userId, AdminLogQueryFilters{
 		LogType: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp,
 		ModelName: modelName, TokenName: tokenName, Group: group, RequestID: requestId,
-	})
+	}, startIdx, num)
+}
+
+// GetUserLogsFiltered 本人日志列表；filters 里只有本人接口允许的字段生效（见 applyUserLogFilters）。
+func GetUserLogsFiltered(userId int, filters AdminLogQueryFilters, startIdx int, num int) (logs []*Log, total int64, err error) {
+	tx, err := applyUserLogFilters(LOG_DB, userId, filters)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -514,6 +523,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 		return nil, 0, errors.New("查询日志失败")
 	}
 
+	fillLogPayers(logs)
 	formatUserLogs(logs, startIdx)
 	return logs, total, err
 }

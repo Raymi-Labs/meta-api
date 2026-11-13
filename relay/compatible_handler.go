@@ -487,7 +487,7 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage 
 	}
 	quota, logContent, other = service.FinalizeConsumeLogAfterSettle(logContent, other, actualQuota, relayInfo, settleErr)
 	if totalTokens != 0 || toolResult.TotalQuota > 0 || relayInfo.PriceData.UseAudioDurationPrice {
-		service.UpdateUsageStats(relayInfo.UserId, relayInfo.ChannelId, quota, true)
+		service.RecordRelayUsageStats(relayInfo, quota)
 	}
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,

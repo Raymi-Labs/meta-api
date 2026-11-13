@@ -36,6 +36,9 @@ import {
   Package,
   Server,
   CalendarClock,
+  Building2,
+  WalletCards,
+  Landmark,
 } from 'lucide-react';
 
 export function getLucideIcon(key, selected = false) {
@@ -84,6 +87,12 @@ export function getLucideIcon(key, selected = false) {
       return <Server {...commonProps} color={iconColor} />;
     case 'subscription':
       return <CalendarClock {...commonProps} color={iconColor} />;
+    case 'enterpriseQuota':
+      return <WalletCards {...commonProps} color={iconColor} />;
+    case 'enterpriseWorkspace':
+      return <Building2 {...commonProps} color={iconColor} />;
+    case 'enterpriseAdmin':
+      return <Landmark {...commonProps} color={iconColor} />;
     case 'setting':
       return <Settings {...commonProps} color={iconColor} />;
     default:

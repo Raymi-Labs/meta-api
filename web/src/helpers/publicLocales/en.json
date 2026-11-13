@@ -319,5 +319,6 @@
   "告诉我们使用场景、目标模型与预计用量，我们一起梳理接入方案。": "Tell us your use case, target models and expected usage. We can work through an integration plan together.",
   "余额": "Balance",
   "钱包管理": "Wallet Management",
-  "余额不足": "Insufficient balance"
+  "余额不足": "Insufficient balance",
+  "进入工作台": "Open workspace"
 }

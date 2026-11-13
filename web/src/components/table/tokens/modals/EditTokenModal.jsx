@@ -69,6 +69,7 @@ import {
 } from '../tokenRouting';
 import TokenModelCopyList from '../TokenModelCopyList';
 import { UserContext } from '../../../../context/User';
+import { useEnterpriseSelf } from '../../../../hooks/enterprise/useEnterpriseSelf';
 import { StatusContext } from '../../../../context/Status';
 import {
   filterTokenGroupsByHealth,
@@ -86,6 +87,7 @@ const readStoredChannelLimitTagMode = () => {
 
 const EditTokenModal = (props) => {
   const { t } = useTranslation();
+  const enterprise = useEnterpriseSelf();
   const [statusState, statusDispatch] = useContext(StatusContext);
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -168,6 +170,9 @@ const EditTokenModal = (props) => {
     window_request_limit: 0,
     window_seconds: 0,
     tokenCount: 1,
+    // 付款方只在创建时选择，默认企业；个人用户没有这一项。
+    payer: enterprise.isMember ? 'enterprise' : 'personal',
+    enterprise_limit_amount: 0,
     package_enabled: false,
     package_limit_amount: 0,
     package_limit_quota: 0,
@@ -474,6 +479,10 @@ const EditTokenModal = (props) => {
         disableDuplicate: true,
         params: {
           group: groupValue,
+          payer:
+            formApiRef.current?.getValue('payer') === 'enterprise'
+              ? 'enterprise'
+              : undefined,
           detail: true,
           routing_config: tokenRoutingModelPreview(
             formApiRef.current?.getValues(),
@@ -522,7 +531,10 @@ const EditTokenModal = (props) => {
     modelLimits = [],
     shouldNotify = false,
   ) => {
-    if (!isAdminUser || isSellableToken) {
+    const channelPayer = isEdit
+      ? props.editingToken.payer
+      : formApiRef.current?.getValue('payer');
+    if (!isAdminUser || isSellableToken || channelPayer === 'enterprise') {
       setChannelOptions([]);
       return [];
     }
@@ -576,7 +588,14 @@ const EditTokenModal = (props) => {
     }
   };
 
-  const loadGroups = async () => {
+  const loadGroups = async (payerArg) => {
+    // 企业付款的令牌按企业计费用户组取可选分组；重试按钮会传入事件对象，这里只认字符串。
+    const payer =
+      typeof payerArg === 'string'
+        ? payerArg
+        : isEdit
+          ? props.editingToken.payer
+          : (formApiRef.current?.getValue('payer') ?? getInitValues().payer);
     const requestId = ++groupRequestRef.current;
     setGroupsLoading(true);
     setGroupsError(false);
@@ -585,7 +604,10 @@ const EditTokenModal = (props) => {
     try {
       // A reopened or account-switched dialog needs a fresh permission snapshot,
       // not another subscriber to a previous account's in-flight GET.
-      res = await API.get(`/api/user/self/groups`, { disableDuplicate: true });
+      res = await API.get(`/api/user/self/groups`, {
+        disableDuplicate: true,
+        params: payer === 'enterprise' ? { payer } : undefined,
+      });
     } catch {
       if (requestId === groupRequestRef.current) {
         setGroupsError(true);
@@ -651,6 +673,9 @@ const EditTokenModal = (props) => {
           data.package_limit_quota || 0,
         );
         data.group_vendor = resolveTokenGroupVendor(data.group);
+        data.enterprise_limit_amount = quotaToUSDAmount(
+          data.enterprise_limit_quota || 0,
+        );
         data.routing_enabled = !!data.routing_config;
         if (data.routing_enabled) {
           // Multi-group tokens keep fallback in the routing config; the legacy
@@ -1186,6 +1211,14 @@ const EditTokenModal = (props) => {
             status: props.editingToken.status,
           };
         }
+        if (values.payer === 'enterprise' && !isSellableToken) {
+          localInputs.enterprise_limit_quota = usdAmountToQuota(
+            Number(values.enterprise_limit_amount || 0),
+          );
+        }
+        // 付款方创建后不可更改，后端只认库里的值。
+        delete localInputs.enterprise_limit_amount;
+        delete localInputs.payer;
         let res = await API.put(`/api/token/`, {
           ...localInputs,
           id: parseInt(props.editingToken.id),
@@ -1263,6 +1296,18 @@ const EditTokenModal = (props) => {
           }
           delete localInputs.remain_amount;
           delete localInputs.package_limit_amount;
+          if (localInputs.payer === 'enterprise') {
+            // 企业令牌不支持周期套餐与渠道限制，额度上限单独提交。
+            localInputs.package_enabled = false;
+            localInputs.channel_limits = '';
+            localInputs.channel_limits_enabled = false;
+            localInputs.enterprise_limit_quota = usdAmountToQuota(
+              Number(localInputs.enterprise_limit_amount || 0),
+            );
+          } else {
+            localInputs.payer = 'personal';
+          }
+          delete localInputs.enterprise_limit_amount;
           let res = await API.post(`/api/token/`, localInputs);
           if (!isCurrentSession()) return;
           const { success, message } = res.data;
@@ -1365,6 +1410,18 @@ const EditTokenModal = (props) => {
           }}
           onValueChange={(values, changedValues) => {
             setSelectedGroup(values.group || '');
+            if (
+              !isEdit &&
+              Object.prototype.hasOwnProperty.call(changedValues, 'payer')
+            ) {
+              // 付款方不同，可选分组与模型目录也不同，已选分组作废。
+              if (values.payer === 'enterprise') switchTokenMode('standard');
+              formApiRef.current?.setValue('group', '');
+              formApiRef.current?.setValue('routing_enabled', false);
+              formApiRef.current?.setValue('routing_config', '');
+              loadGroups(values.payer);
+              return;
+            }
             if (
               Object.prototype.hasOwnProperty.call(
                 changedValues,
@@ -1493,6 +1550,24 @@ const EditTokenModal = (props) => {
                       />
                     </div>
                   </Col>
+                  {isEdit && values.payer === 'enterprise' && (
+                    <Col span={24}>
+                      <Tag color='blue'>{t('企业')}</Tag>
+                    </Col>
+                  )}
+                  {!isEdit && enterprise.isMember && (
+                    <Col span={24}>
+                      <Form.RadioGroup
+                        field='payer'
+                        label={t('付款方')}
+                        type='button'
+                        extraText={t('创建后不能更改付款方。')}
+                      >
+                        <Form.Radio value='enterprise'>{t('企业')}</Form.Radio>
+                        <Form.Radio value='personal'>{t('个人')}</Form.Radio>
+                      </Form.RadioGroup>
+                    </Col>
+                  )}
                   <Col span={24}>
                     <Form.Input
                       field='group'
@@ -1628,7 +1703,7 @@ const EditTokenModal = (props) => {
                           : String(values.expired_time || '')}
                       </span>
                     </summary>
-                    {!isSellableToken && (
+                    {!isSellableToken && values.payer !== 'enterprise' && (
                       <Card className='!rounded-2xl shadow-sm border-0'>
                         <div className='flex items-center mb-2'>
                           <Avatar
@@ -1769,6 +1844,23 @@ const EditTokenModal = (props) => {
                       </Row>
                     </Card>
                     {/* 额度设置 */}
+                    {values.payer === 'enterprise' ? (
+                      <Card className='!rounded-2xl shadow-sm border-0'>
+                        <Row gutter={12}>
+                          <Col span={24}>
+                            <Form.InputNumber
+                              field='enterprise_limit_amount'
+                              label={t('令牌额度上限 (USD)')}
+                              prefix='$'
+                              min={0}
+                              precision={2}
+                              extraText={t('0 表示不单独限制，只受成员额度约束')}
+                              style={{ width: '100%' }}
+                            />
+                          </Col>
+                        </Row>
+                      </Card>
+                    ) : (
                     <Card className='!rounded-2xl shadow-sm border-0'>
                       <div className='flex items-center mb-2'>
                         <Avatar
@@ -1825,8 +1917,9 @@ const EditTokenModal = (props) => {
                         </Col>
                       </Row>
                     </Card>
+                    )}
 
-                    {tokenMode === 'package' && (
+                    {tokenMode === 'package' && values.payer !== 'enterprise' && (
                       <Card className='!rounded-2xl shadow-sm border-0'>
                         <div className='flex items-center mb-2'>
                           <Avatar
@@ -1930,7 +2023,8 @@ const EditTokenModal = (props) => {
                       {t('高级设置')}
                       <span>
                         {values.model_limits?.length ||
-                        values.channel_limits?.length ||
+                        (values.payer !== 'enterprise' &&
+                          values.channel_limits?.length) ||
                         values.allow_ips ||
                         values.max_concurrency ||
                         values.window_request_limit
@@ -2031,7 +2125,7 @@ const EditTokenModal = (props) => {
                             />
                           </div>
                         </Col>
-                        {isAdminUser && (
+                        {isAdminUser && values.payer !== 'enterprise' && (
                           <Col span={24}>
                             <Form.Slot
                               label={
