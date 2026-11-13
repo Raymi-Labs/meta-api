@@ -60,7 +60,7 @@
   border: 1px solid var(--semi-color-border);
   background: var(--semi-color-bg-0);
   color: var(--semi-color-text-0);
-  resize: vertical;
+  resize: none;
 }
 .pg-parallel-composer > div {
   display: flex;

@@ -7162,19 +7162,6 @@
     "最近分歧样本（本实例）": "Divergências recentes (esta instância)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "O cache em memória está desligado (sem Redis e MEMORY_CACHE_ENABLED não definido), então decisões sombra e roteamento inteligente não têm efeito.",
     "智能路由总开关": "Chave geral do roteamento inteligente",
-    "选择模型回答": "Choose a model response",
-    "等待回答…": "Waiting for a response…",
-    "回答中": "Responding",
-    "思考中": "Thinking",
-    "恢复回答布局": "Restore response layout",
-    "放大回答": "Expand response",
-    "模型回答正文": "Model response content",
-    "在下方输入问题后发送，回答会显示在这里。": "Enter a question below and send it. The response will appear here.",
-    "用这个模型继续": "Continue with this model",
-    "上下排列": "Stacked",
-    "仅重新请求这个模型，会产生新的调用。": "Send a new request to this model only. This is a new API call.",
-    "选择模型，开始对比": "Choose models to compare",
-    "还没有选择要对比的模型，最多可以同时对比5个。": "No models selected yet. Compare up to 5 models at a time.",
     "待充值": "Recarga necessária",
     "预计不足1天": "Menos de 1 dia estimado",
     "预计可用约 {{days}} 天": "Cerca de {{days}} dias restantes",
@@ -7448,6 +7435,11 @@
     "注册新账号": "Criar uma conta",
     "企业信息读取失败，请重试": "Não foi possível carregar as informações da empresa. Tente novamente.",
     "禁止全部模型？": "Bloquear todos os modelos?",
-    "保存后将无法使用任何模型，已有账单保留。": "Após salvar, nenhum modelo poderá ser usado. As faturas existentes serão mantidas."
+    "保存后将无法使用任何模型，已有账单保留。": "Após salvar, nenhum modelo poderá ser usado. As faturas existentes serão mantidas.",
+    "后台每 5 分钟更新快照": "Os instantâneos são atualizados em segundo plano a cada 5 minutos",
+    "快照时间": "Hora do instantâneo",
+    "正在后台准备快照，完成后自动显示": "A preparar o instantâneo em segundo plano. Será apresentado automaticamente.",
+    "部分数据刷新失败，保留上次快照，请留意快照时间": "Não foi possível atualizar alguns dados. Os valores anteriores são mantidos; verifique a hora do instantâneo.",
+    "调整输入框高度": "Ajustar a altura do campo de entrada"
   }
 }

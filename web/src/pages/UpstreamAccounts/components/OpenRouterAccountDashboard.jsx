@@ -41,6 +41,7 @@ export default function OpenRouterAccountDashboard({
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const sequence = useRef(0);
+  const displayedIdentity = useRef('');
   const configIdentity = account
     ? `${account.id}:${account.enabled}:${account.access_token_masked}`
     : '';
@@ -53,30 +54,42 @@ export default function OpenRouterAccountDashboard({
   useEffect(() => {
     const request = ++sequence.current;
     const controller = new AbortController();
-    setData(null);
+    let timer;
+    if (displayedIdentity.current !== configIdentity) {
+      setData(null);
+      displayedIdentity.current = configIdentity;
+    }
     setError('');
     setLoading(false);
     if (!active || view !== 'balance' || !selected || !account?.enabled)
       return () => controller.abort();
-    setLoading(true);
-    API.get(`${endpoint}/${selected}/openrouter/finance`, {
-      signal: controller.signal,
-      skipErrorHandler: true,
-    })
-      .then(({ data: response }) => {
+    const load = async () => {
+      setLoading(true);
+      let delay = 5 * 60 * 1000;
+      try {
+        const { data: response } = await API.get(
+          `${endpoint}/${selected}/openrouter/finance`,
+          { signal: controller.signal, skipErrorHandler: true },
+        );
         if (sequence.current !== request) return;
         if (!response.success) throw new Error(response.message);
         setData(response.data);
-      })
-      .catch((e) => {
+        setError('');
+        if (response.data?.refreshing) delay = 2000;
+      } catch (e) {
         if (!controller.signal.aborted && sequence.current === request)
           setError(e.message);
-      })
-      .finally(() => {
-        if (sequence.current === request) setLoading(false);
-      });
+      } finally {
+        if (sequence.current === request && !controller.signal.aborted) {
+          setLoading(false);
+          timer = setTimeout(load, delay);
+        }
+      }
+    };
+    load();
     return () => {
       ++sequence.current;
+      clearTimeout(timer);
       controller.abort();
     };
   }, [selected, configIdentity, active, refresh, view]);
@@ -235,7 +248,7 @@ export default function OpenRouterAccountDashboard({
       ) : (
         <>
           {error && <Banner type='danger' description={error} />}
-          <Spin spinning={loading}>
+          <Spin spinning={loading && !data}>
             <OpenRouterConsumption data={data} loading={loading} t={t} />
           </Spin>
         </>

@@ -1,6 +1,10 @@
 /* Scoped to the playground only. Reference layout keeps chat primary; utility
    panels do not permanently consume a second or third column. */
 .pg-focused {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 64px);
+  box-sizing: border-box;
   --pg-rail-width: 72px;
   position: relative;
   min-width: 0;
@@ -70,8 +74,8 @@
 }
 .pg-focused .pg-conversation-content .pg-workspace {
   display: flex;
-  height: calc(100dvh - 64px);
-  min-height: 480px;
+  height: 100%;
+  min-height: 0;
 }
 .pg-focused .pg-main {
   width: 100%;
@@ -410,7 +414,7 @@
   display: flex;
   position: relative;
   width: 260px;
-  height: calc(100dvh - 64px);
+  height: 100%;
   max-width: calc(100% - var(--pg-rail-width));
   z-index: 1;
   padding: 18px;
@@ -490,8 +494,8 @@
     margin-top: 0;
   }
   .pg-focused .pg-conversation-content .pg-workspace {
-    height: calc(100dvh - 122px);
-    min-height: 440px;
+    height: 100%;
+    min-height: 0;
   }
   .pg-focused .pg-model-tabs {
     max-width: 100%;
@@ -584,4 +588,18 @@
   border: 0;
   color: var(--semi-color-primary);
   cursor: pointer;
+}
+
+/* Reserve warning/toolbar space before dividing the chat and input area. */
+.pg-focused > .pg-local-warning {
+  flex-shrink: 0;
+}
+.pg-focused > .pg-conversation-layout {
+  flex: 1;
+  min-height: 0;
+}
+.pg-focused .pg-conversation-content,
+.pg-focused .pg-conversation-content > div:not([hidden]) {
+  height: 100%;
+  min-height: 0;
 }

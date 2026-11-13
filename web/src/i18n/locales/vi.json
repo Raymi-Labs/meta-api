@@ -7775,19 +7775,6 @@
     "最近分歧样本（本实例）": "Khác biệt gần đây (phiên bản này)",
     "未启用内存缓存（未配置 Redis 且 MEMORY_CACHE_ENABLED 未开启），影子决策与智能路由不会生效。": "Bộ nhớ đệm đang tắt (không có Redis và chưa bật MEMORY_CACHE_ENABLED), nên quyết định bóng và định tuyến thông minh không có hiệu lực.",
     "智能路由总开关": "Công tắc tổng định tuyến thông minh",
-    "选择模型回答": "Choose a model response",
-    "等待回答…": "Waiting for a response…",
-    "回答中": "Responding",
-    "思考中": "Thinking",
-    "恢复回答布局": "Restore response layout",
-    "放大回答": "Expand response",
-    "模型回答正文": "Model response content",
-    "在下方输入问题后发送，回答会显示在这里。": "Enter a question below and send it. The response will appear here.",
-    "用这个模型继续": "Continue with this model",
-    "上下排列": "Stacked",
-    "仅重新请求这个模型，会产生新的调用。": "Send a new request to this model only. This is a new API call.",
-    "选择模型，开始对比": "Choose models to compare",
-    "还没有选择要对比的模型，最多可以同时对比5个。": "No models selected yet. Compare up to 5 models at a time.",
     "待充值": "Cần nạp tiền",
     "预计不足1天": "Ước tính còn dưới 1 ngày",
     "预计可用约 {{days}} 天": "Còn khoảng {{days}} ngày",
@@ -8059,6 +8046,11 @@
     "注册新账号": "Tạo tài khoản mới",
     "企业信息读取失败，请重试": "Không thể tải thông tin doanh nghiệp. Vui lòng thử lại.",
     "禁止全部模型？": "Chặn tất cả mô hình?",
-    "保存后将无法使用任何模型，已有账单保留。": "Sau khi lưu, không thể sử dụng mô hình nào. Các hóa đơn hiện có sẽ được giữ lại."
+    "保存后将无法使用任何模型，已有账单保留。": "Sau khi lưu, không thể sử dụng mô hình nào. Các hóa đơn hiện có sẽ được giữ lại.",
+    "后台每 5 分钟更新快照": "Ảnh chụp dữ liệu được cập nhật nền mỗi 5 phút",
+    "快照时间": "Thời gian chụp dữ liệu",
+    "正在后台准备快照，完成后自动显示": "Đang chuẩn bị ảnh chụp dữ liệu trong nền. Dữ liệu sẽ tự động hiển thị khi hoàn tất.",
+    "部分数据刷新失败，保留上次快照，请留意快照时间": "Không thể cập nhật một số dữ liệu. Giá trị trước đó được giữ lại; hãy kiểm tra thời gian chụp dữ liệu.",
+    "调整输入框高度": "Điều chỉnh chiều cao ô nhập"
   }
 }
