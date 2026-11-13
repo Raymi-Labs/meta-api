@@ -63,7 +63,9 @@ const PageLayout = () => {
     location.pathname.includes('/console') &&
     !location.pathname.startsWith('/console/chat');
 
-  const isStandalonePage = location.pathname === '/usage';
+  const isStandalonePage =
+    location.pathname === '/usage' ||
+    /^\/enterprise\/console(?:\/|$)/i.test(location.pathname);
   const showSider = isConsoleRoute && (!isMobile || drawerOpen);
 
   useLayoutEffect(() => {

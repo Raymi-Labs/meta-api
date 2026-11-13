@@ -85,6 +85,12 @@ const PersonalSetting = lazy(
 );
 const Setup = lazy(() => import('./pages/Setup'));
 const EnterpriseQuota = lazy(() => import('./pages/EnterpriseQuota'));
+const EnterpriseConsoleLayout = lazy(
+  () => import('./pages/EnterpriseConsole/EnterpriseConsoleLayout'),
+);
+const EnterpriseOverview = lazy(
+  () => import('./pages/EnterpriseConsole/Overview'),
+);
 
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
@@ -260,6 +266,25 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path='/enterprise/console'
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>}>
+                <EnterpriseConsoleLayout />
+              </Suspense>
+            </PrivateRoute>
+          }
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseOverview />
+              </Suspense>
+            }
+          />
+        </Route>
         <Route
           path='/console/playground'
           element={
