@@ -24,6 +24,7 @@ import { getLucideIcon } from './sidebarIcons';
 import { ChevronLeft } from 'lucide-react';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useSidebar } from '../../hooks/common/useSidebar';
+import { useEnterpriseSelf } from '../../hooks/enterprise/useEnterpriseSelf';
 import { API } from '../../helpers/apiCore';
 import { isAdmin, isRoot } from '../../helpers/storage';
 import { showError } from '../../helpers/toast';
@@ -54,6 +55,9 @@ const routerMap = {
   personal: '/console/personal',
   desktopFeedback: '/console/desktop-feedback',
   smartRouting: '/console/smart-routing',
+  enterpriseQuota: '/console/enterprise',
+  enterpriseWorkspace: '/enterprise/console',
+  enterpriseAdmin: '/console/enterprise-admin',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -69,6 +73,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
   // useSidebar 已基于默认 adminConfig 提供兜底 finalConfig，菜单可立即渲染。
   // 骨架屏仅在显式刷新等少数场景显示（loadUserConfig({withLoading:true})）。
   const showSkeleton = sidebarLoading;
+  const enterprise = useEnterpriseSelf();
 
   const [selectedKeys, setSelectedKeys] = useState(['home']);
   const [chatItems, setChatItems] = useState([]);
@@ -155,6 +160,25 @@ const SiderBar = ({ onNavigate = () => {} }) => {
     isModuleVisible,
   ]);
 
+  const enterpriseItems = useMemo(() => {
+    const items = [
+      {
+        text: t('我的额度'),
+        itemKey: 'enterpriseQuota',
+        to: '/console/enterprise',
+      },
+    ];
+    if (enterprise.isManager) {
+      items.push({
+        text: t('企业工作台'),
+        itemKey: 'enterpriseWorkspace',
+        to: '/enterprise/console',
+        badge: enterprise.pendingRequests,
+      });
+    }
+    return items;
+  }, [t, enterprise.isManager, enterprise.pendingRequests]);
+
   const financeItems = useMemo(() => {
     const items = [
       { text: t('个人总览'), itemKey: 'overview', to: '/overview' },
@@ -236,6 +260,12 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {
+        text: t('企业管理'),
+        itemKey: 'enterpriseAdmin',
+        to: '/console/enterprise-admin',
+        className: isAdmin() && enterprise.enabled ? '' : 'tableHiddle',
+      },
+      {
         text: t('系统设置'),
         itemKey: 'setting',
         to: '/setting',
@@ -250,7 +280,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
     });
 
     return filteredItems;
-  }, [isAdmin(), isRoot(), t, isModuleVisible]);
+  }, [isAdmin(), isRoot(), t, isModuleVisible, enterprise.enabled]);
 
   const chatMenuItems = useMemo(() => {
     const items = [
@@ -382,6 +412,25 @@ const SiderBar = ({ onNavigate = () => {} }) => {
             data-onboarding={`sidebar-${item.itemKey}`}
           >
             {item.text}
+            {item.badge > 0 && (
+              <span
+                aria-label={String(item.badge)}
+                style={{
+                  marginLeft: 8,
+                  padding: '0 6px',
+                  minWidth: 18,
+                  borderRadius: 9,
+                  background: 'var(--semi-color-danger)',
+                  color: '#fff',
+                  fontSize: 12,
+                  lineHeight: '18px',
+                  display: 'inline-block',
+                  textAlign: 'center',
+                }}
+              >
+                {item.badge}
+              </span>
+            )}
           </span>
         }
         icon={
@@ -551,6 +600,19 @@ const SiderBar = ({ onNavigate = () => {} }) => {
                   <div className='sidebar-group-label'>{t('控制台')}</div>
                 )}
                 {workspaceItems.map((item) => renderNavItem(item))}
+              </div>
+            </>
+          )}
+
+          {/* 企业区域：仅企业成员可见 */}
+          {enterprise.isMember && (
+            <>
+              <Divider className='sidebar-divider' />
+              <div data-onboarding='sidebar-enterprise-section'>
+                {!collapsed && (
+                  <div className='sidebar-group-label'>{t('企业')}</div>
+                )}
+                {enterpriseItems.map((item) => renderNavItem(item))}
               </div>
             </>
           )}

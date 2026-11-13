@@ -91,3 +91,8 @@ html.dark .header-balance-low .header-balance-label {
     padding-inline: 4px;
   }
 }
+@media (max-width: 479px) {
+  .header-balance-enterprise {
+    display: none;
+  }
+}

@@ -84,6 +84,7 @@ const PersonalSetting = lazy(
   () => import('./components/settings/PersonalSetting'),
 );
 const Setup = lazy(() => import('./pages/Setup'));
+const EnterpriseQuota = lazy(() => import('./pages/EnterpriseQuota'));
 
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
@@ -245,6 +246,16 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<Loading></Loading>} key={location.pathname}>
                 <Token />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/enterprise'
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <EnterpriseQuota />
               </Suspense>
             </PrivateRoute>
           }
