@@ -97,7 +97,16 @@ func TestEnterpriseTaskFinalizationMatrix(t *testing.T) {
 			count, err := ReconcileEnterpriseTasks(500)
 			require.NoError(t, err)
 			require.Positive(t, count)
-			enterpriseTestBalanced(t, ent.Id)
+			// Refunds to a former member are swept back into this enterprise by
+			// maintenance. Finish that lifecycle here: external dialect suites reuse
+			// one database, unlike SQLite's per-test in-memory connection.
+			require.NoError(t, SweepEnterpriseMemberResidue(ent.Id, member.Id))
+			var former EnterpriseMember
+			require.NoError(t, DB.First(&former, member.Id).Error)
+			require.Zero(t, former.Available)
+			balance := enterpriseTestBalanced(t, ent.Id)
+			require.EqualValues(t, 8900, balance.Unallocated)
+			require.EqualValues(t, 1100, balance.Consumed)
 			var personal User
 			require.NoError(t, DB.First(&personal, user.Id).Error)
 			require.Equal(t, user.Quota, personal.Quota)
