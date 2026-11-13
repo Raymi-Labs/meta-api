@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -47,20 +47,25 @@ export default function InviteModal({
   const [amount, setAmount] = useState();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const submitLock = useRef(false);
 
   const close = () => {
+    if (submitLock.current) return;
     setEmail('');
     setRole('member');
     setAmount(undefined);
+    if (result) onDone();
     setResult(null);
     onClose();
   };
 
   const submit = async () => {
+    if (submitLock.current) return;
     if (!email.trim()) {
       showError(t('请填写邮箱'));
       return;
     }
+    submitLock.current = true;
     setBusy(true);
     try {
       const data = await enterpriseRequest(
@@ -73,10 +78,10 @@ export default function InviteModal({
         },
       );
       setResult(data);
-      onDone();
     } catch (e) {
       showError(e.message);
     } finally {
+      submitLock.current = false;
       setBusy(false);
     }
   };
@@ -100,7 +105,21 @@ export default function InviteModal({
           <Button theme='solid' type='primary' onClick={close}>
             {t('完成')}
           </Button>
-        ) : undefined
+        ) : (
+          <>
+            <Button disabled={busy} onClick={close}>
+              {t('取消')}
+            </Button>
+            <Button
+              theme='solid'
+              type='primary'
+              loading={busy}
+              onClick={submit}
+            >
+              {t('发送邀请')}
+            </Button>
+          </>
+        )
       }
     >
       {result ? (

@@ -20,7 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Link, NavLink, Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Tag } from '@douyinfe/semi-ui';
+import { Button, Tag } from '@douyinfe/semi-ui';
 import {
   BarChart3,
   ChevronLeft,
@@ -56,6 +56,13 @@ export default function EnterpriseConsoleLayout() {
   const ent = useEnterpriseSelf();
 
   if (!ent.enabled || ent.loading) return null;
+  if (ent.error)
+    return (
+      <div className='p-6' role='alert'>
+        <p>{t(ent.error)}</p>
+        <Button onClick={ent.refresh}>{t('重试')}</Button>
+      </div>
+    );
   if (!ent.isManager) return <Navigate to='/console/enterprise' replace />;
 
   const { enterprise, member } = ent.data;
@@ -114,7 +121,7 @@ export default function EnterpriseConsoleLayout() {
           ))}
         </nav>
         <main className='ec-main'>
-          <Outlet context={context} />
+          <Outlet key={`${enterprise.id}:${member.id}`} context={context} />
         </main>
       </div>
     </div>

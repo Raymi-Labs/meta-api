@@ -7657,6 +7657,9 @@
     "当前账号": "Current account",
     "加入企业": "Join enterprise",
     "登录后加入": "Sign in to join",
-    "注册新账号": "Create an account"
+    "注册新账号": "Create an account",
+    "企业信息读取失败，请重试": "Unable to load enterprise information. Please retry.",
+    "禁止全部模型？": "Block all models?",
+    "保存后将无法使用任何模型，已有账单保留。": "After saving, no models can be used. Existing bills will be retained."
   }
 }

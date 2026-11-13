@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -97,7 +103,7 @@ export default function EnterpriseUsage() {
   const [model, setModel] = useState('');
   const [modelDraft, setModelDraft] = useState('');
   const [kind, setKind] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('all');
   const [members, setMembers] = useState([]);
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -130,7 +136,9 @@ export default function EnterpriseUsage() {
       .catch((e) => showError(e.message));
   }, [base]);
 
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const sequence = ++loadSeq.current;
     setLoading(true);
     try {
       const [list, sum] = await Promise.all([
@@ -141,18 +149,22 @@ export default function EnterpriseUsage() {
         }),
         enterpriseRequest('get', `${base}/usage/summary`, undefined, params),
       ]);
+      if (sequence !== loadSeq.current) return;
       setItems(list?.items || []);
       setTotal(list?.total || 0);
       setSummary(sum);
     } catch (e) {
-      showError(e.message);
+      if (sequence === loadSeq.current) showError(e.message);
     } finally {
-      setLoading(false);
+      if (sequence === loadSeq.current) setLoading(false);
     }
   }, [base, params, page, pageSize]);
 
   useEffect(() => {
     load();
+    return () => {
+      loadSeq.current++;
+    };
   }, [load]);
 
   const reset = (setter) => (v) => {
@@ -301,7 +313,7 @@ export default function EnterpriseUsage() {
           value={status}
           onChange={reset(setStatus)}
           optionList={[
-            { value: '', label: t('全部状态') },
+            { value: 'all', label: t('全部状态') },
             ...Object.keys(STATUS).map((s) => ({
               value: s,
               label: t(STATUS[s]),

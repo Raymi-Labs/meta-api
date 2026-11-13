@@ -109,6 +109,13 @@ export default function EnterpriseQuota() {
   };
 
   if (!ent.enabled || ent.loading) return null;
+  if (ent.error)
+    return (
+      <div className='p-6' role='alert'>
+        <p>{t(ent.error)}</p>
+        <Button onClick={ent.refresh}>{t('重试')}</Button>
+      </div>
+    );
   if (!ent.isMember) return <Navigate to='/console/token' replace />;
 
   const { enterprise, member, models, pending_request: pending } = ent.data;
@@ -146,7 +153,8 @@ export default function EnterpriseQuota() {
         <div className='enterprise-quota-title'>
           <h1>{t('我的额度')}</h1>
           <Tag size='large'>
-            {enterprise.name} · {t(ENTERPRISE_ROLE_LABEL[member.role] || member.role)}
+            {enterprise.name} ·{' '}
+            {t(ENTERPRISE_ROLE_LABEL[member.role] || member.role)}
           </Tag>
         </div>
         <Button
@@ -162,7 +170,9 @@ export default function EnterpriseQuota() {
       {pending && (
         <div className='enterprise-quota-pending'>
           <span>
-            {t('申请 {{amount}} 待审批', { amount: renderQuota(pending.amount) })}
+            {t('申请 {{amount}} 待审批', {
+              amount: renderQuota(pending.amount),
+            })}
           </span>
           <Button size='small' onClick={() => cancel(pending.id)}>
             {t('撤销')}
@@ -180,7 +190,9 @@ export default function EnterpriseQuota() {
         <div className='enterprise-quota-figure'>
           <span>
             {t('在途')}
-            <Tooltip content={t('正在进行的请求暂时冻结的金额，结束后多退少补')}>
+            <Tooltip
+              content={t('正在进行的请求暂时冻结的金额，结束后多退少补')}
+            >
               <Info size={14} aria-label={t('在途')} />
             </Tooltip>
           </span>

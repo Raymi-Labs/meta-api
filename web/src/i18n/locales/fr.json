@@ -7777,6 +7777,9 @@
     "当前账号": "Compte actuel",
     "加入企业": "Rejoindre l'entreprise",
     "登录后加入": "Se connecter pour rejoindre",
-    "注册新账号": "Créer un compte"
+    "注册新账号": "Créer un compte",
+    "企业信息读取失败，请重试": "Impossible de charger les informations de l’entreprise. Réessayez.",
+    "禁止全部模型？": "Bloquer tous les modèles ?",
+    "保存后将无法使用任何模型，已有账单保留。": "Après enregistrement, aucun modèle ne pourra être utilisé. Les factures existantes seront conservées."
   }
 }

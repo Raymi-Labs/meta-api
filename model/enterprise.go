@@ -123,11 +123,13 @@ type EnterpriseInvitation struct {
 	InitialQuota int64  `json:"initial_quota" gorm:"not null;default:0"`
 	GrantedQuota int64  `json:"granted_quota" gorm:"not null;default:0"`
 	InviterId    int    `json:"inviter_id" gorm:"not null"`
-	Status       string `json:"status" gorm:"type:varchar(16);not null"`
-	ExpiresAt    int64  `json:"expires_at" gorm:"not null"`
-	AcceptedBy   int    `json:"accepted_by" gorm:"not null;default:0"`
-	AcceptedAt   int64  `json:"accepted_at" gorm:"not null;default:0"`
-	CreatedAt    int64  `json:"created_at" gorm:"not null"`
+	// Bind invitations to the issuing membership generation; zero legacy values require reissue.
+	InviterMemberId int    `json:"-" gorm:"not null;default:0;index"`
+	Status          string `json:"status" gorm:"type:varchar(16);not null"`
+	ExpiresAt       int64  `json:"expires_at" gorm:"not null"`
+	AcceptedBy      int    `json:"accepted_by" gorm:"not null;default:0"`
+	AcceptedAt      int64  `json:"accepted_at" gorm:"not null;default:0"`
+	CreatedAt       int64  `json:"created_at" gorm:"not null"`
 }
 
 // EnterpriseAuditEvent 只追加，不提供修改或删除入口。

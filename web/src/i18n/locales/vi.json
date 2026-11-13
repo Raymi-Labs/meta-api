@@ -8056,6 +8056,9 @@
     "当前账号": "Tài khoản hiện tại",
     "加入企业": "Tham gia doanh nghiệp",
     "登录后加入": "Đăng nhập để tham gia",
-    "注册新账号": "Tạo tài khoản mới"
+    "注册新账号": "Tạo tài khoản mới",
+    "企业信息读取失败，请重试": "Không thể tải thông tin doanh nghiệp. Vui lòng thử lại.",
+    "禁止全部模型？": "Chặn tất cả mô hình?",
+    "保存后将无法使用任何模型，已有账单保留。": "Sau khi lưu, không thể sử dụng mô hình nào. Các hóa đơn hiện có sẽ được giữ lại."
   }
 }

@@ -215,7 +215,7 @@ func canManageEnterpriseMember(actor EnterpriseActor, actorMember, target *Enter
 // 未接受的邀请不占用预算。
 func CreateEnterpriseInvitation(actor EnterpriseActor, enterpriseID int, email, role string, initialQuota int64) (string, *EnterpriseInvitation, error) {
 	email = normalizeEnterpriseEmail(email)
-	if email == "" || len(email) > 254 || !strings.Contains(email, "@") || initialQuota < 0 {
+	if email == "" || len(email) > 254 || !strings.Contains(email, "@") || initialQuota < 0 || initialQuota > enterpriseMaxAmount {
 		return "", nil, ErrEnterpriseInvalidInput
 	}
 	if role == "" {
@@ -240,15 +240,21 @@ func CreateEnterpriseInvitation(actor EnterpriseActor, enterpriseID int, email, 
 		if err != nil {
 			return err
 		}
-		if !actor.Platform {
-			if !EnterpriseRoleAtLeast(actorMember.Role, EnterpriseRoleAdmin) {
-				return ErrEnterpriseForbidden
-			}
-			// 任免管理员是所有者的权限。
-			if role == EnterpriseRoleAdmin && actorMember.Role != EnterpriseRoleOwner {
-				return ErrEnterpriseForbidden
-			}
+		// Invitations delegate an enterprise membership, never an inferred platform role.
+		if actor.Platform || actorMember == nil || !EnterpriseRoleAtLeast(actorMember.Role, EnterpriseRoleAdmin) {
+			return ErrEnterpriseForbidden
 		}
+		if role == EnterpriseRoleAdmin && actorMember.Role != EnterpriseRoleOwner {
+			return ErrEnterpriseForbidden
+		}
+		var issuer User
+		if err := tx.Select("id", "email", "status").Where("id = ?", actor.UserId).First(&issuer).Error; err != nil || issuer.Status != common.UserStatusEnabled {
+			return ErrEnterpriseForbidden
+		}
+		if normalizeEnterpriseEmail(issuer.Email) == email {
+			return ErrEnterpriseSelfOperation
+		}
+		inv.InviterMemberId = actorMember.Id
 		// 同一邮箱只保留最新一封待接受邀请。
 		if err := tx.Model(&EnterpriseInvitation{}).
 			Where("enterprise_id = ? AND email = ? AND status = ?", ent.Id, email, EnterpriseInvitationPending).
@@ -371,6 +377,24 @@ func AcceptEnterpriseInvitation(token string, userID int) (*EnterpriseInvitation
 		if normalizeEnterpriseEmail(user.Email) != inv.Email {
 			return ErrEnterpriseInvitationMail
 		}
+		if inv.InviterId == userID {
+			return ErrEnterpriseSelfOperation
+		}
+		// Old pending invitations without an issuing generation must be reissued.
+		if inv.InviterMemberId <= 0 {
+			return ErrEnterpriseInvitation
+		}
+		inviterMember, err := lockEnterpriseMemberTx(tx, inv.InviterMemberId)
+		if err != nil || inviterMember.EnterpriseId != ent.Id || inviterMember.UserId != inv.InviterId || inviterMember.Status != EnterpriseMemberStatusActive || !EnterpriseRoleAtLeast(inviterMember.Role, EnterpriseRoleAdmin) {
+			return ErrEnterpriseInvitation
+		}
+		if inv.Role == EnterpriseRoleAdmin && inviterMember.Role != EnterpriseRoleOwner {
+			return ErrEnterpriseInvitation
+		}
+		var issuer User
+		if err := tx.Select("id", "status").Where("id = ?", inv.InviterId).First(&issuer).Error; err != nil || issuer.Status != common.UserStatusEnabled {
+			return ErrEnterpriseInvitation
+		}
 		// 条件更新保证多节点并发下只消费一次。
 		res := tx.Model(&EnterpriseInvitation{}).
 			Where("id = ? AND status = ? AND expires_at > ?", inv.Id, EnterpriseInvitationPending, now).
@@ -408,16 +432,7 @@ func AcceptEnterpriseInvitation(token string, userID int) (*EnterpriseInvitation
 		}
 		if inv.InitialQuota > 0 {
 			if ent.Unallocated >= inv.InitialQuota {
-				// 流水记邀请人接受时的实际角色；邀请人已不在企业时记为系统。
-				inviter, inviterRole := EnterpriseActor{UserId: inv.InviterId}, EnterpriseActorSystem
-				var inviterMember EnterpriseMember
-				if err := tx.Select("role").Where("enterprise_id = ? AND user_id = ? AND status = ?", ent.Id, inv.InviterId, EnterpriseMemberStatusActive).
-					Limit(1).Find(&inviterMember).Error; err != nil {
-					return err
-				}
-				if inviterMember.Role != "" {
-					inviterRole = inviterMember.Role
-				}
+				inviter, inviterRole := EnterpriseActor{UserId: inv.InviterId}, inviterMember.Role
 				if err := transferEnterpriseQuotaTx(tx, ent, member, inv.InitialQuota, EnterpriseLedgerInviteGrant, inviter, inviterRole, "邀请初始额度"); err != nil {
 					return err
 				}
@@ -462,6 +477,9 @@ func SetEnterpriseMemberRole(actor EnterpriseActor, enterpriseID, memberID int, 
 		if target.Role == role {
 			return nil
 		}
+		if err := revokeInvitationsByMemberTx(tx, ent.Id, target.UserId); err != nil {
+			return err
+		}
 		if err := tx.Model(&EnterpriseMember{}).Where("id = ?", target.Id).
 			Updates(map[string]any{"role": role, "updated_at": time.Now().Unix()}).Error; err != nil {
 			return err
@@ -488,6 +506,9 @@ func TransferEnterpriseOwnership(actor EnterpriseActor, enterpriseID, memberID i
 		}
 		if target.Role == EnterpriseRoleOwner {
 			return nil
+		}
+		if err := revokeInvitationsByMemberTx(tx, ent.Id, ent.OwnerUserId); err != nil {
+			return err
 		}
 		now := time.Now().Unix()
 		if err := tx.Model(&EnterpriseMember{}).
@@ -549,10 +570,18 @@ func SetEnterpriseMemberModels(actor EnterpriseActor, enterpriseID, memberID int
 	})
 }
 
+// revokeInvitationsByMemberTx invalidates delegated authority before membership transitions.
+func revokeInvitationsByMemberTx(tx *gorm.DB, enterpriseID, userID int) error {
+	return tx.Model(&EnterpriseInvitation{}).Where("enterprise_id = ? AND inviter_id = ? AND status = ?", enterpriseID, userID, EnterpriseInvitationPending).Update("status", EnterpriseInvitationRevoked).Error
+}
+
 // deactivateEnterpriseMemberTx 使成员关系失效：阻止新请求、令牌立即失效、待审批申请失效，
 // 并把剩余额度（无论正负）并入未分配。在途预留保留在成员行上，结算后由 SweepEnterpriseMemberResidue 归并。
 func deactivateEnterpriseMemberTx(tx *gorm.DB, ent *Enterprise, target *EnterpriseMember, status string,
 	actor EnterpriseActor, actorMember *EnterpriseMember, reason string) ([]string, error) {
+	if err := revokeInvitationsByMemberTx(tx, ent.Id, target.UserId); err != nil {
+		return nil, err
+	}
 	now := time.Now().Unix()
 	if err := tx.Model(&EnterpriseMember{}).Where("id = ?", target.Id).Updates(map[string]any{
 		"status": status, "active_user_id": nil, "left_at": now, "updated_at": now,

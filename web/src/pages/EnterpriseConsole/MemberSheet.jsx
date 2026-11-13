@@ -71,10 +71,16 @@ function ModelScope({ base, member, editable, onDone }) {
       .catch((e) => showError(e.message));
   }, [base]);
 
-  const save = async () => {
-    // 指定模型但一个都不选，等于禁用全部模型，这里拦下来。
-    if (mode === 'custom' && models.length === 0) {
-      showError(t('请选择模型'));
+  const save = async (confirmedEmpty = false) => {
+    if (mode === 'custom' && models.length === 0 && confirmedEmpty !== true) {
+      Modal.confirm({
+        className: 'ec-modal',
+        title: t('禁止全部模型？'),
+        content: t('保存后将无法使用任何模型，已有账单保留。'),
+        okText: t('确认'),
+        cancelText: t('取消'),
+        onOk: () => save(true),
+      });
       return;
     }
     setBusy(true);
@@ -117,7 +123,12 @@ function ModelScope({ base, member, editable, onDone }) {
       )}
       {editable && (
         <div>
-          <Button theme='solid' type='primary' loading={busy} onClick={save}>
+          <Button
+            theme='solid'
+            type='primary'
+            loading={busy}
+            onClick={() => save()}
+          >
             {t('保存')}
           </Button>
         </div>

@@ -17,13 +17,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
   Input,
   InputNumber,
+  Modal,
   Radio,
   RadioGroup,
   Select,
@@ -128,12 +135,15 @@ export default function EnterpriseSettings() {
   const [loading, setLoading] = useState(false);
   const patch = (part) => setForm((f) => ({ ...f, ...part }));
 
+  const loadFormSeq = useRef(0);
   const loadForm = useCallback(async () => {
+    const sequence = ++loadFormSeq.current;
     try {
       const [overview, models] = await Promise.all([
         enterpriseRequest('get', `${base}/overview`),
         enterpriseRequest('get', `${base}/model-options`),
       ]);
+      if (sequence !== loadFormSeq.current) return;
       const e = overview.enterprise;
       setOptions(models || []);
       setForm({
@@ -144,43 +154,62 @@ export default function EnterpriseSettings() {
         threshold: quotaToDisplayAmount(e.low_balance_threshold),
       });
     } catch (err) {
-      showError(err.message);
+      if (sequence === loadFormSeq.current) showError(err.message);
     }
   }, [base]);
 
+  const loadLogsSeq = useRef(0);
   const loadLogs = useCallback(async () => {
+    const sequence = ++loadLogsSeq.current;
     setLoading(true);
     try {
       const data = await enterpriseRequest('get', `${base}/audit`, undefined, {
         p: page,
         page_size: pageSize,
       });
+      if (sequence !== loadLogsSeq.current) return;
       setLogs(data?.items || []);
       setTotal(data?.total || 0);
     } catch (err) {
-      showError(err.message);
+      if (sequence === loadLogsSeq.current) showError(err.message);
     } finally {
-      setLoading(false);
+      if (sequence === loadLogsSeq.current) setLoading(false);
     }
   }, [base, page, pageSize]);
 
   useEffect(() => {
     loadForm();
+    return () => {
+      loadFormSeq.current++;
+    };
   }, [loadForm]);
   useEffect(() => {
     loadLogs();
+    return () => {
+      loadLogsSeq.current++;
+    };
   }, [loadLogs]);
 
   const zones = useMemo(() => zoneList(form?.timezone), [form?.timezone]);
 
-  const save = async () => {
+  const save = async (confirmedEmpty = false) => {
     if (!form.name.trim()) {
       showError(t('请填写名称'));
       return;
     }
-    // 指定模型但一个都不选，等于禁用全部模型，这里拦下来。
-    if (form.model_mode === 'custom' && form.models.length === 0) {
-      showError(t('请选择模型'));
+    if (
+      form.model_mode === 'custom' &&
+      form.models.length === 0 &&
+      confirmedEmpty !== true
+    ) {
+      Modal.confirm({
+        className: 'ec-modal',
+        title: t('禁止全部模型？'),
+        content: t('保存后将无法使用任何模型，已有账单保留。'),
+        okText: t('确认'),
+        cancelText: t('取消'),
+        onOk: () => save(true),
+      });
       return;
     }
     setBusy(true);
@@ -235,7 +264,12 @@ export default function EnterpriseSettings() {
       <div className='em-head'>
         <h1>{t('设置')}</h1>
         {owner && form && (
-          <Button theme='solid' type='primary' loading={busy} onClick={save}>
+          <Button
+            theme='solid'
+            type='primary'
+            loading={busy}
+            onClick={() => save()}
+          >
             {t('保存')}
           </Button>
         )}

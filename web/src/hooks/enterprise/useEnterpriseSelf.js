@@ -17,14 +17,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useCallback, useContext, useEffect, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+} from 'react';
 import { StatusContext } from '../../context/Status';
 import { API } from '../../helpers/apiCore';
 import { getUserIdFromLocalStorage } from '../../helpers/storage';
 
 // 登录账号的企业身份快照，所有组件共用同一份，避免侧栏、顶栏、令牌弹窗各自请求。
 // 功能开关关闭或未登录时不发请求。
-let snapshot = { loading: false, loaded: false, userId: 0, data: null };
+let snapshot = {
+  loading: false,
+  loaded: false,
+  userId: 0,
+  data: null,
+  error: null,
+};
 const listeners = new Set();
 let requestSeq = 0;
 
@@ -47,23 +58,36 @@ export async function refreshEnterpriseSelf() {
   const userId = currentUserId();
   const seq = ++requestSeq;
   if (userId <= 0) {
-    emit({ loading: false, loaded: false, userId: 0, data: null });
+    emit({ loading: false, loaded: false, userId: 0, data: null, error: null });
     return;
   }
-  emit({ ...snapshot, loading: true, userId });
+  const sameAccount = snapshot.userId === userId;
+  emit({
+    loading: true,
+    loaded: sameAccount && snapshot.loaded,
+    userId,
+    data: sameAccount ? snapshot.data : null,
+    error: null,
+  });
   let data = null;
+  let error = null;
   try {
     const res = await API.get('/api/enterprise/self', {
       skipGlobalLoading: true,
       skipErrorHandler: true,
       disableDuplicate: true,
     });
-    if (res.data?.success) data = res.data.data || null;
+    if (!res.data?.success) throw new Error('enterprise identity unavailable');
+    data = res.data.data || null;
   } catch {
-    // 查询失败按未加入处理，不影响控制台其余功能。
+    error = '企业信息读取失败，请重试';
   }
   if (seq !== requestSeq) return;
-  emit({ loading: false, loaded: true, userId, data });
+  if (currentUserId() !== userId) {
+    emit({ loading: false, loaded: false, userId: 0, data: null, error: null });
+    return;
+  }
+  emit({ loading: false, loaded: true, userId, data, error });
 }
 
 export function useEnterpriseSelf() {
@@ -83,7 +107,9 @@ export function useEnterpriseSelf() {
   const data = enabled && matches ? state.data : null;
   return {
     enabled,
-    loading: enabled && (needsFetch || busy),
+    loading: enabled && (needsFetch || (busy && !state.loaded)),
+    refreshing: enabled && busy,
+    error: enabled && matches ? state.error : null,
     data,
     isMember: !!data,
     isManager: !!data?.manager,

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -59,7 +59,9 @@ export default function EnterpriseMembers() {
   const [sheet, setSheet] = useState(null);
   const [version, setVersion] = useState(0);
 
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const sequence = ++loadSeq.current;
     setLoading(true);
     try {
       const data = await enterpriseRequest(
@@ -68,17 +70,21 @@ export default function EnterpriseMembers() {
         undefined,
         { p: page, page_size: pageSize, status, keyword },
       );
+      if (sequence !== loadSeq.current) return;
       setItems(data?.items || []);
       setTotal(data?.total || 0);
     } catch (e) {
-      showError(e.message);
+      if (sequence === loadSeq.current) showError(e.message);
     } finally {
-      setLoading(false);
+      if (sequence === loadSeq.current) setLoading(false);
     }
   }, [enterpriseId, page, pageSize, status, keyword]);
 
   useEffect(() => {
     load();
+    return () => {
+      loadSeq.current++;
+    };
   }, [load]);
 
   const refresh = () => {

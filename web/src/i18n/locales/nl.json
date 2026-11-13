@@ -7445,6 +7445,9 @@
     "当前账号": "Huidig account",
     "加入企业": "Toetreden tot bedrijf",
     "登录后加入": "Inloggen en toetreden",
-    "注册新账号": "Nieuw account aanmaken"
+    "注册新账号": "Nieuw account aanmaken",
+    "企业信息读取失败，请重试": "Bedrijfsinformatie kon niet worden geladen. Probeer het opnieuw.",
+    "禁止全部模型？": "Alle modellen blokkeren?",
+    "保存后将无法使用任何模型，已有账单保留。": "Na het opslaan kunnen geen modellen worden gebruikt. Bestaande facturen blijven behouden."
   }
 }

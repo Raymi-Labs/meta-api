@@ -7445,6 +7445,9 @@
     "当前账号": "Account attuale",
     "加入企业": "Unisciti all'azienda",
     "登录后加入": "Accedi per unirti",
-    "注册新账号": "Crea un account"
+    "注册新账号": "Crea un account",
+    "企业信息读取失败，请重试": "Impossibile caricare le informazioni aziendali. Riprova.",
+    "禁止全部模型？": "Bloccare tutti i modelli?",
+    "保存后将无法使用任何模型，已有账单保留。": "Dopo il salvataggio non sarà possibile usare alcun modello. Le fatture esistenti saranno conservate."
   }
 }

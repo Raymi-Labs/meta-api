@@ -133,7 +133,23 @@
 }
 @media (max-width: 768px) {
   .ec-top {
-    padding: 0 12px;
+    height: auto;
+    min-height: 56px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ec-top-left {
+    flex: 1 1 100%;
+  }
+  .ec-top-right {
+    max-width: 100%;
+    margin-left: auto;
+  }
+  .ec-back {
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: normal;
   }
   .ec-top .semi-tag,
   .ec-divider {
