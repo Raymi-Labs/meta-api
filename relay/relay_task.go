@@ -61,7 +61,7 @@ func ResolveOriginTask(c *gin.Context, info *relaycommon.RelayInfo) *dto.TaskErr
 	if err != nil {
 		return service.TaskErrorWrapper(err, "get_origin_task_failed", http.StatusInternalServerError)
 	}
-	if !exist {
+	if !exist || !service.TaskPayerAllowed(c, originTask) {
 		return service.TaskErrorWrapperLocal(errors.New("task_origin_not_exist"), "task_not_exist", http.StatusBadRequest)
 	}
 
@@ -243,6 +243,9 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 	}
 
 	// 9. 发送请求
+	if info.EnterpriseId > 0 {
+		c.Set("enterprise_task_submission_uncertain", true)
+	}
 	if common.IsVideoTaskChannel(info.ChannelType) {
 		// No shared provider idempotency contract: an error response may follow
 		// an accepted paid task. Never automatically resubmit this video attempt.
@@ -252,6 +255,7 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 	if err != nil {
 		var apiErr *types.NewAPIError
 		if errors.As(err, &apiErr) && apiErr.GetErrorCode() == types.ErrorCodeChannelHeaderOverrideInvalid {
+			c.Set("enterprise_task_submission_uncertain", false)
 			taskErr := service.TaskErrorFromAPIError(apiErr)
 			taskErr.LocalError = true
 			return nil, taskErr
@@ -259,6 +263,9 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 		return nil, service.TaskErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices) {
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			c.Set("enterprise_task_submission_uncertain", false)
+		}
 		responseBody, _ := io.ReadAll(resp.Body)
 		service.CloseResponseBodyGracefully(resp)
 		taskErr := service.TaskErrorWrapper(fmt.Errorf("%s", string(responseBody)), "fail_to_fetch_task", resp.StatusCode)
@@ -367,7 +374,9 @@ func sunoFetchRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *dto.Ta
 			return
 		}
 		for _, task := range taskModels {
-			tasks = append(tasks, PublicTaskModel2Dto(task))
+			if service.TaskPayerAllowed(c, task) {
+				tasks = append(tasks, PublicTaskModel2Dto(task))
+			}
 		}
 	} else {
 		tasks = make([]any, 0)
@@ -388,7 +397,7 @@ func sunoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *dt
 		taskResp = service.TaskErrorWrapper(err, "get_task_failed", http.StatusInternalServerError)
 		return
 	}
-	if !exist {
+	if !exist || !service.TaskPayerAllowed(c, originTask) {
 		taskResp = service.TaskErrorWrapperLocal(errors.New("task_not_exist"), "task_not_exist", http.StatusBadRequest)
 		return
 	}
@@ -412,7 +421,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		taskResp = service.TaskErrorWrapper(err, "get_task_failed", http.StatusInternalServerError)
 		return
 	}
-	if !exist {
+	if !exist || !service.TaskPayerAllowed(c, originTask) {
 		taskResp = service.TaskErrorWrapperLocal(errors.New("task_not_exist"), "task_not_exist", http.StatusBadRequest)
 		return
 	}
@@ -472,6 +481,7 @@ func tryRealtimeFetch(c *gin.Context, task *model.Task, isOpenAIVideoAPI bool) [
 	if err != nil {
 		return nil
 	}
+	channelModel = service.EnterpriseTaskChannel(channelModel, task)
 	isH3 := channelModel.Type == constant.ChannelTypeMiniMax && common.IsMiniMaxH3Model(task.Properties.UpstreamModelName)
 	if channelModel.Type != constant.ChannelTypeVertexAi && channelModel.Type != constant.ChannelTypeGemini && !isH3 {
 		return nil

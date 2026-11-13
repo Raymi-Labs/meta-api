@@ -36,7 +36,7 @@ func tokenRoutingDraft(c *gin.Context, token *model.Token) error {
 
 func tokenCatalogGroups(userID int, token *model.Token) ([]string, error) {
 	if token.EnterpriseId > 0 {
-		// 企业令牌的可用分组由企业计费用户组决定，与成员个人的用户组无关。
+		// 企业令牌保留账号授权范围；企业归属验证不改变渠道权限。
 		userGroup, err := tokenBaseGroup(userID, token)
 		if err != nil {
 			return nil, err

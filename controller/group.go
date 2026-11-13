@@ -36,25 +36,35 @@ func GetGroups(c *gin.Context) {
 
 func GetUserGroups(c *gin.Context) {
 	usableGroups := make(map[string]map[string]interface{})
-	userGroup := ""
 	userId := c.GetInt("id")
-	if strings.TrimSpace(c.Query("payer")) == model.TokenPayerEnterprise {
-		// 企业付款的令牌：可选分组与倍率按企业计费用户组计算。
-		ent, _, err := model.GetEnterprisePayer(userId)
-		if err != nil {
+	payer, err := parseTokenPayer(c.Query("payer"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	token := &model.Token{UserId: userId}
+	if payer == model.TokenPayerEnterprise {
+		if err := enterprisePayerDraft(userId, token); err != nil {
 			enterpriseApiError(c, err)
 			return
 		}
-		userGroup = ent.BillingGroup
-	} else {
-		userGroup, _ = model.GetUserGroup(userId, false)
+	}
+	userGroup, err := tokenBaseGroup(userId, token)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	billingGroup, err := tokenBillingGroup(userId, token)
+	if err != nil {
+		common.ApiError(c, err)
+		return
 	}
 	userUsableGroups := service.GetUserUsableGroups(userGroup)
 	for groupName, _ := range ratio_setting.GetGroupRatioCopy() {
 		// UserUsableGroups contains the groups that the user can use
 		if desc, ok := userUsableGroups[groupName]; ok {
 			usableGroups[groupName] = map[string]interface{}{
-				"ratio": service.GetUserGroupRatio(userGroup, groupName),
+				"ratio": service.GetUserGroupRatio(billingGroup, groupName),
 				"desc":  desc,
 			}
 		}

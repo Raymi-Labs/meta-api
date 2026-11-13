@@ -74,12 +74,18 @@ func GetMjRequestModel(relayMode int, midjRequest *dto.MidjourneyRequest) (strin
 }
 
 func CoverPlusActionToNormalAction(midjRequest *dto.MidjourneyRequest) *dto.MidjourneyResponse {
+	if midjRequest == nil {
+		return MidjourneyErrorWrapper(constant.MjRequestError, "invalid_request")
+	}
 	// "customId": "MJ::JOB::upsample::2::3dbbd469-36af-4a0f-8f02-df6c579e7011"
 	customId := midjRequest.CustomId
 	if customId == "" {
 		return MidjourneyErrorWrapper(constant.MjRequestError, "custom_id_is_required")
 	}
 	splits := strings.Split(customId, "::")
+	if len(splits) < 2 || (splits[1] == "JOB" && len(splits) < 3) {
+		return MidjourneyErrorWrapper(constant.MjRequestError, "invalid_custom_id")
+	}
 	var action string
 	if splits[1] == "JOB" {
 		action = splits[2]
@@ -91,6 +97,9 @@ func CoverPlusActionToNormalAction(midjRequest *dto.MidjourneyRequest) *dto.Midj
 		return MidjourneyErrorWrapper(constant.MjRequestError, "unknown_action")
 	}
 	if strings.Contains(action, "upsample") {
+		if len(splits) < 4 {
+			return MidjourneyErrorWrapper(constant.MjRequestError, "index_parse_failed")
+		}
 		index, err := strconv.Atoi(splits[3])
 		if err != nil {
 			return MidjourneyErrorWrapper(constant.MjRequestError, "index_parse_failed")
@@ -100,6 +109,9 @@ func CoverPlusActionToNormalAction(midjRequest *dto.MidjourneyRequest) *dto.Midj
 	} else if strings.Contains(action, "variation") {
 		midjRequest.Index = 1
 		if action == "variation" {
+			if len(splits) < 4 {
+				return MidjourneyErrorWrapper(constant.MjRequestError, "index_parse_failed")
+			}
 			index, err := strconv.Atoi(splits[3])
 			if err != nil {
 				return MidjourneyErrorWrapper(constant.MjRequestError, "index_parse_failed")
@@ -134,7 +146,7 @@ func CoverPlusActionToNormalAction(midjRequest *dto.MidjourneyRequest) *dto.Midj
 
 func ConvertSimpleChangeParams(content string) *dto.MidjourneyRequest {
 	split := strings.Split(content, " ")
-	if len(split) != 2 {
+	if len(split) != 2 || split[0] == "" || split[1] == "" {
 		return nil
 	}
 
@@ -153,6 +165,9 @@ func ConvertSimpleChangeParams(content string) *dto.MidjourneyRequest {
 		return nil
 	}
 
+	if len(action) != 2 {
+		return nil
+	}
 	index, err := strconv.Atoi(action[1:2])
 	if err != nil || index < 1 || index > 4 {
 		return nil

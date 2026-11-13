@@ -508,11 +508,8 @@ func TestEnterpriseViolationFee(t *testing.T) {
 func TestEnterpriseUnsupportedEntrancesFailClosed(t *testing.T) {
 	f := newEnterpriseBilling(t, 1_000_000, 0)
 	for name, change := range map[string]func(*relaycommon.RelayInfo){
-		"异步任务":  func(i *relaycommon.RelayInfo) { i.TaskRelayInfo = &relaycommon.TaskRelayInfo{} },
-		"网页体验区": func(i *relaycommon.RelayInfo) { i.IsPlayground = true },
-		"实时语音":  func(i *relaycommon.RelayInfo) { i.RelayFormat = types.RelayFormatOpenAIRealtime },
-		"缺请求号":  func(i *relaycommon.RelayInfo) { i.RequestId = "" },
-		"缺成员":   func(i *relaycommon.RelayInfo) { i.EnterpriseMemberId = 0 },
+		"缺请求号": func(i *relaycommon.RelayInfo) { i.RequestId = "" },
+		"缺成员":  func(i *relaycommon.RelayInfo) { i.EnterpriseMemberId = 0 },
 	} {
 		t.Run(name, func(t *testing.T) {
 			c, info := f.request(1000, 0)

@@ -10,7 +10,7 @@ import (
 )
 
 // 企业令牌（付款方为企业）在控制台里的差异集中在这里：
-// 可选分组与倍率按企业计费用户组计算，模型目录叠加企业与成员的模型限制，
+// 可选分组沿用个人授权，倍率按企业计费用户组计算，模型目录叠加企业与成员的模型限制，
 // 额度展示读企业账本里的令牌上限，不读令牌表的剩余额度。
 
 func parseTokenPayer(raw string) (string, error) {
@@ -38,8 +38,22 @@ func tokenEnterpriseScope(userID int, token *model.Token) (*model.Enterprise, *m
 	return model.GetEnterpriseTokenContext(token.EnterpriseId, token.MembershipId, userID)
 }
 
-// tokenBaseGroup 是决定令牌可选分组与倍率的用户组：个人令牌取账号用户组，企业令牌取企业计费用户组。
+// tokenBaseGroup 返回账号的授权分组。企业归属只用于验证，不能改变可选渠道。
 func tokenBaseGroup(userID int, token *model.Token) (string, error) {
+	if token != nil && token.UserId != 0 && token.UserId != userID {
+		return "", model.ErrEnterpriseNotFound
+	}
+	if _, _, err := tokenEnterpriseScope(userID, token); err != nil {
+		return "", err
+	}
+	return model.GetUserGroup(userID, false)
+}
+
+// tokenBillingGroup 只用于价格显示；企业读取失败时不得回退到个人价格。
+func tokenBillingGroup(userID int, token *model.Token) (string, error) {
+	if token != nil && token.UserId != 0 && token.UserId != userID {
+		return "", model.ErrEnterpriseNotFound
+	}
 	ent, _, err := tokenEnterpriseScope(userID, token)
 	if err != nil {
 		return "", err

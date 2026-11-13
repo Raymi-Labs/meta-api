@@ -472,13 +472,19 @@ func GetTokenByKey(key string, fromDB bool) (token *Token, err error) {
 }
 
 func GetReusableImagePlaygroundToken(userId int, minExpiredTime int64) (*Token, error) {
+	return GetReusableImagePlaygroundTokenForPayer(userId, minExpiredTime, 0, 0)
+}
+
+// GetReusableImagePlaygroundTokenForPayer keeps personal, enterprise and former
+// membership sessions separate. The caller resolves payer IDs from the account.
+func GetReusableImagePlaygroundTokenForPayer(userId int, minExpiredTime int64, enterpriseID, membershipID int) (*Token, error) {
+	if userId <= 0 || enterpriseID < 0 || membershipID < 0 || (enterpriseID == 0) != (membershipID == 0) {
+		return nil, ErrEnterpriseInvalidInput
+	}
 	token := &Token{}
 	err := DB.Where(
-		"user_id = ? AND source_type = ? AND status = ? AND expired_time > ?",
-		userId,
-		TokenSourceTypeImagePlayground,
-		common.TokenStatusEnabled,
-		minExpiredTime,
+		"user_id = ? AND source_type = ? AND status = ? AND expired_time > ? AND enterprise_id = ? AND membership_id = ?",
+		userId, TokenSourceTypeImagePlayground, common.TokenStatusEnabled, minExpiredTime, enterpriseID, membershipID,
 	).Order("expired_time desc").First(token).Error
 	return token, err
 }

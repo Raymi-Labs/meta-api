@@ -155,8 +155,18 @@ func TaskPollingLoop() {
 			for _, task := range tasks {
 				upstreamID := task.GetUpstreamTaskID()
 				if upstreamID == "" {
+					if task.EnterpriseId > 0 {
+						logger.LogError(ctx, fmt.Sprintf("enterprise task %d missing upstream ID; keep billing evidence for reconciliation", task.ID))
+						continue
+					}
 					// 统计失败的未完成任务
 					nullTaskIds = append(nullTaskIds, task.ID)
+					continue
+				}
+				if task.EnterpriseId > 0 {
+					// Upstream task IDs are only unique within a provider account.
+					// Do not let a personal/other-company row overwrite this payer.
+					DispatchPlatformUpdate(platform, map[int][]string{task.ChannelId: {upstreamID}}, map[string]*model.Task{upstreamID: task})
 					continue
 				}
 				taskM[upstreamID] = task
@@ -220,6 +230,10 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 		var failedIDs []int64
 		for _, upstreamID := range taskIds {
 			if t, ok := taskM[upstreamID]; ok {
+				if t.EnterpriseId > 0 {
+					logger.LogError(ctx, fmt.Sprintf("enterprise task %s channel unavailable; preserving pending outcome", t.TaskID))
+					continue
+				}
 				failedIDs = append(failedIDs, t.ID)
 			}
 		}
@@ -236,8 +250,9 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 	// One batch must not combine owners or credentials: both may be used by
 	// channel header overrides, and saved keys survive channel key rotation.
 	type batchIdentity struct {
-		userID int
-		key    string
+		userID  int
+		baseURL string
+		key     string
 	}
 	batches := make(map[batchIdentity][]string)
 	for _, id := range taskIds {
@@ -249,12 +264,14 @@ func updateSunoTasks(ctx context.Context, channelId int, taskIds []string, taskM
 		if task.PrivateData.Key != "" {
 			key = task.PrivateData.Key
 		}
-		identity := batchIdentity{task.UserId, key}
+		identity := batchIdentity{userID: task.UserId, key: key, baseURL: EnterpriseTaskChannel(ch, task).GetBaseURL()}
 		batches[identity] = append(batches[identity], id)
 	}
 	var batchErr error
 	for identity, ids := range batches {
-		if err := updateSunoBatch(ctx, ch, ids, taskM, identity.userID, identity.key); err != nil {
+		batchChannel := *ch
+		batchChannel.BaseURL = &identity.baseURL
+		if err := updateSunoBatch(ctx, &batchChannel, ids, taskM, identity.userID, identity.key); err != nil {
 			batchErr = err
 		}
 	}
@@ -318,6 +335,7 @@ func updateSunoBatch(ctx context.Context, ch *model.Channel, taskIds []string, t
 			continue
 		}
 
+		previousStatus := task.Status
 		task.Status = lo.If(model.TaskStatus(responseItem.Status) != "", model.TaskStatus(responseItem.Status)).Else(task.Status)
 		task.FailReason = lo.If(responseItem.FailReason != "", responseItem.FailReason).Else(task.FailReason)
 		task.SubmitTime = lo.If(responseItem.SubmitTime != 0, responseItem.SubmitTime).Else(task.SubmitTime)
@@ -326,13 +344,30 @@ func updateSunoBatch(ctx context.Context, ch *model.Channel, taskIds []string, t
 		if responseItem.FailReason != "" || task.Status == model.TaskStatusFailure {
 			logger.LogInfo(ctx, task.TaskID+" 构建失败，"+task.FailReason)
 			task.Progress = "100%"
-			RefundTaskQuota(ctx, task, task.FailReason)
+			if task.EnterpriseId <= 0 {
+				RefundTaskQuota(ctx, task, task.FailReason)
+			}
 		}
 		if responseItem.Status == model.TaskStatusSuccess {
 			task.Progress = "100%"
 		}
 		task.Data = responseItem.Data
 
+		if task.EnterpriseId > 0 {
+			if task.FailReason != "" {
+				task.Status = model.TaskStatusFailure
+			}
+			won, updateErr := task.UpdateWithStatus(previousStatus)
+			if updateErr != nil {
+				return updateErr
+			}
+			if won && (task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure) {
+				if err := finalizeEnterpriseTask(ctx, task); err != nil {
+					return err
+				}
+			}
+			continue
+		}
 		err = task.Update()
 		if err != nil {
 			common.SysLog("UpdateSunoTask task error: " + err.Error())
@@ -400,6 +435,10 @@ func updateVideoTasks(ctx context.Context, platform constant.TaskPlatform, chann
 		var failedIDs []int64
 		for _, upstreamID := range taskIds {
 			if t, ok := taskM[upstreamID]; ok {
+				if t.EnterpriseId > 0 {
+					logger.LogError(ctx, fmt.Sprintf("enterprise task %s channel unavailable; preserving pending outcome", t.TaskID))
+					continue
+				}
 				failedIDs = append(failedIDs, t.ID)
 			}
 		}
@@ -426,17 +465,19 @@ func updateVideoTasks(ctx context.Context, platform constant.TaskPlatform, chann
 }
 
 func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *model.Channel, taskId string, taskM map[string]*model.Task) error {
-	baseURL := constant.ChannelBaseURLs[ch.Type]
-	if ch.GetBaseURL() != "" {
-		baseURL = ch.GetBaseURL()
-	}
-	proxy := ch.GetSetting().Proxy
 
 	task := taskM[taskId]
 	if task == nil {
 		logger.LogError(ctx, fmt.Sprintf("Task %s not found in taskM", taskId))
 		return fmt.Errorf("task %s not found", taskId)
 	}
+	ch = EnterpriseTaskChannel(ch, task)
+	baseURL := constant.ChannelBaseURLs[ch.Type]
+	if ch.GetBaseURL() != "" {
+		baseURL = ch.GetBaseURL()
+	}
+	proxy := ch.GetSetting().Proxy
+
 	key := ch.Key
 
 	privateData := task.PrivateData
@@ -504,6 +545,9 @@ func ApplyVideoTaskResult(ctx context.Context, adaptor TaskPollingAdaptor, task 
 		return errors.New("missing task result")
 	}
 	if task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure {
+		if task.EnterpriseId > 0 {
+			return finalizeEnterpriseTask(ctx, task)
+		}
 		return nil
 	}
 	original := *task
@@ -567,6 +611,15 @@ func ApplyVideoTaskResult(ctx context.Context, adaptor TaskPollingAdaptor, task 
 		task.Progress = taskResult.Progress
 	}
 
+	if task.EnterpriseId > 0 && (shouldSettle || shouldRefund || task.Status == model.TaskStatusFailure) {
+		task.EnterpriseBillingPending = true
+		task.EnterpriseFinalQuota = int64(task.Quota)
+		if task.Status == model.TaskStatusFailure {
+			task.EnterpriseFinalQuota = 0
+		} else {
+			settleTaskBillingOnComplete(ctx, adaptor, task, taskResult)
+		}
+	}
 	isDone := task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure
 	if isDone && snap.Status != task.Status {
 		won, err := task.UpdateWithStatus(snap.Status)
@@ -590,6 +643,9 @@ func ApplyVideoTaskResult(ctx context.Context, adaptor TaskPollingAdaptor, task 
 		logger.LogDebug(ctx, fmt.Sprintf("No update needed for task %s", task.TaskID))
 	}
 
+	if task.EnterpriseId > 0 && isDone {
+		return finalizeEnterpriseTask(ctx, task)
+	}
 	if shouldSettle {
 		settleTaskBillingOnComplete(ctx, adaptor, task, taskResult)
 		if task.Quota != quota {

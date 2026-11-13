@@ -1,10 +1,10 @@
 name: Enterprise workspace safety
 on:
   push:
-    branches: [main, codex/enterprise-acceptance]
-    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
+    branches: [main, codex/enterprise-acceptance, codex/enterprise-api-parity]
+    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'relay/**', 'constant/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
   pull_request:
-    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
+    paths: ['model/**', 'service/**', 'middleware/**', 'controller/**', 'router/**', 'common/**', 'relay/**', 'constant/**', 'web/src/**', 'web/scripts/enterprise*', '.github/workflows/enterprise-safety.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -51,7 +51,7 @@ jobs:
           TEST_COMPAT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
         run: go test -p 2 ./model -run Enterprise -count=1 -timeout=180s -v
       - name: Verify HTTP, settlement and personal payer isolation
-        run: go test -p 2 ./router ./service ./controller ./middleware ./pkg/group_health ./pkg/route_insight -count=1 -timeout=240s
+        run: go test -p 2 ./router ./service ./controller ./middleware ./pkg/group_health ./pkg/route_insight ./relay ./relay/helper ./relay/channel/openai -count=1 -timeout=240s
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'

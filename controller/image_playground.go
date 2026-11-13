@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
@@ -32,6 +33,7 @@ type imagePlaygroundSessionResponse struct {
 	URL       string `json:"url"`
 	ExpiresAt int64  `json:"expires_at"`
 	Model     string `json:"model"`
+	Payer     string `json:"payer"`
 }
 
 type imagePlaygroundLaunchSettings struct {
@@ -61,10 +63,21 @@ type imagePlaygroundLaunchProfile struct {
 }
 
 func CreateImagePlaygroundSession(c *gin.Context) {
+	defer common.CleanupBodyStorage(c)
 	userId := c.GetInt("id")
 	if userId == 0 {
 		common.ApiErrorMsg(c, "未登录")
 		return
+	}
+
+	scope, err := middleware.ResolvePlaygroundPayer(c)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	enterpriseID, membershipID := 0, 0
+	if scope != nil {
+		enterpriseID, membershipID = scope.Enterprise.Id, scope.Member.Id
 	}
 
 	now := common.GetTimestamp()
@@ -74,19 +87,19 @@ func CreateImagePlaygroundSession(c *gin.Context) {
 
 	var supportsEcommerce bool
 	minExpiredTime := now + int64(imagePlaygroundRefreshWindow/time.Second)
-	token, err := model.GetReusableImagePlaygroundToken(userId, minExpiredTime)
+	token, err := model.GetReusableImagePlaygroundTokenForPayer(userId, minExpiredTime, enterpriseID, membershipID)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			common.ApiError(c, err)
 			return
 		}
-		token, supportsEcommerce, err = createImagePlaygroundToken(userId, now)
+		token, supportsEcommerce, err = createImagePlaygroundToken(userId, now, scope)
 		if err != nil {
 			common.ApiError(c, err)
 			return
 		}
 	} else {
-		changed, refreshed, refreshErr := refreshImagePlaygroundToken(token, userId)
+		changed, refreshed, refreshErr := refreshImagePlaygroundToken(token, userId, scope)
 		// 即便 refreshErr 非空，clearImagePlaygroundTokenModelLimits 可能已经把 ModelLimits 改掉，
 		// 这里仍把可持久化的内存改动写回，避免 in-memory/DB 状态长时间漂移。
 		if changed {
@@ -112,15 +125,16 @@ func CreateImagePlaygroundSession(c *gin.Context) {
 		URL:       buildImagePlaygroundLaunchURL(origin, token.Key, supportsEcommerce),
 		ExpiresAt: token.ExpiredTime,
 		Model:     imagePlaygroundDefaultModel,
+		Payer:     tokenPayer(token),
 	})
 }
 
-func createImagePlaygroundToken(userId int, now int64) (*model.Token, bool, error) {
+func createImagePlaygroundToken(userId int, now int64, scopes ...*middleware.EnterpriseTokenScope) (*model.Token, bool, error) {
 	key, err := common.GenerateKey()
 	if err != nil {
 		return nil, false, err
 	}
-	group, supportsEcommerce, err := resolveImagePlaygroundTokenGroup(userId)
+	group, supportsEcommerce, err := resolveImagePlaygroundPayerGroup(userId, scopes...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -149,7 +163,14 @@ func createImagePlaygroundToken(userId int, now int64) (*model.Token, bool, erro
 	if err := model.ValidateTokenRuntimeLimitConfig(token); err != nil {
 		return nil, false, err
 	}
-	if err := token.Insert(); err != nil {
+	if len(scopes) > 0 && scopes[0] != nil {
+		scope := scopes[0]
+		token.EnterpriseId, token.MembershipId = scope.Enterprise.Id, scope.Member.Id
+		err = model.CreateEnterpriseToken(token, 0)
+	} else {
+		err = token.Insert()
+	}
+	if err != nil {
 		return nil, false, err
 	}
 	return token, supportsEcommerce, nil
@@ -162,9 +183,9 @@ func createImagePlaygroundToken(userId int, now int64) (*model.Token, bool, erro
 //     已经发生的内存变更也应一并持久化以避免内存/DB 漂移）。
 //   - supportsEcommerce: 选定图片组及其实际回退范围是否支持规划，用于决定 UI 是否启用电商模式。
 //   - err: 解析 group 时的错误，nil 表示成功。
-func refreshImagePlaygroundToken(token *model.Token, userId int) (bool, bool, error) {
+func refreshImagePlaygroundToken(token *model.Token, userId int, scopes ...*middleware.EnterpriseTokenScope) (bool, bool, error) {
 	changed := clearImagePlaygroundTokenModelLimits(token)
-	group, supportsEcommerce, err := resolveImagePlaygroundTokenGroup(userId)
+	group, supportsEcommerce, err := resolveImagePlaygroundPayerGroup(userId, scopes...)
 	if err != nil {
 		return changed, false, err
 	}
@@ -191,6 +212,30 @@ func clearImagePlaygroundTokenModelLimits(token *model.Token) bool {
 	token.ModelLimitsEnabled = false
 	token.ModelLimits = ""
 	return true
+}
+
+// resolveImagePlaygroundPayerGroup preserves personal routing and applies only
+// explicit enterprise/member restrictions. Pricing must not select a channel.
+func resolveImagePlaygroundPayerGroup(userID int, scopes ...*middleware.EnterpriseTokenScope) (string, bool, error) {
+	var allows func(string) bool
+	if len(scopes) > 0 && scopes[0] != nil {
+		scope := scopes[0]
+		if scope.Member.UserId != userID || scope.Member.EnterpriseId != scope.Enterprise.Id {
+			return "", false, model.ErrEnterpriseNotFound
+		}
+		allowed, restricted := service.EnterpriseModelPolicy(scope.Enterprise, scope.Member)
+		allows = func(name string) bool {
+			return !restricted || allowed[name] || allowed[ratio_setting.FormatMatchingModelName(name)]
+		}
+		if !allows(imagePlaygroundDefaultModel) {
+			return "", false, fmt.Errorf("企业模型策略未开放 %s", imagePlaygroundDefaultModel)
+		}
+	}
+	group, supportsEcommerce, err := resolveImagePlaygroundTokenGroup(userID)
+	if allows != nil && !allows(imagePlaygroundAgentModel) {
+		supportsEcommerce = false
+	}
+	return group, supportsEcommerce, err
 }
 
 // resolveImagePlaygroundTokenGroup prioritizes gallery image routing independently of

@@ -95,6 +95,25 @@ func calculateAudioQuota(info QuotaInfo) int {
 }
 
 func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.RealtimeUsage) error {
+	if relayInfo.EnterpriseId > 0 {
+		if usage == nil {
+			return errors.New("missing realtime usage")
+		}
+		if relayInfo.UsePrice {
+			return nil
+		}
+		session, ok := relayInfo.Billing.(*BillingSession)
+		if !ok {
+			return model.ErrEnterpriseUnsupported
+		}
+		quota := calculateAudioQuota(QuotaInfo{
+			InputDetails:  TokenDetails{TextTokens: usage.InputTokenDetails.TextTokens, AudioTokens: usage.InputTokenDetails.AudioTokens},
+			OutputDetails: TokenDetails{TextTokens: usage.OutputTokenDetails.TextTokens, AudioTokens: usage.OutputTokenDetails.AudioTokens},
+			ModelName:     relayInfo.OriginModelName, ModelRatio: relayInfo.PriceData.ModelRatio,
+			GroupRatio: relayInfo.PriceData.GroupRatioInfo.GroupRatio, TimeRatio: relayInfo.PriceData.TimeRatioInfo.EffectiveRatio(),
+		})
+		return session.ReserveEnterpriseRealtime(quota)
+	}
 	if relayInfo.UsePrice {
 		return nil
 	}

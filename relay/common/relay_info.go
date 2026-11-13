@@ -199,7 +199,8 @@ type RelayInfo struct {
 	TokenGroup               string
 	UserId                   int
 	UsingGroup               string // 使用的分组，当auto跨分组重试时，会变动
-	UserGroup                string // 用户所在分组
+	UserGroup                string // 用户授权分组，不随付款方改变
+	EnterpriseBillingGroup   string // 企业价格身份；不得用于权限或选路
 	TokenUnlimited           bool
 	StartTime                time.Time
 	FirstResponseTime        time.Time
@@ -544,6 +545,15 @@ func GenRelayInfoGemini(c *gin.Context, request dto.Request) *RelayInfo {
 	return info
 }
 
+// BillingUserGroup 返回价格身份。特殊倍率与时间价格统一使用此方法；
+// 权限、目录、渠道选择仍使用 UserGroup。
+func (info *RelayInfo) BillingUserGroup() string {
+	if info.EnterpriseBillingGroup != "" {
+		return info.EnterpriseBillingGroup
+	}
+	return info.UserGroup
+}
+
 func GenRelayInfoImage(c *gin.Context, request dto.Request) *RelayInfo {
 	info := genBaseRelayInfo(c, request)
 	info.RelayFormat = types.RelayFormatOpenAIImage
@@ -595,8 +605,9 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
 		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
 
-		EnterpriseId:       common.GetContextKeyInt(c, constant.ContextKeyEnterpriseId),
-		EnterpriseMemberId: common.GetContextKeyInt(c, constant.ContextKeyEnterpriseMemberId),
+		EnterpriseId:           common.GetContextKeyInt(c, constant.ContextKeyEnterpriseId),
+		EnterpriseMemberId:     common.GetContextKeyInt(c, constant.ContextKeyEnterpriseMemberId),
+		EnterpriseBillingGroup: common.GetContextKeyString(c, constant.ContextKeyEnterpriseBillingGroup),
 
 		OriginModelName: common.GetContextKeyString(c, constant.ContextKeyOriginalModel),
 
