@@ -25,6 +25,7 @@ import {
   IllustrationNoResultDark,
 } from '@douyinfe/semi-illustrations';
 import { getTokensColumns } from './TokensColumnDefs';
+import { useEnterpriseSelf } from '../../../hooks/enterprise/useEnterpriseSelf';
 
 const TokensTable = (tokensData) => {
   const {
@@ -49,6 +50,7 @@ const TokensTable = (tokensData) => {
     refresh,
     t,
   } = tokensData;
+  const enterprise = useEnterpriseSelf();
 
   // Get all columns
   const columns = useMemo(() => {
@@ -64,6 +66,7 @@ const TokensTable = (tokensData) => {
       setEditingToken,
       setShowEdit,
       refresh,
+      showPayer: enterprise.isMember,
     });
   }, [
     t,
@@ -77,6 +80,7 @@ const TokensTable = (tokensData) => {
     setEditingToken,
     setShowEdit,
     refresh,
+    enterprise.isMember,
   ]);
 
   const tableColumns = columns.map((column) =>
