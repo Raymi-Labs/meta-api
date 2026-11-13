@@ -59,3 +59,17 @@ export const ENTERPRISE_REQUEST_STATUS_COLOR = {
 
 export const formatEnterpriseDate = (timestamp) =>
   timestamp ? new Date(timestamp * 1000).toLocaleDateString() : '—';
+
+// 企业后台的时间统一按企业时区展示，和账单、导出的 CSV 保持一致。
+export const formatEnterpriseTime = (timestamp, timezone) => {
+  if (!timestamp || timestamp <= 0) return '—';
+  const date = new Date(timestamp * 1000);
+  try {
+    return date.toLocaleString(undefined, {
+      timeZone: timezone || undefined,
+      hour12: false,
+    });
+  } catch {
+    return date.toLocaleString();
+  }
+};

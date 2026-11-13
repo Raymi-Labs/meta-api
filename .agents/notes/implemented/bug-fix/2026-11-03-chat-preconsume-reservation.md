@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-待实施的[企业工作空间提案](../../proposed/feature/2026-11-11-enterprise-workspace.md)让企业成员预算沿用本文的预留与结算规则，账本独立，不改变本文的个人钱包规则。
+[企业工作空间](../feature/2026-11-11-enterprise-workspace.md)的企业成员预算沿用本文的预留与结算规则，账本独立，不改变本文的个人钱包规则。
 
 复用 BillingSession、PulseWalletReservation 和主库用户行锁，不增加数据库结构或第二套账本。普通同步 Chat/Messages/Responses/Gemini 的钱包、无限额非周期令牌，在锁内余额高于已有信任线（10 计费单位）时使用有界首笔预留：输入与最多4096输出 Token 按现有倍率估算，取原预估、信任线和初始估算的最小值，收费请求至少1 quota。余额较低时保留原完整预估。各在途请求真实占用钱包，下一笔使用扣除占用后的余额；最终按真实用量补扣/返还。请求 max_tokens 不改写。有限额令牌、套餐、按次、阶梯、音频、图片和异步请求保留原路径。
 

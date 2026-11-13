@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { StatusContext } from '../../context/Status';
 import { usePublicTranslation } from '../../helpers/publicLocale';
+import { useEnterpriseSelf } from '../../hooks/enterprise/useEnterpriseSelf';
 import { getLogo, getSystemName } from '../../helpers/storage';
 import {
   Claude,
@@ -353,6 +354,7 @@ function RoutingDemo({ t, brandName, brandLogo }) {
 export default function Enterprise() {
   const { t, language } = usePublicTranslation();
   const [statusState] = useContext(StatusContext);
+  const workspace = useEnterpriseSelf();
   const brandName = getSystemName();
   const brandLogo = getLogo();
   const serverAddress = getPublicHomeServerAddress(
@@ -464,9 +466,26 @@ export default function Enterprise() {
               )}
             </p>
             <div className='enterprise-actions'>
+              {workspace.isMember && (
+                <Link
+                  to={
+                    workspace.isManager
+                      ? '/enterprise/console'
+                      : '/console/enterprise'
+                  }
+                  className='enterprise-button enterprise-button-primary'
+                >
+                  {t('进入工作台')}
+                  <ArrowRight size={19} aria-hidden='true' />
+                </Link>
+              )}
               <a
                 href={contactHref}
-                className='enterprise-button enterprise-button-primary'
+                className={`enterprise-button ${
+                  workspace.isMember
+                    ? 'enterprise-button-secondary'
+                    : 'enterprise-button-primary'
+                }`}
               >
                 {t('发送邮件咨询')}
                 <ArrowUpRight size={19} aria-hidden='true' />

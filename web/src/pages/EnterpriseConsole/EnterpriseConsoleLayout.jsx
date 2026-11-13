@@ -34,7 +34,12 @@ import { renderQuota } from '../../helpers/render';
 import './enterpriseConsole.css';
 
 const NAV_ITEMS = [
-  { to: '/enterprise/console', end: true, label: '总览', Icon: LayoutDashboard },
+  {
+    to: '/enterprise/console',
+    end: true,
+    label: '总览',
+    Icon: LayoutDashboard,
+  },
   { to: '/enterprise/console/members', label: '成员', Icon: Users },
   {
     to: '/enterprise/console/approvals',
@@ -58,6 +63,7 @@ export default function EnterpriseConsoleLayout() {
   const context = {
     enterpriseId: enterprise.id,
     enterprise,
+    unallocated,
     role: member.role,
     memberId: member.id,
     refreshSelf: ent.refresh,
@@ -97,9 +103,7 @@ export default function EnterpriseConsoleLayout() {
               key={to}
               to={to}
               end={end}
-              className={({ isActive }) =>
-                `ec-nav${isActive ? ' active' : ''}`
-              }
+              className={({ isActive }) => `ec-nav${isActive ? ' active' : ''}`}
             >
               <Icon size={18} aria-hidden='true' />
               <span>{t(label)}</span>

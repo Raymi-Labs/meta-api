@@ -1,0 +1,39 @@
+.es-card {
+  padding: 24px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 16px;
+  background: var(--semi-color-bg-1);
+}
+.es-card h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.es-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 24px;
+}
+.es-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.es-flush {
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+@media (max-width: 900px) {
+  .es-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .es-card {
+    padding: 16px;
+  }
+}
+.es-flush h2 {
+  position: sticky;
+  left: 0;
+}

@@ -94,3 +94,9 @@
   font-size: 13px;
   color: var(--semi-color-text-1);
 }
+/* 弹窗默认宽 448px，手机上会超出屏幕。 */
+@media (max-width: 480px) {
+  .ec-modal .semi-modal {
+    width: calc(100vw - 32px);
+  }
+}

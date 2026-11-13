@@ -216,6 +216,7 @@ export default function EnterpriseQuota() {
       </div>
 
       <Modal
+        className='ec-modal'
         title={t('申请额度')}
         visible={open}
         okText={t('提交申请')}

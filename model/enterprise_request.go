@@ -42,6 +42,7 @@ type EnterpriseQuotaRequest struct {
 
 	MemberName      string `json:"member_name" gorm:"-"`
 	MemberEmail     string `json:"member_email" gorm:"-"`
+	MemberRole      string `json:"member_role" gorm:"-"`
 	ReviewerName    string `json:"reviewer_name" gorm:"-"`
 	MemberAvailable int64  `json:"member_available" gorm:"-"`
 	MemberReserved  int64  `json:"member_reserved" gorm:"-"`
@@ -248,6 +249,7 @@ func ListEnterpriseQuotaRequests(enterpriseID, userID int, status string, offset
 		}
 		if m, ok := members[item.MemberId]; ok {
 			item.MemberAvailable, item.MemberReserved, item.MemberConsumed = m.Available, m.Reserved, m.Consumed
+			item.MemberRole = m.Role
 		}
 	}
 	return items, total, nil

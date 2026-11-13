@@ -91,6 +91,18 @@ const EnterpriseConsoleLayout = lazy(
 const EnterpriseOverview = lazy(
   () => import('./pages/EnterpriseConsole/Overview'),
 );
+const EnterpriseMembers = lazy(
+  () => import('./pages/EnterpriseConsole/Members'),
+);
+const EnterpriseApprovals = lazy(
+  () => import('./pages/EnterpriseConsole/Approvals'),
+);
+const EnterpriseUsage = lazy(() => import('./pages/EnterpriseConsole/Usage'));
+const EnterpriseSettings = lazy(
+  () => import('./pages/EnterpriseConsole/Settings'),
+);
+const EnterpriseInvite = lazy(() => import('./pages/EnterpriseInvite'));
+const EnterpriseAdmin = lazy(() => import('./pages/EnterpriseAdmin'));
 
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
@@ -257,6 +269,24 @@ function App() {
           }
         />
         <Route
+          path='/enterprise/invite'
+          element={
+            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+              <EnterpriseInvite />
+            </Suspense>
+          }
+        />
+        <Route
+          path='/console/enterprise-admin'
+          element={
+            <AdminRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <EnterpriseAdmin />
+              </Suspense>
+            </AdminRoute>
+          }
+        />
+        <Route
           path='/console/enterprise'
           element={
             <PrivateRoute>
@@ -281,6 +311,38 @@ function App() {
             element={
               <Suspense fallback={null}>
                 <EnterpriseOverview />
+              </Suspense>
+            }
+          />
+          <Route
+            path='members'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseMembers />
+              </Suspense>
+            }
+          />
+          <Route
+            path='approvals'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseApprovals />
+              </Suspense>
+            }
+          />
+          <Route
+            path='usage'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseUsage />
+              </Suspense>
+            }
+          />
+          <Route
+            path='settings'
+            element={
+              <Suspense fallback={null}>
+                <EnterpriseSettings />
               </Suspense>
             }
           />
