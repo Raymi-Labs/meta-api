@@ -112,23 +112,22 @@ html.dark .yh-world-map {
 .yh-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 12px;
-  font-weight: 550;
+  gap: 11px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--yh-blue);
-  letter-spacing: 1.1px;
+  letter-spacing: 0.3px;
   margin-bottom: 25px;
 }
 .yh-eyebrow > span {
-  width: 6px;
-  height: 6px;
+  width: 2px;
+  height: 14px;
   background: var(--yh-blue);
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px var(--yh-soft-blue);
+  border-radius: 1px;
 }
 .yh-hero h1 {
   font-size: clamp(38px, 4.3vw, 60px);
-  font-weight: 680;
+  font-weight: 700;
   letter-spacing: -2px;
   line-height: 1.3;
 }
@@ -161,7 +160,7 @@ html.dark .yh-world-map {
   border: 1px solid transparent;
   border-radius: 7px;
   font-size: 14px;
-  font-weight: 550;
+  font-weight: 500;
   cursor: pointer;
   transition:
     background 0.2s,
@@ -197,7 +196,7 @@ html.dark .yh-world-map {
   padding: 0;
   margin: 25px 0 0;
   font-size: 16px;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--yh-ink);
 }
 .yh-hero-benefits li {
@@ -219,11 +218,24 @@ html.dark .yh-world-map {
 .yh-capability {
   min-width: 0;
   border: 1px solid var(--yh-line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--yh-card);
   text-align: center;
-  padding: 25px 20px 20px;
-  box-shadow: 0 4px 12px #1d326603;
+  padding: 28px 24px 22px;
+  box-shadow:
+    0 1px 2px #1d326608,
+    0 8px 24px -12px #1d326614;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+.yh-capability:hover {
+  border-color: color-mix(in srgb, var(--yh-blue) 30%, var(--yh-line));
+  box-shadow:
+    0 1px 2px #1d326608,
+    0 14px 32px -14px #1d326622;
+  transform: translateY(-2px);
 }
 .yh-capability h2 {
   font-size: 15px;
@@ -232,8 +244,8 @@ html.dark .yh-world-map {
 }
 .yh-capability > p {
   color: var(--yh-muted);
-  font-size: 12px;
-  margin-top: 7px;
+  font-size: 13px;
+  margin-top: 8px;
   line-height: 1.7;
 }
 .yh-key-visual {
@@ -514,8 +526,8 @@ html.dark .yh-world-map {
 }
 .yh-router-label {
   top: -24px;
-  font-size: 6px;
-  letter-spacing: 1px;
+  font-size: 9px;
+  letter-spacing: 0.2px;
 }
 .yh-route-model {
   bottom: -24px;
@@ -551,9 +563,9 @@ html.dark .yh-world-map {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
   color: var(--yh-blue);
   margin-bottom: 19px;
 }
@@ -687,8 +699,8 @@ html.dark .yh-world-map {
   margin-bottom: 18px;
 }
 .yh-app-heading small {
-  font-size: 8px;
-  letter-spacing: 2px;
+  font-size: 9px;
+  letter-spacing: 0.8px;
   color: var(--yh-muted);
 }
 .yh-app-heading h3 {
@@ -727,7 +739,7 @@ html.dark .yh-world-map {
 }
 .yh-tool-row strong {
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 500;
 }
 .yh-tool-row div span {
   font-size: 10px;
@@ -807,13 +819,15 @@ html.dark .yh-world-map {
   background: var(--yh-card);
   padding: 26px 22px;
   border: 1px solid var(--yh-line);
-  border-radius: 8px;
+  border-radius: 10px;
   transition:
-    border-color 0.2s,
-    transform 0.2s;
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
 }
 .yh-model-card:hover {
-  border-color: var(--yh-blue);
+  border-color: color-mix(in srgb, var(--yh-blue) 38%, var(--yh-line));
+  box-shadow: 0 12px 28px -14px #1d326626;
   transform: translateY(-3px);
 }
 .yh-model-icon {
@@ -829,10 +843,10 @@ html.dark .yh-world-map {
 }
 .yh-model-card h3 {
   font-size: 16px;
-  font-weight: 550;
+  font-weight: 600;
 }
 .yh-model-card p {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   color: var(--yh-muted);
   margin-top: 6px;
@@ -880,7 +894,7 @@ html.dark .yh-world-map {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 500;
 }
 .yh-steps a:hover {
   color: var(--yh-blue);
@@ -1050,8 +1064,8 @@ html.dark .yh-world-map {
   overflow: hidden;
   text-align: center;
   border: 1px solid var(--yh-line);
-  border-radius: 12px;
-  padding: 49px 24px;
+  border-radius: 16px;
+  padding: 56px 24px;
   background: radial-gradient(
     ellipse at 50% 100%,
     var(--yh-soft-blue),

@@ -7467,6 +7467,10 @@
     "管理普通成员与审批；自己的额度申请由所有者处理。": "Zarządza członkami i zatwierdzeniami; jego własne wnioski rozpatruje właściciel.",
     "使用企业额度、创建企业令牌，申请追加额度。": "Korzysta z budżetu firmy, tworzy tokeny i wnioskuje o dodatkowy budżet.",
     "定制需求": "Indywidualne potrzeby",
-    "额度分配": "Przydział budżetu"
+    "额度分配": "Przydział budżetu",
+    "模型生态": "Ekosystem modeli",
+    "为开发者准备": "Dla deweloperów",
+    "工作区": "Obszar roboczy",
+    "自动路由": "Automatyczny routing"
   }
 }

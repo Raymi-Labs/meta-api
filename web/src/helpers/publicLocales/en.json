@@ -354,5 +354,9 @@
   "所有者": "Owner",
   "管理员": "Admin",
   "成员": "Members",
-  "我的额度": "My quota"
+  "我的额度": "My quota",
+  "工作区": "Workspace",
+  "模型生态": "Model ecosystem",
+  "为开发者准备": "Built for developers",
+  "自动路由": "Auto routing"
 }

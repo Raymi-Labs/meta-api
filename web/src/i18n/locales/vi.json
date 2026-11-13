@@ -8078,6 +8078,10 @@
     "管理普通成员与审批；自己的额度申请由所有者处理。": "Quản lý thành viên và phê duyệt; yêu cầu ngân sách của bản thân do chủ sở hữu xử lý.",
     "使用企业额度、创建企业令牌，申请追加额度。": "Dùng ngân sách doanh nghiệp, tạo token và xin thêm ngân sách.",
     "定制需求": "Nhu cầu tùy chỉnh",
-    "额度分配": "Phân bổ ngân sách"
+    "额度分配": "Phân bổ ngân sách",
+    "模型生态": "Hệ sinh thái mô hình",
+    "为开发者准备": "Dành cho nhà phát triển",
+    "工作区": "Không gian làm việc",
+    "自动路由": "Định tuyến tự động"
   }
 }

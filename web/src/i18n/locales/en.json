@@ -7679,6 +7679,10 @@
     "管理普通成员与审批；自己的额度申请由所有者处理。": "Manages members and approvals; the owner handles the admin’s own budget requests.",
     "使用企业额度、创建企业令牌，申请追加额度。": "Uses company budget, creates enterprise tokens and requests more budget.",
     "定制需求": "Custom requirements",
-    "额度分配": "Budget allocation"
+    "额度分配": "Budget allocation",
+    "模型生态": "Model ecosystem",
+    "为开发者准备": "Built for developers",
+    "工作区": "Workspace",
+    "自动路由": "Auto routing"
   }
 }

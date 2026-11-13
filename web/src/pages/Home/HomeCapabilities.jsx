@@ -212,7 +212,7 @@ export default function HomeCapabilities({ baseUrl, t }) {
               ))}
             </svg>
             <div className='yh-route-hub' key={scene.name}>
-              <span className='yh-router-label'>AUTO ROUTER</span>
+              <span className='yh-router-label'>{t('自动路由')}</span>
               <ModelIcon size={30} />
               <span className='yh-route-model'>{scene.name}</span>
             </div>
