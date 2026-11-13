@@ -1,0 +1,53 @@
+.pg-composer,
+.pg-parallel-composer {
+  position: relative;
+}
+.pg-parallel-composer {
+  flex-shrink: 0;
+}
+.pg-composer > .pg-composer-resize,
+.pg-parallel-composer > .pg-composer-resize {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  z-index: 1;
+  border-radius: 6px;
+}
+.pg-composer-resize > span {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--semi-color-text-2);
+}
+.pg-composer-resize:hover > span,
+.pg-composer-resize:focus-visible > span {
+  background: var(--semi-color-primary);
+}
+.pg-composer-resize:focus-visible {
+  outline: 2px solid var(--semi-color-primary);
+  outline-offset: 2px;
+}
+.pg-composer textarea,
+.pg-parallel-composer textarea {
+  box-sizing: border-box;
+  overflow-y: auto;
+  resize: none;
+}
+@media (pointer: coarse) {
+  .pg-composer > .pg-composer-resize,
+  .pg-parallel-composer > .pg-composer-resize {
+    height: 44px;
+    top: -22px;
+  }
+}

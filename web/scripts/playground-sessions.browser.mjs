@@ -238,9 +238,123 @@ try {
         .querySelector('.pg-conversation-toolbar')
         ?.textContent.includes('已保存在此浏览器'),
     );
+  const checkComposerResize = async (composer, screenshot) => {
+    const root = active + ' ' + composer;
+    const input = root + ' textarea';
+    const handle = root + ' .pg-composer-resize';
+    const height = () =>
+      page.$eval(input, (e) => e.getBoundingClientRect().height);
+    const startCalls = calls.length;
+    const draft = 'Resize draft\n'.repeat(60);
+    await page.focus(input);
+    await page.keyboard.sendCharacter(draft);
+    const h0 = await height();
+    const dragHandle = async (dy) => {
+      const rect = await page.$eval(handle, (e) => {
+        const r = e.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      });
+      await page.mouse.move(rect.x, rect.y);
+      await page.mouse.down();
+      await page.mouse.move(rect.x, rect.y + dy, { steps: 8 });
+      await page.mouse.up();
+    };
+    await dragHandle(-130);
+    assert((await height()) > h0 + 80, 'upward drag expands input');
+    assert.equal(await page.$eval(input, (e) => e.value), draft);
+    assert(
+      await page.$eval(input, (e) => e.scrollHeight > e.clientHeight),
+      'long text scrolls internally',
+    );
+    await page.focus(handle);
+    await page.keyboard.press('End');
+    assert((await height()) <= 420);
+    await page.setViewport({ width: 820, height: 600 });
+    await page.waitForFunction(
+      (sel) =>
+        Number(document.querySelector(sel).getAttribute('aria-valuemax')) <=
+        270,
+      {},
+      handle,
+    );
+    assert((await height()) <= 270, 'window shrink clamps input');
+    const buttons = await page.$$eval(root + ' button', (els) =>
+      els
+        .filter((e) => e.offsetHeight > 0)
+        .map((e) => {
+          const r = e.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom };
+        }),
+    );
+    assert(
+      buttons.every((r) => r.top >= 0 && r.bottom <= 600),
+      'composer actions remain visible',
+    );
+    await page.setViewport({
+      width: 390,
+      height: 844,
+    });
+    await page.focus(handle);
+    await page.keyboard.press('Home');
+    assert.equal(await height(), 72);
+    const touchRect = await page.$eval(handle, (e) => {
+      const r = e.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    const cdp = await page.createCDPSession();
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: touchRect.x, y: touchRect.y }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: touchRect.x, y: touchRect.y - 90 }],
+    });
+    await page.waitForFunction(
+      (sel) => document.querySelector(sel).getBoundingClientRect().height > 100,
+      {},
+      input,
+    );
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchCancel',
+      touchPoints: [],
+    });
+    await page.waitForFunction(
+      (sel) =>
+        document.querySelector(sel).getBoundingClientRect().height === 72,
+      {},
+      input,
+    );
+    await cdp.detach();
+    await page.focus(handle);
+    await page.keyboard.press('ArrowUp');
+    assert.equal(await height(), 88);
+    assert(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    );
+    await page.screenshot({ path: '/tmp/' + screenshot + '-mobile.png' });
+    await page.setViewport({
+      width: 1440,
+      height: 1000,
+    });
+    await page.focus(handle);
+    await page.keyboard.press('Home');
+    await dragHandle(-160);
+    await page.screenshot({ path: '/tmp/' + screenshot + '-desktop.png' });
+    await dragHandle(1000);
+    assert.equal(await height(), 72, 'downward drag clamps at minimum');
+    assert.equal(calls.length, startCalls, 'resize never generates a request');
+    await page.focus(input);
+    await page.$eval(input, (e) => e.select());
+    await page.keyboard.press('Backspace');
+    assert.equal(await page.$eval(input, (e) => e.value), '');
+  };
   await page.goto(base + '/playground', { waitUntil: 'networkidle0' });
   await ready();
   assert.equal(calls.length, 0);
+  await checkComposerResize('.pg-composer', 'composer-single');
   // Focused layout utilities are opt-in and must not issue model requests.
   assert.equal(await page.$(active + ' .pg-workspace > .pg-settings'), null);
   assert.equal(await page.$(active + ' .pg-workspace > .pg-code'), null);
@@ -693,6 +807,7 @@ try {
     }),
   );
   await page.waitForSelector(active + ' .pg-parallel-composer textarea');
+  await checkComposerResize('.pg-parallel-composer', 'composer-parallel');
   await page.type(active + ' .pg-parallel-composer textarea', 'Five models');
   const beforeParallel = calls.length;
   hold = true;
@@ -988,9 +1103,17 @@ try {
       ?.getBoundingClientRect();
     return r && r.left >= 0 && r.right <= innerWidth;
   });
-  await page.waitForSelector('.semi-sidesheet', {visible:true});
-  await page.waitForFunction(()=>{const r=document.querySelector('#pg-service-tier')?.getBoundingClientRect();return r&&r.left>=0&&r.right<=innerWidth&&r.width>150;});
-  await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.setAttribute('theme-mode','dark');});
+  await page.waitForSelector('.semi-sidesheet', { visible: true });
+  await page.waitForFunction(() => {
+    const r = document
+      .querySelector('#pg-service-tier')
+      ?.getBoundingClientRect();
+    return r && r.left >= 0 && r.right <= innerWidth && r.width > 150;
+  });
+  await page.evaluate(() => {
+    document.documentElement.classList.add('dark');
+    document.body.setAttribute('theme-mode', 'dark');
+  });
   await page.screenshot({ path: '/tmp/muze-service-tier-mobile.png' });
   const callsBeforeLostCapability = calls.length;
   offeredTiers = ['default'];
