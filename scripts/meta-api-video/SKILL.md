@@ -12,7 +12,7 @@ Use `scripts/meta_api_video.py` with Python 3.9+ and standard-library dependenci
 Preserve the user's model ID, duration, resolution, aspect ratio and references. A prior successful sample is evidence, never a capability gate. Defaults are preferences, not upper limits. Let the endpoint report unsupported settings; never downgrade, switch protocols or submit again automatically.
 
 - Known Grok IDs default to xAI-style `duration/resolution/aspect_ratio/image`; standalone Grok defaults to 1 second/480p/16:9 (the installed combined Skill retains 5 seconds).
-- Seedance `doubao-seedance-2-5-260628` defaults to 4 seconds/720p/16:9 and uses `seconds/resolution/metadata` plus `images` references.
+- Seedance `doubao-seedance-2-5-260628` defaults to 4 seconds/720p/16:9 and uses `seconds/resolution/metadata` plus `images` references. For the native Seedance 2.5 adapter, one or multiple photos are reference images (`role=reference_image`), never inferred first/last frames. Use `--image photo.png` or `--images character.png scene.jpg`; keep the reference order aligned with the prompt.
 - Muse and compatible Omni/Snow models use `seconds/resolution/aspect_ratio` and `input_reference` or `images`. Defaults remain 4 seconds/720p, except the named Omni1080p alias defaults to1080p. Standard size pairs are derived; other resolution/ratio tokens pass through without guessing pixel dimensions. `--size WIDTHxHEIGHT` is available when the endpoint needs explicit pixels.
 - Other full model IDs use the unified OpenAI video request format. Set `--protocol openai|xai|seedance` when the required format is known. `--protocol auto` selects only from existing known mappings; one POST is made to `/v1/videos` with no protocol fallback.
 - Positive integer duration and non-empty resolution/ratio format tokens are accepted. `--image` and `--images` encode local PNG/JPEG/WebP files; reference order is preserved. Keep local file/memory limits, not unverified provider limits.
@@ -37,7 +37,8 @@ Seedance example (same automatic polling and MP4 delivery):
 ```bash
 python3 scripts/meta_api_video.py --base-url https://meta-api.com \
   --model doubao-seedance-2-5-260628 --duration 4 --resolution 720p \
-  --prompt 'A white paper boat floating on a quiet pond.' \
+  --images character.png scene.jpg \
+  --prompt 'Use the character in reference image 1 and the scene in reference image 2.' \
   --state output/video/seedance-task.json --out output/video/seedance.mp4
 ```
 

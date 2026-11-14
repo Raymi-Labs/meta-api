@@ -11,7 +11,7 @@
 | Grok Imagine Video | 原生提交/查询、seconds/size 别名、分辨率默认值进入计价、缺结果不成功 | 具体版本参数、参考输入和第三方售价需按实际文档核对 |
 | Sora / OpenAI 视频 | JSON 秒数与默认尺寸同源计价、原 multipart 文件路径、公开任务 ID、内容接口 | multipart 不能使用新表达式模板，直接拒绝而非错误报价；原按次/倍率方式保留；供应商型号生命周期另核实 |
 | 阿里 Wan | 现有 video-synthesis 协议、按映射型号处理默认参数、时长/size/resolution 快照、结果 URL | 新协议或新字段（例如多镜头/其他视频系列）未自动接入；模板文生尺寸使用实际出站尺寸如 1280*720 |
-| Seedance / 豆包 | 现有 contents/generations/tasks 协议、顶层时长/分辨率传递、model 不能被 metadata 改写、原用量路径保留 | `duration=-1` 自动时长不支持固定秒价；视频 Token 与输出秒是两种计费口径，不相互猜测 |
+| Seedance / 豆包 | 现有 contents/generations/tasks 协议、顶层时长/分辨率传递、model 不能被 metadata 改写、原用量路径保留；2.5 图片按明确参考/首尾帧角色映射并验证互斥 | `duration=-1` 自动时长不支持固定秒价；视频 Token 与输出秒是两种计费口径，不相互猜测 |
 | Kling | 文生/图生路由、原 JWT/Bearer 规则、保存账号、首尾帧输入、成功结果检查 | 新版模型字段不自动新增；模板中用 STD/PRO 等实际 mode 作档位，不能假称像素分辨率 |
 | Vidu | 原 text2video/img2video/start-end2video/reference2video、模型/时长/分辨率保真、成功结果检查 | 新型号/素材范围按供应商确认；参考输入额外费用用完整表达式，不由简单输出秒价自动覆盖 |
 | Gemini Veo | 现有 predictLongRunning/operations 协议、durationSeconds/resolution 参数传递、缺输出不成功 | 当前适配器仅文生；新版替代接口不自动迁移，实际可用模型必须按供应商当前文档与账号确认 |

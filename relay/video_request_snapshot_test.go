@@ -31,6 +31,7 @@ func TestVideoRequestSnapshotMatchesAdapters(t *testing.T) {
 		{"grok-imagine-video", constant.ChannelTypeXai, `{"seconds":"6","size":"720p"}`, 6, "720p"},
 		{"sora-2", constant.ChannelTypeSora, `{}`, 4, "720x1280"},
 		{"wan2.5-t2v-preview", constant.ChannelTypeAli, `{"duration":5,"size":"1280*720"}`, 5, "1280*720"},
+		{"doubao-seedance-2-5-260628", constant.ChannelTypeDoubaoVideo, `{"duration":5,"resolution":"720p","images":["https://example.test/photo.png"]}`, 5, "720p"},
 		{"doubao-seedance-1-0-pro-250528", constant.ChannelTypeDoubaoVideo, `{"duration":5,"resolution":"720p"}`, 5, "720p"},
 		{"viduq2", constant.ChannelTypeVidu, `{"duration":5,"size":"720p"}`, 5, "720p"},
 		{"kling-v2-master", constant.ChannelTypeKling, `{"duration":5,"mode":"pro"}`, 5, "pro"},
@@ -63,6 +64,10 @@ func TestVideoRequestSnapshotMatchesAdapters(t *testing.T) {
 			again, err := io.ReadAll(sent)
 			require.NoError(t, err)
 			require.JSONEq(t, string(wire), string(again))
+			if tc.name == "doubao-seedance-2-5-260628" {
+				require.Contains(t, string(wire), `"role":"reference_image"`)
+				require.Contains(t, string(wire), `https://example.test/photo.png`)
+			}
 			cost, _, err := billingexpr.RunExprWithRequest(`tier("video",param("duration") * 100000 * param("sampleCount"))`, billingexpr.TokenParams{}, *info.BillingRequestInput)
 			require.NoError(t, err)
 			count := float64(1)

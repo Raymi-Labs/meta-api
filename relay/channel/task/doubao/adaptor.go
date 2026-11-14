@@ -135,6 +135,9 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 		return nil, errors.Wrap(err, "convert request payload failed")
 	}
 	body.Model = info.UpstreamModelName
+	if err := normalizeSeedanceImages(&req, body); err != nil {
+		return nil, err
+	}
 	data, err := common.Marshal(body)
 	if err != nil {
 		return nil, err

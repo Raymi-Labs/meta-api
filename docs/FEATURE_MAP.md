@@ -264,3 +264,5 @@
 | Seedance 系列官方资料 | [官方解析](../controller/model_seedance_metadata.go)、[验证](../controller/model_seedance_metadata_test.go) | 复用管理员/定时资料同步及公开 pricing；六个精确版本官方模态、联网搜索与人民币在线/离线分辨率价格 | 分辨率和输入视频条件保留；同源文档每轮只抓一次；未知文本能力/token 限制不猜，官方 token 价不换算本站秒价；失败保留与人工覆盖继续生效。见[决策](../.agents/notes/implemented/bug-fix/2026-11-12-seedance-official-metadata.md) |
 
 | 百炼独立模型属性 | [解析](../controller/model_aliyun_attributes.go)、[审计](audits/2026-11-13-model-metadata-coverage.md) | 原官方同步→精确型号标题→两列/四列能力表→原逐字段持久化和公开 pricing | 中英文模态、token 上限、三态能力；不从型号推断、不从简表拼价格，未知向量输出不伪装文本；同源失败与人工保护保留。见[决策](../.agents/notes/implemented/bug-fix/2026-11-13-model-metadata-coverage.md) |
+
+| Seedance 2.5 参考照片 | [适配器](../relay/channel/task/doubao/reference_images.go)、[调用说明](channel/seedance-reference-images.md) | 复用视频鉴权、渠道模型映射、出站快照与计费；统一 images/image/input_reference 默认 reference_image，显式模式保留首尾帧 | 仅两个精确 2.5 上游型号；30张参考边界、素材互斥/来源冲突和帧比例提交前校验；旧型号不变，无收费实测或生产部署。见[决策](../.agents/notes/implemented/bug-fix/2026-11-14-seedance-reference-images.md) |
