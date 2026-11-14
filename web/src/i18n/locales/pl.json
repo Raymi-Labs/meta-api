@@ -1,5 +1,8 @@
 {
   "translation": {
+    "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Mnożnik grupy rozliczeniowej firmy. Automatyczny routing go nie zmienia; ceny modeli i mnożniki czasowe są naliczane osobno.",
+    "计费分组": "Grupa rozliczeniowa",
+    "请选择计费分组": "Wybierz grupę rozliczeniową",
     "生成参数": "Generation parameters",
     "已启用 {{count}} 项": "{{count}} enabled",
     "使用模型默认值": "Model defaults",

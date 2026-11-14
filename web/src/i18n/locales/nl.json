@@ -1,5 +1,8 @@
 {
   "translation": {
+    "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Vermenigvuldigingsfactor van de bedrijfsfactureringsgroep. Automatische routering behoudt deze; modelprijzen en tijdsafhankelijke factoren gelden apart.",
+    "计费分组": "Factureringsgroep",
+    "请选择计费分组": "Selecteer een factureringsgroep",
     "生成参数": "Generation parameters",
     "已启用 {{count}} 项": "{{count}} enabled",
     "使用模型默认值": "Model defaults",

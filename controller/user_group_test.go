@@ -249,7 +249,7 @@ func TestReassignUnregisteredUserGroup(t *testing.T) {
 
 func TestUpdateUserChannelGroupsOption(t *testing.T) {
 	db := setupUserGroupControllerTest(t, `{"default":"","vip":""}`, `{"default":1,"premium":2}`)
-	require.NoError(t, db.AutoMigrate(&model.Option{}))
+	require.NoError(t, db.AutoMigrate(&model.Option{}, &model.Enterprise{}))
 	oldOptions := common.OptionMap
 	common.OptionMap = map[string]string{}
 	t.Cleanup(func() { common.OptionMap = oldOptions })

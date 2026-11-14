@@ -36,8 +36,8 @@ func setupEnterprisePayerContract(t *testing.T) (*model.Enterprise, *model.Enter
 	model.InvalidateModelPermissionCache()
 	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":""}`))
 	require.NoError(t, setting.UpdateAutoGroupsByJsonString(`["default"]`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"private":2}`))
-	require.NoError(t, ratio_setting.UpdateGroupGroupRatioByJSONString(`{"default":{"default":0.8},"enterprise-price":{"default":0.25,"private":0.1}}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"private":2,"enterprise-price":0.25}`))
+	require.NoError(t, ratio_setting.UpdateGroupGroupRatioByJSONString(`{"default":{"default":0.8},"enterprise-price":{"default":9,"private":9}}`))
 	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"gpt-image-2":1,"gpt-6-sol":1,"private-model":1}`))
 	ratio_setting.GetGroupRatioSetting().GroupSpecialUsableGroup.ReplaceAll(map[string]map[string]string{
 		"enterprise-price": {"-:default": "", "+:private": ""},

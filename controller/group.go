@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"sort"
 	"strings"
@@ -26,7 +27,26 @@ func sortedGroupNames(groupRatios map[string]float64) []string {
 }
 
 func GetGroups(c *gin.Context) {
-	groupNames := sortedGroupNames(ratio_setting.GetGroupRatioCopy())
+	groupRatios := ratio_setting.GetGroupRatioCopy()
+	groupNames := sortedGroupNames(groupRatios)
+	// Existing consumers keep the name-only response; enterprise editing asks
+	// for the same groups together with their base multiplier.
+	if c.Query("with_ratio") == "true" {
+		type groupOption struct {
+			Name  string  `json:"name"`
+			Ratio float64 `json:"ratio"`
+		}
+		options := make([]groupOption, 0, len(groupNames))
+		for _, name := range groupNames {
+			ratio := groupRatios[name]
+			if name == "" || name == "auto" || ratio < 0 || math.IsNaN(ratio) || math.IsInf(ratio, 0) {
+				continue
+			}
+			options = append(options, groupOption{Name: name, Ratio: ratio})
+		}
+		common.ApiSuccess(c, options)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -59,19 +79,36 @@ func GetUserGroups(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	var enterpriseRatio *float64
+	if token.EnterpriseId > 0 {
+		ratio, valid := ratio_setting.GetValidGroupRatio(billingGroup)
+		if !valid {
+			enterpriseApiError(c, model.ErrEnterpriseBillingGroup)
+			return
+		}
+		enterpriseRatio = &ratio
+	}
 	userUsableGroups := service.GetUserUsableGroups(userGroup)
 	for groupName, _ := range ratio_setting.GetGroupRatioCopy() {
 		// UserUsableGroups contains the groups that the user can use
 		if desc, ok := userUsableGroups[groupName]; ok {
+			ratio := service.GetUserGroupRatio(billingGroup, groupName)
+			if enterpriseRatio != nil {
+				ratio = *enterpriseRatio
+			}
 			usableGroups[groupName] = map[string]interface{}{
-				"ratio": service.GetUserGroupRatio(billingGroup, groupName),
+				"ratio": ratio,
 				"desc":  desc,
 			}
 		}
 	}
 	if _, ok := userUsableGroups["auto"]; ok {
+		var ratio any = "自动"
+		if enterpriseRatio != nil {
+			ratio = *enterpriseRatio
+		}
 		usableGroups["auto"] = map[string]interface{}{
-			"ratio": "自动",
+			"ratio": ratio,
 			"desc":  setting.GetUsableGroupDescription("auto"),
 		}
 	}

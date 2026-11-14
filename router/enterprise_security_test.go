@@ -66,7 +66,7 @@ func setupEnterpriseAPI(t *testing.T, enabled bool) *enterpriseAPI {
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldGroupRatio))
 		_ = sqlDB.Close()
 	})
-	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Token{}))
+	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Token{}, &model.Option{}))
 	require.NoError(t, model.MigrateEnterpriseTables(db))
 
 	engine := gin.New()

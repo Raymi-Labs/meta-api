@@ -179,29 +179,33 @@ const renderGroupColumn = (text, record, t) => {
 // Missing/invalid metadata (including an older backend) must not become 1x.
 const renderGroupRatio = (record, t) => {
   const ratio = record?.group_ratio;
+  const enterprise = record?.payer === 'enterprise';
   const isFixed =
-    !record?.routing_config &&
+    (enterprise || !record?.routing_config) &&
     record?.group_ratio_status === 'fixed' &&
     typeof ratio === 'number' &&
     Number.isFinite(ratio) &&
     ratio >= 0;
   const isAuto =
-    record?.group_ratio_status === 'auto' || !!record?.routing_config;
+    record?.group_ratio_status === 'auto' ||
+    (!enterprise && !!record?.routing_config);
   const label = isFixed ? `${ratio}x` : isAuto ? t('自动') : '—';
   const hint =
-    isFixed &&
-    record?.auto_group_fallback &&
-    record?.source_type !== 'sellable_token'
-      ? t(
-          '此处为首选分组倍率；自动切组后按实际使用分组计费，请以使用日志为准。',
-        )
-      : isFixed
+    isFixed && enterprise
+      ? t('企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。')
+      : isFixed &&
+          record?.auto_group_fallback &&
+          record?.source_type !== 'sellable_token'
         ? t(
-            '当前分组倍率，已包含适用的专属倍率，不含模型价格和时间倍率；实际扣费以使用日志为准。',
+            '此处为首选分组倍率；自动切组后按实际使用分组计费，请以使用日志为准。',
           )
-        : isAuto
-          ? t('自动分组的倍率由实际使用的分组决定，请以使用日志为准。')
-          : t('当前无法确定分组倍率，请刷新或联系管理员；不会按 1x 估算。');
+        : isFixed
+          ? t(
+              '当前分组倍率，已包含适用的专属倍率，不含模型价格和时间倍率；实际扣费以使用日志为准。',
+            )
+          : isAuto
+            ? t('自动分组的倍率由实际使用的分组决定，请以使用日志为准。')
+            : t('当前无法确定分组倍率，请刷新或联系管理员；不会按 1x 估算。');
 
   return (
     <Tooltip content={hint} position='top'>

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Hệ số nhóm tính phí doanh nghiệp. Định tuyến tự động giữ nguyên hệ số này; giá mô hình và hệ số theo thời gian được áp dụng riêng.",
+    "计费分组": "Nhóm tính phí",
+    "请选择计费分组": "Vui lòng chọn nhóm tính phí",
     "生成参数": "Generation parameters",
     "已启用 {{count}} 项": "{{count}} enabled",
     "使用模型默认值": "Model defaults",

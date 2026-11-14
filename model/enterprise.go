@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -46,20 +45,21 @@ const (
 
 var (
 	// 越权与不存在使用同一个错误，避免通过响应差异探测其他企业的对象。
-	ErrEnterpriseNotFound       = errors.New("企业不存在或无权访问")
-	ErrEnterpriseForbidden      = errors.New("无权执行该企业操作")
-	ErrEnterpriseFrozen         = errors.New("企业已冻结")
-	ErrEnterpriseAlreadyMember  = errors.New("该账号已加入企业，一个账号只能加入一家企业")
-	ErrEnterpriseOwnerRequired  = errors.New("企业必须保留一名所有者，请先转移所有权")
-	ErrEnterpriseInvitation     = errors.New("邀请无效、已使用或已过期")
-	ErrEnterpriseInvitationMail = errors.New("当前账号邮箱与邀请邮箱不一致，请先绑定被邀请的邮箱")
-	ErrEnterpriseInvalidInput   = errors.New("参数无效")
-	ErrEnterpriseSelfOperation  = errors.New("不能对自己执行该操作，请联系企业所有者")
-	ErrEnterpriseBillingGroup   = errors.New("计费用户组不存在")
-	ErrEnterpriseTimezone       = errors.New("时区无效")
-	ErrEnterpriseOwnerAccount   = errors.New("所有者账号不存在或已被禁用")
-	ErrEnterpriseDisabled       = errors.New("企业功能未开启")
-	ErrEnterpriseUnsupported    = errors.New("暂不支持企业额度")
+	ErrEnterpriseNotFound              = errors.New("企业不存在或无权访问")
+	ErrEnterpriseForbidden             = errors.New("无权执行该企业操作")
+	ErrEnterpriseFrozen                = errors.New("企业已冻结")
+	ErrEnterpriseAlreadyMember         = errors.New("该账号已加入企业，一个账号只能加入一家企业")
+	ErrEnterpriseOwnerRequired         = errors.New("企业必须保留一名所有者，请先转移所有权")
+	ErrEnterpriseInvitation            = errors.New("邀请无效、已使用或已过期")
+	ErrEnterpriseInvitationMail        = errors.New("当前账号邮箱与邀请邮箱不一致，请先绑定被邀请的邮箱")
+	ErrEnterpriseInvalidInput          = errors.New("参数无效")
+	ErrEnterpriseSelfOperation         = errors.New("不能对自己执行该操作，请联系企业所有者")
+	ErrEnterpriseBillingGroup          = errors.New("计费分组不存在或倍率无效")
+	ErrEnterpriseBillingConfigConflict = errors.New("分组倍率的新旧配置不一致，请先在分组相关设置确认并保存倍率")
+	ErrEnterpriseTimezone              = errors.New("时区无效")
+	ErrEnterpriseOwnerAccount          = errors.New("所有者账号不存在或已被禁用")
+	ErrEnterpriseDisabled              = errors.New("企业功能未开启")
+	ErrEnterpriseUnsupported           = errors.New("暂不支持企业额度")
 )
 
 type Enterprise struct {
@@ -381,7 +381,7 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 	if name == "" || len([]rune(name)) > 64 || ownerUserID <= 0 {
 		return nil, ErrEnterpriseInvalidInput
 	}
-	if billingGroup == "" || billingGroup == "auto" || !ratio_setting.ContainsGroupRatio(billingGroup) {
+	if billingGroup == "" || billingGroup == "auto" {
 		return nil, ErrEnterpriseBillingGroup
 	}
 	if timezone == "" {
@@ -393,7 +393,12 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 	now := time.Now().Unix()
 	ent := &Enterprise{Name: name, Status: EnterpriseStatusActive, OwnerUserId: ownerUserID, BillingGroup: billingGroup,
 		Timezone: timezone, ModelMode: EnterpriseModelModeInherit, ModelList: "[]", CreatedAt: now, UpdatedAt: now}
+	groupOptionsMutex.Lock()
+	defer groupOptionsMutex.Unlock()
 	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := validateEnterpriseBillingGroupTx(tx, billingGroup); err != nil {
+			return err
+		}
 		var owner User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -451,17 +456,26 @@ func SetEnterpriseStatus(actorID, enterpriseID int, status, reason string) error
 	})
 }
 
-// UpdateEnterpriseByPlatform 修改企业名称与计费用户组（合同价落在该组的专属倍率上）。
+// UpdateEnterpriseByPlatform 修改企业名称与计费分组，企业请求直接使用该组的基础倍率。
 func UpdateEnterpriseByPlatform(actorID, enterpriseID int, name, billingGroup string) error {
 	name = strings.TrimSpace(name)
 	billingGroup = strings.TrimSpace(billingGroup)
 	if name == "" || len([]rune(name)) > 64 {
 		return ErrEnterpriseInvalidInput
 	}
-	if billingGroup == "" || billingGroup == "auto" || !ratio_setting.ContainsGroupRatio(billingGroup) {
+	if billingGroup == "" || billingGroup == "auto" {
 		return ErrEnterpriseBillingGroup
 	}
-	return enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
+	groupOptionsMutex.Lock()
+	defer groupOptionsMutex.Unlock()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := validateEnterpriseBillingGroupTx(tx, billingGroup); err != nil {
+			return err
+		}
+		ent, err := lockEnterpriseTx(tx, enterpriseID)
+		if err != nil {
+			return err
+		}
 		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
 			"name": name, "billing_group": billingGroup,
 			"policy_version": gorm.Expr("policy_version + 1"), "updated_at": time.Now().Unix(),
@@ -640,7 +654,7 @@ func IsEnterpriseUserError(err error) bool {
 	for _, known := range []error{
 		ErrEnterpriseNotFound, ErrEnterpriseForbidden, ErrEnterpriseFrozen, ErrEnterpriseAlreadyMember,
 		ErrEnterpriseOwnerRequired, ErrEnterpriseInvitation, ErrEnterpriseInvitationMail, ErrEnterpriseInvalidInput,
-		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
+		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseBillingConfigConflict, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
 		ErrEnterpriseDisabled, ErrEnterpriseInsufficientUnallocated, ErrEnterpriseDuplicateVoucher,
 		ErrEnterpriseReclaimExceeds, ErrEnterpriseRequestPending, ErrEnterpriseRequestState,
 		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap, ErrEnterpriseUnsupported,

@@ -314,6 +314,7 @@ func TaskErrorFromAPIError(apiErr *types.NewAPIError) *dto.TaskError {
 	}
 	return &dto.TaskError{
 		Code:               string(apiErr.GetErrorCode()),
+		LocalError:         apiErr.GetErrorCode() == types.ErrorCodeEnterpriseBillingGroupUnavailable,
 		Message:            apiErr.Err.Error(),
 		StatusCode:         apiErr.StatusCode,
 		UpstreamStatusCode: apiErr.UpstreamStatusCode,

@@ -44,6 +44,9 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 		other["billing_source"] = BillingSourceEnterprise
 		other["enterprise_id"] = info.EnterpriseId
 		other["enterprise_member_id"] = info.EnterpriseMemberId
+		if info.EnterpriseBillingGroup != "" {
+			other["enterprise_billing_group"] = info.EnterpriseBillingGroup
+		}
 	}
 	other["request_path"] = c.Request.URL.Path
 	if info.TaskBillingLogInfo != nil {

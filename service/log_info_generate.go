@@ -251,6 +251,9 @@ func appendBillingInfo(relayInfo *relaycommon.RelayInfo, other map[string]interf
 		// 企业请求不看个人计费偏好；企业与成员代次用于明细下钻和对账。
 		other["enterprise_id"] = relayInfo.EnterpriseId
 		other["enterprise_member_id"] = relayInfo.EnterpriseMemberId
+		if relayInfo.EnterpriseBillingGroup != "" {
+			other["enterprise_billing_group"] = relayInfo.EnterpriseBillingGroup
+		}
 		return
 	}
 	if relayInfo.UserSetting.BillingPreference != "" {

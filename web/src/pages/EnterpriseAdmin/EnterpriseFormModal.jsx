@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input, Modal, Select } from '@douyinfe/semi-ui';
+import { Button, Input, Modal, Select } from '@douyinfe/semi-ui';
 import { enterpriseRequest } from '../../helpers/enterprise';
 import { showError, showSuccess } from '../../helpers/toast';
 
@@ -32,10 +32,13 @@ const zoneList = () => {
   return Array.from(new Set([DEFAULT_ZONE, 'UTC', ...all]));
 };
 
-// 开通企业与修改企业共用：修改时只能改名称和计费用户组。
+// 开通企业与修改企业共用：修改时只能改名称和计费分组。
 export default function EnterpriseFormModal({
   enterprise,
   groups,
+  groupsLoading = false,
+  groupsError = false,
+  onRetryGroups,
   onClose,
   onDone,
 }) {
@@ -58,9 +61,11 @@ export default function EnterpriseFormModal({
   if (!enterprise) return null;
 
   const submit = async () => {
+    if (groupsLoading || groupsError) return;
     if (!name.trim()) return showError(t('请填写名称'));
     if (!editing && !owner.trim()) return showError(t('请填写所有者账号'));
-    if (!group) return showError(t('请选择计费用户组'));
+    if (!group || !groups.some((g) => g.name === group))
+      return showError(t('请选择计费分组'));
     setBusy(true);
     try {
       if (editing) {
@@ -94,6 +99,10 @@ export default function EnterpriseFormModal({
       visible
       okText={editing ? t('保存') : t('开通')}
       confirmLoading={busy}
+      okButtonProps={{
+        disabled:
+          groupsLoading || groupsError || !groups.some((g) => g.name === group),
+      }}
       onOk={submit}
       onCancel={onClose}
     >
@@ -112,15 +121,26 @@ export default function EnterpriseFormModal({
         </label>
       )}
       <label className='ec-field'>
-        {t('计费用户组')}
+        {t('计费分组')}
         <Select
           filter
           value={group}
-          optionList={groups.map((g) => ({ value: g, label: g }))}
+          aria-label={t('计费分组')}
+          loading={groupsLoading}
+          disabled={groupsLoading || groupsError}
+          optionList={groups.map((g) => ({
+            value: g.name,
+            label: `${g.name} · ${g.ratio}×`,
+          }))}
           onChange={setGroup}
           style={{ width: '100%' }}
         />
       </label>
+      {groupsError && (
+        <Button type='danger' onClick={onRetryGroups}>
+          {t('重试')}
+        </Button>
+      )}
       {!editing && (
         <label className='ec-field'>
           {t('时区')}

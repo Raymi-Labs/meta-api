@@ -200,6 +200,10 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 	var err error
 	info.PriceData, err = helper.ModelPriceHelperTask(c, info)
 	if err != nil {
+		var apiErr *types.NewAPIError
+		if errors.As(err, &apiErr) && apiErr.GetErrorCode() == types.ErrorCodeEnterpriseBillingGroupUnavailable {
+			return nil, service.TaskErrorFromAPIError(apiErr)
+		}
 		return nil, service.TaskErrorWrapper(err, "model_price_failed", http.StatusBadRequest)
 	}
 
