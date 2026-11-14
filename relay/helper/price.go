@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"github.com/tidwall/sjson"
+	"net/http"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -37,8 +38,25 @@ func shouldApplyDefaultCompletionReserve(info *relaycommon.RelayInfo, priceData 
 // https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration
 const claudeCacheCreation1hMultiplier = ratio_setting.ClaudeCacheCreation1hMultiplier
 
+// PrepareEnterpriseGroupRatio captures the enterprise price before channel admission.
+// Personal requests keep route-specific pricing; only new enterprise charges need this check.
+func PrepareEnterpriseGroupRatio(info *relaycommon.RelayInfo) *types.NewAPIError {
+	if info.EnterpriseId <= 0 && info.EnterpriseBillingGroup == "" {
+		return nil
+	}
+	if info.EnterpriseBillingRatio != nil {
+		return nil
+	}
+	ratio, valid := ratio_setting.GetValidGroupRatio(info.EnterpriseBillingGroup)
+	if !valid {
+		return types.NewErrorWithStatusCode(fmt.Errorf("企业计费分组不存在或倍率无效，请联系管理员"), types.ErrorCodeEnterpriseBillingGroupUnavailable, http.StatusServiceUnavailable, types.ErrOptionWithSkipRetry())
+	}
+	info.EnterpriseBillingRatio = &ratio
+	return nil
+}
+
 // HandleGroupRatio checks for "auto_group" in the context and updates the group ratio and relayInfo.UsingGroup if present
-func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
+func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) (types.GroupRatioInfo, error) {
 	groupRatioInfo := types.GroupRatioInfo{
 		GroupRatio:        1.0, // default ratio
 		GroupSpecialRatio: -1,
@@ -49,6 +67,16 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.
 	if exists {
 		logger.LogDebug(ctx, fmt.Sprintf("final group: %s", autoGroup))
 		relayInfo.UsingGroup = autoGroup.(string)
+	}
+
+	// Enterprise uses its selected group's base multiplier for every route.
+	// Capture it once so retries cannot reprice an admitted request.
+	if relayInfo.EnterpriseId > 0 || relayInfo.EnterpriseBillingGroup != "" {
+		if err := PrepareEnterpriseGroupRatio(relayInfo); err != nil {
+			return types.GroupRatioInfo{}, err
+		}
+		groupRatioInfo.GroupRatio = *relayInfo.EnterpriseBillingRatio
+		return groupRatioInfo, nil
 	}
 
 	// check user group special ratio
@@ -65,7 +93,7 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.
 		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
 	}
 
-	return groupRatioInfo
+	return groupRatioInfo, nil
 }
 
 func estimateConservativeBuiltInToolQuota(info *relaycommon.RelayInfo, priceData types.PriceData) decimal.Decimal {
@@ -190,7 +218,10 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 	modelPrice, usePrice := ratio_setting.GetModelPrice(info.OriginModelName, false)
 	audioDurationPrice, useAudioDurationPrice := ratio_setting.GetAudioDurationPrice(info.OriginModelName)
 
-	groupRatioInfo := HandleGroupRatio(c, info)
+	groupRatioInfo, err := HandleGroupRatio(c, info)
+	if err != nil {
+		return types.PriceData{}, err
+	}
 	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
@@ -344,8 +375,11 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 }
 
 // ModelPriceHelperPerCall 按次计费的 PriceHelper (MJ、Task)
-func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) types.PriceData {
-	groupRatioInfo := HandleGroupRatio(c, info)
+func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types.PriceData, error) {
+	groupRatioInfo, err := HandleGroupRatio(c, info)
+	if err != nil {
+		return types.PriceData{}, err
+	}
 	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
@@ -378,7 +412,7 @@ func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) types.
 		TimeRatioInfo:  timeRatioInfo,
 	}
 	info.PriceData = priceData
-	return priceData
+	return priceData, nil
 }
 
 // ModelPriceHelperTask applies expression-based pricing to asynchronous tasks
@@ -391,7 +425,10 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	info.TaskBillingLogInfo = nil
 	exprStr, ok := billing_setting.GetTieredExpr(info.OriginModelName)
 	if !ok {
-		price := ModelPriceHelperPerCall(c, info)
+		price, err := ModelPriceHelperPerCall(c, info)
+		if err != nil {
+			return types.PriceData{}, err
+		}
 		_, price.UsePrice = ratio_setting.GetModelPrice(info.OriginModelName, false)
 		info.PriceData = price
 		return price, nil
@@ -404,7 +441,10 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	if err != nil {
 		return types.PriceData{}, fmt.Errorf("model %s tiered task expr run failed: %w", info.OriginModelName, err)
 	}
-	groupRatioInfo := HandleGroupRatio(c, info)
+	groupRatioInfo, err := HandleGroupRatio(c, info)
+	if err != nil {
+		return types.PriceData{}, err
+	}
 	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 	quotaBeforeGroup := rawCost / 1_000_000 * common.QuotaPerUnit
 	quota, err := billingexpr.QuotaRoundChecked(quotaBeforeGroup * groupRatioInfo.GroupRatio * timeRatioInfo.EffectiveRatio())

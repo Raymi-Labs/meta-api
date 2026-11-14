@@ -325,6 +325,12 @@ func isGroupGroupRatioOption(key string) bool {
 }
 
 func UpdateOption(key string, value string) error {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "groupratio", "group_ratio_setting.group_ratio":
+		key = "GroupRatio"
+	case "usergroups":
+		key = "UserGroups"
+	}
 	if key == "UserGroups" || key == "GroupRatio" {
 		return updateSingleGroupOption(key, value)
 	}
@@ -380,6 +386,12 @@ func UpdateOption(key string, value string) error {
 		// https://gorm.io/docs/update.html#Save-All-Fields
 		if err := tx.FirstOrCreate(&option, Option{Key: key}).Error; err != nil {
 			return err
+		}
+		// SQL collations may match aliases that Go does not (case, accents, padding).
+		// Do not let a generic write bypass the protected group configuration path.
+		switch strings.ToLower(strings.TrimSpace(option.Key)) {
+		case "groupratio", "group_ratio_setting.group_ratio", "usergroups":
+			return errors.New("请通过分组相关设置保存分组配置")
 		}
 		option.Value = value
 		return tx.Save(&option).Error
@@ -495,6 +507,17 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 			return err
 		}
 		common.OptionMap[key] = value
+		return nil
+	}
+	if key == "GroupRatio" || key == "group_ratio_setting.group_ratio" {
+		if err = ratio_setting.CheckGroupRatio(value); err != nil {
+			return err
+		}
+		if err = ratio_setting.UpdateGroupRatioByJSONString(value); err != nil {
+			return err
+		}
+		common.OptionMap["GroupRatio"] = value
+		common.OptionMap["group_ratio_setting.group_ratio"] = value
 		return nil
 	}
 	common.OptionMap[key] = value

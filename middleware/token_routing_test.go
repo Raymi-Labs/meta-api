@@ -64,7 +64,8 @@ func TestTokenRoutingAffinityAndSpecifiedChannel(t *testing.T) {
 	require.Equal(t, 2, channel.Id)
 	require.Equal(t, "backup", group)
 	info := &relaycommon.RelayInfo{UserGroup: "primary", UsingGroup: "primary"}
-	price := helper.HandleGroupRatio(c, info)
+	price, priceErr := helper.HandleGroupRatio(c, info)
+	require.NoError(t, priceErr)
 	require.Equal(t, "backup", info.UsingGroup)
 	require.Equal(t, float64(3), price.GroupRatio)
 	c = newContext()

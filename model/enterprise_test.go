@@ -25,7 +25,7 @@ func enterpriseTestDB(t *testing.T, dialect string) {
 		common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = oldSQLite, oldMySQL, oldPG, oldRedis
 		initCol()
 	})
-	require.NoError(t, DB.AutoMigrate(&User{}, &Token{}))
+	require.NoError(t, DB.AutoMigrate(&User{}, &Token{}, &Option{}))
 	require.NoError(t, DB.AutoMigrate(enterpriseModels()...))
 }
 

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Multiplicateur du groupe de facturation de l’entreprise, conservé lors du routage automatique. Les tarifs des modèles et multiplicateurs horaires s’appliquent séparément.",
+    "计费分组": "Groupe de facturation",
+    "请选择计费分组": "Sélectionnez un groupe de facturation",
     "生成参数": "Generation parameters",
     "已启用 {{count}} 项": "{{count}} enabled",
     "使用模型默认值": "Model defaults",

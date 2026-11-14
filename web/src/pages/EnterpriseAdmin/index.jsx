@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -111,6 +111,9 @@ function EnterpriseAdminContent({ featureControl }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [groups, setGroups] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [groupsError, setGroupsError] = useState(false);
+  const groupsSequence = useRef(0);
   const [form, setForm] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [status, setStatus] = useState(null);
@@ -138,12 +141,44 @@ function EnterpriseAdminContent({ featureControl }) {
     load();
   }, [load]);
 
-  useEffect(() => {
-    // “auto” 是按规则自动选组的占位名，不能作为企业的计费用户组。
-    enterpriseRequest('get', '/api/group/')
-      .then((list) => setGroups((list || []).filter((g) => g !== 'auto')))
-      .catch((e) => showError(e.message));
+  const loadGroups = useCallback(async () => {
+    const sequence = ++groupsSequence.current;
+    setGroupsLoading(true);
+    setGroupsError(false);
+    try {
+      const list = await enterpriseRequest(
+        'get',
+        '/api/group/?with_ratio=true',
+      );
+      if (sequence === groupsSequence.current) setGroups(list || []);
+    } catch (e) {
+      if (sequence === groupsSequence.current) {
+        setGroups([]);
+        setGroupsError(true);
+        showError(e.message);
+      }
+    } finally {
+      if (sequence === groupsSequence.current) setGroupsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadGroups();
+    window.addEventListener('focus', loadGroups);
+    return () => {
+      ++groupsSequence.current;
+      window.removeEventListener('focus', loadGroups);
+    };
+  }, [loadGroups]);
+
+  const openForm = (enterprise) => {
+    loadGroups();
+    setForm(enterprise);
+  };
+  const onFormDone = () => {
+    load();
+    loadGroups();
+  };
 
   const search = (value) => {
     setPage(1);
@@ -164,7 +199,14 @@ function EnterpriseAdminContent({ featureControl }) {
         </div>
       ),
     },
-    { title: t('计费用户组'), dataIndex: 'billing_group' },
+    {
+      title: t('计费分组'),
+      dataIndex: 'billing_group',
+      render: (name) => {
+        const group = groups.find((g) => g.name === name);
+        return group ? `${name} · ${group.ratio}×` : name;
+      },
+    },
     {
       title: t('未分配余额'),
       dataIndex: 'unallocated',
@@ -200,7 +242,7 @@ function EnterpriseAdminContent({ featureControl }) {
               {t('入账')}
             </Button>
           )}
-          <Button size='small' theme='borderless' onClick={() => setForm(r)}>
+          <Button size='small' theme='borderless' onClick={() => openForm(r)}>
             {t('编辑')}
           </Button>
           <Dropdown
@@ -253,7 +295,7 @@ function EnterpriseAdminContent({ featureControl }) {
             onEnterPress={() => search(keyword)}
             onClear={() => search('')}
           />
-          <Button theme='solid' type='primary' onClick={() => setForm({})}>
+          <Button theme='solid' type='primary' onClick={() => openForm({})}>
             {t('开通企业')}
           </Button>
         </div>
@@ -309,8 +351,11 @@ function EnterpriseAdminContent({ featureControl }) {
       <EnterpriseFormModal
         enterprise={form}
         groups={groups}
+        groupsLoading={groupsLoading}
+        groupsError={groupsError}
+        onRetryGroups={loadGroups}
         onClose={() => setForm(null)}
-        onDone={load}
+        onDone={onFormDone}
       />
       <WalletModal
         mode={wallet?.mode}

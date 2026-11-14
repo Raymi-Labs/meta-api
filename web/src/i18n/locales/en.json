@@ -1,5 +1,8 @@
 {
   "translation": {
+    "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Enterprise billing group multiplier. Automatic routing keeps this multiplier; model prices and time multipliers apply separately.",
+    "计费分组": "Billing group",
+    "请选择计费分组": "Select a billing group",
     "生成参数": "Generation parameters",
     "已启用 {{count}} 项": "{{count}} enabled",
     "使用模型默认值": "Model defaults",

@@ -52,12 +52,19 @@ func selectChannelWithConcurrency(
 	info *relaycommon.RelayInfo,
 	retryParam *service.RetryParam,
 ) (*model.Channel, func(), *types.NewAPIError, bool) {
+	if err := helper.PrepareEnterpriseGroupRatio(info); err != nil {
+		return nil, nil, err, false
+	}
 	if _, ok := c.Get(service.AudioVoiceContext); ok {
 		ch, err := middleware.SelectAudioVoiceChannel(c, retryParam.ModelName, retryParam.TokenGroup, service.DetectClient(c))
 		if err != nil {
 			return nil, nil, err, false
 		}
-		info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+		groupRatio, priceErr := helper.HandleGroupRatio(c, info)
+		if priceErr != nil {
+			return nil, nil, types.NewError(priceErr, types.ErrorCodeEnterpriseBillingGroupUnavailable, types.ErrOptionWithSkipRetry()), false
+		}
+		info.PriceData.GroupRatioInfo = groupRatio
 		release, capacityErr := acquireFixedChannelCapacityWithWait(c, ch)
 		return ch, release, capacityErr, capacityErr != nil
 	}
@@ -154,7 +161,12 @@ func selectChannelWithConcurrency(
 					continue
 				}
 				service.CommitChannelCandidateSelection(retryParam, selectGroup)
-				info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+				groupRatio, priceErr := helper.HandleGroupRatio(c, info)
+				if priceErr != nil {
+					release()
+					return nil, nil, types.NewError(priceErr, types.ErrorCodeEnterpriseBillingGroupUnavailable, types.ErrOptionWithSkipRetry()), false
+				}
+				info.PriceData.GroupRatioInfo = groupRatio
 
 				// 临时容量排除只在本轮选渠期间生效，成功后恢复，避免影响后续真实失败重试。
 				if len(blockedChannels) > 0 {
@@ -510,7 +522,12 @@ func tryStickToAffinityChannel(
 			// 用 tryAffinityChannel 返回的生效分组，避免 auto 分组下的 group 维度错乱。
 			if service.HasTokenRoutingConfig(c) {
 				service.CommitChannelCandidateSelection(retryParam, selectGroup)
-				info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+				groupRatio, priceErr := helper.HandleGroupRatio(c, info)
+				if priceErr != nil {
+					release()
+					return nil, nil, affinityStickDegrade
+				}
+				info.PriceData.GroupRatioInfo = groupRatio
 			}
 			service.MarkChannelAffinityUsed(c, selectGroup, affinityCh.Id)
 			if inWaitQueue {

@@ -234,7 +234,10 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 	}
 	modelName := service.CovertMjpActionToModelName(constant.MjActionSwapFace)
 
-	priceData := helper.ModelPriceHelperPerCall(c, info)
+	priceData, err := helper.ModelPriceHelperPerCall(c, info)
+	if err != nil {
+		return service.MidjourneyErrorWrapper(constant.MjRequestError, err.Error())
+	}
 	if info.EnterpriseId > 0 {
 		return relayEnterpriseMJSubmit(c, info, constant.MjActionSwapFace, "InsightFace", true)
 	}
@@ -559,7 +562,10 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 
 	modelName := service.CovertMjpActionToModelName(midjRequest.Action)
 
-	priceData := helper.ModelPriceHelperPerCall(c, relayInfo)
+	priceData, err := helper.ModelPriceHelperPerCall(c, relayInfo)
+	if err != nil {
+		return service.MidjourneyErrorWrapper(constant.MjRequestError, err.Error())
+	}
 	if relayInfo.EnterpriseId > 0 {
 		return relayEnterpriseMJSubmit(c, relayInfo, midjRequest.Action, midjRequest.Prompt, consumeQuota)
 	}

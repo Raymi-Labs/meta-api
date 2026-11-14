@@ -32,8 +32,8 @@ func TestEnterpriseBillingIdentityPricePaths(t *testing.T) {
 		require.NoError(t, ratio_setting.UpdateTimeRatioRulesByJSONString(oldTime))
 		billing_setting.ReplaceBundle(oldBundle)
 	})
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
-	require.NoError(t, ratio_setting.UpdateGroupGroupRatioByJSONString(`{"personal-auth":{"default":0.8},"enterprise-price":{"default":0.25},"enterprise-free":{"default":0}}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"enterprise-price":0.25,"enterprise-free":0}`))
+	require.NoError(t, ratio_setting.UpdateGroupGroupRatioByJSONString(`{"personal-auth":{"default":0.8},"enterprise-price":{"default":9},"enterprise-free":{"default":9}}`))
 	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"payer-text":1}`))
 	require.NoError(t, ratio_setting.UpdateModelPriceByJSONString(`{"payer-call":0.2,"payer-image":0.2}`))
 	require.NoError(t, ratio_setting.UpdateTimeRatioRulesByJSONString(`[
@@ -68,7 +68,7 @@ func TestEnterpriseBillingIdentityPricePaths(t *testing.T) {
 				case "text", "tiered", "image", "image-expr":
 					price, err = ModelPriceHelper(c, info, 100, &types.TokenCountMeta{MaxTokens: 50})
 				case "call":
-					price = ModelPriceHelperPerCall(c, info)
+					price, err = ModelPriceHelperPerCall(c, info)
 				case "task":
 					price, err = ModelPriceHelperTask(c, info)
 				}
@@ -100,7 +100,12 @@ func TestEnterpriseBillingIdentityPricePaths(t *testing.T) {
 				other := service.GenerateTextOtherInfo(c, info, price.ModelRatio, price.GroupRatioInfo.GroupRatio,
 					price.CompletionRatio, 0, 0, price.ModelPrice, price.GroupRatioInfo.GroupSpecialRatio)
 				require.Equal(t, payer.ratio, other["group_ratio"])
-				require.Equal(t, payer.ratio, other["user_group_ratio"])
+				if payer.group == "" {
+					require.Equal(t, payer.ratio, other["user_group_ratio"])
+				} else {
+					require.Equal(t, float64(-1), other["user_group_ratio"])
+					require.Equal(t, payer.group, other["enterprise_billing_group"])
+				}
 				if payer.timeRatio != 1 {
 					require.Equal(t, payer.timeRatio, other["time_ratio"])
 					require.Equal(t, "enterprise-window", other["time_ratio_rule"])
@@ -118,7 +123,11 @@ func TestEnterpriseBillingIdentityPricePaths(t *testing.T) {
 				if path == "call" || path == "task" {
 					callLog := service.GenerateMjOtherInfo(info, price)
 					require.Equal(t, payer.ratio, callLog["group_ratio"])
-					require.Equal(t, payer.ratio, callLog["user_group_ratio"])
+					if payer.group == "" {
+						require.Equal(t, payer.ratio, callLog["user_group_ratio"])
+					} else {
+						require.NotContains(t, callLog, "user_group_ratio")
+					}
 					if payer.timeRatio != 1 {
 						require.Equal(t, payer.timeRatio, callLog["time_ratio"])
 					}

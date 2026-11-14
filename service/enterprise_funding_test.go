@@ -47,6 +47,7 @@ func enterpriseTestUser(t *testing.T) *model.User {
 // newEnterpriseBilling 给成员分配 allocated 额度；tokenLimit 为 0 表示令牌不另设上限。
 func newEnterpriseBilling(t *testing.T, allocated, tokenLimit int64) *enterpriseBilling {
 	t.Helper()
+	require.NoError(t, model.DB.AutoMigrate(&model.Option{}))
 	require.NoError(t, model.MigrateEnterpriseTables(model.DB))
 	oldEnabled, oldLog := common.EnterpriseEnabled, constant.ErrorLogEnabled
 	common.EnterpriseEnabled, constant.ErrorLogEnabled = true, false

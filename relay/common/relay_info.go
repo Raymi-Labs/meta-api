@@ -198,9 +198,10 @@ type RelayInfo struct {
 	TokenKey                 string
 	TokenGroup               string
 	UserId                   int
-	UsingGroup               string // 使用的分组，当auto跨分组重试时，会变动
-	UserGroup                string // 用户授权分组，不随付款方改变
-	EnterpriseBillingGroup   string // 企业价格身份；不得用于权限或选路
+	UsingGroup               string   // 使用的分组，当auto跨分组重试时，会变动
+	UserGroup                string   // 用户授权分组，不随付款方改变
+	EnterpriseBillingGroup   string   // 企业价格来源；不得用于权限或选路
+	EnterpriseBillingRatio   *float64 // 首次取价固定的企业分组倍率，渠道重试和配置变更不重定价
 	TokenUnlimited           bool
 	StartTime                time.Time
 	FirstResponseTime        time.Time

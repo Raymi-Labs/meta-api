@@ -13,7 +13,7 @@ import (
 
 func TestUserChannelGroupOptionsSwapAndRollback(t *testing.T) {
 	db := setupGroupUsageTestDB(t)
-	require.NoError(t, db.AutoMigrate(&Option{}))
+	require.NoError(t, db.AutoMigrate(&Option{}, &Enterprise{}))
 	oldUsers, oldChannels, oldOptions := setting.UserGroups2JSONString(), ratio_setting.GroupRatio2JSONString(), common.OptionMap
 	common.OptionMap = map[string]string{}
 	t.Cleanup(func() {

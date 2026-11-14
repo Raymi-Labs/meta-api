@@ -45,7 +45,8 @@ func TestChannelTestMissingGroupRatioKeepsBusinessDiagnostics(t *testing.T) {
 			log.Reset()
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 			info := &relaycommon.RelayInfo{IsChannelTest: tc.test, UserGroup: tc.user, UsingGroup: tc.group}
-			got := HandleGroupRatio(c, info)
+			got, err := HandleGroupRatio(c, info)
+			require.NoError(t, err)
 			require.Equal(t, tc.want, got.GroupRatio)
 			require.Equal(t, tc.special, got.HasSpecialRatio)
 			if tc.warn {
@@ -59,6 +60,8 @@ func TestChannelTestMissingGroupRatioKeepsBusinessDiagnostics(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Set("auto_group", "paid")
 	info := &relaycommon.RelayInfo{IsChannelTest: true, UserGroup: "default", UsingGroup: "default"}
-	require.Equal(t, 0.4, HandleGroupRatio(c, info).GroupRatio)
+	got, err := HandleGroupRatio(c, info)
+	require.NoError(t, err)
+	require.Equal(t, 0.4, got.GroupRatio)
 	require.Equal(t, "paid", info.UsingGroup)
 }

@@ -70,6 +70,13 @@ func GetGroupRatioCopy() map[string]float64 {
 	return groupRatioMap.ReadAll()
 }
 
+// GetValidGroupRatio reads a configured base multiplier without the legacy fallback to 1.
+// Enterprise pricing must fail closed when its selected billing group is retired.
+func GetValidGroupRatio(name string) (float64, bool) {
+	ratio, exists := groupRatioMap.Get(name)
+	return ratio, exists && name != "" && name != "auto" && ratio >= 0 && !math.IsNaN(ratio) && !math.IsInf(ratio, 0)
+}
+
 func ContainsGroupRatio(name string) bool {
 	_, ok := groupRatioMap.Get(name)
 	return ok

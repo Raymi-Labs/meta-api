@@ -639,7 +639,11 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 	for {
 		channel, selectGroup, err := service.CacheGetRandomSatisfiedChannel(retryParam)
 
-		info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
+		groupRatio, priceErr := helper.HandleGroupRatio(c, info)
+		if priceErr != nil {
+			return nil, types.NewError(priceErr, types.ErrorCodeEnterpriseBillingGroupUnavailable, types.ErrOptionWithSkipRetry())
+		}
+		info.PriceData.GroupRatioInfo = groupRatio
 
 		if err != nil {
 			return nil, types.NewError(fmt.Errorf("获取分组 %s 下模型 %s 的可用渠道失败（retry）: %s", selectGroup, info.OriginModelName, err.Error()), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
@@ -752,6 +756,14 @@ func RelayMidjourney(c *gin.Context) {
 			"code":        4,
 		})
 		return
+	}
+
+	// History reads, callbacks and image downloads keep working after a group is retired.
+	if midjourneyModeUsesUpstream(relayInfo.RelayMode) && relayInfo.RelayMode != relayconstant.RelayModeMidjourneyTaskImageSeed {
+		if priceErr := helper.PrepareEnterpriseGroupRatio(relayInfo); priceErr != nil {
+			c.JSON(priceErr.StatusCode, gin.H{"description": priceErr.Error(), "type": "new_api_error", "code": 4})
+			return
+		}
 	}
 
 	var releaseSlot func()
@@ -941,6 +953,11 @@ func RelayTask(c *gin.Context) {
 			Message:    err.Error(),
 			StatusCode: http.StatusInternalServerError,
 		})
+		return
+	}
+
+	if priceErr := helper.PrepareEnterpriseGroupRatio(relayInfo); priceErr != nil {
+		respondTaskError(c, service.TaskErrorFromAPIError(priceErr))
 		return
 	}
 
