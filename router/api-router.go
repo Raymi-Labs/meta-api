@@ -351,6 +351,7 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
 			channelRoute.GET("/update_balance/:id", controller.UpdateChannelBalance)
 			channelRoute.POST("/", controller.AddChannel)
+			channelRoute.POST("/param_override/preview", controller.PreviewChannelParamOverride)
 			channelRoute.PUT("/", controller.UpdateChannel)
 			channelRoute.DELETE("/disabled", controller.DeleteDisabledChannel)
 			channelRoute.GET("/tag/quota_policy", controller.GetChannelTagQuotaPolicy)

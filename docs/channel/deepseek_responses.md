@@ -48,6 +48,10 @@ DeepSeek Responses 是无状态 API。客户端应保留前一轮的完整 `outp
 
 示例中的推理和工具调用由上一轮实际输出替换，`call_id` 必须对应。网关只转发工具协议，工具执行由客户端完成。非空 `previous_response_id` 或 `conversation` 返回明确的 400，提示回传完整历史，不发送到上游，也不切换渠道重试。Chat 转 Responses 的既有会话优化在 DeepSeek 上不缓存或缩减历史。
 
+从 `v1.31.0` 起，官方 HTTPS `api.deepseek.com`（默认端口或 443）的非透传请求，在参数覆盖后、出站前补齐工具步骤缺失的 `reasoning` 项，或为空的 `reasoning_text` 填入一个空格。它只是协议占位，不是重建模型思考；已有推理文本、未知字段与工具结果保留。工具结果后的 assistant 续接步骤同样处理；用户或未知类型输入会划分步骤边界。最终 `reasoning.effort=none`、全局/渠道请求体透传、HTTP、第三方主机和非标准端口不补全。该兼容来源为上游 `a3fd673bb`，本地以合成请求回归，未调用真实供应商。
+
+同批 Chat 兼容将 `developer` 消息角色映射为 DeepSeek 接受的 `system`，保留消息顺序与内容。Messages 的现有缺失 thinking 单次补救与此独立。
+
 官方内置工具支持范围不是完整 OpenAI 工具集合；不能以函数工具回归通过推断任意内置工具、服务端会话或 `/responses/compact` 可用。
 
 ## 验证与诊断边界

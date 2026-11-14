@@ -36,6 +36,7 @@ import {
 } from '@douyinfe/semi-ui';
 import { IconDelete, IconMenu, IconPlus } from '@douyinfe/semi-icons';
 import { copy, showError, showSuccess, verifyJSON } from '../../../../helpers';
+import ParamOverridePreview from './ParamOverridePreview';
 import {
   CLAUDE_CLI_HEADER_PASSTHROUGH_TEMPLATE,
   CODEX_CLI_HEADER_PASSTHROUGH_TEMPLATE,
@@ -1069,6 +1070,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
   const { t } = useTranslation();
 
   const [editMode, setEditMode] = useState('visual');
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [visualMode, setVisualMode] = useState('operations');
   const [legacyValue, setLegacyValue] = useState('');
   const [operations, setOperations] = useState([createDefaultOperation()]);
@@ -1090,6 +1092,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
   useEffect(() => {
     if (!visible) return;
     const nextState = parseInitialState(value);
+    setPreviewVisible(false);
     setEditMode(nextState.editMode);
     setVisualMode(nextState.visualMode);
     setLegacyValue(nextState.legacyValue);
@@ -1867,6 +1870,19 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
     }
   }, [buildVisualJson, editMode, t]);
 
+  const previewDraft = useMemo(() => {
+    try {
+      const draft = editMode === 'json' ? jsonText.trim() : buildVisualJson();
+      const parsed = JSON.parse(draft || '{}');
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error(t('参数覆盖必须是合法的 JSON 对象'));
+      }
+      return { draft, error: '' };
+    } catch (error) {
+      return { draft: '', error: error.message };
+    }
+  }, [editMode, jsonText, buildVisualJson, t]);
+
   const handleSave = () => {
     try {
       let result = '';
@@ -1948,6 +1964,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
               <Button type='tertiary' onClick={resetEditorState}>
                 {t('重置')}
               </Button>
+              <Button onClick={() => setPreviewVisible(true)}>{t('参数覆盖试运行')}</Button>
             </Space>
           </div>
         </Card>
@@ -3326,6 +3343,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
       </Space>
       </Modal>
 
+      <ParamOverridePreview
+        visible={visible && previewVisible}
+        draft={previewDraft.draft}
+        draftError={previewDraft.error}
+        onClose={() => setPreviewVisible(false)}
+      />
       <Modal
         title={t('anthropic-beta JSON 示例')}
         visible={headerValueExampleVisible}

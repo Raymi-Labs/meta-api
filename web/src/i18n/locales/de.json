@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Parameterüberschreibungen testen",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Führt nur den aktuellen Entwurf mit dem Beispiel aus. Keine Speicherung, kein Modellaufruf und keine Kosten. Das Ergebnis umfasst nur Parameterüberschreibungen.",
+    "模拟上下文 JSON": "Beispielkontext als JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Kontext und Header sind manuell eingegebene Beispiele. Keine echten Schlüssel eingeben. Maximal 100 Operationen und 256 KiB Eingabe.",
+    "运行试例": "Beispiel ausführen",
+    "规则条件命中（不代表字段一定改变）": "Erfüllte Bedingungen (Felder können unverändert bleiben)",
+    "强度参考：较弱": "Geschätzte Stärke: schwach",
+    "强度参考：一般": "Geschätzte Stärke: mittel",
+    "强度参考：较强": "Geschätzte Stärke: stark",
+    "两次输入的密码一致": "Passwörter stimmen überein",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Multiplikator der Unternehmensabrechnungsgruppe. Automatisches Routing ändert ihn nicht; Modellpreise und zeitabhängige Multiplikatoren gelten separat.",
     "计费分组": "Abrechnungsgruppe",
     "请选择计费分组": "Abrechnungsgruppe auswählen",

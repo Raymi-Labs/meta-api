@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Prova le sovrascritture dei parametri",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Esegue solo la bozza attuale e l’esempio. Nessun salvataggio, chiamata al modello o addebito. Il risultato riguarda solo le sovrascritture dei parametri.",
+    "模拟上下文 JSON": "Contesto di esempio JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Contesto e intestazioni sono esempi inseriti manualmente. Non inserire chiavi reali. Massimo 100 operazioni e 256 KiB di input.",
+    "运行试例": "Esegui esempio",
+    "规则条件命中（不代表字段一定改变）": "Condizioni soddisfatte (i campi potrebbero non cambiare)",
+    "强度参考：较弱": "Robustezza stimata: debole",
+    "强度参考：一般": "Robustezza stimata: media",
+    "强度参考：较强": "Robustezza stimata: forte",
+    "两次输入的密码一致": "Le password corrispondono",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Moltiplicatore del gruppo di fatturazione aziendale. Il routing automatico lo mantiene; prezzi dei modelli e moltiplicatori orari si applicano separatamente.",
     "计费分组": "Gruppo di fatturazione",
     "请选择计费分组": "Seleziona un gruppo di fatturazione",

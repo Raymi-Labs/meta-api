@@ -61,6 +61,7 @@ import UserBindingManagementModal from './UserBindingManagementModal';
 const { Text, Title } = Typography;
 
 import QuotaNoticeHistory from '../../../common/QuotaNoticeHistory';
+import PasswordFeedback from '../../../common/PasswordFeedback';
 
 const EditUserModal = (props) => {
   const { t } = useTranslation();
@@ -262,6 +263,7 @@ const EditUserModal = (props) => {
                         mode='password'
                         showClear
                       />
+                      <PasswordFeedback password={values.password} />
                     </Col>
 
                     <Col span={24}>

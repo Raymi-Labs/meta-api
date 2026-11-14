@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Banner, Form } from '@douyinfe/semi-ui';
 import { IconUser, IconLock } from '@douyinfe/semi-icons';
+import PasswordFeedback from '../../../common/PasswordFeedback';
 
 /**
  * 管理员账号设置步骤组件
@@ -109,6 +110,11 @@ const AdminStep = ({
             onChange={(value) => {
               setFormData({ ...formData, confirmPassword: value });
             }}
+          />
+          <PasswordFeedback
+            password={formData.password}
+            confirmation={formData.confirmPassword}
+            maxLength={null}
           />
         </>
       )}

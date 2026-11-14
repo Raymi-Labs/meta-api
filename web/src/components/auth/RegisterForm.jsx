@@ -56,6 +56,7 @@ import { SiDiscord } from 'react-icons/si';
 import Turnstile from '../common/ResilientTurnstile';
 import InviteBenefits from './InviteBenefits';
 import AuthCard from './AuthCard';
+import PasswordFeedback from '../common/PasswordFeedback';
 import AuthConsent, { useAuthConsent } from './AuthConsent';
 import {
   buildAuthPathWithNext,
@@ -583,6 +584,7 @@ const RegisterForm = () => {
           onChange={(value) => handleChange('password2', value)}
           prefix={<IconLock />}
         />
+        <PasswordFeedback password={password} confirmation={password2} />
         {showEmailVerification && (
           <>
             <Form.Input

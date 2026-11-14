@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Chạy thử ghi đè tham số",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Chỉ chạy bản nháp hiện tại và dữ liệu mẫu. Không lưu, không gọi mô hình, không tính phí. Kết quả chỉ phản ánh giai đoạn ghi đè tham số.",
+    "模拟上下文 JSON": "Ngữ cảnh mẫu JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Ngữ cảnh và tiêu đề là mẫu tự nhập; không nhập khóa thật. Tối đa 100 thao tác và 256 KiB dữ liệu đầu vào.",
+    "运行试例": "Chạy mẫu",
+    "规则条件命中（不代表字段一定改变）": "Điều kiện khớp (trường có thể không thay đổi)",
+    "强度参考：较弱": "Độ mạnh tham khảo: yếu",
+    "强度参考：一般": "Độ mạnh tham khảo: trung bình",
+    "强度参考：较强": "Độ mạnh tham khảo: mạnh",
+    "两次输入的密码一致": "Mật khẩu khớp nhau",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Hệ số nhóm tính phí doanh nghiệp. Định tuyến tự động giữ nguyên hệ số này; giá mô hình và hệ số theo thời gian được áp dụng riêng.",
     "计费分组": "Nhóm tính phí",
     "请选择计费分组": "Vui lòng chọn nhóm tính phí",

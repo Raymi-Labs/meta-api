@@ -21,6 +21,7 @@ import React from 'react';
 import { Input, Modal, Typography } from '@douyinfe/semi-ui';
 import { IconLock } from '@douyinfe/semi-icons';
 import Turnstile from '../../../common/ResilientTurnstile';
+import PasswordFeedback from '../../../common/PasswordFeedback';
 
 const ChangePasswordModal = ({
   t,
@@ -98,6 +99,11 @@ const ChangePasswordModal = ({
             prefix={<IconLock />}
           />
         </div>
+
+        <PasswordFeedback
+          password={inputs.set_new_password}
+          confirmation={inputs.set_new_password_confirmation}
+        />
 
         {turnstileEnabled && (
           <div className='flex justify-center'>

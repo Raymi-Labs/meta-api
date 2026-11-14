@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Parameteroverschrijvingen testen",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Voert alleen het huidige concept en voorbeeld uit. Er wordt niets opgeslagen, geen model aangeroepen en niets in rekening gebracht. Het resultaat betreft alleen parameteroverschrijvingen.",
+    "模拟上下文 JSON": "Voorbeeldcontext in JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Context en headers zijn handmatig ingevulde voorbeelden. Voer geen echte sleutels in. Maximaal 100 bewerkingen en 256 KiB invoer.",
+    "运行试例": "Voorbeeld uitvoeren",
+    "规则条件命中（不代表字段一定改变）": "Voldane voorwaarden (velden kunnen ongewijzigd blijven)",
+    "强度参考：较弱": "Geschatte sterkte: zwak",
+    "强度参考：一般": "Geschatte sterkte: gemiddeld",
+    "强度参考：较强": "Geschatte sterkte: sterk",
+    "两次输入的密码一致": "Wachtwoorden komen overeen",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Vermenigvuldigingsfactor van de bedrijfsfactureringsgroep. Automatische routering behoudt deze; modelprijzen en tijdsafhankelijke factoren gelden apart.",
     "计费分组": "Factureringsgroep",
     "请选择计费分组": "Selecteer een factureringsgroep",

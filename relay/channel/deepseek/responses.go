@@ -8,13 +8,15 @@ import (
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
 )
 
 // Validate the final payload, including pass-through bodies and parameter
 // overrides. DeepSeek silently ignores state references, which would otherwise
 // turn a continuation into a new conversation with missing history.
-func prepareResponsesRequestBody(body io.Reader) (io.Reader, error) {
+func prepareResponsesRequestBody(body io.Reader, info *relaycommon.RelayInfo) (io.Reader, error) {
 	var payload map[string]json.RawMessage
 	if err := common.DecodeJson(body, &payload); err != nil {
 		return nil, types.NewErrorWithStatusCode(err, types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
@@ -34,6 +36,14 @@ func prepareResponsesRequestBody(body io.Reader) (io.Reader, error) {
 	data, err := common.Marshal(payload)
 	if err != nil {
 		return nil, err
+	}
+	passThrough := model_setting.GetGlobalSettings().PassThroughRequestEnabled ||
+		(info != nil && info.ChannelMeta != nil && info.ChannelSetting.PassThroughBodyEnabled)
+	if !passThrough {
+		data, err = (&Adaptor{}).FinalizeResponsesRequest(info, data)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return bytes.NewReader(data), nil
 }

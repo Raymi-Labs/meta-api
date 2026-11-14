@@ -698,12 +698,29 @@ func hasEnabledMultiKey(keys []string, statusList map[int]int) bool {
 }
 
 func UpdateChannelStatus(channelId int, usingKey string, status int, reason string) bool {
+	// Check persisted manual decisions before mutating a potentially stale
+	// cached multi-key map. The later read still protects non-cached callers.
+	if status == common.ChannelStatusAutoDisabled {
+		stored, err := GetChannelById(channelId, false)
+		if err != nil {
+			return false
+		}
+		if stored.Status == common.ChannelStatusManuallyDisabled {
+			CacheUpdateChannelStatus(channelId, stored.Status)
+			return false
+		}
+	}
 	if common.MemoryCacheEnabled {
 		channelStatusLock.Lock()
 		defer channelStatusLock.Unlock()
 
 		channelCache, _ := CacheGetChannel(channelId)
 		if channelCache == nil {
+			return false
+		}
+		// A request that started before an operator disabled the channel must
+		// not turn that manual decision into an automatically recoverable state.
+		if status == common.ChannelStatusAutoDisabled && channelCache.Status == common.ChannelStatusManuallyDisabled {
 			return false
 		}
 		if channelCache.ChannelInfo.IsMultiKey {
@@ -741,6 +758,10 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 	if err != nil {
 		return false
 	} else {
+		if status == common.ChannelStatusAutoDisabled && channel.Status == common.ChannelStatusManuallyDisabled {
+			CacheUpdateChannelStatus(channelId, channel.Status)
+			return false
+		}
 		if channel.Status == status {
 			return false
 		}

@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Testuj nadpisywanie parametrów",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Uruchamia tylko bieżący szkic i przykład. Bez zapisywania, wywołań modelu i opłat. Wynik dotyczy wyłącznie nadpisywania parametrów.",
+    "模拟上下文 JSON": "Przykładowy kontekst JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Kontekst i nagłówki to ręcznie podane przykłady. Nie wpisuj prawdziwych kluczy. Maksymalnie 100 operacji i 256 KiB danych wejściowych.",
+    "运行试例": "Uruchom przykład",
+    "规则条件命中（不代表字段一定改变）": "Spełnione warunki (pola mogą pozostać bez zmian)",
+    "强度参考：较弱": "Szacowana siła: słaba",
+    "强度参考：一般": "Szacowana siła: średnia",
+    "强度参考：较强": "Szacowana siła: wysoka",
+    "两次输入的密码一致": "Hasła są zgodne",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Mnożnik grupy rozliczeniowej firmy. Automatyczny routing go nie zmienia; ceny modeli i mnożniki czasowe są naliczane osobno.",
     "计费分组": "Grupa rozliczeniowa",
     "请选择计费分组": "Wybierz grupę rozliczeniową",

@@ -1,5 +1,15 @@
 {
   "translation": {
+    "参数覆盖试运行": "Test parameter overrides",
+    "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Runs only the current draft and sample. Nothing is saved, no model is called, and no charges are incurred. Results cover only parameter overrides.",
+    "模拟上下文 JSON": "Sample context JSON",
+    "上下文和请求头均为自填样例；请勿填入真实密钥。最多 100 条操作、256 KiB 输入。": "Context and headers are manually supplied samples; do not enter real keys. Maximum 100 operations and 256 KiB of input.",
+    "运行试例": "Run sample",
+    "规则条件命中（不代表字段一定改变）": "Condition matches (fields may remain unchanged)",
+    "强度参考：较弱": "Estimated strength: weak",
+    "强度参考：一般": "Estimated strength: moderate",
+    "强度参考：较强": "Estimated strength: strong",
+    "两次输入的密码一致": "Passwords match",
     "企业计费分组倍率；自动切组不改变此倍率，模型价格和时间倍率另算。": "Enterprise billing group multiplier. Automatic routing keeps this multiplier; model prices and time multipliers apply separately.",
     "计费分组": "Billing group",
     "请选择计费分组": "Select a billing group",

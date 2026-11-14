@@ -9,9 +9,58 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/stretchr/testify/require"
 )
+
+func TestDeepSeekDeveloperRole(t *testing.T) {
+	var request dto.GeneralOpenAIRequest
+	require.NoError(t, common.Unmarshal([]byte(`{"model":"deepseek-flash-none","messages":[{"role":"developer","content":"rules"},{"role":"user","content":"hello"},{"role":"developer","content":"more"},{"role":"assistant","content":"ok"}]}`), &request))
+	_, err := (&Adaptor{}).ConvertOpenAIRequest(nil, nil, &request)
+	require.NoError(t, err)
+	require.Equal(t, "system", request.Messages[0].Role)
+	require.Equal(t, "user", request.Messages[1].Role)
+	require.Equal(t, "system", request.Messages[2].Role)
+	require.Equal(t, "assistant", request.Messages[3].Role)
+	require.Equal(t, "deepseek-flash", request.Model)
+}
+
+func TestDeepSeekFinalNormalizationRespectsOverridesAndPassthrough(t *testing.T) {
+	settings := model_setting.GetGlobalSettings()
+	old := settings.PassThroughRequestEnabled
+	t.Cleanup(func() { settings.PassThroughRequestEnabled = old })
+	const body = `{"input":[{"type":"function_call","call_id":"x","name":"tool","arguments":"{}"}],"stream_options":{},"unknown":9007199254740993}`
+	for _, tc := range []struct {
+		name                                 string
+		global, channel, none, wantReasoning bool
+	}{
+		{"normal", false, false, false, true},
+		{"global passthrough", true, false, false, false},
+		{"channel passthrough", false, true, false, false},
+		{"override disables", false, false, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings.PassThroughRequestEnabled = tc.global
+			info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{ChannelBaseUrl: "https://api.deepseek.com"}}
+			info.ChannelSetting.PassThroughBodyEnabled = tc.channel
+			data := []byte(body)
+			if tc.none {
+				require.NoError(t, common.Unmarshal([]byte(`{"operations":[{"mode":"set","path":"reasoning.effort","value":"none"}]}`), &info.ParamOverride))
+				var err error
+				data, err = relaycommon.ApplyParamOverrideWithRelayInfo(data, info)
+				require.NoError(t, err)
+			}
+			prepared, err := prepareResponsesRequestBody(strings.NewReader(string(data)), info)
+			require.NoError(t, err)
+			got, err := io.ReadAll(prepared)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantReasoning, strings.Contains(string(got), `"reasoning_text"`))
+			require.NotContains(t, string(got), "stream_options")
+			require.Contains(t, string(got), "9007199254740993")
+		})
+	}
+}
 
 func TestDeepSeekRequestURL(t *testing.T) {
 	for _, tc := range []struct {
@@ -64,20 +113,20 @@ func TestDeepSeekResponsesReasoning(t *testing.T) {
 
 func TestDeepSeekResponsesFinalPayload(t *testing.T) {
 	body := `{"model":"deepseek-flash","input":[{"type":"reasoning","content":[{"type":"reasoning_text","text":"fixture reasoning"}]},{"type":"function_call","call_id":"fc_1","name":"echo","arguments":"{}"},{"type":"function_call_output","call_id":"fc_1","output":"OK"}],"stream":true,"stream_options":{"include_usage":true},"opaque":9007199254740993,"previous_response_id":null}`
-	prepared, err := prepareResponsesRequestBody(strings.NewReader(body))
+	prepared, err := prepareResponsesRequestBody(strings.NewReader(body), nil)
 	require.NoError(t, err)
 	got, err := io.ReadAll(prepared)
 	require.NoError(t, err)
 	require.JSONEq(t, strings.Replace(body, `,"stream_options":{"include_usage":true}`, "", 1), string(got))
 	require.Contains(t, string(got), "9007199254740993")
 	for _, field := range []string{`"previous_response_id":"resp_1"`, `"conversation":"conv_1"`, `"conversation":{"id":"conv_1"}`} {
-		_, err := prepareResponsesRequestBody(strings.NewReader(`{"input":"OK",` + field + `}`))
+		_, err := prepareResponsesRequestBody(strings.NewReader(`{"input":"OK",`+field+`}`), nil)
 		var apiErr *types.NewAPIError
 		require.ErrorAs(t, err, &apiErr)
 		require.Equal(t, 400, apiErr.StatusCode)
 		require.True(t, types.IsSkipRetryError(apiErr))
 	}
-	_, err = prepareResponsesRequestBody(strings.NewReader(`{"input":"OK"`))
+	_, err = prepareResponsesRequestBody(strings.NewReader(`{"input":"OK"`), nil)
 	require.Error(t, err)
 }
 

@@ -36,7 +36,9 @@ var paramOverrideKeyAuditPaths = map[string]struct{}{
 }
 
 type paramOverrideAuditRecorder struct {
-	lines []string
+	lines   []string
+	preview bool
+	steps   []ParamOverridePreviewStep
 }
 
 type ConditionOperation struct {
@@ -680,9 +682,12 @@ func applyOperations(jsonStr string, operations []ParamOperation, conditionConte
 	}
 
 	result := jsonStr
-	for _, op := range operations {
+	for index, op := range operations {
 		// 检查条件是否满足
 		ok, err := checkConditions(result, contextJSON, op.Conditions, op.Logic)
+		if auditRecorder != nil && auditRecorder.preview {
+			auditRecorder.steps = append(auditRecorder.steps, ParamOverridePreviewStep{Index: index + 1, Mode: op.Mode, ConditionsMatched: ok})
+		}
 		if err != nil {
 			return "", err
 		}
@@ -916,6 +921,9 @@ func applyOperations(jsonStr string, operations []ParamOperation, conditionConte
 		}
 		if err != nil {
 			return "", fmt.Errorf("operation %s failed: %w", op.Mode, err)
+		}
+		if auditRecorder != nil && auditRecorder.preview && len(result) > 1024*1024 {
+			return "", fmt.Errorf("preview output exceeds 1 MiB")
 		}
 	}
 	return result, nil

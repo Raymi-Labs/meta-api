@@ -21,6 +21,7 @@ DeepSeek 专用渠道声明支持 Responses，但转换函数返回 not implemen
 - 复用现有 JSON/SSE 处理器，覆盖文本、推理和工具事件及末尾用量；Responses stream_options 声明改为不支持，并在最终出站体移除，覆盖透传与参数覆盖。
 - 官方 Responses 无状态：完整历史续接正常转发，非空 previous_response_id/conversation 明确返回 400 且禁止重试，防止被上游静默忽略。最终出站校验同时覆盖透传与参数覆盖；不增加会话存储。既有 Chat 转 Responses 会话优化对 DeepSeek 跳过存储和匹配，防止网关自行缩减完整历史。
 - 保留上游 HTTP 状态、错误消息与诊断；不新增统一 502 包装。共享非流式 Responses 处理器识别只有 code/message 的错误及 failed 状态，不将 HTTP 200 的失败对象写为成功；沿用 SSE 错误映射并禁止重放，避免重复执行工具。非流式 incomplete 的既有语义不改变。修复不改变生产渠道、价格、权限或数据库。
+- 官方 HTTPS api.deepseek.com（默认端口或 443）的非透传请求在参数覆盖后的最终出站体补齐工具历史缺失的 reasoning 或空文本，仅用单个空格作协议占位，不重建模型思考。保留实际推理、未知字段与原始数字；user/未知类型划分步骤。最终 effort=none、全局/渠道透传、第三方地址不补全。复用现有 DoRequest 最终校验入口，无需引入上游统一 Responses 准备框架；stream_options 和无状态引用校验仍覆盖透传。Chat developer 映射为 system，Messages 补救保持独立。
 
 ## Alternatives considered
 
@@ -29,6 +30,8 @@ DeepSeek 专用渠道声明支持 Responses，但转换函数返回 not implemen
 - 网关持久化历史可支持 previous_response_id，但引入租户隔离、TTL、存储与跨渠道绑定；当前完整历史已能续接，本次明确拒绝无法恢复的引用。
 
 ## Verification
+
+- 2026-11-14 移植上游 a3fd673bb 的工具历史归一算法及合成回归：缺失/空/null reasoning、工具交错、并行调用、tool 结果后 assistant、custom tool、边界、幂等性、官方域名大小写/端口、第三方与 none 例外均通过；最终校验覆盖参数覆盖后禁用与两种透传开关。Chat 多条 developer 顺序和其他角色保留。完整 relay/controller/service/model/middleware/dto/setting/types/router 回归与 DeepSeek、预览、手动启用相关定向 race 通过。未进行真实供应商调用。
 
 - 2026-10-24 后缀补充通过 DeepSeek 包定向竞态回归：low 在 Chat/Messages/Responses 一致，none 移除 effort 而保留其他设置，嵌套结构与超出 float64 精度的大整数原样保留；非 DeepSeek 模型不剥离后缀。既有无状态最终载荷与原始 reasoning 输入不变性测试同时通过。
 - 真实本地 HTTP 桩通过完整 controller.Relay → ResponsesHelper → DeepSeek → HTTP → 原生 JSON/SSE 路径验证原始非流式示例、模型映射与后缀、四档 reasoning.effort、工具首轮纯工具/推理输出、两轮完整历史与 call_id 原样保留。分别覆盖流式/非流式及透传；末尾缓存和推理用量在客户端响应保持原样。

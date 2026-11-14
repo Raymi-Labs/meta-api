@@ -88,6 +88,11 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
+	for i := range request.Messages {
+		if request.Messages[i].Role == "developer" {
+			request.Messages[i].Role = "system"
+		}
+	}
 	if err := applyDeepSeekV4OpenAIThinkingSuffix(info, request); err != nil {
 		return nil, err
 	}
@@ -190,7 +195,7 @@ func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommo
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
 	if info.RelayMode == constant.RelayModeResponses {
 		var err error
-		requestBody, err = prepareResponsesRequestBody(requestBody)
+		requestBody, err = prepareResponsesRequestBody(requestBody, info)
 		if err != nil {
 			return nil, err
 		}
