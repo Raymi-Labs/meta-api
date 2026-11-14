@@ -39,7 +39,15 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     ...config,
     configFile: false,
     root,
-    server: { host: '127.0.0.1', port: 0, open: false, proxy: {} },
+    // Fixture is immutable; filesystem sync events must not reload an active test.
+    server: {
+      host: '127.0.0.1',
+      port: 0,
+      open: false,
+      proxy: {},
+      watch: null,
+      hmr: false,
+    },
     plugins: [
       ...config.plugins
         .flat(Infinity)
@@ -70,9 +78,11 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   });
   page.setDefaultTimeout(15000);
   const errors = [],
-    writes = [];
+    writes = [],
+    requests = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  let enabled = false,
+  let pending = true;
+  let enabled = true,
     verified = true,
     fail = false,
     delay = 0,
@@ -99,6 +109,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     known_income: enabled ? id * 10 : 0,
     known_cost: 5,
     requests: 3,
+    quota: 500000,
     status: verified && enabled ? 'verified' : 'pending',
   });
   await page.addInitScript(() =>
@@ -110,10 +121,18 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       p = url.pathname;
     if (url.origin !== base) return route.abort();
     if (!p.startsWith('/api/')) return route.continue();
+    requests.push(p);
     let data = {};
     if (req.method() === 'GET' && p.endsWith('/cash/report')) {
       const id = Number(p.split('/')[3]);
+      if (pending) {
+        pending = false;
+        return route.fulfill({
+          json: { success: true, data: { refreshing: true, generated_at: 0 } },
+        });
+      }
       data = {
+        generated_at: 1793616000,
         config: { enabled_at: enabled ? 1 : 0 },
         summary: metric('total', id),
         bindings: linked ? [{ key_hash: hash, site_only: true }] : [],
@@ -210,8 +229,10 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     ]),
   );
   await tab('现金收益').click();
-  await button('启用现金收益').click();
-  await button('保存').click();
+  await page
+    .getByText('正在后台准备快照，完成后自动显示', { exact: true })
+    .waitFor();
+  assert.equal(await tab('待核对').count(), 0);
   await page.getByText('¥10.00', { exact: true }).first().waitFor();
   assert.equal(await page.getByText('model-22', { exact: true }).count(), 0);
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
@@ -225,11 +246,18 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     (await fs.readFile(await download.path(), 'utf8')).includes("'=formula"),
   );
   await textbox('搜索').fill('');
-  await tab('待核对').click();
-  await button('核对可关联渠道').click();
-  await button('关联').click();
-  await page.getByRole('switch', { name: '仅用于本站', exact: true }).click();
-  await button('保存').click();
+  const beforeFlow = requests.filter((p) => p.endsWith('/cash/report')).length;
+  await tab('现金流').click();
+  await page.getByText('全站客户净到账', { exact: true }).waitFor();
+  assert.equal(
+    requests.filter((p) => p.endsWith('/cash/report')).length,
+    beforeFlow,
+    'tab switch must reuse report',
+  );
+  assert.equal(
+    await page.getByText('全站待核实批次', { exact: true }).count(),
+    0,
+  );
   await button('录入上游账单').click();
   await textbox('OpenRouter credits (USD)').fill('1');
   await textbox('账单编号').fill('upstream-qa-1');
@@ -241,17 +269,6 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     writes.filter((w) => w.path.endsWith('/cash/entries')).length,
     1,
   );
-  await button('核实').last().click();
-  await textbox('原币金额（不含手续费）').fill('20');
-  await textbox('凭证引用').fill('settlement-qa');
-  await button('保存').click();
-  await page
-    .getByText('receipt-qa', { exact: true })
-    .waitFor({ state: 'hidden' });
-  await page.getByRole('switch', { name: '仅待核实', exact: true }).click();
-  await button('审计记录').click();
-  await page.getByText('settlement-qa', { exact: true }).waitFor();
-  await page.keyboard.press('Escape');
   await button('作废').click();
   await textbox('作废原因').fill('duplicate-proof');
   await button('保存').click();
@@ -272,12 +289,24 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   });
   verified = false;
   await button('刷新').click();
-  await page.getByRole('button', { name: /查看待核对项/ }).waitFor();
+  await page.waitForFunction(
+    () => !document.body.textContent.includes('50.00%'),
+  );
+  assert.equal(
+    await page.getByRole('button', { name: /查看待核对项/ }).count(),
+    0,
+  );
   assert.equal(await page.getByText('50.00%', { exact: true }).count(), 0);
+  verified = true;
+  await button('刷新').click();
+  await page.getByText('¥10.00', { exact: true }).first().waitFor();
   fail = true;
   await button('刷新').click();
   await page.getByText('synthetic report failure', { exact: true }).waitFor();
-  assert.equal(await page.getByText('¥10.00', { exact: true }).count(), 0);
+  assert.ok(
+    (await page.getByText('¥10.00', { exact: true }).count()) > 0,
+    'refresh failure must retain previous snapshot',
+  );
   fail = false;
   verified = true;
   delay = 800;
@@ -310,7 +339,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.evaluate(() =>
     localStorage.setItem('user', JSON.stringify({ id: 2, role: 10 })),
   );
-  await tab('待核对').click();
+  await tab('现金流').click();
   assert.equal(await button('录入上游账单').count(), 0);
   assert.equal(await button('核实').count(), 0);
   await page.screenshot({
@@ -324,13 +353,13 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     'review mobile overflow',
   );
   assert.deepEqual(errors, []);
-  const receipt = writes.find((w) => w.path.endsWith('/receipt')).body;
-  assert.equal(receipt.gross_amount, '20');
-  assert.equal(receipt.currency, 'CNY');
-  assert.equal(typeof receipt.received_at, 'number');
-  assert.ok(receipt.request_id);
+  assert.equal(
+    requests.some((p) => p.includes('/funding') || p.endsWith('/bindings')),
+    false,
+    'removed review flow must not request funding or bindings',
+  );
   console.log(
-    'OpenRouter cash: enable, binding, entries, receipts, audit, void, scope, paging, export, failure, race, permissions and mobile passed',
+    'OpenRouter cash: pending polling, snapshot reuse, no review requests, entries, void, paging, export, failure retention, race, permissions and mobile passed',
   );
 } finally {
   await browser?.close();

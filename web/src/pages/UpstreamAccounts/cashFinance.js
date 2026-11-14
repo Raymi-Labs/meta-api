@@ -13,7 +13,7 @@ export function cashDateRange(days = 7) {
 
 export const cashRequestID = () => crypto.randomUUID();
 
-export function cashCSV(rows, t) {
+export function cashCSV(rows, t, formatQuota = (value) => value) {
   const escape = (value) => {
     let text = String(value ?? '');
     if (/^[\s]*[=+@-]/.test(text)) text = `'${text}`;
@@ -27,18 +27,16 @@ export function cashCSV(rows, t) {
         t('分摊净到账收入'),
         t('上游现金成本'),
         t('现金贡献利润'),
-        t('已核实收入'),
-        t('已核实成本'),
-        t('核实状态'),
+        t('请求数'),
+        t('本站消耗'),
       ],
       ...rows.map((r) => [
         r.name,
         r.income,
         r.cost,
         r.profit,
-        r.known_income,
-        r.known_cost,
-        t(r.status === 'verified' ? '已核实' : '待核对'),
+        r.requests,
+        r.quota == null ? '' : formatQuota(r.quota),
       ]),
     ]
       .map((r) => r.map(escape).join(','))

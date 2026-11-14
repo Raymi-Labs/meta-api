@@ -33,9 +33,7 @@ func GetUpstreamCashReport(c *gin.Context) {
 	if !ok {
 		return
 	}
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
-	defer cancel()
-	data, err := model.GetCashReport(ctx, id, c.Query("start_date"), c.Query("end_date"))
+	data, err := model.GetCashReportSnapshot(id, c.Query("start_date"), c.Query("end_date"))
 	if err != nil {
 		upstreamAccountApiError(c, err)
 		return

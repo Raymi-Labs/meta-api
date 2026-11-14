@@ -116,6 +116,7 @@ func main() {
 	model.StartUpstreamAccountSyncTask()
 	model.StartOpenRouterFinanceSnapshotTask()
 	model.StartCashAccountingService()
+	model.StartCashReportSnapshotTask()
 
 	if os.Getenv("CHANNEL_UPDATE_FREQUENCY") != "" {
 		frequency, err := strconv.Atoi(os.Getenv("CHANNEL_UPDATE_FREQUENCY"))

@@ -216,7 +216,6 @@ export default function OpenRouterAccountDashboard({
             ['balance', '模型消耗看板'],
             ['profit', '现金收益'],
             ['flow', '现金流'],
-            ['review', '待核对'],
           ].map(([key, label]) => (
             <TabPane itemKey={key} tab={t(label)} key={key} />
           ))}
@@ -238,7 +237,6 @@ export default function OpenRouterAccountDashboard({
             account={account}
             active={active}
             view={view}
-            onViewChange={setView}
             refresh={refresh}
             t={t}
           />
