@@ -1,5 +1,8 @@
 {
   "translation": {
+    "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "CNY dönüşümü: 1 USD = 6,7 CNY; 5 yıldırım kredisi = 1 CNY.",
+    "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Dönem tutarları CNY olarak gösterilir. Eşleşmeyen değerler -- olarak, harici BYOK maliyetleri ayrı gösterilir.",
+    "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Hesap toplamları USD olarak gösterilir. Satın alınan krediler ödeme ücretlerini içermez; tekil yüklemeler için resmî faturaya bakın.",
     "充值与消耗": "Yüklemeler ve kullanım",
     "账户累计": "Hesap toplamları",
     "区间消耗": "Dönem kullanımı",

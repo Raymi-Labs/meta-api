@@ -30,3 +30,5 @@ Status: implemented
 ## Consequences
 
 finance既有遍历在后台处理30日日志，增加渠道分组不增加扫描次数；内存与耗时需保持既有两路并发/两分钟上限。日期限定官方可提供的30个完整UTC日；旧cash自定义范围API保留。发布和生产部署分别验收。
+
+区间显示币种由[人民币对照](../feature/2026-11-15-openrouter-cny-comparison.md)接续；数据源、归属和快照不变，账户累计保留USD。

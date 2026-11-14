@@ -220,12 +220,12 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.getByRole('button', { name: '按模型', exact: true }).click();
   assert.equal(await page.getByRole('tab').count(), 0);
   await page.getByText('$40.000000', { exact: true }).waitFor();
-  await page.getByText('⚡25.000000', { exact: true }).waitFor();
+  await page.getByText('¥5.000000', { exact: true }).waitFor();
   await page.getByRole('button', { name: '按日期', exact: true }).click();
   await page.getByText('2026-11-01', { exact: true }).waitFor();
   await page.getByRole('button', { name: '按模型', exact: true }).click();
   assert.equal(saved[0].account_type, 'openrouter');
-  assert.equal(await page.getByText('$2.500000', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('¥16.750000', { exact: true }).count(), 1);
   await page
     .getByText('model-24', { exact: true })
     .waitFor({ state: 'hidden' });
@@ -329,7 +329,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   );
   mode = 'empty';
   await page.getByRole('button', { name: '刷新', exact: true }).click();
-  await page.getByText('$0.000000', { exact: true }).waitFor();
+  await page.getByText('¥0.000000', { exact: true }).waitFor();
   mode = 'normal';
   delay = 600;
   await page.getByRole('button', { name: '刷新', exact: true }).click();

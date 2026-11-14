@@ -44,3 +44,5 @@ Bun 金额与筛选回归通过；真实 Chrome 组件验证创建/编辑/删除
 选用的 credits/activity 接口不提供逐笔充值订单；展示累计购入额度与官方账单入口。消费存在UTC完整日延迟，BYOK外部推理费用不计入OpenRouter消费。真实凭据只读验证了生产接口；修复后的生产界面和 MySQL/PostgreSQL 全流程尚未验收，发布不等于部署。已存余额快照仍遵循现有定时同步，不补历史订单。
 
 入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。
+
+区间展示由[人民币对照](2026-11-15-openrouter-cny-comparison.md)扩展为用户指定固定比例；原始数据和累计金额仍为USD。

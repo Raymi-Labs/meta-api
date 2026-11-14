@@ -110,3 +110,33 @@ test('channel groups keep identical names separate and match date totals', () =>
   expect(summarizeOpenRouterChannels(data, { search: '#2' })).toHaveLength(1);
   expect(summarizeOpenRouterChannels(null)).toEqual([]);
 });
+
+import {
+  openRouterUsageCNY,
+  openRouterQuotaCNY,
+} from '../src/pages/UpstreamAccounts/openRouterFinance.js';
+import { cashCSV } from '../src/pages/UpstreamAccounts/cashFinance.js';
+test('comparison CNY uses confirmed fixed rates and rounds only final values', () => {
+  expect(openRouterUsageCNY(261.387777)).toBe('¥1751.298106');
+  expect(openRouterQuotaCNY(4258180218, 500000, 1)).toBe('¥1703.272087');
+  expect(openRouterQuotaCNY(500000, 500000, 2)).toBe('¥0.400000');
+  expect(openRouterQuotaCNY(100, 100, 5)).toBe('¥1.000000');
+  expect(openRouterUsageCNY(0)).toBe('¥0.000000');
+  expect(openRouterQuotaCNY(0, 500000, 1)).toBe('¥0.000000');
+  for (const value of [null, undefined, NaN, Infinity, '10']) {
+    expect(openRouterUsageCNY(value)).toBe('--');
+    expect(openRouterQuotaCNY(value, 500000, 1)).toBe('--');
+  }
+  for (const invalid of [0, -1, NaN, Infinity]) {
+    expect(openRouterQuotaCNY(1, invalid, 1)).toBe('--');
+    expect(openRouterQuotaCNY(1, 500000, invalid)).toBe('--');
+  }
+  const csv = cashCSV(
+    [{ name: 'test', quota: 4258180218, requests: 84549 }],
+    (v) => v,
+    (q) => openRouterQuotaCNY(q, 500000, 1),
+    '本站消耗 (CNY)',
+  );
+  expect(csv).toContain('本站消耗 (CNY)');
+  expect(csv).toContain('¥1703.272087');
+});

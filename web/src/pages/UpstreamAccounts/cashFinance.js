@@ -13,7 +13,12 @@ export function cashDateRange(days = 7) {
 
 export const cashRequestID = () => crypto.randomUUID();
 
-export function cashCSV(rows, t, formatQuota = (value) => value) {
+export function cashCSV(
+  rows,
+  t,
+  formatQuota = (value) => value,
+  quotaLabel = t('本站消耗'),
+) {
   const escape = (value) => {
     let text = String(value ?? '');
     if (/^[\s]*[=+@-]/.test(text)) text = `'${text}`;
@@ -22,7 +27,7 @@ export function cashCSV(rows, t, formatQuota = (value) => value) {
   return (
     '\uFEFF' +
     [
-      [t('归集对象'), t('请求数'), t('本站消耗')],
+      [t('归集对象'), t('请求数'), quotaLabel],
       ...rows.map((r) => [
         r.name,
         r.requests,

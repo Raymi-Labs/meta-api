@@ -93,3 +93,35 @@ export function summarizeOpenRouterChannels(
     (a, b) => b.quota - a.quota || a.key - b.key,
   );
 }
+
+// Fixed comparison rates requested for this report, independent of global FX.
+const comparisonUSDToCNY = 6.7;
+const lightningPerCNY = 5;
+const cny = (amount) =>
+  Number.isFinite(amount) ? `¥${amount.toFixed(6)}` : '--';
+export const openRouterUsageCNY = (usd) =>
+  typeof usd === 'number' ? cny(usd * comparisonUSDToCNY) : '--';
+
+export function openRouterQuotaCNY(quota, quotaPerUnit, lightningPerUnit) {
+  if (
+    typeof quota !== 'number' ||
+    !Number.isFinite(quotaPerUnit) ||
+    quotaPerUnit <= 0 ||
+    !Number.isFinite(lightningPerUnit) ||
+    lightningPerUnit <= 0
+  )
+    return '--';
+  return cny(((quota / quotaPerUnit) * lightningPerUnit) / lightningPerCNY);
+}
+
+export function readOpenRouterQuotaScale() {
+  try {
+    const status = JSON.parse(localStorage.getItem('status') || '{}');
+    return {
+      quotaPerUnit: Number(localStorage.getItem('quota_per_unit')),
+      lightningPerUnit: Number(status?.custom_currency_exchange_rate ?? 1),
+    };
+  } catch {
+    return { quotaPerUnit: NaN, lightningPerUnit: NaN };
+  }
+}

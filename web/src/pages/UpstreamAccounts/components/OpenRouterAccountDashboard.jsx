@@ -196,7 +196,7 @@ export default function OpenRouterAccountDashboard({
         </div>
         <Text type='tertiary' className='mt-3 block'>
           {t(
-            'OpenRouter 金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。',
+            '账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。',
           )}
         </Text>
       </Card>

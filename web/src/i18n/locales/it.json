@@ -1,5 +1,8 @@
 {
   "translation": {
+    "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "Conversione CNY: 1 USD = 6,7 CNY; 5 crediti fulmine = 1 CNY.",
+    "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Gli importi del periodo sono convertiti in CNY. I valori non abbinati appaiono come --; i costi esterni BYOK sono separati.",
+    "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "I totali del conto sono in USD. I crediti acquistati escludono le commissioni; consulta la fatturazione ufficiale per ogni ricarica.",
     "充值与消耗": "Ricariche e consumo",
     "账户累计": "Totali del conto",
     "区间消耗": "Consumo nel periodo",

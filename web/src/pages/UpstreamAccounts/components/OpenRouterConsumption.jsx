@@ -8,17 +8,21 @@ import {
   Table,
   Typography,
 } from '@douyinfe/semi-ui';
-import { renderQuota } from '../../../helpers';
 import { cashCSV } from '../cashFinance';
 import {
   openRouterUSD,
+  openRouterUsageCNY,
+  openRouterQuotaCNY,
+  readOpenRouterQuotaScale,
   summarizeOpenRouterChannels,
   summarizeOpenRouterConsumption,
 } from '../openRouterFinance';
 const { Text } = Typography;
-const localQuota = (value) => (value == null ? '--' : renderQuota(value, 6));
 
 export default function OpenRouterConsumption({ data, loading, t }) {
+  const { quotaPerUnit, lightningPerUnit } = readOpenRouterQuotaScale();
+  const localQuota = (value) =>
+    openRouterQuotaCNY(value, quotaPerUnit, lightningPerUnit);
   const [search, setSearch] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -56,7 +60,7 @@ export default function OpenRouterConsumption({ data, loading, t }) {
       quota: r.quota,
     }));
     const url = URL.createObjectURL(
-      new Blob([cashCSV(csvRows, t, localQuota)], {
+      new Blob([cashCSV(csvRows, t, localQuota, t('本站消耗') + ' (CNY)')], {
         type: 'text/csv;charset=utf-8',
       }),
     );
@@ -75,15 +79,15 @@ export default function OpenRouterConsumption({ data, loading, t }) {
     ...(!channels
       ? [
           {
-            title: t('上游消耗') + ' (USD)',
+            title: t('上游消耗') + ' (CNY)',
             dataIndex: 'usage',
-            render: openRouterUSD,
+            render: openRouterUsageCNY,
             width: 160,
           },
         ]
       : []),
     {
-      title: t('本站消耗'),
+      title: t('本站消耗') + ' (CNY)',
       dataIndex: 'quota',
       render: localQuota,
       width: 160,
@@ -107,9 +111,9 @@ export default function OpenRouterConsumption({ data, loading, t }) {
     ...(!channels
       ? [
           {
-            title: t('BYOK 外部成本') + ' (USD)',
+            title: t('BYOK 外部成本') + ' (CNY)',
             dataIndex: 'byok',
-            render: openRouterUSD,
+            render: openRouterUsageCNY,
             width: 180,
           },
         ]
@@ -177,6 +181,9 @@ export default function OpenRouterConsumption({ data, loading, t }) {
             '最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。',
           )}
         </Text>
+        <Text type='tertiary' className='mt-2 block'>
+          {t('人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。')}
+        </Text>
         <Space wrap className='my-4'>
           <input
             type='date'
@@ -218,11 +225,11 @@ export default function OpenRouterConsumption({ data, loading, t }) {
         </Space>
         {cards([
           [
-            t('上游消耗') + ' (USD)',
-            openRouterUSD(data?.activity ? sum('usage') : null),
+            t('上游消耗') + ' (CNY)',
+            openRouterUsageCNY(data?.activity ? sum('usage') : null),
           ],
           [
-            t('本站消耗'),
+            t('本站消耗') + ' (CNY)',
             localQuota(data?.site_activity ? sum('quota') : null),
           ],
           [
@@ -275,7 +282,7 @@ export default function OpenRouterConsumption({ data, loading, t }) {
         />
         <Text type='tertiary' size='small'>
           {t(
-            '本站消耗沿用平台额度显示单位；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。',
+            '区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。',
           )}
         </Text>
       </Card>

@@ -1,5 +1,8 @@
 {
   "translation": {
+    "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "CNY-omrekening: 1 USD = 6,7 CNY; 5 bliksemcredits = 1 CNY.",
+    "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Periodebedragen worden omgerekend naar CNY. Niet-gekoppelde waarden verschijnen als --; externe BYOK-kosten staan apart.",
+    "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Accounttotalen staan in USD. Gekochte credits zijn exclusief betaalkosten; zie de officiële facturering voor afzonderlijke opwaarderingen.",
     "充值与消耗": "Opwaarderingen en verbruik",
     "账户累计": "Accounttotalen",
     "区间消耗": "Verbruik in de periode",

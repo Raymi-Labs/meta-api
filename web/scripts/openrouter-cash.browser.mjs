@@ -170,9 +170,11 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   const downloading = page.waitForEvent('download');
   await button('导出 CSV').click();
   const csv = await fs.readFile(await (await downloading).path(), 'utf8');
-  assert.ok(csv.includes('⚡1.000000'));
+  assert.ok(csv.includes('¥0.200000'));
   assert.ok(
-    csv.includes('本站消耗') && !csv.includes('利润') && !csv.includes('核实'),
+    csv.includes('本站消耗 (CNY)') &&
+      !csv.includes('利润') &&
+      !csv.includes('核实'),
   );
   const before = requests.filter((p) =>
     p.endsWith('/openrouter/finance'),
@@ -190,7 +192,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.getByText('2026-11-13', { exact: true }).waitFor();
   await button('7 天').click();
   await page.getByLabel('开始日期', { exact: true }).fill('2026-11-08');
-  await page.getByText('⚡23.000000', { exact: true }).first().waitFor();
+  await page.getByText('¥4.600000', { exact: true }).first().waitFor();
   await button('30 天').click();
   await button('按渠道').click();
   await page.getByText('$100.000000', { exact: true }).waitFor();
@@ -241,7 +243,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     fullPage: true,
   });
   assert.ok(!(await page.locator('body').innerText()).includes('NaN'));
-  assert.ok((await page.getByText('⚡2.000000', { exact: true }).count()) > 0);
+  assert.ok((await page.getByText('¥0.400000', { exact: true }).count()) > 0);
   assert.deepEqual(errors, []);
   assert.equal(
     requests.some(
