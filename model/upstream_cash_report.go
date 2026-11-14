@@ -36,6 +36,7 @@ type CashReportIssue struct {
 }
 
 type CashReport struct {
+	Operations   *CashOperations      `json:"operations,omitempty"`
 	Refreshing   bool                 `json:"refreshing"`
 	RefreshError string               `json:"refresh_error,omitempty"`
 	Config       CashAccountingConfig `json:"config"`

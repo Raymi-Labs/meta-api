@@ -22,19 +22,9 @@ export function cashCSV(rows, t, formatQuota = (value) => value) {
   return (
     '\uFEFF' +
     [
-      [
-        t('归集对象'),
-        t('分摊净到账收入'),
-        t('上游现金成本'),
-        t('现金贡献利润'),
-        t('请求数'),
-        t('本站消耗'),
-      ],
+      [t('归集对象'), t('请求数'), t('本站消耗')],
       ...rows.map((r) => [
         r.name,
-        r.income,
-        r.cost,
-        r.profit,
         r.requests,
         r.quota == null ? '' : formatQuota(r.quota),
       ]),

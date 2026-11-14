@@ -35,7 +35,7 @@ func newCashReportCache(collect func(context.Context, int, string, string) (*Cas
 	return &cashReportCache{entries: make(map[cashSnapshotKey]*cashSnapshotEntry), slots: make(chan struct{}, 2), collect: collect}
 }
 
-var cashReportSnapshots = newCashReportCache(GetCashReport)
+var cashReportSnapshots = newCashReportCache(GetCashOperatingReport)
 var cashSnapshotOnce sync.Once
 
 func cashSnapshotIdentity(a UpstreamAccount) string {
@@ -125,7 +125,7 @@ func (cache *cashReportCache) dispatch(accounts []UpstreamAccount, now time.Time
 }
 func (cache *cashReportCache) refresh(key cashSnapshotKey, entry *cashSnapshotEntry) {
 	defer func() { <-cache.slots }()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	data, err := cache.collect(ctx, key.account, key.start, key.end)
 	cache.mu.Lock()
@@ -138,6 +138,7 @@ func (cache *cashReportCache) refresh(key cashSnapshotKey, entry *cashSnapshotEn
 		entry.err = err.Error()
 		return
 	}
+	retainCashOperatingValues(data, entry.data)
 	entry.err, entry.data = "", data
 }
 func StartCashReportSnapshotTask() {

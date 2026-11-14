@@ -78,43 +78,24 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   });
   page.setDefaultTimeout(15000);
   const errors = [],
-    writes = [],
     requests = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  let pending = true;
-  let enabled = true,
-    verified = true,
+  let pending = true,
     fail = false,
     delay = 0,
-    linked = false,
-    entries = [];
-  const hash = 'a'.repeat(64),
-    lot = {
-      id: 1,
-      user_id: 7,
-      source_type: 'topup',
-      source_ref: 'receipt-qa',
-      total_quota: 5000000,
-      remaining_quota: 2500000,
-      created_at: 1793534400,
-      receipt_id: 0,
-      receipt: null,
-    };
-  const metric = (name, id = 1) => ({
-    name,
-    income: verified && enabled ? id * 10 : null,
-    cost: verified ? 5 : null,
-    profit: verified && enabled ? id * 10 - 5 : null,
-    margin: verified && enabled ? 50 : null,
-    known_income: enabled ? id * 10 : 0,
-    known_cost: 5,
-    requests: 3,
-    quota: 500000,
-    status: verified && enabled ? 'verified' : 'pending',
+    partial = false;
+  await page.addInitScript(() => {
+    localStorage.setItem('user', JSON.stringify({ id: 1, role: 10 }));
+    localStorage.setItem('quota_per_unit', '500000');
+    localStorage.setItem('quota_display_type', 'CUSTOM');
+    localStorage.setItem(
+      'status',
+      JSON.stringify({
+        custom_currency_symbol: '⚡',
+        custom_currency_exchange_rate: 1,
+      }),
+    );
   });
-  await page.addInitScript(() =>
-    localStorage.setItem('user', JSON.stringify({ id: 1, role: 100 })),
-  );
   await page.route('**/*', async (route) => {
     const req = route.request(),
       url = new URL(req.url()),
@@ -122,244 +103,129 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     if (url.origin !== base) return route.abort();
     if (!p.startsWith('/api/')) return route.continue();
     requests.push(p);
-    let data = {};
-    if (req.method() === 'GET' && p.endsWith('/cash/report')) {
-      const id = Number(p.split('/')[3]);
-      if (pending) {
-        pending = false;
-        return route.fulfill({
-          json: { success: true, data: { refreshing: true, generated_at: 0 } },
-        });
-      }
-      data = {
-        generated_at: 1793616000,
-        config: { enabled_at: enabled ? 1 : 0 },
-        summary: metric('total', id),
-        bindings: linked ? [{ key_hash: hash, site_only: true }] : [],
-        days: [metric('2026-11-01', id)],
-        models: Array.from({ length: 23 }, (_, i) =>
-          metric(
-            i === 0 ? '=formula' : `model-${String(i).padStart(2, '0')}`,
-            id,
-          ),
-        ),
-        channels: [],
-        issues:
-          verified && enabled
-            ? []
-            : [{ code: 'funding_unknown', message: '缺少到账凭证', count: 1 }],
-        cash_flow: {
-          site_confirmed_receipts: lot.receipt ? 20 : 0,
-          account_payments: entries.length * 7,
-          pending_funding_lots: lot.receipt ? 0 : 1,
-        },
-        sync: { last_success: 1793616000 },
-        quota_per_unit: 500000,
-      };
-      if (delay) await new Promise((r) => setTimeout(r, id === 1 ? delay : 1));
+    if (p.endsWith('/openrouter/finance'))
+      return route.fulfill({ json: { success: true, data: {} } });
+    assert.ok(p.endsWith('/cash/report'), 'unexpected API ' + p);
+    assert.equal(req.method(), 'GET');
+    if (pending) {
+      pending = false;
       return route.fulfill({
-        json: fail
-          ? { success: false, message: 'synthetic report failure' }
-          : { success: true, data },
+        json: { success: true, data: { refreshing: true } },
       });
     }
-    if (req.method() === 'GET' && p.endsWith('/cash/bindings'))
-      data = [
-        {
-          key_hash: hash,
-          channels: [{ id: 3, name: 'QA channel' }],
-          binding: linked ? { site_only: true } : null,
-        },
-      ];
-    else if (req.method() === 'GET' && p.endsWith('/cash/entries'))
-      data = { items: entries, total: entries.length };
-    else if (req.method() === 'GET' && p === '/api/cash_accounting/funding') {
-      const items =
-        url.searchParams.get('pending') === 'true' && lot.receipt ? [] : [lot];
-      data = { items, total: items.length, quota_per_unit: 500000 };
-    } else if (req.method() === 'GET' && p.endsWith('/receipts'))
-      data = {
-        items: lot.receipt ? [lot.receipt] : [],
-        total: lot.receipt ? 1 : 0,
-      };
-    else if (req.method() === 'POST') {
-      const body = req.postDataJSON();
-      writes.push({ path: p, body });
-      if (p.endsWith('/enable')) enabled = true;
-      else if (p.endsWith('/cash/bindings')) linked = true;
-      else if (p.endsWith('/receipt')) {
-        lot.receipt_id = 1;
-        lot.receipt = {
-          ...body,
-          id: 1,
-          net_cny_micros: 20000000,
-          created_by: 1,
-          created_at: 1793616000,
-        };
-      } else if (p.endsWith('/cash/entries')) {
-        data = {
-          ...body,
-          id: 1,
-          credits_nanos: 1000000000,
-          cost_cny_micros: 7000000,
-        };
-        entries.push(data);
-      } else if (p.endsWith('/void')) {
-        entries[0].voided_at = 1793616000;
-        entries[0].voided_by = 1;
-        entries[0].void_reason = body.reason;
-      } else if (!p.endsWith('/sync')) throw Error(`Unexpected write: ${p}`);
-    } else
-      return route.fulfill({
-        status: 404,
-        json: { success: false, message: `Unexpected path: ${p}` },
-      });
-    await route.fulfill({ json: { success: true, data } });
+    const id = Number(p.split('/')[3]);
+    const item = (name) => ({ name, quota: id * 500000, requests: id * 10 });
+    const data = {
+      generated_at: 1793616000,
+      summary: item('total'),
+      channels: Array.from({ length: 23 }, (_, i) =>
+        item(`channel-${id}-${String(i).padStart(2, '0')}`),
+      ),
+      models: [item('=formula')],
+      days: [item('2026-11-13')],
+      operations: {
+        local_available: true,
+        credits: { total_credits: id * 100, total_usage: 40 },
+        usage: 5,
+        credits_error: partial ? 'synthetic upstream failure' : '',
+      },
+    };
+    if (delay) await new Promise((r) => setTimeout(r, id === 1 ? delay : 1));
+    return route.fulfill({
+      json: fail
+        ? { success: false, message: 'synthetic report failure' }
+        : { success: true, data },
+    });
   });
-  const button = (n) =>
-      n === '保存'
-        ? page.getByRole('button').filter({ hasText: /^保存$/ })
-        : page.getByRole('button', { name: n, exact: true }),
-    textbox = (n) => page.getByRole('textbox', { name: n, exact: true }),
-    tab = (n) => page.getByRole('tab', { name: n, exact: true });
+  const button = (n) => page.getByRole('button', { name: n, exact: true });
+  const tab = (n) => page.getByRole('tab', { name: n, exact: true });
   await page.goto(`${base}/${path.basename(fixture)}/index.html`);
   await page.evaluate(() =>
     window.qa.setAccounts([
-      { id: 1, name: 'Cash QA', account_type: 'openrouter', enabled: true },
+      { id: 1, name: 'Account', account_type: 'openrouter', enabled: true },
     ]),
   );
   await tab('现金收益').click();
   await page
     .getByText('正在后台准备快照，完成后自动显示', { exact: true })
     .waitFor();
+  await page.getByText('channel-1-00', { exact: true }).waitFor();
+  assert.equal(await button('启用现金收益').count(), 0);
   assert.equal(await tab('待核对').count(), 0);
-  await page.getByText('¥10.00', { exact: true }).first().waitFor();
-  assert.equal(await page.getByText('model-22', { exact: true }).count(), 0);
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
-  await page.getByText('model-22', { exact: true }).waitFor();
-  await textbox('搜索').fill('=formula');
-  await page.getByText('=formula', { exact: true }).waitFor();
+  await page.getByText('channel-1-22', { exact: true }).waitFor();
+  await page
+    .getByRole('textbox', { name: '搜索', exact: true })
+    .fill('channel-1-00');
+  await page.getByText('channel-1-00', { exact: true }).waitFor();
   const downloading = page.waitForEvent('download');
   await button('导出 CSV').click();
-  const download = await downloading;
+  const csv = await fs.readFile(await (await downloading).path(), 'utf8');
+  assert.ok(csv.includes('⚡1.000000'));
   assert.ok(
-    (await fs.readFile(await download.path(), 'utf8')).includes("'=formula"),
+    csv.includes('本站消耗') && !csv.includes('利润') && !csv.includes('核实'),
   );
-  await textbox('搜索').fill('');
-  const beforeFlow = requests.filter((p) => p.endsWith('/cash/report')).length;
+  const before = requests.filter((p) => p.endsWith('/cash/report')).length;
   await tab('现金流').click();
-  await page.getByText('全站客户净到账', { exact: true }).waitFor();
+  await page.getByText('$100.000000', { exact: true }).waitFor();
   assert.equal(
     requests.filter((p) => p.endsWith('/cash/report')).length,
-    beforeFlow,
-    'tab switch must reuse report',
+    before,
   );
   assert.equal(
-    await page.getByText('全站待核实批次', { exact: true }).count(),
+    await page.getByText('全站客户净到账', { exact: true }).count(),
     0,
   );
-  await button('录入上游账单').click();
-  await textbox('OpenRouter credits (USD)').fill('1');
-  await textbox('账单编号').fill('upstream-qa-1');
-  await textbox('原币金额（不含手续费）').fill('7');
-  await textbox('凭证引用').fill('bank-qa');
-  await button('保存').click();
-  await page.getByText('upstream-qa-1', { exact: true }).waitFor();
-  assert.equal(
-    writes.filter((w) => w.path.endsWith('/cash/entries')).length,
-    1,
-  );
-  await button('作废').click();
-  await textbox('作废原因').fill('duplicate-proof');
-  await button('保存').click();
-  await page.getByText(/duplicate-proof/).waitFor();
-  await tab('现金流').click();
-  await page.getByText('全站客户净到账', { exact: true }).waitFor();
-  await tab('现金收益').click();
-  await page.getByText('¥10.00', { exact: true }).first().waitFor();
-  await page.waitForFunction(() => !document.querySelector('.semi-toast'));
-  assert.ok(
-    (await page.getByText('OpenRouter 现金收益', { exact: true }).boundingBox())
-      .y < 350,
-    'excessive tab content gap',
-  );
-  await page.screenshot({
-    path: path.join(output, 'cash-profit-desktop.png'),
-    fullPage: true,
-  });
-  verified = false;
+  partial = true;
   await button('刷新').click();
-  await page.waitForFunction(
-    () => !document.body.textContent.includes('50.00%'),
-  );
-  assert.equal(
-    await page.getByRole('button', { name: /查看待核对项/ }).count(),
-    0,
-  );
-  assert.equal(await page.getByText('50.00%', { exact: true }).count(), 0);
-  verified = true;
-  await button('刷新').click();
-  await page.getByText('¥10.00', { exact: true }).first().waitFor();
+  await page.getByText('synthetic upstream failure', { exact: true }).waitFor();
   fail = true;
   await button('刷新').click();
   await page.getByText('synthetic report failure', { exact: true }).waitFor();
-  assert.ok(
-    (await page.getByText('¥10.00', { exact: true }).count()) > 0,
-    'refresh failure must retain previous snapshot',
-  );
+  await page.getByText('$100.000000', { exact: true }).waitFor();
   fail = false;
-  verified = true;
-  delay = 800;
+  partial = false;
+  delay = 600;
   await button('刷新').click();
   await page.evaluate(() =>
     window.qa.setAccounts([
-      {
-        id: 2,
-        name: 'Other account',
-        account_type: 'openrouter',
-        enabled: true,
-      },
+      { id: 2, name: 'Other', account_type: 'openrouter', enabled: true },
     ]),
   );
-  await page.getByText('¥20.00', { exact: true }).first().waitFor();
-  await page.waitForTimeout(900);
-  assert.equal(await page.getByText('¥10.00', { exact: true }).count(), 0);
-  await page.waitForFunction(() => !document.querySelector('.semi-toast'));
+  await page.getByText('$200.000000', { exact: true }).waitFor();
+  await page.waitForTimeout(700);
+  assert.equal(await page.getByText('$100.000000', { exact: true }).count(), 0);
+  await page.screenshot({
+    path: path.join(output, 'cash-flow-desktop.png'),
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
+  await tab('现金收益').click();
+  await page.getByRole('textbox', { name: '搜索', exact: true }).fill('');
+  await page.getByText('channel-2-00', { exact: true }).waitFor();
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
   await page.screenshot({
     path: path.join(output, 'cash-profit-mobile.png'),
     fullPage: true,
   });
-  assert.ok(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth + 1,
-    ),
-    'mobile overflow',
-  );
-  await page.evaluate(() =>
-    localStorage.setItem('user', JSON.stringify({ id: 2, role: 10 })),
-  );
-  await tab('现金流').click();
-  assert.equal(await button('录入上游账单').count(), 0);
-  assert.equal(await button('核实').count(), 0);
-  await page.screenshot({
-    path: path.join(output, 'cash-review-admin-mobile.png'),
-    fullPage: true,
-  });
-  assert.ok(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth + 1,
-    ),
-    'review mobile overflow',
-  );
+  assert.ok(!(await page.locator('body').innerText()).includes('NaN'));
+  assert.ok((await page.getByText('⚡2.000000', { exact: true }).count()) > 0);
   assert.deepEqual(errors, []);
   assert.equal(
-    requests.some((p) => p.includes('/funding') || p.endsWith('/bindings')),
+    requests.some(
+      (p) =>
+        p.includes('/funding') ||
+        p.endsWith('/entries') ||
+        p.endsWith('/bindings'),
+    ),
     false,
-    'removed review flow must not request funding or bindings',
   );
   console.log(
-    'OpenRouter cash: pending polling, snapshot reuse, no review requests, entries, void, paging, export, failure retention, race, permissions and mobile passed',
+    'PASS: no cash setup, pending polling, log channels, pagination/filter/export, snapshot reuse, official credits, partial failure, stale retention, account isolation, mobile',
   );
 } finally {
   await browser?.close();
