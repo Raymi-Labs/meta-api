@@ -40,7 +40,11 @@ func PublicVideo(v *OpenAIVideo, taskID, model string) *OpenAIVideo {
 		out.SetMetadata("url", VideoContentPath(taskID))
 	}
 	if out.Status == VideoStatusFailed || v.Error != nil {
-		out.Error = &OpenAIVideoError{Code: "video_generation_failed", Message: "Video generation failed; contact support with the task ID"}
+		code := ""
+		if v.Error != nil {
+			code = v.Error.Code
+		}
+		out.Error = PublicVideoFailure(code)
 	}
 	return out
 }

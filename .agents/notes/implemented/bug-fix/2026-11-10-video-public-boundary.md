@@ -27,3 +27,8 @@ Status: implemented
 ## Related notes
 
 [任务共同契约](../../implemented/bug-fix/2026-10-26-video-task-common-contract.md)与[成品下载](../../implemented/feature/2026-10-31-video-artifact-delivery.md)部分重叠；保留其轮询、资金和客户端下载决定，本篇增加公开输出边界。
+
+
+## 固定错误分类
+
+[Seedance照片契约](2026-11-14-seedance-reference-images.md)为豆包失败提供审核、输入、权限、取消/过期的固定公开分类。PublicVideo 只从允许的网关代码重新生成固定消息，不透传供应商消息；未知代码保持通用错误。用户任务列表与兼容查询共用分类，原响应的管理员诊断边界不变。

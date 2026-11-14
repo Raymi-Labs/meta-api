@@ -639,6 +639,22 @@ func PublicTaskModel2Dto(task *model.Task) *dto.TaskDto {
 	var video dto.OpenAIVideo
 	// Optional media fields are best-effort; raw provider data is never returned.
 	_ = common.Unmarshal(task.Data, &video)
+	if task.Status == model.TaskStatusFailure && (task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeDoubaoVideo)) || task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeVolcEngine))) {
+		var raw struct {
+			Status string                `json:"status"`
+			Error  *dto.OpenAIVideoError `json:"error"`
+		}
+		if common.Unmarshal(task.Data, &raw) == nil {
+			code := ""
+			if raw.Error != nil {
+				code = raw.Error.Code
+			}
+			video.Error = dto.SeedanceVideoFailure(raw.Status, code)
+			if video.Error != nil {
+				out.FailReason = video.Error.Message
+			}
+		}
+	}
 	video.Status = task.Status.ToVideoStatus()
 	video.SetProgressStr(task.Progress)
 	video.CreatedAt = task.CreatedAt

@@ -67,6 +67,44 @@ class VideoTests(unittest.TestCase):
                          "task_id": "task_fixture", "phase": "queued", "model": video.MODEL,
                          "credential_fingerprint": hashlib.sha256(KEY.encode()).hexdigest()}, exclusive=True)
 
+
+    def test_frame_payload_order_and_defaults(self):
+        first = Path(self.tmp.name) / "first.png"
+        last = Path(self.tmp.name) / "last.png"
+        first.write_bytes(b"\x89PNG\r\n\x1a\nfirst")
+        last.write_bytes(b"\x89PNG\r\n\x1a\nlast")
+        for tail, mode in (([], "first_frame"), (["--last-frame", str(last)], "first_last_frame")):
+            args = self.args("--model", video.SEEDANCE_MODEL, "--first-frame", str(first), *tail)
+            payload = video.payload_for(args)
+            self.assertEqual(payload["mode"], mode)
+            self.assertEqual(payload["metadata"]["ratio"], "adaptive")
+            self.assertEqual(payload["images"][0], video.reference_data_uri(first))
+            if tail:
+                self.assertEqual(payload["images"][1], video.reference_data_uri(last))
+            self.assertNotIn("size", payload)
+        for extra in (("--last-frame", str(last)),
+                      ("--first-frame", str(first), "--image", str(last)),
+                      ("--first-frame", str(first), "--aspect-ratio", "16:9"),
+                      ("--first-frame", str(first), "--size", "1280x720")):
+            with self.assertRaises(video.VideoError):
+                video.payload_for(self.args("--model", video.SEEDANCE_MODEL, *extra))
+        with self.assertRaises(video.VideoError):
+            video.payload_for(self.args("--model", "muse-video", "--first-frame", str(first)))
+
+    def test_safe_failure_does_not_echo_provider_message_or_resubmit(self):
+        with self.assertRaisesRegex(video.VideoError, "Input content did not pass review"):
+            self.run_request(self.args("--model", video.SEEDANCE_MODEL), [
+                {"id": "task_fixture"}, {"status": "failed", "error": {
+                    "code": "video_input_rejected", "message": "https://provider.test/?key=secret"}}])
+        self.assertEqual(sum(call[3] is not None for call in self.calls), 1)
+        self.assertNotIn("provider.test", self.stdout.getvalue())
+        self.assertEqual(json.loads(self.state.read_text())["phase"], "failed")
+
+    def test_seedance_frame_resume_needs_no_original_photos(self):
+        self.seed()
+        self.assertEqual(self.run_request(self.args("--resume", "--first-frame", "/missing/start.png", "--last-frame", "/missing/end.png"), [{"status": "completed"}]), 0)
+        self.assertTrue(all(call[3] is None for call in self.calls))
+
     def test_com_origin_and_seedance_verified_payload(self):
         self.assertEqual(video.normalize_origin("https://meta-api.com/v1"), "https://meta-api.com")
         self.assertEqual(video.normalize_origin("https://meta-api.vip"), "https://meta-api.vip")

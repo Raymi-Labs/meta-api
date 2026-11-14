@@ -158,6 +158,16 @@ def reference_data_uri(filename, max_bytes=20 * 1024 * 1024, allow_webp=False, b
     return "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
 
 
+VIDEO_FAILURE_MESSAGES = {
+    "video_input_rejected": "Input content did not pass review; check the prompt and photos.",
+    "video_output_rejected": "Generated content did not pass review.",
+    "video_invalid_input": "Video parameters or photo format were rejected.",
+    "video_access_unavailable": "This channel is not currently authorized or available; contact support.",
+    "video_cancelled": "The upstream video task was cancelled.",
+    "video_expired": "The upstream video task expired.",
+}
+
+
 def payload_for(args):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}", args.model):
         raise VideoError("Supply a complete model ID.")
@@ -167,6 +177,12 @@ def payload_for(args):
         raise VideoError("A non-empty prompt is required.")
     if args.image and args.images:
         raise VideoError("Use either --image or --images, not both.")
+    frames = bool(args.first_frame or args.last_frame)
+    if args.last_frame and not args.first_frame:
+        raise VideoError("--last-frame requires --first-frame.")
+    if frames and (args.image or args.images):
+        raise VideoError("First/last frames cannot be mixed with reference photos.")
+    args.aspect_ratio = args.aspect_ratio or ("adaptive" if frames else "16:9")
     profile = COMPAT_PROFILES.get(args.model)
     known_xai = args.model in {MODEL, "grok-imagine-video-1.5"}
     args.duration = args.duration if args.duration is not None else (profile[0] if profile else (1 if known_xai else 4))
@@ -181,7 +197,11 @@ def payload_for(args):
     protocol = args.protocol
     if protocol == "auto":
         protocol = "seedance" if args.model == SEEDANCE_MODEL else ("xai" if known_xai else "openai")
-    refs = args.images or ([args.image] if args.image else [])
+    if frames and protocol != "seedance":
+        raise VideoError("First/last frame options require the seedance protocol.")
+    if frames and (args.aspect_ratio != "adaptive" or args.size):
+        raise VideoError("Seedance frames require --aspect-ratio adaptive and no --size.")
+    refs = ([args.first_frame] + ([args.last_frame] if args.last_frame else [])) if frames else (args.images or ([args.image] if args.image else []))
     budget = [64 * 1024 * 1024]  # local request-memory protection, not a provider limit
     encoded = [reference_data_uri(f, allow_webp=True, budget=budget) for f in refs]
     payload = {"model": args.model, "prompt": args.prompt.strip(), "resolution": args.resolution}
@@ -189,6 +209,8 @@ def payload_for(args):
         payload.update(seconds=str(args.duration), metadata={"ratio": args.aspect_ratio, "generate_audio": True, "watermark": False})
         if encoded:
             payload["images"] = encoded
+        if frames:
+            payload["mode"] = "first_last_frame" if args.last_frame else "first_frame"
     elif protocol == "xai":
         payload.update(duration=args.duration, aspect_ratio=args.aspect_ratio)
         if args.images:
@@ -439,7 +461,9 @@ def run(args, request=request_json, clock=time.monotonic, sleep=time.sleep):
             save_state(path, state)
             emit(phase=status, task_id=identifier)
             if status == "failed":
-                raise VideoError("Video generation failed. Check task/usage logs; no resubmission was made.")
+                code = response.get("error", {}).get("code") if isinstance(response.get("error"), dict) else None
+                detail = VIDEO_FAILURE_MESSAGES.get(code if isinstance(code, str) else None, "Video generation failed. Check task/usage logs.")
+                raise VideoError(detail + " No resubmission was made.")
         remaining = deadline - clock()
         if remaining <= 0:
             break
@@ -458,8 +482,10 @@ def parser():
     p.add_argument("--prompt")
     p.add_argument("--image", help="Local first reference: PNG/JPEG/WebP")
     p.add_argument("--images", nargs="+", help="Ordered local PNG/JPEG/WebP references; actual support is determined by the endpoint")
+    p.add_argument("--first-frame", help="Seedance starting PNG/JPEG/WebP photo; separate from references")
+    p.add_argument("--last-frame", help="Seedance ending photo; requires --first-frame")
     p.add_argument("--duration", type=int, default=None)
-    p.add_argument("--aspect-ratio", default="16:9")
+    p.add_argument("--aspect-ratio", default=None, help="Defaults to adaptive for Seedance frames, otherwise 16:9")
     p.add_argument("--resolution", default=None)
     p.add_argument("--state", default="output/video/task.json")
     p.add_argument("--resume", action="store_true")

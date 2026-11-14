@@ -15,6 +15,7 @@ Preserve the user's model ID, duration, resolution, aspect ratio and references.
 - Seedance `doubao-seedance-2-5-260628` defaults to 4 seconds/720p/16:9 and uses `seconds/resolution/metadata` plus `images` references. For the native Seedance 2.5 adapter, one or multiple photos are reference images (`role=reference_image`), never inferred first/last frames. Use `--image photo.png` or `--images character.png scene.jpg`; keep the reference order aligned with the prompt.
 - Muse and compatible Omni/Snow models use `seconds/resolution/aspect_ratio` and `input_reference` or `images`. Defaults remain 4 seconds/720p, except the named Omni1080p alias defaults to1080p. Standard size pairs are derived; other resolution/ratio tokens pass through without guessing pixel dimensions. `--size WIDTHxHEIGHT` is available when the endpoint needs explicit pixels.
 - Other full model IDs use the unified OpenAI video request format. Set `--protocol openai|xai|seedance` when the required format is known. `--protocol auto` selects only from existing known mappings; one POST is made to `/v1/videos` with no protocol fallback.
+- Seedance first/last frames: `--first-frame start.png` optionally with `--last-frame end.jpg`. These are separate from `--image/--images` references, default to adaptive ratio and reject explicit incompatible ratio/size. Other protocols reject these flags. Resume/download-only do not read the source photos again.
 - Positive integer duration and non-empty resolution/ratio format tokens are accepted. `--image` and `--images` encode local PNG/JPEG/WebP files; reference order is preserved. Keep local file/memory limits, not unverified provider limits.
 - Veo Lite remains retired by the user's explicit decision: existing tasks can be recovered, new submissions are rejected.
 - New tasks default to `https://meta-api.com`; explicit legacy YuanHeng origins remain valid. Resume/download-only retain the original origin and credential. Completed output shows only the original gateway content URL and `requires_authorization:true`, never provider URLs.
@@ -42,6 +43,15 @@ python3 scripts/meta_api_video.py --base-url https://meta-api.com \
   --state output/video/seedance-task.json --out output/video/seedance.mp4
 ```
 
+Seedance first/last-frame example:
+
+```bash
+python3 scripts/meta_api_video.py --model doubao-seedance-2-5-260628 \
+  --first-frame start.png --last-frame end.jpg --duration 5 \
+  --prompt 'Move naturally from the starting frame to the ending frame.' \
+  --state output/video/frames-task.json --out output/video/frames.mp4
+```
+
 Only one POST is issued. The task ID is saved before polling. Default wait is 1800 seconds for Muse over 30 seconds, otherwise 420; explicit --wait wins. Run in a managed tool session, never detached. Polling uses bounded backoff; up to three consecutive explicit unknown statuses with a matching ID are tolerated without another POST.
 
 `--out` streams the authenticated original-origin task content endpoint to a private temporary file, refuses redirects/non-MP4 responses and overwrites, and inspects actual MP4 duration, dimensions and audio-track count before publication. Default download budget is 900 seconds, independent from generation wait; maximum file size is 512 MiB. Metadata does not prove visual quality or audible sound: preview the downloaded media and report material differences. Never regenerate merely because the output differs.
@@ -57,6 +67,8 @@ python3 scripts/meta_api_video.py --download-only --state output/video/task.json
 ```
 
 Resume queries the original task using the original origin/key fingerprint; source images are no longer needed. Download-only requires completed state and performs only a content GET, never a POST or generation poll. A failed download leaves completed state intact. Use a new output path if one already exists.
+
+Recognized gateway error codes produce fixed input-review, output-review, parameter, channel-access, cancelled or expired messages. Never echo provider error prose or infer that the model permanently lacks a capability. Unknown codes keep the generic task-log guidance.
 
 A submission_unknown state without an ID requires task/log reconciliation before another paid request. Failed/unknown tasks do not prove zero charges. Do not change keys, providers, proxies or origins to bypass errors. Download retries retrieve the original result only; do not use HEAD or rely on Range support. Clean only this invocation's temporary files after verifying its workers exited. User content, credentials and image data are not persisted in recovery state or dry-run output.
 

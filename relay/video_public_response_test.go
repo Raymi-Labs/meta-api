@@ -8,8 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/relay/channel/task/doubao"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 	"github.com/gin-gonic/gin"
@@ -81,5 +84,58 @@ func TestVideoRealtimeResponseDoesNotExposeProvider(t *testing.T) {
 		require.NotContains(t, string(body), "provider-task")
 		require.Contains(t, string(body), "/v1/videos/task_realtime/content")
 		require.NoError(t, db.Delete(task).Error)
+	}
+}
+
+func TestSeedanceFailureConsistentAcrossPublicEntries(t *testing.T) {
+	db := useRelayCapacityTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.Task{}))
+	for _, tc := range []struct{ status, code, want string }{
+		{"failed", "InputImageSensitiveContentDetected.PrivacyInformation", "video_input_rejected"},
+		{"failed", "OutputVideoSensitiveContentDetected", "video_output_rejected"},
+		{"failed", "InvalidImageURL.InvalidFormat", "video_invalid_input"},
+		{"failed", "OperationDenied.ServiceNotOpen", "video_access_unavailable"},
+		{"failed", "unknown-secret-code", "video_generation_failed"},
+		{"cancelled", "", "video_cancelled"}, {"expired", "", "video_expired"},
+	} {
+		t.Run(tc.want, func(t *testing.T) {
+			data, err := common.Marshal(map[string]any{"status": tc.status, "error": map[string]string{"code": tc.code, "message": "https://private.example/?token=secret bearer hidden"}})
+			require.NoError(t, err)
+			a := &doubao.TaskAdaptor{}
+			parsed, err := a.ParseTaskResult(data)
+			require.NoError(t, err)
+			require.Contains(t, parsed.Reason, tc.want)
+			require.NotContains(t, parsed.Reason, "private.example")
+			require.NotContains(t, parsed.Reason, "secret")
+			for _, platform := range []int{constant.ChannelTypeDoubaoVideo, constant.ChannelTypeVolcEngine} {
+				task := &model.Task{TaskID: fmt.Sprintf("task_%d_%s", platform, tc.want), UserId: 42, Platform: constant.TaskPlatform(fmt.Sprint(platform)), Status: model.TaskStatusFailure, Data: data}
+				require.NoError(t, db.Create(task).Error)
+				for _, prefix := range []string{"/v1/videos/", "/v1/video/generations/"} {
+					c, _ := gin.CreateTestContext(httptest.NewRecorder())
+					c.Set("id", 42)
+					c.Params = gin.Params{{Key: "task_id", Value: task.TaskID}}
+					c.Request = httptest.NewRequest(http.MethodGet, prefix+task.TaskID, nil)
+					response, fetchErr := videoFetchByIDRespBodyBuilder(c)
+					require.Nil(t, fetchErr)
+					require.Contains(t, string(response), tc.want)
+					require.NotContains(t, string(response), "secret")
+				}
+				converted, err := a.ConvertToOpenAIVideo(task)
+				require.NoError(t, err)
+				var v dto.OpenAIVideo
+				require.NoError(t, common.Unmarshal(converted, &v))
+				public := service.PublicVideo(&v, task.TaskID, "alias")
+				require.Equal(t, tc.want, public.Error.Code)
+				listed := PublicTaskModel2Dto(task)
+				var listedVideo dto.OpenAIVideo
+				require.NoError(t, common.Unmarshal(listed.Data, &listedVideo))
+				require.Equal(t, public.Error, listedVideo.Error)
+				require.Equal(t, public.Error.Message, listed.FailReason)
+				wire, err := common.Marshal(listed)
+				require.NoError(t, err)
+				require.NotContains(t, string(wire), "private.example")
+				require.NotContains(t, string(wire), "secret")
+			}
+		})
 	}
 }

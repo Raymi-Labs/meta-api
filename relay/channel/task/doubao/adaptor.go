@@ -65,9 +65,10 @@ type responsePayload struct {
 }
 
 type responseTask struct {
-	ID      string `json:"id"`
-	Model   string `json:"model"`
-	Status  string `json:"status"`
+	Error   *dto.OpenAIVideoError `json:"error,omitempty"`
+	ID      string                `json:"id"`
+	Model   string                `json:"model"`
+	Status  string                `json:"status"`
 	Content struct {
 		VideoURL string `json:"video_url"`
 	} `json:"content"`
@@ -297,7 +298,12 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "failed", "cancelled", "expired":
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
-		taskResult.Reason = "task failed"
+		code := ""
+		if resTask.Error != nil {
+			code = resTask.Error.Code
+		}
+		failure := dto.SeedanceVideoFailure(resTask.Status, code)
+		taskResult.Reason = failure.Code + ": " + failure.Message
 	default:
 		// Unknown status, treat as processing
 		return nil, fmt.Errorf("unknown doubao task status")
@@ -322,11 +328,12 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.CompletedAt = originTask.UpdatedAt
 	openAIVideo.Model = originTask.Properties.OriginModelName
 
-	if dResp.Status == "failed" {
-		openAIVideo.Error = &dto.OpenAIVideoError{
-			Message: "task failed",
-			Code:    "failed",
+	if originTask.Status == model.TaskStatusFailure {
+		code := ""
+		if dResp.Error != nil {
+			code = dResp.Error.Code
 		}
+		openAIVideo.Error = dto.SeedanceVideoFailure(dResp.Status, code)
 	}
 
 	return common.Marshal(openAIVideo)

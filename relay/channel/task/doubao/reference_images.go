@@ -1,7 +1,13 @@
 package doubao
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	_ "golang.org/x/image/webp"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"net/url"
 	"strings"
 
@@ -52,6 +58,7 @@ func normalizeSeedanceImages(req *relaycommon.TaskSubmitReq, body *requestPayloa
 		}
 	}
 	first, last, refs := 0, 0, 0
+	budget := int64(64 * 1024 * 1024)
 	for i := range body.Content {
 		item := &body.Content[i]
 		if item.Type == "video_url" || item.Type == "audio_url" {
@@ -60,8 +67,11 @@ func normalizeSeedanceImages(req *relaycommon.TaskSubmitReq, body *requestPayloa
 		if item.Type != "image_url" {
 			continue
 		}
-		if item.ImageURL == nil || !validPhotoURL(item.ImageURL.URL) {
+		if item.ImageURL == nil {
 			return fmt.Errorf("invalid Seedance photo URL")
+		}
+		if err := validateSeedancePhoto(item.ImageURL.URL, &budget); err != nil {
+			return err
 		}
 		if item.Role == "" {
 			if mode == "first_frame" || mode == "first_last_frame" {
@@ -135,4 +145,41 @@ func validPhotoURL(value string) bool {
 		}
 	}
 	return false
+}
+
+// These are gateway resource budgets, not claims about provider capability.
+func validateSeedancePhoto(value string, budget *int64) error {
+	if !validPhotoURL(value) {
+		return fmt.Errorf("invalid Seedance photo URL; use HTTP(S), asset or an image data URI")
+	}
+	if !strings.HasPrefix(value, "data:") {
+		return nil
+	}
+	header, encoded, _ := strings.Cut(value, ",")
+	const maxBytes = 20 * 1024 * 1024
+	if len(encoded) > base64.StdEncoding.EncodedLen(maxBytes) {
+		return fmt.Errorf("photo exceeds gateway 20 MiB per-image limit")
+	}
+	raw, err := base64.StdEncoding.Strict().DecodeString(encoded)
+	if err != nil || len(raw) == 0 {
+		return fmt.Errorf("invalid photo base64 encoding")
+	}
+	if len(raw) > maxBytes {
+		return fmt.Errorf("photo exceeds gateway 20 MiB per-image limit")
+	}
+	*budget -= int64(len(raw))
+	if *budget < 0 {
+		return fmt.Errorf("photos exceed gateway 64 MiB aggregate limit")
+	}
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(raw))
+	if err != nil || header != "data:image/"+format+";base64" {
+		return fmt.Errorf("photo content is invalid or does not match its declared PNG/JPEG/WebP format")
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > 8192 || cfg.Height > 8192 || int64(cfg.Width)*int64(cfg.Height) > 16*1024*1024 {
+		return fmt.Errorf("photo exceeds gateway 8192-pixel side or 16-megapixel decode budget; resize the photo")
+	}
+	if _, _, err := image.Decode(bytes.NewReader(raw)); err != nil {
+		return fmt.Errorf("photo is damaged or incomplete")
+	}
+	return nil
 }

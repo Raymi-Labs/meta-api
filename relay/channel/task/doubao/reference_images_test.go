@@ -1,7 +1,14 @@
 package doubao
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"hash/crc32"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"net/http/httptest"
 	"strings"
@@ -24,7 +31,7 @@ func TestSeedancePhotoRequest(t *testing.T) {
 		{name: "unsupported audio does not silently vanish", body: `{"metadata":{"content":[{"type":"audio_url","audio_url":{"url":"https://example.test/a.mp3"},"role":"reference_audio"}]}}`, invalid: true},
 		{name: "single reference", body: `{"image":"https://example.test/a.png"}`, roles: []string{"reference_image"}},
 		{name: "two references stay references", body: `{"images":["https://example.test/a.png","https://example.test/b.jpg"],"aspect_ratio":"16:9"}`, roles: []string{"reference_image", "reference_image"}, ratio: "16:9"},
-		{name: "input reference", body: `{"input_reference":"data:image/png;base64,YQ=="}`, roles: []string{"reference_image"}},
+		{name: "input reference", body: fmt.Sprintf(`{"input_reference":%q}`, photoFixture(t, "png")), roles: []string{"reference_image"}},
 		{name: "mapped international", upstream: "dreamina-seedance-2-5-260628", body: `{"images":["https://example.test/a.png"]}`, roles: []string{"reference_image"}},
 		{name: "first frame", body: `{"mode":"first_frame","images":["https://example.test/a.png"]}`, roles: []string{"first_frame"}, ratio: "adaptive"},
 		{name: "first last frame", body: `{"mode":"first_last_frame","images":["https://example.test/a.png","https://example.test/b.jpg"]}`, roles: []string{"first_frame", "last_frame"}, ratio: "adaptive"},
@@ -96,6 +103,52 @@ func TestSeedanceReferenceCount(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Len(t, body.Content, n)
+			}
+		})
+	}
+}
+
+func photoFixture(t *testing.T, format string) string {
+	t.Helper()
+	var b bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 32, 32))
+	if format == "jpeg" {
+		require.NoError(t, jpeg.Encode(&b, img, nil))
+	} else {
+		require.NoError(t, png.Encode(&b, img))
+	}
+	return "data:image/" + format + ";base64," + base64.StdEncoding.EncodeToString(b.Bytes())
+}
+
+func TestSeedancePhotoBytes(t *testing.T) {
+	valid := photoFixture(t, "png")
+	_, encoded, _ := strings.Cut(valid, ",")
+	raw, err := base64.StdEncoding.DecodeString(encoded)
+	require.NoError(t, err)
+	oversized := append([]byte(nil), raw...)
+	binary.BigEndian.PutUint32(oversized[16:20], 8193)
+	binary.BigEndian.PutUint32(oversized[29:33], crc32.ChecksumIEEE(oversized[12:29]))
+	for _, tc := range []struct {
+		name, value string
+		budget      int64
+		invalid     bool
+	}{
+		{"png", valid, 64 << 20, false},
+		{"jpeg", photoFixture(t, "jpeg"), 64 << 20, false},
+		{"remote remains remote", "https://example.invalid/photo.png", 64 << 20, false},
+		{"invalid base64", "data:image/png;base64,%%%", 64 << 20, true},
+		{"mime mismatch", strings.Replace(valid, "image/png", "image/jpeg", 1), 64 << 20, true},
+		{"truncated", "data:image/png;base64," + base64.StdEncoding.EncodeToString(raw[:len(raw)-15]), 64 << 20, true},
+		{"dimension budget", "data:image/png;base64," + base64.StdEncoding.EncodeToString(oversized), 64 << 20, true},
+		{"aggregate budget", valid, int64(len(raw) - 1), true},
+		{"encoded size budget", "data:image/png;base64," + strings.Repeat("A", base64.StdEncoding.EncodedLen(20<<20)+1), 64 << 20, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateSeedancePhoto(tc.value, &tc.budget)
+			if tc.invalid {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
