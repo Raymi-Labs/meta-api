@@ -31,3 +31,5 @@ Go cash/OpenRouter/账户 model/controller/router 回归及 snapshot race 通过
 ## Consequences
 
 内存快照重启需预热，多副本各自统计。首次自定义范围不能预知，后台完成前明确准备状态。账本修订与同步最多滞后五分钟加计算时间。底层仍维护既有审计，不能把移除入口理解成删除历史或获得完整现金利润。
+
+入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。

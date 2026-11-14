@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Recharge & usage",
+    "账户累计": "Lifetime totals",
+    "区间消耗": "Usage in selected period",
     "参数覆盖试运行": "Test parameter overrides",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Runs only the current draft and sample. Nothing is saved, no model is called, and no charges are incurred. Results cover only parameter overrides.",
     "模拟上下文 JSON": "Sample context JSON",

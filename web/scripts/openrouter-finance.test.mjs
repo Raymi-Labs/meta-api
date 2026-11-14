@@ -68,3 +68,45 @@ test('model comparison unions sources, preserves unknown sides, and applies shar
       .usage,
   ).toBeNull();
 });
+
+import { summarizeOpenRouterChannels } from '../src/pages/UpstreamAccounts/openRouterFinance.js';
+test('channel groups keep identical names separate and match date totals', () => {
+  const data = {
+    channel_activity: [
+      {
+        date: '2026-11-01',
+        channel_id: 1,
+        channel_name: 'same',
+        quota: 10,
+        requests: 1,
+      },
+      {
+        date: '2026-11-02',
+        channel_id: 1,
+        channel_name: 'same',
+        quota: 20,
+        requests: 2,
+      },
+      {
+        date: '2026-11-01',
+        channel_id: 2,
+        channel_name: 'same',
+        quota: 30,
+        requests: 3,
+      },
+    ],
+  };
+  const rows = summarizeOpenRouterChannels(data);
+  expect(rows.map((r) => [r.key, r.quota, r.site_requests])).toEqual([
+    [1, 30, 3],
+    [2, 30, 3],
+  ]);
+  expect(
+    summarizeOpenRouterChannels(data, { end: '2026-11-01' }).reduce(
+      (s, r) => s + r.quota,
+      0,
+    ),
+  ).toBe(40);
+  expect(summarizeOpenRouterChannels(data, { search: '#2' })).toHaveLength(1);
+  expect(summarizeOpenRouterChannels(null)).toEqual([]);
+});

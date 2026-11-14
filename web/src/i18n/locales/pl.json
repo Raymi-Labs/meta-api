@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Doładowania i zużycie",
+    "账户累计": "Sumy konta",
+    "区间消耗": "Zużycie w okresie",
     "参数覆盖试运行": "Testuj nadpisywanie parametrów",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Uruchamia tylko bieżący szkic i przykład. Bez zapisywania, wywołań modelu i opłat. Wynik dotyczy wyłącznie nadpisywania parametrów.",
     "模拟上下文 JSON": "Przykładowy kontekst JSON",

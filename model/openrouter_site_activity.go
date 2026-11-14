@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -17,6 +18,14 @@ type OpenRouterSiteActivity struct {
 	Model    string `json:"model"`
 	Quota    int64  `json:"quota"`
 	Requests int64  `json:"requests"`
+}
+
+type OpenRouterChannelActivity struct {
+	Date        string `json:"date"`
+	ChannelID   int    `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+	Quota       int64  `json:"quota"`
+	Requests    int64  `json:"requests"`
 }
 
 // Current key ownership is a reporting scope, not proof of historical ownership.
@@ -38,35 +47,43 @@ func openRouterOwnedChannels(channels []Channel, hashes map[string]bool) []int {
 	return ids
 }
 
-func fetchOpenRouterSiteActivity(ctx context.Context, client *http.Client, account *UpstreamAccount, start, end time.Time) ([]OpenRouterSiteActivity, int, error) {
+func fetchOpenRouterSiteActivity(ctx context.Context, client *http.Client, account *UpstreamAccount, start, end time.Time) ([]OpenRouterSiteActivity, []OpenRouterChannelActivity, int, error) {
 	hashes, err := cashRemoteKeyHashes(ctx, client, account)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
 	var channels []Channel
-	if err = DB.WithContext(ctx).Select("id", "key").Where("type = ?", constant.ChannelTypeOpenRouter).Find(&channels).Error; err != nil {
-		return nil, 0, errors.New("本站渠道查询失败")
+	if err = DB.WithContext(ctx).Select("id", "name", "key").Where("type = ?", constant.ChannelTypeOpenRouter).Find(&channels).Error; err != nil {
+		return nil, nil, 0, errors.New("本站渠道查询失败")
 	}
 	ids := openRouterOwnedChannels(channels, hashes)
 	if len(ids) == 0 {
-		return nil, 0, errors.New("未找到当前密钥归属此账户的本站渠道")
+		return nil, nil, 0, errors.New("未找到当前密钥归属此账户的本站渠道")
 	}
-	rows, err := queryOpenRouterSiteActivity(ctx, ids, start, end)
-	return rows, len(ids), err
+	rows, channelRows, err := queryOpenRouterSiteActivity(ctx, ids, start, end)
+	names := make(map[int]string, len(channels))
+	for _, ch := range channels {
+		names[ch.Id] = ch.Name
+	}
+	for i := range channelRows {
+		channelRows[i].ChannelName = names[channelRows[i].ChannelID]
+	}
+	return rows, channelRows, len(ids), err
 }
 
-func queryOpenRouterSiteActivity(ctx context.Context, ids []int, start, end time.Time) ([]OpenRouterSiteActivity, error) {
+func queryOpenRouterSiteActivity(ctx context.Context, ids []int, start, end time.Time) ([]OpenRouterSiteActivity, []OpenRouterChannelActivity, error) {
 	totals := map[string]*OpenRouterSiteActivity{}
+	channels := map[string]*OpenRouterChannelActivity{}
 	// Stream only required fields; bounded time and indexed channel/type/time filter.
-	rows, err := LOG_DB.WithContext(ctx).Model(&Log{}).Select("created_at", "model_name", "quota", "other").Where("channel_id IN ? AND type = ? AND created_at >= ? AND created_at < ?", ids, LogTypeConsume, start.Unix(), end.Unix()).Rows()
+	rows, err := LOG_DB.WithContext(ctx).Model(&Log{}).Select("channel_id", "created_at", "model_name", "quota", "other").Where("channel_id IN ? AND type = ? AND created_at >= ? AND created_at < ?", ids, LogTypeConsume, start.Unix(), end.Unix()).Rows()
 	if err != nil {
-		return nil, errors.New("本站消费日志查询失败")
+		return nil, nil, errors.New("本站消费日志查询失败")
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var log Log
 		if err = LOG_DB.ScanRows(rows, &log); err != nil {
-			return nil, errors.New("本站消费日志读取失败")
+			return nil, nil, errors.New("本站消费日志读取失败")
 		}
 		name := log.ModelName
 		var meta struct {
@@ -82,9 +99,15 @@ func queryOpenRouterSiteActivity(ctx context.Context, ids []int, start, end time
 		}
 		totals[key].Quota += int64(log.Quota)
 		totals[key].Requests++
+		channelKey := fmt.Sprintf("%s:%d", date, log.ChannelId)
+		if channels[channelKey] == nil {
+			channels[channelKey] = &OpenRouterChannelActivity{Date: date, ChannelID: log.ChannelId}
+		}
+		channels[channelKey].Quota += int64(log.Quota)
+		channels[channelKey].Requests++
 	}
 	if rows.Err() != nil {
-		return nil, errors.New("本站消费日志读取失败")
+		return nil, nil, errors.New("本站消费日志读取失败")
 	}
 	result := make([]OpenRouterSiteActivity, 0, len(totals))
 	for _, row := range totals {
@@ -96,5 +119,15 @@ func queryOpenRouterSiteActivity(ctx context.Context, ids []int, start, end time
 		}
 		return result[i].Date > result[j].Date
 	})
-	return result, nil
+	channelRows := make([]OpenRouterChannelActivity, 0, len(channels))
+	for _, row := range channels {
+		channelRows = append(channelRows, *row)
+	}
+	sort.Slice(channelRows, func(i, j int) bool {
+		if channelRows[i].Date == channelRows[j].Date {
+			return channelRows[i].ChannelID < channelRows[j].ChannelID
+		}
+		return channelRows[i].Date > channelRows[j].Date
+	})
+	return result, channelRows, nil
 }

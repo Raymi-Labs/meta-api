@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Nạp tiền và sử dụng",
+    "账户累计": "Tổng cộng tài khoản",
+    "区间消耗": "Mức sử dụng trong kỳ",
     "参数覆盖试运行": "Chạy thử ghi đè tham số",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Chỉ chạy bản nháp hiện tại và dữ liệu mẫu. Không lưu, không gọi mô hình, không tính phí. Kết quả chỉ phản ánh giai đoạn ghi đè tham số.",
     "模拟上下文 JSON": "Ngữ cảnh mẫu JSON",

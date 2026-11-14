@@ -30,3 +30,5 @@ Status: implemented
 ## Consequences
 
 日志保留期与当前密钥归属不能证明历史完整性；USD和闪电不可直接相减。官方 activity 不是网站实时自定义时区活动接口。
+
+入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。

@@ -63,3 +63,33 @@ export function summarizeOpenRouterConsumption(
       : (b.usage ?? -1) - (a.usage ?? -1) || a.model.localeCompare(b.model),
   );
 }
+
+export function summarizeOpenRouterChannels(
+  data,
+  { start = '', end = '', search = '' } = {},
+) {
+  const groups = new Map();
+  const query = search.trim().toLowerCase();
+  for (const row of data?.channel_activity || []) {
+    const name = `${row.channel_name} (#${row.channel_id})`;
+    if (
+      (start && row.date < start) ||
+      (end && row.date > end) ||
+      !name.toLowerCase().includes(query)
+    )
+      continue;
+    if (!groups.has(row.channel_id))
+      groups.set(row.channel_id, {
+        key: row.channel_id,
+        name,
+        quota: 0,
+        site_requests: 0,
+      });
+    const group = groups.get(row.channel_id);
+    group.quota += row.quota;
+    group.site_requests += row.requests;
+  }
+  return [...groups.values()].sort(
+    (a, b) => b.quota - a.quota || a.key - b.key,
+  );
+}

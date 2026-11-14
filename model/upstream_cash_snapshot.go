@@ -93,10 +93,6 @@ func (cache *cashReportCache) dispatch(accounts []UpstreamAccount, now time.Time
 			continue
 		}
 		valid[a.Id] = cashSnapshotIdentity(a)
-		end := now.UTC().Truncate(24 * time.Hour)
-		for _, days := range []int{7, 30} {
-			cache.read(a, end.AddDate(0, 0, -days).Format("2006-01-02"), end.AddDate(0, 0, -1).Format("2006-01-02"))
-		}
 	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()

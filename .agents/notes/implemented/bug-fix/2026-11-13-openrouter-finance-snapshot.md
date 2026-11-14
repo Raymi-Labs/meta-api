@@ -29,3 +29,5 @@ Go model/controller/router 相关回归、快照 race 检查和 Go 构建通过�
 ## Consequences
 
 每个副本各采集一份，重启需要预热；快照可能滞后五分钟加采集时间，失败时更久，必须展示时间与错误。
+
+入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。

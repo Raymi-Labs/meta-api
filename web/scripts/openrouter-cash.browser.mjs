@@ -103,9 +103,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     if (url.origin !== base) return route.abort();
     if (!p.startsWith('/api/')) return route.continue();
     requests.push(p);
-    if (p.endsWith('/openrouter/finance'))
-      return route.fulfill({ json: { success: true, data: {} } });
-    assert.ok(p.endsWith('/cash/report'), 'unexpected API ' + p);
+    assert.ok(p.endsWith('/openrouter/finance'), 'unexpected API ' + p);
     assert.equal(req.method(), 'GET');
     if (pending) {
       pending = false;
@@ -114,21 +112,30 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       });
     }
     const id = Number(p.split('/')[3]);
-    const item = (name) => ({ name, quota: id * 500000, requests: id * 10 });
     const data = {
-      generated_at: 1793616000,
-      summary: item('total'),
-      channels: Array.from({ length: 23 }, (_, i) =>
-        item(`channel-${id}-${String(i).padStart(2, '0')}`),
-      ),
-      models: [item('=formula')],
-      days: [item('2026-11-13')],
-      operations: {
-        local_available: true,
-        credits: { total_credits: id * 100, total_usage: 40 },
-        usage: 5,
-        credits_error: partial ? 'synthetic upstream failure' : '',
-      },
+      fetched_at: 1793616000,
+      start_date: '2026-10-15',
+      end_date: '2026-11-13',
+      channel_activity: Array.from({ length: 23 }, (_, i) => ({
+        date: '2026-11-13',
+        channel_id: i + 1,
+        channel_name: `channel-${id}-${String(i).padStart(2, '0')}`,
+        quota: id * 500000,
+        requests: id * 10,
+      })),
+      site_activity: [
+        {
+          date: '2026-11-13',
+          model: '=formula',
+          quota: id * 500000 * 23,
+          requests: id * 10 * 23,
+        },
+      ],
+      activity: [
+        { date: '2026-11-13', model: '=formula', usage: 5, requests: 10 },
+      ],
+      credits: { total_credits: id * 100, total_usage: 40 },
+      credits_error: partial ? 'synthetic upstream failure' : '',
     };
     if (delay) await new Promise((r) => setTimeout(r, id === 1 ? delay : 1));
     return route.fulfill({
@@ -145,19 +152,21 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       { id: 1, name: 'Account', account_type: 'openrouter', enabled: true },
     ]),
   );
-  await tab('现金收益').click();
+  assert.equal(await tab('现金收益').count(), 0);
+  assert.equal(await tab('现金流').count(), 0);
+  assert.equal(await tab('模型消耗看板').count(), 0);
   await page
     .getByText('正在后台准备快照，完成后自动显示', { exact: true })
     .waitFor();
-  await page.getByText('channel-1-00', { exact: true }).waitFor();
+  await page.getByText('channel-1-00 (#1)', { exact: true }).waitFor();
   assert.equal(await button('启用现金收益').count(), 0);
   assert.equal(await tab('待核对').count(), 0);
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
-  await page.getByText('channel-1-22', { exact: true }).waitFor();
+  await page.getByText('channel-1-22 (#23)', { exact: true }).waitFor();
   await page
     .getByRole('textbox', { name: '搜索', exact: true })
     .fill('channel-1-00');
-  await page.getByText('channel-1-00', { exact: true }).waitFor();
+  await page.getByText('channel-1-00 (#1)', { exact: true }).waitFor();
   const downloading = page.waitForEvent('download');
   await button('导出 CSV').click();
   const csv = await fs.readFile(await (await downloading).path(), 'utf8');
@@ -165,11 +174,28 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   assert.ok(
     csv.includes('本站消耗') && !csv.includes('利润') && !csv.includes('核实'),
   );
-  const before = requests.filter((p) => p.endsWith('/cash/report')).length;
-  await tab('现金流').click();
+  const before = requests.filter((p) =>
+    p.endsWith('/openrouter/finance'),
+  ).length;
+  await button('按模型').click();
+  await page.getByText('=formula', { exact: true }).waitFor();
+  const modelDownload = page.waitForEvent('download');
+  await button('导出 CSV').click();
+  assert.ok(
+    (await fs.readFile(await (await modelDownload).path(), 'utf8')).includes(
+      "'=formula",
+    ),
+  );
+  await button('按日期').click();
+  await page.getByText('2026-11-13', { exact: true }).waitFor();
+  await button('7 天').click();
+  await page.getByLabel('开始日期', { exact: true }).fill('2026-11-08');
+  await page.getByText('⚡23.000000', { exact: true }).first().waitFor();
+  await button('30 天').click();
+  await button('按渠道').click();
   await page.getByText('$100.000000', { exact: true }).waitFor();
   assert.equal(
-    requests.filter((p) => p.endsWith('/cash/report')).length,
+    requests.filter((p) => p.endsWith('/openrouter/finance')).length,
     before,
   );
   assert.equal(
@@ -196,20 +222,22 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.waitForTimeout(700);
   assert.equal(await page.getByText('$100.000000', { exact: true }).count(), 0);
   await page.screenshot({
-    path: path.join(output, 'cash-flow-desktop.png'),
+    path: path.join(output, 'unified-desktop.png'),
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await tab('现金收益').click();
+  assert.equal(await tab('现金收益').count(), 0);
+  assert.equal(await tab('现金流').count(), 0);
+  assert.equal(await tab('模型消耗看板').count(), 0);
   await page.getByRole('textbox', { name: '搜索', exact: true }).fill('');
-  await page.getByText('channel-2-00', { exact: true }).waitFor();
+  await page.getByText('channel-2-00 (#1)', { exact: true }).waitFor();
   assert.ok(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   );
   await page.screenshot({
-    path: path.join(output, 'cash-profit-mobile.png'),
+    path: path.join(output, 'unified-mobile.png'),
     fullPage: true,
   });
   assert.ok(!(await page.locator('body').innerText()).includes('NaN'));
@@ -225,7 +253,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     false,
   );
   console.log(
-    'PASS: no cash setup, pending polling, log channels, pagination/filter/export, snapshot reuse, official credits, partial failure, stale retention, account isolation, mobile',
+    'PASS: unified page, pending polling, channel/model/date and range reuse, pagination/search/CSV, credits, failures, account isolation, mobile',
   );
 } finally {
   await browser?.close();

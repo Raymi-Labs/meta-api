@@ -37,18 +37,19 @@ type OpenRouterAccountActivity struct {
 }
 
 type OpenRouterAccountFinance struct {
-	Refreshing    bool                        `json:"refreshing"`
-	RefreshError  string                      `json:"refresh_error,omitempty"`
-	SiteActivity  []OpenRouterSiteActivity    `json:"site_activity"`
-	SiteError     string                      `json:"site_error,omitempty"`
-	SiteChannels  int                         `json:"site_channels"`
-	StartDate     string                      `json:"start_date"`
-	EndDate       string                      `json:"end_date"`
-	Credits       *OpenRouterAccountCredits   `json:"credits"`
-	Activity      []OpenRouterAccountActivity `json:"activity"`
-	CreditsError  string                      `json:"credits_error,omitempty"`
-	ActivityError string                      `json:"activity_error,omitempty"`
-	FetchedAt     int64                       `json:"fetched_at"`
+	ChannelActivity []OpenRouterChannelActivity `json:"channel_activity"`
+	Refreshing      bool                        `json:"refreshing"`
+	RefreshError    string                      `json:"refresh_error,omitempty"`
+	SiteActivity    []OpenRouterSiteActivity    `json:"site_activity"`
+	SiteError       string                      `json:"site_error,omitempty"`
+	SiteChannels    int                         `json:"site_channels"`
+	StartDate       string                      `json:"start_date"`
+	EndDate         string                      `json:"end_date"`
+	Credits         *OpenRouterAccountCredits   `json:"credits"`
+	Activity        []OpenRouterAccountActivity `json:"activity"`
+	CreditsError    string                      `json:"credits_error,omitempty"`
+	ActivityError   string                      `json:"activity_error,omitempty"`
+	FetchedAt       int64                       `json:"fetched_at"`
 }
 
 func newOpenRouterAccountClient() *http.Client {
@@ -239,7 +240,7 @@ func collectOpenRouterAccountFinance(ctx context.Context, account UpstreamAccoun
 		result.Activity = filtered
 	}
 	var err error
-	result.SiteActivity, result.SiteChannels, err = fetchOpenRouterSiteActivity(ctx, client, &account, start, end)
+	result.SiteActivity, result.ChannelActivity, result.SiteChannels, err = fetchOpenRouterSiteActivity(ctx, client, &account, start, end)
 	if err != nil {
 		result.SiteError = err.Error()
 	}

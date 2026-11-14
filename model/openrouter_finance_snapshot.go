@@ -85,6 +85,7 @@ func (cache *openRouterFinanceCache) refresh(account UpstreamAccount, entry *ope
 		}
 		if result.SiteError != "" && previous.SiteActivity != nil {
 			result.SiteActivity = previous.SiteActivity
+			result.ChannelActivity = previous.ChannelActivity
 			result.SiteChannels = previous.SiteChannels
 			retained = true
 		}

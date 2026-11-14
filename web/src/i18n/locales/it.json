@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Ricariche e consumo",
+    "账户累计": "Totali del conto",
+    "区间消耗": "Consumo nel periodo",
     "参数覆盖试运行": "Prova le sovrascritture dei parametri",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Esegue solo la bozza attuale e l’esempio. Nessun salvataggio, chiamata al modello o addebito. Il risultato riguarda solo le sovrascritture dei parametri.",
     "模拟上下文 JSON": "Contesto di esempio JSON",

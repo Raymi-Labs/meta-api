@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Opwaarderingen en verbruik",
+    "账户累计": "Accounttotalen",
+    "区间消耗": "Verbruik in de periode",
     "参数覆盖试运行": "Parameteroverschrijvingen testen",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Voert alleen het huidige concept en voorbeeld uit. Er wordt niets opgeslagen, geen model aangeroepen en niets in rekening gebracht. Het resultaat betreft alleen parameteroverschrijvingen.",
     "模拟上下文 JSON": "Voorbeeldcontext in JSON",

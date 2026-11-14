@@ -112,3 +112,22 @@ func TestOpenRouterFinanceSnapshotCredentialIsolationAndBound(t *testing.T) {
 	cache.read(UpstreamAccount{Id: 2})
 	waitFinanceSnapshot(t, cache, 2)
 }
+
+func TestOpenRouterFinanceSnapshotRetainsBothLocalDimensions(t *testing.T) {
+	cache := newOpenRouterFinanceCache(func(context.Context, UpstreamAccount) *OpenRouterAccountFinance {
+		return &OpenRouterAccountFinance{StartDate: "2026-11-01", EndDate: "2026-11-12", FetchedAt: 200, SiteError: "query failed"}
+	})
+	account := UpstreamAccount{Id: 1}
+	cache.entries[1] = &openRouterFinanceEntry{data: &OpenRouterAccountFinance{
+		StartDate: "2026-11-01", EndDate: "2026-11-12", FetchedAt: 100,
+		SiteActivity:    []OpenRouterSiteActivity{{Model: "m", Quota: 10}},
+		ChannelActivity: []OpenRouterChannelActivity{{ChannelID: 1, Quota: 10}}, SiteChannels: 1,
+	}}
+	entry := cache.entries[1]
+	cache.slots <- struct{}{}
+	cache.refresh(account, entry)
+	got := entry.data
+	if len(got.ChannelActivity) != 1 || got.ChannelActivity[0].Quota != 10 || len(got.SiteActivity) != 1 || got.FetchedAt != 100 || got.RefreshError == "" {
+		t.Fatalf("local dimensions diverged: %+v", got)
+	}
+}

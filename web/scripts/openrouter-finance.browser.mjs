@@ -39,7 +39,14 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     ...config,
     configFile: false,
     root,
-    server: { host: '127.0.0.1', port: 0, open: false, proxy: {} },
+    server: {
+      host: '127.0.0.1',
+      port: 0,
+      open: false,
+      proxy: {},
+      watch: null,
+      hmr: false,
+    },
     plugins: [
       ...config.plugins
         .flat(Infinity)
@@ -97,6 +104,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       return;
     }
     if (url.pathname.endsWith('/cash/report')) {
+      assert.fail('unified dashboard must not request legacy cash API');
       await route.fulfill({
         json: { success: false, message: 'Cash tested separately' },
       });
@@ -139,6 +147,13 @@ createRoot(document.getElementById('root')).render(<App/>);`,
             site_activity: rows.map((r) => ({
               date: r.date,
               model: r.model,
+              quota: 500000,
+              requests: 1,
+            })),
+            channel_activity: rows.map((r, i) => ({
+              date: r.date,
+              channel_id: i + 1,
+              channel_name: `channel-${String(i).padStart(2, '0')}`,
               quota: 500000,
               requests: 1,
             })),
@@ -202,7 +217,8 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .getByRole('button')
     .filter({ hasText: /^保存$/ })
     .click();
-  await page.getByRole('tab', { name: '模型消耗看板', exact: true }).click();
+  await page.getByRole('button', { name: '按模型', exact: true }).click();
+  assert.equal(await page.getByRole('tab').count(), 0);
   await page.getByText('$40.000000', { exact: true }).waitFor();
   await page.getByText('⚡25.000000', { exact: true }).waitFor();
   await page.getByRole('button', { name: '按日期', exact: true }).click();
@@ -221,7 +237,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
   await page.getByText('model-24', { exact: true }).waitFor();
   await page
-    .getByRole('textbox', { name: '搜索模型', exact: true })
+    .getByRole('textbox', { name: '搜索', exact: true })
     .fill('model-01');
   await page.getByText('model-01', { exact: true }).waitFor();
   await page
@@ -233,7 +249,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     'model24 pagination/filter',
   );
   await page
-    .getByRole('textbox', { name: '搜索模型', exact: true })
+    .getByRole('textbox', { name: '搜索', exact: true })
     .fill('missing');
   await page
     .getByText('model-01', { exact: true })
@@ -243,7 +259,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     0,
     'model01 empty search',
   );
-  await page.getByRole('textbox', { name: '搜索模型', exact: true }).fill('');
+  await page.getByRole('textbox', { name: '搜索', exact: true }).fill('');
   await page.getByRole('button', { name: '编辑', exact: true }).click();
   await page
     .getByRole('textbox', { name: '账户名称', exact: true })

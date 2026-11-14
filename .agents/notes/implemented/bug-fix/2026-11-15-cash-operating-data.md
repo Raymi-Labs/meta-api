@@ -27,3 +27,5 @@ Status: implemented
 ## Consequences
 
 当前渠道归属不代表历史归属；已清理日志不能补回。官方累计credits不是逐笔现金付款；不显示虚假的现金利润。现场部署仅通过受保护更新入口。
+
+入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。

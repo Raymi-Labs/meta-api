@@ -1,5 +1,8 @@
 {
   "translation": {
+    "充值与消耗": "Recargas e consumo",
+    "账户累计": "Totais da conta",
+    "区间消耗": "Consumo no período",
     "参数覆盖试运行": "Testar substituições de parâmetros",
     "仅运行当前草稿与样例，不保存、不调用模型、不计费。结果仅代表参数覆盖阶段。": "Executa apenas o rascunho atual e o exemplo. Não salva, não chama modelos nem gera cobranças. O resultado cobre apenas as substituições de parâmetros.",
     "模拟上下文 JSON": "Contexto de exemplo JSON",

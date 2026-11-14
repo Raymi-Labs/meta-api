@@ -20,7 +20,7 @@ func waitCashSnapshots(t *testing.T, cache *cashReportCache) {
 	}
 	t.Fatal("background snapshot did not finish")
 }
-func TestCashSnapshotReadNeverCalculatesAndPrewarms(t *testing.T) {
+func TestCashSnapshotReadNeverCalculatesAndOnlyDispatchesRequestedRanges(t *testing.T) {
 	var calls atomic.Int32
 	cache := newCashReportCache(func(_ context.Context, id int, start, end string) (*CashReport, error) {
 		calls.Add(1)
@@ -28,6 +28,11 @@ func TestCashSnapshotReadNeverCalculatesAndPrewarms(t *testing.T) {
 	})
 	a := UpstreamAccount{Id: 1, AccountType: UpstreamAccountTypeOpenRouter}
 	now := time.Now()
+	cache.dispatch([]UpstreamAccount{a}, now)
+	waitCashSnapshots(t, cache)
+	if calls.Load() != 0 {
+		t.Fatal("legacy reports must not prewarm")
+	}
 	end := now.UTC().Truncate(24 * time.Hour)
 	startText, endText := end.AddDate(0, 0, -7).Format("2006-01-02"), end.AddDate(0, 0, -1).Format("2006-01-02")
 	for i := 0; i < 20; i++ {
@@ -40,15 +45,15 @@ func TestCashSnapshotReadNeverCalculatesAndPrewarms(t *testing.T) {
 	}
 	cache.dispatch([]UpstreamAccount{a}, now)
 	waitCashSnapshots(t, cache)
-	if calls.Load() != 2 {
-		t.Fatalf("must prewarm both 7 and 30 days: %d", calls.Load())
+	if calls.Load() != 1 {
+		t.Fatalf("must collect only the requested range: %d", calls.Load())
 	}
 	if r := cache.read(a, startText, endText); r.GeneratedAt != 123 || r.Refreshing {
 		t.Fatalf("warm result: %+v", r)
 	}
 	cache.dispatch([]UpstreamAccount{a}, now.Add(time.Minute))
 	waitCashSnapshots(t, cache)
-	if calls.Load() != 2 {
+	if calls.Load() != 1 {
 		t.Fatal("fresh entries recalculated")
 	}
 }
