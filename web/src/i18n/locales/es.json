@@ -1,5 +1,11 @@
 {
   "translation": {
+    "官方参考价待同步": "Precio oficial de referencia pendiente de sincronización",
+    "免费变体不以平台价格作为官方参考价": "Los precios de variantes gratuitas de la plataforma no son precios oficiales del fabricante",
+    "历史型号的官方价格适用范围待核实": "Debe verificarse la aplicabilidad del precio oficial para este modelo anterior",
+    "模型名称与官方报价的对应关系待核实": "Debe verificarse la correspondencia entre el nombre del modelo y el precio oficial",
+    "官方参考价待核实": "Precio oficial de referencia pendiente de verificación",
+    "最近核实：{{date}}": "Última verificación: {{date}}",
     "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "Conversión a CNY: 1 USD = 6,7 CNY; 5 créditos rayo = 1 CNY.",
     "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Los importes del período se convierten a CNY. Los valores sin correspondencia aparecen como --; los costes externos BYOK se muestran aparte.",
     "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Los totales de la cuenta están en USD. Los créditos comprados excluyen comisiones; consulta la facturación oficial para cada recarga.",

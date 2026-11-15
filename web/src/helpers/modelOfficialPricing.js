@@ -98,3 +98,20 @@ export function visibleOfficialNotes(notes = '') {
     )
     .trim();
 }
+
+// Both the detail header and group comparison use the public review result.
+// A review describes a missing value, never substitutes for a price.
+export function officialPricingUnavailable(review) {
+  switch (review?.code) {
+    case 'source_available':
+      return '官方参考价待同步';
+    case 'platform_variant':
+      return '免费变体不以平台价格作为官方参考价';
+    case 'legacy_review':
+      return '历史型号的官方价格适用范围待核实';
+    case 'identity_review':
+      return '模型名称与官方报价的对应关系待核实';
+    default:
+      return '官方参考价待核实';
+  }
+}

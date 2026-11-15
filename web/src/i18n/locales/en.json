@@ -1,5 +1,11 @@
 {
   "translation": {
+    "官方参考价待同步": "Official reference price awaiting sync",
+    "免费变体不以平台价格作为官方参考价": "Platform prices for free variants are not manufacturer reference prices",
+    "历史型号的官方价格适用范围待核实": "Official pricing applicability for this legacy model needs verification",
+    "模型名称与官方报价的对应关系待核实": "The model name needs to be matched to an official price",
+    "官方参考价待核实": "Official reference price awaiting verification",
+    "最近核实：{{date}}": "Last checked: {{date}}",
     "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "CNY conversion: USD 1 = CNY 6.7; 5 lightning credits = CNY 1.",
     "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Period amounts are converted to CNY. Unmatched values appear as --; BYOK external costs are listed separately.",
     "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Lifetime account totals are in USD. Purchased credits exclude payment fees; see official billing for individual recharges.",

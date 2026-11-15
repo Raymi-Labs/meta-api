@@ -17,7 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { visibleOfficialTiers } from './modelOfficialPricing';
+import {
+  visibleOfficialTiers,
+  officialPricingUnavailable,
+} from './modelOfficialPricing';
 import { officialComparisonUnit } from './modelGroupDiscount';
 
 const inverse = { '<=': '>', '<': '>=', '>': '<=', '>=': '<' };
@@ -46,7 +49,8 @@ const periodName = (label = '') => {
 
 export function groupComparisonUnavailable(model) {
   const official = visibleOfficialTiers(model.official_pricing);
-  if (!official.length) return '暂无官方参考价';
+  if (!official.length)
+    return officialPricingUnavailable(model.official_pricing_review);
   if (!official.some((tier) => tier.unit === officialComparisonUnit(model)))
     return '官方与本站的计价单位不同';
   return '尚未匹配到对应的官方档位';

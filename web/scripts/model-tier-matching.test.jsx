@@ -149,7 +149,7 @@ test('ambiguous period names and extra region/service conditions remain visibly 
     assert.ok(html.includes('<strong>$10</strong>'));
     assert.ok(!html.includes('model-group-discount'));
   }
-  assert.equal(groupComparisonUnavailable({}), '暂无官方参考价');
+  assert.equal(groupComparisonUnavailable({}), '官方参考价待核实');
   assert.equal(
     groupComparisonUnavailable({
       quota_type: 1,

@@ -29,3 +29,5 @@ Carbon 等型号缺官方参考价。旧 ai.google.dev 地址跨域跳转至 ais
 ## Coverage audit
 
 [11月15日全目录复查](../../../../docs/audits/2026-11-15-official-price-coverage.md)确认线上210项中40项缺价；本实现可解析 Carbon 与 Hydrogen，但不覆盖 Omni 的文本/视频分项价格与通用详情路径。线上仍为 v1.32.1，不能将发布视为落库生效。
+
+[缺口扩展](2026-11-15-official-price-gaps.md)补齐 Omni 分项价及可解释核实状态；同日后续网络复查已验证5项取价成功，其余35项保持有依据的核实分类。

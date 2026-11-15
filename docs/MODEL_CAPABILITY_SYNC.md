@@ -36,8 +36,8 @@
 | 厂商 | 官方入口 | 自动读取范围 |
 | --- | --- | --- |
 | Anthropic | [模型文档](https://platform.claude.com/docs/en/models/overview) | 模型 API ID、介绍、确切发布日期、上下文/输出、模态、思考和可识别价格；可选 Models API 补充明确能力 |
-| Google | [模型文档](https://ai.google.dev/gemini-api/docs/models)、[价格](https://aistudio.google.com/docs/pricing) | 精确 model code、目录介绍、Token 限制、模态、能力矩阵及可识别 Standard 价格（兼容新版 Markdoc、按日期选择促销价） |
-| DeepSeek | [模型与价格](https://api-docs.deepseek.com/quick_start/pricing/) | 文档表格明确列出的模型、限制、函数/结构化输出、峰谷价格及 UTC 时间条件 |
+| Google | [模型文档](https://ai.google.dev/gemini-api/docs/models)、[价格](https://aistudio.google.com/docs/pricing) | 精确 model code、目录介绍、Token 限制、模态、能力矩阵及可识别 Standard 价格（兼容新版 Markdoc、按日期选择促销价；Omni 的通用详情路径由精确标题锚点与官方体验链接交叉验证，模态单价独立展示） |
+| DeepSeek | [模型与价格](https://api-docs.deepseek.com/quick_start/pricing/) | 文档表格明确列出的模型、限制、函数/结构化输出、峰谷价格及 UTC 时间条件；完整版本名仅按同一官方表列的 MODEL VERSION 匹配 |
 | 小米 MiMo | [模型](https://mimo.mi.com/static/docs/quick-start/summary/model.md)、[价格](https://mimo.mi.com/static/docs/price/pay-as-you-go.md) | 跨行表格的模型限制和明确能力、海外 token/ASR 价格；国内人民币价不混入 USD 档位 |
 | Kimi | [模型列表](https://platform.kimi.ai/docs/models.md)、[官方价格](https://platform.kimi.ai/docs/pricing/chat) | 精确模型介绍和厂商；HTML DocTable 静态数据中的 USD / MTok 输入、输出、缓存读取价格，以及明确的5分钟/1小时缓存创建独立档位；Markdown 空表格不作为价格来源，其他规格继续从模型库补缺 |
 | 千问 | [文本模型](https://help.aliyun.com/zh/model-studio/text-generation-model)、[视觉模型](https://help.aliyun.com/zh/model-studio/vision-model)、[图像模型](https://help.aliyun.com/zh/model-studio/image-model) | 当前及历史表格明确列出的 ID、上下文和支持状态；只接受千问条目，不把代售模型归为阿里 |
@@ -131,3 +131,15 @@ Cohere 使用 `docs.cohere.com/v2/docs/` 的官方模型页，校验页面 Model
 ### 已核实免费变体
 
 `flint-v1.0:free` 与 `recursive/flint-v1.0:free` 可展示管理员核实的 OpenRouter 免费变体参考价，来源必须为该平台精确模型页，USD / million_tokens 单档输入、输出必须显式为0，其他费目只能未知或0。该例外不把本站零售价、开源许可或任意 `:free` 后缀推断为免费；不扩展普通厂家价格/自动同步的来源校验。2026-11-06 已核对 [OpenRouter 模型页](https://openrouter.ai/recursive/flint-v1.0:free)，资料是人工快照，免费端点仍有速率限制。见[决策](../.agents/notes/implemented/bug-fix/2026-11-06-flint-free-reference-price.md)。
+
+## 官方参考价核实状态
+
+`/api/pricing` 在最终公开价格缺失时返回 `official_pricing_review`，包括 `code` 与可选 `checked_at`（YYYY-MM-DD）。这是有日期的人工资料核实快照，不是实时供应商可用性、一次同步任务结果或计费字段。后台模型记录不变；公开有效价格优先，含官方零价时省略该字段。
+
+- `source_available`：该核实日期已确认有厂家资料，但当前公开价格仍为空，需要同步/核实配置。
+- `legacy_review`：历史型号的价格适用范围待核实，不代表本站模型不可用。
+- `identity_review`：本站名称与厂家报价的精确对应关系待核实。
+- `platform_variant`：遵守现有来源规则，平台免费变体不能用平台零价作为厂家价。
+- `unverified`：暂无足够证据，不能解释为厂家未公布价格；未审计新型号不附核实日期。
+
+快照位于 `model/data/official_pricing_reviews.json`，不包含可用于扣费的数字价格。详情和分组统一翻译状态。Glimpse 从 [Elorian发布页](https://elorian.ai/blog/introducing-glimpse)取得2026-10-16公布的参考价格，注明来源性质，缓存无证据不补值。公共文档请求超时20秒，专用凭据API仍为10秒，仍不允许任意跨域跳转。

@@ -90,3 +90,31 @@ func TestDownloadedGeminiPricing(t *testing.T) {
 		require.Equal(t, .1, *e.OfficialPricing.Tiers[0].CacheRead)
 	}
 }
+
+func TestGeminiOmniModalityPrices(t *testing.T) {
+	data, err := os.ReadFile("testdata/gemini-omni-pricing.markdoc")
+	require.NoError(t, err)
+	names := map[string]bool{"gemini-omni-1.2-flash": true, "gemini-omni-1.1-flash": true}
+	got := parseGeminiPricing(data, names, geminiPricingURL)
+	require.Len(t, got, 1)
+	p := got["gemini-omni-1.2-flash"].OfficialPricing
+	require.Len(t, p.Tiers, 3)
+	require.Equal(t, "million_tokens", p.Tiers[0].Unit)
+	require.Equal(t, 1.5, *p.Tiers[0].Input)
+	require.Equal(t, 9.0, *p.Tiers[0].Output)
+	require.Equal(t, "million_image_tokens", p.Tiers[1].Unit)
+	require.Equal(t, 1.5, *p.Tiers[1].Input)
+	require.Nil(t, p.Tiers[1].Output)
+	require.Equal(t, "million_video_tokens", p.Tiers[2].Unit)
+	require.Equal(t, 1.5, *p.Tiers[2].Input)
+	require.Equal(t, 12.0, *p.Tiers[2].Output)
+	require.Contains(t, p.Notes, "5,792 tokens per second")
+	for _, bad := range []string{
+		strings.Replace(string(data), `id="gemini-omni-1.2-flash"`, `id="gemini-omni-1.1-flash"`, 1),
+		strings.Replace(string(data), `model=gemini-omni-1.2-flash`, `model=gemini-omni-1.1-flash`, 1),
+		strings.Replace(string(data), "(video)", "(video per second)", 1),
+		strings.Replace(string(data), "(text / image / video)", "(unknown)", 1),
+	} {
+		require.Empty(t, parseGeminiPricing([]byte(bad), names, geminiPricingURL))
+	}
+}

@@ -90,7 +90,7 @@ try {
     if (name === 'gpt-4o')
       assert((await page.$$('#official-pricing tbody tr')).length > 0);
     else {
-      assert(text.includes('暂无官方参考价'));
+      assert(text.includes('免费变体不以平台价格作为官方参考价'));
       assert.equal((await page.$$('#official-pricing tbody tr')).length, 0);
     }
     assert.deepEqual(errors, []);

@@ -8,7 +8,8 @@ import (
 // Explicit manufacturer namespaces and first-party origins. Unknown providers
 // remain unknown; reseller hosting does not establish a manufacturer's price.
 var manufacturerPriceDomains = map[string][]string{
-	"amazon": {"amazon.com", "amazonaws.com"}, "thinkingmachines": {"thinkingmachines.ai"},
+	"elorian": {"elorian.ai"},
+	"amazon":  {"amazon.com", "amazonaws.com"}, "thinkingmachines": {"thinkingmachines.ai"},
 	"openai": {"openai.com"}, "anthropic": {"anthropic.com", "claude.com"},
 	"google": {"ai.google.dev", "aistudio.google.com", "cloud.google.com"}, "cohere": {"cohere.com"},
 	"deepseek": {"deepseek.com"}, "x-ai": {"x.ai"},
@@ -26,6 +27,9 @@ var manufacturerPriceDomains = map[string][]string{
 
 func manufacturerForPrice(name string) string {
 	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "glimpse" {
+		return "elorian"
+	}
 	if namespace, _, ok := strings.Cut(name, "/"); ok {
 		return namespace // Never infer a different maker from a reseller's model suffix.
 	}

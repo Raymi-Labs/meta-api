@@ -1,5 +1,11 @@
 {
   "translation": {
+    "官方参考价待同步": "Offizieller Referenzpreis wartet auf Synchronisierung",
+    "免费变体不以平台价格作为官方参考价": "Plattformpreise kostenloser Varianten sind keine offiziellen Herstellerpreise",
+    "历史型号的官方价格适用范围待核实": "Die Gültigkeit des offiziellen Preises für dieses ältere Modell muss geprüft werden",
+    "模型名称与官方报价的对应关系待核实": "Die Zuordnung des Modellnamens zum offiziellen Preis muss geprüft werden",
+    "官方参考价待核实": "Offizieller Referenzpreis muss geprüft werden",
+    "最近核实：{{date}}": "Zuletzt geprüft: {{date}}",
     "人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。": "CNY-Umrechnung: 1 USD = 6,7 CNY; 5 Blitz-Credits = 1 CNY.",
     "区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。": "Zeitraumbeträge werden in CNY umgerechnet. Nicht zugeordnete Werte erscheinen als --; externe BYOK-Kosten stehen separat.",
     "账户累计金额以 USD 展示；累计购入额度不含支付手续费，逐笔充值订单请查看官方账单。": "Kontogesamtsummen werden in USD angezeigt. Gekaufte Credits enthalten keine Zahlungsgebühren; einzelne Aufladungen stehen in der offiziellen Abrechnung.",

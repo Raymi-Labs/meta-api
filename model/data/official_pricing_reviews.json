@@ -1,0 +1,162 @@
+{
+  "MiniMax-M2.5": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "TTseadanco2.5-720": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "claude-opus-4-20250514": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "codex-auto-review": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "deepseek-v4-flash-0731": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "deepseek-v4.1-flash": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "deepseek-v4.1-flash-1017": {
+    "checked_at": "2026-11-15",
+    "code": "source_available"
+  },
+  "dots-3-note-preview:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "flint-v1.0:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "flow-video-gemini-omni-flash-1.1": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "flow-video-gemini-omni-flash-1.1-1080p": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "gemini-3-pro-image-preview": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "gemini-3.1-flash-image-preview": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "gemini-4-carbon": {
+    "checked_at": "2026-11-15",
+    "code": "source_available"
+  },
+  "gemini-4-hydrogen": {
+    "checked_at": "2026-11-15",
+    "code": "source_available"
+  },
+  "gemini-nano-banana-2.1-c": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "gemini-omni-1.2-flash": {
+    "checked_at": "2026-11-15",
+    "code": "source_available"
+  },
+  "glimpse": {
+    "checked_at": "2026-11-15",
+    "code": "source_available"
+  },
+  "gpt-6.2-astra": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "gpt-6.2-sol": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "gpt-image-2.6": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "grok-4.7-build-fast": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "kimi-k2.5": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "lfm-2.5-2.6b:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "muse-video": {
+    "checked_at": "2026-11-15",
+    "code": "unverified"
+  },
+  "nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "nemotron-3-ultra-550b-a55b:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "nemotron-3.5-lightning:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "nemotron-3.5-super-vl:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "north-mini-code:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  },
+  "qwen-image-max": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen-plus-2025-09-11": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen-turbo": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen-vl-max": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen3-235b-a22b": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen3-coder-plus": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen3-max": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "qwen3-max-preview": {
+    "checked_at": "2026-11-15",
+    "code": "legacy_review"
+  },
+  "snow-grok-imagine-video": {
+    "checked_at": "2026-11-15",
+    "code": "identity_review"
+  },
+  "xing4.0-29b-a4b:free": {
+    "checked_at": "2026-11-15",
+    "code": "platform_variant"
+  }
+}

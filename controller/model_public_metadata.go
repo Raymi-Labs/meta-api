@@ -637,6 +637,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 		case id == "solar-pro4" || id == "solar-mini4":
 			slug := strings.TrimSuffix(id, "4") + "-4"
 			jobs = append(jobs, job{"https://console.upstage.ai/docs/models/" + slug + ".md", id, "upstage", parseUpstagePricing})
+		case id == "glimpse":
+			provider = "elorian"
 		case mistralPricingModels[id] != "":
 			provider = "mistralai"
 		case strings.HasPrefix(id, "qwen"), strings.HasPrefix(id, "wan"), strings.HasPrefix(id, "happyhorse-"), strings.HasPrefix(id, "HappyOyster-"), strings.HasPrefix(id, "z-image-"):
@@ -652,7 +654,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 	}
 	for _, source := range []struct{ provider, url string }{
 		{"openai-images", openAIImagePricingURL}, {"amazon", awsNovaPricingURL}, {"thinkingmachines", thinkingMachinesPricingURL}, {"meta", metaPricingURL}, {"liquid", liquidPricingURL}, {"moondream", moondreamPricingURL}, {"rekaai", rekaPricingURL}, {"meituan", longcatPricingURL}, {"fireworks", fireworksPricingURL}, {"particle-ai", particlePricingURL}, {"inference-net", inferencePricingURL}, {"unbiased", unbiasedPricingURL},
-		{"inception", inceptionPricingURL}, {"writer", writerPricingURL}, {"morph", morphPricingURL}, {"aion-labs", aionPricingURL}, {"mistralai", mistralPricingURL}, {"minimax", minimaxPricingURL},
+		{"elorian", elorianPricingURL}, {"inception", inceptionPricingURL}, {"writer", writerPricingURL}, {"morph", morphPricingURL}, {"aion-labs", aionPricingURL}, {"mistralai", mistralPricingURL}, {"minimax", minimaxPricingURL},
 		{"google", "https://ai.google.dev/gemini-api/docs/models"},
 		{"google", geminiPricingURL},
 		{"xiaomi", "https://mimo.mi.com/static/docs/price/pay-as-you-go.md"},
@@ -747,6 +749,8 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 						entries = parseUnbiasedPricing(data, groups[j.provider], j.url)
 					case aliyunPricingURL:
 						entries = parseAliyunPricing(data, groups[j.provider], j.url)
+					case elorianPricingURL:
+						entries = parseElorianPricing(data, groups[j.provider], j.url)
 					case inceptionPricingURL:
 						entries = parseInceptionPricing(data, groups[j.provider], j.url)
 					case writerPricingURL:
@@ -844,6 +848,40 @@ func parseDeepSeekDocumentWithPrices(data []byte, names map[string]bool, address
 	if verified {
 		requested["deepseek-flash"] = true
 	}
+	// Only the exact complete version explicitly paired with an API ID in the
+	// current table inherits its reference rates. Never strip a date suffix.
+	versions := map[string]string{}
+	conflicts := map[string]bool{}
+	for _, table := range documentTables(data) {
+		if len(table) < 2 || table[0][0] != "MODEL" {
+			continue
+		}
+		for _, row := range table[1:] {
+			if len(row) != len(table[0]) || row[0] != "MODEL VERSION" {
+				continue
+			}
+			for col := 1; col < len(row); col++ {
+				version := strings.ToLower(strings.TrimSpace(row[col]))
+				if !names[version] || !strings.HasPrefix(version, "deepseek-") || !regexp.MustCompile(`-[0-9]{4,8}$`).MatchString(version) {
+					continue
+				}
+				fields := strings.Fields(table[0][col])
+				if len(fields) == 0 {
+					continue
+				}
+				apiID := fields[0]
+				apiID = regexp.MustCompile(`\([0-9]+\)$`).ReplaceAllString(apiID, "")
+				if !officialModelID.MatchString(apiID) || !strings.HasPrefix(apiID, "deepseek-") {
+					continue
+				}
+				if old, ok := versions[version]; ok && old != apiID {
+					conflicts[version] = true
+				}
+				versions[version] = apiID
+				requested[apiID] = true
+			}
+		}
+	}
 	entries := parseDeepSeekDocument(data, requested, address)
 	addDeepSeekPrices(data, entries, address)
 	if verified && len(entries["deepseek-flash"].OfficialPricing.Tiers) > 0 {
@@ -853,8 +891,17 @@ func parseDeepSeekDocumentWithPrices(data []byte, names map[string]bool, address
 			}
 		}
 	}
-	if !names["deepseek-flash"] {
-		delete(entries, "deepseek-flash")
+	for version, apiID := range versions {
+		if !conflicts[version] && len(entries[apiID].OfficialPricing.Tiers) > 0 {
+			p := entries[apiID].OfficialPricing
+			p.Notes += " Official MODEL VERSION: " + version + "; API model: " + apiID + "."
+			entries[version] = officialPriceEntry("deepseek", address, p)
+		}
+	}
+	for id := range entries {
+		if !names[id] {
+			delete(entries, id)
+		}
 	}
 	return entries
 }

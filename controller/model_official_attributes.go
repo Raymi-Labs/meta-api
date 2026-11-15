@@ -22,7 +22,11 @@ import (
 
 // Public docs and dedicated metadata credentials only. Never send relay keys.
 func fetchOfficialAttributeData(ctx context.Context, address string, headers map[string]string) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeout := 10 * time.Second
+	if headers["User-Agent"] == "MetaAPI-ModelMetadata/1.0" && headers["Authorization"] == "" && headers["x-goog-api-key"] == "" {
+		timeout = 20 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
 	if err != nil {

@@ -21,13 +21,19 @@ import React from 'react';
 import ModelSectionHelp from './ModelSectionHelp';
 import {
   officialPriceColumns,
+  officialPricingUnavailable,
   visibleOfficialTiers,
   visibleOfficialNotes,
   OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
 } from '../../helpers/modelOfficialPricing';
 
-export default function ModelOfficialPricing({ pricing, provenance, t }) {
+export default function ModelOfficialPricing({
+  pricing,
+  provenance,
+  review,
+  t,
+}) {
   const tiers = visibleOfficialTiers(pricing);
   const notes = visibleOfficialNotes(pricing?.notes);
   const columns = officialPriceColumns(tiers);
@@ -92,7 +98,14 @@ export default function ModelOfficialPricing({ pricing, provenance, t }) {
           </table>
         </div>
       ) : (
-        <p className='model-official-empty'>{t('暂无官方参考价')}</p>
+        <div className='model-official-empty'>
+          <p>{t(officialPricingUnavailable(review))}</p>
+          {review?.checked_at && (
+            <p className='model-detail-caption'>
+              {t('最近核实：{{date}}', { date: review.checked_at })}
+            </p>
+          )}
+        </div>
       )}
     </section>
   );

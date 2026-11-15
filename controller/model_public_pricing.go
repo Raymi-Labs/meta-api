@@ -294,20 +294,34 @@ func parseGeminiPricingAt(data []byte, names map[string]bool, address string, no
 					continue
 				}
 				var input, output, cache map[string]*float64
+				var inputText, outputText, cacheText string
 				notes := []string{}
+				for _, aside := range documentNodes(section, "aside") {
+					notes = append(notes, strings.Join(documentLines(aside), " "))
+				}
 				for _, r := range table[1:] {
 					if len(r) != 3 {
 						continue
 					}
 					switch r[0] {
 					case "Input price":
+						inputText = r[2]
 						input, _ = geminiPriceParts(r[2], now)
 					case "Output price (including thinking tokens)", "Output price":
+						outputText = r[2]
 						output, _ = geminiPriceParts(r[2], now)
 					case "Context caching price":
+						cacheText = r[2]
 						cache, _ = geminiPriceParts(strings.TrimSpace(strings.ReplaceAll(r[2], "Implicit caching only (explicit caching is not supported).", "")), now)
 						notes = append(notes, r[0]+": "+r[2])
 					}
+				}
+				if tiers := geminiModalityTiers(inputText, outputText, cacheText); len(tiers) > 0 {
+					p := model.OfficialPricing{Currency: "USD", SourceURL: address, Notes: strings.Join(notes, " "), Tiers: tiers}
+					for _, id := range ids {
+						out[id] = officialPriceEntry("google", address, p)
+					}
+					continue
 				}
 				if len(input) == 0 || len(output) == 0 {
 					continue

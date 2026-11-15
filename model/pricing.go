@@ -16,6 +16,7 @@ import (
 )
 
 type Pricing struct {
+	OfficialPricingReview    *OfficialPricingReview          `json:"official_pricing_review,omitempty"`
 	FunctionOverrides        ModelFunctionOverrides          `json:"function_overrides"`
 	DescriptionTranslations  ModelDescriptions               `json:"description_translations,omitempty"`
 	FAQ                      ModelFAQ                        `json:"faq"`

@@ -89,7 +89,14 @@ const pricing = {
         ],
       },
     },
-    { ...modelDefaults, model_name: 'no-display-name' },
+    {
+      ...modelDefaults,
+      model_name: 'no-display-name',
+      official_pricing_review: {
+        code: 'identity_review',
+        checked_at: '2026-11-15',
+      },
+    },
     {
       ...modelDefaults,
       model_name: 'friendly-id',
@@ -701,7 +708,7 @@ try {
           );
         }
         for (const [name, reason] of [
-          ['missing-official', '暂无官方参考价'],
+          ['missing-official', '官方参考价待核实'],
           ['image-unit', '官方与本站的计价单位不同'],
           ['regional-period', '尚未匹配到对应的官方档位'],
         ]) {
@@ -1246,7 +1253,7 @@ try {
         '[data-price-key="tiered-p"] .model-group-discount',
         (el) => el.textContent,
       ),
-      '较官方低 92.9%',
+      '较官方低 75%', // USD input: site 10 × group 0.5 versus official 20.
     );
     assert.ok(
       !(await page.$eval('.model-group-row', (el) => el.textContent)).includes(
@@ -1261,12 +1268,22 @@ try {
           'no-display-name' &&
         document
           .querySelector('#official-pricing')
-          ?.textContent.includes('暂无官方参考价'),
+          ?.textContent.includes('模型名称与官方报价的对应关系待核实'),
     );
     await expectActiveSection(page, 'official-pricing');
     assert.ok(
       (await page.$eval('#official-pricing', (el) => el.textContent)).includes(
-        '暂无官方参考价',
+        '模型名称与官方报价的对应关系待核实',
+      ),
+    );
+    assert.ok(
+      (await page.$eval('#official-pricing', (el) => el.textContent)).includes(
+        '2026-11-15',
+      ),
+    );
+    assert.ok(
+      (await page.$eval('.model-group-row', (el) => el.textContent)).includes(
+        '模型名称与官方报价的对应关系待核实',
       ),
     );
     assert.equal(await page.$('#faq'), null);
@@ -1837,7 +1854,7 @@ try {
   });
   assert.ok(
     (await page.$eval('#official-pricing', (el) => el.textContent)).includes(
-      '暂无官方参考价',
+      '官方参考价待核实',
     ),
   );
   assert.equal(await page.$('#faq'), null);

@@ -254,6 +254,7 @@ export default function ModelDetail() {
         <div className='model-detail-main'>
           <ModelOfficialPricing
             pricing={model.official_pricing}
+            review={model.official_pricing_review}
             provenance={model.attribute_sources?.official_pricing}
             t={t}
           />

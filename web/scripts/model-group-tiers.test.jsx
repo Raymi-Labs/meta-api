@@ -145,7 +145,7 @@ test('flat pricing compares every official tier and missing metadata retains sit
   assert.ok(missing.every((row) => !row.officialTier));
 });
 
-test('region-specific official labels do not masquerade as unconditional standard input ranges', () => {
+test('regional official ranges use the documented first-region default without mixing regions', () => {
   const regional = {
     ...model,
     official_pricing: {
@@ -156,10 +156,18 @@ test('region-specific official labels do not masquerade as unconditional standar
       })),
     },
   };
-  assert.ok(
-    groupTierRows(regional, tiers, getPricing, t).every(
-      (row) => !row.officialTier,
-    ),
+  regional.official_pricing.tiers.push(
+    ...original.tiers.map((tier) => ({
+      ...tier,
+      label: tier.label.replace('Standard', 'US'),
+      input: 99,
+    })),
+  );
+  const rows = groupTierRows(regional, tiers, getPricing, t);
+  assert.ok(rows.every((row) => row.officialTier?.label.startsWith('EU ·')));
+  assert.deepEqual(
+    rows.map((row) => row.officialTier.input),
+    [1, 2],
   );
 });
 

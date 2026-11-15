@@ -83,6 +83,12 @@ func TestPricingVendorVisibilityFollowsResponseModels(t *testing.T) {
 		require.True(t, body.Success)
 		expectedJSON, err := common.Marshal(model.FilterPricingByVisibility(model.GetPricing(), role))
 		require.NoError(t, err)
+		// The public review is additive presentation metadata, never cached billing data.
+		for i := range body.Data {
+			require.NotNil(t, body.Data[i].OfficialPricingReview)
+			require.Equal(t, "unverified", body.Data[i].OfficialPricingReview.Code)
+			body.Data[i].OfficialPricingReview = nil
+		}
 		actualJSON, err := common.Marshal(body.Data)
 		require.NoError(t, err)
 		require.JSONEq(t, string(expectedJSON), string(actualJSON), "model payload and prices unchanged")

@@ -161,6 +161,7 @@ func PublicPricingMetadata(items []Pricing, vendors []PricingVendor) ([]Pricing,
 			price = OfficialPricing{}
 		}
 		item.OfficialPricing = price
+		item.OfficialPricingReview = publicOfficialPricingReview(item.ModelName, price)
 		if item.AttributeSources != nil {
 			sources := map[string]ModelAttributeSource{}
 			for key, source := range item.AttributeSources {
