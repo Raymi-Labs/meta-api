@@ -102,7 +102,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, err
 	}
-	if info != nil && info.ChannelSetting.ClaudeIncrementalCacheEnabled {
+	if info != nil && info.ChannelSetting.IsClaudeIncrementalCacheEnabled() {
 		if applyClaudeIncrementalCache(claudeRequest) && c != nil {
 			common.SetContextKey(c, constant.ContextKeyClaudeIncrementalCache, true)
 		}

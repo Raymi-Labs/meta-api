@@ -25,7 +25,7 @@ func TestAdaptorConvertOpenAIRequestAppliesIncrementalCache(t *testing.T) {
 		},
 	}
 	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{
-		ChannelSetting: dto.ChannelSettings{ClaudeIncrementalCacheEnabled: true},
+		ChannelSetting: dto.ChannelSettings{ClaudeIncrementalCacheEnabled: common.GetPointer(true)},
 	}}
 
 	converted, err := (&Adaptor{}).ConvertOpenAIRequest(ctx, info, request)
@@ -51,7 +51,7 @@ func TestAdaptorConvertOpenAIRequestLeavesCacheDisabled(t *testing.T) {
 			{Role: "user", Content: "latest question"},
 		},
 	}
-	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{}}
+	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{ChannelSetting: dto.ChannelSettings{ClaudeIncrementalCacheEnabled: common.GetPointer(false)}}}
 
 	converted, err := (&Adaptor{}).ConvertOpenAIRequest(nil, info, request)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestAdaptorConvertClaudeRequestDoesNotApplyIncrementalCache(t *testing.T) {
 		},
 	}
 	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{
-		ChannelSetting: dto.ChannelSettings{ClaudeIncrementalCacheEnabled: true},
+		ChannelSetting: dto.ChannelSettings{ClaudeIncrementalCacheEnabled: common.GetPointer(true)},
 	}}
 
 	converted, err := (&Adaptor{}).ConvertClaudeRequest(nil, info, request)
@@ -111,4 +111,14 @@ func TestApplyClaudeIncrementalCacheKeepsLatestFourBreakpoints(t *testing.T) {
 	latestMessage, err := request.Messages[len(request.Messages)-1].ParseContent()
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"ephemeral"}`, string(latestMessage[0].CacheControl))
+}
+
+func TestLegacyChannelDefaultsToIncrementalCache(t *testing.T) {
+	request := &dto.GeneralOpenAIRequest{Model: "claude-opus-5-5", Messages: []dto.Message{{Role: "user", Content: "history"}}}
+	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{}}
+	converted, err := (&Adaptor{}).ConvertOpenAIRequest(nil, info, request)
+	require.NoError(t, err)
+	blocks, err := converted.(*dto.ClaudeRequest).Messages[0].ParseContent()
+	require.NoError(t, err)
+	require.JSONEq(t, `{"type":"ephemeral"}`, string(blocks[0].CacheControl))
 }
