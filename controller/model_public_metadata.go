@@ -53,7 +53,7 @@ func metadataTags(values ...string) string {
 // API requests still reject every redirect. Never follow source-supplied URLs.
 func fetchPublicModelDocument(ctx context.Context, address string) ([]byte, error) {
 	accept := "text/html"
-	if strings.HasPrefix(address, "https://platform.claude.com/") || strings.HasSuffix(address, ".md") {
+	if strings.HasPrefix(address, "https://platform.claude.com/") || strings.HasSuffix(address, ".md") || address == geminiPricingURL {
 		accept = "text/markdown, text/html;q=0.9"
 	}
 	return fetchOfficialAttributeData(ctx, address, map[string]string{"Accept": accept, "User-Agent": "MetaAPI-ModelMetadata/1.0"})
@@ -654,7 +654,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 		{"openai-images", openAIImagePricingURL}, {"amazon", awsNovaPricingURL}, {"thinkingmachines", thinkingMachinesPricingURL}, {"meta", metaPricingURL}, {"liquid", liquidPricingURL}, {"moondream", moondreamPricingURL}, {"rekaai", rekaPricingURL}, {"meituan", longcatPricingURL}, {"fireworks", fireworksPricingURL}, {"particle-ai", particlePricingURL}, {"inference-net", inferencePricingURL}, {"unbiased", unbiasedPricingURL},
 		{"inception", inceptionPricingURL}, {"writer", writerPricingURL}, {"morph", morphPricingURL}, {"aion-labs", aionPricingURL}, {"mistralai", mistralPricingURL}, {"minimax", minimaxPricingURL},
 		{"google", "https://ai.google.dev/gemini-api/docs/models"},
-		{"google", "https://ai.google.dev/gemini-api/docs/pricing"},
+		{"google", geminiPricingURL},
 		{"xiaomi", "https://mimo.mi.com/static/docs/price/pay-as-you-go.md"},
 		{"zai", "https://docs.z.ai/guides/overview/pricing.md"},
 		{"deepseek", "https://api-docs.deepseek.com/quick_start/pricing/"},
@@ -765,7 +765,7 @@ func fetchPublicModelDocuments(ctx context.Context, names map[string]bool) (map[
 							results[index].warning = "moonshotai pricing"
 							continue
 						}
-					case "https://ai.google.dev/gemini-api/docs/pricing":
+					case geminiPricingURL:
 						entries = parseGeminiPricing(data, groups[j.provider], j.url)
 					case "https://mimo.mi.com/static/docs/price/pay-as-you-go.md":
 						entries = parseMiMoPricing(data, groups[j.provider], j.url)

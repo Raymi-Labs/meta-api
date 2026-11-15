@@ -36,7 +36,7 @@
 | 厂商 | 官方入口 | 自动读取范围 |
 | --- | --- | --- |
 | Anthropic | [模型文档](https://platform.claude.com/docs/en/models/overview) | 模型 API ID、介绍、确切发布日期、上下文/输出、模态、思考和可识别价格；可选 Models API 补充明确能力 |
-| Google | [模型文档](https://ai.google.dev/gemini-api/docs/models)、[价格](https://ai.google.dev/gemini-api/docs/pricing) | 精确 model code、目录介绍、Token 限制、模态、能力矩阵及可识别 Standard 价格 |
+| Google | [模型文档](https://ai.google.dev/gemini-api/docs/models)、[价格](https://aistudio.google.com/docs/pricing) | 精确 model code、目录介绍、Token 限制、模态、能力矩阵及可识别 Standard 价格（兼容新版 Markdoc、按日期选择促销价） |
 | DeepSeek | [模型与价格](https://api-docs.deepseek.com/quick_start/pricing/) | 文档表格明确列出的模型、限制、函数/结构化输出、峰谷价格及 UTC 时间条件 |
 | 小米 MiMo | [模型](https://mimo.mi.com/static/docs/quick-start/summary/model.md)、[价格](https://mimo.mi.com/static/docs/price/pay-as-you-go.md) | 跨行表格的模型限制和明确能力、海外 token/ASR 价格；国内人民币价不混入 USD 档位 |
 | Kimi | [模型列表](https://platform.kimi.ai/docs/models.md)、[官方价格](https://platform.kimi.ai/docs/pricing/chat) | 精确模型介绍和厂商；HTML DocTable 静态数据中的 USD / MTok 输入、输出、缓存读取价格，以及明确的5分钟/1小时缓存创建独立档位；Markdown 空表格不作为价格来源，其他规格继续从模型库补缺 |

@@ -225,6 +225,13 @@ func geminiPriceParts(text string, now time.Time) (map[string]*float64, bool) {
 	return out, len(out) > 0
 }
 func parseGeminiPricing(data []byte, names map[string]bool, address string) map[string]model.ModelCapabilityMetadata {
+	return parseGeminiPricingAt(data, names, address, time.Now())
+}
+
+func parseGeminiPricingAt(data []byte, names map[string]bool, address string, now time.Time) map[string]model.ModelCapabilityMetadata {
+	if strings.Contains(string(data), `{% tab title="Standard" %}`) {
+		data = geminiMarkdocPricingHTML(data)
+	}
 	out := map[string]model.ModelCapabilityMetadata{}
 	doc, _ := html.Parse(strings.NewReader(string(data)))
 	if doc == nil {
@@ -294,11 +301,11 @@ func parseGeminiPricing(data []byte, names map[string]bool, address string) map[
 					}
 					switch r[0] {
 					case "Input price":
-						input, _ = geminiPriceParts(r[2], time.Now())
+						input, _ = geminiPriceParts(r[2], now)
 					case "Output price (including thinking tokens)", "Output price":
-						output, _ = geminiPriceParts(r[2], time.Now())
+						output, _ = geminiPriceParts(r[2], now)
 					case "Context caching price":
-						cache, _ = geminiPriceParts(r[2], time.Now())
+						cache, _ = geminiPriceParts(strings.TrimSpace(strings.ReplaceAll(r[2], "Implicit caching only (explicit caching is not supported).", "")), now)
 						notes = append(notes, r[0]+": "+r[2])
 					}
 				}

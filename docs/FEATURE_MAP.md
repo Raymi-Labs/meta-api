@@ -251,7 +251,7 @@
 | 视频价格展示与日志快照 | [价格摘要](../web/src/helpers/videoPriceDisplay.js)、[任务定价](../relay/helper/price.go)、[消费日志](../service/task_billing.go) | 线性按秒表达式使用当前分组/货币展示；新任务保存秒数/倍率/原始额度，旧日志仅展示真实扣费 | 未知表达式不执行、不猜价；历史不按现价倒算；独立日志字段不改变结算。见[决策](../.agents/notes/implemented/bug-fix/2026-10-31-video-price-display.md) |
 
 | 官方参考价厂家来源 | [来源约束](../model/manufacturer_pricing.go)、[Cohere同步](../controller/model_cohere_pricing.go)、[公开边界](../model/public_pricing_metadata.go) | 官方同步保留原审计，公开 `/api/pricing` 仅输出厂家来源，详情/分组对比统一消费 | 无厂家来源不公开为官方价；平台免费变体保留后台核实快照和本站实际零售价，不把第三方零价冒充厂家价。见[厂家来源](../.agents/notes/implemented/bug-fix/2026-11-01-manufacturer-official-pricing.md)、[公开资料](../.agents/notes/implemented/bug-fix/2026-11-06-public-model-provenance.md) |
-| 官方价条件与覆盖审计 | [Claude 条件](../controller/model_claude_pricing.go)、[百炼](../controller/model_aliyun_pricing.go)、[厂家格式](../controller/model_additional_pricing.go)、[只读审计](../controller/model_pricing_coverage_test.go) | 复用模型管理自动同步及公开价格；保留上下文、缓存时长、区域及多模态单位 | 六并发抓取、确定性合并，错型号/条件歧义拒绝；失败和人工价保护，未知别名不猜价。见[决策](../.agents/notes/implemented/bug-fix/2026-11-01-official-pricing-coverage.md)及[224 模型审计](audits/2026-11-01-official-price-coverage.md) |
+| 官方价条件与覆盖审计 | [Claude 条件](../controller/model_claude_pricing.go)、[百炼](../controller/model_aliyun_pricing.go)、[厂家格式](../controller/model_additional_pricing.go)、[只读审计](../controller/model_pricing_coverage_test.go) | 复用模型管理自动同步及公开价格；保留上下文、缓存时长、区域及多模态单位 | 六并发抓取、确定性合并，错型号/条件歧义拒绝；Google 价格直接抓取 AI Studio 新官方地址并适配 Markdoc Standard 表，保留促销日期及隐式缓存说明；失败和人工价保护，未知别名不猜价。见[决策](../.agents/notes/implemented/bug-fix/2026-11-01-official-pricing-coverage.md)及[224 模型审计](audits/2026-11-01-official-price-coverage.md) |
 
 ### 顶部余额入口（2026-11-02）
 

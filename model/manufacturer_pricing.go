@@ -10,7 +10,7 @@ import (
 var manufacturerPriceDomains = map[string][]string{
 	"amazon": {"amazon.com", "amazonaws.com"}, "thinkingmachines": {"thinkingmachines.ai"},
 	"openai": {"openai.com"}, "anthropic": {"anthropic.com", "claude.com"},
-	"google": {"ai.google.dev", "cloud.google.com"}, "cohere": {"cohere.com"},
+	"google": {"ai.google.dev", "aistudio.google.com", "cloud.google.com"}, "cohere": {"cohere.com"},
 	"deepseek": {"deepseek.com"}, "x-ai": {"x.ai"},
 	"moonshotai": {"moonshot.ai", "moonshot.cn", "kimi.ai", "kimi.com"},
 	"xiaomi":     {"mimo.mi.com"}, "minimax": {"minimax.io", "minimaxi.com"},
