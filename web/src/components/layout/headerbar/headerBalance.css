@@ -42,53 +42,7 @@ html.dark .header-balance-low .header-balance-label {
 }
 @media (max-width: 767px) {
   .header-balance {
-    gap: 4px;
-    max-width: 110px;
-    padding-inline: 4px;
-    font-size: 12px;
-  }
-  .header-balance-label {
-    font-size: 11px;
-  }
-  .site-header .has-header-balance {
-    gap: 2px;
-  }
-}
-@media (max-width: 374px) {
-  .header-balance {
-    max-width: 87px;
-    padding-inline: 2px;
-  }
-}
-@media (max-width: 374px) {
-  .site-header:has(.header-balance) nav {
-    margin-inline: 0;
-  }
-  .site-header .has-header-balance {
-    gap: 0;
-  }
-  .header-balance {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 0;
-    max-width: 60px;
-    line-height: 15px;
-    font-size: 11px;
-  }
-  .header-balance-label {
-    font-size: 10px;
-  }
-  .header-balance-amount {
-    max-width: 100%;
-  }
-}
-@media (max-width: 374px) {
-  .public-header .has-header-balance .public-icon-button,
-  .public-header .has-header-balance .header-download-link {
-    width: 28px;
-    min-width: 28px;
-    padding-inline: 4px;
+    display: none;
   }
 }
 @media (max-width: 479px) {
