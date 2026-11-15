@@ -18,7 +18,7 @@ console.log('Screenshot directory:', output);
 try {
   await fs.writeFile(
     path.join(fixture, 'index.html'),
-    '<html><div id="root"></div><script type="module" src="./entry.jsx"></script></html>',
+    '<html><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module" src="./entry.jsx"></script></html>',
   );
   await fs.writeFile(
     path.join(fixture, 'entry.jsx'),
@@ -195,7 +195,7 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
   await page.waitForFunction(() => !document.querySelector('.header-balance'));
   await page.evaluate((u) => window.headerQA.setUser(u), user);
   await page.waitForSelector('.header-balance');
-  for (const width of [390, 320]) {
+  for (const width of [767, 390, 320]) {
     await page.setViewport({ width, height: 844 });
     for (const quota of [64250000, 617283945000, 0]) {
       await page.evaluate((u) => window.headerQA.setUser(u), {
@@ -223,12 +223,21 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
       }));
       assert(rect.right <= width + 1, JSON.stringify(rect));
       assert.equal(rect.scroll, width);
-      assert(rect.balance > 30);
+      assert.equal(rect.balance, 0, 'mobile header balance is hidden');
     }
     await page.screenshot({
       path: path.join(output, 'mobile-' + width + '.png'),
     });
   }
+  await page.setViewport({ width: 768, height: 900 });
+  assert(
+    await page.$eval(
+      '.header-balance',
+      (e) => e.getBoundingClientRect().width > 0,
+    ),
+    'balance remains visible at desktop breakpoint',
+  );
+  await page.setViewport({ width: 390, height: 844 });
   await page.evaluate(() => {
     document.documentElement.classList.add('dark');
     document.body.setAttribute('theme-mode', 'dark');
@@ -261,7 +270,7 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
     '/console/topup',
   );
   await page.screenshot({ path: path.join(output, 'public-desktop.png') });
-  for (const width of [390, 320]) {
+  for (const width of [767, 390, 320]) {
     await page.setViewport({ width, height: 844 });
     const bounds = await page.$eval('.public-header-actions', (e) => ({
       left: e.getBoundingClientRect().left,
@@ -271,12 +280,23 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
     }));
     assert(bounds.right <= width + 1, JSON.stringify(bounds));
     assert.equal(bounds.scroll, width);
+    assert.equal(
+      await page.$eval('.header-balance', (e) => getComputedStyle(e).display),
+      'none',
+    );
     await page.screenshot({
       path: path.join(output, 'public-mobile-' + width + '.png'),
     });
   }
   assert.deepEqual(errors, []);
   assert(!requests.some((x) => x.method !== 'GET'), 'No public header writes');
+  await page.setViewport({ width: 768, height: 900 });
+  assert(
+    await page.$eval(
+      '.header-balance',
+      (e) => e.getBoundingClientRect().width > 0,
+    ),
+  );
   console.log(
     'PASS: separate public header, existing account fetch, English labels and 320/390px layout.',
   );
