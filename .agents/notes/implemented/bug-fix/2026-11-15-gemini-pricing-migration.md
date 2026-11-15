@@ -25,3 +25,7 @@ Carbon 等型号缺官方参考价。旧 ai.google.dev 地址跨域跳转至 ais
 ## Consequences
 
 官网再次改变格式时仍保留未知或旧有效值；发布不等于生产升级或数据同步完成。
+
+## Coverage audit
+
+[11月15日全目录复查](../../../../docs/audits/2026-11-15-official-price-coverage.md)确认线上210项中40项缺价；本实现可解析 Carbon 与 Hydrogen，但不覆盖 Omni 的文本/视频分项价格与通用详情路径。线上仍为 v1.32.1，不能将发布视为落库生效。
