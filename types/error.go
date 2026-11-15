@@ -104,6 +104,9 @@ type NewAPIError struct {
 	RetryAfter         time.Duration
 	Metadata           json.RawMessage
 	Upstream           *UpstreamDiagnostics
+
+	// ResponseHeaderTimeout is local transport evidence, never inferred from an upstream 504.
+	ResponseHeaderTimeout bool `json:"-"`
 }
 
 type UpstreamDiagnostics struct {

@@ -486,12 +486,14 @@ func newDoRequestError(c *gin.Context, err error) *types.NewAPIError {
 	}
 	logger.LogError(c, "do request failed: "+err.Error())
 	if strings.Contains(err.Error(), "timeout awaiting response headers") {
-		return types.NewErrorWithStatusCode(
+		apiErr := types.NewErrorWithStatusCode(
 			err,
 			types.ErrorCodeDoRequestFailed,
 			http.StatusGatewayTimeout,
 			types.ErrOptionWithSkipRetry(),
 			types.ErrOptionWithHideErrMsg("upstream response header timeout"))
+		apiErr.ResponseHeaderTimeout = true
+		return apiErr
 	}
 	return types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))
 }

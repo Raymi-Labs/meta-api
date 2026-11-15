@@ -37,3 +37,7 @@ Status: implemented
 仅新增一个官方明确拒绝后的纯保活例外，不改变通用渠道重试或其他供应商补救门槛。纯保活仍不能证明模型输出、首字或成功；上下文取消和任何写失败均不能放行。状态跨 wrapper 自身重建保留；请求级登记的 pinger 在读取证据前先退出，失败负证据保留到请求结束，外部 wrapper 替换及再次包装也不能清除。未知 wrapper 不能继承已有正证据，也不能从普通已写出的 writer 推断心跳来源。
 
 思考被关闭仍是已有定向降级的语义变化。心跳已经提交响应头时，管理员 attempts 的 adjustment_header_not_delivered 和 adjustment 留痕，不能承诺客户端收到 X-Request-Adjusted；after_keepalive 只表示补救开始前已保活，未提交时保留原响应头。真实供应商、代理链路和客户端效果需独立验收，本次没有数据库迁移、真实付费调用或生产变更。
+
+## Scoped extension
+
+[响应头超时的一次切换](2026-11-15-header-timeout-failover.md)另设受限门槛，复用交付证据并支持OpenAI注释保活。这里的DeepSeek调整入口继续仅接受Claude协议，协议切换不能继承正证据。

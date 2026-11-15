@@ -294,8 +294,12 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	// lastRelayError 保留最近一次上游错误，避免重试找不到新渠道时用 (retry) 错误覆盖原始错误。
 	var lastRelayError *types.NewAPIError
 	vmCapacityRetries := 0
+	headerTimeoutFailover := false
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
+		if headerTimeoutFailover && len(c.GetStringSlice("use_channel")) >= 2 {
+			break
+		}
 		if c.Request.Context().Err() != nil {
 			newAPIError = service.NormalizeClientCancellation(c, types.NewError(c.Request.Context().Err(), types.ErrorCodeDoRequestFailed, types.ErrOptionWithSkipRetry()))
 			break
@@ -512,6 +516,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		service.ApplyChannelFailureRetryExclusion(retryParam, channel, newAPIError)
+
+		if canFailoverResponseHeaderTimeout(c, relayInfo, newAPIError) {
+			headerTimeoutFailover = true
+			continue
+		}
 
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break

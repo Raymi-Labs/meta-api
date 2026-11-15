@@ -40,7 +40,7 @@ func requestKeepAliveWriter(c *gin.Context) *streamKeepAliveWriter {
 func (w *streamKeepAliveWriter) ping() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.ResponseWriter.Size() != w.evidence.size || w.ResponseWriter.Status() != http.StatusOK || w.format != types.RelayFormatClaude {
+	if w.ResponseWriter.Size() != w.evidence.size || w.ResponseWriter.Status() != http.StatusOK || (w.format != types.RelayFormatClaude && w.format != types.RelayFormatOpenAI) {
 		w.evidence.unsafe = true
 	}
 	var err error
@@ -125,6 +125,19 @@ func StopStreamKeepAlive(c *gin.Context) {
 // This is deliberately not a general retry predicate. Callers must still prove
 // a specific upstream refusal and an eligible, bounded request adjustment.
 func CanAdjustClaudeRequestBeforeOutput(c *gin.Context) bool {
+	return canReplayBeforeOutput(c, types.RelayFormatClaude)
+}
+
+// CanRetryHeaderTimeoutBeforeOutput proves only delivery safety. The caller must
+// additionally restrict the transport failure, request semantics and retry budget.
+func CanRetryHeaderTimeoutBeforeOutput(c *gin.Context, format types.RelayFormat) bool {
+	if format != types.RelayFormatOpenAI && format != types.RelayFormatClaude {
+		return false
+	}
+	return canReplayBeforeOutput(c, format)
+}
+
+func canReplayBeforeOutput(c *gin.Context, format types.RelayFormat) bool {
 	if c == nil || c.Request == nil || c.Request.Context().Err() != nil || c.Writer == nil {
 		return false
 	}
@@ -140,8 +153,8 @@ func CanAdjustClaudeRequestBeforeOutput(c *gin.Context) bool {
 		return !c.Writer.Written()
 	}
 	w.stop()
-	return c.Request.Context().Err() == nil && !w.evidence.unsafe &&
-		(!w.ResponseWriter.Written() || w.format == types.RelayFormatClaude && w.evidence.ping) &&
+	return w.format == format && c.Request.Context().Err() == nil && !w.evidence.unsafe &&
+		(!w.ResponseWriter.Written() || w.format == format && w.evidence.ping) &&
 		w.ResponseWriter.Status() == http.StatusOK &&
 		w.ResponseWriter.Size() == w.evidence.size
 }
@@ -159,6 +172,9 @@ func StartStreamKeepAlive(c *gin.Context, interval time.Duration, format types.R
 		select {
 		case <-previous.done:
 			evidence = previous.evidence
+			if previous.format != format {
+				evidence.unsafe = true
+			}
 			c.Writer = previous.ResponseWriter
 		default:
 			return func() {}

@@ -170,6 +170,7 @@ func TestNewDoRequestErrorMapsResponseHeaderTimeoutToGatewayTimeout(t *testing.T
 
 	apiErr := newDoRequestError(ctx, errors.New(`Post "http://example.test/v1/images/edits": net/http: timeout awaiting response headers`))
 	require.Equal(t, http.StatusGatewayTimeout, apiErr.StatusCode)
+	require.True(t, apiErr.ResponseHeaderTimeout)
 	require.True(t, types.IsSkipRetryError(apiErr))
 	require.Contains(t, apiErr.Error(), "upstream response header timeout")
 }
@@ -182,6 +183,7 @@ func TestNewDoRequestErrorKeepsClientCancellationClassification(t *testing.T) {
 	apiErr := newDoRequestError(ctx, context.Canceled)
 	apiErr.SetMessage(apiErr.Error() + " (request id: req-canceled)")
 	require.Equal(t, types.StatusClientClosedRequest, apiErr.StatusCode)
+	require.False(t, apiErr.ResponseHeaderTimeout)
 	require.Equal(t, types.FailureClientCanceled, types.ClassifyFailure(apiErr))
 	require.True(t, types.IsSkipRetryError(apiErr))
 }
