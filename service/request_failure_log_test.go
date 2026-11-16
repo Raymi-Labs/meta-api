@@ -141,3 +141,25 @@ func TestFinalFailureKeepsUnbilledUsageSnapshotOnlyInAdminDiagnostics(t *testing
 	require.Equal(t, true, diagnostics["interrupted_output"])
 	require.Equal(t, false, diagnostics["charged"])
 }
+
+func TestVideoFileFailureLogKeepsStreamStatusAndSpecificAdvice(t *testing.T) {
+	ctx := failureLogContext(t)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	ctx.Set(RequestLogStreamKey, true)
+	ctx.Header("Content-Type", "text/event-stream")
+	ctx.Writer.WriteHeaderNow()
+	err := types.WithOpenAIError(types.OpenAIError{Type: "invalid_request_error", Code: "invalid_value", Param: "input_file.file_data", Message: "Unsupported MIME type video/mp4 in input_file.file_data"}, 400)
+	err.UpstreamStatusCode = 200
+	MarkRequestFailure(ctx, err)
+	RecordFinalRequestFailure(ctx, time.Second)
+	var row model.Log
+	require.NoError(t, model.LOG_DB.Where("request_id = ?", "req-stream-failure").First(&row).Error)
+	details, parseErr := common.StrToMap(row.Other)
+	require.NoError(t, parseErr)
+	require.Equal(t, "unsupported_video", details["failure_category"])
+	require.Equal(t, "上游不支持此视频提交格式", row.Content)
+	require.EqualValues(t, 200, details["http_status"])
+	require.EqualValues(t, 400, details["status_code"])
+	require.Equal(t, "invalid_value", details["error_code"], "preserve upstream error code")
+	require.NotContains(t, details["failure_hint"], "稍后重试")
+}

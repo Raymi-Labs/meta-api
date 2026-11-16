@@ -557,6 +557,14 @@ func writeRelayStreamError(c *gin.Context, format types.RelayFormat, apiError *t
 		_ = helper.ClaudeData(c, dto.ClaudeResponse{Type: "error", Error: apiError.ToClaudeError()})
 		return
 	}
+	if format == types.RelayFormatOpenAIResponses {
+		err := apiError.ToOpenAIError()
+		data, marshalErr := common.Marshal(gin.H{"type": "error", "code": err.Code, "message": err.Message, "param": err.Param})
+		if marshalErr == nil {
+			_ = helper.ResponseChunkData(c, dto.ResponsesStreamResponse{Type: "error"}, string(data))
+		}
+		return
+	}
 	_ = helper.ObjectData(c, gin.H{"error": apiError.ToOpenAIError()})
 	helper.Done(c)
 }
@@ -628,7 +636,7 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 			// 不能继续反复返回 Context 中同一个渠道。
 			info.ChannelMeta = &relaycommon.ChannelMeta{}
 		} else if selected, err := model.CacheGetChannel(channelID); err == nil && selected != nil {
-			if service.IsChannelModelCircuitOpen(selected, retryParam.ModelName) || !service.ChannelAllowsRequestedServiceTier(c, selected, retryParam.ModelName) {
+			if service.ChannelInputCapabilityError(c, selected, retryParam.ModelName) != nil || service.IsChannelModelCircuitOpen(selected, retryParam.ModelName) || !service.ChannelAllowsRequestedServiceTier(c, selected, retryParam.ModelName) {
 				retryParam.ExcludeChannels = appendUniqueInt(retryParam.ExcludeChannels, channelID)
 				info.ChannelMeta = &relaycommon.ChannelMeta{}
 			} else {
@@ -665,6 +673,9 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 			return nil, types.NewError(fmt.Errorf("获取分组 %s 下模型 %s 的可用渠道失败（retry）: %s", selectGroup, info.OriginModelName, err.Error()), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 		}
 		if channel == nil {
+			if capabilityErr := service.InputCapabilitySelectionError(c); capabilityErr != nil {
+				return nil, capabilityErr
+			}
 			return nil, types.NewError(fmt.Errorf("分组 %s 下模型 %s 的可用渠道不存在（retry）", selectGroup, info.OriginModelName), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 		}
 

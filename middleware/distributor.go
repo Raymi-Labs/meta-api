@@ -153,6 +153,10 @@ func Distribute() func(c *gin.Context) {
 				responsesImageGenerationTool,
 			)
 
+			if err := service.PrepareInputCapability(c); err != nil {
+				abortWithOpenAiMessage(c, http.StatusBadRequest, "无法读取请求内容", types.ErrorCodeReadRequestBodyFailed)
+				return
+			}
 			channel, selectGroup, selectErr := selectChannelForRequest(c, modelRequest.Model, usingGroup, clientID, specificChannelID)
 			if selectErr != nil {
 				recordUnavailableGroupHealth(c, modelRequest.Model, usingGroup, selectGroup, grouphealth.OutcomeForError(selectErr))
@@ -246,6 +250,9 @@ func tryAffinityChannel(c *gin.Context, modelName string, usingGroup string, cli
 	if service.IsCodexAutoReviewRequestModel(modelName) && !constant.IsCodexAutoReviewCompatibleChannelType(preferred.Type) {
 		return nil, "", false
 	}
+	if service.ChannelInputCapabilityError(c, preferred, modelName) != nil {
+		return nil, "", false
+	}
 	if !service.ChannelAllowsRequestedServiceTier(c, preferred, modelName) {
 		return nil, "", false
 	}
@@ -319,6 +326,9 @@ func selectChannelForRequest(c *gin.Context, modelName string, usingGroup string
 		if service.IsCodexAutoReviewRequestModel(modelName) && !constant.IsCodexAutoReviewCompatibleChannelType(channel.Type) {
 			return nil, usingGroup, types.NewErrorWithStatusCode(errors.New("codex-auto-review only supports codex or openai channel"), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 		}
+		if capabilityErr := service.ChannelInputCapabilityError(c, channel, modelName); capabilityErr != nil {
+			return nil, usingGroup, capabilityErr
+		}
 		if service.IsChannelUnavailableForRequest(channel) || service.IsChannelModelCircuitOpen(channel, modelName) {
 			excludeChannels = appendUniqueChannelID(excludeChannels, channel.Id)
 			common.DeleteContextKey(c, constant.ContextKeyTokenSpecificChannelId)
@@ -374,7 +384,7 @@ func selectChannelForRequest(c *gin.Context, modelName string, usingGroup string
 			)
 		}
 		if channel == nil {
-			return nil, selectGroup, nil
+			return nil, selectGroup, service.InputCapabilitySelectionError(c)
 		}
 		setupErr := SetupContextForSelectedChannel(c, channel, modelName)
 		if setupErr == nil {

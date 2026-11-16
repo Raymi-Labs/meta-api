@@ -118,11 +118,18 @@ func AppendRequestAdjustmentAttempt(c *gin.Context, channel types.ChannelError, 
 }
 
 func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, reason, hint string) {
+	if category, reason, hint := describeInputFailure(err); category != "" {
+		return category, reason, hint
+	}
 	code := string(err.GetErrorCode())
 	message := strings.ToLower(err.Error())
 	rejectedSampling := RejectedSamplingParameter(err.Error())
 	upstreamError := err.ToOpenAIError()
 	switch {
+	case code == "context_length_exceeded":
+		return "context_length", "请求上下文超过模型上限", "请缩短历史消息或减少附件后重试；重复发送相同请求通常无法解决。"
+	case code == "upstream_stream_break":
+		return "upstream_stream_break", "上游响应流异常中断", "请保留已收到的内容与请求 ID，联系管理员排查上游线路；不要自动重放已开始输出的请求。"
 	case err.GetErrorCode() == types.ErrorCodeBadResponseBody && err.Error() == ResponsesStreamEmptyCompletedReason:
 		return "empty_response", "响应结束但未识别到有效输出", "请稍后重试；若持续出现，请携带请求 ID 联系管理员。"
 	case IsUpstreamCapabilityError(err):

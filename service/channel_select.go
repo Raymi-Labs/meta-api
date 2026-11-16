@@ -411,6 +411,7 @@ func buildBaseChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
 			return ch != nil && constant.IsCodexAutoReviewCompatibleChannelType(ch.Type)
 		})
 	}
+	filters = append(filters, inputCapabilityFilter(param.Ctx, param.ModelName))
 	return filters
 }
 
