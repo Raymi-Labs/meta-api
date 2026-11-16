@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { modelPerformance } from '../../../../../helpers/modelPerformance';
+import { supportsTextGenerationMetrics } from '../../../../../helpers/modelHealthMetrics';
 
 import {
   getCatalogTags,
@@ -127,6 +128,7 @@ const PricingCardView = ({
             (data.isDynamicPricing &&
               !isVideoPriceExpression(model.billing_expr) &&
               !isImagePriceExpression(model.billing_expr));
+          const showGenerationMetrics = supportsTextGenerationMetrics(model);
           return (
             <article
               key={key}
@@ -266,52 +268,59 @@ const PricingCardView = ({
                   </div>
                   {health.state === 'ready' ? (
                     <>
-                      <div>
-                        <dt>
-                          <Timer size={13} />
-                          {t(
-                            performance.externalLatency
-                              ? '首字时间'
-                              : '首字均值',
-                          )}
-                        </dt>
-                        <dd>
-                          {formatHealthLatency(latency.value) === '—'
-                            ? t('暂无数据')
-                            : formatHealthLatency(latency.value)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <Gauge size={13} />
-                          {t('输出速度')}
-                        </dt>
-                        <dd>
-                          {formatModelThroughput(performance.throughput) === '—'
-                            ? t('暂无数据')
-                            : formatModelThroughput(performance.throughput)}
-                        </dd>
-                      </div>
+                      {showGenerationMetrics && (
+                        <div>
+                          <dt>
+                            <Timer size={13} />
+                            {t(
+                              performance.externalLatency
+                                ? '首字时间'
+                                : '首字均值',
+                            )}
+                          </dt>
+                          <dd>
+                            {formatHealthLatency(latency.value) === '—'
+                              ? t('暂无数据')
+                              : formatHealthLatency(latency.value)}
+                          </dd>
+                        </div>
+                      )}
+                      {showGenerationMetrics && (
+                        <div>
+                          <dt>
+                            <Gauge size={13} />
+                            {t('输出速度')}
+                          </dt>
+                          <dd>
+                            {formatModelThroughput(performance.throughput) ===
+                            '—'
+                              ? t('暂无数据')
+                              : formatModelThroughput(performance.throughput)}
+                          </dd>
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <div className='pricing-card-health-status'>
-                      <dt>{t('性能对比')}</dt>
-                      <dd>
-                        {health.state === 'anonymous' ? (
-                          <Link
-                            to={`/login?next=${encodeURIComponent(buildModelDetailPath(model.model_name))}`}
-                          >
-                            {t('登录后查看可用分组的调用表现')}
-                          </Link>
-                        ) : health.state === 'error' ? (
-                          <button type='button' onClick={health.retry}>
-                            {t('加载失败，请重试')}
-                          </button>
-                        ) : (
-                          t('加载中')
-                        )}
-                      </dd>
-                    </div>
+                    showGenerationMetrics && (
+                      <div className='pricing-card-health-status'>
+                        <dt>{t('性能对比')}</dt>
+                        <dd>
+                          {health.state === 'anonymous' ? (
+                            <Link
+                              to={`/login?next=${encodeURIComponent(buildModelDetailPath(model.model_name))}`}
+                            >
+                              {t('登录后查看可用分组的调用表现')}
+                            </Link>
+                          ) : health.state === 'error' ? (
+                            <button type='button' onClick={health.retry}>
+                              {t('加载失败，请重试')}
+                            </button>
+                          ) : (
+                            t('加载中')
+                          )}
+                        </dd>
+                      </div>
+                    )
                   )}
                 </dl>
               )}

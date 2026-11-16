@@ -26,6 +26,7 @@ import {
   GroupHealthLegend,
 } from '../../components/group-health';
 import ModelMetricChart from '../ModelDetail/ModelMetricChart';
+import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
 export function useComparisonHealth(models, group, hours) {
   const options = (index) => ({
@@ -54,6 +55,11 @@ export default function ComparisonMetrics({ models, health, group, t }) {
     return stats ? [{ ...stats, group: model.model_name }] : [];
   });
   const authenticated = health[0]?.isAuthenticated;
+  const generationSeries = series.filter((group) =>
+    supportsTextGenerationMetrics(
+      models.find((model) => model.model_name === group.group),
+    ),
+  );
   return (
     <>
       <section className='model-detail-section'>
@@ -95,18 +101,22 @@ export default function ComparisonMetrics({ models, health, group, t }) {
               metric='success_rate'
               t={t}
             />
-            <ModelMetricChart
-              title={t('首字均值') + ' · s'}
-              groups={series}
-              metric='avg_ttft_ms'
-              t={t}
-            />
-            <ModelMetricChart
-              title={t('输出速度') + ' · tok/s'}
-              groups={series}
-              metric='avg_output_tps'
-              t={t}
-            />
+            {generationSeries.length > 0 && (
+              <>
+                <ModelMetricChart
+                  title={t('首字均值') + ' · s'}
+                  groups={generationSeries}
+                  metric='avg_ttft_ms'
+                  t={t}
+                />
+                <ModelMetricChart
+                  title={t('输出速度') + ' · tok/s'}
+                  groups={generationSeries}
+                  metric='avg_output_tps'
+                  t={t}
+                />
+              </>
+            )}
           </div>
         )}
         {authenticated && <GroupHealthLegend />}

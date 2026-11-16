@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { modelPerformance } from '../../helpers/modelPerformance';
+import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
 import React, { useState } from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
@@ -141,6 +142,8 @@ export default function ModelGroupRows({
         const metric = resolveGroupHealthMetric(stats, group, true);
         const performance = modelPerformance(stats, metric);
         const { latency } = performance;
+        const showGenerationMetrics = supportsTextGenerationMetrics(model);
+        const showLatencyMetric = showGenerationMetrics || metric === 'completion';
         const open = expanded.includes(group);
         return (
           <article className='model-group-row' key={group}>
@@ -214,20 +217,28 @@ export default function ModelGroupRows({
                 </div>
               )}
               <dl className='model-group-health-values'>
-                <div>
-                  <dt>
-                    {metric === 'completion'
-                      ? t('平均完成')
-                      : t(
-                          performance.externalLatency ? '首字时间' : '首字均值',
-                        )}
-                  </dt>
-                  <dd>{formatHealthLatency(latency.value)}</dd>
-                </div>
-                <div>
-                  <dt>{t('输出速度')}</dt>
-                  <dd>{formatModelThroughput(performance.throughput)}</dd>
-                </div>
+                {showLatencyMetric && (
+                  <>
+                    <div>
+                      <dt>
+                        {metric === 'completion'
+                          ? t('平均完成')
+                          : t(
+                              performance.externalLatency
+                                ? '首字时间'
+                                : '首字均值',
+                            )}
+                      </dt>
+                      <dd>{formatHealthLatency(latency.value)}</dd>
+                    </div>
+                    {showGenerationMetrics && (
+                      <div>
+                        <dt>{t('输出速度')}</dt>
+                        <dd>{formatModelThroughput(performance.throughput)}</dd>
+                      </div>
+                    )}
+                  </>
+                )}
                 <div>
                   <dt>
                     Uptime <small>· {t('可用率')}</small>

@@ -1339,7 +1339,7 @@ func geminiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 				}
 				if part.Text != "" || (part.FunctionCall != nil && part.FunctionCall.FunctionName != "") ||
 					(part.ExecutableCode != nil && part.ExecutableCode.Code != "") {
-					info.SetGroupHealthFirstOutputTime()
+					info.ObserveGroupHealthOutput()
 				}
 			}
 		}

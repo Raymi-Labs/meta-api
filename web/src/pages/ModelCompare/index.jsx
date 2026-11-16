@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
+import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import {
   getCompareModels,
@@ -405,21 +406,27 @@ export default function ModelCompare() {
                   {row('output-modality', t('输出模态'), (model) =>
                     modalities(model, 'output_modalities'),
                   )}
-                  {row('latency', t('首字均值'), (_, index) => (
-                    <span>
-                      {formatChartDetailValue(
-                        chartDisplayValue(
-                          comparisonStats(health[index], group),
+                  {row('latency', t('首字均值'), (model, index) =>
+                    supportsTextGenerationMetrics(model) ? (
+                      <span>
+                        {formatChartDetailValue(
+                          chartDisplayValue(
+                            comparisonStats(health[index], group),
+                            'avg_ttft_ms',
+                          ),
                           'avg_ttft_ms',
-                        ),
-                        'avg_ttft_ms',
-                      )}
-                    </span>
-                  ))}
-                  {row('throughput', t('输出速度'), (_, index) =>
-                    formatModelThroughput(
-                      comparisonStats(health[index], group)?.avg_output_tps,
+                        )}
+                      </span>
+                    ) : (
+                      '—'
                     ),
+                  )}
+                  {row('throughput', t('输出速度'), (model, index) =>
+                    supportsTextGenerationMetrics(model)
+                      ? formatModelThroughput(
+                          comparisonStats(health[index], group)?.avg_output_tps,
+                        )
+                      : '—',
                   )}
                   {row(
                     'protocol',
