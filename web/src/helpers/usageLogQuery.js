@@ -49,3 +49,22 @@ export const normalizeUsageLogFilters = (values) => {
     result[key] = values[key] || '';
   return result;
 };
+
+export const normalizeUsageLogGroupOptions = (data) => {
+  if (Array.isArray(data)) {
+    return data.map((group) => ({
+      label: group,
+      value: group,
+    }));
+  }
+
+  if (data && typeof data === 'object') {
+    return Object.entries(data).map(([group, info]) => ({
+      label: group,
+      value: group,
+      ratio: info?.ratio,
+    }));
+  }
+
+  return [];
+};

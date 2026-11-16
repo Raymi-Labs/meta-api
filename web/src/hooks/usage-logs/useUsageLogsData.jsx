@@ -57,7 +57,10 @@ import {
   buildUsageLogQuery,
   readLogExportError,
 } from '../../helpers/usageLogExport';
-import { normalizeUsageLogFilters } from '../../helpers/usageLogQuery';
+import {
+  normalizeUsageLogFilters,
+  normalizeUsageLogGroupOptions,
+} from '../../helpers/usageLogQuery';
 import {
   getEffectiveVisibleColumns,
   readUsageLogColumnMode,
@@ -363,32 +366,13 @@ export const useLogsData = (admin = isAdmin()) => {
 
   const normalizeLogQueryValues = () => appliedRef.current;
 
-  const normalizeGroupOptions = (data) => {
-    if (Array.isArray(data)) {
-      return data.map((group) => ({
-        label: group,
-        value: group,
-      }));
-    }
-
-    if (data && typeof data === 'object') {
-      return Object.entries(data).map(([group, info]) => ({
-        label: info?.desc || group,
-        value: group,
-        ratio: info?.ratio,
-      }));
-    }
-
-    return [];
-  };
-
   const loadGroups = async () => {
     const url = isAdminUser ? '/api/group/' : '/api/user/self/groups';
     try {
       const res = await API.get(url);
       const { success, message, data } = res.data || {};
       if (success) {
-        setGroupOptions(normalizeGroupOptions(data));
+        setGroupOptions(normalizeUsageLogGroupOptions(data));
       } else {
         showError(t(message || '加载分组失败'));
       }
