@@ -210,8 +210,8 @@ type RelayInfo struct {
 	// TTFT routing guard's sampling coverage or first-channel attribution.
 	GroupHealthCacheUsage          *GroupHealthCacheUsage
 	GroupHealthTokenUsage          *GroupHealthTokenUsage
-	GroupHealthUsageObservedAt     time.Time
 	GroupHealthFirstOutputTime     time.Time
+	GroupHealthLastOutputTime      time.Time
 	FirstEffectiveOutputChannelId  int
 	FirstEffectiveOutputChannelTag string
 	isFirstResponse                bool
@@ -817,14 +817,16 @@ func (info *RelayInfo) SetFirstResponseTime() {
 }
 
 func (info *RelayInfo) SetFirstEffectiveOutputTime() {
-	info.SetGroupHealthFirstOutputTime()
-	if info == nil || !info.FirstEffectiveOutputTime.IsZero() {
+	if info == nil {
 		return
 	}
-	info.FirstEffectiveOutputTime = time.Now()
-	if info.ChannelMeta != nil {
-		info.FirstEffectiveOutputChannelId = info.ChannelId
-		info.FirstEffectiveOutputChannelTag = info.ChannelTag
+	info.ObserveGroupHealthOutput()
+	if info.FirstEffectiveOutputTime.IsZero() {
+		info.FirstEffectiveOutputTime = time.Now()
+		if info.ChannelMeta != nil {
+			info.FirstEffectiveOutputChannelId = info.ChannelId
+			info.FirstEffectiveOutputChannelTag = info.ChannelTag
+		}
 	}
 }
 

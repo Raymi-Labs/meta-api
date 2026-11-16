@@ -2,7 +2,6 @@ package service
 
 import (
 	"math"
-	"time"
 
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -18,7 +17,6 @@ func ObserveGroupHealthCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage)
 	}
 	info.GroupHealthCacheUsage = nil
 	info.GroupHealthTokenUsage = nil
-	info.GroupHealthUsageObservedAt = time.Time{}
 	if usage == nil || usage.InputTokensEstimated || usage.InterruptedOutput {
 		return
 	}
@@ -68,7 +66,6 @@ func ObserveGroupHealthCacheUsage(info *relaycommon.RelayInfo, usage *dto.Usage)
 		}
 		if output >= 0 && input <= math.MaxInt64-output {
 			info.GroupHealthTokenUsage = &relaycommon.GroupHealthTokenUsage{InputTokens: input, OutputTokens: output}
-			info.GroupHealthUsageObservedAt = time.Now()
 		}
 	}
 }

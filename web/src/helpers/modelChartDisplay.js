@@ -77,7 +77,10 @@ export function chartMeasurement(point, metric) {
     cache_hit_rate: 'cache',
     avg_output_tps: 'output_tps',
   }[metric];
-  return key ? getHealthMeasurement(point, key, true) : null;
+  // Historical reference values belong in summaries, not in time-series
+  // buckets. Filling a missing bucket makes a stale or anomalous sample look
+  // like a continuous measurement.
+  return key ? getHealthMeasurement(point, key, false) : null;
 }
 
 // A current snapshot can replace an empty plot, but cannot become hourly history.

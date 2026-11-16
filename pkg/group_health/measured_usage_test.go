@@ -19,8 +19,8 @@ func TestMeasuredUsageUsesSuccessfulFinalAttemptAndEffectiveOutput(t *testing.T)
 	ResetAttempt(info)
 	require.Nil(t, info.GroupHealthTokenUsage)
 	info.GroupHealthFirstOutputTime = start.Add(3 * time.Second)
+	info.GroupHealthLastOutputTime = start.Add(5 * time.Second)
 	info.GroupHealthTokenUsage = &relaycommon.GroupHealthTokenUsage{InputTokens: 100, OutputTokens: 20}
-	info.GroupHealthUsageObservedAt = start.Add(5 * time.Second)
 	r.Observe(info, true, start.Add(7*time.Second))
 	info.GroupHealthTokenUsage.OutputTokens = 999
 	samples := r.Samples(start)
@@ -66,6 +66,36 @@ func TestMeasuredUsageMissingTimingRemainsUnknown(t *testing.T) {
 	require.NotNil(t, measuredZero.OutputTokens)
 	require.Zero(t, *measuredZero.OutputTokens)
 	require.Nil(t, measuredZero.AvgOutputTPS)
+}
+
+func TestMeasuredUsageRejectsTooShortGenerationWindow(t *testing.T) {
+	start := time.Unix(1800000000, 0)
+	for _, tc := range []struct {
+		elapsed  time.Duration
+		measured bool
+	}{
+		{elapsed: 249 * time.Millisecond},
+		{elapsed: 250 * time.Millisecond, measured: true},
+	} {
+		r := NewRequest("m", true)
+		info := &relaycommon.RelayInfo{
+			UsingGroup:                 "g",
+			StartTime:                  start,
+			GroupHealthFirstOutputTime: start.Add(time.Second),
+			GroupHealthLastOutputTime:  start.Add(time.Second).Add(tc.elapsed),
+			GroupHealthTokenUsage:      &relaycommon.GroupHealthTokenUsage{InputTokens: 100, OutputTokens: 20},
+		}
+		r.Observe(info, true, start.Add(2*time.Second))
+
+		sample := r.Samples(start)[0]
+		require.NotNil(t, sample.TokenUsage)
+		if tc.measured {
+			require.NotNil(t, sample.GenerationMs)
+			require.EqualValues(t, 250, *sample.GenerationMs)
+		} else {
+			require.Nil(t, sample.GenerationMs)
+		}
+	}
 }
 
 func TestHealthWindowIncludesSeventyTwoExplicitHourlyBuckets(t *testing.T) {

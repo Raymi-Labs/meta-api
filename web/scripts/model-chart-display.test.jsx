@@ -191,14 +191,14 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(html).toContain('aria-label="展开 · 首字均值 · s"');
     });
 
-    test('historical throughput keeps values without changing raw samples', () => {
+    test('historical throughput keeps gaps without changing raw samples', () => {
       const point = {
         ts: 7200,
         avg_output_tps: null,
         throughput_sample_count: 0,
         last_valid: { output_tps: { value: 73.7, ts: 3600 } },
       };
-      expect(chartDisplayValue(point, 'avg_output_tps')).toBe(73.7);
+      expect(chartDisplayValue(point, 'avg_output_tps')).toBeNull();
       expect(point.avg_output_tps).toBeNull();
       expect(point.throughput_sample_count).toBe(0);
       expect(
@@ -215,7 +215,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
           t={(key) => key}
         />,
       );
-      expect(html).toContain('73.7 tok/s');
+      expect(html).toContain('暂无数据');
       expect(html).not.toContain('沿用');
       expect(html).not.toContain('P50');
     });

@@ -28,6 +28,7 @@ import {
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
 import ModelMetricChart from './ModelMetricChart';
+import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
 export default function ModelAnalytics({
   model,
@@ -56,6 +57,7 @@ export default function ModelAnalytics({
   const groups = selected.map((group) =>
     available.find((item) => item.group === group),
   );
+  const showGenerationMetrics = supportsTextGenerationMetrics(model);
   const ready =
     health.isAuthenticated &&
     !health.error &&
@@ -120,20 +122,24 @@ export default function ModelAnalytics({
               metric='uptime_rate'
               t={t}
             />
-            <ModelMetricChart
-              title={t('首字均值') + ' · s'}
-              bucketSeconds={1800}
-              groups={groups}
-              metric='avg_ttft_ms'
-              t={t}
-            />
-            <ModelMetricChart
-              title={t('输出速度') + ' · tok/s'}
-              bucketSeconds={1800}
-              groups={groups}
-              metric='avg_output_tps'
-              t={t}
-            />
+            {showGenerationMetrics && (
+              <>
+                <ModelMetricChart
+                  title={t('首字均值') + ' · s'}
+                  bucketSeconds={1800}
+                  groups={groups}
+                  metric='avg_ttft_ms'
+                  t={t}
+                />
+                <ModelMetricChart
+                  title={t('输出速度') + ' · tok/s'}
+                  bucketSeconds={1800}
+                  groups={groups}
+                  metric='avg_output_tps'
+                  t={t}
+                />
+              </>
+            )}
           </div>
           {groups.some((group) => group.completion_count > 0) && (
             <ModelMetricChart

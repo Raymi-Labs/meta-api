@@ -10,6 +10,9 @@ import (
 	"github.com/QuantumNous/new-api/types"
 )
 
+// Exclude sub-250ms windows where timestamp precision dominates the rate.
+const minMeasuredGenerationMs int64 = 250
+
 // Request folds retries within one concrete group, not across fallback groups.
 // It is owned by the relay request goroutine and flushed exactly once on return.
 type Request struct {
@@ -132,9 +135,10 @@ func (r *Request) observe(info *relaycommon.RelayInfo, outcome Outcome, now time
 				// Usage is captured after the adapter has finished the response,
 				// before settlement. Do not count billing/database latency as
 				// generation time. Missing evidence remains unmeasured.
-				completedAt := info.GroupHealthUsageObservedAt
-				generationMs := completedAt.Sub(info.GroupHealthFirstOutputTime).Milliseconds()
-				if !completedAt.After(now) && generationMs > 0 {
+				lastOutputAt := info.GroupHealthLastOutputTime
+				generationMs := lastOutputAt.Sub(info.GroupHealthFirstOutputTime).Milliseconds()
+				if !lastOutputAt.IsZero() && !lastOutputAt.After(now) &&
+					generationMs >= minMeasuredGenerationMs {
 					sample.GenerationMs = &generationMs
 				}
 			}
@@ -194,13 +198,13 @@ func SupportsRequest(method, path string) bool {
 		(strings.HasSuffix(path, ":generateContent") || strings.HasSuffix(path, ":streamGenerateContent") || strings.HasSuffix(path, ":embedContent") || strings.HasSuffix(path, ":batchEmbedContents"))
 }
 
-// ResetAttempt prevents the previous failed upstream's stream state and first
-// output timestamp from contaminating a successful retry. Request start remains
-// unchanged, so successful latency includes selection, queueing and retries.
+// ResetAttempt prevents a failed upstream's stream and output timestamps from
+// contaminating a successful retry. Request start remains unchanged, so
+// successful latency includes selection, queueing and retries.
 func ResetAttempt(info *relaycommon.RelayInfo) {
 	info.GroupHealthFirstOutputTime = time.Time{}
+	info.GroupHealthLastOutputTime = time.Time{}
 	info.StreamStatus = nil
 	info.GroupHealthCacheUsage = nil
 	info.GroupHealthTokenUsage = nil
-	info.GroupHealthUsageObservedAt = time.Time{}
 }

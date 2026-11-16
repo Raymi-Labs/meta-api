@@ -27,6 +27,20 @@ func TestSetFirstEffectiveOutputTimeCapturesInitialChannelOnce(t *testing.T) {
 	require.Equal(t, "tag-a", info.FirstEffectiveOutputChannelTag)
 }
 
+func TestObserveGroupHealthOutputTracksEffectiveOutputInterval(t *testing.T) {
+	info := &RelayInfo{}
+	info.ObserveGroupHealthOutput()
+	first := info.GroupHealthFirstOutputTime
+	firstLast := info.GroupHealthLastOutputTime
+	require.False(t, first.IsZero())
+	require.Equal(t, first, firstLast)
+
+	time.Sleep(time.Millisecond)
+	info.ObserveGroupHealthOutput()
+	require.Equal(t, first, info.GroupHealthFirstOutputTime)
+	require.True(t, info.GroupHealthLastOutputTime.After(firstLast))
+}
+
 func TestRelayInfoGetFinalRequestRelayFormatPrefersExplicitFinal(t *testing.T) {
 	info := &RelayInfo{
 		RelayFormat:             types.RelayFormatOpenAI,

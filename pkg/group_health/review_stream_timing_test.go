@@ -13,21 +13,21 @@ func TestHealthReviewStreamTimingEvidence(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
 		clientStream bool
-		observedAt   time.Time
+		lastOutputAt time.Time
 		wantMeasured bool
 	}{
-		{name: "nonstream client with upstream SSE", observedAt: start.Add(5 * time.Second)},
-		{name: "stream excludes later settlement", clientStream: true, observedAt: start.Add(5 * time.Second), wantMeasured: true},
-		{name: "missing usage clock", clientStream: true},
-		{name: "usage clock before output", clientStream: true, observedAt: start.Add(time.Second)},
-		{name: "usage clock after request", clientStream: true, observedAt: start.Add(11 * time.Second)},
+		{name: "nonstream client with upstream SSE", lastOutputAt: start.Add(5 * time.Second)},
+		{name: "stream measures first to last effective output", clientStream: true, lastOutputAt: start.Add(5 * time.Second), wantMeasured: true},
+		{name: "missing last effective output", clientStream: true},
+		{name: "short output interval", clientStream: true, lastOutputAt: start.Add(2100 * time.Millisecond)},
+		{name: "last output after request", clientStream: true, lastOutputAt: start.Add(11 * time.Second)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			request := NewRequest("m", tc.clientStream)
 			info := &relaycommon.RelayInfo{
 				UsingGroup: "g", StartTime: start, IsStream: true,
 				GroupHealthFirstOutputTime: start.Add(2 * time.Second),
-				GroupHealthUsageObservedAt: tc.observedAt,
+				GroupHealthLastOutputTime:  tc.lastOutputAt,
 				GroupHealthTokenUsage:      &relaycommon.GroupHealthTokenUsage{InputTokens: 100, OutputTokens: 30},
 			}
 			request.Observe(info, true, start.Add(10*time.Second))

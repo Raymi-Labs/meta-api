@@ -20,11 +20,16 @@ func TestRequestFoldsRetriesByActualGroup(t *testing.T) {
 	now := start.Add(3 * time.Second)
 	r := NewRequest("client-model", true)
 	r.Failure("a")
-	info := &relaycommon.RelayInfo{UsingGroup: "a", StartTime: start, GroupHealthFirstOutputTime: start.Add(time.Second)}
+	info := &relaycommon.RelayInfo{
+		UsingGroup: "a", StartTime: start,
+		GroupHealthFirstOutputTime: start.Add(time.Second),
+		GroupHealthLastOutputTime: start.Add(1500 * time.Millisecond),
+	}
 	r.Observe(info, false, now)
 	info.UsingGroup = "b"
 	r.Observe(info, false, now)
 	info.GroupHealthFirstOutputTime = start.Add(2 * time.Second)
+	info.GroupHealthLastOutputTime = start.Add(2500 * time.Millisecond)
 	r.Observe(info, true, now)
 	samples := r.Samples(now)
 	require.Len(t, samples, 2)

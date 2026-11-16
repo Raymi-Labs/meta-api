@@ -1,22 +1,28 @@
 package common
 
 import (
+	"time"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
-	"time"
 )
 
-func (info *RelayInfo) SetGroupHealthFirstOutputTime() {
-	if info != nil && info.GroupHealthFirstOutputTime.IsZero() {
-		info.GroupHealthFirstOutputTime = time.Now()
+func (info *RelayInfo) ObserveGroupHealthOutput() {
+	if info == nil {
+		return
 	}
+	now := time.Now()
+	if info.GroupHealthFirstOutputTime.IsZero() {
+		info.GroupHealthFirstOutputTime = now
+	}
+	info.GroupHealthLastOutputTime = now
 }
 
 // ObserveOpenAIStreamOutput deliberately ignores role-only, usage and empty
 // chunks. Reasoning and tool-call content are useful output, unlike a heartbeat
 // or a tool index/ID announcement. Completion-style choices use text directly.
 func (info *RelayInfo) ObserveOpenAIStreamOutput(data string) {
-	if info == nil || !info.GroupHealthFirstOutputTime.IsZero() {
+	if info == nil {
 		return
 	}
 	var event struct {
@@ -38,7 +44,7 @@ func (info *RelayInfo) ObserveOpenAIStreamOutput(data string) {
 			effective = effective || call.Function.Name != "" || call.Function.Arguments != ""
 		}
 		if effective {
-			info.SetGroupHealthFirstOutputTime()
+			info.ObserveGroupHealthOutput()
 			return
 		}
 	}
