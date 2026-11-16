@@ -7539,6 +7539,9 @@
     "输入完整企业名称": "Wpisz pełną nazwę firmy",
     "重新检查": "Sprawdź ponownie",
     "金额单位": "Jednostka kwoty",
-    "额度归并": "Scalenie budżetu"
+    "额度归并": "Scalenie budżetu",
+    "流式响应头超时（秒）": "Limit oczekiwania na nagłówki odpowiedzi strumieniowej (sekundy)",
+    "流式响应头超时必须为 0 到 600 的整数": "Limit oczekiwania na nagłówki odpowiedzi strumieniowej musi być liczbą całkowitą od 0 do 600",
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 dziedziczy ustawienie globalne. Dotyczy strumieniowych żądań generowania Chat, Responses i Gemini, maksymalnie 600 sekund. Zmienia tylko oczekiwanie na nagłówki, bez zmiany odczytu treści ani całkowitego limitu czasu."
   }
 }

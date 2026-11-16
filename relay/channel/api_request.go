@@ -532,6 +532,26 @@ func channelNonStreamHeaderTimeout(info *common.RelayInfo) time.Duration {
 	return 0
 }
 
+// channelResponseHeaderTimeout preserves the legacy nonstream setting's scope.
+// An independent opt-in is required before extending a streaming channel's wait.
+func channelResponseHeaderTimeout(info *common.RelayInfo) time.Duration {
+	if info == nil || info.ChannelMeta == nil || shouldUseImageHTTPClient(info) {
+		return 0
+	}
+	if !info.IsStream {
+		return channelNonStreamHeaderTimeout(info)
+	}
+	seconds := info.ChannelSetting.StreamResponseHeaderTimeoutSec
+	if seconds <= 0 || seconds > 600 {
+		return 0
+	}
+	switch info.RelayMode {
+	case constant.RelayModeChatCompletions, constant.RelayModeCompletions, constant.RelayModeResponses, constant.RelayModeGemini:
+		return time.Duration(seconds) * time.Second
+	}
+	return 0
+}
+
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	if err := applyCPAIdentity(req.Header, info); err != nil {
 		return nil, err
@@ -549,14 +569,14 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	} else {
 		client = service.GetHttpClient()
 	}
-	wait := channelNonStreamHeaderTimeout(info)
+	wait := channelResponseHeaderTimeout(info)
 	if wait > 0 {
 		client, err = service.WithResponseHeaderTimeout(client, wait)
 		if err != nil {
 			return nil, fmt.Errorf("configure channel header timeout: %w", err)
 		}
 	}
-	service.RecordRelayHTTPTimeout(c, client, wait > 0)
+	service.RecordRelayHTTPTimeout(c, client, wait > 0 && !info.IsStream, wait > 0 && info.IsStream)
 
 	if info.IsStream {
 		helper.SetEventStreamHeaders(c)

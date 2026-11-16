@@ -7539,6 +7539,9 @@
     "输入完整企业名称": "Kuruluşun tam adını girin",
     "重新检查": "Yeniden kontrol et",
     "金额单位": "Tutar birimi",
-    "额度归并": "Bütçe birleştirme"
+    "额度归并": "Bütçe birleştirme",
+    "流式响应头超时（秒）": "Akış yanıtı başlık zaman aşımı (saniye)",
+    "流式响应头超时必须为 0 到 600 的整数": "Akış yanıtı başlık zaman aşımı 0 ile 600 arasında bir tam sayı olmalıdır",
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 genel ayarı devralır. Chat, Responses ve Gemini akış oluşturma isteklerine en fazla 600 saniye uygulanır. Yalnızca başlık bekleme süresini değiştirir; gövde okumasını veya toplam zaman aşımını değiştirmez."
   }
 }

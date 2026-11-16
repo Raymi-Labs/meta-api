@@ -115,6 +115,9 @@ type ChannelSettings struct {
 
 	// 0 inherits the default; only non-streaming text relay requests use this override.
 	NonStreamResponseHeaderTimeoutSec int `json:"nonstream_response_header_timeout_sec,omitempty"`
+	// StreamResponseHeaderTimeoutSec only changes the wait for response headers, not SSE body reads.
+	// 0 inherits the shared HTTP client; valid overrides are 1..600 seconds.
+	StreamResponseHeaderTimeoutSec int `json:"stream_response_header_timeout_sec,omitempty"`
 
 	CPAUserIdentityEnabled         bool                           `json:"cpa_user_identity_enabled,omitempty"`
 	CPAInstanceID                  string                         `json:"cpa_instance_id,omitempty"`
@@ -150,6 +153,9 @@ func (s ChannelSettings) Validate() error {
 	}
 	if s.NonStreamResponseHeaderTimeoutSec < 0 || s.NonStreamResponseHeaderTimeoutSec > 600 {
 		return fmt.Errorf("nonstream_response_header_timeout_sec must be an integer from 0 to 600")
+	}
+	if s.StreamResponseHeaderTimeoutSec < 0 || s.StreamResponseHeaderTimeoutSec > 600 {
+		return fmt.Errorf("stream_response_header_timeout_sec must be an integer from 0 to 600")
 	}
 	if err := s.ValidateCPAIdentity(); err != nil {
 		return err

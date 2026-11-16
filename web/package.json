@@ -60,6 +60,7 @@
     "i18n:lint": "bunx i18next-cli lint",
     "i18n:audit": "node scripts/i18n-audit.mjs",
     "test:video-preflight": "node scripts/video-preflight.test.mjs",
+    "test:channel-stream-timeout": "node scripts/channel-stream-timeout.browser.mjs",
     "test:rich-content-security": "node scripts/rich-content-security.browser.mjs",
     "test:image-playground-static": "node scripts/image-playground-static-guard.test.mjs",
     "test:model-descriptions": "bun test scripts/model-description.test.mjs scripts/model-metadata-patch.test.mjs",

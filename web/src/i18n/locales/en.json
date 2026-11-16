@@ -7751,6 +7751,9 @@
     "输入完整企业名称": "Enter the full enterprise name",
     "重新检查": "Check again",
     "金额单位": "Amount unit",
-    "额度归并": "Budget consolidation"
+    "额度归并": "Budget consolidation",
+    "流式响应头超时（秒）": "Streaming response header timeout (seconds)",
+    "流式响应头超时必须为 0 到 600 的整数": "Streaming response header timeout must be an integer from 0 to 600",
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 inherits the global setting. Applies to streaming Chat, Responses, and Gemini generation requests, up to 600 seconds. Only changes the wait for response headers, not body reads or the total timeout."
   }
 }

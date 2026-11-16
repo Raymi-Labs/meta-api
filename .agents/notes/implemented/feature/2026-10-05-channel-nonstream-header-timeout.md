@@ -14,6 +14,8 @@ Grok 渠道非流式调用在默认60秒响应头等待处失败，而43/57秒�
 
 基础客户端的 TLS 配置独立性由[定向安全修复](../bug-fix/2026-10-12-upstream-security-static-compat.md)补齐，本篇连接池与超时语义保持不变。
 
+流式请求的独立按渠道设置由[流式等待覆盖](2026-11-16-channel-stream-header-timeout.md)补充；本篇旧字段仍不影响流式请求。
+
 ## Alternatives considered
 
 - 全局60改120可立即缓解，但影响所有渠道且不能隔离，否决。

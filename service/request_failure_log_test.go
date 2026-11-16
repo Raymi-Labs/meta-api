@@ -39,7 +39,7 @@ func TestFinalFailureRecordsHTTP200StreamErrorOnce(t *testing.T) {
 	ctx := failureLogContext(t)
 	client := newRelayHttpClient(120 * time.Second)
 	t.Cleanup(client.CloseIdleConnections)
-	RecordRelayHTTPTimeout(ctx, client, true)
+	RecordRelayHTTPTimeout(ctx, client, true, false)
 	ctx.Set(RequestLogStreamKey, true)
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Writer.WriteHeaderNow()

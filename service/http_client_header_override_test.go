@@ -162,13 +162,21 @@ func TestHeaderOverrideAdminDiagnostics(t *testing.T) {
 	client := newRelayHttpClient(120 * time.Second)
 	client.Timeout = 30 * time.Second
 	t.Cleanup(client.CloseIdleConnections)
-	RecordRelayHTTPTimeout(ctx, client, true)
+	RecordRelayHTTPTimeout(ctx, client, true, false)
 	admin := map[string]interface{}{}
 	AppendRelayHTTPTimeout(ctx, admin)
 	raw, err := common.Marshal(admin)
 	require.NoError(t, err)
 	require.Contains(t, string(raw), `"response_header_timeout_seconds":120`)
 	require.Contains(t, string(raw), `"client_total_timeout_seconds":30`)
+	require.Contains(t, string(raw), `"channel_nonstream_override":true`)
+	require.Contains(t, string(raw), `"channel_stream_override":false`)
+	RecordRelayHTTPTimeout(ctx, client, false, true)
+	AppendRelayHTTPTimeout(ctx, admin)
+	raw, err = common.Marshal(admin)
+	require.NoError(t, err)
+	require.Contains(t, string(raw), `"channel_nonstream_override":false`)
+	require.Contains(t, string(raw), `"channel_stream_override":true`)
 }
 
 func TestHeaderOverrideResetDoesNotCancelInflight(t *testing.T) {

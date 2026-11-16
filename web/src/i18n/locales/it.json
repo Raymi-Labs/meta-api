@@ -7539,6 +7539,9 @@
     "输入完整企业名称": "Inserisci il nome completo dell’azienda",
     "重新检查": "Verifica di nuovo",
     "金额单位": "Unità dell’importo",
-    "额度归并": "Consolidamento del budget"
+    "额度归并": "Consolidamento del budget",
+    "流式响应头超时（秒）": "Timeout delle intestazioni in streaming (secondi)",
+    "流式响应头超时必须为 0 到 600 的整数": "Il timeout delle intestazioni in streaming deve essere un intero da 0 a 600",
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 eredita l’impostazione globale. Si applica alle richieste di generazione in streaming Chat, Responses e Gemini, fino a 600 secondi. Cambia solo l’attesa delle intestazioni, non la lettura del corpo né il timeout totale."
   }
 }

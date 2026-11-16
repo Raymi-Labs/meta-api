@@ -75,11 +75,12 @@ func resetHeaderOverrideClients() {
 
 const relayHTTPTimeoutContextKey = "relay_http_timeout"
 
-func RecordRelayHTTPTimeout(c *gin.Context, client *http.Client, overridden bool) {
+func RecordRelayHTTPTimeout(c *gin.Context, client *http.Client, nonstreamOverridden, streamOverridden bool) {
 	c.Set(relayHTTPTimeoutContextKey, map[string]interface{}{
 		"response_header_timeout_seconds": responseHeaderTimeout(client).Seconds(),
 		"client_total_timeout_seconds":    client.Timeout.Seconds(),
-		"channel_nonstream_override":      overridden,
+		"channel_nonstream_override":      nonstreamOverridden,
+		"channel_stream_override":         streamOverridden,
 	})
 }
 

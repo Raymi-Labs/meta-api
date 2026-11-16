@@ -8148,6 +8148,9 @@
     "输入完整企业名称": "Nhập đầy đủ tên doanh nghiệp",
     "重新检查": "Kiểm tra lại",
     "金额单位": "Đơn vị số tiền",
-    "额度归并": "Gộp ngân sách"
+    "额度归并": "Gộp ngân sách",
+    "流式响应头超时（秒）": "Thời gian chờ tiêu đề phản hồi luồng (giây)",
+    "流式响应头超时必须为 0 到 600 的整数": "Thời gian chờ tiêu đề phản hồi luồng phải là số nguyên từ 0 đến 600",
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 kế thừa cài đặt chung. Áp dụng cho yêu cầu tạo nội dung dạng luồng Chat, Responses và Gemini, tối đa 600 giây. Chỉ thay đổi thời gian chờ tiêu đề, không thay đổi việc đọc nội dung hay tổng thời gian chờ."
   }
 }

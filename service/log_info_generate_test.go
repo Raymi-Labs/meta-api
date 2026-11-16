@@ -21,7 +21,7 @@ func TestHeaderOverrideAppearsOnlyInAdminConsumeMetadata(t *testing.T) {
 	c.Request = httptest.NewRequest("POST", "/v1/chat/completions", nil)
 	client := newRelayHttpClient(120 * time.Second)
 	t.Cleanup(client.CloseIdleConnections)
-	RecordRelayHTTPTimeout(c, client, true)
+	RecordRelayHTTPTimeout(c, client, true, false)
 	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{}}
 	other := GenerateTextOtherInfo(c, info, 1, 1, 1, 0, 1, 1, 1)
 	require.Contains(t, other["admin_info"], "relay_http_timeout")

@@ -115,6 +115,7 @@ import {
   IconChevronUp,
   IconChevronDown,
   IconCalendar,
+  IconInfoCircle,
 } from '@douyinfe/semi-icons';
 
 const { Text, Title } = Typography;
@@ -205,6 +206,7 @@ const EditChannelModal = (props) => {
     thinking_to_content: false,
     proxy: '',
     nonstream_response_header_timeout_sec: 0,
+    stream_response_header_timeout_sec: 0,
     pass_through_body_enabled: false,
     chat_completions_to_responses_mode: 'inherit',
     claude_incremental_cache_enabled: true,
@@ -577,6 +579,7 @@ const EditChannelModal = (props) => {
   const [channelSettings, setChannelSettings] = useState({
     upstream_capacity: normalizeVMCapacitySettings(),
     nonstream_response_header_timeout_sec: 0,
+    stream_response_header_timeout_sec: 0,
     force_format: false,
     cpa_user_identity_enabled: false,
     cpa_instance_id: '',
@@ -867,6 +870,8 @@ const EditChannelModal = (props) => {
           data.proxy = parsedSettings.proxy || '';
           data.nonstream_response_header_timeout_sec =
             parsedSettings.nonstream_response_header_timeout_sec ?? 0;
+          data.stream_response_header_timeout_sec =
+            parsedSettings.stream_response_header_timeout_sec ?? 0;
           data.pass_through_body_enabled =
             parsedSettings.pass_through_body_enabled || false;
           data.chat_completions_to_responses_mode =
@@ -902,6 +907,7 @@ const EditChannelModal = (props) => {
           data.thinking_to_content = false;
           data.proxy = '';
           data.nonstream_response_header_timeout_sec = 0;
+          data.stream_response_header_timeout_sec = 0;
           data.pass_through_body_enabled = false;
           data.chat_completions_to_responses_mode = 'inherit';
           data.claude_incremental_cache_enabled = true;
@@ -927,6 +933,7 @@ const EditChannelModal = (props) => {
         data.claude_incremental_cache_enabled = true;
         data.proxy = '';
         data.nonstream_response_header_timeout_sec = 0;
+        data.stream_response_header_timeout_sec = 0;
         data.pass_through_body_enabled = false;
         data.chat_completions_to_responses_mode = 'inherit';
         data.system_prompt = '';
@@ -1068,6 +1075,7 @@ const EditChannelModal = (props) => {
         thinking_to_content: data.thinking_to_content,
         proxy: data.proxy,
         nonstream_response_header_timeout_sec: data.nonstream_response_header_timeout_sec,
+        stream_response_header_timeout_sec: data.stream_response_header_timeout_sec,
         pass_through_body_enabled: data.pass_through_body_enabled,
         chat_completions_to_responses_mode:
           data.chat_completions_to_responses_mode || 'inherit',
@@ -1520,6 +1528,7 @@ const EditChannelModal = (props) => {
     // 重置渠道设置状态
     setChannelSettings({
       nonstream_response_header_timeout_sec: 0,
+      stream_response_header_timeout_sec: 0,
       upstream_capacity: normalizeVMCapacitySettings(),
       force_format: false,
     cpa_user_identity_enabled: false,
@@ -1938,6 +1947,18 @@ const EditChannelModal = (props) => {
       showError(t('非流式响应头超时必须为 0 到 600 的整数'));
       return;
     }
+    const streamHeaderTimeout = Number(
+      localInputs.stream_response_header_timeout_sec ?? 0,
+    );
+    if (
+      !Number.isInteger(streamHeaderTimeout) ||
+      streamHeaderTimeout < 0 ||
+      streamHeaderTimeout > 600
+    ) {
+      showError(t('流式响应头超时必须为 0 到 600 的整数'));
+      return;
+    }
+
     let reasoningAdaptation;
     try {
       reasoningAdaptation = buildReasoningAdaptation(
@@ -1958,6 +1979,7 @@ const EditChannelModal = (props) => {
       thinking_to_content: localInputs.thinking_to_content || false,
       proxy: localInputs.proxy || '',
       nonstream_response_header_timeout_sec: nonstreamHeaderTimeout,
+      stream_response_header_timeout_sec: streamHeaderTimeout,
       pass_through_body_enabled: localInputs.pass_through_body_enabled || false,
       chat_completions_to_responses_mode:
         localInputs.chat_completions_to_responses_mode || 'inherit',
@@ -2090,6 +2112,7 @@ const EditChannelModal = (props) => {
     delete localInputs.client_restriction_clients;
     delete localInputs.proxy;
     delete localInputs.nonstream_response_header_timeout_sec;
+    delete localInputs.stream_response_header_timeout_sec;
     delete localInputs.pass_through_body_enabled;
     delete localInputs.system_prompt;
     delete localInputs.system_prompt_override;
@@ -4781,6 +4804,34 @@ const EditChannelModal = (props) => {
                       }
                       style={{ width: '100%' }}
                       extraText={t('0 为继承全局；非流式文本与视频提交生效，最长 600 秒。流式、生图和后台轮询不变，总超时及反向代理限制仍生效。')}
+                    />
+                    <Form.InputNumber
+                      field='stream_response_header_timeout_sec'
+                      label={{
+                        text: t('流式响应头超时（秒）'),
+                        extra: (
+                          <Tooltip
+                            trigger='click'
+                            content={t('0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。')}
+                          >
+                            <Button
+                              htmlType='button'
+                              type='tertiary'
+                              theme='borderless'
+                              size='small'
+                              icon={<IconInfoCircle />}
+                              aria-label={`${t('流式响应头超时（秒）')}：${t('说明')}`}
+                            />
+                          </Tooltip>
+                        ),
+                      }}
+                      min={0}
+                      max={600}
+                      precision={0}
+                      onChange={(value) =>
+                        handleChannelSettingsChange('stream_response_header_timeout_sec', value ?? 0)
+                      }
+                      style={{ width: '100%' }}
                     />
                     <Form.Input
                       field='proxy'
