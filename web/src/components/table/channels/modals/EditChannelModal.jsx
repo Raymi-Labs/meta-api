@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { modelDiscoveryRequest, modelDiscoveryNotice } from '../../../../helpers/channelModelDiscovery';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CHANNEL_DISPLAY_VENDORS } from '../../../../helpers/channelCategory';
@@ -262,6 +263,28 @@ const EditChannelModal = (props) => {
   const [isModalOpenurl, setIsModalOpenurl] = useState(false);
   const [modelModalVisible, setModelModalVisible] = useState(false);
   const [fetchedModels, setFetchedModels] = useState([]);
+  const [fetchedModelSource, setFetchedModelSource] = useState('');
+  const [modelFetchLoading, setModelFetchLoading] = useState(false);
+  const modelFetchSequence = useRef(0);
+  const discoveryConfig = JSON.stringify(
+    modelDiscoveryRequest(inputs, channelId),
+  );
+  const discoveryConfigRef = useRef(discoveryConfig);
+  discoveryConfigRef.current = discoveryConfig;
+  useEffect(() => {
+    modelFetchSequence.current += 1;
+    setFetchedModels([]);
+    setFetchedModelSource('');
+    setModelFetchLoading(false);
+    setModelModalVisible(false);
+    setModelMappingValueModalVisible(false);
+  }, [discoveryConfig, props.visible]);
+  useEffect(
+    () => () => {
+      modelFetchSequence.current += 1;
+    },
+    [],
+  );
   const [modelMappingValueModalVisible, setModelMappingValueModalVisible] =
     useState(false);
   const [modelMappingValueModalModels, setModelMappingValueModalModels] =
@@ -1090,67 +1113,48 @@ const EditChannelModal = (props) => {
   };
 
   const fetchUpstreamModelList = async (name, options = {}) => {
-    const silent = !!options.silent;
-    // if (inputs['type'] !== 1) {
-    //   showError(t('仅支持 OpenAI 接口格式'));
-    //   return;
-    // }
-    setLoading(true);
-    const models = [];
-    let err = false;
-
-    if (isEdit) {
-      // 如果是编辑模式，使用已有的 channelId 获取模型列表
-      const res = await API.get('/api/channel/fetch_models/' + channelId, {
-        skipErrorHandler: true,
-      });
-      if (res && res.data && res.data.success) {
-        models.push(...res.data.data);
-      } else {
-        err = true;
+    const sequence = ++modelFetchSequence.current;
+    const config = discoveryConfig;
+    setModelFetchLoading(true);
+    try {
+      const res = await API.post(
+        '/api/channel/fetch_models',
+        JSON.parse(config),
+        {
+          skipErrorHandler: true,
+        },
+      );
+      if (
+        sequence !== modelFetchSequence.current ||
+        config !== discoveryConfigRef.current
+      )
+        return null;
+      if (!res?.data?.success) {
+        showError(t(res?.data?.message || '获取模型列表失败'));
+        return null;
       }
-    } else {
-      // 如果是新建模式，通过后端代理获取模型列表
-      if (!inputs?.['key']) {
-        showError(t('请填写密钥'));
-        err = true;
-      } else {
-        try {
-          const res = await API.post(
-            '/api/channel/fetch_models',
-            {
-              base_url: inputs['base_url'],
-              type: inputs['type'],
-              key: inputs['key'],
-            },
-            { skipErrorHandler: true },
-          );
-
-          if (res && res.data && res.data.success) {
-            models.push(...res.data.data);
-          } else {
-            err = true;
-          }
-        } catch (error) {
-          console.error('Error fetching models:', error);
-          err = true;
-        }
-      }
+      const models = Array.from(
+        new Set(
+          (res.data.data || [])
+            .map((item) =>
+              typeof item === 'string'
+                ? item.trim()
+                : (item?.id || item?.model_name || '').trim(),
+            )
+            .filter(Boolean),
+        ),
+      );
+      setFetchedModels(models);
+      setFetchedModelSource(res.data.source || 'upstream');
+      if (!options.silent) setModelModalVisible(true);
+      return models;
+    } catch (error) {
+      if (sequence === modelFetchSequence.current)
+        showError(t(error?.response?.data?.message || '获取模型列表失败'));
+      return null;
+    } finally {
+      if (sequence === modelFetchSequence.current) setModelFetchLoading(false);
     }
-
-    if (!err) {
-      const uniqueModels = Array.from(new Set(models));
-      setFetchedModels(uniqueModels);
-      if (!silent) {
-        setModelModalVisible(true);
-      }
-      setLoading(false);
-      return uniqueModels;
-    } else {
-      showError(t('获取模型列表失败'));
-    }
-    setLoading(false);
-    return null;
   };
 
   const openModelMappingValueModal = async ({ pairKey, value }) => {
@@ -1164,9 +1168,8 @@ const EditChannelModal = (props) => {
     let modelsToUse = fetchedModels;
     if (!Array.isArray(modelsToUse) || modelsToUse.length === 0) {
       const fetched = await fetchUpstreamModelList('models', { silent: true });
-      if (Array.isArray(fetched)) {
-        modelsToUse = fetched;
-      }
+      if (!Array.isArray(fetched)) return;
+      modelsToUse = fetched;
     }
 
     if (!Array.isArray(modelsToUse) || modelsToUse.length === 0) {
@@ -3581,6 +3584,7 @@ const EditChannelModal = (props) => {
                             <Button
                               size='small'
                               type='tertiary'
+                              loading={modelFetchLoading}
                               onClick={() => fetchUpstreamModelList('models')}
                             >
                               {t('获取模型列表')}
@@ -5045,6 +5049,7 @@ const EditChannelModal = (props) => {
       <ModelSelectModal
         visible={modelModalVisible}
         models={fetchedModels}
+        notice={modelDiscoveryNotice(fetchedModelSource, t)}
         selected={inputs.models}
         redirectModels={redirectModelList}
         redirectSourceModels={redirectModelKeyList}
@@ -5058,6 +5063,7 @@ const EditChannelModal = (props) => {
 
       <SingleModelSelectModal
         visible={modelMappingValueModalVisible}
+        notice={modelDiscoveryNotice(fetchedModelSource, t)}
         models={modelMappingValueModalModels}
         selected={modelMappingValueSelected}
         onConfirm={(selectedModel) => {

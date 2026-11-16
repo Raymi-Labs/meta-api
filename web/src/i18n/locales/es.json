@@ -7514,6 +7514,10 @@
     "管理员会通过您填写的联系方式与您联系。": "Un administrador se pondrá en contacto con usted mediante los datos indicados.",
     "联系方式": "Datos de contacto",
     "联系方式类型": "Método de contacto",
-    "请填写拒绝原因": "Indique el motivo del rechazo"
+    "请填写拒绝原因": "Indique el motivo del rechazo",
+    "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "No se pudo obtener la lista del proveedor. Se muestran referencias oficiales; no se ha verificado la compatibilidad del canal.",
+    "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "No se pudo obtener la lista del proveedor. Se muestran referencias integradas; no se ha verificado la compatibilidad del canal.",
+    "模型列表来自当前填写的上游地址。": "Modelos obtenidos de la URL del proveedor introducida actualmente.",
+    "更换上游域名后，请填写该地址对应的密钥": "Tras cambiar el dominio del proveedor, introduce la clave correspondiente a esa dirección."
   }
 }

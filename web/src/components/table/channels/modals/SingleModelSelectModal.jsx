@@ -37,6 +37,7 @@ import { getModelCategories } from '../../../../helpers/render';
 
 const SingleModelSelectModal = ({
   visible,
+  notice,
   models = [],
   selected = '',
   onConfirm,
@@ -129,6 +130,9 @@ const SingleModelSelectModal = ({
       maskClosable
       centered
     >
+      {notice && (
+        <Typography.Paragraph type='secondary'>{notice}</Typography.Paragraph>
+      )}
       <Input
         prefix={<IconSearch size={14} />}
         placeholder={t('搜索模型')}

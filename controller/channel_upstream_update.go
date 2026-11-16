@@ -289,7 +289,11 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 			return nil, fmt.Errorf("获取渠道密钥失败: %w", apiErr)
 		}
 		key = strings.TrimSpace(key)
-		models, err := gemini.FetchGeminiModels(baseURL, key, channel.GetSetting().Proxy)
+		headers, err := buildFetchModelsHeaders(channel, key)
+		if err != nil {
+			return nil, err
+		}
+		models, err := gemini.FetchGeminiModelsWithHeaders(baseURL, key, channel.GetSetting().Proxy, headers)
 		if err != nil {
 			return nil, err
 		}
@@ -316,10 +320,18 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 		if plan, ok := constant.ResolveChannelSpecialBase(baseURL); ok && plan.OpenAIBaseURL != "" {
 			url = fmt.Sprintf("%s/models", plan.OpenAIBaseURL)
 		} else {
-			url = fmt.Sprintf("%s/v1/models", baseURL)
+			url = strings.TrimRight(baseURL, "/")
+			if !strings.HasSuffix(url, "/v1") {
+				url += "/v1"
+			}
+			url += "/models"
 		}
 	default:
-		url = fmt.Sprintf("%s/v1/models", baseURL)
+		url = strings.TrimRight(baseURL, "/")
+		if !strings.HasSuffix(url, "/v1") {
+			url += "/v1"
+		}
+		url += "/models"
 	}
 
 	key, _, apiErr := channel.GetNextEnabledKey()
@@ -333,7 +345,7 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 		return nil, err
 	}
 
-	body, err := GetResponseBody(http.MethodGet, url, channel, headers)
+	body, err := getModelDiscoveryBody(url, channel, headers)
 	if err != nil {
 		return nil, err
 	}

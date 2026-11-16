@@ -7514,6 +7514,10 @@
     "管理员会通过您填写的联系方式与您联系。": "Een beheerder neemt contact met u op via de opgegeven gegevens.",
     "联系方式": "Contactgegevens",
     "联系方式类型": "Contactmethode",
-    "请填写拒绝原因": "Geef een reden voor afwijzing op"
+    "请填写拒绝原因": "Geef een reden voor afwijzing op",
+    "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "De upstreamlijst kon niet worden opgehaald. Officiële referentiemodellen worden getoond; kanaalondersteuning is niet geverifieerd.",
+    "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "De upstreamlijst kon niet worden opgehaald. Ingebouwde referentiemodellen worden getoond; kanaalondersteuning is niet geverifieerd.",
+    "模型列表来自当前填写的上游地址。": "Modellen zijn opgehaald van de momenteel ingevulde upstream-URL.",
+    "更换上游域名后，请填写该地址对应的密钥": "Voer na het wijzigen van het upstreamdomein de sleutel voor dat adres in."
   }
 }

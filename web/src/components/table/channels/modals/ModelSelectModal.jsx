@@ -40,6 +40,7 @@ import { getModelCategories } from '../../../../helpers/render';
 
 const ModelSelectModal = ({
   visible,
+  notice,
   models = [],
   selected = [],
   redirectModels = [],
@@ -370,6 +371,9 @@ const ModelSelectModal = ({
       maskClosable
       centered
     >
+      {notice && (
+        <Typography.Paragraph type='secondary'>{notice}</Typography.Paragraph>
+      )}
       <Input
         prefix={<IconSearch size={14} />}
         placeholder={t('搜索模型')}
@@ -379,7 +383,9 @@ const ModelSelectModal = ({
       />
 
       <Spin
-        spinning={!models || (models.length === 0 && removedModels.length === 0)}
+        spinning={
+          !models || (models.length === 0 && removedModels.length === 0)
+        }
       >
         <div style={{ maxHeight: 400, overflowY: 'auto', paddingRight: 8 }}>
           {filteredModels.length === 0 && removedModels.length === 0 ? (
