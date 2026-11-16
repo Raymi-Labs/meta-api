@@ -24,7 +24,7 @@ import '/src/index.css';
 i18n.init({lng:'zh',resources:{zh:{translation:{}}}});
 localStorage.setItem('user',JSON.stringify({id:1,role:100}));
 window.calls=[];window.mode='upstream';
-API.get=async url=>({data:{success:true,data:url==='/api/channel/901'?{id:901,type:24,name:'Fixture',base_url:'https://saved.example/api',models:'existing-model',group:'default',status:1,setting:'{}',settings:'{}',model_mapping:'{}',param_override:'',header_override:''}:url==='/api/group/'?['default']:url.includes('quota_usage')?{}:[]}});
+API.get=async url=>({data:{success:true,data:url==='/api/channel/901'?{id:901,type:Number(new URLSearchParams(location.search).get('type')||24),name:'Fixture',base_url:'https://saved.example/api',models:'existing-model',group:'default',status:1,setting:'{}',settings:'{}',model_mapping:'{}',param_override:'',header_override:''}:url==='/api/group/'?['default']:url.includes('quota_usage')?{}:[]}});
 API.post=async (url,body)=>{window.calls.push({url,body});if(window.mode==='pending')return new Promise(resolve=>window.release=()=>resolve({data:{success:true,data:['stale-model'],source:'upstream'}}));return {data:{success:true,data:window.mode==='upstream'?['gemini-4-carbon','gemini-4-hydrogen']:['official-only-model'],source:window.mode==='upstream'?'upstream':'official_reference'}}};
 API.put=async ()=>{throw Error('Preview must not save');};
 createRoot(document.getElementById('root')).render(<EditChannelModal visible editingChannel={new URLSearchParams(location.search).has('new')?{}:{id:901}} handleClose={()=>{}} refresh={()=>{}}/>);`,
@@ -123,9 +123,30 @@ createRoot(document.getElementById('root')).render(<EditChannelModal visible edi
   const created = await page.evaluate(() => window.calls.at(-1));
   assert.equal(created.body.base_url, 'https://new.example/api');
   assert.equal('channel_id' in created.body, false);
+  // Types previously excluded from manual discovery must expose the same workflow.
+  for (const type of [3, 33, 41, 45, 56, 57]) {
+    await page.goto(
+      `http://127.0.0.1:${server.httpServer.address().port}/${path.basename(fixture)}/?type=${type}`,
+      { waitUntil: 'networkidle0' },
+    );
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('button')].some(
+        (b) => b.textContent.trim() === '获取模型列表',
+      ),
+    );
+    await click('获取模型列表');
+    await page.waitForFunction(() => window.calls.length > 0);
+    assert.equal(
+      (await page.evaluate(() => window.calls.at(-1))).body.type,
+      type,
+    );
+    await page.waitForFunction(() =>
+      document.body.innerText.includes('模型列表来自当前填写的上游地址。'),
+    );
+  }
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: actual edit form draft URL, saved-key omission, source notice, fallback and stale response isolation',
+    'PASS: actual edit form draft URL, saved-key omission, source notice, fallback, stale response isolation and all-channel entry points',
   );
 } finally {
   await browser?.close();

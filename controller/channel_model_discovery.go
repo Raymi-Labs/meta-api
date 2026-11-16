@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/relay"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 )
@@ -85,7 +88,7 @@ func FetchModels(c *gin.Context) {
 			return
 		}
 	}
-	names, err := fetchChannelUpstreamModelIDs(ch)
+	names, err := fetchChannelModelsContext(c.Request.Context(), ch)
 	source := "upstream"
 	if err != nil || len(names) == 0 {
 		if !req.AllowReferenceFallback {
@@ -93,12 +96,10 @@ func FetchModels(c *gin.Context) {
 			return
 		}
 		names = nil
-		if ch.Type == constant.ChannelTypeGemini {
-			names = fetchOfficialGeminiReference(c.Request.Context())
-			source = "official_reference"
-		}
+		names = fetchOfficialModelReference(c.Request.Context(), ch.Type)
+		source = "official_reference"
 		if len(names) == 0 {
-			names = append([]string(nil), channelId2Models[ch.Type]...)
+			names = builtinModelReference(ch.Type)
 			source = "builtin_reference"
 		}
 		if len(names) == 0 {
@@ -144,8 +145,8 @@ func fetchOfficialGeminiReference(parent context.Context) []string {
 }
 
 // Model discovery is bounded and never forwards credentials across redirects.
-func getModelDiscoveryBody(endpoint string, channel *model.Channel, headers http.Header) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+func getModelDiscoveryBodyContext(parent context.Context, endpoint string, channel *model.Channel, headers http.Header) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(parent, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -171,4 +172,65 @@ func getModelDiscoveryBody(endpoint string, channel *model.Channel, headers http
 		return nil, fmt.Errorf("invalid model response size")
 	}
 	return data, nil
+}
+
+// Official fallback uses a new anonymous channel: no customer credentials, proxy or headers.
+func fetchOfficialModelReference(parent context.Context, channelType int) []string {
+	if channelType == constant.ChannelTypeGemini {
+		return fetchOfficialGeminiReference(parent)
+	}
+	if channelType <= 0 || channelType >= len(constant.ChannelBaseURLs) {
+		return nil
+	}
+	base := constant.ChannelBaseURLs[channelType]
+	u, err := url.Parse(base)
+	if err != nil || u.Scheme != "https" || u.Host == "" || channelType == constant.ChannelTypeCodex {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
+	defer cancel()
+	ch := &model.Channel{Type: channelType, BaseURL: &base}
+	endpoints, err := channelModelEndpoints(channelType, base)
+	if err != nil {
+		return nil
+	}
+	headers := http.Header{}
+	if channelType == constant.ChannelTypeAnthropic {
+		headers.Set("anthropic-version", "2023-06-01")
+	}
+	for _, endpoint := range endpoints {
+		names, err := fetchModelPages(ctx, endpoint, ch, headers)
+		if err == nil && len(names) > 0 {
+			return names
+		}
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	return nil
+}
+
+// Reuse relay and task adapter catalogs; account-owned apps (e.g. Dify) may have no reference list.
+func builtinModelReference(channelType int) []string {
+	names := append([]string(nil), channelId2Models[channelType]...)
+	switch channelType {
+	case constant.ChannelTypeMidjourney, constant.ChannelTypeMidjourneyPlus:
+		for name := range constant.MidjourneyModel2Action {
+			names = append(names, name)
+		}
+	case constant.ChannelTypeSunoAPI:
+		for name := range constant.SunoModel2Action {
+			names = append(names, name)
+		}
+	default:
+		if adaptor := relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelType))); adaptor != nil {
+			names = append(names, adaptor.GetModelList()...)
+		}
+		if _, native := common.ChannelType2APIType(channelType); !native && len(names) == 0 {
+			adaptor := relay.GetAdaptor(constant.APITypeOpenAI)
+			adaptor.Init(&relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{ChannelType: channelType}})
+			names = append(names, adaptor.GetModelList()...)
+		}
+	}
+	return normalizeModelNames(names)
 }

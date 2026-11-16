@@ -87,12 +87,13 @@ func TestDiscoveryReferenceIsManualAndAnonymous(t *testing.T) {
 }
 
 func TestDiscoveryBuiltinFallbackAndBadHeader(t *testing.T) {
+	mockOfficialDiscovery(t, `{"error":"authentication required"}`, 401)
 	old := channelId2Models
-	channelId2Models = map[int][]string{1: {"reference-model"}}
+	channelId2Models = map[int][]string{43: {"reference-model"}}
 	t.Cleanup(func() { channelId2Models = old })
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`{"data":[]}`)) }))
 	defer server.Close()
-	_, result := previewModels(t, map[string]any{"type": 1, "base_url": server.URL + "/v1/", "allow_reference_fallback": true})
+	_, result := previewModels(t, map[string]any{"type": 43, "base_url": server.URL + "/v1/", "allow_reference_fallback": true})
 	require.Equal(t, "builtin_reference", result["source"])
 	status, _ := previewModels(t, map[string]any{"type": 1, "base_url": server.URL, "header_override": "broken"})
 	require.Equal(t, 400, status)

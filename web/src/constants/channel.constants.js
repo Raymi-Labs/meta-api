@@ -191,7 +191,12 @@ export const CHANNEL_OPTIONS = [
   },
 ];
 
-// Channel types that support upstream model list fetching in UI.
+// Manual preview supports every selectable type, including reference fallback.
+export const MODEL_DISCOVERY_CHANNEL_TYPES = new Set(
+  CHANNEL_OPTIONS.map(({ value }) => value),
+);
+
+// Automatic detection remains limited to existing upstream-capable types.
 export const MODEL_FETCHABLE_CHANNEL_TYPES = new Set([
   1, 4, 14, 34, 17, 26, 27, 24, 47, 25, 20, 23, 31, 40, 42, 48, 43,
 ]);

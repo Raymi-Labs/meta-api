@@ -37,6 +37,7 @@ import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import {
   CHANNEL_OPTIONS,
   MODEL_FETCHABLE_CHANNEL_TYPES,
+  MODEL_DISCOVERY_CHANNEL_TYPES,
 } from '../../../../constants';
 import {
   SideSheet,
@@ -1161,7 +1162,7 @@ const EditChannelModal = (props) => {
     const mappingKey = String(pairKey ?? '').trim();
     if (!mappingKey) return;
 
-    if (!MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type)) {
+    if (!MODEL_DISCOVERY_CHANNEL_TYPES.has(inputs.type)) {
       return;
     }
 
@@ -3580,7 +3581,7 @@ const EditChannelModal = (props) => {
                           >
                             {t('填入所有模型')}
                           </Button>
-                          {MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type) && (
+                          {MODEL_DISCOVERY_CHANNEL_TYPES.has(inputs.type) && (
                             <Button
                               size='small'
                               type='tertiary'
@@ -3713,7 +3714,7 @@ const EditChannelModal = (props) => {
                       editorType='keyValue'
                       formApi={formApiRef.current}
                       renderStringValueSuffix={({ pairKey, value }) => {
-                        if (!MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type)) {
+                        if (!MODEL_DISCOVERY_CHANNEL_TYPES.has(inputs.type)) {
                           return null;
                         }
                         const disabled = !String(pairKey ?? '').trim();
