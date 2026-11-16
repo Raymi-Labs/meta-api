@@ -20,13 +20,13 @@ func TestSyncRelayReasoningEffortFromResponsesPayload(t *testing.T) {
 	require.Equal(t, "high", info.ReasoningEffort)
 }
 
-func TestSyncRelayReasoningEffortFromResponsesPayload_IgnoresMissingReasoning(t *testing.T) {
+func TestSyncRelayReasoningEffortFromResponsesPayload_ClearsMissingReasoning(t *testing.T) {
 	t.Parallel()
 
 	info := &relaycommon.RelayInfo{ReasoningEffort: "medium"}
 	SyncRelayReasoningEffortFromResponsesPayload(info, []byte(`{"model":"gpt-5"}`))
 
-	require.Equal(t, "medium", info.ReasoningEffort)
+	require.Empty(t, info.ReasoningEffort)
 }
 
 func TestExtractReasoningSummaryTextFromResponses_CompatWrapper(t *testing.T) {

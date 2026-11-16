@@ -298,6 +298,7 @@ func buildResponsesRequestBody(c *gin.Context, info *relaycommon.RelayInfo, adap
 		}
 	}
 	service.SyncRelayReasoningEffortFromResponsesPayload(info, jsonData)
+	service.CaptureFinalReasoningAdaptation(c, info, jsonData)
 	return bytes.NewBuffer(jsonData), nil
 }
 

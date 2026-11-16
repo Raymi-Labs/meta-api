@@ -60,6 +60,7 @@ const OPENAI_REASONING_EFFORT_OPTIONS = [
   { label: 'medium', value: 'medium' },
   { label: 'high', value: 'high' },
   { label: 'xhigh', value: 'xhigh' },
+  { label: 'max', value: 'max' },
 ];
 
 const ALLOWED_OPENAI_REASONING_EFFORTS = new Set(

@@ -6668,7 +6668,7 @@
     "继承全局映射": "Usar asignación global",
     "按厂商自动适配": "Adaptar automáticamente según el proveedor",
     "智谱 GLM-5.3 Chat 模板": "Plantilla Zhipu GLM-5.3 Chat",
-    "仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。": "Solo se aplica a modelos registrados con reenvío OpenAI/Azure Chat; el paso directo y los demás protocolos conservan su comportamiento.",
+    "专属规则支持 OpenAI/Azure Chat 和 Responses；厂商模板仅用于 Chat，透传不生效。": "Las reglas personalizadas admiten OpenAI/Azure Chat y Responses; las plantillas de proveedor solo se aplican a Chat. No se aplican al reenvío directo.",
     "渠道专属规则（可选）": "Reglas del canal (opcional)",
     "精确匹配上游模型，优先于模板；参数覆盖最后执行。": "La coincidencia exacta del modelo de origen tiene prioridad sobre la plantilla; las sobrescrituras se aplican al final.",
     "思考参数适配配置无效": "Configuración de adaptación de razonamiento no válida",

@@ -10,7 +10,7 @@
 - 渠道专属规则按模型映射后的上游名称精确匹配，优先于模板。规则只填写部分档位时，未填写档位沿用旧全局规则，不再落入模板。`inherit` 关闭厂商模板，但显式专属规则仍生效。
 - 最后执行原有参数覆盖，管理员显式覆盖保持最高优先级。
 
-当前仅支持 OpenAI/Azure 类型渠道实际出站为 Chat 的路径，包括原生 Chat 和 Messages → Chat。原生 Messages、Responses、Chat/Messages → Responses 桥及请求体透传不应用 Chat 模板。它不修改渠道类型、模型映射、选渠权限、重试、工具消息或计费。
+精确模型规则支持 OpenAI/Azure 类型渠道的 Chat 与 Responses 出站协议，包括原生 Chat/Responses、Messages → Chat/Responses 和 Chat → Responses。`protocol` 指实际出站协议，不是客户端入口路径；同一模型可分别配置两条规则。厂商模板仍仅用于 Chat，原生 Messages 和请求体透传不应用规则。它不修改渠道类型、模型映射、选渠权限、重试、工具消息或计费。
 
 ## 首个模板
 
@@ -50,6 +50,23 @@ Flash、FlashX 和其他型号没有自动登记；型号支持应以实际供�
 ```
 
 界面的“渠道专属规则”只填写上面 `rules` 数组。接口保存到 `setting.reasoning_adaptation`。最多32条规则，拒绝重复模型/协议、通配模型和未知档位，错误保存不会落库。可用档位为 minimal、low、medium、high、xhigh、max；不要用档位映射表达关闭思考。
+
+## max 档位配置
+
+全局 `ClaudeToOpenAIReasoningMap` 的目标档位允许 `max`，但默认仍为 `max→xhigh`，避免升级后旧模型收到不支持的参数。建议优先给已核实支持 max 的具体渠道设置规则，不批量修改全局默认。
+
+例如，该渠道的 `gpt-6-astra` 已确认支持 max 时，在“渠道专属规则”填写：
+
+```json
+[
+  {"model":"gpt-6-astra","protocol":"chat","mapping":{"max":"max"}},
+  {"model":"gpt-6-astra","protocol":"responses","mapping":{"max":"max"}}
+]
+```
+
+模型名称须使用模型映射后的上游名称。这里只保留 max，显式 xhigh 仍是 xhigh；不推测 Ultra 的客户端编排模式。Messages 未传 effort、仅传较大 thinking 预算时，沿用已有 max 桶推算：未配置规则仍映射为 xhigh，显式配置上述规则后该桶映射为 max，管理诊断 source 为 `thinking_budget`。这不证明客户端明确选择了 max。
+
+普通日志显示实际发送的 effort。Responses 参数覆盖删除 reasoning/effort 时清除旧值，不继续显示 max。历史日志不回写；配置与本地模拟验证不代表上游真实支持或已部署。
 
 ## 诊断与迁移
 

@@ -18,3 +18,7 @@ func TestValidateClaudeToOpenAIReasoningMap_AcceptsValidMapping(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestValidateClaudeToOpenAIReasoningMap_AcceptsMax(t *testing.T) {
+	require.NoError(t, validateClaudeToOpenAIReasoningMap(`{"low":"low","medium":"medium","high":"high","max":"max"}`))
+}

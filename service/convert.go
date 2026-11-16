@@ -31,6 +31,7 @@ var allowedOpenAIReasoningEfforts = map[string]struct{}{
 	"medium":  {},
 	"high":    {},
 	"xhigh":   {},
+	"max":     {},
 }
 
 func ClaudeToOpenAIRequest(c *gin.Context, claudeRequest dto.ClaudeRequest, info *relaycommon.RelayInfo) (*dto.GeneralOpenAIRequest, error) {

@@ -33,7 +33,10 @@ export default function ReasoningAdaptationEditor({
       className='my-4 flex flex-col gap-2'
       data-testid='reasoning-adaptation-editor'
     >
-      <label id='reasoning-adaptation-label' htmlFor='reasoning-adaptation-mode'>
+      <label
+        id='reasoning-adaptation-label'
+        htmlFor='reasoning-adaptation-mode'
+      >
         {t('思考参数适配')}
       </label>
       <Select
@@ -50,7 +53,7 @@ export default function ReasoningAdaptationEditor({
       />
       <Typography.Text type='tertiary'>
         {t(
-          '仅对已登记模型的 OpenAI/Azure Chat 转发生效；透传和其他协议保持原行为。',
+          '专属规则支持 OpenAI/Azure Chat 和 Responses；厂商模板仅用于 Chat，透传不生效。',
         )}
       </Typography.Text>
       {mode !== 'inherit' && (

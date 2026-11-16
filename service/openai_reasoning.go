@@ -9,11 +9,12 @@ import (
 )
 
 func SyncRelayReasoningEffortFromResponsesRequest(info *relaycommon.RelayInfo, req *dto.OpenAIResponsesRequest) {
-	if info == nil || req == nil || req.Reasoning == nil {
+	if info == nil || req == nil {
 		return
 	}
-	if effort := strings.TrimSpace(req.Reasoning.Effort); effort != "" {
-		info.ReasoningEffort = effort
+	info.ReasoningEffort = ""
+	if req.Reasoning != nil {
+		info.ReasoningEffort = strings.TrimSpace(req.Reasoning.Effort)
 	}
 }
 

@@ -36,10 +36,32 @@ test('reject malformed, wildcard, duplicate, unsupported protocol and effort rul
     'bad',
     JSON.stringify([rule, rule]),
     JSON.stringify([{ ...rule, model: 'glm-*' }]),
-    JSON.stringify([{ ...rule, protocol: 'responses' }]),
+    JSON.stringify([{ ...rule, protocol: 'messages' }]),
     JSON.stringify([{ ...rule, mapping: { high: 'unknown' } }]),
   ]) {
     assert.throws(() => buildReasoningAdaptation('auto', raw));
   }
   assert.throws(() => buildReasoningAdaptation('invalid', '[]'));
+});
+
+test('same model can have separate Chat and Responses rules', () => {
+  const rules = ['chat', 'responses'].map((protocol) => ({
+    model: 'gpt-6-astra',
+    protocol,
+    mapping: { max: 'max' },
+  }));
+  const saved = buildReasoningAdaptation('inherit', JSON.stringify(rules));
+  const loaded = readReasoningAdaptation(
+    JSON.stringify({ reasoning_adaptation: saved }),
+  );
+  assert.deepEqual(
+    buildReasoningAdaptation(
+      loaded.reasoning_adaptation_mode,
+      loaded.reasoning_adaptation_rules,
+    ),
+    saved,
+  );
+  assert.throws(() =>
+    buildReasoningAdaptation('inherit', JSON.stringify([...rules, rules[1]])),
+  );
 });

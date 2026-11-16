@@ -549,6 +549,7 @@ func validateClaudeToOpenAIReasoningMap(raw string) error {
 		"medium":  {},
 		"high":    {},
 		"xhigh":   {},
+		"max":     {},
 	}
 	for _, level := range requiredLevels {
 		value := strings.TrimSpace(parsed[level])
@@ -556,7 +557,7 @@ func validateClaudeToOpenAIReasoningMap(raw string) error {
 			return fmt.Errorf("缺少 %s 档位", level)
 		}
 		if _, ok := allowedEfforts[value]; !ok {
-			return fmt.Errorf("%s 档位仅支持 minimal、low、medium、high、xhigh", level)
+			return fmt.Errorf("%s 档位仅支持 minimal、low、medium、high、xhigh、max", level)
 		}
 	}
 	return nil

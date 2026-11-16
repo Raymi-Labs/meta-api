@@ -139,3 +139,96 @@ func TestReasoningRejectionDiagnostics(t *testing.T) {
 	category, _, _ = describeRequestFailure(otherErr, true)
 	require.Equal(t, "invalid_request", category)
 }
+
+func TestMessagesMaxResponsesRule(t *testing.T) {
+	info := reasoningInfo("inherit", "")
+	info.ChannelSetting.ReasoningAdaptation.Rules = []dto.ReasoningAdaptationRule{{Model: "gpt-6-astra", Protocol: "responses", Mapping: map[string]string{"max": "max"}}}
+	req := dto.ClaudeRequest{Model: "gpt-6-astra", OutputConfig: []byte(`{"effort":"max"}`)}
+	out, err := ClaudeToOpenAIRequestForProtocol(nil, req, info, "responses")
+	require.NoError(t, err)
+	require.Equal(t, "max", out.ReasoningEffort)
+	require.Equal(t, "max", info.ReasoningEffort)
+	require.NotNil(t, info.ReasoningAdaptation)
+	require.Equal(t, "responses", info.ReasoningAdaptation.Protocol)
+}
+
+func TestGlobalReasoningMappingAllowsMax(t *testing.T) {
+	setConvertReasoningTestOptions(t, map[string]string{claudeToOpenAIReasoningMapOption: `{"low":"low","medium":"medium","high":"high","max":"max"}`})
+	require.Equal(t, "max", getClaudeToOpenAIReasoningMap()["max"])
+}
+
+func TestMessagesMaxRuleBoundariesAndPublicLog(t *testing.T) {
+	setConvertReasoningTestOptions(t, map[string]string{claudeToOpenAIReasoningMapOption: ""})
+	for _, protocol := range []string{"chat", "responses"} {
+		for _, tc := range []struct {
+			name, effort, thinking, want, source string
+			budget                               int
+			rule                                 bool
+		}{
+			{name: "explicit", effort: "max", want: "max", source: "output_config", rule: true},
+			{name: "xhigh_not_promoted", effort: "xhigh", want: "xhigh", rule: true},
+			{name: "unknown", effort: "ultra", want: "", rule: true},
+			{name: "omitted", want: "", rule: true},
+			{name: "disabled", effort: "max", thinking: "disabled", want: "", source: "thinking", rule: true},
+			{name: "disabled_without_rule", effort: "max", thinking: "disabled", want: ""},
+			{name: "large_budget_legacy", thinking: "enabled", budget: 8192, want: "xhigh"},
+			{name: "large_budget_explicit_rule", thinking: "enabled", budget: 8192, want: "max", source: "thinking_budget", rule: true},
+			{name: "unknown_budget", thinking: "enabled", want: "medium", rule: true},
+		} {
+			t.Run(protocol+"/"+tc.name, func(t *testing.T) {
+				info := reasoningInfo("inherit", "")
+				if tc.rule {
+					info.ChannelSetting.ReasoningAdaptation.Rules = []dto.ReasoningAdaptationRule{{Model: "gpt-6-astra", Protocol: protocol, Mapping: map[string]string{"max": "max"}}}
+				}
+				req := dto.ClaudeRequest{Model: "gpt-6-astra"}
+				if tc.effort != "" {
+					req.OutputConfig = []byte(`{"effort":"` + tc.effort + `"}`)
+				}
+				if tc.thinking != "" {
+					req.Thinking = &dto.Thinking{Type: tc.thinking, BudgetTokens: common.GetPointer(tc.budget)}
+				}
+				out, err := ClaudeToOpenAIRequestForProtocol(nil, req, info, protocol)
+				require.NoError(t, err)
+				require.Equal(t, tc.want, out.ReasoningEffort)
+				if tc.source != "" {
+					require.NotNil(t, info.ReasoningAdaptation)
+					require.Equal(t, tc.source, info.ReasoningAdaptation.Source)
+				} else {
+					require.Nil(t, info.ReasoningAdaptation)
+				}
+				c, _ := gin.CreateTestContext(httptest.NewRecorder())
+				other := GenerateTextOtherInfo(c, info, 1, 1, 1, 0, 1, 0, 1)
+				if tc.want == "" {
+					require.NotContains(t, other, "reasoning_effort")
+				} else {
+					require.Equal(t, tc.want, other["reasoning_effort"])
+				}
+			})
+		}
+	}
+}
+
+func TestResponsesRuleProtocolIsolationAndFallbackTrace(t *testing.T) {
+	setConvertReasoningTestOptions(t, map[string]string{claudeToOpenAIReasoningMapOption: ""})
+	info := reasoningInfo("inherit", "")
+	info.ChannelSetting.ReasoningAdaptation.Rules = []dto.ReasoningAdaptationRule{{Model: "gpt-6-astra", Protocol: "responses", Mapping: map[string]string{"max": "max"}}}
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	req := dto.ClaudeRequest{Model: "gpt-6-astra", OutputConfig: []byte(`{"effort":"max"}`)}
+	_, err := ClaudeToOpenAIRequestForProtocol(c, req, info, "responses")
+	require.NoError(t, err)
+	CaptureFinalReasoningAdaptation(c, info, []byte(`{"reasoning":{"effort":"max"}}`))
+	out, err := ClaudeToOpenAIRequestForProtocol(c, req, info, "chat")
+	require.NoError(t, err)
+	require.Equal(t, "xhigh", out.ReasoningEffort)
+	CaptureFinalReasoningAdaptation(c, info, []byte(`{"reasoning_effort":"xhigh"}`))
+	require.Nil(t, info.ReasoningAdaptation)
+	admin := map[string]interface{}{}
+	AppendReasoningAdaptationAdminInfo(c, admin)
+	require.Empty(t, admin)
+	// A rule for another exact model cannot change this model.
+	req.Model = "gpt-6-astra-other"
+	out, err = ClaudeToOpenAIRequestForProtocol(c, req, info, "responses")
+	require.NoError(t, err)
+	require.Equal(t, "xhigh", out.ReasoningEffort)
+	require.Nil(t, info.ReasoningAdaptation)
+}
