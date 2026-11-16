@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeUsageLogFilters } from '../src/helpers/usageLogQuery.js';
+import {
+  normalizeUsageLogFilters,
+  normalizeUsageLogGroupOptions,
+} from '../src/helpers/usageLogQuery.js';
 import { buildUsageLogQuery } from '../src/helpers/usageLogExport.js';
 
 test('applied filters retain channels and timestamps after the form draft changes', () => {
@@ -71,9 +74,57 @@ test('payer filter only reaches self queries', () => {
     payer: 'enterprise',
   });
   assert.equal(buildUsageLogQuery(applied, false).payer, 'enterprise');
-  assert.equal(Object.hasOwn(buildUsageLogQuery(applied, true), 'payer'), false);
+  assert.equal(
+    Object.hasOwn(buildUsageLogQuery(applied, true), 'payer'),
+    false,
+  );
   const cleared = normalizeUsageLogFilters({
     dateRange: ['2026-11-12 00:00:00', '2026-11-12 01:00:00'],
   });
-  assert.equal(Object.hasOwn(buildUsageLogQuery(cleared, false), 'payer'), false);
+  assert.equal(
+    Object.hasOwn(buildUsageLogQuery(cleared, false), 'payer'),
+    false,
+  );
+});
+
+test('user and admin group names match even with duplicate descriptions', () => {
+  const names = ['Claude · 福利', 'Gemini · 福利', 'GPT · 鹈鹕王'];
+  const userData = Object.fromEntries(
+    names.map((name) => [name, { desc: '自测 福利', ratio: 0.1 }]),
+  );
+  const snapshot = JSON.stringify(userData);
+  const userOptions = normalizeUsageLogGroupOptions(userData);
+  const adminOptions = normalizeUsageLogGroupOptions(names);
+  assert.deepEqual(
+    userOptions.map(({ label, value }) => ({ label, value })),
+    adminOptions,
+  );
+  assert.equal(JSON.stringify(userData), snapshot);
+  assert.equal(
+    new Set(userOptions.map((option) => option.label)).size,
+    names.length,
+  );
+  for (const option of userOptions) {
+    const query = buildUsageLogQuery(
+      normalizeUsageLogFilters({ group: option.value }),
+      false,
+    );
+    assert.equal(query.group, option.label);
+  }
+});
+
+test('group options tolerate empty catalogs and missing descriptions without expanding scope', () => {
+  for (const data of [null, undefined, {}, []])
+    assert.deepEqual(normalizeUsageLogGroupOptions(data), []);
+  const result = normalizeUsageLogGroupOptions({
+    auto: { desc: '自动选择' },
+    仅用户可用组: null,
+  });
+  assert.deepEqual(
+    result.map(({ label, value }) => ({ label, value })),
+    [
+      { label: 'auto', value: 'auto' },
+      { label: '仅用户可用组', value: '仅用户可用组' },
+    ],
+  );
 });
