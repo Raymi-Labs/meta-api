@@ -325,3 +325,13 @@ func TestEnterpriseMJChannelCorrectionSharesTransaction(t *testing.T) {
 	require.NoError(t, DB.First(&channel, 17).Error)
 	require.Zero(t, channel.UsedQuota)
 }
+
+func TestEnterpriseMJUnsentCloseoutRequiresNoReservation(t *testing.T) {
+	member, token := mjBillingFixture(t)
+	task := mjIntent(t, member, token, 0)
+	require.ErrorIs(t, RejectUnsentEnterpriseMJIntent(task), ErrEnterpriseReservation)
+	var current Midjourney
+	require.NoError(t, DB.First(&current, task.Id).Error)
+	require.Equal(t, MJEnterpriseUnknown, current.EnterpriseBillingState)
+	require.False(t, current.EnterpriseBillingFinalized)
+}

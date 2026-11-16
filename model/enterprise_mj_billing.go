@@ -242,3 +242,42 @@ func ReconcileEnterpriseMJ(limit int) (int, error) {
 	}
 	return n, errors.Join(failures...)
 }
+
+// RejectUnsentEnterpriseMJIntent is only called when local admission failed
+// before any upstream send. Never infer "unsent" from timeout, age or zero cost.
+func RejectUnsentEnterpriseMJIntent(task *Midjourney) error {
+	if task == nil || !validEnterpriseMJ(task) || task.Id <= 0 {
+		return ErrEnterpriseSubject
+	}
+	return DB.Transaction(func(tx *gorm.DB) error {
+		member, err := lockEnterpriseMemberTx(tx, task.EnterpriseMemberId)
+		if err != nil {
+			return err
+		}
+		if member.EnterpriseId != task.EnterpriseId || member.UserId != task.UserId {
+			return ErrEnterpriseSubject
+		}
+		var current Midjourney
+		if err := tx.First(&current, task.Id).Error; err != nil {
+			return err
+		}
+		if current.EnterpriseMJSubject() != task.EnterpriseMJSubject() || current.BillingRequestId != task.BillingRequestId {
+			return ErrEnterpriseSubject
+		}
+		if current.EnterpriseBillingState != MJEnterpriseUnknown {
+			return ErrEnterpriseFinalized
+		}
+		var count int64
+		if err := tx.Model(&EnterpriseReservation{}).Where("request_id = ?", task.BillingRequestId).Count(&count).Error; err != nil {
+			return err
+		}
+		if count != 0 {
+			return ErrEnterpriseReservation
+		}
+		return tx.Model(&Midjourney{}).Where("id = ?", task.Id).Updates(map[string]any{
+			"status": "FAILURE", "progress": "100%", "quota": 0, "enterprise_initial_quota": 0,
+			"enterprise_billing_state": MJEnterpriseRejected, "enterprise_billing_settled": true, "enterprise_billing_finalized": true,
+			"fail_reason": "local admission rejected before send",
+		}).Error
+	})
+}

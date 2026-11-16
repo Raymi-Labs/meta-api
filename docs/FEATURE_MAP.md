@@ -1,5 +1,7 @@
 # 功能地图
 
+企业结清归档（2026-11-16）：[平台企业管理](../web/src/pages/EnterpriseAdmin/index.jsx)在冻结企业「更多 → 归档企业」提供Root专属预检和名称/原因确认；[事务](../model/enterprise_archive.go)复核账本守恒、净余额为零、无预留及未结算异步任务，撤销邀请/令牌、失效申请并释放全部成员关系，保留账单与审计。归档是不可恢复终态，默认列表排除、已归档页签可查只读历史；解除该企业的Owner注销保护和分组引用，但不自动退款/核销。请求/结算、Task插入与令牌编辑共用成员锁封闭迟到写入；调账支持原始额度整数，普通用户资金与调用规则保持。见[操作和本地验收](reviews/2026-11-16-enterprise-archive.md)、[决策](../.agents/notes/implemented/feature/2026-11-16-enterprise-archive.md)。
+
 Claude 增量缓存默认开启（2026-11-15）：[渠道编辑](../web/src/components/table/channels/modals/EditChannelModal.jsx)的新建/复制/编辑与 [Claude 转换](../relay/channel/claude/adaptor.go)统一默认启用；[三态设置](../dto/channel_settings.go)缺失/null 开启、显式 false 保留关闭。仅 Chat Completions 转 Claude 自动追加末尾用户内容缓存断点，原生 Messages 保持原样；无 schema 迁移，首次可能产生缓存写入费用。见[决策](../.agents/notes/implemented/bug-fix/2026-11-15-claude-cache-default.md)。
 
 

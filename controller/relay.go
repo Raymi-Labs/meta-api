@@ -276,10 +276,17 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if newAPIError != nil {
 			newAPIError = service.NormalizeContentSafetyPolicyError(newAPIError)
 			newAPIError = service.NormalizeViolationFeeError(newAPIError)
+			// Keep the enterprise reservation open until the last possible charge
+			// is durable; archive must not slip between refund and a late fee.
+			if relayInfo.EnterpriseId > 0 {
+				service.ChargeViolationFeeIfNeeded(c, relayInfo, newAPIError)
+			}
 			if relayInfo.Billing != nil {
 				relayInfo.Billing.Refund(c)
 			}
-			service.ChargeViolationFeeIfNeeded(c, relayInfo, newAPIError)
+			if relayInfo.EnterpriseId <= 0 {
+				service.ChargeViolationFeeIfNeeded(c, relayInfo, newAPIError)
+			}
 		}
 	}()
 

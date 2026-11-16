@@ -7518,6 +7518,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "Die Upstream-Liste konnte nicht geladen werden. Offizielle Referenzmodelle werden angezeigt; die Unterstützung durch diesen Kanal ist unbestätigt.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "Die Upstream-Liste konnte nicht geladen werden. Integrierte Referenzmodelle werden angezeigt; die Unterstützung durch diesen Kanal ist unbestätigt.",
     "模型列表来自当前填写的上游地址。": "Modelle wurden von der aktuell eingetragenen Upstream-URL geladen.",
-    "更换上游域名后，请填写该地址对应的密钥": "Geben Sie nach dem Ändern der Upstream-Domain den Schlüssel für diese Adresse ein."
+    "更换上游域名后，请填写该地址对应的密钥": "Geben Sie nach dem Ändern der Upstream-Domain den Schlüssel für diese Adresse ein.",
+    "仍有未完成结算的 Midjourney 任务": "Midjourney-Aufgaben sind noch nicht abgerechnet",
+    "仍有未完成结算的视频或音乐任务": "Video- oder Musikaufgaben sind noch nicht abgerechnet",
+    "仍有预留或待对账请求": "Anfragen sind noch reserviert oder müssen abgeglichen werden",
+    "企业已归档": "Unternehmen archiviert",
+    "净余额": "Nettoguthaben",
+    "净余额须结清，请先处理退款或调账": "Nettoguthaben zuerst durch Erstattungen oder Korrekturen ausgleichen",
+    "加入时间": "Beigetreten am",
+    "历史记录": "Verlauf",
+    "已归档": "Archiviert",
+    "异步任务": "Asynchrone Aufgaben",
+    "归档 {{name}}": "{{name}} archivieren",
+    "归档企业": "Unternehmen archivieren",
+    "归档原因": "Archivierungsgrund",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "Die Archivierung kann nicht rückgängig gemacht werden. Mitglieder treten aus und Unternehmenstoken werden deaktiviert. Abrechnungs- und Prüfprotokolle bleiben erhalten.",
+    "请先冻结企业": "Unternehmen zuerst sperren",
+    "账本不平衡，请先核对流水": "Die Buchhaltung ist unausgeglichen. Zuerst die Transaktionen prüfen",
+    "资金流水": "Guthabentransaktionen",
+    "输入完整企业名称": "Vollständigen Unternehmensnamen eingeben",
+    "重新检查": "Erneut prüfen",
+    "金额单位": "Betragseinheit",
+    "额度归并": "Budgetzusammenführung"
   }
 }

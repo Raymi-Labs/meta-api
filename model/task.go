@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	commonRelay "github.com/QuantumNous/new-api/relay/common"
+	"gorm.io/gorm"
 )
 
 type TaskStatus string
@@ -387,10 +388,22 @@ func GetByTaskIds(userId int, taskIds []any) ([]*Task, error) {
 	return task, nil
 }
 
-func (Task *Task) Insert() error {
-	var err error
-	err = DB.Create(Task).Error
-	return err
+func (task *Task) Insert() error {
+	if task.EnterpriseId <= 0 {
+		return DB.Create(task).Error
+	}
+	// Persist accepted work under the same member lock used by archive. Frozen
+	// or disabled members may still own an accepted task; archived ones cannot.
+	return DB.Transaction(func(tx *gorm.DB) error {
+		member, err := lockEnterpriseMemberTx(tx, task.EnterpriseMemberId)
+		if err != nil {
+			return err
+		}
+		if member.EnterpriseId != task.EnterpriseId || member.UserId != task.UserId {
+			return ErrEnterpriseSubject
+		}
+		return tx.Create(task).Error
+	})
 }
 
 type taskSnapshot struct {

@@ -32,21 +32,14 @@ import {
 } from '@douyinfe/semi-ui';
 import {
   enterpriseRequest,
+  ENTERPRISE_LEDGER_KIND as LEDGER_KIND,
   formatEnterpriseTime,
 } from '../../helpers/enterprise';
 import { renderQuota } from '../../helpers/render';
 import { showError, showSuccess } from '../../helpers/toast';
 
 const TOKEN_STATUS = { 1: '已启用', 2: '已禁用', 3: '已过期', 4: '已耗尽' };
-const LEDGER_KIND = {
-  credit: '入账',
-  adjust: '调账',
-  allocate: '分配',
-  reclaim: '回收',
-  invite_grant: '邀请',
-  request_grant: '申请',
-  member_sweep: '停用',
-};
+
 const ACTOR = { platform: '平台', system: '系统' };
 
 function ModelScope({ base, member, editable, onDone }) {

@@ -33,3 +33,5 @@ SQLite回归覆盖引用组单键/组合/别名删除与大小写改名拒绝、
 ## Related notes
 
 [企业选组倍率](../../implemented/feature/2026-11-13-enterprise-group-multiplier.md)部分重叠，本篇补维护边界；[用户组一致性](../../implemented/bug-fix/2026-11-09-user-group-consistency.md)部分重叠，扩展其配置事务但不改变个人身份分组决定。既有工作空间/API对等保留，不恢复已否的独立路由方案。
+
+生命周期补充：[企业结清归档](../feature/2026-11-16-enterprise-archive.md)仅对已归档企业释放计费组引用；使用中、冻结和关闭功能开关时的现有保护保持。历史列表的分组名称不用于重算历史价格。

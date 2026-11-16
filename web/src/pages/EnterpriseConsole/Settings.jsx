@@ -41,6 +41,7 @@ import { Info } from 'lucide-react';
 import {
   ENTERPRISE_ROLE_LABEL,
   enterpriseRequest,
+  ENTERPRISE_AUDIT_ACTION as ACTION,
   formatEnterpriseTime,
 } from '../../helpers/enterprise';
 import { renderQuota } from '../../helpers/render';
@@ -53,28 +54,7 @@ import './enterpriseMembers.css';
 import './enterpriseSettings.css';
 
 // 操作记录里的动作名，没有对应文案的动作直接显示原始名称。
-const ACTION = {
-  'budget.allocate': '分配额度',
-  'budget.reclaim': '回收额度',
-  'enterprise.create': '创建企业',
-  'enterprise.settings': '修改设置',
-  'enterprise.status': '状态变更',
-  'enterprise.transfer': '转移所有权',
-  'enterprise.update': '修改设置',
-  'invitation.create': '邀请成员',
-  'invitation.revoke': '撤销邀请',
-  'member.disable': '停用成员',
-  'member.leave': '成员退出',
-  'member.join': '成员加入',
-  'member.models': '成员模型',
-  'member.role': '调整角色',
-  'request.approved': '批准申请',
-  'request.rejected': '拒绝申请',
-  'reservation.resolve': '人工结算',
-  'token.revoke': '撤销令牌',
-  'wallet.credit': '入账',
-  'wallet.adjust': '调账',
-};
+
 const ACTOR = { platform: '平台', system: '系统' };
 
 const parse = (text) => {

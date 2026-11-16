@@ -8127,6 +8127,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "Không thể lấy danh sách từ nhà cung cấp. Đang hiển thị mô hình tham khảo chính thức; chưa xác minh kênh có hỗ trợ.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "Không thể lấy danh sách từ nhà cung cấp. Đang hiển thị mô hình tham khảo tích hợp; chưa xác minh kênh có hỗ trợ.",
     "模型列表来自当前填写的上游地址。": "Danh sách mô hình được lấy từ URL nhà cung cấp đang nhập.",
-    "更换上游域名后，请填写该地址对应的密钥": "Sau khi đổi tên miền nhà cung cấp, hãy nhập khóa dành cho địa chỉ đó."
+    "更换上游域名后，请填写该地址对应的密钥": "Sau khi đổi tên miền nhà cung cấp, hãy nhập khóa dành cho địa chỉ đó.",
+    "仍有未完成结算的 Midjourney 任务": "Vẫn còn tác vụ Midjourney chưa quyết toán",
+    "仍有未完成结算的视频或音乐任务": "Vẫn còn tác vụ video hoặc nhạc chưa quyết toán",
+    "仍有预留或待对账请求": "Vẫn còn yêu cầu giữ hạn mức hoặc chờ đối soát",
+    "企业已归档": "Doanh nghiệp đã được lưu trữ",
+    "净余额": "Số dư ròng",
+    "净余额须结清，请先处理退款或调账": "Hãy tất toán số dư ròng bằng hoàn tiền hoặc điều chỉnh trước",
+    "加入时间": "Thời điểm tham gia",
+    "历史记录": "Lịch sử",
+    "已归档": "Đã lưu trữ",
+    "异步任务": "Tác vụ bất đồng bộ",
+    "归档 {{name}}": "Lưu trữ {{name}}",
+    "归档企业": "Lưu trữ doanh nghiệp",
+    "归档原因": "Lý do lưu trữ",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "Không thể khôi phục sau khi lưu trữ. Thành viên rời doanh nghiệp và token doanh nghiệp bị vô hiệu hóa. Lịch sử thanh toán và thao tác được giữ lại.",
+    "请先冻结企业": "Hãy đóng băng doanh nghiệp trước",
+    "账本不平衡，请先核对流水": "Sổ cái không cân đối. Hãy kiểm tra giao dịch trước",
+    "资金流水": "Giao dịch tài chính",
+    "输入完整企业名称": "Nhập đầy đủ tên doanh nghiệp",
+    "重新检查": "Kiểm tra lại",
+    "金额单位": "Đơn vị số tiền",
+    "额度归并": "Gộp ngân sách"
   }
 }

@@ -41,6 +41,8 @@ import EnterpriseFeatureGate from './EnterpriseFeatureGate';
 import WalletModal from './WalletModal';
 import Reservations from './Reservations';
 import Applications from './Applications';
+import ArchiveModal from './ArchiveModal';
+import HistoryModal from './HistoryModal';
 import '../EnterpriseConsole/enterpriseMembers.css';
 import './enterpriseAdmin.css';
 
@@ -118,29 +120,47 @@ function EnterpriseAdminContent({ featureControl }) {
   const [form, setForm] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [status, setStatus] = useState(null);
-  const [reviewCount, setReviewCount] = useState(0);
+  const [archive, setArchive] = useState(null);
+  const [history, setHistory] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
+  const [listError, setListError] = useState('');
+  const listSequence = useRef(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   const load = useCallback(async () => {
+    if (activeTab !== 'list' && activeTab !== 'archived') return;
+    const sequence = ++listSequence.current;
     setLoading(true);
+    setListError('');
+    setItems([]);
+    setTotal(0);
     try {
       const data = await enterpriseRequest(
         'get',
         '/api/enterprise/admin/enterprises',
         undefined,
-        { p: page, page_size: pageSize, keyword: query },
+        {
+          p: page,
+          page_size: pageSize,
+          keyword: query,
+          ...(activeTab === 'archived' ? { status: 'archived' } : {}),
+        },
       );
+      if (sequence !== listSequence.current) return;
       setItems(data?.items || []);
       setTotal(data?.total || 0);
     } catch (e) {
-      showError(e.message);
+      if (sequence === listSequence.current) setListError(e.message);
     } finally {
-      setLoading(false);
+      if (sequence === listSequence.current) setLoading(false);
     }
-  }, [page, pageSize, query]);
+  }, [page, pageSize, query, activeTab]);
 
   useEffect(() => {
     load();
+    return () => {
+      ++listSequence.current;
+    };
   }, [load]);
 
   const loadGroups = useCallback(async () => {
@@ -196,6 +216,7 @@ function EnterpriseAdminContent({ featureControl }) {
           <strong>
             {v}
             {r.status === 'frozen' && <Tag color='red'>{t('已冻结')}</Tag>}
+            {r.status === 'archived' && <Tag>{t('已归档')}</Tag>}
           </strong>
           <span>{r.owner_name || `#${r.owner_user_id}`}</span>
         </div>
@@ -204,7 +225,8 @@ function EnterpriseAdminContent({ featureControl }) {
     {
       title: t('计费分组'),
       dataIndex: 'billing_group',
-      render: (name) => {
+      render: (name, row) => {
+        if (row.status === 'archived') return name;
         const group = groups.find((g) => g.name === name);
         return group ? `${name} · ${group.ratio}×` : name;
       },
@@ -232,54 +254,108 @@ function EnterpriseAdminContent({ featureControl }) {
       title: '',
       dataIndex: 'id',
       align: 'right',
-      render: (_, r) => (
-        <div className='em-actions'>
-          {root && (
-            <Button
-              size='small'
-              theme='borderless'
-              type='primary'
-              onClick={() => setWallet({ mode: 'credit', enterprise: r })}
-            >
-              {t('入账')}
-            </Button>
-          )}
-          <Button size='small' theme='borderless' onClick={() => openForm(r)}>
-            {t('编辑')}
+      render: (_, r) =>
+        r.status === 'archived' ? (
+          <Button size='small' theme='borderless' onClick={() => setHistory(r)}>
+            {t('历史记录')}
           </Button>
-          <Dropdown
-            trigger='click'
-            clickToHide
-            position='bottomRight'
-            menu={[
-              ...(root
-                ? [
-                    {
-                      node: 'item',
-                      key: 'adjust',
-                      name: t('调账'),
-                      onClick: () =>
-                        setWallet({ mode: 'adjust', enterprise: r }),
-                    },
-                  ]
-                : []),
-              {
-                node: 'item',
-                key: 'status',
-                name: r.status === 'frozen' ? t('解冻') : t('冻结'),
-                type: r.status === 'frozen' ? undefined : 'danger',
-                onClick: () => setStatus(r),
-              },
-            ]}
-          >
-            <Button size='small' theme='borderless'>
-              {t('更多')}
+        ) : (
+          <div className='em-actions'>
+            {root && (
+              <Button
+                size='small'
+                theme='borderless'
+                type='primary'
+                onClick={() => setWallet({ mode: 'credit', enterprise: r })}
+              >
+                {t('入账')}
+              </Button>
+            )}
+            <Button size='small' theme='borderless' onClick={() => openForm(r)}>
+              {t('编辑')}
             </Button>
-          </Dropdown>
-        </div>
-      ),
+            <Dropdown
+              trigger='click'
+              clickToHide
+              position='bottomRight'
+              menu={[
+                {
+                  node: 'item',
+                  key: 'history',
+                  name: t('历史记录'),
+                  onClick: () => setHistory(r),
+                },
+                ...(root && r.status === 'frozen'
+                  ? [
+                      {
+                        node: 'item',
+                        key: 'archive',
+                        name: t('归档企业'),
+                        type: 'danger',
+                        onClick: () => setArchive(r),
+                      },
+                    ]
+                  : []),
+                ...(root
+                  ? [
+                      {
+                        node: 'item',
+                        key: 'adjust',
+                        name: t('调账'),
+                        onClick: () =>
+                          setWallet({ mode: 'adjust', enterprise: r }),
+                      },
+                    ]
+                  : []),
+                {
+                  node: 'item',
+                  key: 'status',
+                  name: r.status === 'frozen' ? t('解冻') : t('冻结'),
+                  type: r.status === 'frozen' ? undefined : 'danger',
+                  onClick: () => setStatus(r),
+                },
+              ]}
+            >
+              <Button size='small' theme='borderless'>
+                {t('更多')}
+              </Button>
+            </Dropdown>
+          </div>
+        ),
     },
   ];
+
+  const enterpriseTable = (
+    <div className='em-card ea-pane'>
+      {listError ? (
+        <div className='ea-load-error' role='alert'>
+          {listError}
+          <Button onClick={load}>{t('重试')}</Button>
+        </div>
+      ) : (
+        <Table
+          rowKey='id'
+          columns={columns}
+          dataSource={items}
+          loading={loading}
+          empty={query ? t('搜索无结果') : t('还没有企业')}
+          pagination={{
+            currentPage: page,
+            pageSize,
+            total,
+            pageSizeOpts: [10, 20, 50],
+            showSizeChanger: true,
+            onPageChange: setPage,
+            onPageSizeChange: (size) => {
+              setPage(1);
+              setPageSize(size);
+            },
+          }}
+          scroll={{ x: 800 }}
+        />
+      )}
+    </div>
+  );
 
   return (
     <div className='em ea'>
@@ -303,29 +379,22 @@ function EnterpriseAdminContent({ featureControl }) {
         </div>
       </div>
 
-      <Tabs type='line' activeKey={activeTab} onChange={setActiveTab}>
+      <Tabs
+        type='line'
+        activeKey={activeTab}
+        onChange={(v) => {
+          ++listSequence.current;
+          setItems([]);
+          setTotal(0);
+          setPage(1);
+          setActiveTab(v);
+        }}
+      >
         <Tabs.TabPane itemKey='list' tab={t('企业')}>
-          <div className='em-card ea-pane'>
-            <Table
-              rowKey='id'
-              columns={columns}
-              dataSource={items}
-              loading={loading}
-              empty={query ? t('搜索无结果') : t('还没有企业')}
-              pagination={{
-                currentPage: page,
-                pageSize,
-                total,
-                pageSizeOpts: [10, 20, 50],
-                showSizeChanger: true,
-                onPageChange: setPage,
-                onPageSizeChange: (size) => {
-                  setPage(1);
-                  setPageSize(size);
-                },
-              }}
-            />
-          </div>
+          {enterpriseTable}
+        </Tabs.TabPane>
+        <Tabs.TabPane itemKey='archived' tab={t('已归档')}>
+          {enterpriseTable}
         </Tabs.TabPane>
         <Tabs.TabPane itemKey='applications' tab={t('申请审核')}>
           {activeTab === 'applications' && (
@@ -361,6 +430,21 @@ function EnterpriseAdminContent({ featureControl }) {
         </Tabs.TabPane>
       </Tabs>
 
+      {archive && (
+        <ArchiveModal
+          key={archive.id}
+          enterprise={archive}
+          onClose={() => setArchive(null)}
+          onDone={load}
+        />
+      )}
+      {history && (
+        <HistoryModal
+          key={history.id}
+          enterprise={history}
+          onClose={() => setHistory(null)}
+        />
+      )}
       <EnterpriseFormModal
         enterprise={form}
         groups={groups}

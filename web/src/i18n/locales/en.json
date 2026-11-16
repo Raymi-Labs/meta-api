@@ -7730,6 +7730,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "Could not fetch upstream models. Showing official references; channel support is unverified.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "Could not fetch upstream models. Showing built-in references; channel support is unverified.",
     "模型列表来自当前填写的上游地址。": "Models were fetched from the upstream URL currently entered.",
-    "更换上游域名后，请填写该地址对应的密钥": "After changing the upstream domain, enter the key for that address."
+    "更换上游域名后，请填写该地址对应的密钥": "After changing the upstream domain, enter the key for that address.",
+    "仍有未完成结算的 Midjourney 任务": "Midjourney tasks still await settlement",
+    "仍有未完成结算的视频或音乐任务": "Video or music tasks still await settlement",
+    "仍有预留或待对账请求": "Requests still have reservations or await reconciliation",
+    "企业已归档": "Enterprise archived",
+    "净余额": "Net balance",
+    "净余额须结清，请先处理退款或调账": "Settle the net balance through refunds or adjustments first",
+    "加入时间": "Joined at",
+    "历史记录": "History",
+    "已归档": "Archived",
+    "异步任务": "Asynchronous tasks",
+    "归档 {{name}}": "Archive {{name}}",
+    "归档企业": "Archive enterprise",
+    "归档原因": "Archive reason",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "Archiving cannot be undone. Members leave and enterprise tokens are disabled; billing and audit history are retained.",
+    "请先冻结企业": "Freeze the enterprise first",
+    "账本不平衡，请先核对流水": "The ledger is unbalanced. Review the transactions first",
+    "资金流水": "Wallet transactions",
+    "输入完整企业名称": "Enter the full enterprise name",
+    "重新检查": "Check again",
+    "金额单位": "Amount unit",
+    "额度归并": "Budget consolidation"
   }
 }

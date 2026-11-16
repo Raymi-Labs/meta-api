@@ -7850,6 +7850,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "Liste amont indisponible. Modèles officiels de référence affichés ; leur prise en charge par ce canal reste à vérifier.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "Liste amont indisponible. Références intégrées affichées ; leur prise en charge par ce canal reste à vérifier.",
     "模型列表来自当前填写的上游地址。": "Modèles récupérés depuis l’URL amont actuellement saisie.",
-    "更换上游域名后，请填写该地址对应的密钥": "Après avoir changé le domaine amont, saisissez la clé correspondant à cette adresse."
+    "更换上游域名后，请填写该地址对应的密钥": "Après avoir changé le domaine amont, saisissez la clé correspondant à cette adresse.",
+    "仍有未完成结算的 Midjourney 任务": "Des tâches Midjourney restent à régler",
+    "仍有未完成结算的视频或音乐任务": "Des tâches vidéo ou musicales restent à régler",
+    "仍有预留或待对账请求": "Des requêtes ont encore des réservations ou attendent un rapprochement",
+    "企业已归档": "Entreprise archivée",
+    "净余额": "Solde net",
+    "净余额须结清，请先处理退款或调账": "Soldez d’abord le solde net par remboursement ou ajustement",
+    "加入时间": "Date d’adhésion",
+    "历史记录": "Historique",
+    "已归档": "Archivée",
+    "异步任务": "Tâches asynchrones",
+    "归档 {{name}}": "Archiver {{name}}",
+    "归档企业": "Archiver l’entreprise",
+    "归档原因": "Motif de l’archivage",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "L’archivage est irréversible. Les membres quittent l’entreprise et ses jetons sont désactivés. L’historique de facturation et d’audit est conservé.",
+    "请先冻结企业": "Gelez d’abord l’entreprise",
+    "账本不平衡，请先核对流水": "Le registre est déséquilibré. Vérifiez d’abord les transactions",
+    "资金流水": "Mouvements de fonds",
+    "输入完整企业名称": "Saisir le nom complet de l’entreprise",
+    "重新检查": "Vérifier à nouveau",
+    "金额单位": "Unité du montant",
+    "额度归并": "Consolidation du budget"
   }
 }

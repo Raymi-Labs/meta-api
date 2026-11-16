@@ -81,5 +81,7 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 		scoped.POST("/status", controller.AdminSetEnterpriseStatus)
 		scoped.POST("/credit", middleware.RootAuth(), controller.AdminCreditEnterprise)
 		scoped.POST("/adjust", middleware.RootAuth(), controller.AdminAdjustEnterprise)
+		scoped.GET("/archive-preview", middleware.RootAuth(), controller.AdminPreviewEnterpriseArchive)
+		scoped.POST("/archive", middleware.RootAuth(), controller.AdminArchiveEnterprise)
 	}
 }
