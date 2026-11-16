@@ -158,6 +158,7 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 				return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 			}
 			service.SyncRelayReasoningEffortFromResponsesPayload(info, jsonData)
+			service.CaptureFinalReasoningAdaptation(c, info, jsonData)
 
 			if common.DebugEnabled {
 				println("requestBody: ", string(jsonData))

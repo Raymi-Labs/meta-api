@@ -51,10 +51,11 @@ export function buildReasoningAdaptation(mode, rawRules) {
       /[*?\r\n\t]/.test(rule.model)
     )
       throw new Error('Use an exact upstream model name');
-    if (rule.protocol !== 'chat')
-      throw new Error('Only chat protocol is supported');
-    if (seen.has(rule.model)) throw new Error('Duplicate model rule');
-    seen.add(rule.model);
+    if (!['chat', 'responses'].includes(rule.protocol))
+      throw new Error('Only chat and responses protocols are supported');
+    const key = `${rule.protocol}:${rule.model}`;
+    if (seen.has(key)) throw new Error('Duplicate model and protocol rule');
+    seen.add(key);
     if (
       !rule.mapping ||
       typeof rule.mapping !== 'object' ||

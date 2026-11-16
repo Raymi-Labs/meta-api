@@ -43,8 +43,8 @@ func (s ReasoningAdaptation) Validate() error {
 		if rule.Model == "" || len(rule.Model) > 255 || rule.Model != strings.TrimSpace(rule.Model) || strings.ContainsAny(rule.Model, "*?\r\n\t") {
 			return fmt.Errorf("reasoning_adaptation: model must be an exact model name")
 		}
-		if rule.Protocol != "chat" {
-			return fmt.Errorf("reasoning_adaptation: only chat protocol is supported")
+		if rule.Protocol != "chat" && rule.Protocol != "responses" {
+			return fmt.Errorf("reasoning_adaptation: only chat and responses protocols are supported")
 		}
 		key := rule.Protocol + ":" + rule.Model
 		if seen[key] {

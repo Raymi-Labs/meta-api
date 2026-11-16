@@ -70,6 +70,10 @@ func applySystemPromptIfNeeded(c *gin.Context, info *relaycommon.RelayInfo, requ
 }
 
 func chatCompletionsViaResponses(c *gin.Context, info *relaycommon.RelayInfo, adaptor channel.Adaptor, request *dto.GeneralOpenAIRequest) (*dto.Usage, *types.NewAPIError) {
+	// Keep the original Chat request intact if this bridge falls back.
+	requestCopy := *request
+	request = &requestCopy
+	service.AdaptChatReasoningForResponses(info, request)
 	chatJSON, err := common.Marshal(request)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
@@ -215,6 +219,8 @@ func chatCompletionsViaResponses(c *gin.Context, info *relaycommon.RelayInfo, ad
 			}
 		}
 		requestAttempt++
+		service.SyncRelayReasoningEffortFromResponsesPayload(info, jsonData)
+		service.CaptureFinalReasoningAdaptation(c, info, jsonData)
 		resp, err := adaptor.DoRequest(c, info, bytes.NewBuffer(jsonData))
 		if err != nil {
 			return nil, types.NewOpenAIError(err, types.ErrorCodeDoRequestFailed, http.StatusInternalServerError)

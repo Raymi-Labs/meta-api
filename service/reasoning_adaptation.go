@@ -20,7 +20,7 @@ var zhipuGLM53ReasoningMap = map[string]string{
 }
 
 func reasoningRule(info *relaycommon.RelayInfo, modelName, protocol string) (map[string]string, string) {
-	if info == nil || info.ChannelMeta == nil || protocol != "chat" ||
+	if info == nil || info.ChannelMeta == nil || (protocol != "chat" && protocol != "responses") ||
 		info.ChannelType != constant.ChannelTypeOpenAI && info.ChannelType != constant.ChannelTypeAzure ||
 		info.ChannelSetting.PassThroughBodyEnabled || model_setting.GetGlobalSettings().PassThroughRequestEnabled {
 		return nil, ""
@@ -35,7 +35,7 @@ func reasoningRule(info *relaycommon.RelayInfo, modelName, protocol string) (map
 			return rule.Mapping, "channel_rule"
 		}
 	}
-	if modelName != "glm-5.3" {
+	if protocol != "chat" || modelName != "glm-5.3" {
 		return nil, ""
 	}
 	if policy.Mode == dto.ReasoningTemplateZhipuGLM53 || policy.Mode == "auto" && info.ChannelVendor == "zhipu" {
@@ -44,25 +44,29 @@ func reasoningRule(info *relaycommon.RelayInfo, modelName, protocol string) (map
 	return nil, ""
 }
 
-func recordReasoningAdaptation(info *relaycommon.RelayInfo, template, source, original, mapped string) {
+func recordReasoningAdaptation(info *relaycommon.RelayInfo, template, protocol, source, original, mapped string) {
 	if !dto.IsReasoningEffort(original) && original != "disabled" {
 		return
 	}
 	info.ReasoningAdaptation = &relaycommon.ReasoningAdaptationTrace{
-		ChannelID: info.ChannelId, Template: template, Protocol: "chat", Source: source, Original: original, Mapped: mapped,
+		ChannelID: info.ChannelId, Template: template, Protocol: protocol, Source: source, Original: original, Mapped: mapped,
 	}
 	info.ReasoningEffort = mapped
 }
 
 func claudeReasoningForProtocol(request dto.ClaudeRequest, info *relaycommon.RelayInfo, protocol string) string {
-	mapping, template := reasoningRule(info, request.Model, protocol)
-	if mapping == nil {
-		return inferClaudeReasoningEffort(request)
+	// A bridge may fall back to Chat within the same channel attempt.
+	// Do not carry a Responses mapping into a different protocol.
+	if info != nil {
+		info.ReasoningAdaptation = nil
 	}
+	mapping, template := reasoningRule(info, request.Model, protocol)
 	if request.Thinking != nil && request.Thinking.Type == "disabled" {
 		// Do not manufacture an enabled effort. This does not invent an upstream
 		// thinking switch or claim that omission disables the provider's default.
-		recordReasoningAdaptation(info, template, "thinking", "disabled", "")
+		if mapping != nil {
+			recordReasoningAdaptation(info, template, protocol, "thinking", "disabled", "")
+		}
 		return ""
 	}
 	original := claudeOutputConfigEffort(request.OutputConfig)
@@ -72,7 +76,7 @@ func claudeReasoningForProtocol(request dto.ClaudeRequest, info *relaycommon.Rel
 		source = "thinking_budget"
 	}
 	if mapped, ok := mapping[original]; ok {
-		recordReasoningAdaptation(info, template, source, original, mapped)
+		recordReasoningAdaptation(info, template, protocol, source, original, mapped)
 		return mapped
 	}
 	return inferClaudeReasoningEffort(request)
@@ -82,6 +86,7 @@ func AdaptNativeChatReasoning(info *relaycommon.RelayInfo, request *dto.GeneralO
 	if info == nil || request == nil || info.RelayFormat != types.RelayFormatOpenAI {
 		return
 	}
+	info.ReasoningAdaptation = nil
 	// Honor explicit off/none and absent values. Unknown values remain upstream's
 	// responsibility; this adapter does not silently invent a supported level.
 	if len(request.THINKING) > 0 && gjson.GetBytes(request.THINKING, "type").String() == "disabled" {
@@ -91,17 +96,53 @@ func AdaptNativeChatReasoning(info *relaycommon.RelayInfo, request *dto.GeneralO
 	if mapped, ok := mapping[request.ReasoningEffort]; ok {
 		original := request.ReasoningEffort
 		request.ReasoningEffort = mapped
-		recordReasoningAdaptation(info, template, "reasoning_effort", original, mapped)
+		recordReasoningAdaptation(info, template, "chat", "reasoning_effort", original, mapped)
+	}
+}
+
+// AdaptChatReasoningForResponses runs before bridge parameter overrides.
+// Messages already used their original effort in claudeReasoningForProtocol.
+func AdaptChatReasoningForResponses(info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) {
+	if info == nil || request == nil || info.RelayFormat != types.RelayFormatOpenAI {
+		return
+	}
+	if gjson.GetBytes(request.THINKING, "type").String() == "disabled" {
+		return
+	}
+	mapping, template := reasoningRule(info, request.Model, "responses")
+	if mapped, ok := mapping[request.ReasoningEffort]; ok {
+		original := request.ReasoningEffort
+		request.ReasoningEffort = mapped
+		recordReasoningAdaptation(info, template, "responses", "reasoning_effort", original, mapped)
+	}
+}
+
+func AdaptNativeResponsesReasoning(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) {
+	if info == nil || request == nil || request.Reasoning == nil || info.RelayFormat != types.RelayFormatOpenAIResponses {
+		return
+	}
+	mapping, template := reasoningRule(info, request.Model, "responses")
+	if mapped, ok := mapping[request.Reasoning.Effort]; ok {
+		original := request.Reasoning.Effort
+		request.Reasoning.Effort = mapped
+		recordReasoningAdaptation(info, template, "responses", "reasoning.effort", original, mapped)
 	}
 }
 
 // Capture after all explicit parameter overrides. No request-body copy is kept.
 func CaptureFinalReasoningAdaptation(c *gin.Context, info *relaycommon.RelayInfo, payload []byte) {
 	if info == nil || info.ReasoningAdaptation == nil {
+		if c != nil {
+			c.Set(string(constant.ContextKeyReasoningAdaptation), nil)
+		}
 		return
 	}
 	trace := *info.ReasoningAdaptation
-	value := gjson.GetBytes(payload, "reasoning_effort")
+	field := "reasoning_effort"
+	if trace.Protocol == "responses" {
+		field = "reasoning.effort"
+	}
+	value := gjson.GetBytes(payload, field)
 	trace.FinalPresent = value.Exists()
 	trace.Final = ""
 	if value.Exists() {
