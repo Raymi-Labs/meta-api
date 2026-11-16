@@ -176,9 +176,9 @@ func addDeepSeekPrices(data []byte, entries map[string]model.ModelCapabilityMeta
 var pricePart = regexp.MustCompile(`\$([0-9]+(?:\.[0-9]+)?)([^$]*)`)
 var datedPriceCondition = regexp.MustCompile(`^(through|starting) ([A-Za-z]+ [0-9]{1,2}, [0-9]{4})\.?$`)
 
-// Parse explicit USD token rates only. Dates select the currently applicable
-// rate; other conditions stay attached to their tier, never discarded.
-func geminiPriceParts(text string, now time.Time) (map[string]*float64, bool) {
+// Parse explicit USD list rates. A complete introductory-price schedule uses
+// the subsequent regular rate; unrelated conditions retain their own tiers.
+func geminiPriceParts(text string, _ time.Time) (map[string]*float64, bool) {
 	out := map[string]*float64{}
 	if !strings.HasPrefix(strings.TrimSpace(text), "$") {
 		return nil, false
@@ -187,21 +187,43 @@ func geminiPriceParts(text string, now time.Time) (map[string]*float64, bool) {
 	if len(matches) == 0 {
 		return nil, false
 	}
+	// A dated pair is evidence of an introductory offer only when the periods
+	// are contiguous and the subsequent standard rate is higher. Never choose
+	// the largest number across unrelated contexts or incomplete schedules.
+	if strings.Contains(text, "through") || strings.Contains(text, "starting") {
+		if len(matches) != 2 {
+			return nil, false
+		}
+		var end, start time.Time
+		var introductory, regular *float64
+		for _, m := range matches {
+			d := datedPriceCondition.FindStringSubmatch(strings.TrimSpace(m[2]))
+			if d == nil {
+				return nil, false
+			}
+			date, err := time.Parse("January 2, 2006", d[2])
+			if err != nil {
+				return nil, false
+			}
+			v, err := strconv.ParseFloat(m[1], 64)
+			if err != nil {
+				return nil, false
+			}
+			if d[1] == "through" {
+				end, introductory = date, &v
+			} else {
+				start, regular = date, &v
+			}
+		}
+		if introductory == nil || regular == nil || !start.Equal(end.AddDate(0, 0, 1)) || *regular <= *introductory {
+			return nil, false
+		}
+		return map[string]*float64{"": regular}, true
+	}
 	for _, m := range matches {
 		condition := strings.Trim(strings.TrimSpace(m[2]), ".")
 		if strings.Contains(condition, "storage price") {
 			continue
-		}
-		if d := datedPriceCondition.FindStringSubmatch(condition); d != nil {
-			date, e := time.Parse("January 2, 2006", d[2])
-			if e != nil {
-				return nil, false
-			}
-			today := now.UTC().Truncate(24 * time.Hour)
-			if d[1] == "through" && today.After(date) || d[1] == "starting" && today.Before(date) {
-				continue
-			}
-			condition = ""
 		}
 		// Anything with a different unit cannot be represented as a token rate.
 		lower := strings.ToLower(condition)
@@ -313,7 +335,11 @@ func parseGeminiPricingAt(data []byte, names map[string]bool, address string, no
 					case "Context caching price":
 						cacheText = r[2]
 						cache, _ = geminiPriceParts(strings.TrimSpace(strings.ReplaceAll(r[2], "Implicit caching only (explicit caching is not supported).", "")), now)
-						notes = append(notes, r[0]+": "+r[2])
+						if strings.Contains(r[2], "Implicit caching only") {
+							notes = append(notes, "Implicit caching only (explicit caching is not supported).")
+						} else {
+							notes = append(notes, r[0]+": "+r[2])
+						}
 					}
 				}
 				if tiers := geminiModalityTiers(inputText, outputText, cacheText); len(tiers) > 0 {

@@ -73,13 +73,13 @@ func TestAliyunOfficialPriceConditionsAndUnits(t *testing.T) {
 	for _, tc := range []struct {
 		cell, header, unit string
 		v                  float64
-	}{{"1.4 元/万字符", "单价", "million_characters", 140}, {"6", "输入单价（元/百万 Token）", "million_tokens", 6}, {"原价 10 元/张 （限时 8 折）", "单价", "image", 8}, {"0.5 元/小时", "单价", "hour", .5}} {
+	}{{"1.4 元/万字符", "单价", "million_characters", 140}, {"6", "输入单价（元/百万 Token）", "million_tokens", 6}, {"原价 10 元/张 （限时 8 折）", "单价", "image", 10}, {"0.5 元/小时", "单价", "hour", .5}} {
 		v, u := aliyunRate(tc.cell, tc.header)
 		require.NotNil(t, v, tc)
 		require.Equal(t, tc.unit, u)
 		require.Equal(t, tc.v, *v)
 	}
-	for _, c := range []string{"6", "原价 6 元/张", "1-3 元/张", "3 元起/张", "3 美元/张"} {
+	for _, c := range []string{"6", "1-3 元/张", "3 元起/张", "3 美元/张"} {
 		v, _ := aliyunRate(c, "单价")
 		require.Nil(t, v, c)
 	}
@@ -98,10 +98,10 @@ func TestAdditionalManufacturerPriceTables(t *testing.T) {
 		input, output       float64
 	}{
 		{"writer", "palmyra-x5", priceHTML([]string{"Model name", "Model ID", "Input / 1M", "Output / 1M"}, []string{"Palmyra X5", "palmyra-x5", "$0.6", "$6"}), writerPricingURL, parseWriterPricing, .6, 6},
-		{"inception", "mercury-2", `"mercury-2"` + priceHTML([]string{"Model", "Input Price (1M Tokens)", "Cached Input Price (1M Tokens)", "Output Price (1M Tokens)"}, []string{"Mercury 2", "~~$1~~ → $0.25", "$0.05", "$1"}), inceptionPricingURL, parseInceptionPricing, .25, 1},
+		{"inception", "mercury-2", `"mercury-2"` + priceHTML([]string{"Model", "Input Price (1M Tokens)", "Cached Input Price (1M Tokens)", "Output Price (1M Tokens)"}, []string{"Mercury 2", "~~$1~~ → $0.25", "$0.05", "$1"}), inceptionPricingURL, parseInceptionPricing, 1, 1},
 		{"mistral", "codestral-2508", "<div><div><div>" + priceHTML([]string{"Model", "Input", "Cached input", "Output"}, []string{`<a href="/models/codestral-25-08">Codestral ↗</a>`, "$0.3", "$0.03", "$0.9"}) + "</div></div><p>Prices /M Tokens</p></div>", mistralPricingURL, parseMistralPricing, .3, .9},
 		{"reka", "reka-flash-3", priceHTML([]string{"Model ID", "Input $/M", "Output $/M", "Cache read $/M"}, []string{"reka-flash-3", "$0.1", "$0.4", "$0.05"}), rekaPricingURL, parseRekaPricing, .1, .4},
-		{"longcat", "longcat-2.0", "<h1>LongCat-2.0</h1>" + priceHTML([]string{"Item", "Price $/1M Tokens", "Discounted Price $/1M Tokens (limited-time)"}, []string{"Uncached Input", "$1", "$0.5"}, []string{"Cached Input", "$0.1", "$0.05"}, []string{"Output", "$2", "$1"}), longcatPricingURL, parseLongcatPricing, .5, 1},
+		{"longcat", "longcat-2.0", "<h1>LongCat-2.0</h1>" + priceHTML([]string{"Item", "Price $/1M Tokens", "Discounted Price $/1M Tokens (limited-time)"}, []string{"Uncached Input", "$1", "$0.5"}, []string{"Cached Input", "$0.1", "$0.05"}, []string{"Output", "$2", "$1"}), longcatPricingURL, parseLongcatPricing, 1, 2},
 		{"meta", "muse-wonder-1.0", "<h2>Muse Wonder</h2><p>muse-wonder-1.0</p>" + priceHTML([]string{"Usage", "Standard mode (per 1M tokens)", "Contributor mode (per 1M tokens)"}, []string{"Input", "$4", "$1"}, []string{"Output", "$20", "$5"}, []string{"Cached input", "$0.2", "$0.05"}), metaPricingURL, parseMetaPricing, 4, 20},
 		{"moondream", "moondream3-preview", "<h2>Moondream 3 Preview — Real-time</h2><p>$0.1</p><p>/ 1M input tokens</p><p>$0.4</p><p>/ 1M output tokens</p><h2>Moondream 3 Preview — Batch</h2><p>$0.05</p><p>/ 1M input tokens</p><p>$0.2</p><p>/ 1M output tokens</p>", moondreamPricingURL, parseMoondreamPricing, .1, .4},
 		{"liquid", "lfm-2.5-24b-a2b", "<h2>LFM2.5-24B-A2B</h2><p>Input</p><p>$0.05</p><p>/ MTok</p><p>Cached input</p><p>$0.01</p><p>/ MTok</p><p>Output</p><p>$0.2</p><p>/ MTok</p><p>Other</p><p>details</p>", liquidPricingURL, parseLiquidPricing, .05, .2},

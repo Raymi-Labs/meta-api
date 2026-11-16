@@ -114,7 +114,7 @@ func TestPublicOfficialPricingConditions(t *testing.T) {
 	now := time.Date(2026, 10, 31, 0, 0, 0, 0, time.UTC)
 	parts, ok := geminiPriceParts("$0.75 through December 31, 2026. $1.50 starting January 1, 2027.", now)
 	require.True(t, ok)
-	require.Equal(t, .75, *parts[""])
+	require.Equal(t, 1.5, *parts[""])
 	parts, ok = geminiPriceParts("$0.75 through December 31, 2026. $1.50 starting January 1, 2027.", now.AddDate(1, 0, 0))
 	require.True(t, ok)
 	require.Equal(t, 1.5, *parts[""])

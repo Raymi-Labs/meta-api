@@ -46,12 +46,9 @@ func aliyunRate(cell, header string) (*float64, string) {
 	v, _ := strconv.ParseFloat(m[2], 64)
 	if m[4] != "" {
 		d, _ := strconv.ParseFloat(m[4], 64)
-		if d <= 0 || d > 10 {
+		if m[1] == "" || d <= 0 || d > 10 {
 			return nil, ""
 		}
-		v *= d / 10
-	} else if m[1] != "" {
-		return nil, ""
 	}
 	if unit == "million_characters" {
 		v *= 100
@@ -258,7 +255,7 @@ func parseAliyunPricing(data []byte, names map[string]bool, address string) map[
 			continue
 		}
 		tiers := regions[keys[0]]
-		p := model.OfficialPricing{Currency: "CNY", SourceURL: address, Notes: "按档位标注的地域、模式、模态与上下文范围展示官方按量价格；显式限时折扣按来源页面当前折扣计算。Batch、免费额度、缓存与额外工具费用请参阅来源页面，不从其他模型或地域推算。", Tiers: tiers}
+		p := model.OfficialPricing{Currency: "CNY", SourceURL: address, Notes: "按档位标注的地域、模式、模态与上下文范围展示官方按量价格；明确标注原价时保留原价，不应用限时折扣。Batch、免费额度、缓存与额外工具费用请参阅来源页面，不从其他模型或地域推算。", Tiers: tiers}
 		e := officialPriceEntry("alibaba", address, p)
 		if len(e.OfficialPricing.Tiers) > 0 {
 			out[id] = e

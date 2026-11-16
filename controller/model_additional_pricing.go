@@ -23,13 +23,17 @@ const (
 	mistralPricingURL   = "https://docs.mistral.ai/inference/pricing"
 )
 
-// Only an explicit struck-out old price followed by a new price is a replacement.
+// Only an explicit struck-out original price followed by a discount identifies a list rate.
 // A slash, range or "from" price must not be mistaken for a flat unit rate.
-var replacedUSD = regexp.MustCompile(`^~~\\?\$[0-9]+(?:\.[0-9]+)?~~ (?:→ )?(\\?\$[0-9]+(?:\.[0-9]+)?)$`)
+var replacedUSD = regexp.MustCompile(`^~~(\\?\$[0-9]+(?:\.[0-9]+)?)~~ (?:→ )?(\\?\$[0-9]+(?:\.[0-9]+)?)$`)
 
-func currentDocumentUSD(s string) *float64 {
+func listDocumentUSD(s string) *float64 {
 	if m := replacedUSD.FindStringSubmatch(s); m != nil {
-		return documentUSD(m[1])
+		original, discounted := documentUSD(m[1]), documentUSD(m[2])
+		if original == nil || discounted == nil || *original < *discounted {
+			return nil
+		}
+		return original
 	}
 	return documentUSD(s)
 }
@@ -49,15 +53,11 @@ func parseInceptionPricing(data []byte, names map[string]bool, address string) m
 			if !names[id] || !strings.Contains(string(data), `"`+id+`"`) {
 				continue
 			}
-			input, cache, output := currentDocumentUSD(r[1]), currentDocumentUSD(r[2]), currentDocumentUSD(r[3])
+			input, cache, output := listDocumentUSD(r[1]), listDocumentUSD(r[2]), listDocumentUSD(r[3])
 			if input == nil || output == nil || cache == nil {
 				continue
 			}
-			label := "Standard"
-			if strings.Contains(r[1], "~~") {
-				label = "Launch discount"
-			}
-			out[id] = officialPriceEntry("inception", address, model.OfficialPricing{Currency: "USD", SourceURL: address, Notes: "Current published token rates; launch discounts apply only while offered by the manufacturer.", Tiers: []model.OfficialPricingTier{{Label: label, Unit: "million_tokens", Input: input, Output: output, CacheRead: cache}}})
+			out[id] = officialPriceEntry("inception", address, model.OfficialPricing{Currency: "USD", SourceURL: address, Notes: "Published list prices before manufacturer discounts.", Tiers: []model.OfficialPricingTier{{Label: "Standard", Unit: "million_tokens", Input: input, Output: output, CacheRead: cache}}})
 		}
 	}
 	return out
@@ -273,12 +273,12 @@ func parseMiniMaxPricing(data []byte, names map[string]bool, address string) map
 						if !strings.EqualFold(r[0], id) && !strings.HasPrefix(strings.ToLower(r[0]), strings.ToLower(id)+" ") {
 							continue
 						}
-						input, output, cache := currentDocumentUSD(r[1]), currentDocumentUSD(r[2]), currentDocumentUSD(r[3])
+						input, output, cache := listDocumentUSD(r[1]), listDocumentUSD(r[2]), listDocumentUSD(r[3])
 						if input == nil || output == nil || cache == nil {
 							invalid[id] = true
 							continue
 						}
-						suffix := strings.TrimSpace(r[0][len(id):])
+						suffix := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(r[0][len(id):]), "Permanent 50% off"))
 						add(id, model.OfficialPricingTier{Label: strings.TrimSpace(band + " " + suffix), Unit: "million_tokens", Input: input, Output: output, CacheRead: cache})
 					}
 				}
@@ -505,18 +505,18 @@ func parseLongcatPricing(data []byte, names map[string]bool, address string) map
 		if !slices.Equal(table[0], []string{"Item", "Price $/1M Tokens", "Discounted Price $/1M Tokens (limited-time)"}) {
 			continue
 		}
-		tier := model.OfficialPricingTier{Label: "Limited-time discount", Unit: "million_tokens"}
+		tier := model.OfficialPricingTier{Label: "Standard", Unit: "million_tokens"}
 		for _, r := range table[1:] {
 			if len(r) != 3 {
 				continue
 			}
 			switch r[0] {
 			case "Uncached Input":
-				tier.Input = documentUSD(r[2])
+				tier.Input = documentUSD(r[1])
 			case "Cached Input":
-				tier.CacheRead = documentUSD(r[2])
+				tier.CacheRead = documentUSD(r[1])
 			case "Output":
-				tier.Output = documentUSD(r[2])
+				tier.Output = documentUSD(r[1])
 			}
 		}
 		if tier.Input != nil && tier.Output != nil {

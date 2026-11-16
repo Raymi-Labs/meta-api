@@ -21,7 +21,7 @@ func TestGeminiMigratedPricing(t *testing.T) {
 		date                 string
 		input, output, cache float64
 	}{
-		{"2026-11-15", 2, 10, .1}, {"2026-11-30", 2, 10, .1}, {"2026-12-01", 4, 20, .2},
+		{"2026-11-15", 4, 20, .2}, {"2026-11-30", 4, 20, .2}, {"2026-12-01", 4, 20, .2},
 	} {
 		t.Run(tc.date, func(t *testing.T) {
 			now, err := time.Parse("2006-01-02", tc.date)
@@ -86,8 +86,8 @@ func TestDownloadedGeminiPricing(t *testing.T) {
 	entries := parseGeminiPricingAt(data, map[string]bool{"gemini-4-carbon": true, "gemini-4-argon": true}, geminiPricingURL, time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC))
 	require.Len(t, entries, 2)
 	for _, e := range entries {
-		require.Equal(t, 2.0, *e.OfficialPricing.Tiers[0].Input)
-		require.Equal(t, .1, *e.OfficialPricing.Tiers[0].CacheRead)
+		require.Equal(t, 4.0, *e.OfficialPricing.Tiers[0].Input)
+		require.Equal(t, .2, *e.OfficialPricing.Tiers[0].CacheRead)
 	}
 }
 
