@@ -27,9 +27,10 @@ import { localAssetIconRegistry } from './localProviderIcons';
 // Vite enumerates these at build time. There is no arbitrary runtime import path,
 // and a provider's Avatar/UI dependencies are not loaded with its Mono/Color SVG.
 const registry = createProviderIconRegistry(
-  import.meta.glob(
+  import.meta.glob([
     '../../node_modules/@lobehub/icons/es/*/components/{Mono,Avatar,Brand,BrandColor,Color,Combine,Text,TextCn,TextColor,Simple,Morden}.js',
-  ),
+    '!../../node_modules/@lobehub/icons/es/AiHubMix/**',
+  ]),
 );
 for (const [key, loader] of [
   ...createLocalProviderIconRegistry(
