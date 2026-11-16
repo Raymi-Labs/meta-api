@@ -579,7 +579,7 @@ func UpdateEnterpriseSettings(c *gin.Context) {
 
 func AdminListEnterprises(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
-	items, total, err := model.ListEnterprises(c.Query("keyword"), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	items, total, err := model.ListEnterprisesByStatus(c.Query("keyword"), c.Query("status"), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	enterprisePage(c, pageInfo, items, total, err)
 }
 
@@ -712,4 +712,38 @@ func AdminResolveEnterpriseReservation(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, nil)
+}
+
+// Root-only archive endpoints reuse the platform scope and error contract.
+func AdminPreviewEnterpriseArchive(c *gin.Context) {
+	enterpriseID, _, ok := enterpriseScope(c)
+	if !ok {
+		return
+	}
+	preview, err := model.PreviewEnterpriseArchive(enterpriseID)
+	if err != nil {
+		enterpriseApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, preview)
+}
+
+func AdminArchiveEnterprise(c *gin.Context) {
+	enterpriseID, actor, ok := enterpriseScope(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Name   string `json:"name"`
+		Reason string `json:"reason"`
+	}
+	if !enterpriseBody(c, &req) {
+		return
+	}
+	ent, err := model.ArchiveEnterprise(actor.UserId, enterpriseID, req.Name, req.Reason)
+	if err != nil {
+		enterpriseApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, ent)
 }

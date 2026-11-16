@@ -772,6 +772,9 @@ func relayEnterpriseMJSubmit(c *gin.Context, info *relaycommon.RelayInfo, action
 		return service.MidjourneyErrorWrapper(constant.MjRequestError, "persist_midjourney_billing_failed")
 	}
 	if apiErr := service.PreConsumeBilling(c, quota, info); apiErr != nil {
+		if err := model.RejectUnsentEnterpriseMJIntent(task); err != nil {
+			common.SysError("midjourney unsent intent closeout failed: " + err.Error())
+		}
 		service.MarkRequestFailure(c, apiErr)
 		return service.MidjourneyErrorWrapper(constant.MjRequestError, apiErr.Error())
 	}

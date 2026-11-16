@@ -462,3 +462,23 @@ func TestEnterpriseMJImageAppliesFetchPolicyBeforeRequest(t *testing.T) {
 	require.Contains(t, w.Body.String(), "image_url_not_allowed")
 	require.Zero(t, hits.Load())
 }
+
+func TestEnterpriseMJLocalAdmissionFailureDoesNotLeaveUnknownIntent(t *testing.T) {
+	mjRelayDB(t)
+	var calls atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		t.Error("admission failure must not send upstream")
+	}))
+	defer upstream.Close()
+	c, info, _ := mjRelayRequest(`{"prompt":"fixture"}`, upstream.URL, 2000)
+	require.NotNil(t, relayEnterpriseMJSubmit(c, info, "IMAGINE", "fixture", true))
+	require.Zero(t, calls.Load())
+	var task model.Midjourney
+	require.NoError(t, model.DB.Where("billing_request_id = ?", info.RequestId).First(&task).Error)
+	require.Equal(t, model.MJEnterpriseRejected, task.EnterpriseBillingState)
+	require.True(t, task.EnterpriseBillingSettled)
+	require.True(t, task.EnterpriseBillingFinalized)
+	require.Zero(t, task.Quota)
+	mjAssertRelayBalance(t, 1000, 0, 0)
+}

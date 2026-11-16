@@ -7518,6 +7518,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "No se pudo obtener la lista del proveedor. Se muestran referencias oficiales; no se ha verificado la compatibilidad del canal.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "No se pudo obtener la lista del proveedor. Se muestran referencias integradas; no se ha verificado la compatibilidad del canal.",
     "模型列表来自当前填写的上游地址。": "Modelos obtenidos de la URL del proveedor introducida actualmente.",
-    "更换上游域名后，请填写该地址对应的密钥": "Tras cambiar el dominio del proveedor, introduce la clave correspondiente a esa dirección."
+    "更换上游域名后，请填写该地址对应的密钥": "Tras cambiar el dominio del proveedor, introduce la clave correspondiente a esa dirección.",
+    "仍有未完成结算的 Midjourney 任务": "Hay tareas de Midjourney pendientes de liquidación",
+    "仍有未完成结算的视频或音乐任务": "Hay tareas de vídeo o música pendientes de liquidación",
+    "仍有预留或待对账请求": "Hay solicitudes con reservas o pendientes de conciliación",
+    "企业已归档": "Empresa archivada",
+    "净余额": "Saldo neto",
+    "净余额须结清，请先处理退款或调账": "Liquida primero el saldo neto mediante reembolsos o ajustes",
+    "加入时间": "Fecha de incorporación",
+    "历史记录": "Historial",
+    "已归档": "Archivada",
+    "异步任务": "Tareas asíncronas",
+    "归档 {{name}}": "Archivar {{name}}",
+    "归档企业": "Archivar empresa",
+    "归档原因": "Motivo del archivo",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "El archivo es irreversible. Los miembros salen y los tokens de empresa se desactivan. Se conserva el historial de facturación y auditoría.",
+    "请先冻结企业": "Congela primero la empresa",
+    "账本不平衡，请先核对流水": "El libro no cuadra. Revisa primero los movimientos",
+    "资金流水": "Movimientos de fondos",
+    "输入完整企业名称": "Introduce el nombre completo de la empresa",
+    "重新检查": "Comprobar de nuevo",
+    "金额单位": "Unidad del importe",
+    "额度归并": "Consolidación de presupuesto"
   }
 }

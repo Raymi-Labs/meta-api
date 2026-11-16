@@ -18,8 +18,9 @@ import (
 // 锁顺序固定为 企业行 → 成员行；请求路径只锁成员行。
 
 const (
-	EnterpriseStatusActive = "active"
-	EnterpriseStatusFrozen = "frozen"
+	EnterpriseStatusActive   = "active"
+	EnterpriseStatusFrozen   = "frozen"
+	EnterpriseStatusArchived = "archived"
 
 	EnterpriseRoleOwner  = "owner"
 	EnterpriseRoleAdmin  = "admin"
@@ -48,6 +49,9 @@ var (
 	ErrEnterpriseNotFound              = errors.New("企业不存在或无权访问")
 	ErrEnterpriseForbidden             = errors.New("无权执行该企业操作")
 	ErrEnterpriseFrozen                = errors.New("企业已冻结")
+	ErrEnterpriseArchived              = errors.New("企业已归档，不能再修改")
+	ErrEnterpriseArchiveBlocked        = errors.New("企业尚未满足归档条件，请刷新预检")
+	ErrEnterpriseArchiveName           = errors.New("企业名称不一致，请重新确认")
 	ErrEnterpriseAlreadyMember         = errors.New("该账号已加入企业，一个账号只能加入一家企业")
 	ErrEnterpriseOwnerRequired         = errors.New("企业必须保留一名所有者，请先转移所有权")
 	ErrEnterpriseInvitation            = errors.New("邀请无效、已使用或已过期")
@@ -75,21 +79,26 @@ type Enterprise struct {
 	ModelList     string `json:"-" gorm:"type:text"`
 	PolicyVersion int64  `json:"policy_version" gorm:"not null;default:0"`
 	// 钱包：未分配额度与累计净入账。成员侧余额在 EnterpriseMember 上。
-	Unallocated          int64 `json:"unallocated" gorm:"not null;default:0"`
-	NetCredited          int64 `json:"net_credited" gorm:"not null;default:0"`
-	LowBalanceThreshold  int64 `json:"low_balance_threshold" gorm:"not null;default:0"`
-	LowBalanceNotifiedAt int64 `json:"-" gorm:"not null;default:0"`
-	CreatedAt            int64 `json:"created_at" gorm:"not null"`
-	UpdatedAt            int64 `json:"updated_at" gorm:"not null"`
+	Unallocated          int64  `json:"unallocated" gorm:"not null;default:0"`
+	NetCredited          int64  `json:"net_credited" gorm:"not null;default:0"`
+	LowBalanceThreshold  int64  `json:"low_balance_threshold" gorm:"not null;default:0"`
+	LowBalanceNotifiedAt int64  `json:"-" gorm:"not null;default:0"`
+	CreatedAt            int64  `json:"created_at" gorm:"not null"`
+	UpdatedAt            int64  `json:"updated_at" gorm:"not null"`
+	ArchivedAt           int64  `json:"archived_at" gorm:"not null;default:0"`
+	ArchivedBy           int    `json:"archived_by" gorm:"not null;default:0"`
+	ArchiveReason        string `json:"archive_reason" gorm:"type:varchar(255);not null;default:''"`
 
 	Models    []string `json:"models" gorm:"-"`
 	OwnerName string   `json:"owner_name" gorm:"-"`
 }
 
 type EnterpriseMember struct {
-	Id           int `json:"id" gorm:"primaryKey"`
-	EnterpriseId int `json:"enterprise_id" gorm:"not null;index:idx_enterprise_member_ent,priority:1"`
-	UserId       int `json:"user_id" gorm:"not null;index"`
+	// All generations are sealed at archive, including former members with late billing callbacks.
+	ArchivedAt   int64 `json:"archived_at" gorm:"not null;default:0"`
+	Id           int   `json:"id" gorm:"primaryKey"`
+	EnterpriseId int   `json:"enterprise_id" gorm:"not null;index:idx_enterprise_member_ent,priority:1"`
+	UserId       int   `json:"user_id" gorm:"not null;index"`
 	// ActiveUserId 仅在成员有效时等于 UserId，失效后置空；唯一索引允许多个空值，
 	// 由数据库保证一个账号同时只有一个有效成员关系。
 	ActiveUserId *int   `json:"-" gorm:"uniqueIndex"`
@@ -304,6 +313,9 @@ func lockEnterpriseMemberTx(tx *gorm.DB, memberID int) (*EnterpriseMember, error
 		}
 		return nil, err
 	}
+	if member.ArchivedAt != 0 {
+		return nil, ErrEnterpriseArchived
+	}
 	return member.fill(), nil
 }
 
@@ -313,6 +325,9 @@ func enterpriseTx(enterpriseID int, fn func(tx *gorm.DB, ent *Enterprise) error)
 		ent, err := lockEnterpriseTx(tx, enterpriseID)
 		if err != nil {
 			return err
+		}
+		if ent.Status == EnterpriseStatusArchived {
+			return ErrEnterpriseArchived
 		}
 		return fn(tx, ent)
 	})
@@ -489,6 +504,9 @@ func UpdateEnterpriseByPlatform(actorID, enterpriseID int, name, billingGroup st
 		if err != nil {
 			return err
 		}
+		if ent.Status == EnterpriseStatusArchived {
+			return ErrEnterpriseArchived
+		}
 		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
 			"name": name, "billing_group": billingGroup,
 			"policy_version": gorm.Expr("policy_version + 1"), "updated_at": time.Now().Unix(),
@@ -572,7 +590,20 @@ func GetEnterpriseByID(enterpriseID int) (*Enterprise, error) {
 
 // ListEnterprises 平台后台的企业列表。
 func ListEnterprises(keyword string, offset, limit int) ([]*Enterprise, int64, error) {
+	return ListEnterprisesByStatus(keyword, "", offset, limit)
+}
+
+// Empty status excludes archived enterprises, preserving the default management list.
+func ListEnterprisesByStatus(keyword, status string, offset, limit int) ([]*Enterprise, int64, error) {
 	query := DB.Model(&Enterprise{})
+	switch status {
+	case "":
+		query = query.Where("status <> ?", EnterpriseStatusArchived)
+	case EnterpriseStatusActive, EnterpriseStatusFrozen, EnterpriseStatusArchived:
+		query = query.Where("status = ?", status)
+	default:
+		return nil, 0, ErrEnterpriseInvalidInput
+	}
 	if keyword = strings.TrimSpace(keyword); keyword != "" {
 		query = query.Where("name LIKE ?", "%"+keyword+"%")
 	}
@@ -666,6 +697,7 @@ func enterpriseUserBriefs(tx *gorm.DB, ids []int) map[int]enterpriseUserBrief {
 func IsEnterpriseUserError(err error) bool {
 	for _, known := range []error{
 		ErrEnterpriseNotFound, ErrEnterpriseForbidden, ErrEnterpriseFrozen, ErrEnterpriseAlreadyMember,
+		ErrEnterpriseArchived, ErrEnterpriseArchiveBlocked, ErrEnterpriseArchiveName,
 		ErrEnterpriseOwnerRequired, ErrEnterpriseInvitation, ErrEnterpriseInvitationMail, ErrEnterpriseInvalidInput,
 		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseBillingConfigConflict, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
 		ErrEnterpriseDisabled, ErrEnterpriseInsufficientUnallocated, ErrEnterpriseDuplicateVoucher,

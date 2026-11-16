@@ -104,7 +104,7 @@ func validateEnterpriseGroupReferencesTx(tx *gorm.DB, nextJSON string) error {
 	}
 	// Compare in Go: case-insensitive SQL collations must not equate distinct group keys.
 	var enterprises []Enterprise
-	if err := tx.Select("id", "billing_group").Find(&enterprises).Error; err != nil {
+	if err := tx.Select("id", "billing_group").Where("status <> ?", EnterpriseStatusArchived).Find(&enterprises).Error; err != nil {
 		return err
 	}
 	missing := make(map[string]bool)

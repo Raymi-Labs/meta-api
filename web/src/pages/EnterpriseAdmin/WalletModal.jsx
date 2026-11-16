@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Input,
@@ -39,23 +39,29 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
   const [voucher, setVoucher] = useState('');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
+  const [rawUnits, setRawUnits] = useState(false);
+  const submitting = useRef(false);
   const credit = mode === 'credit';
 
   useEffect(() => {
     setAmount(undefined);
+    setRawUnits(false);
     setSign(1);
     setVoucher('');
     setReason('');
   }, [enterprise?.id, mode]);
 
   if (!enterprise) return null;
-  const quota = displayAmountToQuota(amount);
+  const quota = rawUnits ? Number(amount || 0) : displayAmountToQuota(amount);
   const after = enterprise.unallocated + (credit ? quota : sign * quota);
 
   const submit = async () => {
-    if (quota <= 0) return showError(t('请填写金额'));
+    if (submitting.current) return;
+    if (!Number.isSafeInteger(quota) || quota <= 0 || quota > 1e15)
+      return showError(t('请填写金额'));
     if (credit && !voucher.trim()) return showError(t('请填写转账凭证号'));
     if (!credit && !reason.trim()) return showError(t('请填写原因'));
+    submitting.current = true;
     setBusy(true);
     try {
       await enterpriseRequest(
@@ -71,6 +77,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
     } catch (e) {
       showError(e.message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -84,7 +91,11 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
       okButtonProps={after < 0 ? { type: 'danger' } : undefined}
       confirmLoading={busy}
       onOk={submit}
-      onCancel={onClose}
+      onCancel={() => !busy && onClose()}
+      maskClosable={!busy}
+      closeOnEsc={!busy}
+      closable={!busy}
+      cancelButtonProps={{ disabled: busy }}
     >
       {!credit && (
         <div className='ec-field'>
@@ -93,29 +104,47 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
             aria-label={t('方向')}
             value={sign}
             onChange={(e) => setSign(e.target.value)}
+            disabled={busy}
           >
             <Radio value={1}>{t('增加')}</Radio>
             <Radio value={-1}>{t('扣减')}</Radio>
           </RadioGroup>
         </div>
       )}
+      {!credit && (
+        <RadioGroup
+          type='button'
+          aria-label={t('金额单位')}
+          value={rawUnits}
+          onChange={(e) => {
+            setRawUnits(e.target.value);
+            setAmount(undefined);
+          }}
+          disabled={busy}
+        >
+          <Radio value={false}>{t('金额')}</Radio>
+          <Radio value={true}>{t('原始额度')}</Radio>
+        </RadioGroup>
+      )}
       <label className='ec-field'>
         <span className='ec-field-head'>
-          {t('金额')}
+          {rawUnits ? t('原始额度') : t('金额')}
           <em className={after < 0 ? 'em-num neg' : undefined}>
             {quota > 0
               ? t('未分配余额 {{before}} → {{after}}', {
-                  before: renderQuota(enterprise.unallocated),
-                  after: renderQuota(after),
+                  before: renderQuota(enterprise.unallocated, 8),
+                  after: renderQuota(after, 8),
                 })
               : t('未分配余额 {{amount}}', {
-                  amount: renderQuota(enterprise.unallocated),
+                  amount: renderQuota(enterprise.unallocated, 8),
                 })}
           </em>
         </span>
         <InputNumber
           min={0}
-          precision={2}
+          precision={rawUnits ? 0 : 8}
+          aria-label={rawUnits ? t('原始额度') : t('金额')}
+          disabled={busy}
           value={amount}
           onChange={setAmount}
           style={{ width: '100%' }}
@@ -124,12 +153,22 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
       {credit && (
         <label className='ec-field'>
           {t('转账凭证号')}
-          <Input maxLength={128} value={voucher} onChange={setVoucher} />
+          <Input
+            maxLength={128}
+            value={voucher}
+            onChange={setVoucher}
+            disabled={busy}
+          />
         </label>
       )}
       <label className='ec-field'>
         {credit ? t('备注') : t('原因')}
-        <Input maxLength={200} value={reason} onChange={setReason} />
+        <Input
+          maxLength={200}
+          value={reason}
+          onChange={setReason}
+          disabled={busy}
+        />
       </label>
     </Modal>
   );

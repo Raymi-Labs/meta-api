@@ -73,3 +73,37 @@ export const formatEnterpriseTime = (timestamp, timezone) => {
     return date.toLocaleString();
   }
 };
+
+export const ENTERPRISE_AUDIT_ACTION = {
+  'budget.allocate': '分配额度',
+  'budget.reclaim': '回收额度',
+  'enterprise.create': '创建企业',
+  'enterprise.settings': '修改设置',
+  'enterprise.status': '状态变更',
+  'enterprise.transfer': '转移所有权',
+  'enterprise.update': '修改设置',
+  'invitation.create': '邀请成员',
+  'invitation.revoke': '撤销邀请',
+  'member.disable': '停用成员',
+  'member.leave': '成员退出',
+  'member.join': '成员加入',
+  'member.models': '成员模型',
+  'member.role': '调整角色',
+  'request.approved': '批准申请',
+  'request.rejected': '拒绝申请',
+  'reservation.resolve': '人工结算',
+  'token.revoke': '撤销令牌',
+  'wallet.credit': '入账',
+  'wallet.adjust': '调账',
+  'enterprise.archive': '归档企业',
+};
+
+export const ENTERPRISE_LEDGER_KIND = {
+  credit: '入账',
+  adjust: '调账',
+  allocate: '分配',
+  reclaim: '回收',
+  invite_grant: '邀请',
+  request_grant: '申请',
+  member_sweep: '额度归并',
+};

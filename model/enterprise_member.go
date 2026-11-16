@@ -720,7 +720,7 @@ func protectEnterpriseOwnerDeletionTx(tx *gorm.DB, userID int) error {
 		return err
 	}
 	var count int64
-	if err := tx.Model(&Enterprise{}).Where("owner_user_id = ?", userID).Count(&count).Error; err != nil {
+	if err := tx.Model(&Enterprise{}).Where("owner_user_id = ? AND status <> ?", userID, EnterpriseStatusArchived).Count(&count).Error; err != nil {
 		return err
 	}
 	if count > 0 {

@@ -7518,6 +7518,27 @@
     "上游列表获取失败，已显示官方参考模型；不代表该渠道支持。": "Üst sağlayıcı listesi alınamadı. Resmî referans modeller gösteriliyor; kanal desteği doğrulanmadı.",
     "上游列表获取失败，已显示内置参考模型；不代表该渠道支持。": "Üst sağlayıcı listesi alınamadı. Yerleşik referans modeller gösteriliyor; kanal desteği doğrulanmadı.",
     "模型列表来自当前填写的上游地址。": "Modeller şu anda girilen üst sağlayıcı URL’sinden alındı.",
-    "更换上游域名后，请填写该地址对应的密钥": "Üst sağlayıcı alan adını değiştirdikten sonra bu adrese ait anahtarı girin."
+    "更换上游域名后，请填写该地址对应的密钥": "Üst sağlayıcı alan adını değiştirdikten sonra bu adrese ait anahtarı girin.",
+    "仍有未完成结算的 Midjourney 任务": "Midjourney görevlerinin hesaplaşması henüz tamamlanmadı",
+    "仍有未完成结算的视频或音乐任务": "Video veya müzik görevlerinin hesaplaşması henüz tamamlanmadı",
+    "仍有预留或待对账请求": "Rezerve edilmiş veya mutabakat bekleyen istekler var",
+    "企业已归档": "Kuruluş arşivlendi",
+    "净余额": "Net bakiye",
+    "净余额须结清，请先处理退款或调账": "Önce iade veya düzeltmeyle net bakiyeyi kapatın",
+    "加入时间": "Katılma zamanı",
+    "历史记录": "Geçmiş",
+    "已归档": "Arşivlendi",
+    "异步任务": "Asenkron görevler",
+    "归档 {{name}}": "{{name}} kuruluşunu arşivle",
+    "归档企业": "Kuruluşu arşivle",
+    "归档原因": "Arşivleme nedeni",
+    "归档后无法恢复。成员退出、企业令牌停用；账单和操作记录保留。": "Arşivleme geri alınamaz. Üyeler ayrılır ve kuruluş tokenları devre dışı bırakılır. Faturalandırma ve denetim geçmişi korunur.",
+    "请先冻结企业": "Önce kuruluşu dondurun",
+    "账本不平衡，请先核对流水": "Defter dengede değil. Önce hareketleri kontrol edin",
+    "资金流水": "Para hareketleri",
+    "输入完整企业名称": "Kuruluşun tam adını girin",
+    "重新检查": "Yeniden kontrol et",
+    "金额单位": "Tutar birimi",
+    "额度归并": "Bütçe birleştirme"
   }
 }

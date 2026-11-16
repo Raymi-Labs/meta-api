@@ -518,6 +518,15 @@ func (token *Token) Update() (err error) {
 		}
 	}()
 	err = DB.Transaction(func(tx *gorm.DB) error {
+		if token.EnterpriseId > 0 {
+			member, err := lockEnterpriseMemberTx(tx, token.MembershipId)
+			if err != nil {
+				return err
+			}
+			if member.EnterpriseId != token.EnterpriseId || member.UserId != token.UserId {
+				return ErrEnterpriseSubject
+			}
+		}
 		if err := tx.Model(token).Select("name", "status", "source_type", "billing_mode",
 			"sellable_token_product_id", "sellable_token_issuance_id", "expired_time", "remain_quota",
 			"unlimited_quota", "model_limits_enabled", "model_limits", "channel_limits_enabled", "channel_limits", "allow_ips", "group",
