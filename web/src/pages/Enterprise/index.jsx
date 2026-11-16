@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -33,7 +33,7 @@ import { usePublicTranslation } from '../../helpers/publicLocale';
 import { useEnterpriseSelf } from '../../hooks/enterprise/useEnterpriseSelf';
 import { getSystemName } from '../../helpers/storage';
 import { buildAuthPathWithNext } from '../../helpers/authRedirect';
-import { ENTERPRISE_CONTACT } from './enterpriseData';
+import ApplicationModal from './ApplicationModal';
 import { getEnterpriseEntry } from './enterpriseEntry';
 import './Enterprise.css';
 
@@ -68,7 +68,7 @@ const roles = [
   { role: '成员', text: '使用企业额度、创建企业令牌，申请追加额度。' },
 ];
 
-export function EnterpriseEntry({ user, workspace, t, contactHref }) {
+export function EnterpriseEntry({ user, workspace, t, onApply }) {
   const entry = getEnterpriseEntry(user, workspace);
   return (
     <aside className='enterprise-entry' aria-label={t('企业工作空间')}>
@@ -104,12 +104,13 @@ export function EnterpriseEntry({ user, workspace, t, contactHref }) {
             </Link>
           ) : (
             <>
-              <a
+              <button
+                type='button'
                 className='enterprise-button enterprise-primary'
-                href={contactHref}
+                onClick={onApply}
               >
                 {t('联系开通')}
-              </a>
+              </button>
             </>
           )}
           {entry.member && (
@@ -148,7 +149,35 @@ export default function Enterprise() {
   const [userState] = useContext(UserContext);
   const workspace = useEnterpriseSelf();
   const brandName = getSystemName();
-  const contactHref = `mailto:${ENTERPRISE_CONTACT}?subject=${encodeURIComponent(t('企业接入咨询'))}`;
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const [application, setApplication] = useState(null);
+  const [applicationError, setApplicationError] = useState('');
+  const apply = (kind) => {
+    if (!userState?.user?.id) {
+      navigate(buildAuthPathWithNext('/login', `/enterprise?apply=${kind}`));
+      return;
+    }
+    if (!workspace.enabled) {
+      setApplicationError(t('企业功能暂未开放'));
+      return;
+    }
+    setApplicationError('');
+    setApplication(kind);
+  };
+  useEffect(() => {
+    const kind = params.get('apply');
+    if (
+      userState?.user?.id &&
+      workspace.enabled &&
+      ['opening', 'custom'].includes(kind)
+    ) {
+      setApplication(kind);
+      const next = new URLSearchParams(params);
+      next.delete('apply');
+      setParams(next, { replace: true });
+    }
+  }, [userState?.user?.id, workspace.enabled, params, setParams]);
   useEffect(() => {
     const previous = document.title;
     document.title = `${t('企业服务')} · ${brandName}`;
@@ -172,7 +201,7 @@ export default function Enterprise() {
             user={userState?.user}
             workspace={workspace}
             t={t}
-            contactHref={contactHref}
+            onApply={() => apply('opening')}
           />
         </div>
         <div className='enterprise-flow-panel'>
@@ -245,11 +274,29 @@ export default function Enterprise() {
         aria-labelledby='enterprise-contact-title'
       >
         <h2 id='enterprise-contact-title'>{t('定制需求')}</h2>
-        <a className='enterprise-text-link' href={contactHref}>
-          {t('发送邮件咨询')}
+        <button
+          type='button'
+          className='enterprise-text-link'
+          onClick={() => apply('custom')}
+        >
+          {t('填写联系方式')}
           <ArrowUpRight size={17} aria-hidden='true' />
-        </a>
+        </button>
       </section>
+      {applicationError && (
+        <p className='enterprise-container' role='alert'>
+          {applicationError}
+        </p>
+      )}
+      {application && userState?.user?.id && (
+        <ApplicationModal
+          key={`${userState.user.id}:${application}`}
+          kind={application}
+          t={t}
+          onClose={() => setApplication(null)}
+          onDone={workspace.refresh}
+        />
+      )}
     </main>
   );
 }

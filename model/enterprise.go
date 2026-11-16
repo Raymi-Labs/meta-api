@@ -152,7 +152,7 @@ type EnterpriseAuditEvent struct {
 func enterpriseModels() []any {
 	return []any{
 		&Enterprise{}, &EnterpriseMember{}, &EnterpriseInvitation{}, &EnterpriseAuditEvent{},
-		&EnterpriseLedger{}, &EnterpriseReservation{}, &EnterpriseTokenBudget{}, &EnterpriseQuotaRequest{},
+		&EnterpriseLedger{}, &EnterpriseReservation{}, &EnterpriseTokenBudget{}, &EnterpriseQuotaRequest{}, &EnterpriseApplication{},
 	}
 }
 
@@ -375,6 +375,23 @@ func bumpEnterprisePolicyTx(tx *gorm.DB, enterpriseID int) error {
 
 // CreateEnterprise 由平台开通企业：指定所有者并配置计费用户组。
 func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUserID int) (*Enterprise, error) {
+	groupOptionsMutex.Lock()
+	defer groupOptionsMutex.Unlock()
+	var ent *Enterprise
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+		ent, err = createEnterpriseTx(tx, actorID, name, billingGroup, timezone, ownerUserID)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ent, nil
+}
+
+// createEnterpriseTx is shared by manual creation and atomic application approval.
+// Caller holds groupOptionsMutex throughout the transaction.
+func createEnterpriseTx(tx *gorm.DB, actorID int, name, billingGroup, timezone string, ownerUserID int) (*Enterprise, error) {
 	name = strings.TrimSpace(name)
 	billingGroup = strings.TrimSpace(billingGroup)
 	timezone = strings.TrimSpace(timezone)
@@ -393,38 +410,34 @@ func CreateEnterprise(actorID int, name, billingGroup, timezone string, ownerUse
 	now := time.Now().Unix()
 	ent := &Enterprise{Name: name, Status: EnterpriseStatusActive, OwnerUserId: ownerUserID, BillingGroup: billingGroup,
 		Timezone: timezone, ModelMode: EnterpriseModelModeInherit, ModelList: "[]", CreatedAt: now, UpdatedAt: now}
-	groupOptionsMutex.Lock()
-	defer groupOptionsMutex.Unlock()
-	err := DB.Transaction(func(tx *gorm.DB) error {
-		if err := validateEnterpriseBillingGroupTx(tx, billingGroup); err != nil {
-			return err
+	if err := validateEnterpriseBillingGroupTx(tx, billingGroup); err != nil {
+		return nil, err
+	}
+	var owner User
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrEnterpriseOwnerAccount
 		}
-		var owner User
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "status").Where("id = ?", ownerUserID).First(&owner).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrEnterpriseOwnerAccount
-			}
-			return err
+		return nil, err
+	}
+	if owner.Status != common.UserStatusEnabled {
+		return nil, ErrEnterpriseOwnerAccount
+	}
+	if err := tx.Create(ent).Error; err != nil {
+		return nil, err
+	}
+	member := &EnterpriseMember{EnterpriseId: ent.Id, UserId: ownerUserID, ActiveUserId: &ownerUserID,
+		Role: EnterpriseRoleOwner, Status: EnterpriseMemberStatusActive, Generation: 1,
+		ModelMode: EnterpriseModelModeInherit, ModelList: "[]", JoinedAt: now, UpdatedAt: now}
+	if err := tx.Create(member).Error; err != nil {
+		if isEnterpriseDuplicateKeyErr(err) {
+			return nil, ErrEnterpriseAlreadyMember
 		}
-		if owner.Status != common.UserStatusEnabled {
-			return ErrEnterpriseOwnerAccount
-		}
-		if err := tx.Create(ent).Error; err != nil {
-			return err
-		}
-		member := &EnterpriseMember{EnterpriseId: ent.Id, UserId: ownerUserID, ActiveUserId: &ownerUserID,
-			Role: EnterpriseRoleOwner, Status: EnterpriseMemberStatusActive, Generation: 1,
-			ModelMode: EnterpriseModelModeInherit, ModelList: "[]", JoinedAt: now, UpdatedAt: now}
-		if err := tx.Create(member).Error; err != nil {
-			if isEnterpriseDuplicateKeyErr(err) {
-				return ErrEnterpriseAlreadyMember
-			}
-			return err
-		}
-		return appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
-			"enterprise.create", "enterprise", ent.Id, nil,
-			map[string]any{"name": name, "billing_group": billingGroup, "owner_user_id": ownerUserID}, "")
-	})
+		return nil, err
+	}
+	err := appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
+		"enterprise.create", "enterprise", ent.Id, nil,
+		map[string]any{"name": name, "billing_group": billingGroup, "owner_user_id": ownerUserID}, "")
 	if err != nil {
 		return nil, err
 	}

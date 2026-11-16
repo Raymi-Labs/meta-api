@@ -1,0 +1,16 @@
+.enterprise-application-field {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+.enterprise-application-modal .semi-modal {
+  margin: 32px auto;
+}
+.enterprise-application-modal .semi-modal-content {
+  height: auto;
+  max-height: calc(100dvh - 64px);
+}
+.enterprise-application-modal .semi-modal-body {
+  overflow-y: auto;
+  min-height: 0;
+}

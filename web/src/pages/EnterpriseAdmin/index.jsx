@@ -40,6 +40,7 @@ import EnterpriseFormModal from './EnterpriseFormModal';
 import EnterpriseFeatureGate from './EnterpriseFeatureGate';
 import WalletModal from './WalletModal';
 import Reservations from './Reservations';
+import Applications from './Applications';
 import '../EnterpriseConsole/enterpriseMembers.css';
 import './enterpriseAdmin.css';
 
@@ -118,6 +119,7 @@ function EnterpriseAdminContent({ featureControl }) {
   const [wallet, setWallet] = useState(null);
   const [status, setStatus] = useState(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [activeTab, setActiveTab] = useState('list');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -301,7 +303,7 @@ function EnterpriseAdminContent({ featureControl }) {
         </div>
       </div>
 
-      <Tabs type='line'>
+      <Tabs type='line' activeKey={activeTab} onChange={setActiveTab}>
         <Tabs.TabPane itemKey='list' tab={t('企业')}>
           <div className='em-card ea-pane'>
             <Table
@@ -324,6 +326,17 @@ function EnterpriseAdminContent({ featureControl }) {
               }}
             />
           </div>
+        </Tabs.TabPane>
+        <Tabs.TabPane itemKey='applications' tab={t('申请审核')}>
+          {activeTab === 'applications' && (
+            <Applications
+              groups={groups}
+              groupsLoading={groupsLoading}
+              groupsError={groupsError}
+              loadGroups={loadGroups}
+              onDone={load}
+            />
+          )}
         </Tabs.TabPane>
         <Tabs.TabPane
           itemKey='review'

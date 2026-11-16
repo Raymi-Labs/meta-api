@@ -19,6 +19,8 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 		selfRoute.GET("/invitation", middleware.CriticalRateLimit(), controller.PreviewEnterpriseInvitation)
 		authed := selfRoute.Group("/", middleware.UserAuth())
 		authed.POST("/invitation/accept", middleware.CriticalRateLimit(), controller.AcceptEnterpriseInvitation)
+		authed.GET("/applications", controller.ListEnterpriseSelfApplications)
+		authed.POST("/applications", middleware.CriticalRateLimit(), controller.CreateEnterpriseApplication)
 		authed.GET("/self", controller.GetEnterpriseSelf)
 		authed.POST("/self/leave", controller.LeaveEnterpriseSelf)
 		authed.GET("/self/requests", controller.ListEnterpriseSelfRequests)
@@ -59,6 +61,8 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 	// 平台后台：开通与冻结、入账与调账、待对账预留。动钱的操作要求超级管理员。
 	adminRoute := apiRouter.Group("/enterprise/admin", enabled, middleware.AdminAuth())
 	{
+		adminRoute.GET("/applications", controller.AdminListEnterpriseApplications)
+		adminRoute.POST("/applications/:application_id/review", controller.AdminReviewEnterpriseApplication)
 		adminRoute.GET("/enterprises", controller.AdminListEnterprises)
 		adminRoute.POST("/enterprises", controller.AdminCreateEnterprise)
 		adminRoute.GET("/reservations", controller.AdminListEnterpriseReservations)

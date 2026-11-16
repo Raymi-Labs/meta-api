@@ -148,7 +148,7 @@ try {
     const button = await page.evaluateHandle(
       (text) =>
         [...document.querySelectorAll('button')].find(
-          (b) => b.textContent.trim() === text,
+          (b) => b.textContent.trim() === text && b.getClientRects().length > 0,
         ),
       text,
     );
@@ -157,10 +157,24 @@ try {
     await button.dispose();
   };
   const open = async () => {
+    const refreshed = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/group/',
+    );
     await clickText('编辑');
+    await refreshed;
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
     await page.waitForSelector('.ec-modal .semi-select');
   };
   const select = async (label) => {
+    // Mobile toasts can cover the select after a failed save.
+    await page.waitForFunction(
+      () => !document.querySelector('.semi-toast-content'),
+    );
     await page.waitForFunction(() => {
       const select = document.querySelector('.ec-modal .semi-select');
       return (
@@ -281,7 +295,9 @@ try {
     true,
   );
   // Let preceding synthetic success/error toasts clear before typing on mobile.
-  await page.waitForFunction(() => !document.querySelector('.semi-toast-content'));
+  await page.waitForFunction(
+    () => !document.querySelector('.semi-toast-content'),
+  );
   const nameInput = await page.$('.ec-modal input');
   await nameInput.click({ clickCount: 3 });
   await nameInput.type('保留中的名称');

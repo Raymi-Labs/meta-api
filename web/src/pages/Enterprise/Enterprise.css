@@ -457,3 +457,10 @@ html.dark .enterprise-page a.enterprise-button.enterprise-primary:hover {
     height: 14px;
   }
 }
+
+.enterprise-contact button.enterprise-text-link {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}

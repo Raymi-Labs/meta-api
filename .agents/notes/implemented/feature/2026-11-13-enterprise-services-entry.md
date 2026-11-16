@@ -29,3 +29,7 @@ Status: implemented
 ## Related notes
 
 [原企业导航](../../implemented/feature/2026-10-25-enterprise-navigation.md)部分取代，仅企业介绍内容和导航名称改为本决定，其余布局及下载按钮规则保留；[企业空间](../../implemented/feature/2026-11-11-enterprise-workspace.md)和[Owner本人审批](../../implemented/bug-fix/2026-11-13-enterprise-owner-self-approval.md)复用；检索命中的首页、文档、通知及部署笔记无改动归属。
+
+## 企业联系申请后续决定
+
+[站内申请与平台审核](2026-11-16-enterprise-applications.md)部分取代公开页仅邮件咨询的入口：用户留联系方式，平台审批后以申请人为所有者创建企业，仍由平台选计费组与入账；其他角色和资金边界不变。
