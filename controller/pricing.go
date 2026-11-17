@@ -27,6 +27,9 @@ func buildPricingTimeRatioMap(pricing []model.Pricing, usableGroup map[string]st
 
 	result := make(map[string]map[string]pricingTimeRatioPreview)
 	for _, item := range pricing {
+		if item.NoDiscount {
+			continue
+		}
 		modelRatios := make(map[string]pricingTimeRatioPreview)
 		for group := range usableGroup {
 			info := ratio_setting.ResolveTimeRatio(item.ModelName, group, userGroup, now)
@@ -70,6 +73,7 @@ func pricingVendorsForModels(pricing []model.Pricing, vendors []model.PricingVen
 func GetPricing(c *gin.Context) {
 	role := getRequestRole(c)
 	pricing := model.FilterPricingByVisibility(model.GetPricing(), role)
+	pricing = pricingWithDiscountPolicy(pricing)
 	pricing, publicVendors := model.PublicPricingMetadata(pricing, pricingVendorsForModels(pricing, model.GetVendors()))
 	userId, exists := c.Get("id")
 	usableGroup := map[string]string{}
@@ -136,4 +140,13 @@ func ResetModelRatio(c *gin.Context) {
 		"success": true,
 		"message": "重置模型倍率成功",
 	})
+}
+
+// Copy the shared catalog before adding live, model-specific billing policy.
+func pricingWithDiscountPolicy(pricing []model.Pricing) []model.Pricing {
+	result := append([]model.Pricing(nil), pricing...)
+	for i := range result {
+		result[i].NoDiscount = ratio_setting.IsNoDiscountModel(result[i].ModelName)
+	}
+	return result
 }

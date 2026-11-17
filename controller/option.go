@@ -310,6 +310,12 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "NoDiscountModels":
+		_, err = ratio_setting.ParseNoDiscountModels(option.Value.(string))
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+			return
+		}
 	case "TimeRatioRules":
 		_, err = ratio_setting.ParseTimeRatioRules(option.Value.(string))
 		if err != nil {

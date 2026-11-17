@@ -1126,6 +1126,7 @@ func RelayTask(c *gin.Context) {
 			taskTimeRatio = relayInfo.PriceData.TimeRatioInfo.EffectiveRatio()
 		}
 		task.PrivateData.BillingContext = &model.TaskBillingContext{
+			NoDiscount:         relayInfo.UsesBaseModelPrice(),
 			ModelPrice:         relayInfo.PriceData.ModelPrice,
 			GroupRatio:         relayInfo.PriceData.GroupRatioInfo.GroupRatio,
 			ModelRatio:         relayInfo.PriceData.ModelRatio,

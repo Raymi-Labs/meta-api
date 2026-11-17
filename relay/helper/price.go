@@ -69,13 +69,21 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) (types
 		relayInfo.UsingGroup = autoGroup.(string)
 	}
 
+	noDiscount := relayInfo.UsesBaseModelPrice()
 	// Enterprise uses its selected group's base multiplier for every route.
 	// Capture it once so retries cannot reprice an admitted request.
 	if relayInfo.EnterpriseId > 0 || relayInfo.EnterpriseBillingGroup != "" {
 		if err := PrepareEnterpriseGroupRatio(relayInfo); err != nil {
 			return types.GroupRatioInfo{}, err
 		}
+		if noDiscount {
+			return groupRatioInfo, nil
+		}
 		groupRatioInfo.GroupRatio = *relayInfo.EnterpriseBillingRatio
+		return groupRatioInfo, nil
+	}
+
+	if noDiscount {
 		return groupRatioInfo, nil
 	}
 
@@ -222,7 +230,7 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 	if err != nil {
 		return types.PriceData{}, err
 	}
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
+	timeRatioInfo := info.ResolvePricingTimeRatio()
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
 	// Check if this model uses tiered_expr billing
@@ -380,7 +388,7 @@ func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types
 	if err != nil {
 		return types.PriceData{}, err
 	}
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
+	timeRatioInfo := info.ResolvePricingTimeRatio()
 	timeRatio := timeRatioInfo.EffectiveRatio()
 
 	modelPrice, success := ratio_setting.GetModelPrice(info.OriginModelName, true)
@@ -445,7 +453,7 @@ func ModelPriceHelperTask(c *gin.Context, info *relaycommon.RelayInfo) (types.Pr
 	if err != nil {
 		return types.PriceData{}, err
 	}
-	timeRatioInfo := ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
+	timeRatioInfo := info.ResolvePricingTimeRatio()
 	quotaBeforeGroup := rawCost / 1_000_000 * common.QuotaPerUnit
 	quota, err := billingexpr.QuotaRoundChecked(quotaBeforeGroup * groupRatioInfo.GroupRatio * timeRatioInfo.EffectiveRatio())
 	if err != nil {

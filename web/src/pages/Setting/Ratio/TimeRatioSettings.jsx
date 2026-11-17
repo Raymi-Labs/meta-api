@@ -273,9 +273,11 @@ export default function TimeRatioSettings({ options, refresh }) {
         },
         {
           key: t('命中规则'),
-          value: preview.matched
-            ? preview.rule_id || t('未命名规则')
-            : t('未命中，使用 1x'),
+          value: preview.no_discount
+            ? t('不参与折扣，按模型基础价计费')
+            : preview.matched
+              ? preview.rule_id || t('未命名规则')
+              : t('未命中，使用 1x'),
         },
         { key: t('规则时区'), value: preview.timezone || '-' },
         {

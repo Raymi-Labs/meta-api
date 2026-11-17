@@ -44,6 +44,7 @@ export function formatTimeRatioLogDetail(other, t = (value) => value) {
   if (!other || typeof other !== 'object') {
     return '';
   }
+  if (other.no_discount === true) return t('不参与折扣，按模型基础价计费');
   const ratio = Number(other.time_ratio);
   const hasRule = Boolean(other.time_ratio_rule);
   if ((!Number.isFinite(ratio) || ratio === 1) && !hasRule) {
@@ -68,6 +69,7 @@ export function formatTimeRatioLogSummary(other, t = (value) => value) {
   if (!other || typeof other !== 'object') {
     return '';
   }
+  if (other.no_discount === true) return t('不参与折扣，按模型基础价计费');
   const ratio = Number(other.time_ratio);
   const hasRule = Boolean(other.time_ratio_rule);
   if ((!Number.isFinite(ratio) || ratio === 1) && !hasRule) {

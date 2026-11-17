@@ -732,6 +732,10 @@ export const calculateModelPrice = ({
       );
     }
   }
+  if (record.no_discount === true) {
+    usedGroupRatio = 1;
+    usedTimeRatioInfo = normalizePricingTimeRatioInfo(null);
+  }
   const timeRatio = usedTimeRatioInfo.ratio;
   const effectiveBillingRatio = usedGroupRatio * timeRatio;
   const sortPrices = getModelSortPrices(record, effectiveBillingRatio);

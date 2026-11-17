@@ -7542,6 +7542,9 @@
     "额度归并": "Consolidación de presupuesto",
     "流式响应头超时（秒）": "Tiempo de espera de cabeceras en streaming (segundos)",
     "流式响应头超时必须为 0 到 600 的整数": "El tiempo de espera de cabeceras en streaming debe ser un entero entre 0 y 600",
-    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 hereda la configuración global. Se aplica a las solicitudes de generación en streaming de Chat, Responses y Gemini, hasta 600 segundos. Solo cambia la espera de cabeceras, no la lectura del cuerpo ni el tiempo de espera total."
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 hereda la configuración global. Se aplica a las solicitudes de generación en streaming de Chat, Responses y Gemini, hasta 600 segundos. Solo cambia la espera de cabeceras, no la lectura del cuerpo ni el tiempo de espera total.",
+    "不参与折扣的模型": "Modelos sin descuento",
+    "不参与折扣，按模型基础价计费": "Sin descuento; se cobra el precio base del modelo",
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Los modelos seleccionados usan el precio base del sitio en todos los grupos, sin multiplicadores personales, empresariales ni horarios. No cambian las conversiones de recargas o paquetes ni los cargos de aceleración. Los ID deben coincidir exactamente; selecciona los alias por separado."
   }
 }

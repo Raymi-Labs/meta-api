@@ -8151,6 +8151,9 @@
     "额度归并": "Gộp ngân sách",
     "流式响应头超时（秒）": "Thời gian chờ tiêu đề phản hồi luồng (giây)",
     "流式响应头超时必须为 0 到 600 的整数": "Thời gian chờ tiêu đề phản hồi luồng phải là số nguyên từ 0 đến 600",
-    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 kế thừa cài đặt chung. Áp dụng cho yêu cầu tạo nội dung dạng luồng Chat, Responses và Gemini, tối đa 600 giây. Chỉ thay đổi thời gian chờ tiêu đề, không thay đổi việc đọc nội dung hay tổng thời gian chờ."
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 kế thừa cài đặt chung. Áp dụng cho yêu cầu tạo nội dung dạng luồng Chat, Responses và Gemini, tối đa 600 giây. Chỉ thay đổi thời gian chờ tiêu đề, không thay đổi việc đọc nội dung hay tổng thời gian chờ.",
+    "不参与折扣的模型": "Mô hình không áp dụng giảm giá",
+    "不参与折扣，按模型基础价计费": "Không giảm giá, tính theo giá cơ bản của mô hình",
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Các mô hình đã chọn dùng giá cơ bản của trang trong mọi nhóm, không áp dụng hệ số cá nhân, doanh nghiệp hoặc khung giờ. Quy đổi nạp tiền, gói và phí tăng tốc trả phí không thay đổi. ID phải khớp chính xác; chọn riêng các bí danh."
   }
 }

@@ -194,6 +194,7 @@ func InitOptionMap() {
 	common.OptionMap["CreateCacheRatio"] = ratio_setting.CreateCacheRatio2JSONString()
 	common.OptionMap["GroupRatio"] = ratio_setting.GroupRatio2JSONString()
 	common.OptionMap["GroupGroupRatio"] = ratio_setting.GroupGroupRatio2JSONString()
+	common.OptionMap["NoDiscountModels"] = ratio_setting.NoDiscountModelsJSON()
 	common.OptionMap["TimeRatioRules"] = ratio_setting.TimeRatioRules2JSONString()
 	common.OptionMap["UserUsableGroups"] = setting.UserUsableGroups2JSONString()
 	common.OptionMap["UserGroups"] = setting.UserGroups2JSONString()
@@ -868,6 +869,8 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 		err = ratio_setting.UpdateModelRatioByJSONString(value)
 	case "GroupRatio":
 		err = ratio_setting.UpdateGroupRatioByJSONString(value)
+	case "NoDiscountModels":
+		err = ratio_setting.UpdateNoDiscountModels(value)
 	case "TimeRatioRules":
 		err = ratio_setting.UpdateTimeRatioRulesByJSONString(value)
 	case "UserUsableGroups":

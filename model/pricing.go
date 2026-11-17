@@ -16,6 +16,7 @@ import (
 )
 
 type Pricing struct {
+	NoDiscount               bool                            `json:"no_discount"`
 	OfficialPricingReview    *OfficialPricingReview          `json:"official_pricing_review,omitempty"`
 	FunctionOverrides        ModelFunctionOverrides          `json:"function_overrides"`
 	DescriptionTranslations  ModelDescriptions               `json:"description_translations,omitempty"`

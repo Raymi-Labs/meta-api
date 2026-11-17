@@ -122,6 +122,7 @@ type TaskPrivateData struct {
 
 // TaskBillingContext 记录任务提交时的计费参数，以便轮询阶段可以重新计算额度。
 type TaskBillingContext struct {
+	NoDiscount         bool               `json:"no_discount,omitempty"`           // 模型统一基础价策略快照
 	ModelPrice         float64            `json:"model_price,omitempty"`           // 模型单价
 	GroupRatio         float64            `json:"group_ratio,omitempty"`           // 分组倍率
 	ModelRatio         float64            `json:"model_ratio,omitempty"`           // 模型倍率

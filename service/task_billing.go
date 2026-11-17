@@ -139,6 +139,9 @@ func taskBillingOther(task *model.Task) map[string]interface{} {
 	other := make(map[string]interface{})
 	other["billing_unit"] = "task"
 	if bc := task.PrivateData.BillingContext; bc != nil {
+		if bc.NoDiscount {
+			other["no_discount"] = true
+		}
 		other["model_price"] = bc.ModelPrice
 		other["group_ratio"] = bc.GroupRatio
 		if bc.TimeRatioRuleID != "" || (bc.TimeRatio > 0 && bc.TimeRatio != 1) {
@@ -309,7 +312,7 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 
 	// 获取模型价格和倍率
 	modelRatio, hasRatioSetting, _ := ratio_setting.GetModelRatio(modelName)
-	if task.EnterpriseId > 0 && task.PrivateData.BillingContext != nil {
+	if task.PrivateData.BillingContext != nil && (task.EnterpriseId > 0 || task.PrivateData.BillingContext.NoDiscount) {
 		modelRatio = task.PrivateData.BillingContext.ModelRatio
 		hasRatioSetting = true
 	}
@@ -339,7 +342,7 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 	} else {
 		finalGroupRatio = groupRatio
 	}
-	if task.EnterpriseId > 0 && task.PrivateData.BillingContext != nil {
+	if task.PrivateData.BillingContext != nil && (task.EnterpriseId > 0 || task.PrivateData.BillingContext.NoDiscount) {
 		finalGroupRatio = task.PrivateData.BillingContext.GroupRatio
 	}
 	timeRatio := 1.0

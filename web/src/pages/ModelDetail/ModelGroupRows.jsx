@@ -87,6 +87,11 @@ export default function ModelGroupRows({
   );
   return (
     <div className='model-group-list'>
+      {model.no_discount && (
+        <p className='model-detail-caption'>
+          {t('不参与折扣，按模型基础价计费')}
+        </p>
+      )}
       {groups.length > 6 && (
         <Input
           aria-label={t('搜索分组')}
@@ -143,7 +148,8 @@ export default function ModelGroupRows({
         const performance = modelPerformance(stats, metric);
         const { latency } = performance;
         const showGenerationMetrics = supportsTextGenerationMetrics(model);
-        const showLatencyMetric = showGenerationMetrics || metric === 'completion';
+        const showLatencyMetric =
+          showGenerationMetrics || metric === 'completion';
         const open = expanded.includes(group);
         return (
           <article className='model-group-row' key={group}>

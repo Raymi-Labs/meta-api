@@ -7542,6 +7542,9 @@
     "额度归并": "Scalenie budżetu",
     "流式响应头超时（秒）": "Limit oczekiwania na nagłówki odpowiedzi strumieniowej (sekundy)",
     "流式响应头超时必须为 0 到 600 的整数": "Limit oczekiwania na nagłówki odpowiedzi strumieniowej musi być liczbą całkowitą od 0 do 600",
-    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 dziedziczy ustawienie globalne. Dotyczy strumieniowych żądań generowania Chat, Responses i Gemini, maksymalnie 600 sekund. Zmienia tylko oczekiwanie na nagłówki, bez zmiany odczytu treści ani całkowitego limitu czasu."
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 dziedziczy ustawienie globalne. Dotyczy strumieniowych żądań generowania Chat, Responses i Gemini, maksymalnie 600 sekund. Zmienia tylko oczekiwanie na nagłówki, bez zmiany odczytu treści ani całkowitego limitu czasu.",
+    "不参与折扣的模型": "Modele bez rabatów",
+    "不参与折扣，按模型基础价计费": "Bez rabatu, rozliczanie według ceny bazowej modelu",
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Wybrane modele korzystają z ceny bazowej witryny we wszystkich grupach, bez mnożników osobistych, firmowych i czasowych. Przeliczenia doładowań i pakietów oraz opłaty za przyspieszenie pozostają bez zmian. ID muszą być identyczne; aliasy wybierz osobno."
   }
 }

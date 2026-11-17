@@ -45,6 +45,7 @@ const RatioSetting = () => {
     GroupRatio: '',
     GroupGroupRatio: '',
     TimeRatioRules: '',
+    NoDiscountModels: '[]',
     ImageRatio: '',
     AudioRatio: '',
     AudioCompletionRatio: '',

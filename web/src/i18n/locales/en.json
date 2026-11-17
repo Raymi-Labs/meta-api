@@ -7754,6 +7754,9 @@
     "额度归并": "Budget consolidation",
     "流式响应头超时（秒）": "Streaming response header timeout (seconds)",
     "流式响应头超时必须为 0 到 600 的整数": "Streaming response header timeout must be an integer from 0 to 600",
-    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 inherits the global setting. Applies to streaming Chat, Responses, and Gemini generation requests, up to 600 seconds. Only changes the wait for response headers, not body reads or the total timeout."
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 inherits the global setting. Applies to streaming Chat, Responses, and Gemini generation requests, up to 600 seconds. Only changes the wait for response headers, not body reads or the total timeout.",
+    "不参与折扣的模型": "Models excluded from discounts",
+    "不参与折扣，按模型基础价计费": "No discounts; billed at the model base price",
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Selected models use the site base price in all groups, without personal, enterprise or time multipliers. Recharge/package conversions and paid acceleration fees remain unchanged. Model IDs match exactly; select aliases separately."
   }
 }

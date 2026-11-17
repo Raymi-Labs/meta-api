@@ -510,3 +510,41 @@ test('shorter means retention, not cheaper; missing short price keeps the long i
   assert.equal(item(dynamic, 'tiered-cc'), undefined);
   assert.equal(item(dynamic, 'tiered-cc1h').value, '$8.0000');
 });
+
+test('no-discount catalog, comparison and sorting use base prices in every group', () => {
+  const groupRatio = { standard: 0.3, free: 0, expensive: 2 };
+  const timeRatioMap = {
+    'fixture-text': {
+      standard: { ratio: 0.5 },
+      free: { ratio: 0.2 },
+      expensive: { ratio: 3 },
+    },
+  };
+  const record = { no_discount: true, enable_groups: Object.keys(groupRatio) };
+  for (const selectedGroup of ['all', ...Object.keys(groupRatio)]) {
+    const result = pricing(record, { groupRatio, selectedGroup, timeRatioMap });
+    assert.equal(result.data.usedGroupRatio, 1);
+    assert.equal(result.data.timeRatio, 1);
+    assert.equal(item(result, 'input').value, '$4.0000');
+    assert.equal(item(result, 'completion').value, '$20.0000');
+    assert.equal(item(result, 'cache').value, '$0.4000');
+    assert.deepEqual(result.data.sortPrices, pricing().data.sortPrices);
+  }
+  assert.equal(
+    item(pricing({}, { groupRatio, timeRatioMap }), 'input').value,
+    '$0.6000',
+  );
+  for (const variant of [
+    { quota_type: 1, model_price: 0.2 },
+    { billing_mode: 'tiered_expr', billing_expr: 'v1: p * 2 + c * 6' },
+    { quota_type: 2, audio_duration_price: 0.25 },
+  ]) {
+    const actual = pricing(
+      { ...variant, ...record },
+      { groupRatio, timeRatioMap },
+    );
+    const expected = pricing(variant);
+    assert.deepEqual(actual.items, expected.items);
+    assert.deepEqual(actual.data.sortPrices, expected.data.sortPrices);
+  }
+});

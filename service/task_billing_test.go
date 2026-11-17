@@ -11,6 +11,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -715,4 +716,27 @@ func TestSettle_NonPerCall_AdaptorAdjustWorks(t *testing.T) {
 	log := getLastLog(t)
 	require.NotNil(t, log)
 	assert.Equal(t, model.LogTypeRefund, log.Type)
+}
+
+func TestNoDiscountTaskSettlementKeepsSnapshot(t *testing.T) {
+	truncate(t)
+	oldGroups, oldModels := ratio_setting.GroupRatio2JSONString(), ratio_setting.ModelRatio2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldGroups))
+		require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(oldModels))
+	})
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":0.1}`))
+	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"test-model":9}`))
+	seedUser(t, 91, 10000)
+	seedToken(t, 91, 91, "sk-no-discount", 5000)
+	seedChannel(t, 91)
+	task := makeTask(91, 91, 1000, 91, BillingSourceWallet, 0)
+	task.PrivateData.BillingContext.NoDiscount = true
+	task.PrivateData.BillingContext.ModelRatio = 2
+	task.PrivateData.BillingContext.GroupRatio = 1
+	RecalculateTaskQuotaByTokens(context.Background(), task, 1000)
+	require.Equal(t, 2000, task.Quota)
+	require.Equal(t, 9000, getUserQuota(t, 91))
+	require.Equal(t, 4000, getTokenRemainQuota(t, 91))
+	require.Equal(t, true, taskBillingOther(task)["no_discount"])
 }

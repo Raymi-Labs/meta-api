@@ -22,6 +22,7 @@ import { Radio, RadioGroup } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
 import ModelPricingEditor from './components/ModelPricingEditor';
 import ModelRatioSettings from './ModelRatioSettings';
+import ModelDiscountSettings from './ModelDiscountSettings';
 
 export default function ModelPricingCombined({ options, refresh }) {
   const { t } = useTranslation();
@@ -29,6 +30,7 @@ export default function ModelPricingCombined({ options, refresh }) {
 
   return (
     <div>
+      <ModelDiscountSettings options={options} refresh={refresh} />
       <div style={{ marginTop: 12, marginBottom: 16 }}>
         <RadioGroup
           type='button'

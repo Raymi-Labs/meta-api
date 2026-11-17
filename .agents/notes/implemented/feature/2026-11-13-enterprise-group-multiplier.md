@@ -34,3 +34,5 @@ Status: implemented
 ## Related notes
 
 [API对等](../../implemented/feature/2026-11-13-enterprise-api-parity.md)部分取代其企业特殊倍率决定，资金/权限隔离继续有效。[企业工作空间](../../implemented/feature/2026-11-11-enterprise-workspace.md)部分重叠，复用企业字段与平台权限。[用户组一致性](../../implemented/bug-fix/2026-11-09-user-group-consistency.md)保留个人身份与渠道分离；企业选择价格组不登记为个人用户组。既有多组路由、服务入口/UI与交接记录仅关联、不改变其决定；被否的托管路由方案不恢复。
+
+[模型统一基础价](2026-11-17-model-no-discount.md)增加管理员显式选择的模型例外：命中模型在所有分组使用1倍分组及时段倍率，目录报价与实际扣费一致；未命中模型保留本文规则。

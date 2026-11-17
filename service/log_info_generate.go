@@ -212,6 +212,9 @@ func appendTimeRatioInfo(relayInfo *relaycommon.RelayInfo, other map[string]inte
 	if relayInfo == nil || other == nil {
 		return
 	}
+	if relayInfo.NoDiscountSnapshot != nil && *relayInfo.NoDiscountSnapshot {
+		other["no_discount"] = true
+	}
 	timeRatioInfo := relayInfo.PriceData.TimeRatioInfo
 	if !timeRatioInfo.Matched() && timeRatioInfo.EffectiveRatio() == 1 {
 		return

@@ -7874,6 +7874,9 @@
     "额度归并": "Consolidation du budget",
     "流式响应头超时（秒）": "Délai des en-têtes de réponse en streaming (secondes)",
     "流式响应头超时必须为 0 到 600 的整数": "Le délai des en-têtes de réponse en streaming doit être un entier de 0 à 600",
-    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 hérite du réglage global. S’applique aux requêtes de génération Chat, Responses et Gemini en streaming, jusqu’à 600 secondes. Seule l’attente des en-têtes change, pas la lecture du corps ni le délai total."
+    "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 hérite du réglage global. S’applique aux requêtes de génération Chat, Responses et Gemini en streaming, jusqu’à 600 secondes. Seule l’attente des en-têtes change, pas la lecture du corps ni le délai total.",
+    "不参与折扣的模型": "Modèles exclus des remises",
+    "不参与折扣，按模型基础价计费": "Sans remise, facturé au tarif de base du modèle",
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Les modèles sélectionnés utilisent le tarif de base du site dans tous les groupes, sans multiplicateurs personnels, entreprise ou horaires. Les conversions de recharges et forfaits et les frais d’accélération restent inchangés. Les ID doivent correspondre exactement ; sélectionnez les alias séparément."
   }
 }

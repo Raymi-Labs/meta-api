@@ -15,6 +15,7 @@ import (
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/setting/model_setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -201,6 +202,7 @@ type RelayInfo struct {
 	UsingGroup               string   // 使用的分组，当auto跨分组重试时，会变动
 	UserGroup                string   // 用户授权分组，不随付款方改变
 	EnterpriseBillingGroup   string   // 企业价格来源；不得用于权限或选路
+	NoDiscountSnapshot       *bool    // 首次计价固定模型折扣策略，重试与实时增量复用
 	EnterpriseBillingRatio   *float64 // 首次取价固定的企业分组倍率，渠道重试和配置变更不重定价
 	TokenUnlimited           bool
 	StartTime                time.Time
@@ -1059,4 +1061,20 @@ func RemoveGeminiDisabledFields(jsonData []byte) ([]byte, error) {
 		}
 	}
 	return result, nil
+}
+
+// UsesBaseModelPrice freezes both enabled and disabled policies for this request.
+func (info *RelayInfo) UsesBaseModelPrice() bool {
+	if info.NoDiscountSnapshot == nil {
+		enabled := ratio_setting.IsNoDiscountModel(info.OriginModelName)
+		info.NoDiscountSnapshot = &enabled
+	}
+	return *info.NoDiscountSnapshot
+}
+
+func (info *RelayInfo) ResolvePricingTimeRatio() types.TimeRatioInfo {
+	if info.UsesBaseModelPrice() {
+		return types.TimeRatioInfo{Ratio: 1}
+	}
+	return ratio_setting.ResolveTimeRatio(info.OriginModelName, info.UsingGroup, info.BillingUserGroup(), info.StartTime)
 }
