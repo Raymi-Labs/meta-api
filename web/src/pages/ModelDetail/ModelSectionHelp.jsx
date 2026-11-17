@@ -18,11 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Popover } from '@douyinfe/semi-ui';
+import Popover from '@douyinfe/semi-ui/lib/es/popover';
 import { Info } from 'lucide-react';
+import { useIsMobile } from '../../hooks/common/useIsMobile';
 
 export default function ModelSectionHelp({ label, children }) {
   const [visible, setVisible] = useState(false);
+  const compact = useIsMobile();
   const hideTimer = useRef();
   const show = () => {
     clearTimeout(hideTimer.current);
@@ -41,8 +43,8 @@ export default function ModelSectionHelp({ label, children }) {
     <Popover
       trigger='custom'
       visible={visible}
-      position='bottomLeft'
-      showArrow
+      position='bottom'
+      showArrow={!compact}
       closeOnEsc
       guardFocus={false}
       returnFocusOnClose={false}
@@ -51,6 +53,7 @@ export default function ModelSectionHelp({ label, children }) {
       content={
         <div
           className='model-section-help-content'
+          style={compact ? { width: '100%' } : undefined}
           onMouseEnter={show}
           onMouseLeave={scheduleHide}
           onFocus={show}

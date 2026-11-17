@@ -1,6 +1,6 @@
 {
   "MiniMax-M2.5": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "TTseadanco2.5-720": {
@@ -8,7 +8,7 @@
     "code": "identity_review"
   },
   "claude-opus-4-20250514": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "codex-auto-review": {
@@ -16,11 +16,11 @@
     "code": "identity_review"
   },
   "deepseek-v4-flash-0731": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "identity_review"
   },
   "deepseek-v4.1-flash": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "identity_review"
   },
   "deepseek-v4.1-flash-1017": {
@@ -72,23 +72,23 @@
     "code": "source_available"
   },
   "gpt-6.2-astra": {
-    "checked_at": "2026-11-15",
-    "code": "identity_review"
+    "code": "source_unavailable",
+    "checked_at": "2026-11-17"
   },
   "gpt-6.2-sol": {
-    "checked_at": "2026-11-15",
-    "code": "identity_review"
+    "code": "source_unavailable",
+    "checked_at": "2026-11-17"
   },
   "gpt-image-2.6": {
-    "checked_at": "2026-11-15",
-    "code": "identity_review"
+    "code": "identity_review",
+    "checked_at": "2026-11-17"
   },
   "grok-4.7-build-fast": {
-    "checked_at": "2026-11-15",
-    "code": "identity_review"
+    "code": "source_unavailable",
+    "checked_at": "2026-11-17"
   },
   "kimi-k2.5": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "lfm-2.5-2.6b:free": {
@@ -120,35 +120,35 @@
     "code": "platform_variant"
   },
   "qwen-image-max": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen-plus-2025-09-11": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen-turbo": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen-vl-max": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen3-235b-a22b": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen3-coder-plus": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen3-max": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "qwen3-max-preview": {
-    "checked_at": "2026-11-15",
+    "checked_at": "2026-11-17",
     "code": "legacy_review"
   },
   "snow-grok-imagine-video": {

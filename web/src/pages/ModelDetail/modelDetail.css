@@ -879,6 +879,7 @@ html.dark .model-metric-chart {
   overflow-wrap: anywhere;
 }
 .model-chart-reference-values span,
+.model-chart-reference-values small,
 .model-chart-reference-window {
   font-size: 12px;
   color: var(--detail-muted);
@@ -1702,4 +1703,35 @@ html.dark .model-metric-chart {
   line-height: 1.5;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* Keep help panels within the viewport when an anchored popover cannot fit. */
+@media (max-width: 767px) {
+  .semi-portal-inner:has(.model-section-help-content) {
+    position: fixed !important;
+    min-width: 0 !important;
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+    top: auto !important;
+    bottom: 16px !important;
+    transform: none !important;
+  }
+  .semi-portal-inner:has(.model-section-help-content) .semi-popover-wrapper {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+.model-group-metric-state {
+  color: var(--detail-muted);
+  font-size: 12px;
+  white-space: normal;
+}
+.model-group-uptime.model-group-metric-state {
+  text-align: left;
+}
+
+.model-group-pricing-values.model-group-no-cache {
+  grid-template-columns: minmax(0, 1fr);
 }

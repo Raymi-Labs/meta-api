@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -150,4 +152,47 @@ func TestOpenRouterPerformanceOnlyEnabledExactAuthorizedRoutes(t *testing.T) {
 	require.Len(t, refs["local"], 1)
 	require.Empty(t, OpenRouterPerformance(context.Background(), nil, []string{"local"}))
 	require.Empty(t, OpenRouterPerformance(context.Background(), []string{"public"}, []string{"vendor/model"}), "mapping targets do not grant access to undeclared model aliases")
+}
+
+func TestOpenRouterDailyAvailabilityReference(t *testing.T) {
+	raw, err := os.ReadFile("testdata/openrouter_uptime_public.json")
+	require.NoError(t, err)
+	s, err := fetchPerformance(context.Background(), fixtureClient(string(raw)), "test-only", "recursive/flint-v1.0:free")
+	require.NoError(t, err)
+	r := selectPerformance(s, performancePolicy{}, "recursive/flint-v1.0:free")
+	require.NotNil(t, r)
+	require.NotNil(t, r.UptimeRate)
+	require.Equal(t, 100.0, *r.UptimeRate)
+	require.EqualValues(t, 86400, r.UptimeWindowSeconds)
+	s.Endpoints[0].Latency, s.Endpoints[0].Throughput = nil, nil
+	for _, value := range []float64{0, 42.5, 100} {
+		s.Endpoints[0].UptimeLastDay = &value
+		r = selectPerformance(s, performancePolicy{}, "recursive/flint-v1.0:free")
+		require.NotNil(t, r, "availability alone must produce a display reference")
+		require.Equal(t, value, *r.UptimeRate)
+		require.Nil(t, r.TTFTMs)
+	}
+	for _, value := range []float64{-1, 101, math.NaN(), math.Inf(1)} {
+		s.Endpoints[0].UptimeLastDay = &value
+		require.Nil(t, selectPerformance(s, performancePolicy{}, "recursive/flint-v1.0:free"))
+	}
+	s.Endpoints[0].UptimeLastDay = nil
+	require.Nil(t, selectPerformance(s, performancePolicy{}, "recursive/flint-v1.0:free"), "operational status does not imply 100 percent")
+}
+
+func TestAvailabilityUsesConfiguredProviderNotHighestPercentage(t *testing.T) {
+	s, err := fetchPerformance(context.Background(), fixtureClient(performanceFixture), "test-only", "vendor/model")
+	require.NoError(t, err)
+	zero, full := 0.0, 100.0
+	s.Endpoints[0].UptimeLastDay = &zero
+	s.Endpoints[1].UptimeLastDay = &full
+	r := selectPerformance(s, performancePolicy{}, "vendor/model")
+	require.Equal(t, "cheap", r.Provider)
+	require.Zero(t, *r.UptimeRate)
+	s.Endpoints[0].UptimeLastDay = nil
+	r = selectPerformance(s, performancePolicy{}, "vendor/model")
+	require.Equal(t, "cheap", r.Provider)
+	require.Nil(t, r.UptimeRate, "do not use a pricier endpoint to fill missing uptime")
+	s.FetchedAt = time.Now().Add(-performanceTTL)
+	require.Nil(t, selectPerformance(s, performancePolicy{}, "vendor/model"))
 }

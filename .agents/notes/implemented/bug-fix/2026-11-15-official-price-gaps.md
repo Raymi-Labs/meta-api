@@ -12,6 +12,8 @@ Status: implemented
 
 Glimpse 读取 Elorian 固定厂家发布页的明确输入/输出单价，注明2026-10-16发布参考价，未披露缓存价格不填充。40项审计形成不含价格的核实状态快照。仅在公开层最终无价格时返回统一状态（来源可核实、历史条目待核实、型号映射待核实、免费变体、一般待核实），附核实日期；未知新模型默认待核实，不宣称官方未定价。实际有效价优先，自动清除空态提示；不新增数据库字段、不改管理员资料或本站计费。详情与各分组消费同一状态和翻译。
 
+[后续参考范围与展示](../feature/2026-11-17-official-price-reference-scope.md)部分替代重复外显空态：缺口原因改按需展开，区分来源访问失败；历史价使用FAQ隔离，当前参考表与计费不变。
+
 ## Existing notes audit
 
 [Google迁移](../../implemented/bug-fix/2026-11-15-gemini-pricing-migration.md)部分扩展；[官方覆盖](../../implemented/bug-fix/2026-11-01-official-pricing-coverage.md)继续负责条件完整性；[公开来源](../../implemented/bug-fix/2026-11-06-public-model-provenance.md)继续排除平台价。不改变这些决定。其他渠道Claude缓存改动与本任务无关。

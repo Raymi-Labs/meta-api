@@ -21,22 +21,17 @@ import React from 'react';
 import ModelSectionHelp from './ModelSectionHelp';
 import {
   officialPriceColumns,
-  officialPricingUnavailable,
   visibleOfficialTiers,
   visibleOfficialNotes,
   OFFICIAL_PRICE_UNITS,
   formatOfficialPrice,
 } from '../../helpers/modelOfficialPricing';
 
-export default function ModelOfficialPricing({
-  pricing,
-  provenance,
-  review,
-  t,
-}) {
+export default function ModelOfficialPricing({ pricing, provenance, t }) {
   const tiers = visibleOfficialTiers(pricing);
   const notes = visibleOfficialNotes(pricing?.notes);
   const columns = officialPriceColumns(tiers);
+  if (!tiers.length || !columns.length) return null;
   return (
     <section
       id='official-pricing'
@@ -62,51 +57,40 @@ export default function ModelOfficialPricing({
           </ModelSectionHelp>
         </h2>
       </div>
-      {tiers.length && columns.length ? (
-        <div
-          className='model-official-table-wrap'
-          tabIndex={0}
-          role='region'
-          aria-label={t('官方参考价')}
-        >
-          <table>
-            <thead>
-              <tr>
-                <th>{t('档位')}</th>
-                {columns.map(([key, label]) => (
-                  <th key={key}>{t(label)}</th>
-                ))}
-                <th>{t('单位')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tiers.map((tier, index) => (
-                <tr key={index}>
-                  <th scope='row'>{tier.label}</th>
-                  {columns.map(([key]) => (
-                    <td key={key}>
-                      {formatOfficialPrice(tier[key], pricing.currency)}
-                    </td>
-                  ))}
-                  <td>
-                    {pricing.currency} /{' '}
-                    {OFFICIAL_PRICE_UNITS[tier.unit] || tier.unit}
-                  </td>
-                </tr>
+      <div
+        className='model-official-table-wrap'
+        tabIndex={0}
+        role='region'
+        aria-label={t('官方参考价')}
+      >
+        <table>
+          <thead>
+            <tr>
+              <th>{t('档位')}</th>
+              {columns.map(([key, label]) => (
+                <th key={key}>{t(label)}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className='model-official-empty'>
-          <p>{t(officialPricingUnavailable(review))}</p>
-          {review?.checked_at && (
-            <p className='model-detail-caption'>
-              {t('最近核实：{{date}}', { date: review.checked_at })}
-            </p>
-          )}
-        </div>
-      )}
+              <th>{t('单位')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiers.map((tier, index) => (
+              <tr key={index}>
+                <th scope='row'>{tier.label}</th>
+                {columns.map(([key]) => (
+                  <td key={key}>
+                    {formatOfficialPrice(tier[key], pricing.currency)}
+                  </td>
+                ))}
+                <td>
+                  {pricing.currency} /{' '}
+                  {OFFICIAL_PRICE_UNITS[tier.unit] || tier.unit}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

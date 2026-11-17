@@ -30,7 +30,7 @@ import {
   formatChartDetailValue,
   chartDomain,
   contiguousChartPoints,
-  chartPerformanceReference,
+  chartSummary,
 } from '../../helpers/modelChartDisplay';
 
 export const GROUP_CHART_COLORS = ['#16b8a6', '#f5a623', '#5285ed', '#9b72cf'];
@@ -76,12 +76,27 @@ export default function ModelMetricChart({
       [...map.values()].map((point) => chartDisplayValue(point, metric)),
     )
     .filter((value) => value != null);
-  const references = groups.map((group) =>
-    chartPerformanceReference(group, metric),
-  );
-  const hasReference = references.some((value) => value != null);
+  const summaries = groups.map((group) => chartSummary(group, metric));
+  const hasReference = summaries.some((summary) => summary.kind === 'external');
+  const hasSnapshot = summaries.some((summary) => summary.value != null);
+  const externalWindow =
+    metric === 'uptime_rate'
+      ? t('最近 {{hours}} 小时', { hours: 24 })
+      : t('近30分钟') + ' · P50';
+  const summaryLabel = (summary) =>
+    summary.kind === 'external'
+      ? externalWindow
+      : summary.kind === 'history'
+        ? t('最近有效统计')
+        : summary.kind === 'measured'
+          ? t('当前汇总')
+          : '';
   const displayTitle =
-    hasReference && metric === 'avg_ttft_ms' ? t('首字时间') + ' · s' : title;
+    hasReference && metric === 'avg_ttft_ms'
+      ? t('首字时间') + ' · s'
+      : hasReference && metric === 'uptime_rate' && !nums.length
+        ? 'Uptime · ' + t('参考可用率')
+        : title;
   const { min, max, ticks } = chartDomain(nums, metric);
   const tickLabels = ticks.map((value) =>
     formatChartValue(
@@ -320,22 +335,26 @@ export default function ModelMetricChart({
               </div>
             )}
           </>
-        ) : hasReference ? (
+        ) : hasSnapshot ? (
           <div className='model-chart-reference-values'>
             {groups.map((group, i) => (
               <div key={group.group}>
                 <span>{group.group}</span>
-                <strong>{format(references[i])}</strong>
+                <strong>
+                  {summaries[i].value == null
+                    ? t('暂无统计数据')
+                    : format(summaries[i].value)}
+                </strong>
+                {summaryLabel(summaries[i]) && (
+                  <small>{summaryLabel(summaries[i])}</small>
+                )}
               </div>
             ))}
           </div>
         ) : (
-          <div className='model-chart-empty'>{t('暂无数据')}</div>
+          <div className='model-chart-empty'>{t('暂无统计数据')}</div>
         )}
       </div>
-      {hasReference && nums.length === 0 && (
-        <p className='model-chart-reference-window'>{t('近30分钟')} · P50</p>
-      )}
       <div className='model-chart-legend'>
         {groups.map((group, i) => (
           <div key={group.group}>
@@ -343,14 +362,16 @@ export default function ModelMetricChart({
             <span title={group.group}>{group.group}</span>
             <strong
               title={
-                references[i] != null
-                  ? detail(references[i])
-                  : pointDetail(group)
+                summaries[i].value == null
+                  ? t('暂无统计数据')
+                  : detail(summaries[i].value)
               }
             >
-              {format(chartDisplayValue(group, metric) ?? references[i])}
-              {references[i] != null && nums.length > 0 && (
-                <small> · {t('近30分钟')} · P50</small>
+              {summaries[i].value == null
+                ? t('暂无统计数据')
+                : format(summaries[i].value)}
+              {summaries[i].kind === 'external' && nums.length > 0 && (
+                <small> · {externalWindow}</small>
               )}
             </strong>
           </div>

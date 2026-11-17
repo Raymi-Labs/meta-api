@@ -7551,6 +7551,13 @@
     "无法恢复操作，请联系管理员核对": "İşlem kurtarılamadı. Yöneticiyle iletişime geçin.",
     "结果待确认，请查询或重试原操作": "Sonuç doğrulanmadı. Asıl işlemi kontrol edin veya yeniden deneyin.",
     "无法保存操作，请检查浏览器存储后重试": "İşlem kaydedilemedi. Tarayıcı depolamasını kontrol edin.",
-    "全部回收": "Tümünü geri al"
+    "全部回收": "Tümünü geri al",
+    "官方价格来源暂时无法访问": "Resmî fiyat kaynağına geçici olarak erişilemiyor",
+    "登录后查看": "Görmek için giriş yapın",
+    "暂未开启": "Etkin değil",
+    "参考可用率": "Referans kullanılabilirlik",
+    "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Model uç noktasının son 24 saatte bildirilen kullanılabilirliği; bu sitedeki grubun ölçümü değildir.",
+    "更新时间：{{time}}": "Güncellendi: {{time}}",
+    "最近有效统计": "Son geçerli ölçüm"
   }
 }

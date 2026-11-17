@@ -95,7 +95,7 @@ func GetGroupHealth(c *gin.Context) {
 	if modelName != "" && len(groups) > 0 {
 		needs := []string{}
 		for _, g := range result.Groups {
-			if needsPerformanceReference(g.Metrics) {
+			if needsPerformanceReference(g.Metrics) || needsUptimeReference(g.Metrics) {
 				needs = append(needs, g.Group)
 			}
 		}
@@ -177,4 +177,9 @@ func GetModelHealthSummaries(c *gin.Context) {
 func needsPerformanceReference(m grouphealth.Metrics) bool {
 	return (m.AvgTTFTMs == nil && (m.LastValid == nil || m.LastValid.TTFT == nil)) ||
 		(m.AvgOutputTPS == nil && (m.LastValid == nil || m.LastValid.OutputTPS == nil))
+}
+
+// Local measurements, including zero, always take precedence over references.
+func needsUptimeReference(m grouphealth.Metrics) bool {
+	return m.UptimeRate == nil
 }

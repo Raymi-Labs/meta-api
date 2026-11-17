@@ -7,6 +7,7 @@ import {
 import {
   chartDisplayValue,
   chartPerformanceReference,
+  chartSummary,
 } from '../src/helpers/modelChartDisplay';
 const now = Date.UTC(2026, 10, 1, 12);
 const day = Date.UTC(2026, 10, 1) / 1000;
@@ -99,4 +100,93 @@ test('P50 is a current empty-plot reference, never a replacement for actual hist
     null,
   );
   assert.deepEqual(stats, before);
+});
+
+test('uptime snapshot extends the same reference rules and never becomes history', () => {
+  const ref = {
+    source: 'openrouter',
+    percentile: 50,
+    fetched_at: now / 1000 - 5,
+    expires_at: now / 1000 + 295,
+    uptime_rate: 99.9,
+    uptime_window_seconds: 86400,
+    ttft_ms: 2000,
+    output_tps: 30,
+  };
+  const group = {
+    uptime_sample_count: 0,
+    uptime_rate: null,
+    performance_reference: ref,
+    series: [{ ts: day, uptime_sample_count: 0, uptime_rate: null }],
+  };
+  const before = structuredClone(group);
+  assert.equal(chartPerformanceReference(group, 'uptime_rate', now), 99.9);
+  assert.deepEqual(chartSummary(group, 'uptime_rate', now), {
+    value: 99.9,
+    kind: 'external',
+  });
+  assert.equal(chartDisplayValue(group.series[0], 'uptime_rate'), null);
+  assert.equal(
+    chartPerformanceReference(
+      {
+        ...group,
+        series: [{ ts: day, uptime_rate: 0, uptime_sample_count: 1 }],
+      },
+      'uptime_rate',
+      now,
+    ),
+    null,
+  );
+  assert.deepEqual(
+    chartSummary(
+      { ...group, uptime_rate: 0, uptime_sample_count: 1 },
+      'uptime_rate',
+      now,
+    ),
+    { value: 0, kind: 'measured' },
+  );
+  assert.deepEqual(group, before);
+});
+test('available site summaries and last valid cache/completion fill snapshots only', () => {
+  for (const [metric, key, value, expected] of [
+    ['avg_ttft_ms', 'ttft', 2500, 2.5],
+    ['avg_output_tps', 'output_tps', 30, 30],
+    ['avg_completion_ms', 'completion', 5000, 5],
+    ['cache_hit_rate', 'cache', 0, 0],
+  ]) {
+    const g = {
+      group: 'g',
+      series: [],
+      last_valid: { [key]: { value, ts: day - 3600 } },
+    };
+    assert.deepEqual(chartSummary(g, metric, now), {
+      value: expected,
+      kind: 'history',
+    });
+    assert.equal(chartDisplayValue(g, metric), null);
+    assert.deepEqual(chartSummary({ ...g, [metric]: 0 }, metric, now), {
+      value: 0,
+      kind: 'measured',
+    });
+  }
+  const unsupported = {
+    performance_reference: {
+      source: 'openrouter',
+      percentile: 50,
+      fetched_at: now / 1000 - 5,
+      expires_at: now / 1000 + 295,
+      ttft_ms: 10,
+      output_tps: 100,
+      cache_hit_rate: 80,
+      avg_completion_ms: 50,
+    },
+    series: [],
+  };
+  for (const metric of [
+    'cache_hit_rate',
+    'avg_completion_ms',
+    'total_tokens',
+    'request_count',
+  ])
+    assert.equal(chartSummary(unsupported, metric, now).value, null);
 });

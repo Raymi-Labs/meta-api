@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { chartMetricValue } from './modelPresentation';
-import { modelPerformance } from './modelPerformance';
+import { modelPerformance, modelUptime } from './modelPerformance';
 import {
   getUptimeRate,
   getHealthMeasurement,
@@ -86,12 +86,16 @@ export function chartMeasurement(point, metric) {
 // A current snapshot can replace an empty plot, but cannot become hourly history.
 export function chartPerformanceReference(group, metric, now = Date.now()) {
   if (
-    !['avg_ttft_ms', 'avg_output_tps'].includes(metric) ||
+    !['avg_ttft_ms', 'avg_output_tps', 'uptime_rate'].includes(metric) ||
     (group.series || []).some(
       (point) => chartDisplayValue(point, metric) != null,
     )
   )
     return null;
+  if (metric === 'uptime_rate') {
+    const uptime = modelUptime(group, now);
+    return uptime.external ? uptime.value : null;
+  }
   const display = modelPerformance(group, 'ttft', now);
   if (metric === 'avg_ttft_ms' && display.externalLatency) {
     return display.latency.value / 1000;
@@ -151,4 +155,33 @@ export function contiguousChartPoints(previous, current, bucketSeconds = 3600) {
     current > previous &&
     current - previous <= bucketSeconds
   );
+}
+
+// Summaries can show current/history/reference values without becoming chart points.
+export function chartSummary(group, metric, now = Date.now()) {
+  const actual = chartDisplayValue(group, metric);
+  if (actual != null) return { value: actual, kind: 'measured' };
+  const external = chartPerformanceReference(group, metric, now);
+  if (external != null) return { value: external, kind: 'external' };
+  // Existing same-scope last-valid measurements belong only in summaries.
+  const field = {
+    avg_ttft_ms: 'ttft',
+    avg_output_tps: 'output_tps',
+    cache_hit_rate: 'cache',
+    avg_completion_ms: 'completion',
+  }[metric];
+  if (field) {
+    const measured = getHealthMeasurement(group, field, true);
+    if (
+      measured.referenceTs &&
+      measured.value != null &&
+      Number.isFinite(Number(measured.value))
+    ) {
+      return {
+        value: isLatencyMetric(metric) ? measured.value / 1000 : measured.value,
+        kind: 'history',
+      };
+    }
+  }
+  return { value: null, kind: 'missing' };
 }

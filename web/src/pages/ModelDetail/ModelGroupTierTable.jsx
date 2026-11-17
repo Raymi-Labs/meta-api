@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
+import ModelSectionHelp from './ModelSectionHelp';
 
 export default function ModelGroupTierTable({ rows, model, data }) {
   const columns = [
@@ -50,10 +51,16 @@ export default function ModelGroupTierTable({ rows, model, data }) {
               <th scope='row'>
                 {row.label}
                 {row.condition && <small>{row.condition}</small>}
-                {(row.comparisonNote || row.comparisonUnavailable) && (
-                  <small className='model-group-comparison-note'>
-                    {data.t(row.comparisonNote || row.comparisonUnavailable)}
-                  </small>
+                {(row.comparisonNote ||
+                  (model.official_pricing?.tiers?.length > 0 &&
+                    row.comparisonUnavailable)) && (
+                  <ModelSectionHelp
+                    label={data.t('官方参考价') + ': ' + row.label}
+                  >
+                    <p>
+                      {data.t(row.comparisonNote || row.comparisonUnavailable)}
+                    </p>
+                  </ModelSectionHelp>
                 )}
               </th>
               {columns.map(([key]) => {

@@ -66,7 +66,9 @@ export const getPricingTableColumns = ({
   };
   const renderPrice = (record, keys, includeFixed = false) => {
     const { data, items } = pricing(record);
-    const videoItems = items.filter((item) => item.key.startsWith('video-'));
+    const videoItems = items.filter(
+      (item) => item.key.startsWith('video-') || item.key.startsWith('image-'),
+    );
     if (videoItems.length) {
       if (!includeFixed) return '—';
       return (

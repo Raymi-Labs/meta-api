@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
-import { modelPerformance } from '../src/helpers/modelPerformance.js';
+import {
+  modelPerformance,
+  modelUptime,
+} from '../src/helpers/modelPerformance.js';
 const now = 1800000000000;
 const reference = {
   source: 'openrouter',
@@ -76,5 +79,80 @@ test('historical throughput fills independently and current zero wins over histo
     { value: 100, ts: 'bad' },
   ]) {
     assert.equal(calculate({ last_valid: { output_tps: ref } }).throughput, 20);
+  }
+});
+
+test('daily uptime fills only missing site measurements without mutating statistics', () => {
+  const stats = {
+    uptime_sample_count: 0,
+    uptime_rate: null,
+    performance_reference: {
+      ...reference,
+      uptime_rate: 98.76,
+      uptime_window_seconds: 86400,
+    },
+  };
+  const before = structuredClone(stats);
+  assert.equal(modelUptime(stats, now).value, 98.76);
+  assert.equal(modelUptime(stats, now).external, true);
+  assert.equal(
+    modelUptime({ ...stats, uptime_rate: 0, uptime_sample_count: 5 }, now)
+      .external,
+    false,
+  );
+  assert.equal(
+    modelUptime({ ...stats, uptime_rate: 0, uptime_sample_count: 5 }, now)
+      .value,
+    0,
+  );
+  assert.deepEqual(stats, before);
+  assert.equal(
+    modelUptime(
+      { success_rate: 0, performance_reference: stats.performance_reference },
+      now,
+    ).external,
+    false,
+  );
+});
+test('uptime rejects wrong sources, periods, invalid numbers and stale references', () => {
+  const ref = { ...reference, uptime_rate: 0, uptime_window_seconds: 86400 };
+  assert.equal(modelUptime({ performance_reference: ref }, now).value, 0);
+  for (const patch of [
+    { uptime_rate: null },
+    { uptime_rate: undefined },
+    { uptime_rate: '100' },
+    { uptime_rate: NaN },
+    { uptime_rate: -1 },
+    { uptime_rate: 101 },
+    { uptime_window_seconds: 1800 },
+    { source: 'other' },
+    { fetched_at: now / 1000 + 1 },
+    { expires_at: now / 1000 },
+    { expires_at: now / 1000 + 600 },
+    { fetched_at: 0 },
+  ]) {
+    assert.equal(
+      modelUptime({ performance_reference: { ...ref, ...patch } }, now)
+        .external,
+      false,
+      JSON.stringify(patch),
+    );
+  }
+});
+
+test('all external performance fields share the same bounded freshness contract', () => {
+  for (const patch of [
+    { expires_at: now / 1000 + 600 },
+    { fetched_at: now / 1000 + 1 },
+    { fetched_at: NaN },
+    { expires_at: Infinity },
+    { fetched_at: '1800000000' },
+    { expires_at: now / 1000 },
+  ]) {
+    const result = calculate({
+      performance_reference: { ...reference, ...patch },
+    });
+    assert.equal(result.externalLatency, false);
+    assert.equal(result.externalThroughput, false);
   }
 });

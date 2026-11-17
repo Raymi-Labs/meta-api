@@ -8160,6 +8160,13 @@
     "无法恢复操作，请联系管理员核对": "Không thể khôi phục thao tác. Hãy liên hệ quản trị viên.",
     "结果待确认，请查询或重试原操作": "Chưa xác nhận kết quả. Kiểm tra hoặc thử lại thao tác ban đầu.",
     "无法保存操作，请检查浏览器存储后重试": "Không thể lưu thao tác. Kiểm tra bộ nhớ trình duyệt rồi thử lại.",
-    "全部回收": "Thu hồi toàn bộ"
+    "全部回收": "Thu hồi toàn bộ",
+    "官方价格来源暂时无法访问": "Tạm thời không thể truy cập nguồn giá chính thức",
+    "登录后查看": "Đăng nhập để xem",
+    "暂未开启": "Chưa bật",
+    "参考可用率": "Độ khả dụng tham khảo",
+    "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Độ khả dụng của endpoint mô hình trong 24 giờ qua, không phải số đo của nhóm trên trang này.",
+    "更新时间：{{time}}": "Cập nhật: {{time}}",
+    "最近有效统计": "Số đo hợp lệ gần nhất"
   }
 }

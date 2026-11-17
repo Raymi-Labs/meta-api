@@ -215,9 +215,72 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
           t={(key) => key}
         />,
       );
-      expect(html).toContain('暂无数据');
+      expect(html).toContain('73.7 tok/s');
+      expect(html).toContain('最近有效统计');
+      expect(html).not.toContain('role="img"');
+      expect(html).not.toContain('<table');
       expect(html).not.toContain('沿用');
       expect(html).not.toContain('P50');
+    });
+
+    test('empty charts show typed reference snapshots and preserve mixed actual history', () => {
+      const now = Date.now() / 1000;
+      const ref = {
+        source: 'openrouter',
+        percentile: 50,
+        fetched_at: now - 5,
+        expires_at: now + 295,
+        ttft_ms: 1915,
+        output_tps: 20,
+        uptime_rate: 100,
+        uptime_window_seconds: 86400,
+      };
+      const t = (s, args = {}) => s.replace(/{{(\w+)}}/g, (_, k) => args[k]);
+      const g = {
+        group: '参考组',
+        uptime_sample_count: 0,
+        uptime_rate: null,
+        performance_reference: ref,
+        series: [],
+      };
+      const render = (metric, groups) =>
+        renderToStaticMarkup(
+          <ModelMetricChart
+            title='Metric'
+            metric={metric}
+            groups={groups}
+            t={t}
+          />,
+        );
+      for (const [metric, value, window] of [
+        ['avg_ttft_ms', '1.92 s', '近30分钟'],
+        ['avg_output_tps', '20 tok/s', '近30分钟'],
+        ['uptime_rate', '100%', '最近 24 小时'],
+      ]) {
+        const html = render(metric, [g]);
+        expect(html).toContain(value);
+        expect(html).toContain(window);
+        expect(html).not.toContain('role="img"');
+        expect(html).not.toContain('<table');
+      }
+      const mixed = render('uptime_rate', [
+        {
+          group: '实测组',
+          uptime_sample_count: 30,
+          uptime_rate: 0,
+          series: [{ ts: 0, uptime_sample_count: 30, uptime_rate: 0 }],
+        },
+        g,
+      ]);
+      expect(mixed).toContain('role="img"');
+      expect(mixed).toContain('0%');
+      expect(mixed).toContain('100%');
+      expect(mixed).toContain('最近 24 小时');
+      const zero = render('avg_output_tps', [
+        { group: '实测', avg_output_tps: 0, series: [] },
+      ]);
+      expect(zero).toContain('0 tok/s');
+      expect(zero).toContain('当前汇总');
     });
 
     test('low-sample success remains gray; no-data and usage do not invent observations', () => {
@@ -242,8 +305,10 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(success).toContain('fill="#a8aeb9"');
       expect(success).toContain('100%');
       const empty = render('avg_ttft_ms', [{ group: '无样本', series: [] }]);
-      expect(empty).toContain('暂无数据');
-      expect(empty).toContain('<strong title="—">—</strong>');
+      expect(empty).toContain('暂无统计数据');
+      expect(empty).toContain(
+        '<strong title="暂无统计数据">暂无统计数据</strong>',
+      );
       expect(empty).not.toContain('<table>');
       const usage = render(
         'total_tokens',
