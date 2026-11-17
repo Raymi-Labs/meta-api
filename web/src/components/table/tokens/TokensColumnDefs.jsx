@@ -925,6 +925,19 @@ export const getTokensColumns = ({
       render: (text, record) => renderStatus(text, record, t),
     },
     {
+      title: t('密钥'),
+      key: 'token_key',
+      render: (text, record) =>
+        renderTokenKey(
+          text,
+          record,
+          showKeys,
+          tokenFullKeys,
+          toggleTokenKeyVisibility,
+          copyTokenKey,
+        ),
+    },
+    {
       title: t('剩余额度/总额度'),
       key: 'quota_usage',
       render: (text, record) => renderQuotaUsage(text, record, t),
@@ -965,19 +978,6 @@ export const getTokensColumns = ({
       dataIndex: 'group_ratio',
       key: 'group_ratio',
       render: (_text, record) => renderGroupRatio(record, t),
-    },
-    {
-      title: t('密钥'),
-      key: 'token_key',
-      render: (text, record) =>
-        renderTokenKey(
-          text,
-          record,
-          showKeys,
-          tokenFullKeys,
-          toggleTokenKeyVisibility,
-          copyTokenKey,
-        ),
     },
     {
       title: t('可用模型'),
