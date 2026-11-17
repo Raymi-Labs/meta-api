@@ -1,0 +1,38 @@
+.ec-financial-modal .semi-modal-title {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.ec-financial-modal .semi-modal-body {
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ec-financial-modal .semi-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ec-financial-modal [role='status'] {
+  overflow-wrap: anywhere;
+}
+@media (max-height: 700px) {
+  .ec-financial-modal .semi-modal {
+    top: 16px;
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+}
+
+.ec-pending-operations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ec-pending-operations .semi-button {
+  height: auto;
+  min-height: 32px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

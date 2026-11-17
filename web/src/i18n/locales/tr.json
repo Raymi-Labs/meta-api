@@ -7545,6 +7545,12 @@
     "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 genel ayarı devralır. Chat, Responses ve Gemini akış oluşturma isteklerine en fazla 600 saniye uygulanır. Yalnızca başlık bekleme süresini değiştirir; gövde okumasını veya toplam zaman aşımını değiştirmez.",
     "不参与折扣的模型": "İndirim uygulanmayan modeller",
     "不参与折扣，按模型基础价计费": "İndirim yok; modelin temel fiyatı üzerinden ücretlendirilir",
-    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Seçilen modeller tüm gruplarda sitenin temel fiyatını kullanır; kişisel, kurumsal veya zamana bağlı çarpan uygulanmaz. Bakiye ve paket dönüşümleri ile ücretli hızlandırma bedelleri değişmez. Model kimlikleri tam eşleşmelidir; takma adları ayrıca seçin."
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Seçilen modeller tüm gruplarda sitenin temel fiyatını kullanır; kişisel, kurumsal veya zamana bağlı çarpan uygulanmaz. Bakiye ve paket dönüşümleri ile ücretli hızlandırma bedelleri değişmez. Model kimlikleri tam eşleşmelidir; takma adları ayrıca seçin.",
+    "重试原操作": "Asıl işlemi yeniden dene",
+    "已完成，余额待刷新": "Tamamlandı; bakiye yenilenmeli",
+    "无法恢复操作，请联系管理员核对": "İşlem kurtarılamadı. Yöneticiyle iletişime geçin.",
+    "结果待确认，请查询或重试原操作": "Sonuç doğrulanmadı. Asıl işlemi kontrol edin veya yeniden deneyin.",
+    "无法保存操作，请检查浏览器存储后重试": "İşlem kaydedilemedi. Tarayıcı depolamasını kontrol edin.",
+    "全部回收": "Tümünü geri al"
   }
 }

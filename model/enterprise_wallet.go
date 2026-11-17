@@ -63,73 +63,112 @@ func validEnterpriseAmount(amount int64) bool {
 // CreditEnterprise 平台核对对公转账到账后入账：未分配额度与累计净入账同时增加。
 // 不调用任何邀请返佣逻辑。未分配为负时，入账自动先抵欠额。
 func CreditEnterprise(actorID, enterpriseID int, amount int64, voucher, reason string) (*EnterpriseLedger, error) {
+	result, err := CreditEnterpriseWithKey(actorID, enterpriseID, amount, voucher, reason, "")
+	if err != nil || result == nil {
+		return nil, err
+	}
+	return result.Ledger, nil
+}
+
+// CreditEnterpriseWithKey is the idempotent platform credit entry point.
+func CreditEnterpriseWithKey(actorID, enterpriseID int, amount int64, voucher, reason, operationKey string) (*EnterpriseOperationResult, error) {
 	voucher = strings.TrimSpace(voucher)
 	if !validEnterpriseAmount(amount) || voucher == "" || len(voucher) > 128 {
 		return nil, ErrEnterpriseInvalidInput
 	}
-	var entry *EnterpriseLedger
-	err := enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
-		// 先查一次给出明确错误；唯一索引兜住并发重复录入。
-		var dup int64
-		if err := tx.Model(&EnterpriseLedger{}).Where("enterprise_id = ? AND voucher = ?", ent.Id, voucher).Count(&dup).Error; err != nil {
-			return err
-		}
-		if dup > 0 {
-			return ErrEnterpriseDuplicateVoucher
-		}
-		now := time.Now().Unix()
-		entry = &EnterpriseLedger{EnterpriseId: ent.Id, Kind: EnterpriseLedgerCredit, UnallocatedDelta: amount,
-			UnallocatedAfter: ent.Unallocated + amount, Voucher: &voucher, ActorId: actorID, ActorRole: EnterpriseActorPlatform,
-			Reason: trimEnterpriseReason(reason), CreatedAt: now}
-		if err := tx.Create(entry).Error; err != nil {
-			if isEnterpriseDuplicateKeyErr(err) {
-				return ErrEnterpriseDuplicateVoucher
+	return runEnterpriseOperation(EnterpriseActor{UserId: actorID, Platform: true}, enterpriseID, 0, "wallet.credit", operationKey,
+		struct {
+			Amount  int64  `json:"amount"`
+			Voucher string `json:"voucher"`
+			Reason  string `json:"reason"`
+		}{amount, voucher, trimEnterpriseReason(reason)},
+		func(tx *gorm.DB, ent *Enterprise) (*EnterpriseOperationResult, error) {
+			// 先查一次给出明确错误；唯一索引兜住并发重复录入。
+			var dup int64
+			if err := tx.Model(&EnterpriseLedger{}).Where("enterprise_id = ? AND voucher = ?", ent.Id, voucher).Count(&dup).Error; err != nil {
+				return nil, err
 			}
-			return err
-		}
-		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
-			"unallocated": ent.Unallocated + amount, "net_credited": ent.NetCredited + amount,
-			"low_balance_notified_at": 0, "updated_at": now,
-		}).Error; err != nil {
-			return err
-		}
-		return appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
-			"wallet.credit", "enterprise", ent.Id, map[string]any{"unallocated": ent.Unallocated},
-			map[string]any{"unallocated": ent.Unallocated + amount, "amount": amount, "voucher": voucher}, reason)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return entry, nil
+			if dup > 0 {
+				return nil, ErrEnterpriseDuplicateVoucher
+			}
+			if _, err := enterpriseCheckedAdd(ent.Unallocated, amount); err != nil {
+				return nil, err
+			}
+			if _, err := enterpriseCheckedAdd(ent.NetCredited, amount); err != nil {
+				return nil, err
+			}
+			now := time.Now().Unix()
+			entry := &EnterpriseLedger{EnterpriseId: ent.Id, Kind: EnterpriseLedgerCredit, UnallocatedDelta: amount,
+				UnallocatedAfter: ent.Unallocated + amount, Voucher: &voucher, ActorId: actorID, ActorRole: EnterpriseActorPlatform,
+				Reason: trimEnterpriseReason(reason), CreatedAt: now}
+			if err := tx.Create(entry).Error; err != nil {
+				if isEnterpriseDuplicateKeyErr(err) {
+					return nil, ErrEnterpriseDuplicateVoucher
+				}
+				return nil, err
+			}
+			if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
+				"unallocated": ent.Unallocated + amount, "net_credited": ent.NetCredited + amount,
+				"low_balance_notified_at": 0, "updated_at": now,
+			}).Error; err != nil {
+				return nil, err
+			}
+			if err := appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
+				"wallet.credit", "enterprise", ent.Id, map[string]any{"unallocated": ent.Unallocated},
+				map[string]any{"unallocated": ent.Unallocated + amount, "amount": amount, "voucher": voucher}, reason); err != nil {
+				return nil, err
+			}
+			return &EnterpriseOperationResult{Action: "wallet.credit", EnterpriseID: ent.Id, Amount: amount,
+				UnallocatedAfter: ent.Unallocated + amount, Ledger: entry}, nil
+		})
 }
 
 // AdjustEnterprise 平台调账（可正可负），必须填写原因。用于纠正录错的入账或受控退款。
 func AdjustEnterprise(actorID, enterpriseID int, delta int64, reason string) (*EnterpriseLedger, error) {
+	result, err := AdjustEnterpriseWithKey(actorID, enterpriseID, delta, reason, "")
+	if err != nil || result == nil {
+		return nil, err
+	}
+	return result.Ledger, nil
+}
+
+// AdjustEnterpriseWithKey is the idempotent platform adjustment entry point.
+func AdjustEnterpriseWithKey(actorID, enterpriseID int, delta int64, reason, operationKey string) (*EnterpriseOperationResult, error) {
 	reason = trimEnterpriseReason(reason)
 	if delta == 0 || delta > enterpriseMaxAmount || delta < -enterpriseMaxAmount || reason == "" {
 		return nil, ErrEnterpriseInvalidInput
 	}
-	var entry *EnterpriseLedger
-	err := enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
-		now := time.Now().Unix()
-		entry = &EnterpriseLedger{EnterpriseId: ent.Id, Kind: EnterpriseLedgerAdjust, UnallocatedDelta: delta,
-			UnallocatedAfter: ent.Unallocated + delta, ActorId: actorID, ActorRole: EnterpriseActorPlatform, Reason: reason, CreatedAt: now}
-		if err := tx.Create(entry).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
-			"unallocated": ent.Unallocated + delta, "net_credited": ent.NetCredited + delta, "updated_at": now,
-		}).Error; err != nil {
-			return err
-		}
-		return appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
-			"wallet.adjust", "enterprise", ent.Id, map[string]any{"unallocated": ent.Unallocated},
-			map[string]any{"unallocated": ent.Unallocated + delta, "delta": delta}, reason)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return entry, nil
+	return runEnterpriseOperation(EnterpriseActor{UserId: actorID, Platform: true}, enterpriseID, 0, "wallet.adjust", operationKey,
+		struct {
+			Delta  int64  `json:"delta"`
+			Reason string `json:"reason"`
+		}{delta, reason},
+		func(tx *gorm.DB, ent *Enterprise) (*EnterpriseOperationResult, error) {
+			if _, err := enterpriseCheckedAdd(ent.Unallocated, delta); err != nil {
+				return nil, err
+			}
+			if _, err := enterpriseCheckedAdd(ent.NetCredited, delta); err != nil {
+				return nil, err
+			}
+			now := time.Now().Unix()
+			entry := &EnterpriseLedger{EnterpriseId: ent.Id, Kind: EnterpriseLedgerAdjust, UnallocatedDelta: delta,
+				UnallocatedAfter: ent.Unallocated + delta, ActorId: actorID, ActorRole: EnterpriseActorPlatform, Reason: reason, CreatedAt: now}
+			if err := tx.Create(entry).Error; err != nil {
+				return nil, err
+			}
+			if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).Updates(map[string]any{
+				"unallocated": ent.Unallocated + delta, "net_credited": ent.NetCredited + delta, "updated_at": now,
+			}).Error; err != nil {
+				return nil, err
+			}
+			if err := appendEnterpriseAuditTx(tx, ent.Id, EnterpriseActor{UserId: actorID, Platform: true}, nil,
+				"wallet.adjust", "enterprise", ent.Id, map[string]any{"unallocated": ent.Unallocated},
+				map[string]any{"unallocated": ent.Unallocated + delta, "delta": delta}, reason); err != nil {
+				return nil, err
+			}
+			return &EnterpriseOperationResult{Action: "wallet.adjust", EnterpriseID: ent.Id, Delta: delta,
+				UnallocatedAfter: ent.Unallocated + delta, Ledger: entry}, nil
+		})
 }
 
 // transferEnterpriseQuotaTx 把未分配额度划给成员。调用方必须已持有企业行锁（ent 为锁内读取的值）。
@@ -148,6 +187,9 @@ func transferEnterpriseQuotaTx(tx *gorm.DB, ent *Enterprise, member *EnterpriseM
 	}
 	if locked.EnterpriseId != ent.Id || locked.Status != EnterpriseMemberStatusActive {
 		return ErrEnterpriseNotFound
+	}
+	if _, err := enterpriseCheckedAdd(locked.Available, amount); err != nil {
+		return err
 	}
 	now := time.Now().Unix()
 	if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).
@@ -236,71 +278,116 @@ func SweepInactiveEnterpriseResidues(limit int) (int, error) {
 
 // AllocateEnterpriseQuota 管理员给成员分配额度。管理员不能给自己分配，管理员的额度由所有者分配。
 func AllocateEnterpriseQuota(actor EnterpriseActor, enterpriseID, memberID int, amount int64, reason string) error {
+	_, err := AllocateEnterpriseQuotaWithKey(actor, enterpriseID, memberID, amount, reason, "")
+	return err
+}
+
+// AllocateEnterpriseQuotaWithKey is the idempotent member allocation entry point.
+func AllocateEnterpriseQuotaWithKey(actor EnterpriseActor, enterpriseID, memberID int, amount int64, reason, operationKey string) (*EnterpriseOperationResult, error) {
 	if !validEnterpriseAmount(amount) {
-		return ErrEnterpriseInvalidInput
+		return nil, ErrEnterpriseInvalidInput
 	}
-	return enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
-		if ent.Status != EnterpriseStatusActive {
-			return ErrEnterpriseFrozen
-		}
-		actorMember, err := enterpriseActorMemberTx(tx, ent.Id, actor)
-		if err != nil {
-			return err
-		}
-		target, err := lockEnterpriseMemberTx(tx, memberID)
-		if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
-			return ErrEnterpriseNotFound
-		}
-		if err := canManageEnterpriseMember(actor, actorMember, target); err != nil {
-			return err
-		}
-		before := target.Available
-		if err := transferEnterpriseQuotaTx(tx, ent, target, amount, EnterpriseLedgerAllocate, actor, actor.auditRole(actorMember), reason); err != nil {
-			return err
-		}
-		return appendEnterpriseAuditTx(tx, ent.Id, actor, actorMember, "budget.allocate", "member", target.Id,
-			map[string]any{"available": before}, map[string]any{"available": target.Available, "amount": amount}, reason)
-	})
+	return runEnterpriseOperation(actor, enterpriseID, int64(memberID), "budget.allocate", operationKey,
+		struct {
+			Amount  int64  `json:"amount"`
+			Reason  string `json:"reason"`
+			ActorID int    `json:"actor_id"`
+		}{amount, trimEnterpriseReason(reason), actor.UserId},
+		func(tx *gorm.DB, ent *Enterprise) (*EnterpriseOperationResult, error) {
+			if ent.Status != EnterpriseStatusActive {
+				return nil, ErrEnterpriseFrozen
+			}
+			actorMember, err := enterpriseActorMemberTx(tx, ent.Id, actor)
+			if err != nil {
+				return nil, err
+			}
+			target, err := lockEnterpriseMemberTx(tx, memberID)
+			if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
+				return nil, ErrEnterpriseNotFound
+			}
+			if err := canManageEnterpriseMember(actor, actorMember, target); err != nil {
+				return nil, err
+			}
+			if err := transferEnterpriseQuotaTx(tx, ent, target, amount, EnterpriseLedgerAllocate, actor, actor.auditRole(actorMember), reason); err != nil {
+				return nil, err
+			}
+			before := target.Available - amount
+			if err := appendEnterpriseAuditTx(tx, ent.Id, actor, actorMember, "budget.allocate", "member", target.Id,
+				map[string]any{"available": before}, map[string]any{"available": target.Available, "amount": amount}, reason); err != nil {
+				return nil, err
+			}
+			return &EnterpriseOperationResult{Action: "budget.allocate", EnterpriseID: ent.Id, MemberID: target.Id,
+				Amount: amount, Delta: amount, UnallocatedAfter: ent.Unallocated, MemberAvailableAfter: target.Available}, nil
+		})
 }
 
 // ReclaimEnterpriseQuota 从成员回收额度，仅限可用额度为正的部分。
 func ReclaimEnterpriseQuota(actor EnterpriseActor, enterpriseID, memberID int, amount int64, reason string) error {
+	_, err := ReclaimEnterpriseQuotaWithKey(actor, enterpriseID, memberID, amount, reason, "")
+	return err
+}
+
+// ReclaimEnterpriseQuotaWithKey is the idempotent member reclaim entry point.
+func ReclaimEnterpriseQuotaWithKey(actor EnterpriseActor, enterpriseID, memberID int, amount int64, reason, operationKey string) (*EnterpriseOperationResult, error) {
+	return ReclaimEnterpriseQuotaSnapshot(actor, enterpriseID, memberID, amount, reason, operationKey, nil)
+}
+
+// expectedAvailable is the exact snapshot chosen by "reclaim all". New funds
+// arriving after that preview must not silently be included in the operation.
+func ReclaimEnterpriseQuotaSnapshot(actor EnterpriseActor, enterpriseID, memberID int, amount int64, reason, operationKey string, expectedAvailable *int64) (*EnterpriseOperationResult, error) {
 	if !validEnterpriseAmount(amount) {
-		return ErrEnterpriseInvalidInput
+		return nil, ErrEnterpriseInvalidInput
 	}
-	return enterpriseTx(enterpriseID, func(tx *gorm.DB, ent *Enterprise) error {
-		actorMember, err := enterpriseActorMemberTx(tx, ent.Id, actor)
-		if err != nil {
-			return err
-		}
-		target, err := lockEnterpriseMemberTx(tx, memberID)
-		if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
-			return ErrEnterpriseNotFound
-		}
-		if err := canManageEnterpriseMember(actor, actorMember, target); err != nil {
-			return err
-		}
-		if target.Available < amount {
-			return ErrEnterpriseReclaimExceeds
-		}
-		now := time.Now().Unix()
-		if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).
-			Updates(map[string]any{"unallocated": ent.Unallocated + amount, "updated_at": now}).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&EnterpriseMember{}).Where("id = ?", target.Id).
-			Updates(map[string]any{"available": target.Available - amount, "updated_at": now}).Error; err != nil {
-			return err
-		}
-		if err := tx.Create(&EnterpriseLedger{EnterpriseId: ent.Id, MemberId: target.Id, Kind: EnterpriseLedgerReclaim,
-			UnallocatedDelta: amount, MemberDelta: -amount, UnallocatedAfter: ent.Unallocated + amount,
-			MemberAfter: target.Available - amount, ActorId: actor.UserId, ActorRole: actor.auditRole(actorMember),
-			Reason: trimEnterpriseReason(reason), CreatedAt: now}).Error; err != nil {
-			return err
-		}
-		return appendEnterpriseAuditTx(tx, ent.Id, actor, actorMember, "budget.reclaim", "member", target.Id,
-			map[string]any{"available": target.Available}, map[string]any{"available": target.Available - amount, "amount": amount}, reason)
-	})
+	return runEnterpriseOperation(actor, enterpriseID, int64(memberID), "budget.reclaim", operationKey,
+		struct {
+			Amount            int64  `json:"amount"`
+			Reason            string `json:"reason"`
+			ActorID           int    `json:"actor_id"`
+			ExpectedAvailable *int64 `json:"expected_available,omitempty"`
+		}{amount, trimEnterpriseReason(reason), actor.UserId, expectedAvailable},
+		func(tx *gorm.DB, ent *Enterprise) (*EnterpriseOperationResult, error) {
+			actorMember, err := enterpriseActorMemberTx(tx, ent.Id, actor)
+			if err != nil {
+				return nil, err
+			}
+			target, err := lockEnterpriseMemberTx(tx, memberID)
+			if err != nil || target.EnterpriseId != ent.Id || target.Status != EnterpriseMemberStatusActive {
+				return nil, ErrEnterpriseNotFound
+			}
+			if err := canManageEnterpriseMember(actor, actorMember, target); err != nil {
+				return nil, err
+			}
+			if expectedAvailable != nil && (*expectedAvailable != target.Available || amount != *expectedAvailable) {
+				return nil, ErrEnterpriseBalanceChanged
+			}
+			if target.Available < amount {
+				return nil, ErrEnterpriseReclaimExceeds
+			}
+			if _, err := enterpriseCheckedAdd(ent.Unallocated, amount); err != nil {
+				return nil, err
+			}
+			now := time.Now().Unix()
+			if err := tx.Model(&Enterprise{}).Where("id = ?", ent.Id).
+				Updates(map[string]any{"unallocated": ent.Unallocated + amount, "updated_at": now}).Error; err != nil {
+				return nil, err
+			}
+			if err := tx.Model(&EnterpriseMember{}).Where("id = ?", target.Id).
+				Updates(map[string]any{"available": target.Available - amount, "updated_at": now}).Error; err != nil {
+				return nil, err
+			}
+			if err := tx.Create(&EnterpriseLedger{EnterpriseId: ent.Id, MemberId: target.Id, Kind: EnterpriseLedgerReclaim,
+				UnallocatedDelta: amount, MemberDelta: -amount, UnallocatedAfter: ent.Unallocated + amount,
+				MemberAfter: target.Available - amount, ActorId: actor.UserId, ActorRole: actor.auditRole(actorMember),
+				Reason: trimEnterpriseReason(reason), CreatedAt: now}).Error; err != nil {
+				return nil, err
+			}
+			if err := appendEnterpriseAuditTx(tx, ent.Id, actor, actorMember, "budget.reclaim", "member", target.Id,
+				map[string]any{"available": target.Available}, map[string]any{"available": target.Available - amount, "amount": amount}, reason); err != nil {
+				return nil, err
+			}
+			return &EnterpriseOperationResult{Action: "budget.reclaim", EnterpriseID: ent.Id, MemberID: target.Id,
+				Amount: amount, Delta: -amount, UnallocatedAfter: ent.Unallocated + amount, MemberAvailableAfter: target.Available - amount}, nil
+		})
 }
 
 // EnterpriseBalance 是企业账务的汇总快照。Balanced 为真表示守恒式成立：

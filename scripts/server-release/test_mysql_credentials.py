@@ -58,6 +58,9 @@ if kind == 'mysqldump':
     print('CREATE TABLE fixture (id BIGINT);')
 elif '-Nse' in args:
     print('stable schema fingerprint input')
+elif any('enterprise_operations' in arg for arg in args):
+    assert args[-1].startswith('newapi_preflight_')
+    print('0')
 elif '-e' not in args:
     assert 'CREATE TABLE fixture' in sys.stdin.read()
 '''
@@ -92,7 +95,7 @@ elif '-e' not in args:
         self.assertFalse((backup / 'mysql.sql.gz').exists())
 
     def test_schema_clone_fingerprint_and_cleanup_use_same_credentials(self):
-        result = self.run_shell('run_preflight_pass() { PREFLIGHT_CONTAINER=""; }; preflight_target')
+        result = self.run_shell('run_preflight_pass() { PREFLIGHT_CONTAINER=""; }; actual_image_id() { echo sha256:fixture; }; timeout() { shift 2; "$@"; }; preflight_target')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         events = [json.loads(line) for line in self.events.read_text().splitlines()]
         self.assertEqual(sum(e['kind'] == 'mysqldump' for e in events), 1)

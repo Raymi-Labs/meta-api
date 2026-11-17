@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearStoredUser } from '../../helpers/storage';
 import { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -137,7 +138,7 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     await API.get('/api/user/logout');
     showSuccess(t('注销成功!'));
     userDispatch({ type: 'logout' });
-    localStorage.removeItem('user');
+    clearStoredUser();
     navigate('/login');
   }, [navigate, t, userDispatch]);
 

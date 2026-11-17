@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearStoredUser } from './storage';
 import { getModelSortPrices } from './modelPriceSorting';
 import i18n from '../i18n/i18n';
 
@@ -151,7 +152,7 @@ export function showError(error) {
       switch (error.response.status) {
         case 401:
           // 清除用户状态
-          localStorage.removeItem('user');
+          clearStoredUser();
           // toast.error('错误：未登录或登录已过期，请重新登录！', showErrorOptions);
           window.location.href = '/login?expired=true';
           break;

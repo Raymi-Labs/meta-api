@@ -20,7 +20,13 @@ For commercial licensing, please contact support@quantumnous.com
 import { API } from './apiCore';
 
 // 企业接口统一封装：成功返回 data，失败抛出带后端文案的 Error，由调用方决定怎么提示。
-export async function enterpriseRequest(method, url, data, params) {
+export async function enterpriseRequest(
+  method,
+  url,
+  data,
+  params,
+  options = {},
+) {
   const res = await API.request({
     method,
     url,
@@ -28,9 +34,16 @@ export async function enterpriseRequest(method, url, data, params) {
     params,
     skipErrorHandler: true,
     skipGlobalLoading: true,
+    signal: options.signal,
+    timeout: options.timeout,
+    ...(options.idempotencyKey
+      ? { headers: { 'Idempotency-Key': options.idempotencyKey } }
+      : {}),
   });
   if (!res.data?.success) {
-    throw new Error(res.data?.message || '操作失败');
+    const error = new Error(res.data?.message || '操作失败');
+    error.operationRejected = res.data?.operation_state === 'rejected';
+    throw error;
   }
   return res.data.data;
 }

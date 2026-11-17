@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	Port         = flag.Int("port", 3000, "the listening port")
-	PrintVersion = flag.Bool("version", false, "print version and exit")
-	PrintHelp    = flag.Bool("help", false, "print help and exit")
-	LogDir       = flag.String("log-dir", "./logs", "specify the log directory")
+	Port                  = flag.Int("port", 3000, "the listening port")
+	PrintDataCapabilities = flag.Bool("data-capabilities", false, "print supported durable data capabilities and exit")
+	PrintVersion          = flag.Bool("version", false, "print version and exit")
+	PrintHelp             = flag.Bool("help", false, "print help and exit")
+	LogDir                = flag.String("log-dir", "./logs", "specify the log directory")
 )
 
 func printHelp() {
@@ -46,6 +47,11 @@ func InitEnv() {
 	envBuildBranch := os.Getenv("BUILD_BRANCH")
 	if envBuildBranch != "" {
 		BuildBranch = envBuildBranch
+	}
+
+	if *PrintDataCapabilities {
+		fmt.Println("enterprise_operations_v1")
+		os.Exit(0)
 	}
 
 	if *PrintVersion {

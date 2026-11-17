@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearEnterpriseOperationDrafts } from './enterpriseOperation';
 import { TABLE_COMPACT_MODES_KEY } from '../constants/common.constant';
 
 const DEFAULT_SYSTEM_NAME = '元衡 API';
@@ -33,6 +34,15 @@ function isLegacyLogo(logo) {
     logo === 'https://cn.meta-api.vip/logo.png' ||
     logo === 'https://cn.meta-api.vip/logo.svg'
   );
+}
+
+export function clearStoredUser() {
+  localStorage.removeItem('user');
+  try {
+    clearEnterpriseOperationDrafts(sessionStorage);
+  } catch {
+    /* Storage may be disabled. */
+  }
 }
 
 export function getStoredUser() {

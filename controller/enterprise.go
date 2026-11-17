@@ -18,12 +18,16 @@ import (
 // 平台侧由 middleware.EnterprisePlatformScope 写入；处理函数只从上下文取企业 ID，不直接信任路径参数。
 
 func enterpriseApiError(c *gin.Context, err error) {
-	if model.IsEnterpriseUserError(err) {
-		common.ApiError(c, err)
+	if errors.Is(err, model.ErrEnterpriseOperationPending) || errors.Is(err, model.ErrEnterpriseOperationConflict) {
+		c.JSON(200, gin.H{"success": false, "message": err.Error(), "operation_state": "unknown"})
 		return
 	}
-	if errors.Is(err, model.ErrEnterpriseFinalized) {
-		common.ApiErrorMsg(c, "该记录已处理")
+	if model.IsEnterpriseUserError(err) || errors.Is(err, model.ErrEnterpriseFinalized) {
+		message := err.Error()
+		if errors.Is(err, model.ErrEnterpriseFinalized) {
+			message = "该记录已处理"
+		}
+		c.JSON(200, gin.H{"success": false, "message": message, "operation_state": "rejected"})
 		return
 	}
 	logger.LogError(c.Request.Context(), "enterprise api failed: "+err.Error())
@@ -53,7 +57,7 @@ func enterprisePathInt(c *gin.Context, name string) (int, bool) {
 
 func enterpriseBody(c *gin.Context, v any) bool {
 	if err := common.DecodeJson(c.Request.Body, v); err != nil {
-		common.ApiError(c, model.ErrEnterpriseInvalidInput)
+		enterpriseApiError(c, model.ErrEnterpriseInvalidInput)
 		return false
 	}
 	return true
@@ -343,11 +347,16 @@ func GetEnterpriseMember(c *gin.Context) {
 }
 
 type enterpriseAmountRequest struct {
-	Amount int64  `json:"amount"`
-	Reason string `json:"reason"`
+	Amount            int64  `json:"amount"`
+	Reason            string `json:"reason"`
+	ExpectedAvailable *int64 `json:"expected_available"`
 }
 
-func enterpriseMemberAmount(c *gin.Context, apply func(actor model.EnterpriseActor, enterpriseID, memberID int, amount int64, reason string) error) {
+func enterpriseOperationKey(c *gin.Context) string {
+	return strings.TrimSpace(c.GetHeader("Idempotency-Key"))
+}
+
+func enterpriseMemberAmount(c *gin.Context, reclaim bool) {
 	enterpriseID, actor, ok := enterpriseScope(c)
 	if !ok {
 		return
@@ -360,24 +369,31 @@ func enterpriseMemberAmount(c *gin.Context, apply func(actor model.EnterpriseAct
 	if !enterpriseBody(c, &req) {
 		return
 	}
-	if err := apply(actor, enterpriseID, memberID, req.Amount, req.Reason); err != nil {
-		enterpriseApiError(c, err)
+	operationKey := enterpriseOperationKey(c)
+	if operationKey == "" {
+		enterpriseApiError(c, model.ErrEnterpriseOperationInvalid)
 		return
 	}
-	member, err := model.GetEnterpriseMemberDetail(enterpriseID, memberID)
+	var result *model.EnterpriseOperationResult
+	var err error
+	if reclaim {
+		result, err = model.ReclaimEnterpriseQuotaSnapshot(actor, enterpriseID, memberID, req.Amount, req.Reason, operationKey, req.ExpectedAvailable)
+	} else {
+		result, err = model.AllocateEnterpriseQuotaWithKey(actor, enterpriseID, memberID, req.Amount, req.Reason, operationKey)
+	}
 	if err != nil {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, member)
+	common.ApiSuccess(c, result)
 }
 
 func AllocateEnterpriseQuota(c *gin.Context) {
-	enterpriseMemberAmount(c, model.AllocateEnterpriseQuota)
+	enterpriseMemberAmount(c, false)
 }
 
 func ReclaimEnterpriseQuota(c *gin.Context) {
-	enterpriseMemberAmount(c, model.ReclaimEnterpriseQuota)
+	enterpriseMemberAmount(c, true)
 }
 
 func SetEnterpriseMemberModels(c *gin.Context) {
@@ -658,12 +674,17 @@ func AdminCreditEnterprise(c *gin.Context) {
 	if !enterpriseBody(c, &req) {
 		return
 	}
-	entry, err := model.CreditEnterprise(actor.UserId, enterpriseID, req.Amount, req.Voucher, req.Reason)
+	operationKey := enterpriseOperationKey(c)
+	if operationKey == "" {
+		enterpriseApiError(c, model.ErrEnterpriseOperationInvalid)
+		return
+	}
+	result, err := model.CreditEnterpriseWithKey(actor.UserId, enterpriseID, req.Amount, req.Voucher, req.Reason, operationKey)
 	if err != nil {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, entry)
+	common.ApiSuccess(c, result)
 }
 
 func AdminAdjustEnterprise(c *gin.Context) {
@@ -678,12 +699,17 @@ func AdminAdjustEnterprise(c *gin.Context) {
 	if !enterpriseBody(c, &req) {
 		return
 	}
-	entry, err := model.AdjustEnterprise(actor.UserId, enterpriseID, req.Delta, req.Reason)
+	operationKey := enterpriseOperationKey(c)
+	if operationKey == "" {
+		enterpriseApiError(c, model.ErrEnterpriseOperationInvalid)
+		return
+	}
+	result, err := model.AdjustEnterpriseWithKey(actor.UserId, enterpriseID, req.Delta, req.Reason, operationKey)
 	if err != nil {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, entry)
+	common.ApiSuccess(c, result)
 }
 
 func AdminListEnterpriseReservations(c *gin.Context) {
@@ -707,11 +733,17 @@ func AdminResolveEnterpriseReservation(c *gin.Context) {
 	if !enterpriseBody(c, &req) {
 		return
 	}
-	if err := model.ResolveEnterpriseReservation(c.GetInt("id"), reservationID, req.Settle, req.Amount, req.Reason); err != nil {
+	operationKey := enterpriseOperationKey(c)
+	if operationKey == "" {
+		enterpriseApiError(c, model.ErrEnterpriseOperationInvalid)
+		return
+	}
+	result, err := model.ResolveEnterpriseReservationWithKey(c.GetInt("id"), reservationID, req.Settle, req.Amount, req.Reason, operationKey)
+	if err != nil {
 		enterpriseApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, nil)
+	common.ApiSuccess(c, result)
 }
 
 // Root-only archive endpoints reuse the platform scope and error contract.
@@ -746,4 +778,19 @@ func AdminArchiveEnterprise(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, ent)
+}
+
+// Read-only recovery: missing receipts mean unconfirmed, never permission to
+// issue a new financial intent.
+func GetEnterpriseOperation(c *gin.Context) {
+	enterpriseID, actor, ok := enterpriseScope(c)
+	if !ok {
+		return
+	}
+	result, err := model.GetEnterpriseOperation(actor, enterpriseID, c.Param("operation_key"))
+	if err != nil {
+		enterpriseApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"protocol": 1, "receipt": result})
 }

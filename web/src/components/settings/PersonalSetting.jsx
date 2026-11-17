@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearStoredUser } from '../../helpers/storage';
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -393,7 +394,7 @@ const PersonalSetting = () => {
       showSuccess(t('账户已删除！'));
       await API.get('/api/user/logout');
       userDispatch({ type: 'logout' });
-      localStorage.removeItem('user');
+      clearStoredUser();
       navigate('/login');
     } else {
       showError(message);

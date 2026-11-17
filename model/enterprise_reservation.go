@@ -7,6 +7,7 @@ import (
 	"github.com/QuantumNous/new-api/types"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -122,6 +123,9 @@ func applyEnterpriseTokenBudgetTx(tx *gorm.DB, sub EnterpriseSubject, delta int6
 	if budget.MemberId != sub.MemberId {
 		return ErrEnterpriseSubject
 	}
+	if _, err := enterpriseCheckedAdd(budget.UsedQuota, delta); err != nil {
+		return err
+	}
 	if enforce && delta > 0 && budget.LimitQuota > 0 && budget.UsedQuota+delta > budget.LimitQuota {
 		return &types.QuotaRejection{Source: EnterpriseTokenQuotaSource, ResourceID: sub.TokenId,
 			Available: budget.LimitQuota - budget.UsedQuota, Required: delta, Known: true, Cause: ErrEnterpriseTokenCap}
@@ -135,7 +139,7 @@ func applyEnterpriseTokenBudgetTx(tx *gorm.DB, sub EnterpriseSubject, delta int6
 //   - reserved：建立或调整在途占用；requireAvailable 时成员可用额度必须为正且够本次增量。
 //   - settled：按真实费用终结，允许成员可用额度为负。
 //   - refunded：释放全部占用。
-func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, target int64, state string,
+func adjustEnterpriseReservationTx(tx *gorm.DB, sub EnterpriseSubject, requestID, kind string, target int64, state string,
 	requireAvailable bool, chat *chatWalletAdmission) (EnterpriseReservation, error) {
 	var result EnterpriseReservation
 	if !sub.valid() || requestID == "" || len(requestID) > 96 || target < 0 || target > enterpriseMaxAmount ||
@@ -143,7 +147,7 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 		(state == EnterpriseReservationRefunded && target != 0) {
 		return result, ErrEnterpriseReservation
 	}
-	err := DB.Transaction(func(tx *gorm.DB) error {
+	err := func() error {
 		member, err := lockEnterpriseMemberTx(tx, sub.MemberId)
 		if err != nil {
 			return err
@@ -153,7 +157,7 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 		}
 		now := time.Now().Unix()
 		created := false
-		err = tx.Where("request_id = ?", requestID).First(&result).Error
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("request_id = ?", requestID).First(&result).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			result = EnterpriseReservation{RequestId: requestID, EnterpriseId: sub.EnterpriseId, MemberId: sub.MemberId,
 				UserId: sub.UserId, TokenId: sub.TokenId, Kind: kind, Status: EnterpriseReservationReserved,
@@ -207,6 +211,15 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 		case EnterpriseReservationSettled:
 			consumed = target
 		}
+		if _, err := enterpriseCheckedAdd(member.Available, -delta); err != nil {
+			return err
+		}
+		if _, err := enterpriseCheckedAdd(member.Reserved, newHold-result.Quota); err != nil {
+			return err
+		}
+		if _, err := enterpriseCheckedAdd(member.Consumed, consumed); err != nil {
+			return err
+		}
 		updates := map[string]any{
 			"available":  member.Available - delta,
 			"reserved":   member.Reserved + newHold - result.Quota,
@@ -238,6 +251,18 @@ func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, 
 		}
 		return tx.Model(&EnterpriseReservation{}).Where("id = ?", result.Id).
 			Updates(map[string]any{"quota": result.Quota, "status": result.Status, "updated_at": now}).Error
+	}()
+	return result, err
+}
+
+// adjustEnterpriseReservation keeps the historical transactional wrapper.
+func adjustEnterpriseReservation(sub EnterpriseSubject, requestID, kind string, target int64, state string,
+	requireAvailable bool, chat *chatWalletAdmission) (EnterpriseReservation, error) {
+	var result EnterpriseReservation
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+		result, err = adjustEnterpriseReservationTx(tx, sub, requestID, kind, target, state, requireAvailable, chat)
+		return err
 	})
 	return result, err
 }
@@ -371,30 +396,56 @@ func ListEnterpriseReviewReservations(enterpriseID, offset, limit int) ([]*Enter
 
 // ResolveEnterpriseReservation 平台人工处理待对账预留：按核实的真实费用结算，或全额释放。
 func ResolveEnterpriseReservation(actorID int, reservationID int64, settle bool, amount int64, reason string) error {
+	_, err := ResolveEnterpriseReservationWithKey(actorID, reservationID, settle, amount, reason, "")
+	return err
+}
+
+// ResolveEnterpriseReservationWithKey atomically changes the reservation,
+// writes the audit event, and stores a replayable result.
+func ResolveEnterpriseReservationWithKey(actorID int, reservationID int64, settle bool, amount int64, reason, operationKey string) (*EnterpriseOperationResult, error) {
 	reason = trimEnterpriseReason(reason)
-	if reason == "" || amount < 0 {
-		return ErrEnterpriseInvalidInput
+	if reservationID <= 0 || reason == "" || amount < 0 || amount > enterpriseMaxAmount || (!settle && amount != 0) {
+		return nil, ErrEnterpriseInvalidInput
 	}
-	var r EnterpriseReservation
-	if err := DB.Where("id = ?", reservationID).First(&r).Error; err != nil {
-		return ErrEnterpriseNotFound
-	}
-	if r.Status != EnterpriseReservationReview {
-		return ErrEnterpriseFinalized
+	var initial EnterpriseReservation
+	if err := DB.Where("id = ?", reservationID).First(&initial).Error; err != nil {
+		return nil, ErrEnterpriseNotFound
 	}
 	state, target := EnterpriseReservationRefunded, int64(0)
 	if settle {
 		state, target = EnterpriseReservationSettled, amount
 	}
-	sub := EnterpriseSubject{EnterpriseId: r.EnterpriseId, MemberId: r.MemberId, UserId: r.UserId, TokenId: r.TokenId}
-	if _, err := adjustEnterpriseReservation(sub, r.RequestId, r.Kind, target, state, false, nil); err != nil {
-		return err
-	}
-	return DB.Transaction(func(tx *gorm.DB) error {
-		return appendEnterpriseAuditTx(tx, r.EnterpriseId, EnterpriseActor{UserId: actorID, Platform: true}, nil,
-			"reservation.resolve", "reservation", int(r.Id), map[string]any{"status": r.Status, "quota": r.Quota},
-			map[string]any{"status": state, "quota": target, "request_id": r.RequestId}, reason)
-	})
+	return runEnterpriseOperation(EnterpriseActor{UserId: actorID, Platform: true}, initial.EnterpriseId, reservationID, "reservation.resolve", operationKey,
+		struct {
+			ReservationID int64  `json:"reservation_id"`
+			Settle        bool   `json:"settle"`
+			Amount        int64  `json:"amount"`
+			Reason        string `json:"reason"`
+		}{reservationID, settle, amount, reason},
+		func(tx *gorm.DB, ent *Enterprise) (*EnterpriseOperationResult, error) {
+			if _, err := lockEnterpriseMemberTx(tx, initial.MemberId); err != nil {
+				return nil, err
+			}
+			var r EnterpriseReservation
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND enterprise_id = ?", reservationID, ent.Id).First(&r).Error; err != nil {
+				return nil, ErrEnterpriseNotFound
+			}
+			if r.Status != EnterpriseReservationReview {
+				return nil, ErrEnterpriseFinalized
+			}
+			sub := EnterpriseSubject{EnterpriseId: r.EnterpriseId, MemberId: r.MemberId, UserId: r.UserId, TokenId: r.TokenId}
+			adjusted, err := adjustEnterpriseReservationTx(tx, sub, r.RequestId, r.Kind, target, state, false, nil)
+			if err != nil {
+				return nil, err
+			}
+			if err := appendEnterpriseAuditTx(tx, r.EnterpriseId, EnterpriseActor{UserId: actorID, Platform: true}, nil,
+				"reservation.resolve", "reservation", int(r.Id), map[string]any{"status": r.Status, "quota": r.Quota},
+				map[string]any{"status": state, "quota": target, "request_id": r.RequestId}, reason); err != nil {
+				return nil, err
+			}
+			return &EnterpriseOperationResult{Action: "reservation.resolve", EnterpriseID: ent.Id, ReservationID: r.Id,
+				ReservationState: adjusted.Status, ReservationQuota: adjusted.Quota}, nil
+		})
 }
 
 // SetEnterpriseTokenLimit 设置企业令牌的安全上限（0 表示不另设）。

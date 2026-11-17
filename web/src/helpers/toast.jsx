@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearStoredUser } from './storage';
 import { Toast } from '@douyinfe/semi-ui';
 import { toastConstants } from '../constants/toast.constants';
 import React from 'react';
@@ -51,7 +52,7 @@ export function showError(error) {
     if (error.name === 'AxiosError') {
       switch (error.response.status) {
         case 401:
-          localStorage.removeItem('user');
+          clearStoredUser();
           window.location.href = '/login?expired=true';
           break;
         case 429:
