@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { clearEnterpriseOperationDrafts } from '../src/helpers/enterpriseOperation.js';
 import {
   canonicalOAuthEntry,
   loginOrigin,
@@ -17,10 +18,34 @@ const body = source
     source.indexOf('let channelModels'),
   )
   .replaceAll('export async function', 'async function');
+const storageSource = readFileSync(
+  new URL('../src/helpers/storage.js', import.meta.url),
+  'utf8',
+);
+const cleanupBody = storageSource
+  .slice(
+    storageSource.indexOf('export function clearStoredUser'),
+    storageSource.indexOf('export function getStoredUser'),
+  )
+  .replace('export function', 'function');
 function setup(origin) {
   const calls = [],
     saved = [];
   let nextState = 0;
+  const userStore = new Map([
+    ['user', 'synthetic old user'],
+    ['theme', 'dark'],
+  ]);
+  const draftKey = 'enterprise-operation:v1:1:reservation:44';
+  const sessionStore = {
+    [draftKey]: 'pending',
+    'unrelated-preference': 'keep',
+  };
+  Object.defineProperty(sessionStore, 'removeItem', {
+    value: (key) => {
+      delete sessionStore[key];
+    },
+  });
   const context = vm.createContext({
     URL,
     console,
@@ -39,7 +64,9 @@ function setup(origin) {
         return {};
       },
     },
-    localStorage: { removeItem: () => {} },
+    localStorage: { removeItem: (key) => userStore.delete(key) },
+    sessionStorage: sessionStore,
+    clearEnterpriseOperationDrafts,
     updateAPI: () => {},
     getOAuthState: async () => {
       calls.push(['state']);
@@ -50,8 +77,8 @@ function setup(origin) {
       throw Error(e);
     },
   });
-  vm.runInContext(body, context);
-  return { context, calls, saved };
+  vm.runInContext(cleanupBody + '\n' + body, context);
+  return { context, calls, saved, userStore, sessionStore, draftKey };
 }
 test('aliases navigate before logout/state and never bind another account', async () => {
   for (const origin of [
@@ -59,7 +86,7 @@ test('aliases navigate before logout/state and never bind another account', asyn
     'https://cn.meta-api.vip',
     'https://nan.meta-api.vip',
   ]) {
-    const { context, calls } = setup(origin);
+    const { context, calls, userStore, sessionStore, draftKey } = setup(origin);
     await context.onGitHubOAuthClicked('id', {
       shouldLogout: true,
       postLoginPath: '/desktop-login?request_id=' + 'a'.repeat(43),
@@ -71,10 +98,13 @@ test('aliases navigate before logout/state and never bind another account', asyn
     await context.onCustomOAuthClicked({ slug: 'google' });
     assert.equal(calls.length, 1);
     assert.equal(calls[0][1], 'https://meta-api.com/console/personal');
+    assert.equal(userStore.get('user'), 'synthetic old user');
+    assert.equal(sessionStore[draftKey], 'pending');
   }
 });
 test('primary GitHub and Google use same-tab canonical callbacks and retain next', async () => {
-  const { context, calls, saved } = setup(META_LOGIN_ORIGIN);
+  const { context, calls, saved, userStore, sessionStore, draftKey } =
+    setup(META_LOGIN_ORIGIN);
   const next = '/desktop-login?request_id=' + 'a'.repeat(43);
   await context.onGitHubOAuthClicked('github-id', {
     shouldLogout: true,
@@ -87,6 +117,10 @@ test('primary GitHub and Google use same-tab canonical callbacks and retain next
     META_LOGIN_ORIGIN + '/oauth/github',
   );
   assert.equal(saved[0][1], next);
+  assert.equal(userStore.has('user'), false);
+  assert.equal(userStore.get('theme'), 'dark');
+  assert.equal(sessionStore[draftKey], undefined);
+  assert.equal(sessionStore['unrelated-preference'], 'keep');
   await context.onCustomOAuthClicked(
     {
       slug: 'google',
