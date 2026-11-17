@@ -7545,6 +7545,12 @@
     "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 herda a configuração global. Aplica-se às solicitações de geração em streaming de Chat, Responses e Gemini, até 600 segundos. Altera apenas a espera pelos cabeçalhos, não a leitura do corpo nem o tempo limite total.",
     "不参与折扣的模型": "Modelos sem desconto",
     "不参与折扣，按模型基础价计费": "Sem desconto; cobrança pelo preço base do modelo",
-    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Os modelos selecionados usam o preço base do site em todos os grupos, sem multiplicadores pessoais, empresariais ou horários. Conversões de recargas e pacotes e taxas de aceleração permanecem iguais. Os IDs devem corresponder exatamente; selecione os aliases separadamente."
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Os modelos selecionados usam o preço base do site em todos os grupos, sem multiplicadores pessoais, empresariais ou horários. Conversões de recargas e pacotes e taxas de aceleração permanecem iguais. Os IDs devem corresponder exatamente; selecione os aliases separadamente.",
+    "重试原操作": "Repetir a operação original",
+    "已完成，余额待刷新": "Concluído; saldo pendente de atualização",
+    "无法恢复操作，请联系管理员核对": "Não foi possível recuperar a operação. Contacte um administrador.",
+    "结果待确认，请查询或重试原操作": "Resultado não confirmado. Consulte ou repita a operação original.",
+    "无法保存操作，请检查浏览器存储后重试": "Não foi possível guardar a operação. Verifique o armazenamento do navegador.",
+    "全部回收": "Recolher tudo"
   }
 }

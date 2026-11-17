@@ -8154,6 +8154,12 @@
     "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 kế thừa cài đặt chung. Áp dụng cho yêu cầu tạo nội dung dạng luồng Chat, Responses và Gemini, tối đa 600 giây. Chỉ thay đổi thời gian chờ tiêu đề, không thay đổi việc đọc nội dung hay tổng thời gian chờ.",
     "不参与折扣的模型": "Mô hình không áp dụng giảm giá",
     "不参与折扣，按模型基础价计费": "Không giảm giá, tính theo giá cơ bản của mô hình",
-    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Các mô hình đã chọn dùng giá cơ bản của trang trong mọi nhóm, không áp dụng hệ số cá nhân, doanh nghiệp hoặc khung giờ. Quy đổi nạp tiền, gói và phí tăng tốc trả phí không thay đổi. ID phải khớp chính xác; chọn riêng các bí danh."
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Các mô hình đã chọn dùng giá cơ bản của trang trong mọi nhóm, không áp dụng hệ số cá nhân, doanh nghiệp hoặc khung giờ. Quy đổi nạp tiền, gói và phí tăng tốc trả phí không thay đổi. ID phải khớp chính xác; chọn riêng các bí danh.",
+    "重试原操作": "Thử lại thao tác ban đầu",
+    "已完成，余额待刷新": "Đã hoàn tất; cần làm mới số dư",
+    "无法恢复操作，请联系管理员核对": "Không thể khôi phục thao tác. Hãy liên hệ quản trị viên.",
+    "结果待确认，请查询或重试原操作": "Chưa xác nhận kết quả. Kiểm tra hoặc thử lại thao tác ban đầu.",
+    "无法保存操作，请检查浏览器存储后重试": "Không thể lưu thao tác. Kiểm tra bộ nhớ trình duyệt rồi thử lại.",
+    "全部回收": "Thu hồi toàn bộ"
   }
 }

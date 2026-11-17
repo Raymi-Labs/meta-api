@@ -91,12 +91,20 @@ func setupEnterpriseAPI(t *testing.T, enabled bool) *enterpriseAPI {
 func (a *enterpriseAPI) user(name string) *model.User {
 	a.t.Helper()
 	user := &model.User{Username: name, AffCode: name, Email: name + "@example.com", Status: common.UserStatusEnabled, Group: "default"}
+	if name == "root" || strings.HasSuffix(name, "-root") {
+		user.Role = common.RoleRootUser
+	}
 	require.NoError(a.t, model.DB.Create(user).Error)
 	return user
 }
 
 // call 以指定账号发起请求；userID 为 0 表示未登录。
 func (a *enterpriseAPI) call(userID, role int, method, path string, body any) enterpriseAPIResponse {
+	a.t.Helper()
+	return a.callWithKey(userID, role, method, path, body, common.GetUUID())
+}
+
+func (a *enterpriseAPI) callWithKey(userID, role int, method, path string, body any, key string) enterpriseAPIResponse {
 	a.t.Helper()
 	payload := []byte("{}")
 	if body != nil {
@@ -106,6 +114,7 @@ func (a *enterpriseAPI) call(userID, role int, method, path string, body any) en
 	}
 	req := httptest.NewRequest(method, path, bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", key)
 	if userID > 0 {
 		req.Header.Set("X-Test-User", strconv.Itoa(userID))
 		req.Header.Set("X-Test-Role", strconv.Itoa(role))

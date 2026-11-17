@@ -161,7 +161,7 @@ type EnterpriseAuditEvent struct {
 func enterpriseModels() []any {
 	return []any{
 		&Enterprise{}, &EnterpriseMember{}, &EnterpriseInvitation{}, &EnterpriseAuditEvent{},
-		&EnterpriseLedger{}, &EnterpriseReservation{}, &EnterpriseTokenBudget{}, &EnterpriseQuotaRequest{}, &EnterpriseApplication{},
+		&EnterpriseLedger{}, &EnterpriseReservation{}, &EnterpriseTokenBudget{}, &EnterpriseQuotaRequest{}, &EnterpriseApplication{}, &EnterpriseOperation{},
 	}
 }
 
@@ -353,15 +353,20 @@ func enterpriseActorMemberTx(tx *gorm.DB, enterpriseID int, actor EnterpriseActo
 
 func appendEnterpriseAuditTx(tx *gorm.DB, enterpriseID int, actor EnterpriseActor, actorMember *EnterpriseMember,
 	action, targetType string, targetID int, before, after any, reason string) error {
-	encode := func(v any) string {
+	encode := func(v any) (string, error) {
 		if v == nil {
-			return ""
+			return "", nil
 		}
 		data, err := common.Marshal(v)
-		if err != nil {
-			return ""
-		}
-		return string(data)
+		return string(data), err
+	}
+	beforeJSON, err := encode(before)
+	if err != nil {
+		return err
+	}
+	afterJSON, err := encode(after)
+	if err != nil {
+		return err
 	}
 	reason = strings.TrimSpace(reason)
 	if len([]rune(reason)) > 255 {
@@ -374,8 +379,8 @@ func appendEnterpriseAuditTx(tx *gorm.DB, enterpriseID int, actor EnterpriseActo
 		Action:       action,
 		TargetType:   targetType,
 		TargetId:     targetID,
-		Before:       encode(before),
-		After:        encode(after),
+		Before:       beforeJSON,
+		After:        afterJSON,
 		Reason:       reason,
 		CreatedAt:    time.Now().Unix(),
 	}).Error
@@ -702,7 +707,7 @@ func IsEnterpriseUserError(err error) bool {
 		ErrEnterpriseSelfOperation, ErrEnterpriseBillingGroup, ErrEnterpriseBillingConfigConflict, ErrEnterpriseTimezone, ErrEnterpriseOwnerAccount,
 		ErrEnterpriseDisabled, ErrEnterpriseInsufficientUnallocated, ErrEnterpriseDuplicateVoucher,
 		ErrEnterpriseReclaimExceeds, ErrEnterpriseRequestPending, ErrEnterpriseRequestState,
-		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap, ErrEnterpriseUnsupported,
+		ErrEnterpriseMemberInactive, ErrEnterpriseTokenCap, ErrEnterpriseUnsupported, ErrEnterpriseOperationConflict, ErrEnterpriseOperationInvalid, ErrEnterpriseOperationPending, ErrEnterpriseAmountOverflow, ErrEnterpriseBalanceChanged,
 	} {
 		if errors.Is(err, known) {
 			return true

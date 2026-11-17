@@ -7545,6 +7545,12 @@
     "0 继承全局；用于流式 Chat、Responses 和 Gemini 生成请求，最长 600 秒。仅延长等待响应头，不改变正文读取和总超时。": "0 neemt de globale instelling over. Geldt voor streaminggeneratieverzoeken voor Chat, Responses en Gemini, maximaal 600 seconden. Wijzigt alleen het wachten op headers, niet het lezen van de inhoud of de totale time-out.",
     "不参与折扣的模型": "Modellen zonder korting",
     "不参与折扣，按模型基础价计费": "Geen korting; afrekening tegen de basisprijs van het model",
-    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Geselecteerde modellen gebruiken in alle groepen de basisprijs, zonder persoonlijke, zakelijke of tijdsmultipliers. Omrekening van tegoeden en pakketten en versnellingskosten blijven ongewijzigd. Model-ID’s moeten exact overeenkomen; selecteer aliassen apart."
+    "所选模型在所有分组按本站基础价计费，不叠加个人、企业或时段倍率；不改变充值套餐折算和付费加速费用。精确匹配模型 ID，别名需单独选择。": "Geselecteerde modellen gebruiken in alle groepen de basisprijs, zonder persoonlijke, zakelijke of tijdsmultipliers. Omrekening van tegoeden en pakketten en versnellingskosten blijven ongewijzigd. Model-ID’s moeten exact overeenkomen; selecteer aliassen apart.",
+    "重试原操作": "Oorspronkelijke bewerking opnieuw proberen",
+    "已完成，余额待刷新": "Voltooid; saldo moet worden vernieuwd",
+    "无法恢复操作，请联系管理员核对": "Bewerking kan niet worden hersteld. Neem contact op met een beheerder.",
+    "结果待确认，请查询或重试原操作": "Resultaat onbevestigd. Controleer of herhaal de oorspronkelijke bewerking.",
+    "无法保存操作，请检查浏览器存储后重试": "Bewerking kan niet worden opgeslagen. Controleer de browseropslag.",
+    "全部回收": "Alles terughalen"
   }
 }

@@ -32,72 +32,118 @@ import {
   enterpriseRequest,
   formatEnterpriseTime,
 } from '../../helpers/enterprise';
-import { renderQuota } from '../../helpers/render';
-import {
-  displayAmountToQuota,
-  quotaToDisplayAmount,
-} from '../../helpers/quota';
-import { showError, showSuccess } from '../../helpers/toast';
+import { renderQuota, getCurrencyConfig } from '../../helpers/render';
+import { parseEnterpriseQuota } from '../../helpers/enterpriseQuota';
+import { getQuotaPerUnit } from '../../helpers/quota';
+import { quotaToDisplayAmount } from '../../helpers/quota';
+import { showError } from '../../helpers/toast';
+import { getStoredUser } from '../../helpers/storage';
+import { listPendingEnterpriseReservations } from '../../helpers/enterpriseOperation';
 
-function ResolveModal({ reservation, onClose, onDone }) {
+import { useEnterpriseOperation } from '../../hooks/enterprise/useEnterpriseOperation';
+import EnterpriseOperationStatus from '../../components/common/EnterpriseOperationStatus';
+
+export function ResolveModal({ reservation, onClose, onDone }) {
   const { t } = useTranslation();
   const [settle, setSettle] = useState(true);
   const [amount, setAmount] = useState();
   const [reason, setReason] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [rawUnits, setRawUnits] = useState(false);
+  const operation = useEnterpriseOperation({
+    scope: `reservation:${reservation?.id}`,
+    url: `/api/enterprise/admin/reservations/${reservation?.id}/resolve`,
+    lookupBase: reservation
+      ? `/api/enterprise/admin/enterprises/${reservation.enterprise_id}`
+      : null,
+    recoveryContext: reservation
+      ? {
+          reservation: {
+            id: reservation.id,
+            enterprise_id: reservation.enterprise_id,
+            enterprise_name: reservation.enterprise_name,
+            member_name: reservation.member_name,
+            request_id: reservation.request_id,
+            quota: reservation.quota,
+          },
+        }
+      : undefined,
+    onDone,
+    onClose,
+  });
+  const { busy, locked } = operation;
   const full = reservation ? quotaToDisplayAmount(reservation.quota) : 0;
 
   useEffect(() => {
     setSettle(true);
+    setRawUnits(false);
     setAmount(full);
     setReason('');
   }, [reservation?.id]);
 
+  useEffect(() => {
+    const data = operation.pending?.data;
+    if (!data) return;
+    setSettle(data.settle);
+    setRawUnits(true);
+    setAmount(data.amount);
+    setReason(data.reason || '');
+  }, [operation.pending]);
+
   if (!reservation) return null;
 
   const submit = async () => {
+    if (operation.pending) return operation.submit(operation.pending.data);
+    if (busy) return;
     // 金额留空不能当成 0 结算，否则等于悄悄全额退回。
     if (settle && typeof amount !== 'number') return showError(t('请填写金额'));
     if (!reason.trim()) return showError(t('请填写原因'));
     // 金额没改就原样传预留额，避免换算取整差 1 个单位。
     const quota =
-      amount === full ? reservation.quota : displayAmountToQuota(amount);
-    setBusy(true);
-    try {
-      await enterpriseRequest(
-        'post',
-        `/api/enterprise/admin/reservations/${reservation.id}/resolve`,
-        { settle, amount: settle ? quota : 0, reason: reason.trim() },
-      );
-      showSuccess(t('已完成'));
-      onDone();
-      onClose();
-    } catch (e) {
-      showError(e.message);
-    } finally {
-      setBusy(false);
-    }
+      !rawUnits && amount === full
+        ? reservation.quota
+        : parseEnterpriseQuota(amount, {
+            raw: rawUnits,
+            quotaPerUnit: getQuotaPerUnit(),
+            ...getCurrencyConfig(),
+          });
+    if (settle && (!Number.isSafeInteger(quota) || quota < 0 || quota > 1e15))
+      return showError(t('请填写金额'));
+    await operation.submit({
+      settle,
+      amount: settle ? quota : 0,
+      reason: reason.trim(),
+    });
   };
 
   return (
     <Modal
-      className='ec-modal'
+      className='ec-modal ec-financial-modal'
       title={`${t('处理预留')} · ${reservation.enterprise_name}`}
       visible
-      okText={settle ? t('结算') : t('退回')}
+      okText={
+        operation.pending ? t('重试原操作') : settle ? t('结算') : t('退回')
+      }
       okButtonProps={{ type: 'danger' }}
       confirmLoading={busy}
       onOk={submit}
-      onCancel={onClose}
+      onCancel={() => !busy && onClose()}
+      maskClosable={!busy}
+      closeOnEsc={!busy}
+      closable={!busy}
+      cancelButtonProps={{ disabled: busy }}
     >
+      <EnterpriseOperationStatus operation={operation} />
       <div className='ec-field'>
         <span className='ec-field-head'>
           {reservation.member_name}
           <em>
-            {t('已预留 {{amount}}', { amount: renderQuota(reservation.quota) })}
+            {t('已预留 {{amount}}', {
+              amount: renderQuota(reservation.quota, 8),
+            })}
           </em>
         </span>
         <RadioGroup
+          disabled={locked}
           type='button'
           aria-label={t('处理方式')}
           value={settle}
@@ -108,11 +154,28 @@ function ResolveModal({ reservation, onClose, onDone }) {
         </RadioGroup>
       </div>
       {settle && (
+        <RadioGroup
+          type='button'
+          aria-label={t('金额单位')}
+          value={rawUnits}
+          disabled={locked}
+          onChange={(e) => {
+            setRawUnits(e.target.value);
+            setAmount(e.target.value ? reservation.quota : full);
+          }}
+        >
+          <Radio value={false}>{t('金额')}</Radio>
+          <Radio value={true}>{t('原始额度')}</Radio>
+        </RadioGroup>
+      )}
+      {settle && (
         <label className='ec-field'>
           {t('实际扣费')}
           <InputNumber
             min={0}
-            precision={2}
+            precision={rawUnits ? 0 : 8}
+            aria-label={rawUnits ? t('原始额度') : t('实际扣费')}
+            disabled={locked}
             value={amount}
             onChange={setAmount}
             style={{ width: '100%' }}
@@ -121,7 +184,13 @@ function ResolveModal({ reservation, onClose, onDone }) {
       )}
       <label className='ec-field'>
         {t('原因')}
-        <Input maxLength={200} value={reason} onChange={setReason} />
+        <Input
+          aria-label={t('原因')}
+          disabled={locked}
+          maxLength={200}
+          value={reason}
+          onChange={setReason}
+        />
       </label>
       <p className='ea-warn'>{t('处理后不能更改。')}</p>
     </Modal>
@@ -136,6 +205,27 @@ export default function Reservations({ canResolve, onCount, onDone }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [target, setTarget] = useState(null);
+  const actorID = getStoredUser()?.id;
+  const [recovery, setRecovery] = useState({ actorID: null, items: [] });
+  const refreshRecovery = useCallback(() => {
+    try {
+      setRecovery({
+        actorID,
+        items: canResolve
+          ? listPendingEnterpriseReservations(sessionStorage, actorID)
+          : [],
+      });
+    } catch {
+      setRecovery({ actorID, items: [] });
+      showError(t('无法恢复操作，请联系管理员核对'));
+    }
+  }, [actorID, canResolve, t]);
+
+  useEffect(() => {
+    refreshRecovery();
+  }, [refreshRecovery]);
+  const pendingReservations =
+    canResolve && recovery.actorID === actorID ? recovery.items : [];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -217,6 +307,25 @@ export default function Reservations({ canResolve, onCount, onDone }) {
 
   return (
     <>
+      {pendingReservations.length > 0 && (
+        <div
+          className='ec-pending-operations'
+          role='group'
+          aria-label={t('结果待确认')}
+        >
+          {pendingReservations.map((reservation) => (
+            <Button
+              key={reservation.id}
+              theme='light'
+              onClick={() => setTarget(reservation)}
+            >
+              {t('查询结果')} ·{' '}
+              {reservation.enterprise_name || reservation.enterprise_id} ·{' '}
+              {reservation.request_id || reservation.id}
+            </Button>
+          ))}
+        </div>
+      )}
       <div className='em-card'>
         <Table
           rowKey='id'
@@ -238,10 +347,14 @@ export default function Reservations({ canResolve, onCount, onDone }) {
       </div>
       <ResolveModal
         reservation={target}
-        onClose={() => setTarget(null)}
-        onDone={() => {
-          load();
-          onDone();
+        onClose={() => {
+          setTarget(null);
+          refreshRecovery();
+        }}
+        onDone={async () => {
+          refreshRecovery();
+          await load();
+          await onDone();
         }}
       />
     </>

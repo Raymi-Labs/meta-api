@@ -715,6 +715,11 @@ preflight_target() {
     previous_fingerprint="$fingerprint"
   done
   log "preflight schema is stable: $previous_fingerprint"
+  # Check the post-migration schema while the current service is still online.
+  # Without this check a first upgrade could create the receipt table, fail its
+  # health check, then discover too late that its old image cannot recover.
+  verify_enterprise_receipt_capability "$(actual_image_id)" "$PREFLIGHT_DB" \
+    || die "current image cannot recover the post-migration enterprise schema; compatible recovery rollout required before switching"
   cleanup_preflight
 }
 
@@ -1080,9 +1085,42 @@ load_state() {
   source "$STATE_FILE"
 }
 
+# The receipt table is an irreversible capability marker, even while empty.
+# This conservative schema gate removes the check/write race: ordinary money
+# writes cannot introduce a new requirement after a successful pre-switch check.
+# Candidate identity is the immutable Docker image ID, never a mutable tag.
+verify_enterprise_receipt_capability() {
+  local candidate_id="$1" schema="${2:-}" marker capabilities probe_name="newapi-capabilities-$$"
+  marker="$(timeout --kill-after=2 10 docker exec -e CAPABILITY_DB="$schema" "$MYSQL_CONTAINER" sh -c '
+    MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?}" exec mysql --user=root --protocol=SOCKET --batch --skip-column-names --execute="SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='\''enterprise_operations'\''" "${CAPABILITY_DB:-${MYSQL_DATABASE:?}}"
+  ' 2>/dev/null)" || { log "cannot verify enterprise receipt compatibility" >&2; return 1; }
+  case "$marker" in
+    0) return 0 ;;
+    1) ;;
+    *) log "invalid enterprise receipt compatibility result" >&2; return 1 ;;
+  esac
+  if ! capabilities="$(timeout --kill-after=2 15 docker run --rm --name "$probe_name" --network none --read-only --entrypoint /new-api "$candidate_id" --data-capabilities 2>/dev/null)"; then
+    timeout --kill-after=2 5 docker rm -f "$probe_name" >/dev/null 2>&1 || true
+    log "target cannot declare enterprise receipt support; keeping current application" >&2
+    return 1
+  fi
+  case "
+$capabilities
+" in
+    *$'\nenterprise_operations_v1\n'*) return 0 ;;
+    *) log "target does not support enterprise_operations_v1; refusing incompatible switch" >&2; return 1 ;;
+  esac
+}
+
 recover_previous_deployment() {
   set +e
   [ "$RECOVERY_REQUIRED" -eq 1 ] || return 0
+  if ! verify_enterprise_receipt_capability "$RECOVERY_ID"; then
+    log "CRITICAL: automatic recovery refused because the previous image cannot preserve financial receipts; current deployment retained" >&2
+    append_history recovery "$TARGET_IMAGE" "$RECOVERY_IMAGE" failed "${ACTIVE_BACKUP_DIR:-}" || true
+    RECOVERY_REQUIRED=0
+    return 1
+  fi
   log "deployment failed; restoring $RECOVERY_IMAGE"
   docker logs "$CONTAINER_NAME" >"${ACTIVE_BACKUP_DIR:-$STATE_DIR}/failed-deployment.log" 2>&1 || true
   cp -a "$RECOVERY_COMPOSE" "$COMPOSE_FILE"
@@ -1133,6 +1171,7 @@ deploy_target() {
   else
     RECOVERY_STATE_EXISTED=0
   fi
+  verify_enterprise_receipt_capability "$TARGET_ID" || die "enterprise financial data is incompatible with target image"
   RECOVERY_REQUIRED=1
 
   replace_compose_image "$TARGET_IMAGE"

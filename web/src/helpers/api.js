@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { clearStoredUser } from './storage';
 import { showError } from './toast';
 export { API, updateAPI } from './apiCore';
 import { API, updateAPI } from './apiCore';
@@ -130,7 +131,7 @@ async function prepareOAuthState(options = {}) {
     try {
       await API.get('/api/user/logout', { skipErrorHandler: true });
     } catch (err) {}
-    localStorage.removeItem('user');
+    clearStoredUser();
     updateAPI();
   }
   const state = await getOAuthState();

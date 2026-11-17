@@ -33,6 +33,7 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 		middleware.EnterpriseMemberAuth(model.EnterpriseRoleAdmin))
 	{
 		manageRoute.GET("/overview", controller.GetEnterpriseOverview)
+		manageRoute.GET("/operations/:operation_key", controller.GetEnterpriseOperation)
 		manageRoute.GET("/members", controller.ListEnterpriseMembers)
 		manageRoute.GET("/members/:member_id", controller.GetEnterpriseMember)
 		manageRoute.POST("/members/:member_id/allocate", controller.AllocateEnterpriseQuota)
@@ -70,6 +71,7 @@ func setEnterpriseRoutes(apiRouter *gin.RouterGroup) {
 
 		scoped := adminRoute.Group("/enterprises/:id", middleware.EnterprisePlatformScope())
 		scoped.GET("/overview", controller.GetEnterpriseOverview)
+		scoped.GET("/operations/:operation_key", middleware.RootAuth(), controller.GetEnterpriseOperation)
 		scoped.GET("/members", controller.ListEnterpriseMembers)
 		scoped.GET("/usage", controller.ListEnterpriseUsage)
 		scoped.GET("/usage/summary", controller.GetEnterpriseUsageSummary)

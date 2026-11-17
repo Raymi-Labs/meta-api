@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Input,
@@ -26,10 +26,12 @@ import {
   Radio,
   RadioGroup,
 } from '@douyinfe/semi-ui';
-import { enterpriseRequest } from '../../helpers/enterprise';
-import { renderQuota } from '../../helpers/render';
-import { displayAmountToQuota } from '../../helpers/quota';
-import { showError, showSuccess } from '../../helpers/toast';
+import { useEnterpriseOperation } from '../../hooks/enterprise/useEnterpriseOperation';
+import EnterpriseOperationStatus from '../../components/common/EnterpriseOperationStatus';
+import { renderQuota, getCurrencyConfig } from '../../helpers/render';
+import { parseEnterpriseQuota } from '../../helpers/enterpriseQuota';
+import { getQuotaPerUnit } from '../../helpers/quota';
+import { showError } from '../../helpers/toast';
 
 // 入账（对公转账到账，凭证号防重复录入）与调账（纠错，必须写原因）共用一个弹窗。
 export default function WalletModal({ mode, enterprise, onClose, onDone }) {
@@ -38,10 +40,17 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
   const [sign, setSign] = useState(1);
   const [voucher, setVoucher] = useState('');
   const [reason, setReason] = useState('');
-  const [busy, setBusy] = useState(false);
   const [rawUnits, setRawUnits] = useState(false);
-  const submitting = useRef(false);
   const credit = mode === 'credit';
+  const base = `/api/enterprise/admin/enterprises/${enterprise?.id}`;
+  const operation = useEnterpriseOperation({
+    scope: `${base}/${mode}`,
+    url: `${base}/${mode}`,
+    lookupBase: enterprise ? base : null,
+    onDone,
+    onClose,
+  });
+  const { busy, locked } = operation;
 
   useEffect(() => {
     setAmount(undefined);
@@ -51,43 +60,47 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
     setReason('');
   }, [enterprise?.id, mode]);
 
+  useEffect(() => {
+    const data = operation.pending?.data;
+    if (!data) return;
+    const originalAmount = data.delta ?? data.amount;
+    setAmount(Math.abs(originalAmount));
+    setSign(originalAmount < 0 ? -1 : 1);
+    setRawUnits(true);
+    setVoucher(data.voucher || '');
+    setReason(data.reason || '');
+  }, [operation.pending]);
+
   if (!enterprise) return null;
-  const quota = rawUnits ? Number(amount || 0) : displayAmountToQuota(amount);
+  const quota = parseEnterpriseQuota(amount, {
+    raw: rawUnits,
+    quotaPerUnit: getQuotaPerUnit(),
+    ...getCurrencyConfig(),
+  });
   const after = enterprise.unallocated + (credit ? quota : sign * quota);
 
   const submit = async () => {
-    if (submitting.current) return;
+    if (operation.pending) return operation.submit(operation.pending.data);
+    if (busy) return;
     if (!Number.isSafeInteger(quota) || quota <= 0 || quota > 1e15)
       return showError(t('请填写金额'));
     if (credit && !voucher.trim()) return showError(t('请填写转账凭证号'));
     if (!credit && !reason.trim()) return showError(t('请填写原因'));
-    submitting.current = true;
-    setBusy(true);
-    try {
-      await enterpriseRequest(
-        'post',
-        `/api/enterprise/admin/enterprises/${enterprise.id}/${mode}`,
-        credit
-          ? { amount: quota, voucher: voucher.trim(), reason: reason.trim() }
-          : { delta: sign * quota, reason: reason.trim() },
-      );
-      showSuccess(t('已完成'));
-      onDone();
-      onClose();
-    } catch (e) {
-      showError(e.message);
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-    }
+    await operation.submit(
+      credit
+        ? { amount: quota, voucher: voucher.trim(), reason: reason.trim() }
+        : { delta: sign * quota, reason: reason.trim() },
+    );
   };
 
   return (
     <Modal
-      className='ec-modal'
+      className='ec-modal ec-financial-modal'
       title={`${credit ? t('入账') : t('调账')} · ${enterprise.name}`}
       visible
-      okText={credit ? t('入账') : t('调账')}
+      okText={
+        operation.pending ? t('重试原操作') : credit ? t('入账') : t('调账')
+      }
       okButtonProps={after < 0 ? { type: 'danger' } : undefined}
       confirmLoading={busy}
       onOk={submit}
@@ -97,6 +110,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
       closable={!busy}
       cancelButtonProps={{ disabled: busy }}
     >
+      <EnterpriseOperationStatus operation={operation} />
       {!credit && (
         <div className='ec-field'>
           <RadioGroup
@@ -104,7 +118,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
             aria-label={t('方向')}
             value={sign}
             onChange={(e) => setSign(e.target.value)}
-            disabled={busy}
+            disabled={locked}
           >
             <Radio value={1}>{t('增加')}</Radio>
             <Radio value={-1}>{t('扣减')}</Radio>
@@ -120,7 +134,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
             setRawUnits(e.target.value);
             setAmount(undefined);
           }}
-          disabled={busy}
+          disabled={locked}
         >
           <Radio value={false}>{t('金额')}</Radio>
           <Radio value={true}>{t('原始额度')}</Radio>
@@ -130,7 +144,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
         <span className='ec-field-head'>
           {rawUnits ? t('原始额度') : t('金额')}
           <em className={after < 0 ? 'em-num neg' : undefined}>
-            {quota > 0
+            {!operation.pending && quota > 0
               ? t('未分配余额 {{before}} → {{after}}', {
                   before: renderQuota(enterprise.unallocated, 8),
                   after: renderQuota(after, 8),
@@ -144,7 +158,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
           min={0}
           precision={rawUnits ? 0 : 8}
           aria-label={rawUnits ? t('原始额度') : t('金额')}
-          disabled={busy}
+          disabled={locked}
           value={amount}
           onChange={setAmount}
           style={{ width: '100%' }}
@@ -154,10 +168,11 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
         <label className='ec-field'>
           {t('转账凭证号')}
           <Input
+            aria-label={t('转账凭证号')}
             maxLength={128}
             value={voucher}
             onChange={setVoucher}
-            disabled={busy}
+            disabled={locked}
           />
         </label>
       )}
@@ -167,7 +182,7 @@ export default function WalletModal({ mode, enterprise, onClose, onDone }) {
           maxLength={200}
           value={reason}
           onChange={setReason}
-          disabled={busy}
+          disabled={locked}
         />
       </label>
     </Modal>
