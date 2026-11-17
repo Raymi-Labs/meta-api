@@ -182,7 +182,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}()
 
 	startRequestKeepAlive := func() {
-		if relayFormat != types.RelayFormatClaude || !relayInfo.IsStream {
+		if !relayInfo.IsStream || (relayFormat != types.RelayFormatClaude && relayFormat != types.RelayFormatOpenAI && relayFormat != types.RelayFormatOpenAIResponses) {
 			return
 		}
 		if enabled, interval := helper.GetStreamPingConfig(relayInfo); enabled {

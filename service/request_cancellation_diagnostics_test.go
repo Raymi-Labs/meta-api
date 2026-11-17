@@ -107,3 +107,26 @@ func TestCancellationObservationNormalFinish(t *testing.T) {
 	defer o.mu.Unlock()
 	require.Nil(t, o.frozen, "normal completion unregisters the observer")
 }
+
+func TestCancellationFreezesDownstreamDelivery(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx, cancel := context.WithCancel(context.Background())
+	c.Request = httptest.NewRequest("POST", "/v1/responses", nil).WithContext(ctx)
+	finish := BeginRequestCancellationObservation(c, time.Now().Add(-time.Second))
+	defer finish()
+	common.ObserveStreamDelivery(c, true, false, nil)
+	common.ObserveStreamDelivery(c, false, true, nil)
+	cancel()
+	finish()
+	admin := map[string]interface{}{}
+	appendCancellationDiagnostics(c, types.NewClientCanceledError(), admin, time.Second)
+	d := admin["cancellation"].(CancellationDiagnostics)
+	require.NotNil(t, d.Delivery)
+	require.EqualValues(t, 1, d.Delivery.Heartbeats)
+	require.EqualValues(t, 1, d.Delivery.EffectiveFrames)
+	require.GreaterOrEqual(t, *d.Delivery.FirstEffectiveMs, int64(1000))
+	common.ObserveStreamDelivery(c, false, true, nil)
+	again := map[string]interface{}{}
+	appendCancellationDiagnostics(c, types.NewClientCanceledError(), again, time.Minute)
+	require.Equal(t, admin, again)
+}

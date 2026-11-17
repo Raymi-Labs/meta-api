@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 )
@@ -15,17 +16,19 @@ const requestCancellationObservationKey = "request_cancellation_observation"
 // CancellationDiagnostics describes observed transport progress, not why the
 // remote peer disconnected. Nil means this transport was not instrumented.
 type CancellationDiagnostics struct {
-	DurationMs              int64  `json:"duration_ms"`
-	Phase                   string `json:"phase"`
-	UpstreamResponseStarted *bool  `json:"upstream_response_started"`
+	DurationMs              int64                          `json:"duration_ms"`
+	Phase                   string                         `json:"phase"`
+	UpstreamResponseStarted *bool                          `json:"upstream_response_started"`
+	Delivery                *common.StreamDeliverySnapshot `json:"delivery,omitempty"`
 }
 
 type requestCancellationObservation struct {
-	mu      sync.Mutex
-	start   time.Time
-	phase   string
-	started *bool
-	frozen  *CancellationDiagnostics
+	mu       sync.Mutex
+	start    time.Time
+	phase    string
+	started  *bool
+	frozen   *CancellationDiagnostics
+	delivery *common.StreamDeliveryObservation
 }
 
 func (o *requestCancellationObservation) freeze() {
@@ -33,13 +36,19 @@ func (o *requestCancellationObservation) freeze() {
 	defer o.mu.Unlock()
 	if o.frozen == nil {
 		o.frozen = &CancellationDiagnostics{DurationMs: time.Since(o.start).Milliseconds(), Phase: o.phase, UpstreamResponseStarted: o.started}
+		if o.delivery != nil {
+			snapshot := o.delivery.Freeze(time.Now())
+			o.frozen.Delivery = &snapshot
+		}
 	}
 }
 
 // BeginRequestCancellationObservation installs one bounded observation per
 // request. Finish must run before final logging and releases the callback.
 func BeginRequestCancellationObservation(c *gin.Context, start time.Time) func() {
-	o := &requestCancellationObservation{start: start, phase: "unknown"}
+	delivery := common.NewStreamDeliveryObservation(start)
+	c.Set(common.StreamDeliveryObservationKey, delivery)
+	o := &requestCancellationObservation{start: start, phase: "unknown", delivery: delivery}
 	c.Set(requestCancellationObservationKey, o)
 	done := make(chan struct{})
 	stop := context.AfterFunc(c.Request.Context(), func() { o.freeze(); close(done) })

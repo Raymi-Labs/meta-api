@@ -7770,6 +7770,15 @@
     "参考可用率": "Reference uptime",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Availability reported for the model endpoint over the last 24 hours, not measurements of this site’s group.",
     "更新时间：{{time}}": "Updated: {{time}}",
-    "最近有效统计": "Last valid measurement"
+    "最近有效统计": "Last valid measurement",
+    "下游交付观测": "Downstream delivery observed",
+    "已发送保活次数": "Heartbeats sent",
+    "已写出有效内容帧": "Effective content frames written",
+    "首次保活耗时": "Time to first heartbeat",
+    "首次有效内容耗时": "Time to first effective content",
+    "距最后有效内容": "Time since last effective content",
+    "下游写入失败": "Downstream write failed",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "When enabled, streaming keepalives start after about 1 second, then use the configured interval. They cannot extend a client’s total timeout. Once streaming starts, errors are sent as stream events; channels switch only when safe.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "Supports 1–5 seconds; larger legacy values take effect as 5 seconds."
   }
 }

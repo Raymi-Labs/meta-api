@@ -7890,6 +7890,15 @@
     "参考可用率": "Disponibilité de référence",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Disponibilité du point de terminaison du modèle sur les dernières 24 heures, et non mesures du groupe de ce site.",
     "更新时间：{{time}}": "Mis à jour : {{time}}",
-    "最近有效统计": "Dernière mesure valide"
+    "最近有效统计": "Dernière mesure valide",
+    "下游交付观测": "Transmission en aval observée",
+    "已发送保活次数": "Signaux de maintien envoyés",
+    "已写出有效内容帧": "Trames de contenu utile écrites",
+    "首次保活耗时": "Délai du premier signal de maintien",
+    "首次有效内容耗时": "Délai du premier contenu utile",
+    "距最后有效内容": "Temps depuis le dernier contenu utile",
+    "下游写入失败": "Échec d’écriture en aval",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "Une fois activé, le maintien commence après environ 1 seconde, puis suit l’intervalle configuré. Il ne prolonge pas le délai total du client. Les erreurs après le début du flux sont envoyées dans le flux ; le canal ne change que si cela est sûr.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "De 1 à 5 secondes ; les anciennes valeurs supérieures sont limitées à 5 secondes."
   }
 }

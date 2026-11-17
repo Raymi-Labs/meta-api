@@ -83,6 +83,12 @@ func GetOptions(c *gin.Context) {
 	common.OptionMapRWMutex.Lock()
 	for k, v := range common.OptionMap {
 		value := common.Interface2String(v)
+		if k == "general_setting.ping_interval_seconds" {
+			seconds, err := strconv.Atoi(value)
+			if err != nil || seconds <= 0 || seconds > 5 {
+				value = "5"
+			}
+		}
 		if common.IsPulseConfigKey(k) || strings.HasSuffix(k, "Token") ||
 			strings.HasSuffix(k, "Secret") ||
 			(strings.HasSuffix(k, "Key") && !isVisiblePublicKeyOption(k)) ||
@@ -148,6 +154,13 @@ func UpdateOption(c *gin.Context) {
 		option.Value = common.Interface2String(option.Value.(int))
 	default:
 		option.Value = fmt.Sprintf("%v", option.Value)
+	}
+	if option.Key == "general_setting.ping_interval_seconds" {
+		seconds, parseErr := strconv.Atoi(option.Value.(string))
+		if parseErr != nil || seconds < 1 || seconds > 5 {
+			common.ApiError(c, fmt.Errorf("Ping interval must be an integer between 1 and 5 seconds"))
+			return
+		}
 	}
 	if option.Key == model.SystemTranslationTokenOption {
 		id, parseErr := strconv.Atoi(option.Value.(string))

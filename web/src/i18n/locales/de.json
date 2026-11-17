@@ -7558,6 +7558,15 @@
     "参考可用率": "Referenzverfügbarkeit",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Gemeldete Verfügbarkeit des Modell-Endpunkts in den letzten 24 Stunden, keine Messung der Gruppe auf dieser Website.",
     "更新时间：{{time}}": "Aktualisiert: {{time}}",
-    "最近有效统计": "Letzte gültige Messung"
+    "最近有效统计": "Letzte gültige Messung",
+    "下游交付观测": "Übertragung zum Client beobachtet",
+    "已发送保活次数": "Gesendete Keepalive-Signale",
+    "已写出有效内容帧": "Geschriebene Inhaltsframes",
+    "首次保活耗时": "Zeit bis zum ersten Keepalive",
+    "首次有效内容耗时": "Zeit bis zum ersten nutzbaren Inhalt",
+    "距最后有效内容": "Zeit seit dem letzten nutzbaren Inhalt",
+    "下游写入失败": "Schreiben zum Client fehlgeschlagen",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "Nach Aktivierung beginnt Keepalive nach etwa 1 Sekunde, danach gilt das eingestellte Intervall. Das Gesamtzeitlimit des Clients wird nicht verlängert. Fehler nach Streambeginn werden als Streamereignisse gesendet; Kanalwechsel erfolgen nur unter sicheren Bedingungen.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "1–5 Sekunden; größere Altwerte werden auf 5 Sekunden begrenzt."
   }
 }

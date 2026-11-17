@@ -21,8 +21,8 @@ import (
 const (
 	InitialScannerBufferSize    = 64 << 10
 	DefaultMaxScannerBufferSize = 64 << 20
-	DefaultPingInterval         = 10 * time.Second
-	MaxPingInterval             = 15 * time.Second
+	DefaultPingInterval         = 5 * time.Second
+	MaxPingInterval             = 5 * time.Second
 	DefaultStreamingTimeout     = 300 * time.Second
 )
 

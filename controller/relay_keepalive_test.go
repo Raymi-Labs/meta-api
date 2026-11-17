@@ -46,6 +46,12 @@ func readClaudeKeepAlive(t *testing.T, reader *bufio.Reader) {
 }
 
 func TestRelayRequestKeepAliveDuringPreparationAndFinalError(t *testing.T) {
+	for _, format := range []types.RelayFormat{types.RelayFormatClaude, types.RelayFormatOpenAI, types.RelayFormatOpenAIResponses} {
+		t.Run(string(format), func(t *testing.T) { testRelayPreparationKeepAlive(t, format) })
+	}
+}
+
+func testRelayPreparationKeepAlive(t *testing.T, format types.RelayFormat) {
 	configureRequestKeepAliveTest(t)
 	db := useControllerCapacityTestDB(t)
 	require.NoError(t, db.AutoMigrate(&model.User{}, &model.ContentSafetyViolation{}))
@@ -71,23 +77,42 @@ func TestRelayRequestKeepAliveDuringPreparationAndFinalError(t *testing.T) {
 	defer imageServer.Close()
 	result := make(chan bool, 1)
 	r := gin.New()
-	r.POST("/v1/messages", func(c *gin.Context) {
+	path := "/v1/messages"
+	if format == types.RelayFormatOpenAI {
+		path = "/v1/chat/completions"
+	}
+	if format == types.RelayFormatOpenAIResponses {
+		path = "/v1/responses"
+	}
+	r.POST(path, func(c *gin.Context) {
 		common.SetContextKey(c, constant.ContextKeyOriginalModel, "claude-sonnet-4-20250514")
-		Relay(c, types.RelayFormatClaude)
+		Relay(c, format)
 		result <- service.RequestSucceeded(c)
 	})
 	gateway := httptest.NewServer(r)
 	defer gateway.Close()
 	defer releaseOnce.Do(func() { close(releaseImage) })
 	body := `{"model":"claude-sonnet-4-20250514","max_tokens":16,"stream":true,"messages":[{"role":"user","content":[{"type":"image","source":{"type":"url","url":"` + imageServer.URL + `"}}]}]}`
+	if format == types.RelayFormatOpenAI {
+		body = `{"model":"claude-sonnet-4-20250514","stream":true,"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"` + imageServer.URL + `"}}]}]}`
+	}
+	if format == types.RelayFormatOpenAIResponses {
+		body = `{"model":"claude-sonnet-4-20250514","stream":true,"input":[{"role":"user","content":[{"type":"input_image","image_url":"` + imageServer.URL + `"}]}]}`
+	}
 	client := &http.Client{Timeout: 4 * time.Second}
-	resp, err := client.Post(gateway.URL+"/v1/messages", "application/json", strings.NewReader(body))
+	resp, err := client.Post(gateway.URL+path, "application/json", strings.NewReader(body))
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	require.Equal(t, "text/event-stream", resp.Header.Get("Content-Type"))
 	reader := bufio.NewReader(resp.Body)
-	readClaudeKeepAlive(t, reader)
+	if format == types.RelayFormatClaude {
+		readClaudeKeepAlive(t, reader)
+	} else {
+		line, err := reader.ReadString('\n')
+		require.NoError(t, err)
+		require.Equal(t, ": PING\n", line)
+	}
 	select {
 	case <-imageRequested:
 	default:
@@ -96,8 +121,12 @@ func TestRelayRequestKeepAliveDuringPreparationAndFinalError(t *testing.T) {
 	releaseOnce.Do(func() { close(releaseImage) })
 	remainder, err := io.ReadAll(reader)
 	require.NoError(t, err)
-	require.Contains(t, string(remainder), "event: error\ndata: ")
-	require.Contains(t, string(remainder), `"type":"error"`)
+	if format == types.RelayFormatOpenAI {
+		require.Contains(t, string(remainder), `"error":`)
+	} else {
+		require.Contains(t, string(remainder), "event: error\ndata: ")
+		require.Contains(t, string(remainder), `"type":"error"`)
+	}
 	require.NotContains(t, string(remainder), "event: message_stop")
 	require.False(t, <-result, "a heartbeat is not a completed response")
 }

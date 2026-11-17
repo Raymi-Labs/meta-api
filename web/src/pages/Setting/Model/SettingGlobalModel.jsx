@@ -79,7 +79,7 @@ const defaultGlobalSettingInputs = {
   'global.chat_completions_to_responses_policy': '{}',
   'global.image_generation_tool_call_permission': 0,
   'general_setting.ping_interval_enabled': false,
-  'general_setting.ping_interval_seconds': 15,
+  'general_setting.ping_interval_seconds': 5,
 };
 
 export default function SettingGlobalModel(props) {
@@ -398,7 +398,7 @@ export default function SettingGlobalModel(props) {
                   <Banner
                     type='warning'
                     description={t(
-                      '警告：启用保活后，如果已经写入保活数据后渠道出错，系统无法重试。建议设置 10-15 秒，避免代理空闲断流；后端会自动限制过大的 Ping 间隔。',
+                      '启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。',
                     )}
                   />
                 </Col>
@@ -428,9 +428,9 @@ export default function SettingGlobalModel(props) {
                       })
                     }
                     min={1}
-                    max={15}
+                    max={5}
                     disabled={!inputs['general_setting.ping_interval_enabled']}
-                    extraText={t('建议 10-15 秒，超过 15 秒会按 15 秒生效')}
+                    extraText={t('支持 1–5 秒；历史超大值按 5 秒生效。')}
                   />
                 </Col>
               </Row>

@@ -57,7 +57,7 @@ func SetEventStreamHeaders(c *gin.Context) {
 	c.Writer = &streamResponseWriter{ResponseWriter: c.Writer}
 }
 
-func ClaudeData(c *gin.Context, resp dto.ClaudeResponse) error {
+func ClaudeData(c *gin.Context, resp dto.ClaudeResponse) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
@@ -68,16 +68,18 @@ func ClaudeData(c *gin.Context, resp dto.ClaudeResponse) error {
 	if err != nil {
 		return fmt.Errorf("error marshalling stream response: %w", err)
 	}
+	defer func() { observeDeliveredStreamFrame(c, string(jsonData), false, result) }()
 	if _, err := c.Writer.Write([]byte(fmt.Sprintf("event: %s\ndata: %s\n\n", resp.Type, jsonData))); err != nil {
 		return fmt.Errorf("write Messages event: %w", err)
 	}
 	return FlushWriter(c)
 }
 
-func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) error {
+func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
+	defer func() { observeDeliveredStreamFrame(c, data, false, result) }()
 	if c.Request != nil && c.Request.Context().Err() != nil {
 		return c.Request.Context().Err()
 	}
@@ -92,10 +94,11 @@ func ClaudeChunkData(c *gin.Context, resp dto.ClaudeResponse, data string) error
 	return FlushWriter(c)
 }
 
-func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data string) error {
+func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data string) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
+	defer func() { observeDeliveredStreamFrame(c, data, false, result) }()
 	if c.Request != nil && c.Request.Context().Err() != nil {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
@@ -108,11 +111,12 @@ func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data st
 	return FlushWriter(c)
 }
 
-func StringData(c *gin.Context, str string) error {
+func StringData(c *gin.Context, str string) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
 
+	defer func() { observeDeliveredStreamFrame(c, str, false, result) }()
 	if c.Request != nil && c.Request.Context().Err() != nil {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
@@ -123,11 +127,12 @@ func StringData(c *gin.Context, str string) error {
 	return FlushWriter(c)
 }
 
-func PingData(c *gin.Context) error {
+func PingData(c *gin.Context) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
 
+	defer func() { observeDeliveredStreamFrame(c, "", true, result) }()
 	if c.Request != nil && c.Request.Context().Err() != nil {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}
@@ -145,11 +150,12 @@ func PingData(c *gin.Context) error {
 // 相比 PingData 的注释行（": PING\n\n"），标准 ping 事件能被
 // 部分对注释行不友好的中间代理/CDN 当作真正的数据帧，对长 reasoning
 // 阶段保活更可靠。
-func ClaudePingData(c *gin.Context) error {
+func ClaudePingData(c *gin.Context) (result error) {
 	if c == nil || c.Writer == nil {
 		return errors.New("context or writer is nil")
 	}
 
+	defer func() { observeDeliveredStreamFrame(c, "", true, result) }()
 	if c.Request != nil && c.Request.Context().Err() != nil {
 		return fmt.Errorf("request context done: %w", c.Request.Context().Err())
 	}

@@ -28,7 +28,7 @@ type GeneralSetting struct {
 var generalSetting = GeneralSetting{
 	DocsLink:                   "/docs",
 	PingIntervalEnabled:        false,
-	PingIntervalSeconds:        15,
+	PingIntervalSeconds:        5,
 	QuotaDisplayType:           QuotaDisplayTypeUSD,
 	CustomCurrencySymbol:       "¤",
 	CustomCurrencyExchangeRate: 1.0,

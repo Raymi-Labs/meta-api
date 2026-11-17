@@ -231,3 +231,48 @@ test('cancellation detail preserves false, unknown and duration without inferrin
     assert.doesNotMatch(report, /断开阶段|上游正文/);
   }
 });
+
+test('delivery diagnostics keep unknown separate from zero and stay out of reports', async () => {
+  const { getCancellationDetails } = await import(
+    '../src/helpers/requestFailure.js'
+  );
+  const other = {
+    failure_class: 'client_canceled',
+    admin_info: {
+      cancellation: {
+        phase: 'receiving_body',
+        delivery: {
+          observed: true,
+          heartbeats: 2,
+          effective_frames: 0,
+          first_heartbeat_ms: 1000,
+          first_effective_ms: null,
+          last_effective_ago_ms: null,
+          write_failed: false,
+        },
+      },
+    },
+  };
+  const details = getCancellationDetails(other, t);
+  assert.ok(
+    details.some((d) => d.key === '已写出有效内容帧' && d.value === '0'),
+  );
+  assert.ok(!details.some((d) => d.key === '首次有效内容耗时'));
+  assert.doesNotMatch(
+    buildRequestFailureReport(
+      { type: 5, created_at: 100, other: JSON.stringify(other) },
+      t,
+      true,
+    ),
+    /保活次数|有效内容|delivery/,
+  );
+  other.admin_info.cancellation.delivery.observed = false;
+  assert.ok(
+    getCancellationDetails(other, t).some(
+      (d) => d.key === '下游交付观测' && d.value === '未知',
+    ),
+  );
+  assert.ok(
+    !getCancellationDetails(other, t).some((d) => d.key === '已写出有效内容帧'),
+  );
+});

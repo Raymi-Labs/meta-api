@@ -161,7 +161,7 @@ func canReplayBeforeOutput(c *gin.Context, format types.RelayFormat) bool {
 
 // StartStreamKeepAlive covers preparation and retry gaps. Nested HTTP attempts
 // borrow an active request heartbeat, so returning from one attempt cannot stop
-// it. The first heartbeat waits one interval, preserving ordinary JSON errors
+// it. The first heartbeat waits at most one second, preserving ordinary JSON errors
 // and headers for requests that finish promptly.
 func StartStreamKeepAlive(c *gin.Context, interval time.Duration, format types.RelayFormat) func() {
 	if c == nil || c.Writer == nil || c.Request == nil || c.Request.Context().Err() != nil {
@@ -205,7 +205,8 @@ func StartStreamKeepAlive(c *gin.Context, interval time.Duration, format types.R
 				logger.LogError(pingContext, "request keepalive panic")
 			}
 		}()
-		ticker := time.NewTicker(NormalizeStreamPingInterval(interval))
+		period := NormalizeStreamPingInterval(interval)
+		ticker := time.NewTimer(min(period, time.Second))
 		defer ticker.Stop()
 		for {
 			select {
@@ -218,6 +219,7 @@ func StartStreamKeepAlive(c *gin.Context, interval time.Duration, format types.R
 				if err := w.ping(); err != nil {
 					return
 				}
+				ticker.Reset(period)
 			}
 		}
 	}()

@@ -7558,6 +7558,15 @@
     "参考可用率": "Disponibilidad de referencia",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Disponibilidad del endpoint del modelo durante las últimas 24 horas, no mediciones del grupo de este sitio.",
     "更新时间：{{time}}": "Actualizado: {{time}}",
-    "最近有效统计": "Última medición válida"
+    "最近有效统计": "Última medición válida",
+    "下游交付观测": "Entrega al cliente observada",
+    "已发送保活次数": "Señales de mantenimiento enviadas",
+    "已写出有效内容帧": "Tramas de contenido útil escritas",
+    "首次保活耗时": "Tiempo hasta la primera señal",
+    "首次有效内容耗时": "Tiempo hasta el primer contenido útil",
+    "距最后有效内容": "Tiempo desde el último contenido útil",
+    "下游写入失败": "Error de escritura al cliente",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "Al activarse, las señales comienzan tras aproximadamente 1 segundo y siguen el intervalo configurado. No amplían el tiempo límite total del cliente. Tras iniciar el flujo, los errores se envían como eventos; el canal solo cambia cuando es seguro.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "Admite 1–5 segundos; los valores antiguos mayores se aplican como 5 segundos."
   }
 }

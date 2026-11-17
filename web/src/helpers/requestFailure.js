@@ -137,5 +137,33 @@ export const getCancellationDetails = (other, t) => {
           : '未知',
     ),
   });
+  const delivery = diagnostic.delivery;
+  if (delivery) {
+    details.push({
+      key: t('下游交付观测'),
+      value: t(delivery.observed ? '是' : '未知'),
+    });
+    if (delivery.observed) {
+      for (const [field, label] of [
+        ['heartbeats', '已发送保活次数'],
+        ['effective_frames', '已写出有效内容帧'],
+        ['first_heartbeat_ms', '首次保活耗时'],
+        ['first_effective_ms', '首次有效内容耗时'],
+        ['last_effective_ago_ms', '距最后有效内容'],
+      ]) {
+        const value = delivery[field];
+        if (Number.isFinite(value) && value >= 0) {
+          details.push({
+            key: t(label),
+            value: `${value}${field.endsWith('_ms') ? ' ms' : ''}`,
+          });
+        }
+      }
+      details.push({
+        key: t('下游写入失败'),
+        value: t(delivery.write_failed ? '是' : '否'),
+      });
+    }
+  }
   return details;
 };

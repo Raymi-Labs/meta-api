@@ -8167,6 +8167,15 @@
     "参考可用率": "Độ khả dụng tham khảo",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Độ khả dụng của endpoint mô hình trong 24 giờ qua, không phải số đo của nhóm trên trang này.",
     "更新时间：{{time}}": "Cập nhật: {{time}}",
-    "最近有效统计": "Số đo hợp lệ gần nhất"
+    "最近有效统计": "Số đo hợp lệ gần nhất",
+    "下游交付观测": "Quan sát gửi dữ liệu tới máy khách",
+    "已发送保活次数": "Số tín hiệu giữ kết nối đã gửi",
+    "已写出有效内容帧": "Số khung nội dung hữu ích đã ghi",
+    "首次保活耗时": "Thời gian tới tín hiệu đầu tiên",
+    "首次有效内容耗时": "Thời gian tới nội dung hữu ích đầu tiên",
+    "距最后有效内容": "Thời gian từ nội dung hữu ích gần nhất",
+    "下游写入失败": "Ghi tới máy khách thất bại",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "Khi bật, tín hiệu giữ kết nối bắt đầu sau khoảng 1 giây rồi theo khoảng đã đặt. Không kéo dài giới hạn tổng của máy khách. Lỗi sau khi bắt đầu được trả qua sự kiện luồng; chỉ đổi kênh khi an toàn.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "Hỗ trợ 1–5 giây; giá trị cũ lớn hơn được áp dụng là 5 giây."
   }
 }

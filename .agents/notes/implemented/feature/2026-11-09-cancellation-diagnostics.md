@@ -28,3 +28,5 @@ Status: implemented
 取消回调记录的是服务端观察时刻，有调度误差；收到上游心跳也算正文，不能证明有效输出或客户端已收到。该信号不能单独证明断开根因。
 
 相关 service/middleware/controller/relay/model 包测试及 `go vet` 通过；前端失败日志单测、语言资源检查及 Vite 生产构建通过。合成数据接入真实 useLogsData 与 Descriptions 的浏览器验收确认管理员阶段/耗时/三态值可见，普通用户隐藏；无真实生产调用。全量 `i18n:lint` 被现存其他组件的硬编码字符串拦截，本次文件不在报告中。没有配置 MySQL/PostgreSQL 测试 DSN，无跨库实机验证；本次不新增 SQL 或迁移。
+
+下游交付观测及启用保活的时间策略由[流式等待连续性](../bug-fix/2026-11-18-stream-wait-continuity.md)扩展，保留本篇冻结、交付、取消与退款边界。

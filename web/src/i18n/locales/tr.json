@@ -7558,6 +7558,15 @@
     "参考可用率": "Referans kullanılabilirlik",
     "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Model uç noktasının son 24 saatte bildirilen kullanılabilirliği; bu sitedeki grubun ölçümü değildir.",
     "更新时间：{{time}}": "Güncellendi: {{time}}",
-    "最近有效统计": "Son geçerli ölçüm"
+    "最近有效统计": "Son geçerli ölçüm",
+    "下游交付观测": "İstemciye teslim gözlemi",
+    "已发送保活次数": "Gönderilen bağlantı sinyalleri",
+    "已写出有效内容帧": "Yazılan anlamlı içerik çerçeveleri",
+    "首次保活耗时": "İlk bağlantı sinyaline kadar süre",
+    "首次有效内容耗时": "İlk anlamlı içeriğe kadar süre",
+    "距最后有效内容": "Son anlamlı içerikten beri geçen süre",
+    "下游写入失败": "İstemciye yazma başarısız",
+    "启用后，流式等待约 1 秒开始保活，之后按设定间隔发送。保活不能延长客户端总时限；响应开始后错误通过流内事件返回，仅满足安全条件时切换渠道。": "Etkinleştirildiğinde sinyaller yaklaşık 1 saniye sonra başlar ve ayarlanan aralıkla sürer. İstemcinin toplam zaman aşımını uzatmaz. Akış başladıktan sonra hatalar akış olayı olarak döner; kanal yalnızca güvenli koşullarda değişir.",
+    "支持 1–5 秒；历史超大值按 5 秒生效。": "1–5 saniye desteklenir; eski büyük değerler 5 saniye olarak uygulanır."
   }
 }
