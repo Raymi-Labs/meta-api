@@ -35,6 +35,13 @@ func TestManufacturerPriceSources(t *testing.T) {
 		{"unknown/gpt-example", "https://openai.com/pricing", false},
 		{"unknown-model", "https://cohere.com/pricing", false},
 		{"cohere/command-a:free", "https://cohere.com/pricing", false},
+		{"north-mini-code:free", "https://docs.cohere.com/docs/north-mini-code-1.0", true},
+		{"cohere/north-mini-code:free", "https://docs.cohere.com/docs/north-mini-code-1.0", true},
+		{"unknown/north-mini-code:free", "https://docs.cohere.com/docs/north-mini-code-1.0", false},
+		{"north-mini-code:free", "https://docs.cohere.com/docs/command-a", false},
+		{"north-mini-code:free", "https://openrouter.ai/cohere/north-mini-code:free", false},
+		{"north-mini-code:free", "https://docs.cohere.com.evil.test/docs/north-mini-code-1.0", false},
+		{"north-mini-code:free", "https://docs.cohere.com/docs/north-mini-code-1.0?price=0", false},
 	} {
 		require.Equal(t, tc.allowed, IsManufacturerPriceSource(tc.name, tc.url), "%s %s", tc.name, tc.url)
 	}

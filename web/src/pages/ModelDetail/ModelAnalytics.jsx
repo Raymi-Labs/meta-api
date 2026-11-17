@@ -28,6 +28,7 @@ import {
 } from '../../components/group-health';
 import { selectComparisonGroups } from '../../helpers/modelPresentation';
 import ModelMetricChart from './ModelMetricChart';
+import { chartSummary } from '../../helpers/modelChartDisplay';
 import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
 export default function ModelAnalytics({
@@ -141,7 +142,9 @@ export default function ModelAnalytics({
               </>
             )}
           </div>
-          {groups.some((group) => group.completion_count > 0) && (
+          {groups.some(
+            (group) => chartSummary(group, 'avg_completion_ms').value != null,
+          ) && (
             <ModelMetricChart
               title={t('平均完成') + ' · s'}
               bucketSeconds={1800}

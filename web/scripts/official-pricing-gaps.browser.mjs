@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { createServer, loadConfigFromFile } from 'vite';
 import { stop as stopEsbuild } from 'esbuild';
-import { officialPricingUnavailable } from '../src/helpers/modelOfficialPricing.js';
 
 // Read-only output of TestOfficialPricingCatalogCoverage; no production writes.
 const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
@@ -124,11 +123,15 @@ try {
         waitUntil: 'networkidle0',
         timeout: 45000,
       });
-      await page.waitForSelector('#official-pricing');
+      await page.waitForSelector('#pricing');
       const m = data.find((m) => m.model_name === name);
       const text = await page.$eval(
-        '#official-pricing',
+        '.model-detail-main',
         (el) => el.textContent,
+      );
+      assert.equal(
+        await page.$eval('.model-detail-main > section', (el) => el.id),
+        'pricing',
       );
       if (m.official_pricing.tiers?.length) {
         assert.equal(
@@ -144,13 +147,12 @@ try {
         }
         if (name === 'free-manufacturer-fixture') assert(text.includes('$0'));
       } else {
-        const message = officialPricingUnavailable(m.official_pricing_review);
-        assert(text.includes(message), name);
-        assert(text.includes('2026-11-15'), name);
+        assert.equal(await page.$('#official-pricing'), null, name);
+        assert(!text.includes('待核实') && !text.includes('待同步'), name);
         assert(
-          (
-            await page.$eval('.model-group-row', (el) => el.textContent)
-          ).includes(message),
+          (await page.$eval('#pricing', (el) => el.textContent)).includes(
+            '本站价格',
+          ),
           name,
         );
       }
@@ -165,7 +167,7 @@ try {
           name,
         )
       ) {
-        await page.$eval('#official-pricing', (el) =>
+        await page.$eval('#pricing', (el) =>
           el.scrollIntoView({ block: 'start' }),
         );
         await page.screenshot({

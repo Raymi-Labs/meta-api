@@ -17,11 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { modelPerformance } from '../../helpers/modelPerformance';
+import { modelPerformance, modelUptime } from '../../helpers/modelPerformance';
 import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
 import React, { useState } from 'react';
 import ModelGroupPrice from './ModelGroupPrice';
+import ModelGroupMetric from './ModelGroupMetric';
+import { modelGroupHealthState } from '../../helpers/modelGroupHealthState';
+import ModelSectionHelp from './ModelSectionHelp';
 import ModelGroupTierTable from './ModelGroupTierTable';
 import {
   groupTierRows,
@@ -31,9 +34,8 @@ import { parseTiersFromExpr } from '../../helpers/render';
 import { splitBillingExprAndRequestRules } from '../Setting/Ratio/components/requestRuleExpr';
 import { isVideoPriceExpression } from '../../helpers/videoPricingTemplate';
 import { isImagePriceExpression } from '../../helpers/imagePricing';
-import { Link } from 'react-router-dom';
 import { Button, Input, Pagination } from '@douyinfe/semi-ui';
-import { ChevronDown, Copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import {
   getModelCatalogPricing,
   isCachePriceItem,
@@ -41,14 +43,12 @@ import {
 import { formatModelThroughput } from '../../helpers/modelPresentation';
 import {
   GroupHealthPanel,
-  GroupHealthStatus,
   GroupHealthCollectionNote,
 } from '../../components/group-health';
 import {
   formatHealthLatency,
   formatHealthRate,
   uptimeTone,
-  getUptimeRate,
   resolveGroupHealthMetric,
 } from '../../components/group-health/healthUtils';
 
@@ -104,22 +104,7 @@ export default function ModelGroupRows({
           }}
         />
       )}
-      <GroupHealthStatus
-        loading={health.loading}
-        error={health.error}
-        onRetry={health.refresh}
-      />
       <GroupHealthCollectionNote data={health.data} />
-      {!health.isAuthenticated && (
-        <p className='model-detail-caption'>
-          <Link to='/login'>{t('登录后查看可用分组的调用表现')}</Link>
-        </p>
-      )}
-      {health.data?.enabled === false && (
-        <p className='model-detail-caption'>
-          {t('管理员暂未开启分组健康展示')}
-        </p>
-      )}
       {filtered.slice((currentPage - 1) * 6, currentPage * 6).map((group) => {
         const getPricing = (tierIndex = 0) =>
           getModelCatalogPricing(
@@ -150,7 +135,24 @@ export default function ModelGroupRows({
         const showGenerationMetrics = supportsTextGenerationMetrics(model);
         const showLatencyMetric =
           showGenerationMetrics || metric === 'completion';
-        const open = expanded.includes(group);
+        const availability = modelUptime(stats);
+        const rate = availability.value;
+        const referenceVisible =
+          availability.external &&
+          health.isAuthenticated &&
+          !health.error &&
+          health.data?.enabled !== false;
+        const samples = Math.max(
+          Number(stats?.uptime_sample_count) || 0,
+          Number(stats?.request_count) || 0,
+          Number(stats?.probe_count) || 0,
+        );
+        const uptimeReady =
+          modelGroupHealthState(health, rate, { rate: true, samples }) ===
+          'ready';
+        const open =
+          expanded.includes(group) && uptimeReady && !availability.external;
+        const metricProps = { health, modelName: model.model_name, t };
         return (
           <article className='model-group-row' key={group}>
             <header>
@@ -164,21 +166,25 @@ export default function ModelGroupRows({
                 icon={<Copy size={13} />}
                 onClick={() => data.copyText(model.model_name)}
               />
-            </header>
-            {rows.length <= 1 && !officialTier && (
-              <p className='model-detail-caption model-group-comparison-note'>
-                {t(
-                  rows[0]?.comparisonUnavailable ||
-                    groupComparisonUnavailable(model),
+              {model.official_pricing?.tiers?.length > 0 &&
+                rows.length <= 1 &&
+                !officialTier && (
+                  <ModelSectionHelp label={t('官方参考价') + ': ' + group}>
+                    <p>
+                      {t(
+                        rows[0]?.comparisonUnavailable ||
+                          groupComparisonUnavailable(model),
+                      )}
+                    </p>
+                  </ModelSectionHelp>
                 )}
-              </p>
-            )}
+            </header>
             <div className='model-group-values'>
               {rows.length > 1 || tiers.length > 1 ? (
                 <ModelGroupTierTable rows={rows} model={model} data={data} />
               ) : (
                 <div
-                  className={`model-group-pricing-values${pricing.videoPricing ? ' model-group-video-prices' : ''}`}
+                  className={`model-group-pricing-values${pricing.videoPricing ? ' model-group-video-prices' : ''}${!items.some(isCachePriceItem) ? ' model-group-no-cache' : ''}`}
                 >
                   <div className='model-group-price-cell model-group-price-items'>
                     {items.length
@@ -205,21 +211,20 @@ export default function ModelGroupRows({
                         ` ${t('多份生成按份数累加。')}`}
                     </p>
                   )}
-                  <div className='model-group-price-items'>
-                    {items.filter(isCachePriceItem).map((item) => (
-                      <ModelGroupPrice
-                        key={item.key}
-                        item={item}
-                        pricing={pricing}
-                        model={model}
-                        officialTier={officialTier}
-                        data={data}
-                      />
-                    ))}
-                    {!pricing.videoPricing &&
-                      !items.some(isCachePriceItem) &&
-                      '—'}
-                  </div>
+                  {items.some(isCachePriceItem) && (
+                    <div className='model-group-price-items'>
+                      {items.filter(isCachePriceItem).map((item) => (
+                        <ModelGroupPrice
+                          key={item.key}
+                          item={item}
+                          pricing={pricing}
+                          model={model}
+                          officialTier={officialTier}
+                          data={data}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               <dl className='model-group-health-values'>
@@ -235,50 +240,83 @@ export default function ModelGroupRows({
                                 : '首字均值',
                             )}
                       </dt>
-                      <dd>{formatHealthLatency(latency.value)}</dd>
+                      <dd>
+                        <ModelGroupMetric
+                          {...metricProps}
+                          value={latency.value}
+                          formatted={formatHealthLatency(latency.value)}
+                          samples={stats?.request_count}
+                          label={
+                            group +
+                            ' · ' +
+                            t(metric === 'completion' ? '平均完成' : '首字均值')
+                          }
+                        />
+                      </dd>
                     </div>
                     {showGenerationMetrics && (
                       <div>
                         <dt>{t('输出速度')}</dt>
-                        <dd>{formatModelThroughput(performance.throughput)}</dd>
+                        <dd>
+                          <ModelGroupMetric
+                            {...metricProps}
+                            value={performance.throughput}
+                            formatted={formatModelThroughput(
+                              performance.throughput,
+                            )}
+                            samples={stats?.request_count}
+                            label={group + ' · ' + t('输出速度')}
+                          />
+                        </dd>
                       </div>
                     )}
                   </>
                 )}
                 <div>
-                  <dt>
-                    Uptime <small>· {t('可用率')}</small>
+                  <dt className='model-section-title-with-help'>
+                    Uptime{' '}
+                    <small>
+                      · {t(referenceVisible ? '参考可用率' : '可用率')}
+                      {referenceVisible ? ' · 24h' : ''}
+                    </small>
+                    {referenceVisible && (
+                      <ModelSectionHelp label={t('参考可用率') + ': ' + group}>
+                        <p>
+                          {t(
+                            '模型端点最近24小时的参考可用率，不代表本站分组实测。',
+                          )}
+                        </p>
+                        <p>
+                          {t('更新时间：{{time}}', {
+                            time: new Date(
+                              availability.fetchedAt * 1000,
+                            ).toLocaleString(),
+                          })}
+                        </p>
+                      </ModelSectionHelp>
+                    )}
                   </dt>
                   <dd>
-                    <button
-                      type='button'
-                      className={`model-group-uptime group-health-text-${uptimeTone(stats)}`}
-                      disabled={
-                        !stats ||
-                        !!health.error ||
-                        health.data?.enabled === false
+                    <ModelGroupMetric
+                      {...metricProps}
+                      rate
+                      value={rate}
+                      formatted={formatHealthRate(rate)}
+                      samples={samples}
+                      label={group + ' · Uptime'}
+                      tone={availability.external ? 'empty' : uptimeTone(stats)}
+                      open={open}
+                      onToggle={
+                        availability.external
+                          ? undefined
+                          : () =>
+                              setExpanded(
+                                open
+                                  ? expanded.filter((value) => value !== group)
+                                  : [...expanded, group],
+                              )
                       }
-                      aria-expanded={open}
-                      aria-label={`${group} · Uptime`}
-                      onClick={() =>
-                        setExpanded(
-                          open
-                            ? expanded.filter((value) => value !== group)
-                            : [...expanded, group],
-                        )
-                      }
-                    >
-                      <span className='model-uptime-spark' aria-hidden='true'>
-                        {[0, 1, 2].map((i) => (
-                          <i
-                            key={i}
-                            className={`group-health-bar-${uptimeTone(stats)}`}
-                          />
-                        ))}
-                      </span>
-                      {formatHealthRate(getUptimeRate(stats))}
-                      <ChevronDown size={13} />
-                    </button>
+                    />
                   </dd>
                 </div>
               </dl>

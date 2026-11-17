@@ -43,8 +43,10 @@ export function useComparisonHealth(models, group, hours) {
 }
 
 export function comparisonStats(health, group) {
-  return !health?.error && health?.data?.enabled !== false
-    ? health?.data?.groups.find((item) => item.group === group)
+  return health?.isAuthenticated &&
+    !health?.error &&
+    health?.data?.enabled !== false
+    ? health?.data?.groups?.find((item) => item.group === group)
     : undefined;
 }
 
@@ -96,9 +98,9 @@ export default function ComparisonMetrics({ models, health, group, t }) {
         {authenticated && (
           <div className='model-performance-grid'>
             <ModelMetricChart
-              title={'Uptime · ' + t('成功率')}
+              title={'Uptime · ' + t('可用率')}
               groups={series}
-              metric='success_rate'
+              metric='uptime_rate'
               t={t}
             />
             {generationSeries.length > 0 && (
@@ -119,7 +121,7 @@ export default function ComparisonMetrics({ models, health, group, t }) {
             )}
           </div>
         )}
-        {authenticated && <GroupHealthLegend />}
+        {authenticated && <GroupHealthLegend uptime />}
       </section>
       <section className='model-detail-section'>
         <h2>{t('用量')}</h2>

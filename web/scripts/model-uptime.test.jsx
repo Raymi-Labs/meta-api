@@ -89,7 +89,8 @@ if (process.env.META_UPTIME_TEST === import.meta.url) {
       expect(
         renderToStaticMarkup(<GroupHealthScopeNote uptime />),
       ).not.toContain('沿用最近有效值');
-      expect(chartDisplayValue(stats, 'avg_ttft_ms')).toBe(1.14);
+      // Historical chart gaps remain unknown; summary reference values do not fill them.
+      expect(chartDisplayValue(stats, 'avg_ttft_ms')).toBeNull();
       const actual = {
         ...stats,
         avg_ttft_ms: 0,

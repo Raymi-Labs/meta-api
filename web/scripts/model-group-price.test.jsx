@@ -106,12 +106,13 @@ test('unavailable comparison keeps the existing price item', () => {
   assert.ok(!html.includes('model-group-discount'), html);
 });
 
-test('a matched tier with a missing official field explains the unavailable comparison', () => {
+test('a missing official field keeps price and exposes an accessible explanation control', () => {
   const html = renderPrice(54.4, {
     officialTier: { unit: 'million_tokens', input: 10 },
   });
   assert.ok(html.includes('<strong>原价格</strong>'), html);
-  assert.ok(html.includes('官方未提供该项单价'), html);
+  assert.ok(html.includes('aria-label="官方参考价: 补全价格"'), html);
+  assert.ok(!html.includes('官方未提供该项单价'), html);
   assert.ok(!html.includes('model-group-discount'), html);
 });
 
@@ -145,4 +146,29 @@ test('video resolution price keeps recharge amount, seconds and duration apart f
   assert.ok(html.includes('4–15 秒'));
   assert.ok(!html.includes('较官方'));
   assert.ok(!html.includes('<del'));
+});
+
+test('zero price retains currency and numeric format alongside an official reference', () => {
+  const html = renderToStaticMarkup(
+    <ModelGroupPrice
+      item={{
+        key: 'input',
+        label: '输入',
+        value: '$0.0000',
+        suffix: '/M',
+      }}
+      pricing={{ unitPricesUSD: { input: 0 } }}
+      model={{ quota_type: 0, official_pricing: { currency: 'USD' } }}
+      officialTier={{ unit: 'million_tokens', input: 2 }}
+      data={{
+        t: (s) => s,
+        currency: 'USD',
+        tokenUnit: 'M',
+        siteDisplayType: 'USD',
+        displayPrice: { toAmount: (v) => v },
+      }}
+    />,
+  );
+  assert.ok(html.includes('<strong>$0</strong>'));
+  assert.ok(!html.includes('免费'));
 });

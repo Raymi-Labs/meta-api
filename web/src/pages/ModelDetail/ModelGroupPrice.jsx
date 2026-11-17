@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import ModelSectionHelp from './ModelSectionHelp';
 import { groupPriceComparison } from '../../helpers/modelGroupDiscount';
 import { formatOfficialPrice } from '../../helpers/modelOfficialPricing';
 
@@ -90,7 +91,9 @@ export default function ModelGroupPrice({
       </span>
       {item.duration && <small>{item.duration}</small>}
       {!comparison && officialTier && reason && (
-        <small className='model-group-comparison-note'>{t(reason)}</small>
+        <ModelSectionHelp label={t('官方参考价') + ': ' + item.label}>
+          <p>{t(reason)}</p>
+        </ModelSectionHelp>
       )}
       {comparison && (
         <span

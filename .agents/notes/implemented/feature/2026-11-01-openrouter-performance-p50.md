@@ -16,6 +16,8 @@ Status: implemented
 
 [空图与模型用量参考](2026-11-01-model-chart-reference.md)部分取代仅摘要显示的范围：空性能图可显示当前P50，独立模型用量参考使用真实每日记录；不倒填性能历史的约束不变。
 
+[24小时参考可用率](2026-11-17-external-uptime-reference.md)扩展原先仅读取首字/速度的范围：官方端点明确给出uptime_last_1d时用独立参考字段展示，本站实测优先，不修改历史统计；选路/授权/缓存策略保持。
+
 ## Existing notes audit
 
 - [目录指标](../../implemented/feature/2026-10-25-model-catalog-metrics.md)：本次取代外部性能一律不接入的显示限制，保留原始聚合、权限和图表。

@@ -159,9 +159,9 @@ export default function ModelDetail() {
           .slice(0, 6)
       : [];
   const sections = [
-    ['official-pricing', '官方参考价'],
+    ['pricing', '本站价格'],
+    ...(officialTiers.length ? [['official-pricing', '官方参考价']] : []),
     ['capabilities', '模型属性'],
-    ['pricing', '分组价格'],
     ['performance', '性能对比'],
     ['quick-start', '快速开始'],
     ...(related.length ? [['related', '同厂商模型']] : []),
@@ -252,18 +252,11 @@ export default function ModelDetail() {
           t={t}
         />
         <div className='model-detail-main'>
-          <ModelOfficialPricing
-            pricing={model.official_pricing}
-            review={model.official_pricing_review}
-            provenance={model.attribute_sources?.official_pricing}
-            t={t}
-          />
-          <ModelAttributes model={model} />
           <section id='pricing' className='model-detail-section'>
             <div className='model-detail-section-heading'>
               <h2 className='model-section-title-with-help'>
-                {t('分组价格')}
-                <ModelSectionHelp label={`${t('分组价格')} · ${t('费用说明')}`}>
+                {t('本站价格')}
+                <ModelSectionHelp label={`${t('本站价格')} · ${t('费用说明')}`}>
                   <p className='model-detail-caption'>
                     {selectedGroup === 'all'
                       ? t(
@@ -337,6 +330,12 @@ export default function ModelDetail() {
               health={uptimeHealth}
             />
           </section>
+          <ModelOfficialPricing
+            pricing={model.official_pricing}
+            provenance={model.attribute_sources?.official_pricing}
+            t={t}
+          />
+          <ModelAttributes model={model} />
           <ModelAnalytics
             key={`analytics-${model.model_name}`}
             model={model}

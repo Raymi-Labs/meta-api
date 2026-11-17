@@ -83,6 +83,7 @@ export function getModelCatalogPricing(options, t) {
                 options.displayPrice,
               ),
               suffix: `/${t('张')}`,
+              unitPriceUSD: row[key] * data.effectiveBillingRatio,
               isDynamic: true,
             })),
           )

@@ -7551,6 +7551,13 @@
     "无法恢复操作，请联系管理员核对": "Não foi possível recuperar a operação. Contacte um administrador.",
     "结果待确认，请查询或重试原操作": "Resultado não confirmado. Consulte ou repita a operação original.",
     "无法保存操作，请检查浏览器存储后重试": "Não foi possível guardar a operação. Verifique o armazenamento do navegador.",
-    "全部回收": "Recolher tudo"
+    "全部回收": "Recolher tudo",
+    "官方价格来源暂时无法访问": "A fonte oficial de preços está temporariamente inacessível",
+    "登录后查看": "Entre para visualizar",
+    "暂未开启": "Não ativado",
+    "参考可用率": "Disponibilidade de referência",
+    "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Disponibilidade do endpoint do modelo nas últimas 24 horas, não medições do grupo deste site.",
+    "更新时间：{{time}}": "Atualizado: {{time}}",
+    "最近有效统计": "Última medição válida"
   }
 }

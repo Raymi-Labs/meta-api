@@ -1,0 +1,21 @@
+{
+  "data": {
+    "id": "recursive/flint-v1.0:free",
+    "endpoints": [
+      {
+        "tag": "recursive/bf16",
+        "status": 0,
+        "service_tier": null,
+        "quantization": "bf16",
+        "pricing": {
+          "prompt": "0",
+          "completion": "0",
+          "discount": 0
+        },
+        "latency_last_30m": null,
+        "throughput_last_30m": null,
+        "uptime_last_1d": 100
+      }
+    ]
+  }
+}

@@ -16,6 +16,7 @@ import { splitBillingExprAndRequestRules } from '../src/pages/Setting/Ratio/comp
 import { isVideoPriceExpression } from '../src/helpers/videoPricingTemplate.js';
 
 import {
+  buildImagePriceExpression,
   parseImagePriceExpression,
   isImagePriceExpression,
 } from '../src/helpers/imagePricing.js';
@@ -547,4 +548,92 @@ test('no-discount catalog, comparison and sorting use base prices in every group
     assert.deepEqual(actual.items, expected.items);
     assert.deepEqual(actual.data.sortPrices, expected.data.sortPrices);
   }
+});
+
+test('zero prices keep numeric currency formatting regardless of model names', () => {
+  const free = pricing({ model_ratio: 0 });
+  assert.equal(item(free, 'input').value, '$0.0000');
+  assert.equal(item(free, 'completion').value, '$0.0000');
+  assert.equal(free.data.unitPricesUSD.input, 0);
+  assert.equal(
+    item(pricing({ model_name: 'paid:free', model_ratio: 1 }), 'input').isFree,
+    undefined,
+  );
+  assert.equal(
+    item(pricing({ model_ratio: 1e-10 }), 'input').isFree,
+    undefined,
+  );
+  assert.equal(item(pricing({ model_ratio: null }), 'input').isFree, undefined);
+  assert.equal(
+    item(
+      pricing({ model_ratio: 0 }, { quotaDisplayType: 'TOKENS' }),
+      'input-ratio',
+    ).value,
+    0,
+  );
+  assert.equal(
+    item(pricing({ quota_type: 1, model_price: 0 }), 'fixed').value,
+    '$0',
+  );
+  assert.equal(
+    item(pricing({ quota_type: 2, audio_duration_price: 0 }), 'audio-duration')
+      .value,
+    '$0',
+  );
+});
+
+test('all public catalog entries retain configured main prices without official data', () => {
+  const fixture = process.env.META_SITE_PRICE_AUDIT;
+  if (!fixture) return;
+  const catalog = JSON.parse(readFileSync(fixture, 'utf8'));
+  const failures = [];
+  for (const record of catalog.data) {
+    const result = getModelCatalogPricing(
+      {
+        record: { ...record, official_pricing: {} },
+        selectedGroup: 'all',
+        groupRatio: catalog.group_ratio,
+        timeRatioMap: {},
+        tokenUnit: 'M',
+        currency: 'USD',
+        displayPrice: money(),
+      },
+      t,
+    );
+    const primary = result.items.filter(
+      (x) => !isCachePriceItem(x) && x.key !== 'time-ratio',
+    );
+    if (
+      !primary.length ||
+      primary.some((x) => !x.value || /NaN|Infinity/.test(x.value))
+    )
+      failures.push(record.model_name);
+    if (
+      record.model_name.endsWith(':free') &&
+      record.model_ratio === 0 &&
+      record.billing_mode !== 'tiered_expr'
+    )
+      assert(
+        primary.some((x) => x.value.startsWith('$0')),
+        record.model_name,
+      );
+  }
+  assert.deepEqual(failures, []);
+});
+
+test('image prices preserve per-image free and paid fields with group conversion', () => {
+  const result = pricing(
+    {
+      billing_mode: 'tiered_expr',
+      billing_expr: buildImagePriceExpression([
+        { resolution: '1K', input: 0, output: 0.1 },
+        { resolution: '2K', input: 0.02, output: 0.2 },
+      ]),
+    },
+    { groupRatio: { standard: 0.5 } },
+  );
+  assert.equal(item(result, 'image-1K-input').value, '$0.0000');
+  assert.equal(item(result, 'image-1K-output').unitPriceUSD, 0.05);
+  assert.equal(item(result, 'image-2K-output').unitPriceUSD, 0.1);
+  assert.ok(result.items.every((x) => x.suffix === '/张'));
 });

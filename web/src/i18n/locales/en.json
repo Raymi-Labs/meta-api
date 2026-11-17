@@ -7763,6 +7763,13 @@
     "无法恢复操作，请联系管理员核对": "Unable to recover the operation. Contact an administrator.",
     "结果待确认，请查询或重试原操作": "Result unconfirmed. Check or retry the original operation.",
     "无法保存操作，请检查浏览器存储后重试": "Unable to save the operation. Check browser storage and retry.",
-    "全部回收": "Reclaim all"
+    "全部回收": "Reclaim all",
+    "官方价格来源暂时无法访问": "The official pricing source is temporarily inaccessible",
+    "登录后查看": "Sign in to view",
+    "暂未开启": "Not enabled",
+    "参考可用率": "Reference uptime",
+    "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Availability reported for the model endpoint over the last 24 hours, not measurements of this site’s group.",
+    "更新时间：{{time}}": "Updated: {{time}}",
+    "最近有效统计": "Last valid measurement"
   }
 }

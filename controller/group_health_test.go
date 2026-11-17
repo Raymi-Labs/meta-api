@@ -228,3 +228,12 @@ func TestGroupHealthHistorySatisfiesPerformanceReference(t *testing.T) {
 	m.AvgOutputTPS = &zero
 	require.False(t, needsPerformanceReference(m))
 }
+
+func TestMissingUptimeRequestsReferenceIndependentlyOfSpeed(t *testing.T) {
+	zero := 0.0
+	m := grouphealth.Metrics{AvgTTFTMs: &zero, AvgOutputTPS: &zero}
+	require.False(t, needsPerformanceReference(m))
+	require.True(t, needsUptimeReference(m))
+	m.UptimeRate = &zero
+	require.False(t, needsUptimeReference(m), "measured zero must win")
+}

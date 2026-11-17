@@ -63,6 +63,13 @@ func hostWithin(host, domain string) bool {
 }
 
 func IsManufacturerPriceSource(name, address string) bool {
+	// Cohere documents this exact free variant as north-mini-code-1.0.
+	// This exception uses the manufacturer page, never the reseller quote.
+	if name == "north-mini-code:free" || name == "cohere/north-mini-code:free" {
+		u, err := url.Parse(address)
+		return err == nil && priceSourceHost(address) == "docs.cohere.com" &&
+			u.Path == "/docs/north-mini-code-1.0" && u.RawQuery == "" && u.Fragment == ""
+	}
 	if strings.Contains(name, ":") {
 		return false
 	}

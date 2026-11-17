@@ -7883,6 +7883,13 @@
     "无法恢复操作，请联系管理员核对": "Récupération impossible. Contactez un administrateur.",
     "结果待确认，请查询或重试原操作": "Résultat à confirmer. Vérifiez ou réessayez l’opération initiale.",
     "无法保存操作，请检查浏览器存储后重试": "Enregistrement impossible. Vérifiez le stockage du navigateur.",
-    "全部回收": "Récupérer tout"
+    "全部回收": "Récupérer tout",
+    "官方价格来源暂时无法访问": "La source officielle des tarifs est temporairement inaccessible",
+    "登录后查看": "Connectez-vous pour voir",
+    "暂未开启": "Non activé",
+    "参考可用率": "Disponibilité de référence",
+    "模型端点最近24小时的参考可用率，不代表本站分组实测。": "Disponibilité du point de terminaison du modèle sur les dernières 24 heures, et non mesures du groupe de ce site.",
+    "更新时间：{{time}}": "Mis à jour : {{time}}",
+    "最近有效统计": "Dernière mesure valide"
   }
 }

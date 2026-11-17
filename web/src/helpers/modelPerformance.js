@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   getHealthLatency,
   getHealthMeasurement,
+  getUptimeRate,
 } from '../components/group-health/healthUtils';
 
 const valid = (value) =>
@@ -31,15 +32,12 @@ export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
   const throughput = getHealthMeasurement(stats, 'output_tps', true);
   const reference = stats?.performance_reference;
   const fresh =
-    reference?.source === 'openrouter' &&
-    reference.percentile === 50 &&
-    Number(reference.fetched_at) > 0 &&
-    Number(reference.fetched_at) * 1000 <= now &&
-    Number(reference.expires_at) * 1000 > now;
+    isFreshModelReference(reference, now) && reference.percentile === 50;
   const externalLatency =
     metric === 'ttft' &&
     !valid(latency.value) &&
     fresh &&
+    typeof reference.ttft_ms === 'number' &&
     valid(reference.ttft_ms);
   const externalThroughput =
     !valid(throughput.value) && fresh && valid(reference.output_tps);
@@ -54,4 +52,41 @@ export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
     externalLatency: Boolean(externalLatency),
     externalThroughput: Boolean(externalThroughput),
   };
+}
+
+// External availability is a current reference, never a site history sample.
+export function modelUptime(stats, now = Date.now()) {
+  const measured = getUptimeRate(stats);
+  const validRate = (v) =>
+    typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100;
+  if (validRate(measured)) return { value: measured, external: false };
+  const ref = stats?.performance_reference;
+  if (
+    isFreshModelReference(ref, now) &&
+    ref.uptime_window_seconds === 86400 &&
+    validRate(ref.uptime_rate)
+  ) {
+    return {
+      value: ref.uptime_rate,
+      external: true,
+      fetchedAt: ref.fetched_at,
+      windowSeconds: 86400,
+    };
+  }
+  return { value: undefined, external: false };
+}
+
+// A reference snapshot is usable for at most the service's five-minute TTL.
+export function isFreshModelReference(ref, now = Date.now()) {
+  return (
+    ref?.source === 'openrouter' &&
+    typeof ref.fetched_at === 'number' &&
+    typeof ref.expires_at === 'number' &&
+    Number.isFinite(ref.fetched_at) &&
+    Number.isFinite(ref.expires_at) &&
+    ref.fetched_at > 0 &&
+    ref.fetched_at * 1000 <= now &&
+    ref.expires_at * 1000 > now &&
+    ref.expires_at - ref.fetched_at <= 300
+  );
 }

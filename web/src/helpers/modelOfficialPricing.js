@@ -109,6 +109,8 @@ export function officialPricingUnavailable(review) {
       return '免费变体不以平台价格作为官方参考价';
     case 'legacy_review':
       return '历史型号的官方价格适用范围待核实';
+    case 'source_unavailable':
+      return '官方价格来源暂时无法访问';
     case 'identity_review':
       return '模型名称与官方报价的对应关系待核实';
     default:

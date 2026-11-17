@@ -33,13 +33,14 @@ type performancePercentile struct {
 	P50 *float64 `json:"p50"`
 }
 type performanceEndpoint struct {
-	Tag          string                 `json:"tag"`
-	Status       *int                   `json:"status"`
-	ServiceTier  *string                `json:"service_tier"`
-	Quantization string                 `json:"quantization"`
-	Pricing      map[string]interface{} `json:"pricing"`
-	Latency      *performancePercentile `json:"latency_last_30m"`
-	Throughput   *performancePercentile `json:"throughput_last_30m"`
+	Tag           string                 `json:"tag"`
+	Status        *int                   `json:"status"`
+	ServiceTier   *string                `json:"service_tier"`
+	Quantization  string                 `json:"quantization"`
+	Pricing       map[string]interface{} `json:"pricing"`
+	Latency       *performancePercentile `json:"latency_last_30m"`
+	Throughput    *performancePercentile `json:"throughput_last_30m"`
+	UptimeLastDay *float64               `json:"uptime_last_1d"`
 }
 type performanceSnapshot struct {
 	Endpoints []performanceEndpoint
@@ -348,7 +349,12 @@ func selectPerformance(s performanceSnapshot, p performancePolicy, upstream stri
 		v := *e.Throughput.P50
 		r.OutputTPS = &v
 	}
-	if r.TTFTMs == nil && r.OutputTPS == nil {
+	if e.UptimeLastDay != nil && finiteNonnegative(*e.UptimeLastDay) && *e.UptimeLastDay <= 100 {
+		v := *e.UptimeLastDay
+		r.UptimeRate = &v
+		r.UptimeWindowSeconds = 86400
+	}
+	if r.TTFTMs == nil && r.OutputTPS == nil && r.UptimeRate == nil {
 		return nil
 	}
 	return r
