@@ -12,14 +12,14 @@
 | 通用 HTTP 节点 | 手动配置 URL、Header、JSON Body 与返回字段 |
 | 知识库 | 嵌入、重排和对话分别选择支持对应能力的模型 |
 
-模型提供方填写 Base URL `https://meta-api.vip/v1`；HTTP 节点则填写完整端点。使用平台的凭据或受保护变量机制保存密钥，不把真实 Key 写入可共享的流程 JSON、节点名称或运行截图。没有该配置能力的版本不应通过不受支持的方式强行接入。
+模型提供方填写 Base URL `https://meta-api.com/v1`；HTTP 节点则填写完整端点。使用平台的凭据或受保护变量机制保存密钥，不把真实 Key 写入可共享的流程 JSON、节点名称或运行截图。没有该配置能力的版本不应通过不受支持的方式强行接入。
 
 ## HTTP 节点字段
 
 | 字段 | 值 |
 | --- | --- |
 | Method | `POST` |
-| URL | `https://meta-api.vip/v1/chat/completions` |
+| URL | `https://meta-api.com/v1/chat/completions` |
 | Authorization | `Bearer` 加本站 API Key；从安全凭据读取 |
 | Content-Type | `application/json` |
 | Body | 下方 JSON；把 `MODEL_ID` 替换为可用模型 |

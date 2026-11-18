@@ -4,7 +4,7 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://meta-api.vip/`。
+1. 登录 `https://meta-api.com/`。
 2. 进入 `令牌管理` 创建令牌。
 3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
 4. 复制完整 API Key。
@@ -60,7 +60,7 @@ source ~/.bashrc
       "npm": "@ai-sdk/openai",
       "name": "NAN OpenAI Proxy",
       "options": {
-        "baseURL": "https://meta-api.vip/v1",
+        "baseURL": "https://meta-api.com/v1",
         "apiKey": "{env:CRS_OAI_KEY}"
       },
       "models": {

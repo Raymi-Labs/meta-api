@@ -1,13 +1,13 @@
 # Chat Completions
 
-`POST https://meta-api.vip/v1/chat/completions` 适合基于消息列表的对话、摘要、文本生成和支持该协议的工具调用。先在[模型广场](https://meta-api.vip/pricing)确认模型支持 Chat Completions，把示例的 `MODEL_ID` 替换为实际 ID，并使用有权访问对应分组的 Key。
+`POST https://meta-api.com/v1/chat/completions` 适合基于消息列表的对话、摘要、文本生成和支持该协议的工具调用。先在[模型广场](https://meta-api.com/pricing)确认模型支持 Chat Completions，把示例的 `MODEL_ID` 替换为实际 ID，并使用有权访问对应分组的 Key。
 
 ## 最小请求
 
 `API_KEY` 由终端环境提供。非流式响应成功后，主要读取 `choices[].message`；返回的 `usage` 用于理解本次模型用量，最终费用以本站使用日志为准。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

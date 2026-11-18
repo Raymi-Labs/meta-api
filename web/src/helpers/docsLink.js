@@ -26,7 +26,15 @@ export function withDocsLanguage(
 ) {
   try {
     const url = new URL(href);
-    if (url.origin !== 'https://docs.meta-api.vip') return href;
+    if (
+      !['https://docs.meta-api.vip', 'https://docs.meta-api.com'].includes(
+        url.origin,
+      ) ||
+      url.username ||
+      url.password
+    )
+      return href;
+    url.hostname = 'docs.meta-api.com';
     url.searchParams.set('lang', language);
     return url.href;
   } catch {

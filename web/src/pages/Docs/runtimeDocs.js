@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 // Documentation uses the same visibility and group data as the model plaza.
-import { normalizeBaseUrl } from '../../utils/ccSwitch.js';
+import { getPublicHomeServerAddress } from '../Home/homeAddress.js';
 import { translateContentText } from '../../helpers/contentLanguage.js';
 
 const originalText = (source, values) =>
@@ -76,7 +76,7 @@ const fence = (language, content) => `\`\`\`${language}\n${content}\n\`\`\``;
 const shellQuote = (value) => `'${value.replace(/'/g, `'"'"'`)}'`;
 
 export function getDocsBaseUrl(serverAddress, origin) {
-  return (normalizeBaseUrl(serverAddress) || normalizeBaseUrl(origin)).replace(
+  return getPublicHomeServerAddress(serverAddress, origin).replace(
     /['"`$\\()[\]{}<>|]/g,
     (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
   );
@@ -300,7 +300,7 @@ export function renderRuntimeDocs(
         }
       : {};
   let result = markdown
-    .replaceAll('https://meta-api.vip', () => baseUrl)
+    .replace(/https:\/\/meta-api\.(?:vip|com)(?=[/\s'"`?#)]|$)/g, () => baseUrl)
     .replace(
       /<!-- docs:([a-z-]+) -->[\s\S]*?<!-- \/docs:\1 -->/g,
       (_, section) => sections[section] || (available ? empty : missing),

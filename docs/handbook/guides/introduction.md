@@ -6,9 +6,9 @@
 
 | 地址 | 用途 |
 | --- | --- |
-| `https://meta-api.vip` | 网站、控制台和 API 服务 |
-| `https://meta-api.vip/v1` | OpenAI 兼容 SDK 的常用 Base URL |
-| `https://docs.meta-api.vip` | 公开文档，不接受模型调用或账户管理请求 |
+| `https://meta-api.com` | 网站、控制台和 API 服务 |
+| `https://meta-api.com/v1` | OpenAI 兼容 SDK 的常用 Base URL |
+| `https://docs.meta-api.com` | 公开文档，不接受模型调用或账户管理请求 |
 
 文档可以匿名阅读。创建密钥、查看个人用量和充值需要登录主站；切换文档语言不改变账户权限、模型价格或分组。
 

@@ -6,17 +6,17 @@
 
 | 客户端协议              | Base URL                  | 请求路径                                 |
 | ----------------------- | ------------------------- | ---------------------------------------- |
-| OpenAI Chat / Responses | `https://meta-api.vip/v1` | `/chat/completions` 或 `/responses`      |
-| Claude / Anthropic      | `https://meta-api.vip`    | `/v1/messages`                           |
-| Google Gemini           | `https://meta-api.vip`    | `/v1beta/models/{model}:generateContent` |
-| OpenAI Images           | `https://meta-api.vip/v1` | `/images/generations`                    |
+| OpenAI Chat / Responses | `https://meta-api.com/v1` | `/chat/completions` 或 `/responses`      |
+| Claude / Anthropic      | `https://meta-api.com`    | `/v1/messages`                           |
+| Google Gemini           | `https://meta-api.com`    | `/v1beta/models/{model}:generateContent` |
+| OpenAI Images           | `https://meta-api.com/v1` | `/images/generations`                    |
 
 Base URL 是否带 `/v1` 取决于客户端，避免重复拼接。API Key 在 `控制台 -> 令牌管理` 创建。模型和协议必须匹配，不能仅凭厂商名称推断兼容性。
 
 ## 2. 设置密钥并查询令牌模型
 
 ```bash
-export NAN_BASE_URL="https://meta-api.vip"
+export NAN_BASE_URL="https://meta-api.com"
 export NAN_API_KEY="sk-替换为你的API密钥"
 
 curl -sS "$NAN_BASE_URL/v1/models" \
@@ -29,7 +29,7 @@ curl -sS "$NAN_BASE_URL/v1/models" \
 
 <!-- docs:groups -->
 
-请打开[在线文档](https://meta-api.vip/docs/api-examples)或[模型广场](https://meta-api.vip/pricing)查看当前分组。
+请打开[在线文档](https://meta-api.com/docs/api-examples)或[模型广场](https://meta-api.com/pricing)查看当前分组。
 
 <!-- /docs:groups -->
 
@@ -47,7 +47,7 @@ curl -sS "$NAN_BASE_URL/v1/models" \
 
 <!-- docs:examples -->
 
-请打开[在线文档](https://meta-api.vip/docs/api-examples)查看按现网配置生成的 Chat、Responses、Claude、Gemini 和图片请求。
+请打开[在线文档](https://meta-api.com/docs/api-examples)查看按现网配置生成的 Chat、Responses、Claude、Gemini 和图片请求。
 
 <!-- /docs:examples -->
 
@@ -77,7 +77,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key=os.environ["NAN_API_KEY"],
-    base_url="https://meta-api.vip/v1",
+    base_url="https://meta-api.com/v1",
 )
 response = client.chat.completions.create(
     model="MODEL_OPENAI",

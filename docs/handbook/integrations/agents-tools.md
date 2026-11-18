@@ -6,7 +6,7 @@ Agent 在模型回复和工具执行之间循环：模型提出工具调用，�
 
 | 部分 | 谁负责 |
 | --- | --- |
-| 模型地址与密钥 | `https://meta-api.vip/v1` 与环境变量 `API_KEY` |
+| 模型地址与密钥 | `https://meta-api.com/v1` 与环境变量 `API_KEY` |
 | 模型选择 | 将 `MODEL_ID` 替换为支持当前协议及工具调用的模型 |
 | `tools` 定义 | 客户端声明名称、参数类型和用途 |
 | 工具执行 | 应用校验名称、参数和权限后执行 |
@@ -23,7 +23,7 @@ import os
 from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["API_KEY"],
-                base_url="https://meta-api.vip/v1", timeout=60.0, max_retries=0)
+                base_url="https://meta-api.com/v1", timeout=60.0, max_retries=0)
 messages = [{"role": "user", "content": "Use add to calculate 2 + 3."}]
 tools = [{"type": "function", "function": {
     "name": "add", "description": "Add two finite numbers.",

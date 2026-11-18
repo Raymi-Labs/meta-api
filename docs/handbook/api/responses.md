@@ -1,11 +1,11 @@
 # Responses API
 
-Responses 使用 `POST https://meta-api.vip/v1/responses`，以 `input` 而非 Chat 的 `messages` 作为输入。它适合支持该协议的文本、多模态和工具流程。请先在[模型广场](https://meta-api.vip/pricing)确认协议及令牌分组，再将 `MODEL_ID` 替换为实际模型；不要因模型支持 Chat 就默认支持 Responses。
+Responses 使用 `POST https://meta-api.com/v1/responses`，以 `input` 而非 Chat 的 `messages` 作为输入。它适合支持该协议的文本、多模态和工具流程。请先在[模型广场](https://meta-api.com/pricing)确认协议及令牌分组，再将 `MODEL_ID` 替换为实际模型；不要因模型支持 Chat 就默认支持 Responses。
 
 ## 最小请求
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/responses' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/responses' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

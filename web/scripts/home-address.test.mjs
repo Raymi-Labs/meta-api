@@ -13,11 +13,11 @@ test('known public roots use the main domain with one protocol suffix', () => {
     ' https://CN.META-API.VIP:443/v1/ ',
   ]) {
     const server = getPublicHomeServerAddress(address, 'http://localhost:5173');
-    assert.equal(server, 'https://meta-api.vip');
-    assert.equal(`${server}/v1`, 'https://meta-api.vip/v1');
+    assert.equal(server, 'https://meta-api.com');
+    assert.equal(`${server}/v1`, 'https://meta-api.com/v1');
     assert.equal(
       `${server}/v1/chat/completions`,
-      'https://meta-api.vip/v1/chat/completions',
+      'https://meta-api.com/v1/chat/completions',
     );
   }
 });
@@ -55,7 +55,7 @@ test('missing or invalid config falls back to the current origin', () => {
     );
     assert.equal(
       getPublicHomeServerAddress(address, 'https://cn.meta-api.vip'),
-      'https://meta-api.vip',
+      'https://meta-api.com',
     );
   }
 });

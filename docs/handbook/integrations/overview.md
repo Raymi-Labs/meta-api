@@ -26,8 +26,8 @@
 | 字段 | OpenAI 兼容对话的填写方式 |
 | --- | --- |
 | 提供商 | OpenAI Compatible 或允许自定义地址的等价选项 |
-| Base URL | `https://meta-api.vip/v1` |
-| 完整对话端点 | `https://meta-api.vip/v1/chat/completions`，仅用于明确要求完整端点的字段 |
+| Base URL | `https://meta-api.com/v1` |
+| 完整对话端点 | `https://meta-api.com/v1/chat/completions`，仅用于明确要求完整端点的字段 |
 | API Key | 本站令牌；命令行通过 `API_KEY` 环境变量读取 |
 | Model | 将 `MODEL_ID` 替换为该令牌可用且支持对应协议的模型名 |
 
@@ -36,7 +36,7 @@
 先创建一个用途明确、额度适当的令牌。下面只检查令牌模型目录，不发起模型生成：
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/models' \
+curl --fail-with-body 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 

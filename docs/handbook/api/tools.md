@@ -1,13 +1,13 @@
 # 工具调用
 
-工具调用用于让模型提出结构化的操作请求，例如查询业务数据或计算结果。先在[模型广场](https://meta-api.vip/pricing)选择支持工具调用及对应协议的模型，将 `MODEL_ID` 替换为实际 ID。本站负责转发和协议适配；**函数工具由你的应用执行**，提交函数声明不会让网关自动访问数据库、发邮件或运行命令。
+工具调用用于让模型提出结构化的操作请求，例如查询业务数据或计算结果。先在[模型广场](https://meta-api.com/pricing)选择支持工具调用及对应协议的模型，将 `MODEL_ID` 替换为实际 ID。本站负责转发和协议适配；**函数工具由你的应用执行**，提交函数声明不会让网关自动访问数据库、发邮件或运行命令。
 
 ## 声明一个函数
 
 下面的 Chat Completions 请求声明只读温度查询函数。`API_KEY` 通过环境变量提供，模型可以返回文本，也可以请求调用函数。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

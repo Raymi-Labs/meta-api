@@ -25,7 +25,7 @@
 ```bash
 curl --silent --show-error --fail-with-body \
   -D response-headers.txt \
-  https://meta-api.vip/v1/models \
+  https://meta-api.com/v1/models \
   -H "Authorization: Bearer $API_KEY"
 ```
 
@@ -34,7 +34,7 @@ curl --silent --show-error --fail-with-body \
 ## 分层排查
 
 1. 在同一网络下测试最小请求；成功后再恢复工具、图片和附加参数。
-2. 对照客户端 Base URL，避免把 `docs.meta-api.vip` 当成 API 域名。
+2. 对照客户端 Base URL，避免把 `docs.meta-api.com` 当成 API 域名。
 3. 对照[令牌设置](/docs/account/api-keys)，确认未过期、有足够额度且模型可用。
 4. 在[使用日志](/console/log)查找对应时间与请求 ID。
 5. 若仅特定客户端失败，比较它实际发出的端点、请求头和字段。

@@ -1,13 +1,13 @@
 # 流式输出
 
-流式响应让应用在生成过程中逐步接收结果，适合聊天和长文本展示。先在[模型广场](https://meta-api.vip/pricing)确认模型及所选协议支持流式调用，再把 `MODEL_ID` 替换为实际 ID。流式主要改变传输和解析方式，不代表更低价格、更长上下文或无限连接时长。
+流式响应让应用在生成过程中逐步接收结果，适合聊天和长文本展示。先在[模型广场](https://meta-api.com/pricing)确认模型及所选协议支持流式调用，再把 `MODEL_ID` 替换为实际 ID。流式主要改变传输和解析方式，不代表更低价格、更长上下文或无限连接时长。
 
 ## 最小请求
 
 下面使用 Chat Completions。`API_KEY` 从环境变量读取，`-N` 关闭 cURL 的输出缓冲，便于观察服务端事件。
 
 ```bash
-curl --fail-with-body -N 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body -N 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

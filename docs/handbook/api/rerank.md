@@ -1,13 +1,13 @@
 # 文档重排 Rerank
 
-Rerank 根据查询与一组候选文档的相关程度重新排序，适合检索后的精排。它不会代替向量库或搜索引擎召回文档，也不会直接生成最终答案。先在[模型广场](https://meta-api.vip/pricing)确认模型支持 Rerank 协议，将 `MODEL_ID` 替换为实际 ID。
+Rerank 根据查询与一组候选文档的相关程度重新排序，适合检索后的精排。它不会代替向量库或搜索引擎召回文档，也不会直接生成最终答案。先在[模型广场](https://meta-api.com/pricing)确认模型支持 Rerank 协议，将 `MODEL_ID` 替换为实际 ID。
 
 ## 最小请求
 
 `query` 和 `documents` 都不能省略或为空。下例要求返回最相关的一条候选；Key 只从环境变量读取。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/rerank' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/rerank' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

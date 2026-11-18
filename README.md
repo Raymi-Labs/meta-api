@@ -2,7 +2,7 @@
 
 [Meta API](https://github.com/Raymi-Labs/meta-api) is the company-maintained AI API gateway from [Raymi Labs](https://github.com/Raymi-Labs), based on [QuantumNous/new-api](https://github.com/QuantumNous/new-api).
 
-[Service](https://meta-api.vip) · [Documentation](https://docs.meta-api.vip) · [Company releases](https://github.com/Raymi-Labs/meta-api/releases) · [Repository and release guide](docs/META_API.md)
+[Service](https://meta-api.com) · [Documentation](https://docs.meta-api.com) · [Company releases](https://github.com/Raymi-Labs/meta-api/releases) · [Repository and release guide](docs/META_API.md)
 
 The upstream attribution, license, Go module path, and existing program names are preserved. The original repository and its historical releases remain available at [nanashiwang/new-api](https://github.com/nanashiwang/new-api). The upstream project documentation follows below.
 
@@ -25,10 +25,10 @@ The upstream attribution, license, Go module path, and existing program names ar
 </p>
 
 <p align="center">
-  🌊 <strong>在线服务：<a href="https://cn.meta-api.vip">元衡 API · 一口接入多模型，智能调度更稳定</a></strong><br>
+  🌊 <strong>在线服务：<a href="https://meta-api.com">元衡 API · 一口接入多模型，智能调度更稳定</a></strong><br>
   OpenAI / Claude / Gemini / DeepSeek / Qwen 等 40+ 模型统一接入，
-  支持 <a href="https://cn.meta-api.vip/docs/clients/claude-code">Claude Code</a>、<a href="https://cn.meta-api.vip/docs/clients/codex">Codex</a>、<a href="https://cn.meta-api.vip/docs/clients/gemini">Gemini CLI</a> 接入教程 ·
-  <a href="https://cn.meta-api.vip/pricing">模型价格</a> · <a href="https://cn.meta-api.vip/docs">使用文档</a>
+  支持 <a href="https://meta-api.com/docs/clients/claude-code">Claude Code</a>、<a href="https://meta-api.com/docs/clients/codex">Codex</a>、<a href="https://meta-api.com/docs/clients/gemini">Gemini CLI</a> 接入教程 ·
+  <a href="https://meta-api.com/pricing">模型价格</a> · <a href="https://meta-api.com/docs">使用文档</a>
 </p>
 
 <p align="center">

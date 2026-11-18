@@ -1,13 +1,13 @@
 # 语音合成与识别
 
-音频接口包括文字转语音、语音转文字和音频翻译。先在[模型广场](https://meta-api.vip/pricing)确认模型支持哪一种任务与协议，将 `MODEL_ID` 替换为实际 ID。音频输入模型、语音合成模型和实时对话模型并不通用，不能仅凭名称含有 audio 就互换使用。
+音频接口包括文字转语音、语音转文字和音频翻译。先在[模型广场](https://meta-api.com/pricing)确认模型支持哪一种任务与协议，将 `MODEL_ID` 替换为实际 ID。音频输入模型、语音合成模型和实时对话模型并不通用，不能仅凭名称含有 audio 就互换使用。
 
 ## 文字转语音
 
 `POST /v1/audio/speech` 接收 `model`、`input` 和 `voice`。示例的 `VOICE_ID` 也要替换为该模型支持的音色；这里的 MP3 格式仅适用于支持该输出格式的模型。`API_KEY` 由环境变量提供。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/audio/speech' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/audio/speech' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -31,7 +31,7 @@ curl --fail-with-body -sS 'https://meta-api.vip/v1/audio/speech' \
 准备本地 `sample.wav`，使用 multipart 上传。cURL 自动设置文件上传的 Content-Type 和 boundary。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/audio/transcriptions' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/audio/transcriptions' \
   -H "Authorization: Bearer $API_KEY" \
   -F 'model=MODEL_ID' \
   -F 'file=@sample.wav'

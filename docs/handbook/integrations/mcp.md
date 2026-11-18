@@ -1,12 +1,12 @@
 # 模型 API 与 MCP 工具连接
 
-模型 API 负责生成回复，MCP 负责让应用发现和调用工具、资源等能力。两者不是同一个接口：把 `https://meta-api.vip/v1` 填进 MCP Server URL 不会变成工具服务；配置一个 MCP 服务器，也不会自动把客户端的模型提供方切换到元衡。
+模型 API 负责生成回复，MCP 负责让应用发现和调用工具、资源等能力。两者不是同一个接口：把 `https://meta-api.com/v1` 填进 MCP Server URL 不会变成工具服务；配置一个 MCP 服务器，也不会自动把客户端的模型提供方切换到元衡。
 
 ## 分别配置两条连接
 
 | 连接 | 配置位置 | 凭据与地址 |
 | --- | --- | --- |
-| 应用 → 元衡模型 API | 客户端模型提供商设置 | Base URL `https://meta-api.vip/v1`、本站 Key、`MODEL_ID` |
+| 应用 → 元衡模型 API | 客户端模型提供商设置 | Base URL `https://meta-api.com/v1`、本站 Key、`MODEL_ID` |
 | 应用 → 本地 MCP 服务 | 客户端 MCP 设置 | 本地启动命令与受控环境变量，按工具官方说明填写 |
 | 应用 → 远端 MCP 服务 | 客户端 MCP 设置 | 工具提供方的 MCP 地址及其独立鉴权方式 |
 | 工具结果 → 模型 | 客户端工具循环 | 客户端将必要结果作为上下文交回模型 |
@@ -18,7 +18,7 @@
 先在不启用 MCP 的情况下确认模型配置。此请求查询本站模型目录，使用模型 API Key 环境变量：
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/models' \
+curl --fail-with-body 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 

@@ -1,6 +1,6 @@
 # 独立文档站
 
-域名：`https://docs.meta-api.vip`。复用 `web/src/pages/Docs`、65 篇本站 Markdown 和十七种正文语言。参考站的 181 个主题在 `docs/handbook/reference-coverage.json` 中逐项映射；正文按本站路由与功能独立编写，不镜像其专有接口、活动或业务承诺。
+域名：`https://docs.meta-api.com`。复用 `web/src/pages/Docs`、65 篇本站 Markdown 和十七种正文语言。参考站的 181 个主题在 `docs/handbook/reference-coverage.json` 中逐项映射；正文按本站路由与功能独立编写，不镜像其专有接口、活动或业务承诺。
 
 ## 内容维护
 
@@ -22,13 +22,13 @@
 
 1. 下载同一 Release 的文档包和校验文件，执行 `sha256sum -c`，检查 `build-info.json`。解压到 `/var/www/newapi-docs/releases/<版本>/`，不要覆盖旧版本。
 2. 确认 DNS 的 `docs` 无冲突后，新增指向文档服务器的记录。首次申请证书时仅开放独立 HTTP 虚拟主机的 `/.well-known/acme-challenge/`，目录为 `/var/www/newapi-docs/acme`；其他路径返回 503。沿用服务器既有 ACME 账户和续期流程申请该域名证书；安装 `deploy/docs-site/renew-hook.sh` 为 `/etc/letsencrypt/renewal-hooks/deploy/50-newapi-docs-reload`（0755），仅该证书续期后校验并重载 Nginx。
-3. 安装 `deploy/docs-site/public-api.conf` 到 `/etc/nginx/snippets/newapi-docs-public-api.conf`，另安装 `docs.meta-api.vip.conf` 为独立站点。其公开接口固定 `127.0.0.1:3000`，部署前核实本机业务监听地址；不允许将整个应用代理到该域名。
+3. 安装 `deploy/docs-site/public-api.conf` 到 `/etc/nginx/snippets/newapi-docs-public-api.conf`，另安装 `docs.meta-api.com.conf` 为独立站点。其公开接口固定 `127.0.0.1:3000`，部署前核实本机业务监听地址；不允许将整个应用代理到该域名。
 4. 原子切换 `current` 软链，执行 `nginx -t` 后 graceful reload。失败时恢复原软链/配置，不停止正在服务的业务容器。
 5. 验证 HTTPS 证书、主页、深层链接、静态资源、`build-info.json`；`/api/status` 和 `/api/pricing` 只能 GET/HEAD 且不传身份。其他 API、控制台和非只读方法应拒绝。核对业务容器 ID/健康状态未变。
-6. 通过平台现有设置将 `DocsLink` 配置为 `https://docs.meta-api.vip/`；该设置只切换文档入口，不代表业务程序升级。新版主站导航、首页阅读按钮与页脚会携带 `lang`；文档消费合法语言参数并移除，随后以用户手动选择为准。
+6. 通过平台现有设置将 `DocsLink` 配置为 `https://docs.meta-api.com/`；该设置只切换文档入口，不代表业务程序升级。新版主站导航、首页阅读按钮与页脚会携带 `lang`；文档消费合法语言参数并移除，随后以用户手动选择为准。
 
 ## 运行边界
 
-公开定价目录仅生成公开模型样例，不保证某个账户/令牌的可用模型。请求失败保留教程，并提示重试；API 基地址回退 `https://meta-api.vip`，绝不使用文档域名调用模型。跨域仅传语言偏好，不共享账户、令牌或用户缓存。教程内主站操作链接回到主站，代码块中的请求样例保持原格式。
+公开定价目录仅生成公开模型样例，不保证某个账户/令牌的可用模型。请求失败保留教程，并提示重试；API 基地址回退 `https://meta-api.com`，绝不使用文档域名调用模型。跨域仅传语言偏好，不共享账户、令牌或用户缓存。教程内主站操作链接回到主站，代码块中的请求样例保持原格式。
 
 回退文档只需将 `current` 指回已校验的旧目录；必要时将 `DocsLink` 改回 `/docs`。业务应用发布继续走项目受保护入口，不能借此文档流程部署应用。

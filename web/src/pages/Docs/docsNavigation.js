@@ -106,8 +106,8 @@ export function extractHeadings(content) {
   }, []);
 }
 
-export const DOCS_ORIGIN = 'https://docs.meta-api.vip';
-export const MAIN_ORIGIN = 'https://meta-api.vip';
+export const DOCS_ORIGIN = 'https://docs.meta-api.com';
+export const MAIN_ORIGIN = 'https://meta-api.com';
 
 export function docPath(path, standalone = false) {
   return standalone ? path.replace(/^\/docs(?=\/|$)/, '') || '/' : path;
@@ -157,7 +157,7 @@ export function standaloneMarkdown(content, language) {
       }
       if (fenced) return line;
       return line.replace(
-        /(\]\()(https:\/\/meta-api\.vip)?(\/(?!\/)[^\s)]*)(\))/g,
+        /(\]\()(https:\/\/meta-api\.(?:vip|com))?(\/(?!\/)[^\s)]*)(\))/g,
         (all, open, origin, path, close) => {
           if (/^\/docs(?:\/|$|[?#])/.test(path))
             return `${open}${path.replace(/^\/docs(?=\/|$|[?#])/, '') || '/'}${close}`;

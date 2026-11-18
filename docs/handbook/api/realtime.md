@@ -1,6 +1,6 @@
 # Realtime 实时接口
 
-Realtime 使用 WebSocket 建立持续双向连接，适用于模型支持的实时交互。本站入口为 `wss://meta-api.vip/v1/realtime`。先在[模型广场](https://meta-api.vip/pricing)确认模型和渠道支持实时协议，再将 `MODEL_ID` 替换为实际 ID。普通 Chat、音频合成和 Realtime 是不同协议，不能混用请求结构。
+Realtime 使用 WebSocket 建立持续双向连接，适用于模型支持的实时交互。本站入口为 `wss://meta-api.com/v1/realtime`。先在[模型广场](https://meta-api.com/pricing)确认模型和渠道支持实时协议，再将 `MODEL_ID` 替换为实际 ID。普通 Chat、音频合成和 Realtime 是不同协议，不能混用请求结构。
 
 ## 最小连接检查
 
@@ -11,7 +11,7 @@ import os
 from websocket import create_connection
 
 ws = create_connection(
-    "wss://meta-api.vip/v1/realtime?model=MODEL_ID",
+    "wss://meta-api.com/v1/realtime?model=MODEL_ID",
     header=[
         f"Authorization: Bearer {os.environ['API_KEY']}",
         "OpenAI-Beta: realtime=v1",

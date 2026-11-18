@@ -56,8 +56,16 @@ const officialDownloadLinks = (url, filename, version, definition) => {
   const expectedFilename = `YuanHeng.Desktop_${version}${definition.filenameSuffixes[0]}`;
   if (filename !== expectedFilename) return unchanged;
   const path = `/desktop/update/releases/${version}/${filename}`;
-  const mirror = `https://meta-api.vip${path}`;
-  if (url.href !== mirror && url.href !== `${mirror}?origin=1`)
+  const mirror = `https://meta-api.com${path}`;
+  const legacyMirror = `https://meta-api.vip${path}`;
+  if (
+    ![
+      mirror,
+      `${mirror}?origin=1`,
+      legacyMirror,
+      `${legacyMirror}?origin=1`,
+    ].includes(url.href)
+  )
     return unchanged;
   return {
     url: `${mirror}?origin=1`,
