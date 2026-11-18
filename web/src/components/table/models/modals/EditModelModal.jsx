@@ -214,7 +214,10 @@ const EditModelModal = (props) => {
         if (session !== sessionRef.current) return;
         formValuesRef.current = {
           key: formKey,
-          values: structuredClone(values),
+          values,
+          // Semi updates nested field paths in its form values. The PATCH baseline
+          // must never be handed to the form or a real edit may look unchanged.
+          initial: structuredClone(values),
         };
         setReadySession(session);
       } else {
@@ -234,7 +237,11 @@ const EditModelModal = (props) => {
     submittingRef.current = false;
     setReadySession(null);
     const values = getInitValues();
-    formValuesRef.current = { key: formKey, values };
+    formValuesRef.current = {
+      key: formKey,
+      values,
+      initial: structuredClone(values),
+    };
     setLoading(Boolean(props.visiable && isEdit));
     if (props.visiable) {
       if (isEdit) {
@@ -293,7 +300,7 @@ const EditModelModal = (props) => {
           omitUnchangedModelMetadata(
             submitData,
             values,
-            formValuesRef.current?.values,
+            formValuesRef.current?.initial,
           ),
           {
             skipErrorHandler: true,
@@ -616,6 +623,55 @@ const EditModelModal = (props) => {
                       )}
                     />
                   </Col>
+                  {values.name_rule === 0 && (
+                    <>
+                      <Col span={isMobile ? 24 : 12}>
+                        <Form.Select
+                          field='reasoning_profile.supportedLevels'
+                          label={t('思考强度')}
+                          placeholder={t('未配置')}
+                          multiple
+                          showClear
+                          optionList={[
+                            'none',
+                            'minimal',
+                            'low',
+                            'medium',
+                            'high',
+                            'xhigh',
+                            'max',
+                            'ultra',
+                          ].map((value) => ({ label: value, value }))}
+                          onChange={(levels) => {
+                            if (
+                              !levels?.includes(
+                                values.reasoning_profile?.defaultLevel,
+                              )
+                            ) {
+                              formApiRef.current?.setValue(
+                                'reasoning_profile.defaultLevel',
+                                undefined,
+                              );
+                            }
+                          }}
+                          style={{ width: '100%' }}
+                        />
+                      </Col>
+                      {!!values.reasoning_profile?.supportedLevels?.length && (
+                        <Col span={isMobile ? 24 : 12}>
+                          <Form.Select
+                            field='reasoning_profile.defaultLevel'
+                            label={`${t('思考强度')} · ${t('默认')}`}
+                            rules={[{ required: true }]}
+                            optionList={values.reasoning_profile.supportedLevels.map(
+                              (value) => ({ label: value, value }),
+                            )}
+                            style={{ width: '100%' }}
+                          />
+                        </Col>
+                      )}
+                    </>
+                  )}
                   <Col span={24}>
                     <ModelFunctionsEditor
                       field='function_overrides'

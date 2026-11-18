@@ -37,6 +37,16 @@ const metadataFields = [
 ];
 export function omitUnchangedModelMetadata(payload, values, initial) {
   const patch = { ...payload };
+  const declaration = (form) =>
+    form?.name_rule === 0 && form.reasoning_profile?.supportedLevels?.length
+      ? form.reasoning_profile
+      : null;
+  const nextProfile = declaration(values);
+  if (JSON.stringify(nextProfile) === JSON.stringify(declaration(initial))) {
+    delete patch.reasoning_profile;
+  } else {
+    patch.reasoning_profile = nextProfile;
+  }
   delete patch.description_translations;
   delete patch.description_automatic;
   const descriptions = descriptionOverridePatch(
