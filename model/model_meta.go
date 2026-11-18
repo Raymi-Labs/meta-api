@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -23,6 +24,7 @@ type BoundChannel struct {
 }
 
 type Model struct {
+	ReasoningProfile        *ReasoningProfile               `json:"reasoning_profile,omitempty" gorm:"type:text;serializer:json"`
 	FunctionOverrides       ModelFunctionOverrides          `json:"function_overrides" gorm:"type:text"`
 	DescriptionAutomatic    ModelDescriptions               `json:"description_automatic,omitempty" gorm:"-"`
 	DescriptionOverrides    ModelDescriptions               `json:"description_overrides,omitempty" gorm:"type:text"`
@@ -169,10 +171,16 @@ func (mi *Model) UpdateWithLocalizedMetadata(omitted []string, overrides map[str
 
 func (mi *Model) updateMetadata(db *gorm.DB, omitted []string) error {
 	normalizePublicModelMetadata(mi)
+	// Changing to a wildcard and clearing its exact declaration must be one UPDATE,
+	// including for older editors that never send reasoning_profile.
+	if mi.NameRule != NameRuleExact {
+		mi.ReasoningProfile = nil
+		omitted = slices.DeleteFunc(slices.Clone(omitted), func(field string) bool { return field == "reasoning_profile" })
+	}
 	mi.UpdatedTime = common.GetTimestamp()
 	// 使用 Select 强制更新所有字段，包括零值
 	return db.Model(&Model{}).Where("id = ?", mi.Id).
-		Select("function_overrides", "description_overrides", "faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
+		Select("reasoning_profile", "function_overrides", "description_overrides", "faq", "official_pricing", "model_name", "display_name", "release_date", "context_length", "max_output_tokens", "capabilities", "input_modalities", "output_modalities", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").
 		Omit(omitted...).Updates(mi).Error
 }
 

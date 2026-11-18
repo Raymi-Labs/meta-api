@@ -980,11 +980,7 @@ func GetUserModels(c *gin.Context) {
 	requestedGroup := strings.TrimSpace(c.Query("group"))
 	if requestedGroup != "" {
 		if _, ok := groups[requestedGroup]; !ok {
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"message": "",
-				"data":    []string{},
-			})
+			writeUserModels(c, []string{})
 			return
 		}
 
@@ -1001,11 +997,7 @@ func GetUserModels(c *gin.Context) {
 			models = model.GetGroupEnabledModels(requestedGroup)
 		}
 		models = model.FilterModelsByVisibility(models, user.Role)
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "",
-			"data":    models,
-		})
+		writeUserModels(c, models)
 		return
 	}
 
@@ -1018,12 +1010,19 @@ func GetUserModels(c *gin.Context) {
 		}
 	}
 	models = model.FilterModelsByVisibility(models, user.Role)
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    models,
-	})
-	return
+	writeUserModels(c, models)
+}
+
+func writeUserModels(c *gin.Context, visible []string) {
+	response := gin.H{"success": true, "message": "", "data": visible}
+	if c.Query("include") == "reasoning_profiles" {
+		if profiles, err := model.VisibleReasoningProfiles(visible); err == nil {
+			response["reasoningProfiles"] = profiles
+		} else {
+			common.SysError("读取模型推理档位失败: " + err.Error())
+		}
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateUser(c *gin.Context) {

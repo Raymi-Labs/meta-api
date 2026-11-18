@@ -1,5 +1,7 @@
 # 功能地图
 
+[精确型号推理档位](../.agents/notes/implemented/feature/2026-11-18-platform-reasoning-profiles.md)：复用管理员模型编辑；`/api/user/models?include=reasoning_profiles` 仅在已过滤账号目录内返回档位和默认值。未请求时保持旧响应，不改变转发或结算。
+
 企业资金可靠性（2026-11-17，本地实现）：[平台钱包](../web/src/pages/EnterpriseAdmin/WalletModal.jsx)、[成员额度](../web/src/pages/EnterpriseConsole/AmountModal.jsx)、[人工预留](../web/src/pages/EnterpriseAdmin/Reservations.jsx) → 原企业权限路由 → [controller](../controller/enterprise.go) → [持久操作回执](../model/enterprise_operation.go)。入账/调账/分配/回收/人工结算要求Idempotency-Key，同键同参取原结果；资金/审计/回执同事务。回执查询复核当前主库身份和成员代次，金额为精确整数；全部回收绑定原可用额。浏览器保留待确认原操作，重开先查询，退出/认证失效清草稿；窄屏保留可达主操作。发布工具增加enterprise_operations_v1能力屏障，回执表存在后禁止不兼容回退。SQLite/race/本地组件通过，MySQL/PostgreSQL待CI；不改普通用户生图规则。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-17-enterprise-financial-operations.md)。 预留已离开待对账列表时，当前账号仍有原操作查询入口；首次升级兼容回退不满足时保留旧服务并中止，过渡发布待安排。
 
 模型不参与折扣（2026-11-17）：[模型价格设置](../web/src/pages/Setting/Ratio/ModelDiscountSettings.jsx)通过 Root `/api/option/` 配置 `NoDiscountModels` 精确 ID 列表（默认空）；[统一取价](../relay/helper/price.go)覆盖个人/企业/自动切组的分组与时间倍率为1，保留基础价、付费档位和权限路由。`/api/pricing` 下发模型 `no_discount`，卡片/表格/排序/详情/比较/体验区复用有效报价；请求与异步任务快照、日志及时间预览一致。见[决策与验证](../.agents/notes/implemented/feature/2026-11-17-model-no-discount.md)。

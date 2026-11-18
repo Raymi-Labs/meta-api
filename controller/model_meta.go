@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,6 +18,7 @@ import (
 // Keep added fields presence-aware so older full-update clients do not erase
 // curated display metadata. Explicit empty strings, zero, and [] clear values.
 type modelMetaRequest struct {
+	Reasoning            json.RawMessage               `json:"reasoning_profile"`
 	FunctionOverrides    *model.ModelFunctionOverrides `json:"function_overrides"`
 	DescriptionOverrides map[string]*string            `json:"description_overrides"`
 	CapabilityOverrides  map[string]*bool              `json:"capability_overrides"`
@@ -36,6 +39,24 @@ type modelMetaRequest struct {
 
 func (request modelMetaRequest) withDisplayMetadata(existing *model.Model) (model.Model, error) {
 	m := request.Model
+	if existing != nil {
+		m.ReasoningProfile = existing.ReasoningProfile
+	}
+	if request.Reasoning != nil {
+		m.ReasoningProfile = nil
+		if err := common.Unmarshal(request.Reasoning, &m.ReasoningProfile); err != nil {
+			return m, err
+		}
+		if err := m.ReasoningProfile.Validate(); err != nil {
+			return m, err
+		}
+	}
+	if m.NameRule != model.NameRuleExact && m.ReasoningProfile != nil {
+		if request.Reasoning != nil {
+			return m, errors.New("推理档位仅支持精确匹配模型")
+		}
+		m.ReasoningProfile = nil
+	}
 	m.DescriptionOverrides = nil
 	if existing != nil {
 		m.Description, m.Tags, m.VendorID = existing.Description, existing.Tags, existing.VendorID
@@ -135,6 +156,7 @@ func (request modelMetaRequest) omittedMetadataFields() []string {
 		omitted bool
 	}{
 		{"description_overrides", len(request.DescriptionOverrides) == 0},
+		{"reasoning_profile", request.Reasoning == nil},
 		{"description", request.Description == nil}, {"tags", request.Tags == nil}, {"vendor_id", request.VendorID == nil},
 		{"official_pricing", request.OfficialPricing == nil}, {"release_date", request.ReleaseDate == nil},
 		{"context_length", request.ContextLength == nil}, {"max_output_tokens", request.MaxOutputTokens == nil},
