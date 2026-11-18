@@ -1,12 +1,12 @@
 # API 接入总览
 
-元衡 API 将已配置的模型渠道接入同一服务入口。先在[模型广场](https://meta-api.vip/pricing)查看目标模型的 ID、可用分组与支持协议，再创建对应分组的 API Key。页面出现某个厂商名称，不代表该厂商的每种接口、工具或模型都已开放；同一模型也可能只支持其中一种协议。
+元衡 API 将已配置的模型渠道接入同一服务入口。先在[模型广场](https://meta-api.com/pricing)查看目标模型的 ID、可用分组与支持协议，再创建对应分组的 API Key。页面出现某个厂商名称，不代表该厂商的每种接口、工具或模型都已开放；同一模型也可能只支持其中一种协议。
 
 [常用接口速查](/docs/reference/common-endpoints)
 
 ## 地址与请求方式
 
-API 服务根地址为 `https://meta-api.vip`。OpenAI SDK 通常填写 `https://meta-api.vip/v1`；原生 HTTP 请求需带下面的完整路径。`docs.meta-api.vip` 只提供文档，不接收模型生成请求。
+API 服务根地址为 `https://meta-api.com`。OpenAI SDK 通常填写 `https://meta-api.com/v1`；原生 HTTP 请求需带下面的完整路径。`docs.meta-api.com` 只提供文档，不接收模型生成请求。
 
 | 用途 | 方法与路径 | 核心输入 |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ API 服务根地址为 `https://meta-api.vip`。OpenAI SDK 通常填写 `https:/
 在当前终端设置好 `API_KEY` 环境变量后执行。不要将真实密钥放进截图、公开仓库或网页前端。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/models' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 

@@ -4,10 +4,10 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://meta-api.vip/`。
+1. 登录 `https://meta-api.com/`。
 2. 进入 `令牌管理` 创建令牌。
 3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
-4. 可用模型以 `https://meta-api.vip/pricing` 为准。
+4. 可用模型以 `https://meta-api.com/pricing` 为准。
 5. 复制完整 API Key。
 
 ## 2. 安装 Claude Code
@@ -26,35 +26,35 @@ claude --version
 Claude Code 的 Base URL 不带 `/v1`：
 
 ```text
-ANTHROPIC_BASE_URL=https://meta-api.vip
+ANTHROPIC_BASE_URL=https://meta-api.com
 ANTHROPIC_AUTH_TOKEN=你的API密钥
 ```
 
 Windows 临时设置：
 
 ```powershell
-$env:ANTHROPIC_BASE_URL = "https://meta-api.vip"
+$env:ANTHROPIC_BASE_URL = "https://meta-api.com"
 $env:ANTHROPIC_AUTH_TOKEN = "你的API密钥"
 ```
 
 Windows 永久设置：
 
 ```powershell
-[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://meta-api.vip", [System.EnvironmentVariableTarget]::User)
+[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "https://meta-api.com", [System.EnvironmentVariableTarget]::User)
 [System.Environment]::SetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN", "你的API密钥", [System.EnvironmentVariableTarget]::User)
 ```
 
 macOS / Linux：
 
 ```bash
-export ANTHROPIC_BASE_URL="https://meta-api.vip"
+export ANTHROPIC_BASE_URL="https://meta-api.com"
 export ANTHROPIC_AUTH_TOKEN="你的API密钥"
 ```
 
 zsh 永久设置：
 
 ```bash
-echo 'export ANTHROPIC_BASE_URL="https://meta-api.vip"' >> ~/.zshrc
+echo 'export ANTHROPIC_BASE_URL="https://meta-api.com"' >> ~/.zshrc
 echo 'export ANTHROPIC_AUTH_TOKEN="你的API密钥"' >> ~/.zshrc
 source ~/.zshrc
 ```

@@ -10,8 +10,8 @@ Meta API 是 Raymi Labs 维护的大模型 API 网关，基于 QuantumNous/new-a
 | 公司版本发布 | https://github.com/Raymi-Labs/meta-api/releases |
 | 原个人仓库与历史 Release | https://github.com/nanashiwang/new-api |
 | 上游项目 | https://github.com/QuantumNous/new-api |
-| 在线服务 | https://meta-api.vip |
-| 用户文档 | https://docs.meta-api.vip |
+| 在线服务 | https://meta-api.com |
+| 用户文档 | https://docs.meta-api.com |
 
 公司仓库从原个人仓库复制已推送的分支、标签和完整 Git 历史；原仓库继续保留。Issues、历史 Release 页面及附件不会随 Git 推送自动复制，查阅原版本时使用原仓库。后续常规应用发布采用正式三段式版本 `vX.Y.Z`，结束新增 `v1.0.0-compat.N` 的命名方式。历史 compat 标签、Release 和产物保留，不复用旧标签发布不同源码；递增规则见 [版本号约定](installation/release-artifacts.md#版本号约定)。
 

@@ -322,7 +322,7 @@ test('runtime docs translate labels but preserve permission-filtered model/group
   assert.doesNotMatch(translated, /隐藏组/);
   assert.match(
     translated,
-    /curl -sS 'https:\/\/meta-api.vip\/v1\/chat\/completions'/,
+    /curl -sS 'https:\/\/meta-api.com\/v1\/chat\/completions'/,
   );
   assert.match(translated, /"model": "gpt-test"/);
 });

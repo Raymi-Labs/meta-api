@@ -7,7 +7,7 @@
 从模型广场确认支持审核的模型 ID，再把 `MODEL_ID` 替换为该值。密钥从环境变量读取。
 
 ```bash
-curl --fail-with-body https://meta-api.vip/v1/moderations \
+curl --fail-with-body https://meta-api.com/v1/moderations \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"model":"MODEL_ID","input":"Text to evaluate"}'

@@ -99,7 +99,7 @@ function normalizedDocPath(href) {
   } catch {
     return null;
   }
-  if (url.hostname === 'docs.meta-api.vip') {
+  if (['docs.meta-api.vip', 'docs.meta-api.com'].includes(url.hostname)) {
     const pathname = url.pathname.replace(/\/+$/, '') || '/';
     return pathname === '/'
       ? '/docs'
@@ -108,7 +108,7 @@ function normalizedDocPath(href) {
         : `/docs${pathname}`;
   }
   if (
-    url.hostname !== 'meta-api.vip' ||
+    !['meta-api.vip', 'meta-api.com'].includes(url.hostname) ||
     !/^\/docs(?:\/|$)/.test(url.pathname)
   ) {
     return null;
@@ -154,7 +154,8 @@ function docsHostAPIUrls(code) {
       } catch {
         continue; // Other tools may legitimately show a templated host.
       }
-      if (url.hostname !== 'docs.meta-api.vip') continue;
+      if (!['docs.meta-api.vip', 'docs.meta-api.com'].includes(url.hostname))
+        continue;
       const apiPath = /^\/(?:v1(?:beta)?|v2|v3|mj|suno)(?:\/|$)/.test(
         url.pathname,
       );

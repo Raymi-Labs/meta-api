@@ -61,7 +61,7 @@ for (const [id, suffix] of [
   const normalize = (item, version = '1.2.3') =>
     normalizeDesktopDownloadCatalog({ version, packages: [item] }).packages[0];
   const result = normalize(item);
-  assert.equal(result.url, `${item.url}?origin=1`);
+  assert.equal(result.url, `${item.url.replace('meta-api.vip', 'meta-api.com')}?origin=1`);
   assert.deepEqual(result.backups, [
     {
       label: 'R2',

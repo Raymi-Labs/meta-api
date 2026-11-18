@@ -46,10 +46,10 @@ test('link mapping keeps docs local and moves account links home without changin
   expect(output).toContain('[Docs](/clients/codex)');
   expect(output).toContain('[Examples](/api-examples)');
   expect(output).toContain(
-    '[Account](https://meta-api.vip/console/token?lang=ja)',
+    '[Account](https://meta-api.com/console/token?lang=ja)',
   );
   expect(output).toContain(
-    '[Download](https://meta-api.vip/downloads/skill.zip)',
+    '[Download](https://meta-api.com/downloads/skill.zip)',
   );
   expect(output).toContain('![Image](/docs-images/a.png)');
   expect(output).toContain(code);
@@ -101,7 +101,7 @@ test('only the official documentation host receives a language preference', asyn
       'https://docs.meta-api.vip/api-examples?from=home#sample',
       'ja',
     ),
-    'https://docs.meta-api.vip/api-examples?from=home&lang=ja#sample',
+    'https://docs.meta-api.com/api-examples?from=home&lang=ja#sample',
   );
   for (const url of [
     '/docs',
@@ -109,7 +109,28 @@ test('only the official documentation host receives a language preference', asyn
     'https://example.test/docs',
     'https://docs.meta-api.vip.evil.test/',
     'http://docs.meta-api.vip',
+    'https://docs.meta-api.com.evil.test/',
+    'https://docs.meta-api.com:8443/',
+    'https://user:secret@docs.meta-api.com/',
   ]) {
     assert.equal(withDocsLanguage(url, 'ja'), url);
   }
+});
+
+test('new documentation origin keeps deep links, query and language', async () => {
+  const { withDocsLanguage } = await import('../src/helpers/docsLink.js');
+  assert.equal(
+    withDocsLanguage(
+      'https://docs.meta-api.com:443/api/video?x=1#example',
+      'ja',
+    ),
+    'https://docs.meta-api.com/api/video?x=1&lang=ja#example',
+  );
+  assert.equal(
+    standaloneMarkdown(
+      '[Video](https://meta-api.com/docs/api/video?x=1#example)',
+      'en',
+    ),
+    '[Video](/api/video?x=1#example)',
+  );
 });

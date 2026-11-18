@@ -1,13 +1,13 @@
 # Claude Messages
 
-`POST https://meta-api.vip/v1/messages` 接收 Claude Messages 格式。适用于支持该协议的模型和客户端。模型名称、分组和可选能力需在[模型广场](https://meta-api.vip/pricing)核对；把 `MODEL_ID` 替换为实际 ID，不要把 Chat、Responses 的请求体直接提交到此端点。
+`POST https://meta-api.com/v1/messages` 接收 Claude Messages 格式。适用于支持该协议的模型和客户端。模型名称、分组和可选能力需在[模型广场](https://meta-api.com/pricing)核对；把 `MODEL_ID` 替换为实际 ID，不要把 Chat、Responses 的请求体直接提交到此端点。
 
 ## 最小请求
 
 在终端环境中设置 `API_KEY`。下面的 max_tokens 是示例输出预算，可按任务与模型限制调整；不是本站规定的统一额度。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/messages' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/messages' \
   -H "x-api-key: $API_KEY" \
   -H 'anthropic-version: 2023-06-01' \
   -H 'Content-Type: application/json' \

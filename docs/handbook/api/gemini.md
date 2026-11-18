@@ -1,12 +1,12 @@
 # Gemini 原生 API
 
-Gemini 原生接口使用 `contents/parts` 表达输入，路径中包含模型名与动作。先在[模型广场](https://meta-api.vip/pricing)确认模型支持 Gemini 原生协议，并检查令牌分组；将 URL 中的 `MODEL_ID` 替换为实际模型 ID。使用 OpenAI 兼容调用时则应按 Chat Completions 文档构造请求，两种格式不能混用。
+Gemini 原生接口使用 `contents/parts` 表达输入，路径中包含模型名与动作。先在[模型广场](https://meta-api.com/pricing)确认模型支持 Gemini 原生协议，并检查令牌分组；将 URL 中的 `MODEL_ID` 替换为实际模型 ID。使用 OpenAI 兼容调用时则应按 Chat Completions 文档构造请求，两种格式不能混用。
 
 ## 普通生成请求
 
 ```bash
 curl --fail-with-body -sS \
-  'https://meta-api.vip/v1beta/models/MODEL_ID:generateContent' \
+  'https://meta-api.com/v1beta/models/MODEL_ID:generateContent' \
   -H "x-goog-api-key: $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

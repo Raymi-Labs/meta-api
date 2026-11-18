@@ -8,7 +8,7 @@ Cherry Studio、Chatbox、RikkaHub、LobeChat、LobeHub、Open WebUI、NextChat�
 | --- | --- |
 | 名称 | 自定义为便于识别的“元衡” |
 | 协议 / Provider | OpenAI Compatible，具体标签以当前版本为准 |
-| Base URL | `https://meta-api.vip/v1` |
+| Base URL | `https://meta-api.com/v1` |
 | API Key | 本站创建的独立令牌；脚本中对应 `API_KEY` |
 | 模型 ID | `MODEL_ID`，替换为该令牌可用的模型名称 |
 | 显示名称 | 可自定义，不能替代发给接口的模型 ID |
@@ -16,7 +16,7 @@ Cherry Studio、Chatbox、RikkaHub、LobeChat、LobeHub、Open WebUI、NextChat�
 保存连接后，启用它并添加模型；在新建对话中明确选中这个连接下的模型。部分客户端不会自动列出第三方模型，此时应手动添加精确 ID。自动获取列表失败并不一定代表生成接口不可用，可先检查模型目录：
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/models' \
+curl --fail-with-body 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 

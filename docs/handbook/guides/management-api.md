@@ -1,6 +1,6 @@
 # 账户与令牌管理 API
 
-管理 API 用于查询账户和管理令牌，认证与模型推理接口不同。公开文档站不代理这些请求，调用地址始终是 `https://meta-api.vip`。
+管理 API 用于查询账户和管理令牌，认证与模型推理接口不同。公开文档站不代理这些请求，调用地址始终是 `https://meta-api.com`。
 
 ## 认证与权限
 
@@ -14,7 +14,7 @@
 export MANAGEMENT_TOKEN='YOUR_ACCOUNT_ACCESS_TOKEN'
 export NEW_API_USER='YOUR_NUMERIC_USER_ID'
 
-curl --fail-with-body https://meta-api.vip/api/user/self \
+curl --fail-with-body https://meta-api.com/api/user/self \
   -H "Authorization: Bearer $MANAGEMENT_TOKEN" \
   -H "New-Api-User: $NEW_API_USER"
 ```

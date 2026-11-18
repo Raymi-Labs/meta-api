@@ -4,10 +4,10 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://meta-api.vip/`。
+1. 登录 `https://meta-api.com/`。
 2. 进入 `令牌管理` 创建令牌。
 3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
-4. 可用模型以 `https://meta-api.vip/pricing` 为准。
+4. 可用模型以 `https://meta-api.com/pricing` 为准。
 5. 复制完整 API Key。
 
 令牌管理中，点击 `添加令牌`，按模型广场选择 `分组`，创建后复制 `密钥`。
@@ -35,7 +35,7 @@ npx zcf
 2. 首次安装选 `1`；已有配置/更新密钥选 `3`。
 3. 供应商选择“自定义”。
 4. 供应商名称填 `nan`。
-5. URL 填 `https://meta-api.vip/v1`。
+5. URL 填 `https://meta-api.com/v1`。
 6. Key 填平台生成的 API Key。
 7. MCP 建议直接回车跳过。
 8. 配置完成后设为默认供应商。
@@ -60,7 +60,7 @@ preferred_auth_method = "apikey"
 
 [model_providers.crs]
 name = "crs"
-base_url = "https://meta-api.vip/v1"
+base_url = "https://meta-api.com/v1"
 wire_api = "responses"
 requires_openai_auth = true
 env_key = "NAN_API_KEY"

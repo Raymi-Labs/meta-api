@@ -34,6 +34,21 @@ const options = {
   origin: 'https://browser.example',
 };
 
+test('canonical documentation examples support both source domains without rewriting lookalikes', () => {
+  assert.equal(
+    getDocsBaseUrl('https://meta-api.vip/v1', 'https://docs.meta-api.com'),
+    'https://meta-api.com',
+  );
+  const output = renderRuntimeDocs(
+    'https://meta-api.vip/v1 https://meta-api.com/v1 https://meta-api.com.evil.test/v1 https://meta-api.vip:8443/v1',
+    options,
+  );
+  assert.equal(
+    output,
+    'https://configured.example/v1 https://configured.example/v1 https://meta-api.com.evil.test/v1 https://meta-api.vip:8443/v1',
+  );
+});
+
 test('server config wins; protocol suffix is normalized; fallback and unsafe characters are handled', () => {
   assert.equal(
     getDocsBaseUrl(options.serverAddress, options.origin),

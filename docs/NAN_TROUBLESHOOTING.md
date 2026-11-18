@@ -66,7 +66,7 @@ echo $env:CRS_OAI_KEY
 
 | 客户端      | 必查项                                                                       |
 | ----------- | ---------------------------------------------------------------------------- |
-| Codex       | `base_url=https://meta-api.vip/v1`，`wire_api=responses`，`NAN_API_KEY` 生效 |
+| Codex       | `base_url=https://meta-api.com/v1`，`wire_api=responses`，`NAN_API_KEY` 生效 |
 | Claude Code | `ANTHROPIC_BASE_URL` 不带 `/v1`，分组匹配模型类型                            |
 | Gemini      | `GOOGLE_GEMINI_BASE_URL` 不带 `/v1`，`GEMINI_MODEL` 可用                     |
 | OpenCode    | `baseURL` 带 `/v1`，`CRS_OAI_KEY` 生效                                       |

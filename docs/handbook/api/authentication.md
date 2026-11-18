@@ -1,6 +1,6 @@
 # 认证与 API Key
 
-模型接口使用控制台“令牌管理”中创建的 API Key。登录网站的账号密码、浏览器 Cookie、第三方厂商密钥和元衡令牌不能混用。创建前先在[模型广场](https://meta-api.vip/pricing)确认目标模型及其协议，再选择账号有权使用的分组；一把令牌可以调用哪些模型，由分组、模型限制及当前渠道共同决定。
+模型接口使用控制台“令牌管理”中创建的 API Key。登录网站的账号密码、浏览器 Cookie、第三方厂商密钥和元衡令牌不能混用。创建前先在[模型广场](https://meta-api.com/pricing)确认目标模型及其协议，再选择账号有权使用的分组；一把令牌可以调用哪些模型，由分组、模型限制及当前渠道共同决定。
 
 [常用接口速查](/docs/reference/common-endpoints)
 
@@ -15,7 +15,7 @@
 以下示例通过模型列表检查 Key。请先在终端设置 `API_KEY`，不要把值写进源码；也不要同时发送相互冲突的多个认证头。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/models' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 

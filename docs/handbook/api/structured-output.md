@@ -1,13 +1,13 @@
 # 结构化输出
 
-结构化输出适合分类、信息提取和需要程序消费的结果。开始前在[模型广场](https://meta-api.vip/pricing)确认实际模型支持的协议与 JSON 输出能力，将 `MODEL_ID` 替换为对应 ID。本站可以接收相关参数，但参数存在于接口结构中不代表所有上游模型都实现了同样的约束。
+结构化输出适合分类、信息提取和需要程序消费的结果。开始前在[模型广场](https://meta-api.com/pricing)确认实际模型支持的协议与 JSON 输出能力，将 `MODEL_ID` 替换为对应 ID。本站可以接收相关参数，但参数存在于接口结构中不代表所有上游模型都实现了同样的约束。
 
 ## JSON Schema 示例
 
 下面使用 Chat Completions 的 `response_format`；仅适用于明确支持 `json_schema` 的模型。Key 来自环境变量。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

@@ -1,6 +1,6 @@
 # SDK、HTTP 与应用框架
 
-使用支持 OpenAI Chat Completions 的模型时，可以保留现有 SDK，把服务地址改为 `https://meta-api.vip/v1`，并使用本站令牌。本页选择最小对话请求，便于确认网络、鉴权和模型是否匹配；需要 [Responses](/docs/reference/responses)、[Claude Messages](/docs/reference/messages) 或 [Gemini 原生 API](/docs/reference/gemini) 时，请按相应文档选择端点，不能只换一个模型名称。
+使用支持 OpenAI Chat Completions 的模型时，可以保留现有 SDK，把服务地址改为 `https://meta-api.com/v1`，并使用本站令牌。本页选择最小对话请求，便于确认网络、鉴权和模型是否匹配；需要 [Responses](/docs/reference/responses)、[Claude Messages](/docs/reference/messages) 或 [Gemini 原生 API](/docs/reference/gemini) 时，请按相应文档选择端点，不能只换一个模型名称。
 
 ## 配置与安装
 
@@ -27,7 +27,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key=os.environ["API_KEY"],
-    base_url="https://meta-api.vip/v1",
+    base_url="https://meta-api.com/v1",
     timeout=60.0,
     max_retries=0,
 )
@@ -47,7 +47,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   apiKey: process.env.API_KEY,
-  baseURL: 'https://meta-api.vip/v1',
+  baseURL: 'https://meta-api.com/v1',
   timeout: 60_000,
   maxRetries: 0,
 });
@@ -63,7 +63,7 @@ console.log(result.choices[0].message.content);
 下面请求可用于区分“平台调用失败”和“框架转换有误”。成功结果的正文通常位于 `choices[0].message.content`；其他字段及结束原因见 [Chat Completions](/docs/reference/chat-completions)。
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"model":"MODEL_ID","messages":[{"role":"user","content":"Hello"}]}'

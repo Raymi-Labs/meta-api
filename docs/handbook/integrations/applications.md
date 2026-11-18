@@ -15,12 +15,12 @@
 
 ## 通用字段
 
-Base URL 填 `https://meta-api.vip/v1`；若字段明确叫“完整 API 地址”，Chat 接口填 `https://meta-api.vip/v1/chat/completions`。模型填写 `MODEL_ID` 对应的实际名称；GUI 的密钥字段填写独立用途令牌，脚本使用 `API_KEY` 环境变量。令牌的分组和额度应覆盖实际任务，不能用显示名称代替模型 ID。
+Base URL 填 `https://meta-api.com/v1`；若字段明确叫“完整 API 地址”，Chat 接口填 `https://meta-api.com/v1/chat/completions`。模型填写 `MODEL_ID` 对应的实际名称；GUI 的密钥字段填写独立用途令牌，脚本使用 `API_KEY` 环境变量。令牌的分组和额度应覆盖实际任务，不能用显示名称代替模型 ID。
 
 先用短段落测试语言和格式，再启用全文处理。下面是一条独立的翻译请求，可帮助判断问题来自接口还是应用的提示词模板：
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"model":"MODEL_ID","messages":[{"role":"system","content":"Translate into Chinese. Return only the translation."},{"role":"user","content":"The meeting starts at nine."}]}'

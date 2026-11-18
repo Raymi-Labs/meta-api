@@ -7,7 +7,7 @@
 先在当前终端配置 `API_KEY` 环境变量，再读取列表：
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/models' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/models' \
   -H "Authorization: Bearer $API_KEY"
 ```
 
@@ -28,7 +28,7 @@ OpenAI 格式通常返回 `object: "list"` 和 `data` 数组。使用每项的 `
 import os
 from openai import OpenAI
 
-client = OpenAI(base_url="https://meta-api.vip/v1", api_key=os.environ["API_KEY"])
+client = OpenAI(base_url="https://meta-api.com/v1", api_key=os.environ["API_KEY"])
 result = client.chat.completions.create(
     model="MODEL_ID",
     messages=[{"role": "user", "content": "用一句话打个招呼。"}],

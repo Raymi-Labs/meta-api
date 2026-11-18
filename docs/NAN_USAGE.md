@@ -36,7 +36,7 @@
 
 ### 1.1 注册账号
 
-1. 打开 `https://meta-api.vip/`。
+1. 打开 `https://meta-api.com/`。
 2. 点击注册，填写邮箱验证码。
 3. 如果有邀请链接，使用完整链接注册，例如 `/register?aff=xxxx`。
 4. 出现 Turnstile 校验时，完成校验后再提交，不要重复点击。
@@ -49,7 +49,7 @@
 
 <!-- docs:groups -->
 
-分组随模型和账号权限变化，请在[模型广场](https://meta-api.vip/pricing)选择目标模型，查看它当前支持的分组。在线文档会自动显示当前分组。
+分组随模型和账号权限变化，请在[模型广场](https://meta-api.com/pricing)选择目标模型，查看它当前支持的分组。在线文档会自动显示当前分组。
 
 <!-- /docs:groups -->
 

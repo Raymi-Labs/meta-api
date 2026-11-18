@@ -7,7 +7,7 @@
 | 项目 | 填写与核对方式 |
 | --- | --- |
 | API Provider | 选择 OpenAI Compatible 或当前版本的自定义提供商 |
-| Base URL / `apiBase` | `https://meta-api.vip/v1` |
+| Base URL / `apiBase` | `https://meta-api.com/v1` |
 | API Key | 独立开发令牌；脚本读取 `API_KEY` |
 | Model ID | `MODEL_ID`，必须支持客户端所用协议 |
 | 上下文长度 | 按模型广场填写，不因客户端允许输入大数而扩大模型限制 |
@@ -24,7 +24,7 @@ Cursor 的自带 Key 使用范围和功能限制以官方当前说明为准。�
 先在终端发出同协议的最小请求，将 `MODEL_ID` 替换为真实模型：
 
 ```bash
-curl --fail-with-body 'https://meta-api.vip/v1/chat/completions' \
+curl --fail-with-body 'https://meta-api.com/v1/chat/completions' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"model":"MODEL_ID","messages":[{"role":"user","content":"Return OK"}]}'

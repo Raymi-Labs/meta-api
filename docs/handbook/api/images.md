@@ -1,13 +1,13 @@
 # 图片生成与编辑
 
-本站提供图片生成和图片编辑入口。先在[模型广场](https://meta-api.vip/pricing)确认模型支持的图片协议、输入方式与计费单位，将 `MODEL_ID` 替换为实际 ID。支持生成不代表同时支持编辑、透明背景、蒙版或流式图片；这些能力需要逐个模型确认。
+本站提供图片生成和图片编辑入口。先在[模型广场](https://meta-api.com/pricing)确认模型支持的图片协议、输入方式与计费单位，将 `MODEL_ID` 替换为实际 ID。支持生成不代表同时支持编辑、透明背景、蒙版或流式图片；这些能力需要逐个模型确认。
 
 ## 文生图
 
 `API_KEY` 从环境变量读取。先用一张图片的最小请求验证，再增加尺寸、质量等模型专属参数。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/images/generations' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/images/generations' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -24,7 +24,7 @@ curl --fail-with-body -sS 'https://meta-api.vip/v1/images/generations' \
 以下示例适用于支持 multipart 编辑协议的模型，需要本地存在 `input.png`。不要手动设置 Content-Type 的 multipart boundary，cURL 会自动生成。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/images/edits' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/images/edits' \
   -H "Authorization: Bearer $API_KEY" \
   -F 'model=MODEL_ID' \
   -F 'prompt=保留灯塔主体，将天空改为柔和的晚霞。' \

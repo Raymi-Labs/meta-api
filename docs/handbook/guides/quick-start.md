@@ -18,7 +18,7 @@ export MODEL_ID='MODEL_ID'
 打开[模型广场](/pricing)，复制支持 Chat Completions 的模型 ID，替换上面的 `MODEL_ID`。也可以列出当前令牌可见的模型：
 
 ```bash
-curl --fail-with-body https://meta-api.vip/v1/models \
+curl --fail-with-body https://meta-api.com/v1/models \
   -H "Authorization: Bearer $API_KEY"
 ```
 
@@ -39,7 +39,7 @@ import os
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://meta-api.vip/v1",
+    base_url="https://meta-api.com/v1",
     api_key=os.environ["API_KEY"],
 )
 result = client.chat.completions.create(

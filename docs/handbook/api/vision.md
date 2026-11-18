@@ -1,6 +1,6 @@
 # 图片与视频理解
 
-视觉输入用于识别图片中的内容、提取文字和分析图表；这与生成图片是不同能力。在[模型广场](https://meta-api.vip/pricing)确认模型支持视觉输入和所需协议，把 `MODEL_ID` 替换为实际 ID。纯文本模型不能因为接收到图片字段就自动获得视觉能力。
+视觉输入用于识别图片中的内容、提取文字和分析图表；这与生成图片是不同能力。在[模型广场](https://meta-api.com/pricing)确认模型支持视觉输入和所需协议，把 `MODEL_ID` 替换为实际 ID。纯文本模型不能因为接收到图片字段就自动获得视觉能力。
 
 ## 使用本地图片
 
@@ -15,7 +15,7 @@ with open("input.png", "rb") as image:
     encoded = base64.b64encode(image.read()).decode("ascii")
 
 client = OpenAI(
-    base_url="https://meta-api.vip/v1",
+    base_url="https://meta-api.com/v1",
     api_key=os.environ["API_KEY"],
 )
 result = client.chat.completions.create(

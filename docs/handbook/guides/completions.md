@@ -7,7 +7,7 @@
 选择明确支持 `/v1/completions` 的模型，将 `MODEL_ID` 替换为实际 ID。密钥通过环境变量提供。
 
 ```bash
-curl --fail-with-body https://meta-api.vip/v1/completions \
+curl --fail-with-body https://meta-api.com/v1/completions \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{"model":"MODEL_ID","prompt":"def add(a, b):\n    ","max_tokens":64}'

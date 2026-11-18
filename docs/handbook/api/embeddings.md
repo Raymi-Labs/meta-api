@@ -1,13 +1,13 @@
 # 文本向量 Embeddings
 
-Embeddings 将文本转换为数值向量，常用于语义检索、相似度比较和检索增强生成。先在[模型广场](https://meta-api.vip/pricing)确认模型支持向量接口，将 `MODEL_ID` 替换为实际 ID。本站提供推理接口，不会自动为应用保存向量、建立索引或托管向量数据库。
+Embeddings 将文本转换为数值向量，常用于语义检索、相似度比较和检索增强生成。先在[模型广场](https://meta-api.com/pricing)确认模型支持向量接口，将 `MODEL_ID` 替换为实际 ID。本站提供推理接口，不会自动为应用保存向量、建立索引或托管向量数据库。
 
 ## 最小请求
 
 下面一次编码两段文本。`API_KEY` 从终端环境变量读取，输出应按 `data[].index` 与输入对应。
 
 ```bash
-curl --fail-with-body -sS 'https://meta-api.vip/v1/embeddings' \
+curl --fail-with-body -sS 'https://meta-api.com/v1/embeddings' \
   -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{

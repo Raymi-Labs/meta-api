@@ -4,10 +4,10 @@
 
 ## 1. 平台准备
 
-1. 登录 `https://meta-api.vip/`。
+1. 登录 `https://meta-api.com/`。
 2. 进入 `令牌管理` 创建令牌。
 3. 在模型广场找到目标模型，选择该模型当前支持且账号可选的分组。
-4. 可用模型以 `https://meta-api.vip/pricing` 为准。
+4. 可用模型以 `https://meta-api.com/pricing` 为准。
 5. 复制完整 API Key。
 
 ## 2. 安装前准备
@@ -89,7 +89,7 @@ onboard 时建议：
     "mode": "replace",
     "providers": {
       "crs": {
-        "baseUrl": "https://meta-api.vip/v1",
+        "baseUrl": "https://meta-api.com/v1",
         "api": "openai-responses",
         "auth": "api-key",
         "authHeader": true,
@@ -125,7 +125,7 @@ onboard 时建议：
     "mode": "replace",
     "providers": {
       "opus": {
-        "baseUrl": "https://meta-api.vip/",
+        "baseUrl": "https://meta-api.com/",
         "api": "anthropic-messages",
         "auth": "api-key",
         "authHeader": true,
@@ -160,7 +160,7 @@ onboard 时建议：
     "mode": "replace",
     "providers": {
       "crs": {
-        "baseUrl": "https://meta-api.vip/v1",
+        "baseUrl": "https://meta-api.com/v1",
         "api": "openai-responses",
         "auth": "api-key",
         "authHeader": true,
@@ -176,7 +176,7 @@ onboard 时建议：
         ]
       },
       "opus": {
-        "baseUrl": "https://meta-api.vip/",
+        "baseUrl": "https://meta-api.com/",
         "api": "anthropic-messages",
         "auth": "api-key",
         "authHeader": true,

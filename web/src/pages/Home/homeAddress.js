@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { normalizeBaseUrl } from '../../utils/ccSwitch.js';
 
 const legacyPublicServers = new Set([
+  'https://meta-api.vip',
   'https://nan.meta-api.vip',
   'https://cn.meta-api.vip',
 ]);
@@ -29,6 +30,6 @@ export function getPublicHomeServerAddress(serverAddress, origin) {
     normalizeBaseUrl(serverAddress) || normalizeBaseUrl(origin);
   // Only the known root endpoints share the public homepage's canonical URL.
   return legacyPublicServers.has(normalized)
-    ? 'https://meta-api.vip'
+    ? 'https://meta-api.com'
     : normalized;
 }
