@@ -18,7 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useMemo } from 'react';
-import { Empty, Descriptions, Button } from '@douyinfe/semi-ui';
+import { Empty, Descriptions, Button, Space } from '@douyinfe/semi-ui';
+import { useNavigate } from 'react-router-dom';
 import CardTable from '../../common/ui/CardTable';
 import {
   IllustrationNoResult,
@@ -48,6 +49,8 @@ const LogsTable = (logsData) => {
     t,
     COLUMN_KEYS,
   } = logsData;
+
+  const navigate = useNavigate();
 
   // Get all columns
   const allColumns = useMemo(() => {
@@ -107,19 +110,30 @@ const LogsTable = (logsData) => {
     return (
       <div className='usage-logs-detail'>
         <Descriptions data={expandData[record.key]} />
-        {record.type === 5 && (
+        <Space style={{ marginTop: 12 }}>
+          {record.type === 5 && (
+            <Button
+              size='small'
+              onClick={(event) => {
+                copyText(
+                  event,
+                  buildRequestFailureReport(record, t, isAdminUser),
+                );
+              }}
+            >
+              {t('复制排查信息')}
+            </Button>
+          )}
           <Button
             size='small'
-            onClick={(event) => {
-              copyText(
-                event,
-                buildRequestFailureReport(record, t, isAdminUser),
-              );
+            type='tertiary'
+            onClick={() => {
+              navigate(`/console/tickets?create=1&request_id=${record.request_id || record.key}`);
             }}
           >
-            {t('复制排查信息')}
+            {t('创建工单')}
           </Button>
-        )}
+        </Space>
       </div>
     );
   };

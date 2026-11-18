@@ -68,6 +68,9 @@ export function getLucideIcon(key, selected = false) {
       return <BarChart3 {...commonProps} color={iconColor} />;
     case 'task':
       return <CheckSquare {...commonProps} color={iconColor} />;
+    case 'tickets':
+    case 'ticketAdmin':
+      return <MessageSquare {...commonProps} color={iconColor} />;
     case 'topup':
       return <CreditCard {...commonProps} color={iconColor} />;
     case 'channel':

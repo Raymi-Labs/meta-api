@@ -36,6 +36,7 @@ export const useNotifications = (statusState) => {
   const [pendingWithdrawalCount, setPendingWithdrawalCount] = useState(0);
   const [pendingInvoices, setPendingInvoices] = useState([]);
   const [pendingInvoiceCount, setPendingInvoiceCount] = useState(0);
+  const [ticketUnread, setTicketUnread] = useState(0);
   const admin = isAdmin();
 
   const announcements = useMemo(
@@ -88,6 +89,21 @@ export const useNotifications = (statusState) => {
       .map(getAnnouncementKey);
   }, [announcements]);
 
+  const fetchTicketUnread = async () => {
+    if (!statusState?.status?.user_id) return;
+    try {
+      const res = await API.get('/api/ticket/unread', {
+        skipErrorHandler: true,
+        skipGlobalLoading: true,
+      });
+      if (res?.data?.success) {
+        setTicketUnread(Number(res.data.data?.count) || 0);
+      }
+    } catch (_) {
+      // silent: keep previous value to avoid badge flicker
+    }
+  };
+
   // Effects
   useEffect(() => {
     const update = () => setAnnouncementUnread(getUnreadKeys().length);
@@ -100,6 +116,12 @@ export const useNotifications = (statusState) => {
     fetchPendingWithdrawals();
     fetchPendingInvoices();
   }, [admin]);
+
+  useEffect(() => {
+    fetchTicketUnread();
+    const timer = setInterval(fetchTicketUnread, 60000);
+    return () => clearInterval(timer);
+  }, [statusState?.status?.user_id]);
 
   // 操作函数
   const handleNoticeOpen = () => {
@@ -118,8 +140,10 @@ export const useNotifications = (statusState) => {
     noticeVisible,
     unreadCount:
       announcementUnread +
+      ticketUnread +
       (admin ? pendingWithdrawalCount + pendingInvoiceCount : 0),
     announcementUnread,
+    ticketUnread,
     pendingWithdrawalCount,
     pendingWithdrawals,
     pendingInvoiceCount,

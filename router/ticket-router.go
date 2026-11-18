@@ -1,0 +1,64 @@
+package router
+
+import (
+	"github.com/QuantumNous/new-api/controller"
+	"github.com/QuantumNous/new-api/middleware"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupTicketRouter(router *gin.Engine) {
+	// 用户工单路由
+	ticketGroup := router.Group("/api/ticket")
+	ticketGroup.Use(middleware.UserAuth())
+	{
+		ticketGroup.POST("", controller.CreateTicket)
+		ticketGroup.GET("", controller.GetMyTickets)
+		ticketGroup.GET("/unread", controller.GetUnreadTicketCount)
+		ticketGroup.GET("/:id", controller.GetTicket)
+		ticketGroup.POST("/:id/reply", controller.ReplyTicket)
+		ticketGroup.POST("/:id/close", controller.CloseTicket)
+	}
+
+	// 申诉用户工单路由
+	appealGroup := router.Group("/api/appeal")
+	appealGroup.Use(middleware.AppealAuth())
+	{
+		appealGroup.GET("/session", controller.GetAppealSession)
+		appealGroup.POST("/tickets", controller.CreateAppealTicket)
+		appealGroup.GET("/tickets", controller.GetAppealTickets)
+		appealGroup.GET("/tickets/:id", controller.GetAppealTicket)
+		appealGroup.POST("/tickets/:id/reply", controller.ReplyAppealTicket)
+	}
+
+	// 管理员工单路由
+	adminGroup := router.Group("/api/admin/ticket")
+	adminGroup.Use(middleware.AdminAuth())
+	{
+		adminGroup.GET("", controller.AdminGetTickets)
+		adminGroup.GET("/unread", controller.AdminGetUnreadTicketCount)
+		adminGroup.GET("/:id", controller.AdminGetTicket)
+		adminGroup.POST("/:id/reply", controller.AdminReplyTicket)
+		adminGroup.PUT("/:id/status", controller.AdminUpdateTicketStatus)
+		adminGroup.PUT("/:id/assign", controller.AdminAssignTicket)
+	}
+
+	// 附件路由
+	attachmentGroup := router.Group("/api/ticket")
+	attachmentGroup.Use(middleware.UserAuth())
+	{
+		attachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)
+		attachmentGroup.POST("/attachment/upload", controller.UploadTicketAttachment)
+		attachmentGroup.GET("/attachment/:id/download", controller.DownloadTicketAttachment)
+		attachmentGroup.DELETE("/attachment/:id", controller.DeleteTicketAttachment)
+	}
+
+	// 管理员附件路由
+	adminAttachmentGroup := router.Group("/api/admin/ticket")
+	adminAttachmentGroup.Use(middleware.AdminAuth())
+	{
+		adminAttachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)
+		adminAttachmentGroup.GET("/attachment/:id/download", controller.DownloadTicketAttachment)
+		adminAttachmentGroup.DELETE("/attachment/:id", controller.DeleteTicketAttachment)
+	}
+}

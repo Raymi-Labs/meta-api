@@ -103,6 +103,9 @@ const EnterpriseSettings = lazy(
 );
 const EnterpriseInvite = lazy(() => import('./pages/EnterpriseInvite'));
 const EnterpriseAdmin = lazy(() => import('./pages/EnterpriseAdmin'));
+const Ticket = lazy(() => import('./pages/Ticket'));
+const TicketAdmin = lazy(() => import('./pages/Ticket/TicketAdmin'));
+const Appeal = lazy(() => import('./pages/Ticket/Appeal'));
 
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
@@ -420,6 +423,14 @@ function App() {
           }
         />
         <Route
+          path='/appeal'
+          element={
+            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+              <Appeal />
+            </Suspense>
+          }
+        />
+        <Route
           path='/register'
           element={
             <Suspense fallback={<Loading></Loading>} key={location.pathname}>
@@ -555,6 +566,26 @@ function App() {
                 <Log />
               </Suspense>
             </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/tickets'
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <Ticket />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/ticket-admin'
+          element={
+            <AdminRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <TicketAdmin />
+              </Suspense>
+            </AdminRoute>
           }
         />
         <Route

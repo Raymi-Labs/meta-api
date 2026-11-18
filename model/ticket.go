@@ -1,0 +1,756 @@
+package model
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+	"unicode"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
+)
+
+const (
+	TicketStatusOpen        = "open"
+	TicketStatusInProgress  = "in_progress"
+	TicketStatusWaitingUser = "waiting_user"
+	TicketStatusResolved    = "resolved"
+	TicketStatusClosed      = "closed"
+
+	TicketCategoryBilling    = "billing"
+	TicketCategoryAPI        = "api"
+	TicketCategoryAccount    = "account"
+	TicketCategoryInvoice    = "invoice"
+	TicketCategoryEnterprise = "enterprise"
+	TicketCategoryAppeal     = "appeal"
+	TicketCategoryOther      = "other"
+
+	TicketSenderUser   = "user"
+	TicketSenderStaff  = "staff"
+	TicketSenderSystem = "system"
+
+	// 别名
+	SenderRoleUser   = TicketSenderUser
+	SenderRoleStaff  = TicketSenderStaff
+	SenderRoleSystem = TicketSenderSystem
+)
+
+var (
+	ErrTicketNotFound         = errors.New("工单不存在")
+	ErrTicketUnauthorized     = errors.New("无权访问此工单")
+	ErrTicketMaxOpen          = errors.New("您已有5个未结工单，请等待处理或关闭后再提交")
+	ErrTicketInvalidStatus    = errors.New("工单状态无效")
+	ErrTicketInvalidCategory  = errors.New("工单分类无效")
+	ErrTicketClosed           = errors.New("工单已关闭，无法回复")
+	ErrTicketInvalidRequestID = errors.New("请求ID格式无效")
+	ErrTicketMessageTooLong   = errors.New("消息内容不能超过5000字符")
+	ErrTicketSubjectTooLong   = errors.New("标题不能超过100字符")
+	ErrTicketInvalidAssignee  = errors.New("指派人无效")
+	ErrTicketMaxAppeal        = errors.New("您已有1个未结申诉工单")
+)
+
+var ticketRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9._:-]{1,64}$`)
+
+type Ticket struct {
+	ID              int    `json:"id" gorm:"primaryKey"`
+	UserID          int    `json:"user_id" gorm:"not null;index"`
+	Subject         string `json:"subject" gorm:"size:100;not null"`
+	Category        string `json:"category" gorm:"size:16;not null;index"`
+	Status          string `json:"status" gorm:"size:16;not null;index"`
+	Assignee        int    `json:"assignee" gorm:"index;default:0"`
+	RequestID       string `json:"request_id" gorm:"size:64;index;default:''"`
+	UserUnread      bool   `json:"user_unread" gorm:"not null;default:false;index"`
+	StaffUnread     bool   `json:"staff_unread" gorm:"not null;default:false;index"`
+	LastMessageAt   int64  `json:"last_message_at" gorm:"not null;index"`
+	StatusUpdatedAt int64  `json:"status_updated_at" gorm:"not null"`
+	CreatedAt       int64  `json:"created_at" gorm:"not null;index"`
+	UpdatedAt       int64  `json:"updated_at" gorm:"not null"`
+}
+
+type TicketMessage struct {
+	ID         int    `json:"id" gorm:"primaryKey"`
+	TicketID   int    `json:"ticket_id" gorm:"not null;index"`
+	SenderID   int    `json:"sender_id" gorm:"not null;index"`
+	SenderRole string `json:"sender_role" gorm:"size:16;not null"`
+	Event      string `json:"event" gorm:"size:64;default:''"`
+	Body       string `json:"body" gorm:"type:text"`
+	IsInternal bool   `json:"is_internal" gorm:"not null;default:false"`
+	CreatedAt  int64  `json:"created_at" gorm:"not null;index"`
+}
+
+type TicketAttachment struct {
+	ID           int    `json:"id" gorm:"primaryKey"`
+	TicketID     int    `json:"ticket_id" gorm:"not null;index"`
+	MessageID    *int   `json:"message_id" gorm:"index"` // 可选：关联到消息
+	Filename     string `json:"filename" gorm:"size:255;not null"`
+	MimeType     string `json:"mime_type" gorm:"size:64;not null"`
+	Size         int    `json:"size" gorm:"not null"`
+	StoragePath  string `json:"-" gorm:"type:text;not null"`
+	UploadedByID int    `json:"uploaded_by_id" gorm:"not null;index"`
+	CreatedAt    int64  `json:"created_at" gorm:"not null"`
+}
+
+func ticketDB(ctx context.Context) *gorm.DB {
+	return DB.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)}).WithContext(ctx)
+}
+
+func ValidTicketStatus(status string) bool {
+	switch status {
+	case TicketStatusOpen, TicketStatusInProgress, TicketStatusWaitingUser, TicketStatusResolved, TicketStatusClosed:
+		return true
+	}
+	return false
+}
+
+func ValidTicketCategory(category string) bool {
+	switch category {
+	case TicketCategoryBilling, TicketCategoryAPI, TicketCategoryAccount,
+		TicketCategoryInvoice, TicketCategoryEnterprise, TicketCategoryAppeal, TicketCategoryOther:
+		return true
+	}
+	return false
+}
+
+func ValidTicketRequestID(requestID string) bool {
+	if requestID == "" {
+		return true
+	}
+	return ticketRequestIDPattern.MatchString(requestID)
+}
+
+func ValidTicketMessageBody(body string) bool {
+	return len([]rune(body)) <= 5000
+}
+
+func ValidTicketSubject(subject string) bool {
+	subjectRunes := []rune(subject)
+	return len(subjectRunes) > 0 && len(subjectRunes) <= 100
+}
+
+func CreateTicket(ctx context.Context, userID int, subject, category, requestID, body string) (*Ticket, error) {
+	subject = strings.TrimSpace(subject)
+	body = strings.TrimSpace(body)
+	if !ValidTicketSubject(subject) {
+		return nil, ErrTicketSubjectTooLong
+	}
+	if !ValidTicketCategory(category) {
+		return nil, ErrTicketInvalidCategory
+	}
+	if !ValidTicketRequestID(requestID) {
+		return nil, ErrTicketInvalidRequestID
+	}
+	if !ValidTicketMessageBody(body) {
+		return nil, ErrTicketMessageTooLong
+	}
+	if strings.IndexFunc(subject, unicode.IsControl) >= 0 || strings.IndexFunc(body, unicode.IsControl) >= 0 {
+		return nil, errors.New("标题或内容包含无效字符")
+	}
+
+	now := time.Now().Unix()
+	ticket := &Ticket{
+		UserID:          userID,
+		Subject:         subject,
+		Category:        category,
+		Status:          TicketStatusOpen,
+		RequestID:       requestID,
+		UserUnread:      false,
+		StaffUnread:     true,
+		LastMessageAt:   now,
+		StatusUpdatedAt: now,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+
+	err := ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		var user User
+		if err := tx.Select("id", "status").First(&user, userID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("用户不存在")
+			}
+			return err
+		}
+		// 非申诉工单要求用户状态正常
+		if category != TicketCategoryAppeal && user.Status != 1 {
+			return errors.New("账号已被封禁")
+		}
+
+		var openCount int64
+		if err := tx.Model(&Ticket{}).Where("user_id = ? AND status IN ?", userID,
+			[]string{TicketStatusOpen, TicketStatusInProgress, TicketStatusWaitingUser}).Count(&openCount).Error; err != nil {
+			return err
+		}
+		if category == TicketCategoryAppeal {
+			if openCount > 0 {
+				return ErrTicketMaxAppeal
+			}
+		} else if openCount >= 5 {
+			return ErrTicketMaxOpen
+		}
+
+		if err := tx.Create(ticket).Error; err != nil {
+			return err
+		}
+
+		message := &TicketMessage{
+			TicketID:   ticket.ID,
+			SenderID:   userID,
+			SenderRole: TicketSenderUser,
+			Body:       body,
+			IsInternal: false,
+			CreatedAt:  now,
+		}
+		return tx.Create(message).Error
+	})
+
+	return ticket, err
+}
+
+type TicketFilter struct {
+	UserID          int
+	Status          string
+	Category        string
+	Keyword         string
+	AssignedToMe    int
+	Unassigned      bool
+	StaffUnreadOnly bool
+}
+
+func ListTickets(ctx context.Context, filter TicketFilter, offset, limit int) ([]Ticket, int64, error) {
+	query := ticketDB(ctx).Model(&Ticket{})
+
+	if filter.UserID > 0 {
+		query = query.Where("user_id = ?", filter.UserID)
+	}
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.Category != "" {
+		query = query.Where("category = ?", filter.Category)
+	}
+	if filter.Keyword != "" {
+		pattern, err := sanitizeContainsLikePattern(filter.Keyword)
+		if err != nil {
+			return nil, 0, err
+		}
+		if pattern != "" {
+			query = query.Where("subject LIKE ? ESCAPE '!'", pattern)
+		}
+	}
+	if filter.AssignedToMe > 0 {
+		query = query.Where("assignee = ?", filter.AssignedToMe)
+	}
+	if filter.Unassigned {
+		query = query.Where("assignee = 0")
+	}
+	if filter.StaffUnreadOnly {
+		query = query.Where("staff_unread = ?", true)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var tickets []Ticket
+	err := query.Order("last_message_at DESC").Offset(offset).Limit(limit).Find(&tickets).Error
+	return tickets, total, err
+}
+
+func GetTicket(ctx context.Context, ticketID int) (*Ticket, error) {
+	var ticket Ticket
+	err := ticketDB(ctx).First(&ticket, ticketID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTicketNotFound
+	}
+	return &ticket, err
+}
+
+func GetTicketMessages(ctx context.Context, ticketID int, includeInternal bool) ([]TicketMessage, error) {
+	query := ticketDB(ctx).Where("ticket_id = ?", ticketID)
+	if !includeInternal {
+		query = query.Where("is_internal = ?", false)
+	}
+	var messages []TicketMessage
+	err := query.Order("id ASC").Find(&messages).Error
+	return messages, err
+}
+
+func GetTicketAttachments(ctx context.Context, ticketID int, includeInternal bool) ([]TicketAttachment, error) {
+	query := ticketDB(ctx).Where("ticket_id = ?", ticketID)
+	if !includeInternal {
+		// 只返回非内部消息的附件，或未关联消息的附件
+		query = query.Where("message_id IS NULL OR message_id IN (?)",
+			ticketDB(ctx).Table("ticket_messages").Select("id").Where("ticket_id = ? AND is_internal = ?", ticketID, false))
+	}
+	var attachments []TicketAttachment
+	err := query.Order("id ASC").Find(&attachments).Error
+	return attachments, err
+}
+
+func CreateTicketMessage(ctx context.Context, ticketID, senderID int, senderRole, body string, isInternal bool) (*TicketMessage, error) {
+	body = strings.TrimSpace(body)
+	if !ValidTicketMessageBody(body) {
+		return nil, ErrTicketMessageTooLong
+	}
+	if strings.IndexFunc(body, unicode.IsControl) >= 0 {
+		return nil, errors.New("消息内容包含无效字符")
+	}
+
+	now := time.Now().Unix()
+	message := &TicketMessage{
+		TicketID:   ticketID,
+		SenderID:   senderID,
+		SenderRole: senderRole,
+		Body:       body,
+		IsInternal: isInternal,
+		CreatedAt:  now,
+	}
+
+	err := ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(message).Error; err != nil {
+			return err
+		}
+		updates := map[string]interface{}{
+			"last_message_at": now,
+			"updated_at":      now,
+		}
+		if senderRole == TicketSenderUser {
+			updates["user_unread"] = false
+			updates["staff_unread"] = true
+		} else if !isInternal {
+			updates["user_unread"] = true
+			updates["staff_unread"] = false
+		}
+		return tx.Model(&Ticket{}).Where("id = ?", ticketID).Updates(updates).Error
+	})
+
+	return message, err
+}
+
+func CreateTicketEventMessage(ctx context.Context, ticketID int, event, body string) error {
+	now := time.Now().Unix()
+	message := &TicketMessage{
+		TicketID:   ticketID,
+		SenderID:   0,
+		SenderRole: TicketSenderSystem,
+		Event:      event,
+		Body:       body,
+		IsInternal: false,
+		CreatedAt:  now,
+	}
+	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(message).Error; err != nil {
+			return err
+		}
+		return tx.Model(&Ticket{}).Where("id = ?", ticketID).Updates(map[string]interface{}{
+			"last_message_at": now,
+			"updated_at":      now,
+		}).Error
+	})
+}
+
+func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (*TicketAttachment, error) {
+	now := time.Now().Unix()
+	attachment.CreatedAt = now
+	err := ticketDB(ctx).Create(attachment).Error
+	return attachment, err
+}
+
+func GetTicketAttachment(ctx context.Context, attachmentID int) (*TicketAttachment, error) {
+	var attachment TicketAttachment
+	err := ticketDB(ctx).First(&attachment, attachmentID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTicketAttachmentNotFound
+	}
+	return &attachment, err
+}
+
+func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, senderRole, body string, isInternal bool, newStatus string, oldStatus string) error {
+	body = strings.TrimSpace(body)
+	if !ValidTicketMessageBody(body) {
+		return ErrTicketMessageTooLong
+	}
+	if strings.IndexFunc(body, unicode.IsControl) >= 0 {
+		return errors.New("消息内容包含无效字符")
+	}
+	if newStatus != "" && !ValidTicketStatus(newStatus) {
+		return ErrTicketInvalidStatus
+	}
+
+	now := time.Now().Unix()
+	message := &TicketMessage{
+		TicketID:   ticketID,
+		SenderID:   senderID,
+		SenderRole: senderRole,
+		Body:       body,
+		IsInternal: isInternal,
+		CreatedAt:  now,
+	}
+
+	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		var ticket Ticket
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ticket, ticketID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTicketNotFound
+			}
+			return err
+		}
+		if ticket.Status != oldStatus {
+			return errors.New("工单状态已变更")
+		}
+
+		if err := tx.Create(message).Error; err != nil {
+			return err
+		}
+
+		updates := map[string]interface{}{
+			"last_message_at": now,
+			"updated_at":      now,
+		}
+
+		if senderRole == TicketSenderUser {
+			updates["user_unread"] = false
+			updates["staff_unread"] = true
+			if ticket.Status == TicketStatusWaitingUser || ticket.Status == TicketStatusResolved {
+				updates["status"] = TicketStatusOpen
+				updates["status_updated_at"] = now
+			}
+		} else if !isInternal {
+			updates["user_unread"] = true
+			updates["staff_unread"] = false
+			if newStatus != "" && newStatus != ticket.Status {
+				updates["status"] = newStatus
+				updates["status_updated_at"] = now
+			} else if newStatus == "" {
+				updates["status"] = TicketStatusWaitingUser
+				updates["status_updated_at"] = now
+			}
+		}
+
+		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(updates)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("工单状态已变更")
+		}
+
+		if !isInternal && newStatus != "" && newStatus != oldStatus {
+			eventBody := fmt.Sprintf("工单状态由 %s 变更为 %s", formatTicketStatus(oldStatus), formatTicketStatus(newStatus))
+			eventMsg := &TicketMessage{
+				TicketID:   ticketID,
+				SenderID:   0,
+				SenderRole: TicketSenderSystem,
+				Event:      "status_" + newStatus,
+				Body:       eventBody,
+				IsInternal: false,
+				CreatedAt:  now,
+			}
+			if err := tx.Create(eventMsg).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func CloseTicket(ctx context.Context, ticketID, userID int, oldStatus string) error {
+	now := time.Now().Unix()
+	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		var ticket Ticket
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ticket, ticketID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTicketNotFound
+			}
+			return err
+		}
+		if ticket.UserID != userID {
+			return ErrTicketUnauthorized
+		}
+		if ticket.Status != oldStatus {
+			return errors.New("工单状态已变更")
+		}
+		if ticket.Status == TicketStatusClosed {
+			return nil
+		}
+
+		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(map[string]interface{}{
+			"status":           TicketStatusClosed,
+			"status_updated_at": now,
+			"updated_at":       now,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("工单状态已变更")
+		}
+
+		eventMsg := &TicketMessage{
+			TicketID:   ticketID,
+			SenderID:   0,
+			SenderRole: TicketSenderSystem,
+			Event:      "status_closed",
+			Body:       "用户关闭了工单",
+			IsInternal: false,
+			CreatedAt:  now,
+		}
+		return tx.Create(eventMsg).Error
+	})
+}
+
+func UpdateTicketStatus(ctx context.Context, ticketID int, newStatus, oldStatus string) error {
+	if !ValidTicketStatus(newStatus) {
+		return ErrTicketInvalidStatus
+	}
+
+	now := time.Now().Unix()
+	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(map[string]interface{}{
+			"status":           newStatus,
+			"status_updated_at": now,
+			"updated_at":       now,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			var ticket Ticket
+			if err := tx.First(&ticket, ticketID).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return ErrTicketNotFound
+				}
+				return err
+			}
+			if ticket.Status == newStatus {
+				return nil
+			}
+			return errors.New("工单状态已变更")
+		}
+
+		eventBody := fmt.Sprintf("管理员将工单状态由 %s 变更为 %s", formatTicketStatus(oldStatus), formatTicketStatus(newStatus))
+		eventMsg := &TicketMessage{
+			TicketID:   ticketID,
+			SenderID:   0,
+			SenderRole: TicketSenderSystem,
+			Event:      "status_" + newStatus,
+			Body:       eventBody,
+			IsInternal: false,
+			CreatedAt:  now,
+		}
+		return tx.Create(eventMsg).Error
+	})
+}
+
+func UpdateTicketCategory(ctx context.Context, ticketID int, category string) error {
+	if !ValidTicketCategory(category) {
+		return ErrTicketInvalidCategory
+	}
+	now := time.Now().Unix()
+	result := ticketDB(ctx).Model(&Ticket{}).Where("id = ?", ticketID).Updates(map[string]interface{}{
+		"category":   category,
+		"updated_at": now,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrTicketNotFound
+	}
+	return nil
+}
+
+func UpdateTicketAssignee(ctx context.Context, ticketID, assignee int) error {
+	if assignee < 0 {
+		return ErrTicketInvalidAssignee
+	}
+	if assignee > 0 {
+		var user User
+		err := ticketDB(ctx).Select("id", "status", "role").First(&user, assignee).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTicketInvalidAssignee
+			}
+			return err
+		}
+		if user.Status != 1 || user.Role < 10 {
+			return ErrTicketInvalidAssignee
+		}
+	}
+
+	now := time.Now().Unix()
+	result := ticketDB(ctx).Model(&Ticket{}).Where("id = ?", ticketID).Updates(map[string]interface{}{
+		"assignee":   assignee,
+		"updated_at": now,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrTicketNotFound
+	}
+	return nil
+}
+
+// AssignTicket 分配工单给管理员
+func AssignTicket(ctx context.Context, ticketID, assigneeID int) error {
+	return UpdateTicketAssignee(ctx, ticketID, assigneeID)
+}
+
+func ClearTicketUserUnread(ctx context.Context, ticketID, userID int) error {
+	result := ticketDB(ctx).Model(&Ticket{}).Where("id = ? AND user_id = ? AND user_unread = ?", ticketID, userID, true).
+		Update("user_unread", false)
+	return result.Error
+}
+
+func ClearTicketStaffUnread(ctx context.Context, ticketID int) error {
+	result := ticketDB(ctx).Model(&Ticket{}).Where("id = ? AND staff_unread = ?", ticketID, true).
+		Update("staff_unread", false)
+	return result.Error
+}
+
+func CountTicketUserUnread(ctx context.Context, userID int) (int64, error) {
+	var count int64
+	err := ticketDB(ctx).Model(&Ticket{}).Where("user_id = ? AND user_unread = ?", userID, true).Count(&count).Error
+	return count, err
+}
+
+func CountTicketStaffPending(ctx context.Context) (int64, error) {
+	var count int64
+	err := ticketDB(ctx).Model(&Ticket{}).Where("staff_unread = ? AND status IN ?", true,
+		[]string{TicketStatusOpen, TicketStatusInProgress}).Count(&count).Error
+	return count, err
+}
+
+func ListTicketsForAutoTransition(ctx context.Context, status string, staleThreshold int64, limit int) ([]Ticket, error) {
+	var tickets []Ticket
+	err := ticketDB(ctx).Where("status = ? AND status_updated_at < ?", status, staleThreshold).
+		Order("id ASC").Limit(limit).Find(&tickets).Error
+	return tickets, err
+}
+
+func AutoTransitionTicketStatus(ctx context.Context, ticketID int, fromStatus, toStatus string) error {
+	if !ValidTicketStatus(fromStatus) || !ValidTicketStatus(toStatus) {
+		return ErrTicketInvalidStatus
+	}
+
+	now := time.Now().Unix()
+	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, fromStatus).Updates(map[string]interface{}{
+			"status":           toStatus,
+			"status_updated_at": now,
+			"updated_at":       now,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return nil
+		}
+
+		eventBody := fmt.Sprintf("工单已自动由 %s 变更为 %s", formatTicketStatus(fromStatus), formatTicketStatus(toStatus))
+		eventMsg := &TicketMessage{
+			TicketID:   ticketID,
+			SenderID:   0,
+			SenderRole: TicketSenderSystem,
+			Event:      "status_" + toStatus,
+			Body:       eventBody,
+			IsInternal: false,
+			CreatedAt:  now,
+		}
+		return tx.Create(eventMsg).Error
+	})
+}
+
+func GetTicketRelatedLogs(ctx context.Context, userID int, requestID string, limit int) ([]Log, error) {
+	if requestID == "" || userID <= 0 {
+		return []Log{}, nil
+	}
+	var logs []Log
+	err := LOG_DB.WithContext(ctx).Where("user_id = ? AND request_id = ?", userID, requestID).
+		Order("id DESC").Limit(limit).Find(&logs).Error
+	return logs, err
+}
+
+func formatTicketStatus(status string) string {
+	switch status {
+	case TicketStatusOpen:
+		return "待处理"
+	case TicketStatusInProgress:
+		return "处理中"
+	case TicketStatusWaitingUser:
+		return "等待用户回复"
+	case TicketStatusResolved:
+		return "已解决"
+	case TicketStatusClosed:
+		return "已关闭"
+	default:
+		return status
+	}
+}
+
+// Additional helper functions
+
+var ErrTicketAttachmentNotFound = errors.New("附件不存在")
+
+func GetTicketAttachmentCount(ctx context.Context, ticketID int) (int64, error) {
+	var count int64
+	err := ticketDB(ctx).Model(&TicketAttachment{}).Where("ticket_id = ?", ticketID).Count(&count).Error
+	return count, err
+}
+
+func GetTicketAttachmentByID(ctx context.Context, attachmentID int) (*TicketAttachment, error) {
+	var attachment TicketAttachment
+	err := ticketDB(ctx).First(&attachment, attachmentID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTicketAttachmentNotFound
+	}
+	return &attachment, err
+}
+
+func DeleteTicketAttachment(ctx context.Context, attachmentID int) error {
+	return ticketDB(ctx).Delete(&TicketAttachment{}, attachmentID).Error
+}
+
+// GetTicketByID 获取工单（别名）
+func GetTicketByID(ctx context.Context, ticketID int) (*Ticket, error) {
+	return GetTicket(ctx, ticketID)
+}
+
+// MarkTicketUserRead 标记工单用户已读
+func MarkTicketUserRead(ctx context.Context, ticketID, userID int) error {
+	return ClearTicketUserUnread(ctx, ticketID, userID)
+}
+
+// MarkTicketStaffRead 标记工单客服已读
+func MarkTicketStaffRead(ctx context.Context, ticketID int) error {
+	return ClearTicketStaffUnread(ctx, ticketID)
+}
+
+// GetUserUnreadTicketCount 获取用户未读工单数
+func GetUserUnreadTicketCount(ctx context.Context, userID int) (int64, error) {
+	return CountTicketUserUnread(ctx, userID)
+}
+
+// GetStaffUnreadTicketCount 获取客服待处理工单数
+func GetStaffUnreadTicketCount(ctx context.Context) (int64, error) {
+	return CountTicketStaffPending(ctx)
+}
+
+// GetUserTickets 获取用户工单列表
+func GetUserTickets(ctx context.Context, userID int, offset, limit int) ([]Ticket, int64, error) {
+	filter := TicketFilter{
+		UserID: userID,
+	}
+	return ListTickets(ctx, filter, offset, limit)
+}
+
+// GetAllTickets 获取所有工单列表（管理端）
+func GetAllTickets(ctx context.Context, offset, limit int) ([]Ticket, int64, error) {
+	return ListTickets(ctx, TicketFilter{}, offset, limit)
+}

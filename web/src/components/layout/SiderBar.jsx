@@ -58,6 +58,8 @@ const routerMap = {
   enterpriseQuota: '/console/enterprise',
   enterpriseWorkspace: '/enterprise/console',
   enterpriseAdmin: '/console/enterprise-admin',
+  tickets: '/console/tickets',
+  ticketAdmin: '/console/ticket-admin',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -126,6 +128,11 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('使用日志'),
         itemKey: 'log',
         to: '/log',
+      },
+      {
+        text: t('我的工单'),
+        itemKey: 'tickets',
+        to: '/tickets',
       },
       {
         text: t('绘图日志'),
@@ -245,6 +252,12 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('用户管理'),
         itemKey: 'user',
         to: '/user',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('工单管理'),
+        itemKey: 'ticketAdmin',
+        to: '/ticket-admin',
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {
