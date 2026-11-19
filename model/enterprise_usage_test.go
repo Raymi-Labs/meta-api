@@ -65,6 +65,27 @@ func TestEnterpriseUsageMatchesLedger(t *testing.T) {
 			r4 := rid("r4")
 			settle(sub(m2, 21, "gpt-b", "丙令牌"), r4, 1000, 1000)
 
+			for _, tc := range []struct {
+				id              int
+				request, status string
+				count, net      int64
+			}{
+				{ent.Id, r1, EnterpriseUsageStatusAll, 1, 300}, {ent.Id, r2, EnterpriseUsageStatusAll, 1, 0}, {ent.Id, r2, "", 0, 0}, {other.Id, r1, EnterpriseUsageStatusAll, 0, 0}, {ent.Id, "%", EnterpriseUsageStatusAll, 0, 0}, {ent.Id, strings.ToUpper(r1), EnterpriseUsageStatusAll, 0, 0},
+			} {
+				f := EnterpriseUsageFilter{EnterpriseId: tc.id, RequestID: tc.request, Status: tc.status}
+				rows, total, err := ListEnterpriseUsage(f, 0, 20)
+				require.NoError(t, err)
+				require.Equal(t, tc.count, total)
+				require.Len(t, rows, int(total))
+				summary, err := GetEnterpriseUsageSummary(f)
+				require.NoError(t, err)
+				require.Equal(t, tc.net, summary.NetConsumed)
+				n := 0
+				require.NoError(t, WalkEnterpriseUsage(context.Background(), f, func(r *EnterpriseReservation) error { require.Equal(t, tc.request, r.RequestId); n++; return nil }))
+				require.Equal(t, int(total), n)
+			}
+			_, _, err = ListEnterpriseUsage(EnterpriseUsageFilter{EnterpriseId: ent.Id, RequestID: strings.Repeat("a", 97)}, 0, 20)
+			require.ErrorIs(t, err, ErrEnterpriseInvalidInput)
 			all := EnterpriseUsageFilter{EnterpriseId: ent.Id}
 			summary, err := GetEnterpriseUsageSummary(all)
 			require.NoError(t, err)

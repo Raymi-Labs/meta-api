@@ -4,7 +4,7 @@ import {
   createEnterpriseOperationStore,
   listPendingEnterpriseReservations,
 } from '../src/helpers/enterpriseOperation.js';
-import { parseEnterpriseQuota } from '../src/helpers/enterpriseQuota.js';
+import { formatSmallEnterpriseBalance, parseEnterpriseQuota } from '../src/helpers/enterpriseQuota.js';
 const storage = () => {
   const data = {};
   return Object.defineProperties(data, {
@@ -225,4 +225,10 @@ test('reservation recovery rejects mismatched targets and URLs without hiding va
   ]);
   for (const actorID of [null, undefined, 0, '1', -1])
     assert.deepEqual(listPendingEnterpriseReservations(s, actorID), []);
+});
+
+test('tiny enterprise balances preserve sign and do not turn a nonzero amount into zero', () => {
+  for (const [value, expected] of [[-0.000598, '-0.000598'], [0.000598, '0.000598'], [-0.001, '-0.001'], [0.00000001, '0.00000001'], [-1e-10, '-1.00e-10']]) {
+    assert.equal(formatSmallEnterpriseBalance(value), expected);
+  }
 });

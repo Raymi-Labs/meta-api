@@ -737,6 +737,19 @@ func TestEnterpriseStaleReservationGoesToReview(t *testing.T) {
 			require.NoError(t, err)
 			require.EqualValues(t, 2, total)
 			require.Len(t, items, 2)
+			for _, tc := range []struct {
+				enterprise int
+				request    string
+				want       int
+			}{{ent.Id, stale, 1}, {0, late, 1}, {ent.Id + 1, stale, 0}, {ent.Id, "STALE-" + stale[len("stale-"):], 0}, {ent.Id, "%", 0}, {ent.Id, fresh, 0}} {
+				rows, count, err := FindEnterpriseReviewReservations(tc.enterprise, tc.request, 0, 10)
+				require.NoError(t, err)
+				require.EqualValues(t, tc.want, count)
+				require.Len(t, rows, tc.want)
+				if tc.want == 1 {
+					require.Equal(t, tc.request, rows[0].RequestId)
+				}
+			}
 
 			// 迟到的真实结算仍然生效。
 			_, err = AdjustEnterpriseReservation(sub, late, 60, EnterpriseReservationSettled, false)

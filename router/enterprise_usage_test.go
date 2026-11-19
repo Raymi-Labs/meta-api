@@ -111,7 +111,7 @@ func TestEnterpriseUsageOverAPI(t *testing.T) {
 	require.Zero(t, total)
 	_, total = enterprisePageItems(t, api.ok(ownerA.Id, user, http.MethodGet, baseA+"/usage?token_id="+strconv.Itoa(foreignToken.Id), nil))
 	require.Zero(t, total)
-	for _, bad := range []string{"member_id=abc", "member_id=-1", "kind=x", "status=x", "start_timestamp=9&end_timestamp=1"} {
+	for _, bad := range []string{"request_id=" + strings.Repeat("x", 97), "member_id=abc", "member_id=-1", "kind=x", "status=x", "start_timestamp=9&end_timestamp=1"} {
 		api.denied(ownerA.Id, user, http.MethodGet, baseA+"/usage?"+bad, nil, model.ErrEnterpriseInvalidInput)
 		api.denied(ownerA.Id, user, http.MethodGet, baseA+"/usage/summary?"+bad, nil, model.ErrEnterpriseInvalidInput)
 	}
@@ -139,6 +139,11 @@ func TestEnterpriseUsageOverAPI(t *testing.T) {
 	api.denied(staffA.Id, user, http.MethodGet, baseA+"/usage/export?"+window, nil, model.ErrEnterpriseForbidden)
 
 	// 平台管理员走平台接口看同一份账单；企业后台接口不认平台身份。
+	matchedRows, matches := enterprisePageItems(t, api.ok(platformAdmin.Id, common.RoleAdminUser, http.MethodGet, platformA+"/usage?status=all&request_id=%20usage-a1%20", nil))
+	require.Equal(t, 1, matches)
+	require.Equal(t, "usage-a1", matchedRows[0]["request_id"])
+	_, matches = enterprisePageItems(t, api.ok(platformAdmin.Id, common.RoleAdminUser, http.MethodGet, platformA+"/usage?status=all&request_id=usage-b1", nil))
+	require.Zero(t, matches)
 	_, total = enterprisePageItems(t, api.ok(platformAdmin.Id, common.RoleAdminUser, http.MethodGet, platformA+"/usage", nil))
 	require.Equal(t, 2, total)
 	require.EqualValues(t, 1300, api.ok(platformAdmin.Id, common.RoleAdminUser, http.MethodGet, platformA+"/usage/summary", nil).object()["net_consumed"])

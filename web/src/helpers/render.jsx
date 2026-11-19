@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { formatSmallEnterpriseBalance } from './enterpriseQuota';
 import i18next from 'i18next';
 import { getCacheCreationBreakdown } from './cacheCreation';
 import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
@@ -1168,6 +1169,14 @@ export function convertUSDToCurrency(usdAmount, digits = 2) {
 }
 
 export function renderQuota(quota, digits = 2) {
+  return formatQuota(quota, digits, false);
+}
+
+export function renderEnterpriseBalance(quota) {
+  return formatQuota(quota, 2, true);
+}
+
+function formatQuota(quota, digits, preserveSmallBalance) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
   quotaPerUnit = parseFloat(quotaPerUnit);
@@ -1203,6 +1212,9 @@ export function renderQuota(quota, digits = 2) {
     symbol = symbolCustom;
   }
   const fixedResult = value.toFixed(digits);
+  if (preserveSmallBalance && value !== 0 && Number(fixedResult) === 0) {
+    return symbol + formatSmallEnterpriseBalance(value);
+  }
   if (parseFloat(fixedResult) === 0 && quota > 0 && value > 0) {
     const minValue = Math.pow(10, -digits);
     return symbol + minValue.toFixed(digits);

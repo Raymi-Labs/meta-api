@@ -360,7 +360,24 @@ func MarkStaleEnterpriseReservations(cutoff int64, limit int) (int64, error) {
 
 // ListEnterpriseReviewReservations 平台后台的待对账预留；enterpriseID 为 0 时列出全部企业。
 func ListEnterpriseReviewReservations(enterpriseID, offset, limit int) ([]*EnterpriseReservation, int64, error) {
+	return FindEnterpriseReviewReservations(enterpriseID, "", offset, limit)
+}
+
+// Keep the indexed lookup while enforcing case sensitivity on MySQL CI collations.
+func filterEnterpriseRequestID(query *gorm.DB, id string) *gorm.DB {
+	if id == "" {
+		return query
+	}
+	query = query.Where("request_id = ?", id)
+	if query.Dialector.Name() == "mysql" {
+		return query.Where("BINARY request_id = ?", id)
+	}
+	return query
+}
+
+func FindEnterpriseReviewReservations(enterpriseID int, requestID string, offset, limit int) ([]*EnterpriseReservation, int64, error) {
 	query := DB.Model(&EnterpriseReservation{}).Where("status = ?", EnterpriseReservationReview)
+	query = filterEnterpriseRequestID(query, requestID)
 	if enterpriseID > 0 {
 		query = query.Where("enterprise_id = ?", enterpriseID)
 	}

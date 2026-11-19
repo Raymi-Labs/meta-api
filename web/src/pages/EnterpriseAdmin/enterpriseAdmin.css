@@ -122,3 +122,6 @@
     top: 0;
   }
 }
+
+.ea-review-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ea-review-filter .semi-input-wrapper { flex: 0 1 16rem; }

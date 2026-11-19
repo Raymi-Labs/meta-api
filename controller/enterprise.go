@@ -713,9 +713,22 @@ func AdminAdjustEnterprise(c *gin.Context) {
 }
 
 func AdminListEnterpriseReservations(c *gin.Context) {
-	enterpriseID, _ := strconv.Atoi(c.Query("enterprise_id"))
+	var enterpriseID int
+	if raw, present := c.GetQuery("enterprise_id"); present {
+		var err error
+		enterpriseID, err = strconv.Atoi(raw)
+		if err != nil || enterpriseID <= 0 {
+			enterpriseApiError(c, model.ErrEnterpriseInvalidInput)
+			return
+		}
+	}
+	requestID := strings.TrimSpace(c.Query("request_id"))
+	if len(requestID) > 96 {
+		enterpriseApiError(c, model.ErrEnterpriseInvalidInput)
+		return
+	}
 	pageInfo := common.GetPageQuery(c)
-	items, total, err := model.ListEnterpriseReviewReservations(enterpriseID, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	items, total, err := model.FindEnterpriseReviewReservations(enterpriseID, requestID, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	enterprisePage(c, pageInfo, items, total, err)
 }
 

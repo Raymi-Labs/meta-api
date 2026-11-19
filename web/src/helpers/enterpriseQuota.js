@@ -44,3 +44,9 @@ export function parseEnterpriseQuota(
   const result = (numerator * 2n + denominator) / (denominator * 2n);
   return result <= 1000000000000000n ? Number(result) : null;
 }
+
+// Called only when two decimal places would hide a nonzero converted balance.
+export function formatSmallEnterpriseBalance(value) {
+  const fixed = value.toFixed(8);
+  return Number(fixed) === 0 ? value.toExponential(2) : fixed.replace(/0+$/, '');
+}

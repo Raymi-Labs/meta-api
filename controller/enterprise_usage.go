@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -16,7 +17,7 @@ import (
 
 func enterpriseUsageFilter(c *gin.Context, enterpriseID int) (model.EnterpriseUsageFilter, bool) {
 	filter := model.EnterpriseUsageFilter{
-		EnterpriseId: enterpriseID, ModelName: c.Query("model_name"), Kind: c.Query("kind"), Status: c.Query("status"),
+		RequestID: strings.TrimSpace(c.Query("request_id")), EnterpriseId: enterpriseID, ModelName: c.Query("model_name"), Kind: c.Query("kind"), Status: c.Query("status"),
 	}
 	var err error
 	number := func(name string) int64 {

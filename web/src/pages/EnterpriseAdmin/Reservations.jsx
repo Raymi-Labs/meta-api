@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -227,27 +227,40 @@ export default function Reservations({ canResolve, onCount, onDone }) {
   const pendingReservations =
     canResolve && recovery.actorID === actorID ? recovery.items : [];
 
+  const [draft, setDraft] = useState({ enterprise_id: '', request_id: '' });
+  const [filter, setFilter] = useState({});
+  const sequence = useRef(0);
+  const [loadError, setLoadError] = useState('');
   const load = useCallback(async () => {
+    const seq = ++sequence.current;
+    setLoadError('');
+    setItems([]);
+    setTotal(0);
     setLoading(true);
     try {
       const data = await enterpriseRequest(
         'get',
         '/api/enterprise/admin/reservations',
         undefined,
-        { p: page, page_size: 20 },
+        { p: page, page_size: 20, ...filter },
       );
+      if (seq !== sequence.current) return;
       setItems(data?.items || []);
       setTotal(data?.total || 0);
-      onCount(data?.total || 0);
+      if (!filter.enterprise_id && !filter.request_id)
+        onCount(data?.total || 0);
     } catch (e) {
-      showError(e.message);
+      if (seq === sequence.current) setLoadError(e.message);
     } finally {
-      setLoading(false);
+      if (seq === sequence.current) setLoading(false);
     }
-  }, [page, onCount]);
+  }, [page, onCount, filter]);
 
   useEffect(() => {
     load();
+    return () => {
+      ++sequence.current;
+    };
   }, [load]);
 
   const columns = [
@@ -326,13 +339,52 @@ export default function Reservations({ canResolve, onCount, onDone }) {
           ))}
         </div>
       )}
+      <form
+        className='ea-review-filter'
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFilter(
+            Object.fromEntries(
+              Object.entries(draft)
+                .map(([k, v]) => [k, v.trim()])
+                .filter(([, v]) => v),
+            ),
+          );
+          setPage(1);
+        }}
+      >
+        <Input
+          aria-label={`${t('企业')} ID`}
+          placeholder={`${t('企业')} ID`}
+          value={draft.enterprise_id}
+          onChange={(v) => setDraft({ ...draft, enterprise_id: v })}
+          showClear
+        />
+        <Input
+          aria-label={t('请求 ID')}
+          placeholder={t('请求 ID')}
+          maxLength={96}
+          value={draft.request_id}
+          onChange={(v) => setDraft({ ...draft, request_id: v })}
+          showClear
+        />
+        <Button htmlType='submit'>{t('查询')}</Button>
+      </form>
       <div className='em-card'>
         <Table
           rowKey='id'
           columns={columns}
           dataSource={items}
           loading={loading}
-          empty={t('没有待对账的预留')}
+          empty={
+            loadError ? (
+              <span role='alert'>
+                {loadError} <Button onClick={load}>{t('重试')}</Button>
+              </span>
+            ) : (
+              t('没有待对账的预留')
+            )
+          }
           pagination={
             total > 20
               ? {
