@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { paymentCentsToQuota } from '../../helpers/quota';
 import React, {
   useCallback,
   useEffect,
@@ -196,6 +197,7 @@ const TopUpContent = () => {
   const [openWithdrawal, setOpenWithdrawal] = useState(false);
   const [openInviteCommissions, setOpenInviteCommissions] = useState(false);
   const [openWalletRedemption, setOpenWalletRedemption] = useState(false);
+  const [withdrawalTier, setWithdrawalTier] = useState(null);
   const [withdrawalSubmitting, setWithdrawalSubmitting] = useState(false);
   const [alipayAccount, setAlipayAccount] = useState('');
   const [alipayName, setAlipayName] = useState('');
@@ -761,11 +763,24 @@ const TopUpContent = () => {
     const withdrawalQuota = displayAmountToQuota(withdrawalAmount);
     const quotaPerUnit = Number(getQuotaPerUnit() || 0);
     const topUpPrice = Number(statusState?.status?.price || 0);
-    if (!meetsAffWithdrawalMinimum(withdrawalQuota, quotaPerUnit, topUpPrice)) {
+    if (
+      withdrawalTier?.enabled
+        ? withdrawalQuota <
+          (paymentCentsToQuota(
+            withdrawalTier.minimum_withdrawal_cents,
+            topUpPrice,
+          ) ?? Infinity)
+        : !meetsAffWithdrawalMinimum(withdrawalQuota, quotaPerUnit, topUpPrice)
+    ) {
       showError(
         `${t('提现额度不能低于最低额度')}：${renderQuota(
-          AFF_WITHDRAWAL_MINIMUM_QUOTA,
-        )} / ¥${AFF_WITHDRAWAL_MINIMUM_PAYMENT_CNY.toFixed(2)}`,
+          withdrawalTier?.enabled
+            ? paymentCentsToQuota(
+                withdrawalTier.minimum_withdrawal_cents,
+                topUpPrice,
+              )
+            : AFF_WITHDRAWAL_MINIMUM_QUOTA,
+        )} / ¥${(withdrawalTier?.enabled ? withdrawalTier.minimum_withdrawal_cents / 100 : AFF_WITHDRAWAL_MINIMUM_PAYMENT_CNY).toFixed(2)}`,
       );
       return;
     }
@@ -841,8 +856,28 @@ const TopUpContent = () => {
     setOpenTransfer(true);
   };
 
-  const tryOpenWithdrawal = () => {
-    const minQuota = AFF_WITHDRAWAL_MINIMUM_QUOTA;
+  const tryOpenWithdrawal = async () => {
+    let tier;
+    try {
+      const { data } = await API.get('/api/invite/tier/status');
+      if (!data?.success) throw new Error(data?.message);
+      tier = data.data;
+      setWithdrawalTier(tier);
+    } catch (e) {
+      showError(e.message || t('加载失败'));
+      return;
+    }
+    const minQuota = tier?.enabled
+      ? paymentCentsToQuota(
+          tier.minimum_withdrawal_cents,
+          statusState?.status?.price,
+        )
+      : AFF_WITHDRAWAL_MINIMUM_QUOTA;
+    if (minQuota === null) {
+      showError(t('提现换算配置不合法'));
+      return;
+    }
+
     const currentQuota = Number(userState?.user?.aff_quota || 0);
     if (currentQuota < minQuota) {
       showError(
@@ -984,6 +1019,7 @@ const TopUpContent = () => {
         onOk={submitWithdrawal}
         onCancel={() => setOpenWithdrawal(false)}
         confirmLoading={withdrawalSubmitting}
+        tierStatus={withdrawalTier}
         userState={userState}
         renderQuota={renderQuota}
         getQuotaPerUnit={getQuotaPerUnit}

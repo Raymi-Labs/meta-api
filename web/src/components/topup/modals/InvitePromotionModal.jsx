@@ -26,6 +26,7 @@ import {
   buildInvitePromotionHTML,
   INVITE_PROMOTION_SOURCES,
 } from '../../../helpers/invitePromotion';
+import InviteTierPanel from '../../common/invitation/InviteTierPanel';
 import InvitePromotionStats from '../../common/invitation/InvitePromotionStats';
 
 export default function InvitePromotionModal({ visible, onCancel, affLink }) {
@@ -44,6 +45,7 @@ export default function InvitePromotionModal({ visible, onCancel, affLink }) {
       {visible && (
         <div className='space-y-6'>
           <InvitePromotionStats endpoint='/api/user/invite-promotion/self' />
+          <InviteTierPanel compact />
           <section className='space-y-3' aria-label={t('HTML 广告代码')}>
             <h3 className='font-semibold'>{t('HTML 广告代码')}</h3>
             <p className='text-sm text-semi-color-text-2'>

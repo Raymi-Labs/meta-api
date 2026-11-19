@@ -36,6 +36,7 @@ import {
 import { API, renderGroup, renderQuota, showError } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import CardTable from '../../../common/ui/CardTable';
+import InviteTierPanel from '../../../common/invitation/InviteTierPanel';
 import InvitePromotionStats from '../../../common/invitation/InvitePromotionStats';
 
 const { Text } = Typography;
@@ -248,7 +249,8 @@ const UserInviteRelationsSheet = ({
         <div className='p-3 space-y-3'>
           {visible && user?.id && (
             <Card className='!rounded-2xl'>
-              <InvitePromotionStats
+              <InviteTierPanel admin userId={user?.id} compact />
+          <InvitePromotionStats
                 endpoint={`/api/user/${user.id}/invite-promotion`}
               />
             </Card>

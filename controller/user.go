@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
@@ -70,11 +71,8 @@ func Login(c *gin.Context) {
 		Password: password,
 	}
 	err = user.ValidateAndFill()
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"message": err.Error(),
-			"success": false,
-		})
+	if err != nil && !errors.Is(err, model.ErrUserDisabled) {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 
@@ -88,6 +86,7 @@ func Login(c *gin.Context) {
 	if twoFAEnabled {
 		// 设置pending session，等待2FA验证
 		session := sessions.Default(c)
+		session.Clear()
 		session.Set("pending_username", user.Username)
 		session.Set("pending_user_id", user.Id)
 		err := session.Save()
@@ -111,14 +110,26 @@ func Login(c *gin.Context) {
 
 // setup session & cookies and then return user info
 func setupLogin(user *model.User, c *gin.Context) {
+	// All login methods call this only after validating their credentials.
+	current, err := model.GetUserById(user.Id, false)
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	user = current
+	if user.Status != common.UserStatusEnabled {
+		setupAppealSession(user, c)
+		return
+	}
 	model.UpdateUserLastLoginAt(user.Id)
 	session := sessions.Default(c)
+	clearAppealSession(session)
 	session.Set("id", user.Id)
 	session.Set("username", user.Username)
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
 	session.Set("group", user.Group)
-	err := session.Save()
+	err = session.Save()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
 		return
@@ -135,6 +146,32 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"group":        user.Group,
 		},
 	})
+}
+
+func setupAppealSession(user *model.User, c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	session.Set("appeal_user_id", user.Id)
+	session.Set("appeal_expires_at", time.Now().Add(15*time.Minute).Unix())
+	err := session.Save()
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": i18n.T(c, i18n.MsgUserAppealAvailable),
+		"success": false,
+		"data": map[string]interface{}{
+			"appeal_available": true,
+		},
+	})
+}
+
+func clearAppealSession(session sessions.Session) {
+	session.Delete("appeal_user_id")
+	session.Delete("appeal_expires_at")
+	session.Delete("pending_username")
+	session.Delete("pending_user_id")
 }
 
 func Logout(c *gin.Context) {
@@ -756,6 +793,10 @@ func TransferAffQuota(c *gin.Context) {
 	}
 	err = user.TransferAffQuotaToQuota(tran.Quota)
 	if err != nil {
+		if errors.Is(err, model.ErrInviteFrozen) || errors.Is(err, model.ErrInviteIdentity) {
+			inviteError(c, err)
+			return
+		}
 		common.ApiErrorI18n(c, i18n.MsgUserTransferFailed, map[string]any{"Error": err.Error()})
 		return
 	}

@@ -275,6 +275,8 @@ const (
 	MsgOAuthNotEnabled                = "oauth.not_enabled"
 	MsgOAuthUserDeleted               = "oauth.user_deleted"
 	MsgOAuthUserBanned                = "oauth.user_banned"
+	MsgUserAccountBanned              = "user.account_banned"
+	MsgUserAppealAvailable            = "user.appeal_available"
 	MsgOAuthBindSuccess               = "oauth.bind_success"
 	MsgOAuthAlreadyBound              = "oauth.already_bound"
 	MsgOAuthLegacyBindingNotConfirmed = "oauth.legacy_binding_not_confirmed"
@@ -318,4 +320,14 @@ const (
 	MsgCustomOAuthHasBindings       = "custom_oauth.has_bindings"
 	MsgCustomOAuthBindingNotFound   = "custom_oauth.binding_not_found"
 	MsgCustomOAuthProviderIdInvalid = "custom_oauth.provider_id_field_invalid"
+)
+
+const (
+	InviteTierError           = "invite.error"
+	InviteTierEligibility     = "invite.eligibility"
+	InviteTierConflict        = "invite.conflict"
+	InviteTierInvalid         = "invite.invalid"
+	InviteTierFrozen          = "invite.frozen"
+	InviteTierIdentityPending = "invite.identity_pending"
+	InviteTierMinimum         = "invite.minimum"
 )

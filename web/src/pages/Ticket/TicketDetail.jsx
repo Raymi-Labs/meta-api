@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -32,6 +32,7 @@ import {
   Timeline,
   Empty,
 } from '@douyinfe/semi-ui';
+import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
 
@@ -74,7 +75,7 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [replyForm] = Form.useForm();
+  const replyForm = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [closing, setClosing] = useState(false);
 
@@ -105,12 +106,12 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
 
   const handleReply = async () => {
     try {
-      const values = await replyForm.validate();
+      const values = await replyForm.current?.validate();
       setSubmitting(true);
       const res = await API.post(`/api/ticket/${ticketId}/reply`, values);
       if (res.data.success) {
         showSuccess(t('回复成功'));
-        replyForm.reset();
+        replyForm.current?.reset();
         await loadTicketDetail();
         onUpdate && onUpdate();
       } else {
@@ -189,7 +190,7 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
               {ticket.subject}
             </Title>
             <Tag color={STATUS_COLORS[ticket.status]}>
-              {STATUS_LABELS[ticket.status] || ticket.status}
+              {t(STATUS_LABELS[ticket.status] || ticket.status)}
             </Tag>
           </div>
           <Space>
@@ -198,7 +199,8 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
             </Text>
             <Divider layout='vertical' />
             <Text type='tertiary'>
-              {t('分类')}: {CATEGORY_LABELS[ticket.category] || ticket.category}
+              {t('分类')}:{' '}
+              {t(CATEGORY_LABELS[ticket.category] || ticket.category)}
             </Text>
             <Divider layout='vertical' />
             <Text type='tertiary'>
@@ -217,6 +219,11 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
 
         <Divider />
 
+        <TicketAttachments
+          ticketId={ticketId}
+          mode='user'
+          closed={ticket.status === 'closed'}
+        />
         {/* 消息列表 */}
         <div style={{ marginBottom: 24 }}>
           {messages.length === 0 ? (
@@ -231,10 +238,16 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
                 >
                   <div style={{ marginBottom: 8 }}>
                     <Tag size='small'>
-                      {SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role}
+                      {t(
+                        SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role,
+                      )}
                     </Tag>
                     {msg.event && (
-                      <Text type='tertiary' size='small' style={{ marginLeft: 8 }}>
+                      <Text
+                        type='tertiary'
+                        size='small'
+                        style={{ marginLeft: 8 }}
+                      >
                         [{msg.event}]
                       </Text>
                     )}
@@ -252,7 +265,12 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
         {canReply && (
           <>
             <Divider />
-            <Form form={replyForm} labelPosition='top'>
+            <Form
+              getFormApi={(api) => {
+                replyForm.current = api;
+              }}
+              labelPosition='top'
+            >
               <Form.TextArea
                 field='body'
                 label={t('回复内容')}

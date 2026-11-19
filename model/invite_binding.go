@@ -68,6 +68,9 @@ func decideInviteBindingWithoutRewardsWithTx(tx *gorm.DB, inviterID int) (invite
 }
 
 func decideInviteBindingWithRewardsTx(tx *gorm.DB, inviterID int, inviterRewardQuota int, inviteeRewardQuota int) (inviteBindingDecision, error) {
+	if common.GetInviteTierSettings().Enabled {
+		inviterRewardQuota = 0
+	}
 	settings := common.GetInviteBindingSettings()
 	decision := inviteBindingDecision{
 		RequestedInviterID: inviterID,

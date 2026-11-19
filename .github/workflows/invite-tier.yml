@@ -1,0 +1,57 @@
+name: Invite tier transactions
+on:
+  push:
+    paths:
+      - 'model/invite*'
+      - 'model/aff_withdrawal*'
+      - 'common/invite_tier*'
+      - 'controller/invite_tier*'
+      - 'router/invite*'
+      - '.github/workflows/invite-tier.yml'
+  pull_request:
+    paths:
+      - 'model/invite*'
+      - 'common/invite_tier*'
+      - '.github/workflows/invite-tier.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transactions:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mysql: '5.7'
+            postgres: '9.6'
+          - mysql: '8.0'
+            postgres: '16'
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: invite_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd='mysqladmin ping -h 127.0.0.1'
+          --health-interval=10s --health-timeout=5s --health-retries=15
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: invite_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd='pg_isready -U postgres'
+          --health-interval=10s --health-timeout=5s --health-retries=15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - run: go test -race ./model ./common ./router -run 'TestInviteTier' -count=1 -v
+        env:
+          TEST_MYSQL_DSN: root@tcp(127.0.0.1:3306)/invite_test?charset=utf8mb4&parseTime=true
+          TEST_POSTGRES_DSN: postgres://postgres:fixture-only@127.0.0.1:5432/invite_test?sslmode=disable

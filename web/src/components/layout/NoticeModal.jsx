@@ -54,6 +54,9 @@ const NoticeModal = ({
   onClose,
   isMobile,
   defaultTab = 'inApp',
+  ticketUnread = 0,
+  staffTicketUnread = 0,
+  showTicketTab = false,
   unreadKeys = [],
   pendingWithdrawalCount = 0,
   pendingWithdrawals = [],
@@ -258,6 +261,29 @@ const NoticeModal = ({
   };
 
   const renderBody = () => {
+    if (activeTab === 'tickets' && showTicketTab)
+      return (
+        <div className='p-4 flex gap-3 flex-wrap'>
+          <Button
+            onClick={() => {
+              closeNotice();
+              navigate('/console/tickets');
+            }}
+          >
+            {t('我的工单')} ({ticketUnread})
+          </Button>
+          {showWithdrawalTab && (
+            <Button
+              onClick={() => {
+                closeNotice();
+                navigate('/console/ticket-admin');
+              }}
+            >
+              {t('工单管理')} ({staffTicketUnread})
+            </Button>
+          )}
+        </div>
+      );
     if (activeTab === 'inApp') {
       return renderMarkdownNotice();
     }
@@ -447,6 +473,12 @@ const NoticeModal = ({
         <div className='flex items-center justify-between w-full'>
           <span>{t('系统公告')}</span>
           <Tabs activeKey={activeTab} onChange={setActiveTab} type='button'>
+            {showTicketTab && (
+              <TabPane
+                tab={t('我的工单') + ` (${ticketUnread + staffTicketUnread})`}
+                itemKey='tickets'
+              />
+            )}
             <TabPane
               tab={
                 <span className='flex items-center gap-1'>

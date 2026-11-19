@@ -26,6 +26,7 @@ import SettingsSensitiveWords from '../../pages/Setting/Operation/SettingsSensit
 import SettingsLog from '../../pages/Setting/Operation/SettingsLog';
 import SettingsMonitoring from '../../pages/Setting/Operation/SettingsMonitoring';
 import SettingsChannelConcurrency from '../../pages/Setting/Operation/SettingsChannelConcurrency';
+import SettingsInviteTier from '../../pages/Setting/Operation/SettingsInviteTier';
 import SettingsCreditLimit from '../../pages/Setting/Operation/SettingsCreditLimit';
 import SettingsCheckin from '../../pages/Setting/Operation/SettingsCheckin';
 import { API, showError, toBoolean } from '../../helpers';
@@ -178,6 +179,7 @@ const OperationSetting = () => {
         {/* 额度设置 */}
         <Card style={{ marginTop: '10px' }}>
           <SettingsCreditLimit options={inputs} refresh={onRefresh} />
+          <SettingsInviteTier />
         </Card>
         {/* 签到设置 */}
         <Card style={{ marginTop: '10px' }}>

@@ -105,8 +105,13 @@ func CreateAffWithdrawal(userID int, quota int, alipayAccount string, alipayName
 	if userID <= 0 {
 		return nil, errors.New("用户不存在")
 	}
-	if err := validateAffWithdrawalQuota(quota); err != nil {
-		return nil, err
+	if quota <= 0 {
+		return nil, ErrAffWithdrawalInvalidQuota
+	}
+	if !common.GetInviteTierSettings().Enabled {
+		if err := validateAffWithdrawalQuota(quota); err != nil {
+			return nil, err
+		}
 	}
 	if account == "" {
 		return nil, errors.New("支付宝账号不能为空")
@@ -127,8 +132,10 @@ func CreateAffWithdrawal(userID int, quota int, alipayAccount string, alipayName
 	if err != nil {
 		return nil, err
 	}
-	if err := validateAffWithdrawalMinimum(quota, amountCents); err != nil {
-		return nil, err
+	if !common.GetInviteTierSettings().Enabled {
+		if err := validateAffWithdrawalMinimum(quota, amountCents); err != nil {
+			return nil, err
+		}
 	}
 
 	withdrawal := &AffWithdrawal{
@@ -144,6 +151,21 @@ func CreateAffWithdrawal(userID int, quota int, alipayAccount string, alipayName
 	}
 
 	err = DB.Transaction(func(tx *gorm.DB) error {
+		if common.InviteTierLifecycleActive() {
+			if _, e := lockInviteUser(tx, userID); e != nil {
+				return e
+			}
+			if e := checkInvitePayoutEligibility(tx, userID); e != nil {
+				return e
+			}
+			minimum, e := InviteWithdrawalMinimum(tx, userID)
+			if e != nil {
+				return e
+			}
+			if amountCents < minimum {
+				return ErrInviteMinimum
+			}
+		}
 		result := tx.Model(&User{}).
 			Where("id = ? AND aff_quota >= ?", userID, quota).
 			Update("aff_quota", gorm.Expr("aff_quota - ?", quota))
@@ -187,17 +209,34 @@ func reviewAffWithdrawal(id int, reviewerUserID int, targetStatus string, adminR
 	var withdrawal AffWithdrawal
 	now := common.GetTimestamp()
 	err := DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&withdrawal, "id = ?", id).Error; err != nil {
+		if err := tx.First(&withdrawal, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrAffWithdrawalNotFound
 			}
 			return err
 		}
+		if _, e := lockInviteUser(tx, withdrawal.UserId); e != nil {
+			return e
+		}
+		if e := inviteLock(tx).First(&withdrawal, id).Error; e != nil {
+			return e
+		}
 		if withdrawal.Status != AffWithdrawalStatusPending {
 			return ErrAffWithdrawalAlreadyReviewed
 		}
 		if targetStatus == AffWithdrawalStatusApproved {
-			if err := validateAffWithdrawalMinimum(withdrawal.Quota, withdrawal.AmountCents); err != nil {
+			minimum, e := InviteWithdrawalMinimum(tx, withdrawal.UserId)
+			if e != nil {
+				return e
+			}
+			if common.InviteTierLifecycleActive() {
+				if e := checkInvitePayoutEligibility(tx, withdrawal.UserId); e != nil {
+					return e
+				}
+				if withdrawal.AmountCents < minimum {
+					return ErrInviteMinimum
+				}
+			} else if err := validateAffWithdrawalMinimum(withdrawal.Quota, withdrawal.AmountCents); err != nil {
 				return err
 			}
 		}

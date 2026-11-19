@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { API } from '../../helpers/apiCore';
-import { isAdmin } from '../../helpers/storage';
 import {
   getAnnouncementKey,
   getReadAnnouncementKeys,
@@ -29,7 +28,7 @@ import {
   subscribeNoticeReadState,
 } from '../../helpers/noticeReadState';
 
-export const useNotifications = (statusState) => {
+export const useNotifications = (statusState, userState) => {
   const [noticeVisible, setNoticeVisible] = useState(false);
   const [announcementUnread, setAnnouncementUnread] = useState(0);
   const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
@@ -37,7 +36,9 @@ export const useNotifications = (statusState) => {
   const [pendingInvoices, setPendingInvoices] = useState([]);
   const [pendingInvoiceCount, setPendingInvoiceCount] = useState(0);
   const [ticketUnread, setTicketUnread] = useState(0);
-  const admin = isAdmin();
+  const userID = userState?.user?.id;
+  const admin = Number(userState?.user?.role) >= 10;
+  const [staffTicketUnread, setStaffTicketUnread] = useState(0);
 
   const announcements = useMemo(
     () =>
@@ -90,7 +91,7 @@ export const useNotifications = (statusState) => {
   }, [announcements]);
 
   const fetchTicketUnread = async () => {
-    if (!statusState?.status?.user_id) return;
+    if (!userID) return;
     try {
       const res = await API.get('/api/ticket/unread', {
         skipErrorHandler: true,
@@ -98,6 +99,14 @@ export const useNotifications = (statusState) => {
       });
       if (res?.data?.success) {
         setTicketUnread(Number(res.data.data?.count) || 0);
+      }
+      if (admin) {
+        const staff = await API.get('/api/admin/ticket/unread', {
+          skipErrorHandler: true,
+          skipGlobalLoading: true,
+        });
+        if (staff.data?.success)
+          setStaffTicketUnread(Number(staff.data.data?.count) || 0);
       }
     } catch (_) {
       // silent: keep previous value to avoid badge flicker
@@ -118,13 +127,16 @@ export const useNotifications = (statusState) => {
   }, [admin]);
 
   useEffect(() => {
+    setTicketUnread(0);
+    setStaffTicketUnread(0);
     fetchTicketUnread();
     const timer = setInterval(fetchTicketUnread, 60000);
     return () => clearInterval(timer);
-  }, [statusState?.status?.user_id]);
+  }, [userID, admin]);
 
   // 操作函数
   const handleNoticeOpen = () => {
+    fetchTicketUnread();
     fetchPendingWithdrawals();
     fetchPendingInvoices();
     setNoticeVisible(true);
@@ -141,9 +153,11 @@ export const useNotifications = (statusState) => {
     unreadCount:
       announcementUnread +
       ticketUnread +
+      staffTicketUnread +
       (admin ? pendingWithdrawalCount + pendingInvoiceCount : 0),
     announcementUnread,
     ticketUnread,
+    staffTicketUnread,
     pendingWithdrawalCount,
     pendingWithdrawals,
     pendingInvoiceCount,

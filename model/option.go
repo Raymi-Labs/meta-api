@@ -335,6 +335,14 @@ func UpdateOption(key string, value string) error {
 		if err != nil {
 			return err
 		}
+		if parsed.Enabled && !common.HasPersistentCryptoSecret() {
+			return errors.New("invite.crypto_required")
+		}
+		original := common.GetInviteTierSettings()
+		parsed.ActivatedAt = original.ActivatedAt
+		if parsed.Enabled && parsed.ActivatedAt == 0 {
+			parsed.ActivatedAt = common.GetTimestamp()
+		}
 		encoded, err := common.Marshal(parsed)
 		if err != nil {
 			return err

@@ -65,6 +65,17 @@ var errInviteCommissionAlreadyProcessed = errors.New("invite commission ledger a
 // - 同一 trade_no + inviter_user_id + commission_level 只允许一条台账（唯一索引）。
 // - 结算时仅处理 status=pending 的记录，重复执行不会重复入账。
 type InviteCommissionLedger struct {
+	SourceTradeNo     string `json:"-" gorm:"type:varchar(255);index;default:''"`
+	ValidityState     string `json:"validity_state" gorm:"type:varchar(24);default:''"`
+	PaidCents         int64  `json:"paid_cents" gorm:"type:bigint;not null;default:0"`
+	ExcludedBaseQuota int64  `json:"excluded_base_quota" gorm:"type:bigint;not null;default:0"`
+	DebtOffset        int64  `json:"debt_offset" gorm:"type:bigint;not null;default:0"`
+	PoolDeduction     int64  `json:"pool_deduction" gorm:"type:bigint;not null;default:0"`
+	IssueAt           int64  `json:"issue_at" gorm:"not null;default:0;index"`
+	PayoutAt          int64  `json:"payout_at" gorm:"not null;default:0"`
+	ObservedUntil     int64  `json:"observed_until" gorm:"not null;default:0"`
+	EarlyApproved     bool   `json:"early_approved" gorm:"not null;default:false"`
+
 	Id                  int     `json:"id"`
 	InviteeUserId       int     `json:"invitee_user_id" gorm:"index;not null"`
 	InviterUserId       int     `json:"inviter_user_id" gorm:"index;not null;uniqueIndex:idx_invite_commission_trade_inviter_level"`
@@ -381,6 +392,11 @@ var inviteCommissionWakeup = make(chan struct{}, 1)
 func InviteCommissionSettlementWakeups() <-chan struct{} { return inviteCommissionWakeup }
 
 func NotifyInviteCommissionSettlement() {
+	NotifyInviteStatements()
+	NotifyInvitePayoutWorker()
+}
+
+func NotifyInvitePayoutWorker() {
 	select {
 	case inviteCommissionWakeup <- struct{}{}:
 	default:
@@ -408,6 +424,9 @@ func deferInviteCommissionRetry(ledger *InviteCommissionLedger) error {
 }
 
 func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap int) (processed bool, settled bool, err error) {
+	if ledger.AmountVersion == 2 {
+		return settleTierCommission(ledger.Id, int64(dailyCap), common.GetTimestamp())
+	}
 	now := common.GetTimestamp()
 	var allowedQuota int64
 	riskReason := ""
@@ -510,10 +529,7 @@ func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap
 	}
 
 	if processed && settled {
-		levelLabel := "一级"
-		if ledger.CommissionLevel == InviteCommissionLevelIndirect {
-			levelLabel = "二级"
-		}
+		levelLabel := inviteCommissionLevelLabel(ledger.CommissionLevel)
 		RecordLog(
 			ledger.InviterUserId,
 			LogTypeSystem,
@@ -539,16 +555,35 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 	}
 
 	var ledgers []*InviteCommissionLedger
-	if err := tx.Where("topup_trade_no = ? AND status IN ?", tradeNo, []string{
+	if err := tx.Where("(topup_trade_no = ? OR source_trade_no = ?) AND status IN ?", tradeNo, tradeNo, []string{
 		InviteCommissionStatusPending,
 		InviteCommissionStatusSettled,
-	}).Order("id ASC").Find(&ledgers).Error; err != nil {
+	}).Order("inviter_user_id ASC, id ASC").Find(&ledgers).Error; err != nil {
 		return 0, err
 	}
 
 	var reversedQuota int64
+	// Lock every beneficiary in the same order before touching ledger rows.
+	// Pool adjustment and statement issuance also lock beneficiaries first.
+	lastInviter := 0
+	for _, row := range ledgers {
+		if row.InviterUserId != lastInviter {
+			var user User
+			err := inviteLock(tx.Unscoped()).First(&user, row.InviterUserId).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, err
+			}
+			lastInviter = row.InviterUserId
+		}
+	}
 	for _, ledger := range ledgers {
 		if ledger == nil {
+			continue
+		}
+		if err := inviteLock(tx).First(ledger, ledger.Id).Error; err != nil {
+			return 0, err
+		}
+		if ledger.Status != InviteCommissionStatusPending && ledger.Status != InviteCommissionStatusSettled {
 			continue
 		}
 		if ledger.Status == InviteCommissionStatusPending {
@@ -567,10 +602,10 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 		}
 
 		settledQuota := ledger.SettledQuota
-		if settledQuota <= 0 {
+		if settledQuota <= 0 && ledger.AmountVersion < 2 {
 			settledQuota = ledger.CommissionQuota
 		}
-		if settledQuota <= 0 {
+		if settledQuota <= 0 && ledger.DebtOffset <= 0 {
 			continue
 		}
 
@@ -601,6 +636,7 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 			Updates(map[string]any{
 				"status":        InviteCommissionStatusSkipped,
 				"settled_quota": 0,
+				"debt_offset":   0,
 				"risk_reason":   InviteCommissionRiskReasonPaymentReversed,
 				"settled_at":    common.GetTimestamp(),
 			})
@@ -612,13 +648,13 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 		}
 
 		if capErr == nil {
-			newSettledQuota := int64(capState.SettledQuota) - settledQuota
+			newSettledQuota := int64(capState.SettledQuota) - settledQuota - ledger.DebtOffset
 			if newSettledQuota < 0 {
 				newSettledQuota = 0
 			}
 			if err := tx.Model(&InviteCommissionDailyCapState{}).
 				Where("id = ?", capState.Id).
-				Update("settled_quota", int(newSettledQuota)).Error; err != nil {
+				Update("settled_quota", newSettledQuota).Error; err != nil {
 				return 0, err
 			}
 		}
@@ -635,8 +671,21 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 			affDebit = settledQuota
 		}
 		walletDebit := settledQuota - affDebit
+		available := int64(EffectiveTransferableQuota(inviter.Quota, inviter.TransferableQuota))
+		if ledger.AmountVersion == 2 {
+			walletDebit = min(walletDebit, max(int64(0), available))
+		}
+		if ledger.AmountVersion == 2 {
+			if err := addInviteDebtTx(tx, inviter.Id, settledQuota-affDebit-walletDebit+ledger.DebtOffset, tradeNo); err != nil {
+				return 0, err
+			}
+		}
+
 		newQuota := int64(inviter.Quota) - walletDebit
 		newTransferableQuota := EffectiveTransferableQuota(int(newQuota), inviter.TransferableQuota)
+		if ledger.AmountVersion == 2 {
+			newTransferableQuota = EffectiveTransferableQuota(int(newQuota), max(0, inviter.TransferableQuota-int(walletDebit)))
+		}
 		newAffHistoryQuota := inviter.AffHistoryQuota - settledQuota
 		if newAffHistoryQuota < 0 {
 			newAffHistoryQuota = 0
@@ -657,6 +706,13 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, er
 		reversedQuota += settledQuota
 	}
 
+	for _, row := range ledgers {
+		if row.StatementId > 0 {
+			if e := refreshInviteStatementTx(tx, row.StatementId, common.GetTimestamp()); e != nil {
+				return 0, e
+			}
+		}
+	}
 	for _, row := range ledgers {
 		if row.AmountVersion == 2 {
 			if err := reverseInviteTierAllocationTx(tx, tradeNo); err != nil {
@@ -692,7 +748,7 @@ func reconcilePendingInviteCommissionAmountTx(tx *gorm.DB, ledger *InviteCommiss
 	}
 	// Version 1 is the paid-time snapshot; do not reprice it on retry.
 	if ledger.AmountVersion >= 1 {
-		if ledger.BaseQuota <= 0 || ledger.CommissionQuota <= 0 {
+		if ledger.BaseQuota <= 0 || (ledger.CommissionQuota <= 0 && ledger.PoolDeduction <= 0) {
 			return InviteCommissionRiskReasonPaidMoneyMissing, nil
 		}
 		return "", nil

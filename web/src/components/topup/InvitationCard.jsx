@@ -37,6 +37,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import InviteTierPanel from '../common/invitation/InviteTierPanel';
 import InvitePromotionModal from './modals/InvitePromotionModal';
 
 const { Text } = Typography;
@@ -75,6 +76,7 @@ const InvitationCard = ({
         </div>
       </div>
 
+      <InviteTierPanel userId={userState?.user?.id} />
       {/* 收益展示区域 */}
       <Space vertical style={{ width: '100%' }}>
         {/* 统计数据统一卡片 */}

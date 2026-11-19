@@ -9,7 +9,10 @@ import (
 
 // InviteTierSettings 定义六档位的返佣配置与晋级规则。
 type InviteTierSettings struct {
-	Enabled bool `json:"enabled"`
+	Enabled                  bool  `json:"enabled"`
+	ActivatedAt              int64 `json:"activated_at"`
+	RequireIdentityForPayout bool  `json:"require_identity_for_payout"`
+	CommissionerRetention    int   `json:"commissioner_retention"`
 
 	// 返利池比例（如 0.16 = 16%）
 	PoolRatio float64 `json:"pool_ratio"`
@@ -43,18 +46,15 @@ type InviteTierSettings struct {
 	MinWithdrawalAmounts [6]int `json:"min_withdrawal_amounts"`
 }
 
-// Keep persisted configuration disabled until the statement, risk and debt
-// lifecycle is implemented and verified. Tests may exercise the engine directly.
-const InviteTierReleaseReady = false
-
 var inviteTierSettings atomic.Value
 var defaultInviteTierSettings InviteTierSettings
 
 func init() {
 	// 内部规则默认值（仓库只存配置，不抄原文说明与容量表）
 	defaultInviteTierSettings = InviteTierSettings{
-		Enabled:   false,
-		PoolRatio: 0.16,
+		Enabled:               false,
+		CommissionerRetention: 30,
+		PoolRatio:             0.16,
 		FirstLevelRates: [6]float64{
 			0.05,  // 0: 普通推广者
 			0.07,  // 1: 晋级档 A
@@ -103,6 +103,9 @@ func GetInviteTierSettings() InviteTierSettings {
 }
 
 func ValidateInviteTierSettings(s InviteTierSettings) error {
+	if s.CommissionerRetention < 0 || s.ActivatedAt < 0 {
+		return fmt.Errorf("invalid tier lifecycle settings")
+	}
 	for _, rate := range s.LeaderSlotRates {
 		if rate < 0 || rate > 1 || math.IsNaN(rate) || math.IsInf(rate, 0) {
 			return fmt.Errorf("invalid leader slot rate")
@@ -144,7 +147,7 @@ func ValidateInviteTierSettings(s InviteTierSettings) error {
 	if s.QualifiedThresholdMoney < 0 || math.IsNaN(s.QualifiedThresholdMoney) || math.IsInf(s.QualifiedThresholdMoney, 0) {
 		return fmt.Errorf("达标门槛金额不能为负")
 	}
-	if s.SecondLevelMonthlyCapMoney < 0 || math.IsNaN(s.SecondLevelMonthlyCapMoney) || math.IsInf(s.SecondLevelMonthlyCapMoney, 0) {
+	if s.SecondLevelMonthlyCapMoney < 0 || s.SecondLevelMonthlyCapMoney >= float64(math.MaxInt64)/100 || math.IsNaN(s.SecondLevelMonthlyCapMoney) || math.IsInf(s.SecondLevelMonthlyCapMoney, 0) {
 		return fmt.Errorf("二级月基数上限不能为负")
 	}
 
@@ -158,7 +161,7 @@ func ValidateInviteTierSettings(s InviteTierSettings) error {
 
 	// 注册奖励非负
 	for i, reward := range s.RegisterRewards {
-		if reward < 0 || math.IsNaN(reward) || math.IsInf(reward, 0) {
+		if reward < 0 || reward >= float64(math.MaxInt64)/math.Max(1, QuotaPerUnit) || math.IsNaN(reward) || math.IsInf(reward, 0) {
 			return fmt.Errorf("档位 %d 注册奖励不能为负", i)
 		}
 	}
@@ -245,9 +248,6 @@ func ParseInviteTierSettings(raw string) (InviteTierSettings, error) {
 		return s, err
 	}
 
-	if s.Enabled && !InviteTierReleaseReady {
-		return s, fmt.Errorf("档位返佣尚未通过周期结算、有效消费与欠款抵扣验收，暂不可启用")
-	}
 	if err := ValidateInviteTierSettings(s); err != nil {
 		return InviteTierSettings{}, err
 	}
@@ -276,4 +276,10 @@ func InviteTierSettings2JSONString() string {
 		raw, _ = Marshal(defaultInviteTierSettings)
 	}
 	return string(raw)
+}
+
+// Lifecycle controls survive disabling new tier allocations.
+func InviteTierLifecycleActive() bool {
+	s := GetInviteTierSettings()
+	return s.Enabled || s.ActivatedAt > 0
 }

@@ -16,7 +16,7 @@ Status: implemented
 
 ## Existing capabilities and impact
 
-[引擎完整提案](../../proposed/feature/2026-11-18-invite-tier-commission-engine.md) 部分重叠，保留其未落地的注册奖励与生命周期决策；[账单提案](../../proposed/feature/2026-11-18-invite-commission-statements.md) 与 [风控提案](../../proposed/feature/2026-11-18-invite-promoter-risk-identity.md) 仍待实施。旧 [即时结算](../feature/2026-10-31-invite-realtime-settlement.md) 的生产行为不改变。登录封禁提示与工单改动属于工作区已有独立改动，不纳入本提交。
+[引擎完整提案](../../implemented/feature/2026-11-18-invite-tier-commission-engine.md) 部分重叠，保留其未落地的注册奖励与生命周期决策；[账单提案](../../implemented/feature/2026-11-18-invite-commission-statements.md) 与 [风控提案](../../implemented/feature/2026-11-18-invite-promoter-risk-identity.md) 仍待实施。旧 [即时结算](../feature/2026-10-31-invite-realtime-settlement.md) 的生产行为不改变。登录封禁提示与工单改动属于工作区已有独立改动，不纳入本提交。
 
 ## Alternatives considered
 
@@ -33,3 +33,7 @@ Status: implemented
 删除阶段 A 草稿中每次启动无条件执行的 bigint ALTER；正常与快速迁移均沿用 GORM 的字段类型检查，不在 AutoMigrate 后重复锁表改列。
 
 验证结果：`go test ./model/... -race`（154.643s）、`go test ./common ./controller`、档位专项 race 与 MySQL/PostgreSQL 并发测试、`make verify-notes`、Bun 前端构建及 Go 可执行文件构建通过。前端预渲染因本机缺少 `/usr/bin/chromium` 跳过；未做新界面浏览器验收（本批无新增界面）。初次 Go 构建阻塞在旧静态资源读取，保留旧 dist 到临时目录并重新生成后通过。
+
+## 后续完整交付
+
+本篇保留基础阶段暂不开放的理由。完整周期与风控接入后，启用门禁由[周期账单决策](../feature/2026-11-18-invite-commission-statements.md)接管：默认关闭，具备持久化密钥后可人工开启；已入池新台账在关闭开关后继续结算。

@@ -136,6 +136,9 @@ func main() {
 	service.StartSlowTTFTBaselineTask()
 	if common.IsMasterNode {
 		service.StartContentSafetyMaintenanceTask()
+		service.StartInviteStatementIssuingTask()
+		service.StartInvitePoolAdjustmentTask()
+		service.StartInviteTierPromotionTask()
 	}
 
 	// Subscription quota reset task (daily/weekly/monthly/custom)
@@ -153,6 +156,7 @@ func main() {
 	service.StartPulseBenefitLogTask()
 	service.StartQuotaNoticeTask()
 	service.StartEnterpriseMaintenanceTask()
+	service.StartTicketAutoTransitionTask()
 	service.StartAnnouncementEmailTask()
 	service.StartRouteOutageTask()
 

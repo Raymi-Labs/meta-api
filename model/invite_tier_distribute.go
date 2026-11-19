@@ -18,6 +18,8 @@ var inviteBusinessLocation = time.FixedZone("Asia/Shanghai", 8*3600)
 // InviteCommissionAllocation is the transaction receipt, including zero-award
 // payments. A callback must never reprice an existing allocation after promotion.
 type InviteCommissionAllocation struct {
+	ExcludedQuota int64  `gorm:"type:bigint;not null;default:0"`
+	PaidCents     int64  `gorm:"type:bigint;not null;default:0;index"`
 	TradeNo       string `gorm:"primaryKey;type:varchar(255)"`
 	SecondUserID  int
 	InviteeUserID int
@@ -56,8 +58,11 @@ func enqueueTierBasedCommission(tx *gorm.DB, trade string, inviteeID int, comple
 	if completed <= 0 {
 		completed = common.GetTimestamp()
 	}
+	if !paidCNY.Mul(decimal.NewFromInt(100)).Floor().BigInt().IsInt64() {
+		return ErrInviteInvalid
+	}
 	month := time.Unix(completed, 0).In(inviteBusinessLocation).Format("2006-01")
-	receipt := InviteCommissionAllocation{TradeNo: trade, InviteeUserID: inviteeID, Month: month}
+	receipt := InviteCommissionAllocation{TradeNo: trade, InviteeUserID: inviteeID, Month: month, PaidCents: paidCNY.Mul(decimal.NewFromInt(100)).Floor().IntPart()}
 	inserted := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&receipt)
 	if inserted.Error != nil {
 		return inserted.Error
@@ -66,12 +71,31 @@ func enqueueTierBasedCommission(tx *gorm.DB, trade string, inviteeID int, comple
 		return nil
 	}
 	var user User
-	if err := tx.First(&user, inviteeID).Error; err != nil {
+	if err := inviteLock(tx).First(&user, inviteeID).Error; err != nil {
 		return err
 	}
 	if user.InviterId <= 0 || user.InviterId == user.Id {
 		return nil
 	}
+	risk, err := invitePaymentRiskTx(tx, &user, trade, receipt.PaidCents)
+	if err != nil {
+		return err
+	}
+	excluded := min(base, max(int64(0), user.InviteTransferredQuota-user.InviteExcludedQuota))
+	if excluded > 0 {
+		if e := tx.Model(&InviteCommissionAllocation{}).Where("trade_no = ?", trade).Update("excluded_quota", excluded).Error; e != nil {
+			return e
+		}
+		if e := tx.Model(&User{}).Where("id = ?", user.Id).UpdateColumn("invite_excluded_quota", gorm.Expr("invite_excluded_quota + ?", excluded)).Error; e != nil {
+			return e
+		}
+		paidCNY = paidCNY.Mul(decimal.NewFromInt(base - excluded)).Div(decimal.NewFromInt(base))
+		base -= excluded
+	}
+	if base <= 0 {
+		return nil
+	}
+	validity := inviteValidity(&user, paidCNY.Mul(decimal.NewFromInt(100)).Floor().IntPart(), completed)
 	var first User
 	if err := tx.First(&first, user.InviterId).Error; err != nil {
 		return err
@@ -101,10 +125,29 @@ func enqueueTierBasedCommission(tx *gorm.DB, trade string, inviteeID int, comple
 			directInvitee = inviteeID
 		}
 		row := InviteCommissionLedger{TopupTradeNo: trade, InviteeUserId: inviteeID, InviterUserId: receiver, DirectInviteeUserId: directInvitee, CommissionLevel: level, BaseQuota: amountBase, CommissionRate: rate, CommissionQuota: quota, InviterTierSnapshot: snapshot, InviteeTierSnapshot: tier, AmountVersion: 2, BizDate: time.Unix(completed, 0).In(inviteBusinessLocation).Format("2006-01-02"), Status: InviteCommissionStatusPending, CreatedAt: common.GetTimestamp()}
+		row.SourceTradeNo = trade
+		row.ValidityState = validity
+		row.PaidCents = paidCNY.Mul(decimal.NewFromInt(100)).Floor().IntPart()
+		row.ExcludedBaseQuota = excluded
+		scheduleInviteLedger(&row, completed)
+		if validity == "pending_time" || validity == "pending_usage" {
+			row.NextRetryAt = user.CreatedAt + 7*86400
+		}
+		if risk != "" {
+			row.Status = InviteCommissionStatusSkipped
+			row.RiskReason = risk
+		}
+		if validity == "invalid" && risk == "" {
+			row.Status = InviteCommissionStatusSkipped
+			row.RiskReason = "invalid_consumption"
+		}
 		return tx.Create(&row).Error
 	}
 	if err := appendRow(first.Id, 1, tier, s.FirstLevelRates[tier], base); err != nil {
 		return err
+	}
+	if validity == "invalid" || risk != "" {
+		return nil
 	}
 	bonusReserve := 0.0
 	if tier == 3 || tier == 5 {
@@ -246,6 +289,11 @@ func reverseInviteTierAllocationTx(tx *gorm.DB, trade string) error {
 	}
 	if receipt.Reversed {
 		return nil
+	}
+	if receipt.ExcludedQuota > 0 {
+		if e := tx.Model(&User{}).Where("id = ? AND invite_excluded_quota >= ?", receipt.InviteeUserID, receipt.ExcludedQuota).UpdateColumn("invite_excluded_quota", gorm.Expr("invite_excluded_quota - ?", receipt.ExcludedQuota)).Error; e != nil {
+			return e
+		}
 	}
 	if receipt.SecondUserID > 0 && receipt.BaseCents > 0 {
 		result := tx.Model(&SecondLevelMonthlyUsage{}).Where("inviter_user_id = ? AND invitee_user_id = ? AND month = ? AND used_base_cents >= ?", receipt.SecondUserID, receipt.InviteeUserID, receipt.Month, receipt.BaseCents).Updates(map[string]any{"used_base_cents": gorm.Expr("used_base_cents - ?", receipt.BaseCents), "used_quota_amount": gorm.Expr("used_quota_amount - ?", receipt.BaseQuota)})

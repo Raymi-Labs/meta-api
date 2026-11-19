@@ -5,6 +5,10 @@ package model
 // 记录人工档位（专员/成员/部长）及管理员覆盖档位。
 // 业绩档（普通/A/B）由查询逻辑实时计算，不存储。
 type PromoterProfile struct {
+	OverrideActive   bool `json:"override_active" gorm:"not null;default:false"`
+	Cleared          bool `json:"cleared" gorm:"not null;default:false"`
+	ExemptAssessment bool `json:"exempt_assessment" gorm:"not null;default:false"`
+
 	Id     int `json:"id"`
 	UserId int `json:"user_id" gorm:"uniqueIndex;not null"`
 
@@ -73,13 +77,14 @@ type Department struct {
 
 // DepartmentMember 部门成员表。
 type DepartmentMember struct {
-	Id           int   `json:"id"`
-	DepartmentId int   `json:"department_id" gorm:"not null;index"`
-	UserId       int   `json:"user_id" gorm:"not null;uniqueIndex:idx_department_member_user"` // 成员 user_id
-	JoinedAt     int64 `json:"joined_at" gorm:"not null"`
-	LeftAt       int64 `json:"left_at" gorm:"not null;default:0"` // 0=在职，非 0=已退出
-	CreatedAt    int64 `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt    int64 `json:"updated_at" gorm:"autoUpdateTime"`
+	LeaveEffectiveAt int64 `json:"leave_effective_at" gorm:"not null;default:0"`
+	Id               int   `json:"id"`
+	DepartmentId     int   `json:"department_id" gorm:"not null;index"`
+	UserId           int   `json:"user_id" gorm:"not null;uniqueIndex:idx_department_member_user"` // 成员 user_id
+	JoinedAt         int64 `json:"joined_at" gorm:"not null"`
+	LeftAt           int64 `json:"left_at" gorm:"not null;default:0"` // 0=在职，非 0=已退出
+	CreatedAt        int64 `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt        int64 `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 // InviteCommissionStatement 返佣周期账单表。
@@ -99,7 +104,7 @@ type InviteCommissionStatement struct {
 	IssuedAt   int64 `json:"issued_at" gorm:"not null;default:0"`
 	ReleasedAt int64 `json:"released_at" gorm:"not null;default:0"`
 
-	// 应发/实发/扣减/结转欠款金额（bigint，人民币分或内部额度，待确认单位）
+	// 应发/实发/扣减/结转欠款金额（bigint，内部 quota）
 	DueAmount       int64 `json:"due_amount" gorm:"type:bigint;not null;default:0"`
 	PaidAmount      int64 `json:"paid_amount" gorm:"type:bigint;not null;default:0"`
 	DeductedAmount  int64 `json:"deducted_amount" gorm:"type:bigint;not null;default:0"`

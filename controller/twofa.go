@@ -477,11 +477,7 @@ func Verify2FALogin(c *gin.Context) {
 		return
 	}
 
-	// 2FA验证成功，清理pending会话信息并完成登录
-	session.Delete("pending_username")
-	session.Delete("pending_user_id")
-	session.Save()
-
+	// setupLogin clears pending state and persists exactly one final session cookie.
 	setupLogin(user, c)
 }
 

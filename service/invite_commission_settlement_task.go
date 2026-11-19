@@ -58,12 +58,10 @@ func runInviteCommissionSettlementOnce() {
 	}
 	defer inviteCommissionSettlementRunning.Store(false)
 
-	if !common.InviterCommissionEnabled {
-		return
-	}
+	// Pending snapshots remain payable after either configuration switch is disabled.
 
 	// 包含当天待办；旧pending保留原业务日及日限额，不重复发放已结算记录。
-	targetDate := time.Now().Format("2006-01-02")
+	targetDate := model.InviteBusinessTime(time.Now()).Format("2006-01-02")
 
 	totalSettled := 0
 	totalSkipped := 0

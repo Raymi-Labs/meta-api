@@ -18,7 +18,7 @@ func setupTierTest(t *testing.T) {
 	settings := original
 	settings.Enabled = true
 	require.NoError(t, common.SetInviteTierSettings(settings))
-	require.NoError(t, DB.AutoMigrate(&PromoterProfile{}, &InviteeQualification{}, &InviteCommissionAllocation{}, &QualifiedBonusOnceGuard{}, &SecondLevelMonthlyUsage{}, &Department{}, &DepartmentMember{}))
+	require.NoError(t, DB.AutoMigrate(&PromoterProfile{}, &InviteeQualification{}, &InviteCommissionAllocation{}, &QualifiedBonusOnceGuard{}, &SecondLevelMonthlyUsage{}, &Department{}, &DepartmentMember{}, &PromoterIdentity{}, &InviteRiskSignal{}, &InviteSubject{}, &PaymentRiskCase{}, &InviteCommissionStatement{}, &InviteCommissionDebt{}, &InvitePoolMonth{}, &InvitePoolCarry{}, &PromoterApplication{}, &InviteEarlyPayout{}, &InviteRebind{}, &InviteAdminAction{}))
 }
 func TestInviteTierMatrixAndReplay(t *testing.T) {
 	for x := 0; x < 6; x++ {
@@ -168,7 +168,7 @@ func TestInviteTierCrossDatabase(t *testing.T) {
 			common.UsingMySQL = dialect == "mysql"
 			common.UsingPostgreSQL = dialect == "postgres"
 			initCol()
-			require.NoError(t, db.AutoMigrate(&User{}, &InviteCommissionLedger{}, &PromoterProfile{}, &InviteeQualification{}, &InviteCommissionAllocation{}, &QualifiedBonusOnceGuard{}, &SecondLevelMonthlyUsage{}, &Department{}, &DepartmentMember{}))
+			require.NoError(t, db.AutoMigrate(&User{}, &InviteCommissionLedger{}, &PromoterProfile{}, &InviteeQualification{}, &InviteCommissionAllocation{}, &QualifiedBonusOnceGuard{}, &SecondLevelMonthlyUsage{}, &Department{}, &DepartmentMember{}, &PromoterIdentity{}, &InviteRiskSignal{}, &InviteSubject{}, &PaymentRiskCase{}, &InviteCommissionStatement{}, &InviteCommissionDebt{}, &InvitePoolMonth{}, &InvitePoolCarry{}, &PromoterApplication{}, &InviteEarlyPayout{}, &InviteRebind{}, &InviteAdminAction{}))
 			require.NoError(t, db.Exec("CREATE UNIQUE INDEX idx_invite_commission_trade_inviter ON invite_commission_ledgers (topup_trade_no, inviter_user_id)").Error)
 			require.NoError(t, migrateInviteCommissionUniqueIndex(db))
 			require.NoError(t, migrateInviteCommissionUniqueIndex(db))
@@ -210,6 +210,50 @@ func TestInviteTierCrossDatabase(t *testing.T) {
 			require.NoError(t, db.First(&usage).Error)
 			require.Equal(t, int64(20000), usage.UsedBaseCents)
 
+			require.NoError(t, db.AutoMigrate(&TopUp{}, &InviteCommissionDailyCapState{}))
+			owner := createInviteCommissionTestUser(t, "cross_settle_owner", 0)
+			_, order := tierPayment(t, owner, "cross_settle_buyer")
+			paymentRows := tierRows(t, order.TradeNo)
+			now := paymentRows[0].NextRetryAt + 1
+			require.NoError(t, IssueInviteStatements(now))
+			for i := 0; i < 8; i++ {
+				go func() { _, _, e := settleTierCommission(paymentRows[0].Id, 0, now); errors <- e }()
+			}
+			for i := 0; i < 8; i++ {
+				require.NoError(t, <-errors)
+			}
+			var paid User
+			require.NoError(t, db.First(&paid, owner.Id).Error)
+			require.Equal(t, paymentRows[0].CommissionQuota, paid.AffQuota)
+			for i := 0; i < 8; i++ {
+				go func(i int) {
+					if i%2 == 0 {
+						_, _, e := settleTierCommission(paymentRows[1].Id, 0, now)
+						errors <- e
+						return
+					}
+					errors <- db.Transaction(func(tx *gorm.DB) error {
+						var source TopUp
+						if e := inviteLock(tx).First(&source, order.Id).Error; e != nil {
+							return e
+						}
+						if e := tx.Model(&source).Update("status", "refunded").Error; e != nil {
+							return e
+						}
+						_, e := reverseInviteCommissionsByTradeNoTx(tx, order.TradeNo)
+						return e
+					})
+				}(i)
+			}
+			for i := 0; i < 8; i++ {
+				require.NoError(t, <-errors)
+			}
+			require.NoError(t, db.First(&paid, owner.Id).Error)
+			require.Zero(t, paid.AffQuota)
+			var count int64
+			require.NoError(t, db.Model(&InviteCommissionLedger{}).Where("source_trade_no = ? AND status <> ?", order.TradeNo, InviteCommissionStatusSkipped).Count(&count).Error)
+			require.Zero(t, count)
+
 		})
 	}
 }
@@ -236,4 +280,16 @@ func TestInviteTierOptionPatchPersistsFullSnapshot(t *testing.T) {
 	var after Option
 	require.NoError(t, DB.First(&after, "key = ?", "InviteTierSettings").Error)
 	require.Equal(t, stored.Value, after.Value)
+}
+
+func TestInviteTierCentsOverflow(t *testing.T) {
+	setupTierTest(t)
+	require.ErrorIs(t, enqueueTierBasedCommission(DB, "overflow-cents", 1, common.GetTimestamp(), 1, decimal.NewFromInt(1<<63-1)), ErrInviteInvalid)
+}
+
+func TestInviteTierEnableRequiresPersistentSecret(t *testing.T) {
+	setupTierTest(t)
+	t.Setenv("CRYPTO_SECRET", "")
+	t.Setenv("SESSION_SECRET", "")
+	require.ErrorContains(t, UpdateOption("InviteTierSettings", `{"enabled":true,"activated_at":1}`), "invite.crypto_required")
 }

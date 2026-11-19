@@ -3,6 +3,8 @@ package common
 import "testing"
 
 func TestInviteTierPartialSettings(t *testing.T) {
+	t.Setenv("CRYPTO_SECRET", "")
+	t.Setenv("SESSION_SECRET", "")
 	original := GetInviteTierSettings()
 	for _, raw := range []string{`{"enabled":false}`, `{"leader_slot_rates":[0.03,0.03,0.02,0.02]}`} {
 		got, err := ParseInviteTierSettings(raw)
@@ -13,9 +15,17 @@ func TestInviteTierPartialSettings(t *testing.T) {
 			t.Fatal("partial patch erased rates")
 		}
 	}
-	for _, raw := range []string{`{"enabled":true}`, `null`, `[]`, `{"first_level_rates":[0.1]}`, `{"second_level_matrix":[[0.1]]}`, `{"leader_slot_rates":null}`, `{"leader_slot_rates":[0.2,0.2,0.2,0.2]}`} {
+	for _, raw := range []string{`null`, `[]`, `{"first_level_rates":[0.1]}`, `{"second_level_matrix":[[0.1]]}`, `{"leader_slot_rates":null}`, `{"leader_slot_rates":[0.2,0.2,0.2,0.2]}`} {
 		if _, err := ParseInviteTierSettings(raw); err == nil {
 			t.Fatalf("accepted invalid settings %s", raw)
 		}
+	}
+}
+
+func TestInviteTierLoadPreservesActivationWithoutSecret(t *testing.T) {
+	t.Setenv("CRYPTO_SECRET", "")
+	t.Setenv("SESSION_SECRET", "")
+	if _, e := ParseInviteTierSettings(`{"enabled":true,"activated_at":1}`); e != nil {
+		t.Fatal(e)
 	}
 }

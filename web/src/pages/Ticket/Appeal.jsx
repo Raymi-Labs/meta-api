@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -33,6 +33,7 @@ import {
   Modal,
   Form,
 } from '@douyinfe/semi-ui';
+import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
 import TicketDetail from './TicketDetail';
@@ -162,7 +163,9 @@ function Appeal() {
             description={
               <div>
                 <Paragraph>
-                  {t('您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。')}
+                  {t(
+                    '您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。',
+                  )}
                 </Paragraph>
                 <Paragraph>
                   {t('申诉会话有效期')}: {expiresIn} {t('分钟')}
@@ -209,10 +212,7 @@ function Appeal() {
             )}
 
             {tickets.length === 0 ? (
-              <Empty
-                image={<Empty.IllustrationNoContent />}
-                description={t('暂无申诉工单')}
-              />
+              <Empty description={t('暂无申诉工单')} />
             ) : (
               <List
                 dataSource={tickets}
@@ -243,7 +243,7 @@ function Appeal() {
                         </div>
                         <Space>
                           <Tag color={STATUS_COLORS[ticket.status]}>
-                            {STATUS_LABELS[ticket.status] || ticket.status}
+                            {t(STATUS_LABELS[ticket.status] || ticket.status)}
                           </Tag>
                           <Text type='tertiary' size='small'>
                             {new Date(ticket.created_at * 1000).toLocaleString(
@@ -263,7 +263,8 @@ function Appeal() {
         <CreateAppealModal
           visible={createModalVisible}
           onClose={() => setCreateModalVisible(false)}
-          onSuccess={() => {
+          onSuccess={(id) => {
+            setSelectedTicketId(id);
             setCreateModalVisible(false);
             loadTickets();
           }}
@@ -283,20 +284,20 @@ function Appeal() {
 
 function CreateAppealModal({ visible, onClose, onSuccess }) {
   const { t } = useTranslation();
-  const [form] = Form.useForm();
+  const form = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validate();
+      const values = await form.current?.validate();
       setSubmitting(true);
       const res = await API.post('/api/appeal/tickets', values, {
         skipErrorHandler: true,
       });
       if (res.data.success) {
         showSuccess(t('申诉工单创建成功'));
-        form.reset();
-        onSuccess();
+        form.current?.reset();
+        onSuccess(res.data.data.id);
       } else {
         showError(res.data.message);
       }
@@ -316,7 +317,13 @@ function CreateAppealModal({ visible, onClose, onSuccess }) {
       confirmLoading={submitting}
       width={600}
     >
-      <Form form={form} labelPosition='left' labelWidth={100}>
+      <Form
+        getFormApi={(api) => {
+          form.current = api;
+        }}
+        labelPosition='left'
+        labelWidth={100}
+      >
         <Form.Input
           field='subject'
           label={t('标题')}
@@ -344,7 +351,7 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [replyForm] = Form.useForm();
+  const replyForm = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loadTicketDetail = async () => {
@@ -381,14 +388,18 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
 
   const handleReply = async () => {
     try {
-      const values = await replyForm.validate();
+      const values = await replyForm.current?.validate();
       setSubmitting(true);
-      const res = await API.post(`/api/appeal/tickets/${ticketId}/reply`, values, {
-        skipErrorHandler: true,
-      });
+      const res = await API.post(
+        `/api/appeal/tickets/${ticketId}/reply`,
+        values,
+        {
+          skipErrorHandler: true,
+        },
+      );
       if (res.data.success) {
         showSuccess(t('回复成功'));
-        replyForm.reset();
+        replyForm.current?.reset();
         await loadTicketDetail();
         onUpdate && onUpdate();
       } else {
@@ -447,7 +458,7 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
               {ticket.subject}
             </Title>
             <Tag color={STATUS_COLORS[ticket.status]}>
-              {STATUS_LABELS[ticket.status] || ticket.status}
+              {t(STATUS_LABELS[ticket.status] || ticket.status)}
             </Tag>
           </div>
           <Text type='tertiary'>
@@ -456,6 +467,11 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
           </Text>
         </div>
 
+        <TicketAttachments
+          ticketId={ticketId}
+          mode='appeal'
+          closed={ticket.status === 'closed'}
+        />
         {/* 消息列表 - 简化版 */}
         <div style={{ marginBottom: 24 }}>
           {messages.map((msg, idx) => (
@@ -489,7 +505,11 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
         {/* 回复区域 */}
         {canReply && (
           <>
-            <Form form={replyForm}>
+            <Form
+              getFormApi={(api) => {
+                replyForm.current = api;
+              }}
+            >
               <Form.TextArea
                 field='body'
                 label={t('回复内容')}

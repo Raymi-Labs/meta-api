@@ -19,6 +19,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var ErrUserDisabled = errors.New("用户已被封禁")
+
 const UserNameMaxLength = 20
 const UserRegisterSourceMaxLength = 64
 const UserAffCodeLength = 12
@@ -64,6 +66,9 @@ func NormalizeUserRegisterSource(source string) string {
 // User if you add sensitive fields, don't forget to clean them in setupLogin function.
 // Otherwise, the sensitive information will be saved on local storage in plain text!
 type User struct {
+	InviteTransferredQuota int64 `json:"-" gorm:"type:bigint;not null;default:0"`
+	InviteExcludedQuota    int64 `json:"-" gorm:"type:bigint;not null;default:0"`
+
 	Id                   int            `json:"id"`
 	Username             string         `json:"username" gorm:"unique;index" validate:"max=20"`
 	Password             string         `json:"password" gorm:"not null;" validate:"min=8,max=20"`
@@ -90,7 +95,7 @@ type User struct {
 	BalanceTrendDisabled bool           `json:"balance_trend_disabled" gorm:"default:false;column:balance_trend_disabled;index"`
 	AffCode              string         `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
 	AffCount             int            `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
-	AffQuota             int64          `json:"aff_quota" gorm:"type:bigint;default:0;column:aff_quota"`        // 邀请剩余额度
+	AffQuota             int64          `json:"aff_quota" gorm:"type:bigint;default:0;column:aff_quota"`           // 邀请剩余额度
 	AffHistoryQuota      int64          `json:"aff_history_quota" gorm:"type:bigint;default:0;column:aff_history"` // 邀请历史额度
 	InviterId            int            `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
 	DeletedAt            gorm.DeletedAt `gorm:"index"`
@@ -1178,8 +1183,8 @@ func GetUserInviteRechargeCommissions(userID int, startIdx int, pageSize int) ([
 	// 一级按实际付款用户汇总；二级按当前受益人的直接下级分支汇总。
 	// 这样 A 只能看到自己已知的直接下级 B 及该分支产生的返佣，
 	// 不会新增暴露 B 的下级 C 的逐人注册日期和充值行为。
-	sourceUserExpression := "CASE WHEN ledgers.commission_level = 2 AND ledgers.direct_invitee_user_id > 0 THEN ledgers.direct_invitee_user_id ELSE ledgers.invitee_user_id END"
-	commissionLevelExpression := "CASE WHEN ledgers.commission_level = 2 THEN 2 ELSE 1 END"
+	sourceUserExpression := "CASE WHEN ledgers.commission_level IN (2,4,5) AND ledgers.direct_invitee_user_id > 0 THEN ledgers.direct_invitee_user_id ELSE ledgers.invitee_user_id END"
+	commissionLevelExpression := "ledgers.commission_level"
 	groupedSources := DB.Table("invite_commission_ledgers AS ledgers").
 		Select(sourceUserExpression+" AS source_user_id, "+commissionLevelExpression+" AS commission_level").
 		Where("ledgers.inviter_user_id = ? AND ledgers.status = ?", userID, InviteCommissionStatusSettled).
@@ -1485,6 +1490,12 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 		return errors.New("邀请额度不足！")
 	}
 
+	if common.InviteTierLifecycleActive() {
+		if err := checkInvitePayoutEligibility(tx, user.Id); err != nil {
+			return err
+		}
+	}
+	user.InviteTransferredQuota += int64(quota)
 	// 更新用户额度
 	user.AffQuota -= int64(quota)
 	user.TransferableQuota = EffectiveTransferableQuota(user.Quota, user.TransferableQuota)
@@ -1812,8 +1823,11 @@ func (user *User) ValidateAndFill() (err error) {
 	// find buy username or email
 	DB.Where("username = ? OR email = ?", username, username).First(user)
 	okay := common.ValidatePasswordAndHash(password, user.Password)
-	if !okay || user.Status != common.UserStatusEnabled {
+	if !okay {
 		return errors.New("用户名或密码错误，或用户已被封禁")
+	}
+	if user.Status != common.UserStatusEnabled {
+		return ErrUserDisabled
 	}
 	return nil
 }

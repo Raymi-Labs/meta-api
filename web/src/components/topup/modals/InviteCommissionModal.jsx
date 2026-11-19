@@ -17,13 +17,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Modal, Space, Tag, Typography } from '@douyinfe/semi-ui';
+import {
+  Button,
+  Card,
+  Modal,
+  Space,
+  Tag,
+  Typography,
+  Tabs,
+  TabPane,
+} from '@douyinfe/semi-ui';
 import {
   API,
   getPaymentCurrencySymbol,
   renderQuota,
   showError,
 } from '../../../helpers';
+import InviteTierLedgerTabs from '../../common/invitation/InviteTierLedgerTabs';
 import CardTable from '../../common/ui/CardTable';
 import { useVisibleRefresh } from '../../../hooks/common/useVisibleRefresh';
 
@@ -128,7 +138,17 @@ const InviteCommissionModal = ({ visible, onCancel, t }) => {
         dataIndex: 'commission_level',
         render: (level) => (
           <Tag color={Number(level) === 2 ? 'violet' : 'blue'} shape='circle'>
-            {Number(level) === 2 ? t('二级') : t('一级')}
+            {t(
+              [
+                '',
+                '一级',
+                '二级',
+                '达标奖金',
+                '部门分成',
+                '成员的部长位',
+                '注册奖励',
+              ][Number(level)] || '—',
+            )}
           </Tag>
         ),
       },
@@ -164,59 +184,67 @@ const InviteCommissionModal = ({ visible, onCancel, t }) => {
       footer={null}
       width='min(860px, calc(100vw - 24px))'
       maskClosable={false}
+      bodyStyle={{ maxHeight: '75vh', overflowY: 'auto' }}
     >
-      <div className='space-y-3'>
-        {refreshError && (
-          <Space>
-            <Text type='danger'>{t('加载失败')}</Text>
-            <Button onClick={() => loadData(page, pageSize)}>
-              {t('重试')}
-            </Button>
-          </Space>
-        )}
-        <Card className='!rounded-2xl shadow-sm border-0'>
-          <Space wrap>
-            <Tag color='white' shape='circle'>
-              {t('返佣来源项数')}：{inviteesTotal}
-            </Tag>
-            <Tag color='white' shape='circle'>
-              {t('充值返佣汇总')}：
-              {renderQuota(data?.summary?.recharge_total_quota || 0)}
-            </Tag>
-          </Space>
-          <div className='mt-2'>
-            <Text type='tertiary' size='small'>
-              {t(
-                '一级按匿名用户、二级按直接下级分支汇总已结算返佣；不展示下级的下级账号和逐人注册信息，支付成功后自动结算，页面定期刷新。',
-              )}
-            </Text>
-          </div>
-        </Card>
+      <Tabs defaultActiveKey='period'>
+        <TabPane tab={t('周期账单与明细')} itemKey='period'>
+          <InviteTierLedgerTabs visible={visible} />
+        </TabPane>
+        <TabPane tab={t('历史汇总')} itemKey='history'>
+          <div className='space-y-3'>
+            {refreshError && (
+              <Space>
+                <Text type='danger'>{t('加载失败')}</Text>
+                <Button onClick={() => loadData(page, pageSize)}>
+                  {t('重试')}
+                </Button>
+              </Space>
+            )}
+            <Card className='!rounded-2xl shadow-sm border-0'>
+              <Space wrap>
+                <Tag color='white' shape='circle'>
+                  {t('返佣来源项数')}：{inviteesTotal}
+                </Tag>
+                <Tag color='white' shape='circle'>
+                  {t('充值返佣汇总')}：
+                  {renderQuota(data?.summary?.recharge_total_quota || 0)}
+                </Tag>
+              </Space>
+              <div className='mt-2'>
+                <Text type='tertiary' size='small'>
+                  {t(
+                    '一级按匿名用户、团队及二级按分支汇总已结算收益；周期收益请查看账单，不展示下级的下级账号。',
+                  )}
+                </Text>
+              </div>
+            </Card>
 
-        <CardTable
-          columns={columns}
-          dataSource={invitees}
-          loading={loading}
-          rowKey='key'
-          pagination={{
-            currentPage: page,
-            pageSize: pageSize,
-            total: inviteesTotal,
-            pageSizeOpts: [10, 20, 50, 100],
-            showSizeChanger: true,
-            onPageChange: (nextPage) => {
-              setPage(nextPage);
-              loadData(nextPage, pageSize);
-            },
-            onPageSizeChange: (nextPageSize) => {
-              setPage(1);
-              setPageSize(nextPageSize);
-              loadData(1, nextPageSize);
-            },
-          }}
-          hidePagination={false}
-        />
-      </div>
+            <CardTable
+              columns={columns}
+              dataSource={invitees}
+              loading={loading}
+              rowKey='key'
+              pagination={{
+                currentPage: page,
+                pageSize: pageSize,
+                total: inviteesTotal,
+                pageSizeOpts: [10, 20, 50, 100],
+                showSizeChanger: true,
+                onPageChange: (nextPage) => {
+                  setPage(nextPage);
+                  loadData(nextPage, pageSize);
+                },
+                onPageSizeChange: (nextPageSize) => {
+                  setPage(1);
+                  setPageSize(nextPageSize);
+                  loadData(1, nextPageSize);
+                },
+              }}
+              hidePagination={false}
+            />
+          </div>
+        </TabPane>
+      </Tabs>
     </Modal>
   );
 };

@@ -22,6 +22,7 @@ import { Input, InputNumber, Modal, Typography } from '@douyinfe/semi-ui';
 import { Wallet } from 'lucide-react';
 import { getCurrencyConfig } from '../../../helpers';
 import {
+  paymentCentsToQuota,
   displayAmountToQuota,
   quotaToDisplayAmount,
 } from '../../../helpers/quota';
@@ -45,6 +46,7 @@ const formatPaymentAmount = (value) => `¥${Number(value || 0).toFixed(2)}`;
 
 const WithdrawalModal = ({
   t,
+  tierStatus,
   visible,
   onOk,
   onCancel,
@@ -60,11 +62,18 @@ const WithdrawalModal = ({
   alipayName,
   setAlipayName,
 }) => {
+  const minimumCNY = tierStatus?.enabled
+    ? tierStatus.minimum_withdrawal_cents / 100
+    : AFF_WITHDRAWAL_MINIMUM_PAYMENT_CNY;
+  const minimumQuota = tierStatus?.enabled
+    ? (paymentCentsToQuota(tierStatus.minimum_withdrawal_cents, topUpPrice) ??
+      Infinity)
+    : AFF_WITHDRAWAL_MINIMUM_QUOTA;
   const currencyConfig = getCurrencyConfig();
   const isTokenDisplay = currencyConfig.type === 'TOKENS';
   const minWithdrawalAmount = isTokenDisplay
-    ? AFF_WITHDRAWAL_MINIMUM_QUOTA
-    : roundCurrencyAmountUp(quotaToDisplayAmount(AFF_WITHDRAWAL_MINIMUM_QUOTA));
+    ? minimumQuota
+    : roundCurrencyAmountUp(quotaToDisplayAmount(minimumQuota));
   const maxWithdrawalAmount = isTokenDisplay
     ? userState?.user?.aff_quota || 0
     : roundCurrencyAmountDown(
@@ -92,8 +101,7 @@ const WithdrawalModal = ({
     );
   }, [estimatedQuota, getQuotaPerUnit, topUpPrice]);
   const paymentBelowMinimum =
-    estimatedQuota >= AFF_WITHDRAWAL_MINIMUM_QUOTA &&
-    estimatedPaymentAmount < AFF_WITHDRAWAL_MINIMUM_PAYMENT_CNY;
+    estimatedQuota >= minimumQuota && estimatedPaymentAmount < minimumCNY;
 
   return (
     <Modal
@@ -127,8 +135,8 @@ const WithdrawalModal = ({
             {(isTokenDisplay ? t('提现额度') : t('提现金额')) +
               ' · ' +
               t('最低') +
-              renderQuota(AFF_WITHDRAWAL_MINIMUM_QUOTA) +
-              ` / ¥${AFF_WITHDRAWAL_MINIMUM_PAYMENT_CNY.toFixed(2)}`}
+              renderQuota(minimumQuota) +
+              ` / ¥${minimumCNY.toFixed(2)}`}
           </Typography.Text>
           <InputNumber
             min={minWithdrawalAmount}

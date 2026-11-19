@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
@@ -28,6 +29,10 @@ func CreateAffWithdrawal(c *gin.Context) {
 
 	withdrawal, err := model.CreateAffWithdrawal(c.GetInt("id"), req.Quota, req.AlipayAccount, req.AlipayName)
 	if err != nil {
+		if errors.Is(err, model.ErrInviteMinimum) || errors.Is(err, model.ErrInviteIdentity) || errors.Is(err, model.ErrInviteFrozen) {
+			inviteError(c, err)
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -42,6 +47,10 @@ func GetUserAffWithdrawals(c *gin.Context) {
 
 	withdrawals, total, err := model.GetUserAffWithdrawalsByParams(c.GetInt("id"), params, pageInfo)
 	if err != nil {
+		if errors.Is(err, model.ErrInviteMinimum) || errors.Is(err, model.ErrInviteIdentity) || errors.Is(err, model.ErrInviteFrozen) {
+			inviteError(c, err)
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -59,6 +68,10 @@ func GetAllAffWithdrawals(c *gin.Context) {
 
 	withdrawals, total, err := model.GetAllAffWithdrawalsByParams(params, pageInfo)
 	if err != nil {
+		if errors.Is(err, model.ErrInviteMinimum) || errors.Is(err, model.ErrInviteIdentity) || errors.Is(err, model.ErrInviteFrozen) {
+			inviteError(c, err)
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -95,6 +108,10 @@ func reviewAffWithdrawal(c *gin.Context, targetStatus string) {
 		withdrawal, err = model.RejectAffWithdrawal(id, c.GetInt("id"), req.AdminRemark)
 	}
 	if err != nil {
+		if errors.Is(err, model.ErrInviteMinimum) || errors.Is(err, model.ErrInviteIdentity) || errors.Is(err, model.ErrInviteFrozen) {
+			inviteError(c, err)
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}

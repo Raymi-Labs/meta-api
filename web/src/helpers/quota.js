@@ -58,3 +58,10 @@ export const renderCurrencyQuota = (quota, digits = 2) => {
   const { symbol } = getCurrencyConfig();
   return `${symbol}${quotaToCurrencyAmount(quota).toFixed(digits)}`;
 };
+
+// Payment minimum is CNY, independent of the user's display currency.
+export const paymentCentsToQuota = (cents, price) => {
+ const money = Number(cents), unitPrice = Number(price);
+ if (!Number.isFinite(money) || money < 0 || !Number.isFinite(unitPrice) || unitPrice <= 0) return null;
+ return Math.max(1, Math.ceil(money / 100 / unitPrice * getQuotaPerUnit()));
+};

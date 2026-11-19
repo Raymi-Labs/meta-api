@@ -1,5 +1,7 @@
 # 功能地图
 
+工单与封禁申诉（2026-11-19）：[用户工单](../web/src/pages/Ticket/index.jsx)、[工单管理](../web/src/pages/Ticket/TicketAdmin.jsx)、[申诉页](../web/src/pages/Ticket/Appeal.jsx) → [工单API](../router/ticket-router.go) → [控制器](../controller/ticket.go)/[模型](../model/ticket.go)。普通及管理接口复查账号状态与角色，申诉在完整认证后签发15分钟独立会话；5MB附件、管理员下载、内部消息隔离；Redis同秒限流、状态筛选、未读入口与主节点7天自动流转。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-18-support-tickets.md)。
+
 [精确型号推理档位](../.agents/notes/implemented/feature/2026-11-18-platform-reasoning-profiles.md)：复用管理员模型编辑；`/api/user/models?include=reasoning_profiles` 仅在已过滤账号目录内返回档位和默认值。未请求时保持旧响应，不改变转发或结算。
 
 企业资金可靠性（2026-11-17，本地实现）：[平台钱包](../web/src/pages/EnterpriseAdmin/WalletModal.jsx)、[成员额度](../web/src/pages/EnterpriseConsole/AmountModal.jsx)、[人工预留](../web/src/pages/EnterpriseAdmin/Reservations.jsx) → 原企业权限路由 → [controller](../controller/enterprise.go) → [持久操作回执](../model/enterprise_operation.go)。入账/调账/分配/回收/人工结算要求Idempotency-Key，同键同参取原结果；资金/审计/回执同事务。回执查询复核当前主库身份和成员代次，金额为精确整数；全部回收绑定原可用额。浏览器保留待确认原操作，重开先查询，退出/认证失效清草稿；窄屏保留可达主操作。发布工具增加enterprise_operations_v1能力屏障，回执表存在后禁止不兼容回退。SQLite/race/本地组件通过，MySQL/PostgreSQL待CI；不改普通用户生图规则。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-17-enterprise-financial-operations.md)。 预留已离开待对账列表时，当前账号仍有原操作查询入口；首次升级兼容回退不满足时保留旧服务并中止，过渡发布待安排。
@@ -288,4 +290,4 @@ Claude 增量缓存默认开启（2026-11-15）：[渠道编辑](../web/src/comp
 
 | Seedance 2.5 参考照片 | [适配器](../relay/channel/task/doubao/reference_images.go)、[调用说明](channel/seedance-reference-images.md) | 复用视频鉴权、渠道模型映射、出站快照与计费；统一 images/image/input_reference 默认 reference_image，显式模式保留首尾帧 | 仅两个精确 2.5 上游型号；30张参考边界、素材互斥/来源冲突和帧比例提交前校验；内嵌照片解码/大小/像素预算、独立脚本首尾帧参数与安全错误分类覆盖查询/列表；旧型号图片行为不变；2026-11-15线上单图已生成并下载验收，多图/首尾帧仍仅本地验证。见[决策](../.agents/notes/implemented/bug-fix/2026-11-14-seedance-reference-images.md) |
 
-| 邀请档位入池基础（未开放） | [配置](../common/invite_tier.go)、[分配](../model/invite_tier_distribute.go)、[回归](../model/invite_tier_test.go) | 复用支付事务，档位矩阵、部门分配、整数分月基数、一次分配回执、撤销释放、bigint；配置补丁保存完整快照 | `InviteTierReleaseReady=false` 禁止开启；周期账单、注册奖励、欠款和风控等尚未接通，不构成 B–I 完整实现，不发布。见[基础修复边界](../.agents/notes/implemented/bug-fix/2026-11-19-invite-tier-allocation-foundation.md) |
+| 邀请档位、周期账单与风控 | [钱包档位](../web/src/components/common/invitation/InviteTierPanel.jsx)、[管理配置](../web/src/pages/Setting/Operation/SettingsInviteTier.jsx)、[接口](../router/invite-tier-router.go) | 复用支付入池、邀请台账、提现、支付风险单；六档矩阵、周/月账单、提前发放、欠款、部门、实名与改绑 | 默认关闭，启用要求持久化密钥；历史邀请不补发、历史下级不计晋级。集中注册仅记风险、人工冻结；[使用说明](INVITE_TIERS.md)、[验收](reviews/2026-11-19-invite-tier.md) |

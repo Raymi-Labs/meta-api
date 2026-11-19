@@ -21,11 +21,35 @@ func getTierForCommission(tx *gorm.DB, userId int, month string) (int, error) {
 	profile := &PromoterProfile{}
 	profileErr := tx.Where("user_id = ?", userId).First(profile).Error
 	if profileErr == nil {
-		if profile.AdminOverrideTier > 0 && (profile.AdminOverrideExpiresAt == 0 || profile.AdminOverrideExpiresAt > time.Now().Unix()) {
+		if profile.Cleared {
+			return 0, nil
+		}
+		if (profile.OverrideActive || profile.AdminOverrideTier > 0) && (profile.AdminOverrideExpiresAt == 0 || profile.AdminOverrideExpiresAt > time.Now().Unix()) {
 			return profile.AdminOverrideTier, nil
 		}
 		if profile.ManualTier > 0 {
-			return profile.ManualTier, nil
+			if profile.ManualTier != 3 || profile.ExemptAssessment || common.GetInviteTierSettings().CommissionerRetention == 0 {
+				return profile.ManualTier, nil
+			}
+			effectiveMonth := profile.ManualTierEffectiveMonth
+			if effectiveMonth == "" && profile.CreatedAt > 0 {
+				effectiveMonth = InviteBusinessTime(time.Unix(profile.CreatedAt, 0)).Format("2006-01")
+			}
+			effective, e := time.Parse("2006-01", effectiveMonth)
+			current, ce := time.Parse("2006-01", month)
+			if e != nil || ce != nil {
+				return 0, ErrInviteInvalid
+			}
+			if current.Before(effective.AddDate(0, 2, 0)) {
+				return 3, nil
+			}
+			var count int64
+			if e := tx.Model(&InviteeQualification{}).Where("inviter_id = ? AND qualified_month = ? AND status = 1", userId, getPrevMonth(month)).Count(&count).Error; e != nil {
+				return 0, e
+			}
+			if count >= int64(common.GetInviteTierSettings().CommissionerRetention) {
+				return 3, nil
+			}
 		}
 	}
 

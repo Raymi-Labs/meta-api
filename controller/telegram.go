@@ -107,6 +107,10 @@ func TelegramLogin(c *gin.Context) {
 		})
 		return
 	}
+	if user.Status != common.UserStatusEnabled {
+		setupAppealSession(&user, c)
+		return
+	}
 	setupLogin(&user, c)
 }
 

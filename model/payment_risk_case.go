@@ -146,7 +146,12 @@ func normalizePaymentRiskAction(action string) string {
 	}
 }
 
-func UpsertPaymentRiskCase(input PaymentRiskCaseUpsertInput) (*PaymentRiskCase, error) {
+func UpsertPaymentRiskCase(input PaymentRiskCaseUpsertInput) (result *PaymentRiskCase, err error) {
+	err = DB.Transaction(func(tx *gorm.DB) error { var e error; result, e = upsertPaymentRiskCaseTx(tx, input); return e })
+	return
+}
+
+func upsertPaymentRiskCaseTx(tx *gorm.DB, input PaymentRiskCaseUpsertInput) (*PaymentRiskCase, error) {
 	recordType := normalizePaymentRiskRecordType(input.RecordType)
 	tradeNo := strings.TrimSpace(input.TradeNo)
 	if tradeNo == "" {
@@ -154,7 +159,7 @@ func UpsertPaymentRiskCase(input PaymentRiskCaseUpsertInput) (*PaymentRiskCase, 
 	}
 
 	var result PaymentRiskCase
-	err := DB.Transaction(func(tx *gorm.DB) error {
+	err := func() error {
 		var existing PaymentRiskCase
 		lookup := tx.Where("record_type = ? AND trade_no = ?", recordType, tradeNo).Limit(1).Find(&existing)
 		if lookup.Error != nil {
@@ -195,7 +200,7 @@ func UpsertPaymentRiskCase(input PaymentRiskCaseUpsertInput) (*PaymentRiskCase, 
 		}
 		result = existing
 		return nil
-	})
+	}()
 	if err != nil {
 		return nil, err
 	}
