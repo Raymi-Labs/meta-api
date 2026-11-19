@@ -275,6 +275,8 @@ const (
 	MsgOAuthNotEnabled                = "oauth.not_enabled"
 	MsgOAuthUserDeleted               = "oauth.user_deleted"
 	MsgOAuthUserBanned                = "oauth.user_banned"
+	MsgUserAccountBanned              = "user.account_banned"
+	MsgUserAppealAvailable            = "user.appeal_available"
 	MsgOAuthBindSuccess               = "oauth.bind_success"
 	MsgOAuthAlreadyBound              = "oauth.already_bound"
 	MsgOAuthLegacyBindingNotConfirmed = "oauth.legacy_binding_not_confirmed"

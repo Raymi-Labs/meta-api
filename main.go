@@ -153,6 +153,7 @@ func main() {
 	service.StartPulseBenefitLogTask()
 	service.StartQuotaNoticeTask()
 	service.StartEnterpriseMaintenanceTask()
+	service.StartTicketAutoTransitionTask()
 	service.StartAnnouncementEmailTask()
 	service.StartRouteOutageTask()
 
