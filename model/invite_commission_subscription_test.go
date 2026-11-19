@@ -332,8 +332,8 @@ func TestCompleteSubscriptionOrder_EnqueueInviteCommissionByPaidAmount_StackAndI
 	require.NoError(t, DB.Where("topup_trade_no = ? AND inviter_user_id = ?", tradeNo, inviter.Id).First(&ledger).Error)
 
 	expectedBaseQuota := 11000 // floor(88 * 1000 / 8)
-	assert.Equal(t, expectedBaseQuota, ledger.BaseQuota)
-	assert.Equal(t, 1100, ledger.CommissionQuota)
+	assert.Equal(t, int64(expectedBaseQuota), ledger.BaseQuota)
+	assert.Equal(t, int64(1100), ledger.CommissionQuota)
 	assert.Equal(t, InviteCommissionStatusPending, ledger.Status)
 	assert.NotEqual(t, int(plan.TotalAmount), ledger.BaseQuota, "返佣基数必须来自实付金额折算，不能按套餐总额度")
 
@@ -385,9 +385,9 @@ func TestCompleteSubscriptionOrder_EnqueueInviteCommissionTwoLevels(t *testing.T
 	require.NoError(t, DB.Where("topup_trade_no = ?", tradeNo).Order("commission_level asc").Find(&ledgers).Error)
 	require.Len(t, ledgers, 2)
 	assert.Equal(t, parent.Id, ledgers[0].InviterUserId)
-	assert.Equal(t, 1100, ledgers[0].CommissionQuota)
+	assert.Equal(t, int64(1100), ledgers[0].CommissionQuota)
 	assert.Equal(t, grandparent.Id, ledgers[1].InviterUserId)
-	assert.Equal(t, 550, ledgers[1].CommissionQuota)
+	assert.Equal(t, int64(550), ledgers[1].CommissionQuota)
 }
 
 func TestCompleteSubscriptionOrder_EnqueueInviteCommission_Renew(t *testing.T) {
@@ -431,8 +431,8 @@ func TestCompleteSubscriptionOrder_EnqueueInviteCommission_Renew(t *testing.T) {
 
 	var ledger InviteCommissionLedger
 	require.NoError(t, DB.Where("topup_trade_no = ? AND inviter_user_id = ?", tradeNo, inviter.Id).First(&ledger).Error)
-	assert.Equal(t, 11000, ledger.BaseQuota)
-	assert.Equal(t, 1100, ledger.CommissionQuota)
+	assert.Equal(t, int64(11000), ledger.BaseQuota)
+	assert.Equal(t, int64(1100), ledger.CommissionQuota)
 	assert.Equal(t, InviteCommissionStatusPending, ledger.Status)
 
 	issuance := requireIssuedSubscriptionIssuanceBySourceRef(t, SubscriptionIssuanceSourceOrder, tradeNo)

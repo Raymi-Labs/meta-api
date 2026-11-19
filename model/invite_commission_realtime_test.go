@@ -126,7 +126,7 @@ func TestInviteRealtimeSnapshotAndRetryRecovery(t *testing.T) {
 	require.Zero(t, settled)
 	var user User
 	require.NoError(t, DB.First(&user, inviter.Id).Error)
-	require.Equal(t, 20000, user.AffQuota)
+	require.Equal(t, int64(20000), user.AffQuota)
 	require.NoError(t, DB.First(&ledgers[0], ledgers[0].Id).Error)
 	require.Zero(t, ledgers[0].NextRetryAt)
 }
@@ -154,7 +154,7 @@ func TestInviteRealtimeConcurrentSettlementAndReversal(t *testing.T) {
 			require.NoError(t, DB.First(legacy, legacy.Id).Error)
 			require.Zero(t, legacy.AmountVersion)
 			require.Zero(t, legacy.NextRetryAt)
-			require.Equal(t, 25, legacy.CommissionQuota)
+			require.Equal(t, int64(25), legacy.CommissionQuota)
 			oldCap := common.InviterCommissionDailyCap
 			common.InviterCommissionDailyCap = 15000
 			t.Cleanup(func() { common.InviterCommissionDailyCap = oldCap })
@@ -182,10 +182,10 @@ func TestInviteRealtimeConcurrentSettlementAndReversal(t *testing.T) {
 			}
 			var user User
 			require.NoError(t, DB.First(&user, inviter.Id).Error)
-			require.Equal(t, 15000, user.AffQuota)
+			require.Equal(t, int64(15000), user.AffQuota)
 			var cap InviteCommissionDailyCapState
 			require.NoError(t, DB.First(&cap).Error)
-			require.Equal(t, 15000, cap.SettledQuota)
+			require.Equal(t, int64(15000), cap.SettledQuota)
 			// Both orderings must end with no payable commission for a reversed source.
 			for i := 0; i < 12; i++ {
 				order := createInviteCommissionTopUp(t, invitee.Id, fmt.Sprintf("reversal_%d", i), 100, 100, 100, common.TopUpStatusSuccess)
@@ -215,7 +215,7 @@ func TestInviteRealtimeConcurrentSettlementAndReversal(t *testing.T) {
 				require.NoError(t, DB.First(&ledger, ledger.Id).Error)
 				require.Equal(t, InviteCommissionStatusSkipped, ledger.Status)
 				require.NoError(t, DB.First(&user, inviter.Id).Error)
-				require.Equal(t, 15000, user.AffQuota)
+				require.Equal(t, int64(15000), user.AffQuota)
 			}
 		})
 	}
@@ -239,7 +239,7 @@ func TestInviteRealtimeRewardCanBeUsedImmediately(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AffWithdrawalStatusPending, withdrawal.Status)
 	require.NoError(t, DB.First(inviter, inviter.Id).Error)
-	require.Equal(t, 49000, inviter.AffQuota)
+	require.Equal(t, int64(49000), inviter.AffQuota)
 	require.Equal(t, 1000, inviter.Quota)
 }
 

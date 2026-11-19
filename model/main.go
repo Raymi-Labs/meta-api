@@ -260,6 +260,9 @@ func InitLogDB() (err error) {
 }
 
 func migrateDB() error {
+	if err := migrateInviteCommissionUniqueIndex(DB); err != nil {
+		return err
+	}
 	if err := DB.AutoMigrate(cashAccountingModels()...); err != nil {
 		return err
 	}
@@ -270,7 +273,6 @@ func migrateDB() error {
 		return err
 	}
 	// Migrate price_amount column from float/double to decimal for existing tables
-	migrateSubscriptionPlanPriceAmount()
 	err := DB.AutoMigrate(
 		&Channel{},
 		&AudioVoice{},
@@ -335,6 +337,15 @@ func migrateDB() error {
 		&InvitePromotionClick{},
 		&DesktopFeedback{},
 		&InviteCommissionDailyCapState{},
+		&PromoterProfile{},
+		&InviteCommissionAllocation{},
+		&InviteeQualification{},
+		&Department{},
+		&DepartmentMember{},
+		&InviteCommissionStatement{},
+		&InviteCommissionDebt{},
+		&SecondLevelMonthlyUsage{},
+		&QualifiedBonusOnceGuard{},
 		&AffWithdrawal{},
 		&InvoiceRequest{},
 		&InvoiceRequestItem{},
@@ -392,10 +403,15 @@ func migrateDB() error {
 	if err := MigrateWalletRedemptionTransferPolicy(); err != nil {
 		return fmt.Errorf("failed to migrate wallet redemption transfer policy: %w", err)
 	}
+	migrateSubscriptionPlanPriceAmount()
+	common.SysLog("database migration finished")
 	return nil
 }
 
 func migrateDBFast() error {
+	if err := migrateInviteCommissionUniqueIndex(DB); err != nil {
+		return err
+	}
 	if err := DB.AutoMigrate(cashAccountingModels()...); err != nil {
 		return err
 	}
@@ -474,6 +490,15 @@ func migrateDBFast() error {
 		{&InvitePromotionClick{}, "InvitePromotionClick"},
 		{&DesktopFeedback{}, "DesktopFeedback"},
 		{&InviteCommissionDailyCapState{}, "InviteCommissionDailyCapState"},
+		{&PromoterProfile{}, "PromoterProfile"},
+		{&InviteCommissionAllocation{}, "InviteCommissionAllocation"},
+		{&InviteeQualification{}, "InviteeQualification"},
+		{&Department{}, "Department"},
+		{&DepartmentMember{}, "DepartmentMember"},
+		{&InviteCommissionStatement{}, "InviteCommissionStatement"},
+		{&InviteCommissionDebt{}, "InviteCommissionDebt"},
+		{&SecondLevelMonthlyUsage{}, "SecondLevelMonthlyUsage"},
+		{&QualifiedBonusOnceGuard{}, "QualifiedBonusOnceGuard"},
 		{&AffWithdrawal{}, "AffWithdrawal"},
 		{&InvoiceRequest{}, "InvoiceRequest"},
 		{&InvoiceRequestItem{}, "InvoiceRequestItem"},
@@ -855,7 +880,7 @@ func migrateSubscriptionPlanPriceAmount() {
 	if common.UsingPostgreSQL {
 		// PostgreSQL: Check if already decimal/numeric
 		var dataType string
-		DB.Raw(`SELECT data_type FROM information_schema.columns 
+		DB.Raw(`SELECT data_type FROM information_schema.columns
 			WHERE table_name = ? AND column_name = ?`, tableName, columnName).Scan(&dataType)
 		if dataType == "numeric" {
 			return // Already decimal/numeric
@@ -865,7 +890,7 @@ func migrateSubscriptionPlanPriceAmount() {
 	} else if common.UsingMySQL {
 		// MySQL: Check if already decimal
 		var columnType string
-		DB.Raw(`SELECT COLUMN_TYPE FROM information_schema.columns 
+		DB.Raw(`SELECT COLUMN_TYPE FROM information_schema.columns
 			WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?`,
 			tableName, columnName).Scan(&columnType)
 		if strings.HasPrefix(strings.ToLower(columnType), "decimal") {

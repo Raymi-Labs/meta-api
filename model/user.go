@@ -90,8 +90,8 @@ type User struct {
 	BalanceTrendDisabled bool           `json:"balance_trend_disabled" gorm:"default:false;column:balance_trend_disabled;index"`
 	AffCode              string         `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
 	AffCount             int            `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
-	AffQuota             int            `json:"aff_quota" gorm:"type:int;default:0;column:aff_quota"`           // 邀请剩余额度
-	AffHistoryQuota      int            `json:"aff_history_quota" gorm:"type:int;default:0;column:aff_history"` // 邀请历史额度
+	AffQuota             int64          `json:"aff_quota" gorm:"type:bigint;default:0;column:aff_quota"`        // 邀请剩余额度
+	AffHistoryQuota      int64          `json:"aff_history_quota" gorm:"type:bigint;default:0;column:aff_history"` // 邀请历史额度
 	InviterId            int            `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
 	DeletedAt            gorm.DeletedAt `gorm:"index"`
 	LinuxDOId            string         `json:"linux_do_id" gorm:"column:linux_do_id;index"`
@@ -1481,12 +1481,12 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 	}
 
 	// 再次检查用户的AffQuota是否足够
-	if user.AffQuota < quota {
+	if user.AffQuota < int64(quota) {
 		return errors.New("邀请额度不足！")
 	}
 
 	// 更新用户额度
-	user.AffQuota -= quota
+	user.AffQuota -= int64(quota)
 	user.TransferableQuota = EffectiveTransferableQuota(user.Quota, user.TransferableQuota)
 	user.Quota += quota
 	user.TransferableQuota += quota

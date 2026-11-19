@@ -61,14 +61,14 @@ func TestEnqueueInviteCommissionFromTopUp_CreatesAndSettlesTwoLevels(t *testing.
 	assert.Equal(t, parent.Id, direct.InviterUserId)
 	assert.Equal(t, invitee.Id, direct.DirectInviteeUserId)
 	assert.Equal(t, 0.1, direct.CommissionRate)
-	assert.Equal(t, 10000, direct.CommissionQuota)
+	assert.Equal(t, int64(10000), direct.CommissionQuota)
 
 	indirect := ledgers[1]
 	assert.Equal(t, InviteCommissionLevelIndirect, indirect.CommissionLevel)
 	assert.Equal(t, grandparent.Id, indirect.InviterUserId)
 	assert.Equal(t, parent.Id, indirect.DirectInviteeUserId)
 	assert.Equal(t, 0.05, indirect.CommissionRate)
-	assert.Equal(t, 5000, indirect.CommissionQuota)
+	assert.Equal(t, int64(5000), indirect.CommissionQuota)
 
 	settled, skipped, processed, err := SettleInviteCommissionByBizDate("2099-01-01", 10)
 	require.NoError(t, err)
@@ -78,13 +78,13 @@ func TestEnqueueInviteCommissionFromTopUp_CreatesAndSettlesTwoLevels(t *testing.
 
 	var refreshedParent User
 	require.NoError(t, DB.First(&refreshedParent, parent.Id).Error)
-	assert.Equal(t, 10000, refreshedParent.AffQuota)
-	assert.Equal(t, 10000, refreshedParent.AffHistoryQuota)
+	assert.Equal(t, int64(10000), refreshedParent.AffQuota)
+	assert.Equal(t, int64(10000), refreshedParent.AffHistoryQuota)
 
 	var refreshedGrandparent User
 	require.NoError(t, DB.First(&refreshedGrandparent, grandparent.Id).Error)
-	assert.Equal(t, 5000, refreshedGrandparent.AffQuota)
-	assert.Equal(t, 5000, refreshedGrandparent.AffHistoryQuota)
+	assert.Equal(t, int64(5000), refreshedGrandparent.AffQuota)
+	assert.Equal(t, int64(5000), refreshedGrandparent.AffHistoryQuota)
 }
 
 func TestEnqueueInviteCommissionFromTopUp_AllowsSecondLevelOnly(t *testing.T) {
@@ -147,21 +147,21 @@ func TestSettleInviteCommission_AppliesDailyCapPerBeneficiary(t *testing.T) {
 
 	var refreshedParent User
 	require.NoError(t, DB.First(&refreshedParent, parent.Id).Error)
-	assert.Equal(t, 7000, refreshedParent.AffQuota)
+	assert.Equal(t, int64(7000), refreshedParent.AffQuota)
 
 	var refreshedGrandparent User
 	require.NoError(t, DB.First(&refreshedGrandparent, grandparent.Id).Error)
-	assert.Equal(t, 5000, refreshedGrandparent.AffQuota)
+	assert.Equal(t, int64(5000), refreshedGrandparent.AffQuota)
 
 	var capStates []*InviteCommissionDailyCapState
 	require.NoError(t, DB.Order("inviter_user_id asc").Find(&capStates).Error)
 	require.Len(t, capStates, 2)
-	settledByInviter := map[int]int{}
+	settledByInviter := map[int]int64{}
 	for _, state := range capStates {
 		settledByInviter[state.InviterUserId] = state.SettledQuota
 	}
-	assert.Equal(t, 7000, settledByInviter[parent.Id])
-	assert.Equal(t, 5000, settledByInviter[grandparent.Id])
+	assert.Equal(t, int64(7000), settledByInviter[parent.Id])
+	assert.Equal(t, int64(5000), settledByInviter[grandparent.Id])
 }
 
 func TestEnqueueInviteCommissionFromTopUp_SkipsCyclicGrandparent(t *testing.T) {
@@ -242,8 +242,8 @@ func TestEnqueueInviteCommissionFromTopUp_UsesPaidMoneyAndDatabaseOrder(t *testi
 	require.NoError(t, DB.Where("topup_trade_no = ?", topUp.TradeNo).First(&ledger).Error)
 	assert.Equal(t, invitee.Id, ledger.InviteeUserId)
 	assert.Equal(t, inviter.Id, ledger.InviterUserId)
-	assert.Equal(t, 80000, ledger.BaseQuota)
-	assert.Equal(t, 8000, ledger.CommissionQuota)
+	assert.Equal(t, int64(80000), ledger.BaseQuota)
+	assert.Equal(t, int64(8000), ledger.CommissionQuota)
 	assert.NotEqual(t, int(topUp.Amount*int64(common.QuotaPerUnit)), ledger.BaseQuota)
 
 	var count int64
@@ -268,8 +268,8 @@ func TestEnqueueInviteCommissionFromTopUp_StripeUsesCNYPresentmentInsteadOfGrant
 
 	var ledger InviteCommissionLedger
 	require.NoError(t, DB.Where("topup_trade_no = ?", topUp.TradeNo).First(&ledger).Error)
-	assert.Equal(t, 80000, ledger.BaseQuota)
-	assert.Equal(t, 8000, ledger.CommissionQuota)
+	assert.Equal(t, int64(80000), ledger.BaseQuota)
+	assert.Equal(t, int64(8000), ledger.CommissionQuota)
 }
 
 func TestEnqueueInviteCommissionFromTopUp_RejectsUnsuccessfulOrders(t *testing.T) {
@@ -299,8 +299,8 @@ func TestEnqueueInviteCommissionFromTopUp_LegacyOrderFallsBackToMoney(t *testing
 
 	var ledger InviteCommissionLedger
 	require.NoError(t, DB.Where("topup_trade_no = ?", topUp.TradeNo).First(&ledger).Error)
-	assert.Equal(t, 75000, ledger.BaseQuota)
-	assert.Equal(t, 7500, ledger.CommissionQuota)
+	assert.Equal(t, int64(75000), ledger.BaseQuota)
+	assert.Equal(t, int64(7500), ledger.CommissionQuota)
 }
 
 func TestSettleInviteCommission_ReconcilesLegacyPendingTopUpLedger(t *testing.T) {
@@ -336,14 +336,14 @@ func TestSettleInviteCommission_ReconcilesLegacyPendingTopUpLedger(t *testing.T)
 
 	var refreshedLedger InviteCommissionLedger
 	require.NoError(t, DB.First(&refreshedLedger, ledger.Id).Error)
-	assert.Equal(t, 80000, refreshedLedger.BaseQuota)
-	assert.Equal(t, 8000, refreshedLedger.CommissionQuota)
-	assert.Equal(t, 8000, refreshedLedger.SettledQuota)
+	assert.Equal(t, int64(80000), refreshedLedger.BaseQuota)
+	assert.Equal(t, int64(8000), refreshedLedger.CommissionQuota)
+	assert.Equal(t, int64(8000), refreshedLedger.SettledQuota)
 
 	var refreshedInviter User
 	require.NoError(t, DB.First(&refreshedInviter, inviter.Id).Error)
-	assert.Equal(t, 8000, refreshedInviter.AffQuota)
-	assert.Equal(t, 8000, refreshedInviter.AffHistoryQuota)
+	assert.Equal(t, int64(8000), refreshedInviter.AffQuota)
+	assert.Equal(t, int64(8000), refreshedInviter.AffHistoryQuota)
 }
 
 func TestSettleInviteCommission_SkipsLegacyStripeWithoutPaidMoney(t *testing.T) {
@@ -384,7 +384,7 @@ func TestSettleInviteCommission_SkipsLegacyStripeWithoutPaidMoney(t *testing.T) 
 	require.NoError(t, DB.First(&refreshedLedger, ledger.Id).Error)
 	assert.Equal(t, InviteCommissionStatusSkipped, refreshedLedger.Status)
 	assert.Equal(t, InviteCommissionRiskReasonPaidMoneyMissing, refreshedLedger.RiskReason)
-	assert.Equal(t, 0, refreshedLedger.SettledQuota)
+	assert.Equal(t, int64(0), refreshedLedger.SettledQuota)
 }
 
 func TestEnqueueInviteCommissionFromTopUp_StripeUSDWithoutCNYPresentmentIsSkipped(t *testing.T) {

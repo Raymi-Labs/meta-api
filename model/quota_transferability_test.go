@@ -286,7 +286,7 @@ func TestTransferAffQuotaToQuota_PreservesCachedQuotaDelta(t *testing.T) {
 	var persisted User
 	require.NoError(t, DB.First(&persisted, user.Id).Error)
 	assert.Equal(t, 150, persisted.Quota)
-	assert.Equal(t, 50, persisted.AffQuota)
+	assert.Equal(t, int64(50), persisted.AffQuota)
 	assert.Equal(t, 150, persisted.TransferableQuota)
 
 	cachedQuota, err := common.RDB.HGet(ctx, cacheKey, "Quota").Int()

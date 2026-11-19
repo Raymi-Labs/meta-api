@@ -29,6 +29,7 @@ type Option struct {
 // They are persisted as separate legacy options, but must be validated and
 // published as one logical configuration inside a process.
 var inviteCommissionRateOptionMutex sync.Mutex
+var inviteTierOptionMutex sync.Mutex
 
 // tieredBillingOptionMutex keeps persistence and runtime publication ordered.
 // Without it, two concurrent saves can commit in one order and publish in the
@@ -165,6 +166,7 @@ func InitOptionMap() {
 	common.OptionMap["InviterRechargeCommissionRate"] = strconv.FormatFloat(common.InviterRechargeCommissionRate, 'f', -1, 64)
 	common.OptionMap["InviterRechargeSecondLevelCommissionRate"] = strconv.FormatFloat(common.InviterRechargeSecondLevelCommissionRate, 'f', -1, 64)
 	common.OptionMap["InviterCommissionDailyCap"] = strconv.Itoa(common.InviterCommissionDailyCap)
+	common.OptionMap["InviteTierSettings"] = common.InviteTierSettings2JSONString()
 	common.OptionMap["WalletRedemptionDailyCreateLimit"] = strconv.Itoa(common.WalletRedemptionDailyCreateLimit)
 	common.OptionMap["WalletRedemptionMinimumQuota"] = strconv.Itoa(common.WalletRedemptionMinimumQuota)
 	common.OptionMap["WalletRedemptionActiveLimit"] = strconv.Itoa(common.WalletRedemptionActiveLimit)
@@ -326,6 +328,24 @@ func isGroupGroupRatioOption(key string) bool {
 }
 
 func UpdateOption(key string, value string) error {
+	if key == "InviteTierSettings" {
+		inviteTierOptionMutex.Lock()
+		defer inviteTierOptionMutex.Unlock()
+		parsed, err := common.ParseInviteTierSettings(value)
+		if err != nil {
+			return err
+		}
+		encoded, err := common.Marshal(parsed)
+		if err != nil {
+			return err
+		}
+		option := Option{Key: key, Value: string(encoded)}
+		if err := DB.Transaction(func(tx *gorm.DB) error { return tx.Save(&option).Error }); err != nil {
+			return err
+		}
+		return updateOptionMapUnlocked(key, string(encoded))
+	}
+
 	switch strings.ToLower(strings.TrimSpace(key)) {
 	case "groupratio", "group_ratio_setting.group_ratio":
 		key = "GroupRatio"
@@ -462,6 +482,10 @@ func UpdateTieredBillingOptions(raw string) error {
 }
 
 func updateOptionMap(key string, value string) (err error) {
+	if key == "InviteTierSettings" {
+		inviteTierOptionMutex.Lock()
+		defer inviteTierOptionMutex.Unlock()
+	}
 	if isWalletRedemptionPolicyField(key) {
 		walletRedemptionPolicyMutex.Lock()
 		defer walletRedemptionPolicyMutex.Unlock()
@@ -487,6 +511,11 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 	// prevents a malformed persisted value from replacing the last good value.
 	if key == "InviteBindingSettings" {
 		if _, err = common.ParseInviteBindingSettings(value); err != nil {
+			return err
+		}
+	}
+	if key == "InviteTierSettings" {
+		if _, err = common.ParseInviteTierSettings(value); err != nil {
 			return err
 		}
 	}
@@ -809,6 +838,8 @@ func updateOptionMapUnlocked(key string, value string) (err error) {
 		common.QuotaForInvitee, _ = strconv.Atoi(value)
 	case "InviteBindingSettings":
 		err = common.UpdateInviteBindingSettingsByJSONString(value)
+	case "InviteTierSettings":
+		err = common.UpdateInviteTierSettingsByJSONString(value)
 	case "InviterRechargeCommissionRate":
 		// 比例配置使用小数表达（例如 0.1 表示 10%）。
 		common.InviterRechargeCommissionRate, _ = strconv.ParseFloat(value, 64)

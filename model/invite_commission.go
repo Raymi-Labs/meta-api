@@ -23,8 +23,12 @@ const (
 )
 
 const (
-	InviteCommissionLevelDirect   = 1
-	InviteCommissionLevelIndirect = 2
+	InviteCommissionLevelDirect     = 1
+	InviteCommissionLevelIndirect   = 2
+	InviteCommissionLevelBonus      = 3 // 达标奖金
+	InviteCommissionLevelDeptTeam   = 4 // 部门团队分成
+	InviteCommissionLevelDeptLeader = 5 // 部长位（与成员位并存）
+	InviteCommissionLevelRegister   = 6 // 注册奖励
 )
 
 const inviteCommissionCapCasMaxRetry = 8
@@ -58,20 +62,20 @@ var errInviteCommissionAlreadyProcessed = errors.New("invite commission ledger a
 // 3. skipped：被风控跳过（例如自邀、单日上限已满）。
 //
 // 幂等策略：
-// - 同一 trade_no + inviter_user_id 只允许一条台账（唯一索引）。
+// - 同一 trade_no + inviter_user_id + commission_level 只允许一条台账（唯一索引）。
 // - 结算时仅处理 status=pending 的记录，重复执行不会重复入账。
 type InviteCommissionLedger struct {
 	Id                  int     `json:"id"`
 	InviteeUserId       int     `json:"invitee_user_id" gorm:"index;not null"`
-	InviterUserId       int     `json:"inviter_user_id" gorm:"index;not null;uniqueIndex:idx_invite_commission_trade_inviter"`
+	InviterUserId       int     `json:"inviter_user_id" gorm:"index;not null;uniqueIndex:idx_invite_commission_trade_inviter_level"`
 	DirectInviteeUserId int     `json:"direct_invitee_user_id" gorm:"index;not null;default:0"`
-	CommissionLevel     int     `json:"commission_level" gorm:"index;not null;default:1"`
-	TopupTradeNo        string  `json:"topup_trade_no" gorm:"type:varchar(255);not null;uniqueIndex:idx_invite_commission_trade_inviter"`
+	CommissionLevel     int     `json:"commission_level" gorm:"index;not null;default:1;uniqueIndex:idx_invite_commission_trade_inviter_level"`
+	TopupTradeNo        string  `json:"topup_trade_no" gorm:"type:varchar(255);not null;uniqueIndex:idx_invite_commission_trade_inviter_level"`
 	BizDate             string  `json:"biz_date" gorm:"type:varchar(10);index;not null"` // 业务日期（YYYY-MM-DD）
-	BaseQuota           int     `json:"base_quota" gorm:"type:int;not null;default:0"`
+	BaseQuota           int64   `json:"base_quota" gorm:"type:bigint;not null;default:0"`
 	CommissionRate      float64 `json:"commission_rate" gorm:"type:decimal(10,6);not null;default:0"`
-	CommissionQuota     int     `json:"commission_quota" gorm:"type:int;not null;default:0"`
-	SettledQuota        int     `json:"settled_quota" gorm:"type:int;not null;default:0"`
+	CommissionQuota     int64   `json:"commission_quota" gorm:"type:bigint;not null;default:0"`
+	SettledQuota        int64   `json:"settled_quota" gorm:"type:bigint;not null;default:0"`
 	Status              string  `json:"status" gorm:"type:varchar(16);index;not null;index:idx_invite_commission_ready,priority:1"`
 	RiskReason          string  `json:"risk_reason" gorm:"type:varchar(64);default:''"`
 	CreatedAt           int64   `json:"created_at" gorm:"index"`
@@ -79,6 +83,13 @@ type InviteCommissionLedger struct {
 	AmountVersion       int     `json:"amount_version" gorm:"not null;default:0"`
 	RetryCount          int     `json:"retry_count" gorm:"not null;default:0"`
 	NextRetryAt         int64   `json:"next_retry_at" gorm:"not null;default:0;index:idx_invite_commission_ready,priority:2"`
+
+	// 新增字段：档位快照与周期
+	InviterTierSnapshot int    `json:"inviter_tier_snapshot" gorm:"not null;default:0"` // 收款人档位快照（0-5）
+	InviteeTierSnapshot int    `json:"invitee_tier_snapshot" gorm:"not null;default:0"` // 一级用户档位快照（0-5）
+	SettlementCycle     int    `json:"settlement_cycle" gorm:"not null;default:2"`      // 1=周结 2=月结
+	PeriodKey           string `json:"period_key" gorm:"type:varchar(10);default:''"`   // 周期键（YYYY-WW 或 YYYY-MM）
+	StatementId         int    `json:"statement_id" gorm:"not null;default:0;index"`    // 关联账单 ID
 }
 
 // InviteCommissionDailyCapState 记录 inviter + bizDate 的当日已结算返佣额度。
@@ -86,7 +97,7 @@ type InviteCommissionDailyCapState struct {
 	Id            int    `json:"id"`
 	InviterUserId int    `json:"inviter_user_id" gorm:"not null;uniqueIndex:idx_invite_commission_daily_cap_inviter_date"`
 	BizDate       string `json:"biz_date" gorm:"type:varchar(10);not null;uniqueIndex:idx_invite_commission_daily_cap_inviter_date"`
-	SettledQuota  int    `json:"settled_quota" gorm:"type:int;not null;default:0"`
+	SettledQuota  int64  `json:"settled_quota" gorm:"type:bigint;not null;default:0"`
 	CreatedAt     int64  `json:"created_at" gorm:"index"`
 	UpdatedAt     int64  `json:"updated_at" gorm:"index"`
 }
@@ -112,7 +123,7 @@ func EnqueueInviteCommissionFromTopUpTx(tx *gorm.DB, topUp *TopUp) error {
 	if topUp == nil || topUp.Id <= 0 {
 		return nil
 	}
-	if !common.InviteCommissionConfigured() {
+	if !common.InviteCommissionConfigured() && !common.GetInviteTierSettings().Enabled {
 		return nil
 	}
 	if operation_setting.Price <= 0 || math.IsNaN(operation_setting.Price) || math.IsInf(operation_setting.Price, 0) {
@@ -140,13 +151,14 @@ func EnqueueInviteCommissionFromTopUpTx(tx *gorm.DB, topUp *TopUp) error {
 		return nil
 	}
 
-	baseQuota := int(decimal.NewFromFloat(paidMoney).
-		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
-		Div(decimal.NewFromFloat(operation_setting.Price)).IntPart())
+	baseQuota, amountErr := inviteBaseQuota(paidMoney)
+	if amountErr != nil {
+		return amountErr
+	}
 	if baseQuota <= 0 {
 		return nil
 	}
-	return enqueueInviteCommissionWithDB(tx, dbTopUp.UserId, dbTopUp.TradeNo, dbTopUp.CompleteTime, baseQuota)
+	return enqueueInviteCommissionWithDB(tx, dbTopUp.UserId, dbTopUp.TradeNo, dbTopUp.CompleteTime, baseQuota, decimal.NewFromFloat(paidMoney))
 }
 
 // EnqueueInviteCommissionFromSubscriptionOrderTx 将“订阅支付成功”纳入邀请返佣口径。
@@ -160,7 +172,7 @@ func EnqueueInviteCommissionFromSubscriptionOrderTx(tx *gorm.DB, order *Subscrip
 	if order == nil || order.Id <= 0 {
 		return nil
 	}
-	if !common.InviteCommissionConfigured() {
+	if !common.InviteCommissionConfigured() && !common.GetInviteTierSettings().Enabled {
 		return nil
 	}
 	if operation_setting.Price <= 0 || math.IsNaN(operation_setting.Price) || math.IsInf(operation_setting.Price, 0) {
@@ -183,18 +195,18 @@ func EnqueueInviteCommissionFromSubscriptionOrderTx(tx *gorm.DB, order *Subscrip
 		return nil
 	}
 
-	dBaseQuota := decimal.NewFromFloat(dbOrder.Money).
-		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
-		Div(decimal.NewFromFloat(operation_setting.Price))
-	baseQuota := int(dBaseQuota.IntPart())
+	baseQuota, amountErr := inviteBaseQuota(dbOrder.Money)
+	if amountErr != nil {
+		return amountErr
+	}
 	if baseQuota <= 0 {
 		return nil
 	}
 
-	return enqueueInviteCommissionWithDB(tx, dbOrder.UserId, dbOrder.TradeNo, dbOrder.CompleteTime, baseQuota)
+	return enqueueInviteCommissionWithDB(tx, dbOrder.UserId, dbOrder.TradeNo, dbOrder.CompleteTime, baseQuota, decimal.NewFromFloat(dbOrder.Money))
 }
 
-func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo string, completeTime int64, baseQuota int) error {
+func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo string, completeTime int64, baseQuota int64, paidAmounts ...decimal.Decimal) error {
 	if db == nil {
 		return errors.New("db is nil")
 	}
@@ -202,7 +214,26 @@ func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo strin
 	if inviteeUserID <= 0 || tradeNo == "" || baseQuota <= 0 {
 		return nil
 	}
-	// 功能开关与完整比例检查。使用同一份比例快照，避免设置更新时
+
+	// 检查是否启用档位返佣系统
+	settings := common.GetInviteTierSettings()
+	if settings.Enabled {
+		paid := decimal.NewFromInt(baseQuota).Mul(decimal.NewFromFloat(operation_setting.Price)).Div(decimal.NewFromFloat(common.QuotaPerUnit))
+		if len(paidAmounts) > 0 {
+			paid = paidAmounts[0]
+		}
+		// 使用新版档位引擎
+		if err := enqueueTierBasedCommission(db, tradeNo, inviteeUserID, completeTime, baseQuota, paid); err != nil {
+			return err
+		}
+		// 尝试标记被邀请人资格
+		if err := tryMarkInviteeQualified(db, inviteeUserID, tradeNo); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// 旧版逻辑：功能开关与完整比例检查。使用同一份比例快照，避免设置更新时
 	// 同一订单混用两个时刻的经济参数。
 	configured, firstLevelRate, secondLevelRate := common.InviteCommissionConfigSnapshot()
 	if !configured {
@@ -235,7 +266,7 @@ func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo strin
 			return
 		}
 		// 每级分别向下取整，且完整比例已限制合计不超过 100%。
-		commissionQuota := int(decimal.NewFromInt(int64(baseQuota)).Mul(decimal.NewFromFloat(rate)).IntPart())
+		commissionQuota := int64(decimal.NewFromInt(int64(baseQuota)).Mul(decimal.NewFromFloat(rate)).IntPart())
 		if commissionQuota <= 0 {
 			return
 		}
@@ -246,7 +277,7 @@ func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo strin
 			CommissionLevel:     level,
 			TopupTradeNo:        tradeNo,
 			BizDate:             bizDate,
-			BaseQuota:           baseQuota,
+			BaseQuota:           int64(baseQuota),
 			CommissionRate:      rate,
 			CommissionQuota:     commissionQuota,
 			AmountVersion:       1,
@@ -284,10 +315,11 @@ func enqueueInviteCommissionWithDB(db *gorm.DB, inviteeUserID int, tradeNo strin
 	}
 
 	return db.Clauses(clause.OnConflict{
-		// 幂等保障：同一个订单对同一个邀请人只允许入池一次。
+		// 幂等保障：同一个订单对同一个邀请人同一级别只允许入池一次。
 		Columns: []clause.Column{
 			{Name: "topup_trade_no"},
 			{Name: "inviter_user_id"},
+			{Name: "commission_level"},
 		},
 		DoNothing: true,
 	}).Create(&ledgers).Error
@@ -377,7 +409,7 @@ func deferInviteCommissionRetry(ledger *InviteCommissionLedger) error {
 
 func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap int) (processed bool, settled bool, err error) {
 	now := common.GetTimestamp()
-	allowedQuota := 0
+	var allowedQuota int64
 	riskReason := ""
 
 	err = DB.Transaction(func(tx *gorm.DB) error {
@@ -418,10 +450,11 @@ func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap
 		// 在事务内做日上限 CAS 预占，避免并发超发。
 		if allowedQuota > 0 && dailyCap > 0 {
 			var truncated bool
-			allowedQuota, truncated, err = reserveInviteCommissionDailyCapTx(tx, ledger.InviterUserId, ledger.BizDate, allowedQuota, dailyCap)
+			grantedQuota, truncated, err := reserveInviteCommissionDailyCapTx(tx, ledger.InviterUserId, ledger.BizDate, allowedQuota, int64(dailyCap))
 			if err != nil {
 				return err
 			}
+			allowedQuota = int64(grantedQuota)
 			if allowedQuota == 0 {
 				riskReason = InviteCommissionRiskReasonDailyCapReached
 			} else if truncated {
@@ -484,7 +517,7 @@ func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap
 		RecordLog(
 			ledger.InviterUserId,
 			LogTypeSystem,
-			fmt.Sprintf("%s邀请返佣到账 %s（订单:%s）", levelLabel, logger.LogQuota(allowedQuota), maskTradeNoForLog(ledger.TopupTradeNo)),
+			fmt.Sprintf("%s邀请返佣到账 %s（订单:%s）", levelLabel, logger.LogQuota(int(allowedQuota)), maskTradeNoForLog(ledger.TopupTradeNo)),
 		)
 	}
 
@@ -496,7 +529,7 @@ func settleSingleInviteCommissionLedger(ledger *InviteCommissionLedger, dailyCap
 // already-settled ledgers, the payout is reclaimed from aff_quota first and
 // then from wallet quota, covering the case where the inviter already moved
 // the commission into the wallet.
-func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, error) {
+func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int64, error) {
 	if tx == nil {
 		return 0, errors.New("tx is nil")
 	}
@@ -513,7 +546,7 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, erro
 		return 0, err
 	}
 
-	reversedQuota := 0
+	var reversedQuota int64
 	for _, ledger := range ledgers {
 		if ledger == nil {
 			continue
@@ -579,13 +612,13 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, erro
 		}
 
 		if capErr == nil {
-			newSettledQuota := capState.SettledQuota - settledQuota
+			newSettledQuota := int64(capState.SettledQuota) - settledQuota
 			if newSettledQuota < 0 {
 				newSettledQuota = 0
 			}
 			if err := tx.Model(&InviteCommissionDailyCapState{}).
 				Where("id = ?", capState.Id).
-				Update("settled_quota", newSettledQuota).Error; err != nil {
+				Update("settled_quota", int(newSettledQuota)).Error; err != nil {
 				return 0, err
 			}
 		}
@@ -602,8 +635,8 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, erro
 			affDebit = settledQuota
 		}
 		walletDebit := settledQuota - affDebit
-		newQuota := inviter.Quota - walletDebit
-		newTransferableQuota := EffectiveTransferableQuota(newQuota, inviter.TransferableQuota)
+		newQuota := int64(inviter.Quota) - walletDebit
+		newTransferableQuota := EffectiveTransferableQuota(int(newQuota), inviter.TransferableQuota)
 		newAffHistoryQuota := inviter.AffHistoryQuota - settledQuota
 		if newAffHistoryQuota < 0 {
 			newAffHistoryQuota = 0
@@ -614,7 +647,7 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, erro
 			}
 		}
 		if err := tx.Unscoped().Model(&User{}).Where("id = ?", inviter.Id).Updates(map[string]any{
-			"quota":              newQuota,
+			"quota":              int(newQuota),
 			"transferable_quota": newTransferableQuota,
 			"aff_quota":          inviter.AffQuota - affDebit,
 			"aff_history":        newAffHistoryQuota,
@@ -624,6 +657,14 @@ func reverseInviteCommissionsByTradeNoTx(tx *gorm.DB, tradeNo string) (int, erro
 		reversedQuota += settledQuota
 	}
 
+	for _, row := range ledgers {
+		if row.AmountVersion == 2 {
+			if err := reverseInviteTierAllocationTx(tx, tradeNo); err != nil {
+				return 0, err
+			}
+			break
+		}
+	}
 	return reversedQuota, nil
 }
 
@@ -669,24 +710,24 @@ func reconcilePendingInviteCommissionAmountTx(tx *gorm.DB, ledger *InviteCommiss
 		return InviteCommissionRiskReasonPaymentSourceInvalid, nil
 	}
 
-	baseQuota := int(decimal.NewFromFloat(paidMoney).
+	baseQuota := int64(decimal.NewFromFloat(paidMoney).
 		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
 		Div(decimal.NewFromFloat(operation_setting.Price)).IntPart())
 	if baseQuota <= 0 {
 		return InviteCommissionRiskReasonPaidMoneyMissing, nil
 	}
-	commissionQuota := int(decimal.NewFromInt(int64(baseQuota)).
+	commissionQuota := int64(decimal.NewFromInt(int64(baseQuota)).
 		Mul(decimal.NewFromFloat(ledger.CommissionRate)).IntPart())
 	if commissionQuota <= 0 {
 		return InviteCommissionRiskReasonPaidMoneyMissing, nil
 	}
 
-	ledger.BaseQuota = baseQuota
+	ledger.BaseQuota = int64(baseQuota)
 	ledger.CommissionQuota = commissionQuota
 	return "", nil
 }
 
-func reserveInviteCommissionDailyCapTx(tx *gorm.DB, inviterUserId int, bizDate string, requestQuota int, dailyCap int) (grantedQuota int, truncated bool, err error) {
+func reserveInviteCommissionDailyCapTx(tx *gorm.DB, inviterUserId int, bizDate string, requestQuota int64, dailyCap int64) (grantedQuota int64, truncated bool, err error) {
 	if requestQuota <= 0 || dailyCap <= 0 {
 		return requestQuota, false, nil
 	}

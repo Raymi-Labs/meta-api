@@ -95,8 +95,8 @@ func TestUserInsertPersistsInviterAndRewards(t *testing.T) {
 	var savedInviter User
 	require.NoError(t, DB.First(&savedInviter, inviter.Id).Error)
 	assert.Equal(t, 1, savedInviter.AffCount)
-	assert.Equal(t, 11, savedInviter.AffQuota)
-	assert.Equal(t, 11, savedInviter.AffHistoryQuota)
+	assert.Equal(t, int64(11), savedInviter.AffQuota)
+	assert.Equal(t, int64(11), savedInviter.AffHistoryQuota)
 }
 
 func TestUserInsertWithTxPersistsInviterForOAuthFlow(t *testing.T) {
@@ -126,8 +126,8 @@ func TestUserInsertWithTxPersistsInviterForOAuthFlow(t *testing.T) {
 	var savedInviter User
 	require.NoError(t, DB.First(&savedInviter, inviter.Id).Error)
 	assert.Equal(t, 1, savedInviter.AffCount)
-	assert.Equal(t, 9, savedInviter.AffQuota)
-	assert.Equal(t, 9, savedInviter.AffHistoryQuota)
+	assert.Equal(t, int64(9), savedInviter.AffQuota)
+	assert.Equal(t, int64(9), savedInviter.AffHistoryQuota)
 }
 
 func TestInviteBindingUsesGuaranteedSlotBeforeProbability(t *testing.T) {
@@ -157,8 +157,8 @@ func TestInviteBindingUsesGuaranteedSlotBeforeProbability(t *testing.T) {
 	var savedInviter User
 	require.NoError(t, DB.First(&savedInviter, inviter.Id).Error)
 	assert.Equal(t, 2, savedInviter.AffCount)
-	assert.Equal(t, 11, savedInviter.AffQuota)
-	assert.Equal(t, 11, savedInviter.AffHistoryQuota)
+	assert.Equal(t, int64(11), savedInviter.AffQuota)
+	assert.Equal(t, int64(11), savedInviter.AffHistoryQuota)
 }
 
 func TestInviteBindingAfterThreshold(t *testing.T) {
@@ -204,14 +204,14 @@ func TestInviteBindingAfterThreshold(t *testing.T) {
 				assert.Equal(t, inviter.Id, savedInvitee.InviterId)
 				assert.Equal(t, 20, savedInvitee.Quota)
 				assert.Equal(t, 2, savedInviter.AffCount)
-				assert.Equal(t, 16, savedInviter.AffQuota)
-				assert.Equal(t, 16, savedInviter.AffHistoryQuota)
+				assert.Equal(t, int64(16), savedInviter.AffQuota)
+				assert.Equal(t, int64(16), savedInviter.AffHistoryQuota)
 			} else {
 				assert.Zero(t, savedInvitee.InviterId)
 				assert.Equal(t, 13, savedInvitee.Quota)
 				assert.Equal(t, 1, savedInviter.AffCount)
-				assert.Equal(t, 5, savedInviter.AffQuota)
-				assert.Equal(t, 5, savedInviter.AffHistoryQuota)
+				assert.Equal(t, int64(5), savedInviter.AffQuota)
+				assert.Equal(t, int64(5), savedInviter.AffHistoryQuota)
 
 				var userLogs []Log
 				require.NoError(t, LOG_DB.Where("user_id = ?", savedInvitee.Id).Find(&userLogs).Error)
@@ -312,7 +312,7 @@ func TestFinalizeOAuthUserCreationIsIdempotent(t *testing.T) {
 	var savedInviter User
 	require.NoError(t, DB.First(&savedInviter, inviter.Id).Error)
 	assert.Equal(t, 1, savedInviter.AffCount)
-	assert.Equal(t, 11, savedInviter.AffQuota)
+	assert.Equal(t, int64(11), savedInviter.AffQuota)
 }
 
 func TestGetUserIdByAffCodeRequiresEnabledActiveInviter(t *testing.T) {

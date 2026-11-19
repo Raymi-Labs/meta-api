@@ -458,6 +458,14 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "InviteTierSettings":
+		if _, parseErr := common.ParseInviteTierSettings(option.Value.(string)); parseErr != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("档位配置无效：%v", parseErr),
+			})
+			return
+		}
 	case "InviterRechargeCommissionRate", "InviterRechargeSecondLevelCommissionRate":
 		rate, parseErr := strconv.ParseFloat(strings.TrimSpace(option.Value.(string)), 64)
 		_, firstLevelRate, secondLevelRate := common.InviteCommissionConfigSnapshot()

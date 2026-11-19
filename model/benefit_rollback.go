@@ -75,7 +75,7 @@ func rollbackBenefitsBySource(businessType string, businessId int, sourceType st
 				return reverseErr
 			}
 			if reversedCommissionQuota > 0 {
-				summaries = append(summaries, fmt.Sprintf("回退邀请返佣 %s", logger.FormatQuota(reversedCommissionQuota)))
+				summaries = append(summaries, fmt.Sprintf("回退邀请返佣 %s", logger.FormatQuota(int(reversedCommissionQuota))))
 			}
 			if reverseErr := markReversedPaymentSourceTx(tx, sourceType, sourceRef); reverseErr != nil {
 				return reverseErr

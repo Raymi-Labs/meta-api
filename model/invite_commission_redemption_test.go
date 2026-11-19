@@ -138,10 +138,10 @@ func TestSettleInviteCommission_SkipsLegacyRedemptionLedger(t *testing.T) {
 	require.NoError(t, DB.First(&refreshedLedger, ledger.Id).Error)
 	assert.Equal(t, InviteCommissionStatusSkipped, refreshedLedger.Status)
 	assert.Equal(t, InviteCommissionRiskReasonRedemptionNotCommissionable, refreshedLedger.RiskReason)
-	assert.Equal(t, 0, refreshedLedger.SettledQuota)
+	assert.Equal(t, int64(0), refreshedLedger.SettledQuota)
 
 	var refreshedInviter User
 	require.NoError(t, DB.First(&refreshedInviter, inviter.Id).Error)
-	assert.Equal(t, 0, refreshedInviter.AffQuota)
-	assert.Equal(t, 0, refreshedInviter.AffHistoryQuota)
+	assert.Equal(t, int64(0), refreshedInviter.AffQuota)
+	assert.Equal(t, int64(0), refreshedInviter.AffHistoryQuota)
 }

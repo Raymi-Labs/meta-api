@@ -64,7 +64,7 @@ func createAffWithdrawalControllerTestUser(t *testing.T, username string, affQuo
 		Role:     common.RoleCommonUser,
 		Status:   common.UserStatusEnabled,
 		AffCode:  username + "-aff",
-		AffQuota: affQuota,
+		AffQuota: int64(affQuota),
 	}
 	require.NoError(t, model.DB.Create(user).Error)
 	return user
@@ -113,7 +113,7 @@ func TestCreateAffWithdrawalAPI_FreezesQuota(t *testing.T) {
 
 	var updated model.User
 	require.NoError(t, model.DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 250, updated.AffQuota)
+	assert.Equal(t, int64(250), updated.AffQuota)
 }
 
 func TestCreateAffWithdrawalAPI_RejectsBelowMinimumWithoutMutation(t *testing.T) {
@@ -138,7 +138,7 @@ func TestCreateAffWithdrawalAPI_RejectsBelowMinimumWithoutMutation(t *testing.T)
 
 	var updated model.User
 	require.NoError(t, model.DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 
 	var count int64
 	require.NoError(t, model.DB.Model(&model.AffWithdrawal{}).Where("user_id = ?", user.Id).Count(&count).Error)
@@ -210,5 +210,5 @@ func TestReviewAffWithdrawalAPI_ApproveAndReject(t *testing.T) {
 
 	var updated model.User
 	require.NoError(t, model.DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 750, updated.AffQuota)
+	assert.Equal(t, int64(750), updated.AffQuota)
 }

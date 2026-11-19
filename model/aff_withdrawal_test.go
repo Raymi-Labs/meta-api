@@ -63,7 +63,7 @@ func createAffWithdrawalTestUser(t *testing.T, username string, affQuota int) *U
 		Role:     common.RoleCommonUser,
 		Status:   common.UserStatusEnabled,
 		AffCode:  username + "-aff",
-		AffQuota: affQuota,
+		AffQuota: int64(affQuota),
 	}
 	require.NoError(t, DB.Create(user).Error)
 	return user
@@ -85,7 +85,7 @@ func TestCreateAffWithdrawal_FreezesAffQuotaAndSnapshotsAmount(t *testing.T) {
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 250, updated.AffQuota)
+	assert.Equal(t, int64(250), updated.AffQuota)
 
 	var count int64
 	require.NoError(t, DB.Model(&AffWithdrawal{}).Where("user_id = ?", user.Id).Count(&count).Error)
@@ -102,7 +102,7 @@ func TestCreateAffWithdrawal_RejectsQuotaBelowMinimumWithoutMutation(t *testing.
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 
 	var count int64
 	require.NoError(t, DB.Model(&AffWithdrawal{}).Where("user_id = ?", user.Id).Count(&count).Error)
@@ -120,7 +120,7 @@ func TestCreateAffWithdrawal_RejectsPaymentBelowMinimumWithoutMutation(t *testin
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 
 	var count int64
 	require.NoError(t, DB.Model(&AffWithdrawal{}).Where("user_id = ?", user.Id).Count(&count).Error)
@@ -137,7 +137,7 @@ func TestCreateAffWithdrawal_InsufficientQuotaDoesNotCreateRecord(t *testing.T) 
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, AffWithdrawalMinimumQuota, updated.AffQuota)
+	assert.Equal(t, int64(AffWithdrawalMinimumQuota), updated.AffQuota)
 
 	var count int64
 	require.NoError(t, DB.Model(&AffWithdrawal{}).Where("user_id = ?", user.Id).Count(&count).Error)
@@ -158,14 +158,14 @@ func TestRejectAffWithdrawal_RefundsFrozenAffQuotaOnce(t *testing.T) {
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 
 	_, err = RejectAffWithdrawal(withdrawal.Id, 99, "重复驳回")
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrAffWithdrawalAlreadyReviewed))
 
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 }
 
 func TestApproveAffWithdrawal_DoesNotDeductAgain(t *testing.T) {
@@ -181,14 +181,14 @@ func TestApproveAffWithdrawal_DoesNotDeductAgain(t *testing.T) {
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 250, updated.AffQuota)
+	assert.Equal(t, int64(250), updated.AffQuota)
 
 	_, err = ApproveAffWithdrawal(withdrawal.Id, 99, "重复通过")
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrAffWithdrawalAlreadyReviewed))
 
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 250, updated.AffQuota)
+	assert.Equal(t, int64(250), updated.AffQuota)
 }
 
 func TestApproveAffWithdrawal_RejectsLegacyRecordBelowMinimum(t *testing.T) {
@@ -218,7 +218,7 @@ func TestApproveAffWithdrawal_RejectsLegacyRecordBelowMinimum(t *testing.T) {
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 }
 
 func TestApproveAffWithdrawal_RejectsLegacyRecordBelowMinimumPayment(t *testing.T) {
@@ -248,7 +248,7 @@ func TestApproveAffWithdrawal_RejectsLegacyRecordBelowMinimumPayment(t *testing.
 
 	var updated User
 	require.NoError(t, DB.First(&updated, "id = ?", user.Id).Error)
-	assert.Equal(t, 500, updated.AffQuota)
+	assert.Equal(t, int64(500), updated.AffQuota)
 }
 
 func TestCalculateAffWithdrawalAmountCents_UsesTopUpPriceOnly(t *testing.T) {
