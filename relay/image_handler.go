@@ -183,25 +183,25 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 		usage.(*dto.Usage).PromptTokens = 1
 	}
 
-	quality := "standard"
-	if request.Quality == "hd" {
-		quality = "hd"
-	}
+	postConsumeQuota(c, info, usage.(*dto.Usage), imageUsageLogContent(request.Size, request.Quality, imageN)...)
+	return nil
+}
 
+func imageUsageLogContent(size, quality string, imageN uint) []string {
 	var logContent []string
 
-	if len(request.Size) > 0 {
-		logContent = append(logContent, fmt.Sprintf("大小 %s", request.Size))
+	if len(size) > 0 {
+		logContent = append(logContent, fmt.Sprintf("大小 %s", size))
 	}
-	if len(quality) > 0 {
-		logContent = append(logContent, fmt.Sprintf("品质 %s", quality))
+	switch quality {
+	case "auto", "low", "medium", "high", "standard", "hd":
+		logContent = append(logContent, fmt.Sprintf("请求品质 %s", quality))
 	}
 	if imageN > 0 {
 		logContent = append(logContent, fmt.Sprintf("生成数量 %d", imageN))
 	}
 
-	postConsumeQuota(c, info, usage.(*dto.Usage), logContent...)
-	return nil
+	return logContent
 }
 
 // Validate again after channel overrides or pass-through input. Unknown fields
