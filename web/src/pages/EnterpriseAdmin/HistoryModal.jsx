@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Table, Tabs } from '@douyinfe/semi-ui';
+import { Button, Input, Modal, Table, Tabs } from '@douyinfe/semi-ui';
 import {
   enterpriseRequest,
   formatEnterpriseTime,
@@ -37,6 +37,8 @@ export default function HistoryModal({ enterprise, onClose }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
+  const [requestId, setRequestId] = useState('');
   const sequence = useRef(0);
   const load = useCallback(async () => {
     const id = ++sequence.current;
@@ -50,6 +52,7 @@ export default function HistoryModal({ enterprise, onClose }) {
         `/api/enterprise/admin/enterprises/${enterprise.id}/${tab}`,
         undefined,
         {
+          ...(tab === 'usage' && requestId ? { request_id: requestId } : {}),
           p: page,
           page_size: 20,
           ...(tab === 'usage' || tab === 'members' ? { status: 'all' } : {}),
@@ -64,7 +67,7 @@ export default function HistoryModal({ enterprise, onClose }) {
     } finally {
       if (id === sequence.current) setLoading(false);
     }
-  }, [enterprise.id, tab, page]);
+  }, [enterprise.id, tab, page, requestId]);
   useEffect(() => {
     load();
     return () => {
@@ -179,6 +182,27 @@ export default function HistoryModal({ enterprise, onClose }) {
         <Tabs.TabPane itemKey='audit' tab={t('操作记录')} />
         <Tabs.TabPane itemKey='members' tab={t('成员')} />
       </Tabs>
+      {tab === 'usage' && (
+        <form
+          className='ea-review-filter'
+          aria-label={t('查询')}
+          onSubmit={(event) => {
+            event.preventDefault();
+            setPage(1);
+            setRequestId(draft.trim());
+          }}
+        >
+          <label htmlFor='enterprise-history-request'>{t('请求 ID')}</label>
+          <Input
+            id='enterprise-history-request'
+            value={draft}
+            onChange={setDraft}
+            maxLength={96}
+            showClear
+          />
+          <Button htmlType='submit'>{t('查询')}</Button>
+        </form>
+      )}
       {error ? (
         <div className='ea-load-error' role='alert'>
           {error}

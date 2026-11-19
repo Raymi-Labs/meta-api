@@ -29,6 +29,7 @@ type EnterpriseUsageFilter struct {
 	EnterpriseId int
 	MemberId     int
 	TokenId      int
+	RequestID    string
 	ModelName    string
 	Kind         string
 	Status       string
@@ -40,10 +41,11 @@ func (f EnterpriseUsageFilter) apply(tx *gorm.DB) (*gorm.DB, error) {
 	if f.EnterpriseId <= 0 {
 		return nil, ErrEnterpriseNotFound
 	}
-	if f.MemberId < 0 || f.TokenId < 0 || f.Start < 0 || f.End < 0 || (f.End > 0 && f.End < f.Start) {
+	if len(f.RequestID) > 96 || f.MemberId < 0 || f.TokenId < 0 || f.Start < 0 || f.End < 0 || (f.End > 0 && f.End < f.Start) {
 		return nil, ErrEnterpriseInvalidInput
 	}
 	tx = tx.Where("enterprise_id = ?", f.EnterpriseId)
+	tx = filterEnterpriseRequestID(tx, f.RequestID)
 	if f.MemberId > 0 {
 		tx = tx.Where("member_id = ?", f.MemberId)
 	}

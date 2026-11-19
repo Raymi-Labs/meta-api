@@ -34,7 +34,7 @@ import {
   formatEnterpriseDate,
 } from '../../helpers/enterprise';
 import { isRoot } from '../../helpers/storage';
-import { renderQuota } from '../../helpers/render';
+import { renderEnterpriseBalance } from '../../helpers/render';
 import { showError, showSuccess } from '../../helpers/toast';
 import EnterpriseFormModal from './EnterpriseFormModal';
 import EnterpriseFeatureGate from './EnterpriseFeatureGate';
@@ -236,14 +236,14 @@ function EnterpriseAdminContent({ featureControl }) {
       dataIndex: 'unallocated',
       align: 'right',
       render: (v) => (
-        <span className={`em-num${v < 0 ? ' neg' : ''}`}>{renderQuota(v)}</span>
+        <span className={`em-num${v < 0 ? ' neg' : ''}`}>{renderEnterpriseBalance(v)}</span>
       ),
     },
     {
       title: t('累计入账'),
       dataIndex: 'net_credited',
       align: 'right',
-      render: (v) => <span className='em-num'>{renderQuota(v)}</span>,
+      render: (v) => <span className='em-num'>{renderEnterpriseBalance(v)}</span>,
     },
     {
       title: t('开通日期'),
