@@ -244,7 +244,12 @@ export default function ModelGroupRows({
                         <ModelGroupMetric
                           {...metricProps}
                           value={latency.value}
-                          formatted={formatHealthLatency(latency.value)}
+                          formatted={
+                            formatHealthLatency(latency.value) +
+                            (performance.externalLatency
+                              ? ' · ' + t('参考 P50')
+                              : '')
+                          }
                           samples={stats?.request_count}
                           label={
                             group +
@@ -261,9 +266,12 @@ export default function ModelGroupRows({
                           <ModelGroupMetric
                             {...metricProps}
                             value={performance.throughput}
-                            formatted={formatModelThroughput(
-                              performance.throughput,
-                            )}
+                            formatted={
+                              formatModelThroughput(performance.throughput) +
+                              (performance.externalThroughput
+                                ? ' · ' + t('参考 P50')
+                                : '')
+                            }
                             samples={stats?.request_count}
                             label={group + ' · ' + t('输出速度')}
                           />

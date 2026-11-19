@@ -268,7 +268,7 @@ const PricingCardView = ({
                   </div>
                   {health.state === 'ready' ? (
                     <>
-                      {showGenerationMetrics && (
+                      {showGenerationMetrics && latency.value != null && (
                         <div>
                           <dt>
                             <Timer size={13} />
@@ -281,24 +281,33 @@ const PricingCardView = ({
                           <dd>
                             {formatHealthLatency(latency.value) === '—'
                               ? t('暂无数据')
-                              : formatHealthLatency(latency.value)}
+                              : formatHealthLatency(latency.value) +
+                                (performance.externalLatency
+                                  ? ' · ' + t('参考 P50')
+                                  : '')}
                           </dd>
                         </div>
                       )}
-                      {showGenerationMetrics && (
-                        <div>
-                          <dt>
-                            <Gauge size={13} />
-                            {t('输出速度')}
-                          </dt>
-                          <dd>
-                            {formatModelThroughput(performance.throughput) ===
-                            '—'
-                              ? t('暂无数据')
-                              : formatModelThroughput(performance.throughput)}
-                          </dd>
-                        </div>
-                      )}
+                      {showGenerationMetrics &&
+                        performance.throughput != null && (
+                          <div>
+                            <dt>
+                              <Gauge size={13} />
+                              {t('输出速度')}
+                            </dt>
+                            <dd>
+                              {formatModelThroughput(performance.throughput) ===
+                              '—'
+                                ? t('暂无数据')
+                                : formatModelThroughput(
+                                    performance.throughput,
+                                  ) +
+                                  (performance.externalThroughput
+                                    ? ' · ' + t('参考 P50')
+                                    : '')}
+                            </dd>
+                          </div>
+                        )}
                     </>
                   ) : (
                     showGenerationMetrics && (

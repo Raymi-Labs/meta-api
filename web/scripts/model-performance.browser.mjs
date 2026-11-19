@@ -113,7 +113,7 @@ try {
   );
   fs.writeFileSync(
     files[1],
-    `import React from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route,Link}from'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import EditModelModal from './src/components/table/models/modals/EditModelModal';import{UserContext}from'./src/context/User';import{StatusContext}from'./src/context/Status';import{ThemeProvider}from'./src/context/Theme';import{changeSiteLanguage,SITE_LANGUAGES}from'./src/helpers/siteLanguage';import{initialLocaleReady}from'./src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false),[revision,setRevision]=React.useState(0),[user,setUser]=React.useState({id:8,role:100,username:'fixture',group:'default'});return <UserContext.Provider value={[{user},()=>{}]}><div style={{display:'flex',gap:12,padding:12,flexWrap:'wrap'}}><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><button data-edit onClick={()=>setOpen(true)}>模型管理</button><button data-account onClick={()=>setUser({id:9,role:1,username:'other',group:'default'})}>切换账户</button></div><Routes><Route path="/pricing" element={<Pricing key={revision}/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:'chat-00'}} handleClose={()=>setOpen(false)} refresh={()=>setRevision(x=>x+1)}/></UserContext.Provider>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></MemoryRouter>);`,
+    `import React from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route,Link}from'react-router-dom';import Pricing from './src/pages/Pricing';import ModelDetail from './src/pages/ModelDetail';import EditModelModal from './src/components/table/models/modals/EditModelModal';import{UserContext}from'./src/context/User';import{StatusContext}from'./src/context/Status';import{ThemeProvider}from'./src/context/Theme';import{changeSiteLanguage,SITE_LANGUAGES}from'./src/helpers/siteLanguage';import{initialLocaleReady}from'./src/i18n/i18n';import './src/index.css';function App(){const[open,setOpen]=React.useState(false),[revision,setRevision]=React.useState(0),[user,setUser]=React.useState({id:8,role:1,username:'fixture',group:'default'});return <UserContext.Provider value={[{user},()=>{}]}><div style={{display:'flex',gap:12,padding:12,flexWrap:'wrap'}}><select data-site-language defaultValue="zh-CN" onChange={e=>changeSiteLanguage(e.target.value)}>{SITE_LANGUAGES.map(([code,label])=><option key={code} value={code}>{label}</option>)}</select><button data-edit onClick={()=>setOpen(true)}>模型管理</button><button data-account onClick={()=>setUser({id:9,role:1,username:'other',group:'default'})}>切换账户</button></div><Routes><Route path="/pricing" element={<Pricing key={revision}/>}/><Route path="/model/:name" element={<ModelDetail/>}/></Routes><EditModelModal visiable={open} editingModel={{id:1,model_name:'chat-00'}} handleClose={()=>setOpen(false)} refresh={()=>setRevision(x=>x+1)}/></UserContext.Provider>};await initialLocaleReady;createRoot(document.getElementById('root')).render(<MemoryRouter initialEntries={['/pricing']}><StatusContext.Provider value={[{status:${JSON.stringify(status)}},()=>{}]}><ThemeProvider><App/></ThemeProvider></StatusContext.Provider></MemoryRouter>);`,
   );
   browser = await puppeteer.launch({
     headless: true,
@@ -131,7 +131,7 @@ try {
       'user',
       JSON.stringify({
         id: 8,
-        role: 100,
+        role: 1,
         username: 'fixture',
         group: 'default',
       }),
@@ -169,7 +169,7 @@ try {
     else if (u.pathname === '/api/status')
       body = { success: true, data: status };
     else if (u.pathname === '/api/user/self')
-      body = { success: true, data: { id: 8, role: 100, username: 'fixture' } };
+      body = { success: true, data: { id: 8, role: 1, username: 'fixture' } };
     else if (u.pathname.startsWith('/api/health/')) {
       healthRequests.push(u.search);
       const seconds = Number(u.searchParams.get('bucket_seconds') || 3600);
@@ -205,7 +205,7 @@ try {
         avg_ttft_ms: measured ? 300 : null,
         ttft_count: measured ? 1 : 0,
         avg_output_tps: measured ? 77 : null,
-        performance_reference: ref,
+        market_speed_reference: historical ? undefined : ref,
         last_valid: history,
         series: historical
           ? Array.from({ length: count }, (_, i) => ({
@@ -263,7 +263,11 @@ try {
   );
   let text = await page.$eval(card, (e) => e.textContent);
   assert.ok(text.includes('首字时间') && text.includes('20'));
-  assert.ok(!/OpenRouter|P50|参考|首字均值/.test(text));
+  assert.ok(
+    text.includes('参考 P50') &&
+      !/OpenRouter|\bOR\b/.test(text) &&
+      !text.includes('首字均值'),
+  );
   await page.screenshot({ path: path.join(artifacts, 'catalog-desktop.png') });
   await page.click('.pricing-model-card a[href="/model/chat-00"]');
   await page.waitForFunction(() =>
@@ -273,7 +277,7 @@ try {
   );
   text = await page.$eval('.model-group-health-values', (e) => e.textContent);
   assert.ok(text.includes('首字时间') && text.includes('20'));
-  assert.ok(!/OpenRouter|P50|参考/.test(text));
+  assert.ok(text.includes('参考 P50') && !/OpenRouter|\bOR\b/.test(text));
   assert.ok(!text.includes('100.00%'), 'external data must not create uptime');
   const performance = await page.$eval('#performance', (e) => e.textContent);
   assert.ok(performance.includes('1.92 s') && performance.includes('20 tok/s'));
@@ -388,8 +392,10 @@ try {
   await page.reload({ waitUntil: 'networkidle0' });
   await page.waitForFunction(
     (selector) =>
-      (document.querySelector(selector)?.textContent.match(/暂无数据/g) || [])
-        .length === 2,
+      document.querySelector(selector)?.textContent.includes('上下文长度') &&
+      !document
+        .querySelector(selector)
+        ?.textContent.match(/暂无数据|首字时间|首字均值|输出速度|加载中/),
     {},
     card,
   );
@@ -411,7 +417,7 @@ try {
         'empty plots show current P50 without fake history',
         'usage section and navigation removed for reference and local data',
         'quick start follows performance',
-        'no source labels',
+        'ordinary-user fixture with neutral reference label',
         'no synthetic uptime',
         '390px dark layout',
         'historical throughput across card, group row and chart without source hint',

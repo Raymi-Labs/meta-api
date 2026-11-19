@@ -8,6 +8,7 @@ import {
   chartDisplayValue,
   chartPerformanceReference,
   chartSummary,
+  hasChartData,
 } from '../src/helpers/modelChartDisplay';
 const now = Date.UTC(2026, 10, 1, 12);
 const day = Date.UTC(2026, 10, 1) / 1000;
@@ -189,4 +190,16 @@ test('available site summaries and last valid cache/completion fill snapshots on
     'request_count',
   ])
     assert.equal(chartSummary(unsupported, metric, now).value, null);
+});
+
+test('comparison shows a positive request snapshot without treating missing tokens or availability as zero', () => {
+  const groups = [{ request_count: 29269, series: [] }];
+  assert.equal(chartSummary(groups[0], 'request_count').value, 29269);
+  assert.equal(hasChartData(groups, 'request_count'), true);
+  for (const metric of ['uptime_rate', 'total_tokens'])
+    assert.equal(hasChartData(groups, metric), false);
+  assert.equal(
+    hasChartData([{ series: [{ ts: 1, total_tokens: 0 }] }], 'total_tokens'),
+    true,
+  );
 });

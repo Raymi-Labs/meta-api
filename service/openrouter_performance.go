@@ -32,7 +32,16 @@ var performanceModelID = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._:-]+$`
 type performancePercentile struct {
 	P50 *float64 `json:"p50"`
 }
+type performanceTextWorkload struct {
+	Latency    *performancePercentile `json:"latency"`
+	Throughput *performancePercentile `json:"throughput"`
+}
 type performanceEndpoint struct {
+	LatencyWindowMinutes    int `json:"-"`
+	ThroughputWindowMinutes int `json:"-"`
+	Workloads               struct {
+		Text *performanceTextWorkload `json:"text_generation"`
+	} `json:"perf_last_30m_by_workload"`
 	Tag           string                 `json:"tag"`
 	Status        *int                   `json:"status"`
 	ServiceTier   *string                `json:"service_tier"`
@@ -87,10 +96,10 @@ func (cache *performanceCache) get(ctx context.Context, key string, fetch func(c
 			return performanceSnapshot{}, nil
 		}
 		s, err := fetch(fetchCtx)
-		ttl := performanceTTL
+		expires := s.FetchedAt.Add(performanceTTL)
 		if err != nil {
 			s = performanceSnapshot{}
-			ttl = performanceFailureTTL
+			expires = time.Now().Add(performanceFailureTTL)
 		}
 		cache.mu.Lock()
 		if len(cache.entries) >= 2048 {
@@ -101,7 +110,7 @@ func (cache *performanceCache) get(ctx context.Context, key string, fetch func(c
 			}
 		}
 		if len(cache.entries) < 2048 {
-			cache.entries[key] = performanceEntry{s, time.Now().Add(ttl)}
+			cache.entries[key] = performanceEntry{s, expires}
 		}
 		cache.mu.Unlock()
 		return s, nil
@@ -124,7 +133,9 @@ func fetchPerformance(ctx context.Context, client *http.Client, key, upstream st
 	if err != nil {
 		return performanceSnapshot{}, err
 	}
-	req.Header.Set("Authorization", "Bearer "+key)
+	if key != "" {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
 	req.Header.Set("Accept", "application/json")
 	if client == nil {
 		client = http.DefaultClient
@@ -340,14 +351,26 @@ func selectPerformance(s performanceSnapshot, p performancePolicy, upstream stri
 	}
 	e := candidates[0]
 	r := &grouphealth.PerformanceReference{Source: "openrouter", Model: upstream, Provider: e.Tag, Percentile: 50, FetchedAt: s.FetchedAt.Unix(), ExpiresAt: s.FetchedAt.Add(performanceTTL).Unix()}
+	// Prefer the text-specific workload when present. Other workloads (notably
+	// video) can report completion latency instead of time to first token.
+	if w := e.Workloads.Text; w != nil {
+		if w.Latency != nil && w.Latency.P50 != nil && finiteNonnegative(*w.Latency.P50) {
+			e.Latency = w.Latency
+		}
+		if w.Throughput != nil && w.Throughput.P50 != nil && finiteNonnegative(*w.Throughput.P50) {
+			e.Throughput = w.Throughput
+		}
+	}
 	// Authenticated endpoint responses report latency in milliseconds (e.g. 1915 ms).
 	if e.Latency != nil && e.Latency.P50 != nil && finiteNonnegative(*e.Latency.P50) {
 		v := *e.Latency.P50
 		r.TTFTMs = &v
+		r.LatencyWindowMinutes = e.LatencyWindowMinutes
 	}
 	if e.Throughput != nil && e.Throughput.P50 != nil && finiteNonnegative(*e.Throughput.P50) {
 		v := *e.Throughput.P50
 		r.OutputTPS = &v
+		r.ThroughputWindowMinutes = e.ThroughputWindowMinutes
 	}
 	if e.UptimeLastDay != nil && finiteNonnegative(*e.UptimeLastDay) && *e.UptimeLastDay <= 100 {
 		v := *e.UptimeLastDay

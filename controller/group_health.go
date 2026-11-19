@@ -113,10 +113,18 @@ func GetGroupHealth(c *gin.Context) {
 			usageRef = service.OpenRouterModelUsage(c.Request.Context(), emptyUsageGroups, modelName)
 		}()
 		refs := service.OpenRouterPerformance(c.Request.Context(), needs, []string{modelName})
+		var missing []string
+		for _, g := range result.Groups {
+			if missingSpeed(g.Metrics, refs[modelName][g.Group]) {
+				missing = append(missing, g.Group)
+			}
+		}
+		market := service.OpenRouterMarketSpeed(c.Request.Context(), missing, []string{modelName})
 		wg.Wait()
 		result.ModelUsageReference = usageRef
 		for i := range result.Groups {
 			result.Groups[i].PerformanceReference = refs[modelName][result.Groups[i].Group]
+			result.Groups[i].MarketSpeedReference = market[modelName][result.Groups[i].Group]
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": result})
@@ -171,12 +179,30 @@ func GetModelHealthSummaries(c *gin.Context) {
 			}
 		}
 	}
+	var missing []string
+	for _, m := range result.Models {
+		if missingSpeed(m.Metrics, m.PerformanceReference) {
+			missing = append(missing, m.Model)
+		}
+	}
+	market := service.OpenRouterMarketSpeed(c.Request.Context(), groups, missing)
+	for i, m := range result.Models {
+		for _, g := range groups {
+			if ref := market[m.Model][g]; ref != nil {
+				result.Models[i].MarketSpeedReference = ref
+				break
+			}
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": result})
 }
 
+func missingSpeed(m grouphealth.Metrics, ref *grouphealth.PerformanceReference) bool {
+	return (m.AvgTTFTMs == nil && (ref == nil || ref.TTFTMs == nil)) || (m.AvgOutputTPS == nil && (ref == nil || ref.OutputTPS == nil))
+}
+
 func needsPerformanceReference(m grouphealth.Metrics) bool {
-	return (m.AvgTTFTMs == nil && (m.LastValid == nil || m.LastValid.TTFT == nil)) ||
-		(m.AvgOutputTPS == nil && (m.LastValid == nil || m.LastValid.OutputTPS == nil))
+	return missingSpeed(m, nil)
 }
 
 // Local measurements, including zero, always take precedence over references.

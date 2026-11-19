@@ -29,7 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import { getLobeHubIcon } from '../../helpers';
-import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
+import ComparisonGenerationMetric from './ComparisonGenerationMetric';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import {
   getCompareModels,
@@ -48,7 +48,6 @@ import {
 } from '../../helpers/modelDetailNavigation';
 import {
   MODEL_MODALITY_LABELS,
-  formatModelThroughput,
   formatModelContextExact,
 } from '../../helpers/modelPresentation';
 import {
@@ -61,10 +60,6 @@ import {
   getDeclaredModelProtocols,
   getModelProtocolLabel,
 } from '../../helpers/modelProtocols';
-import {
-  formatChartDetailValue,
-  chartDisplayValue,
-} from '../../helpers/modelChartDisplay';
 import ComparisonMetrics, {
   useComparisonHealth,
   comparisonStats,
@@ -406,27 +401,21 @@ export default function ModelCompare() {
                   {row('output-modality', t('输出模态'), (model) =>
                     modalities(model, 'output_modalities'),
                   )}
-                  {row('latency', t('首字均值'), (model, index) =>
-                    supportsTextGenerationMetrics(model) ? (
-                      <span>
-                        {formatChartDetailValue(
-                          chartDisplayValue(
-                            comparisonStats(health[index], group),
-                            'avg_ttft_ms',
-                          ),
-                          'avg_ttft_ms',
-                        )}
-                      </span>
-                    ) : (
-                      '—'
+                  {['latency', 'throughput'].map((key) =>
+                    row(
+                      key,
+                      t(key === 'latency' ? '首字时间' : '输出速度'),
+                      (model, index) => (
+                        <ComparisonGenerationMetric
+                          model={model}
+                          group={group}
+                          health={health[index]}
+                          stats={comparisonStats(health[index], group)}
+                          latency={key === 'latency'}
+                          t={t}
+                        />
+                      ),
                     ),
-                  )}
-                  {row('throughput', t('输出速度'), (model, index) =>
-                    supportsTextGenerationMetrics(model)
-                      ? formatModelThroughput(
-                          comparisonStats(health[index], group)?.avg_output_tps,
-                        )
-                      : '—',
                   )}
                   {row(
                     'protocol',

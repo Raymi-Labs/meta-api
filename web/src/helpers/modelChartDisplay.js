@@ -162,7 +162,18 @@ export function chartSummary(group, metric, now = Date.now()) {
   const actual = chartDisplayValue(group, metric);
   if (actual != null) return { value: actual, kind: 'measured' };
   const external = chartPerformanceReference(group, metric, now);
-  if (external != null) return { value: external, kind: 'external' };
+  if (external != null) {
+    const summary = { value: external, kind: 'external' };
+    if (metric === 'avg_ttft_ms' || metric === 'avg_output_tps') {
+      const perf = modelPerformance(group, 'ttft', now);
+      if (
+        (metric === 'avg_ttft_ms' ? perf.latencyWindow : perf.speedWindow) ===
+        1440
+      )
+        summary.windowMinutes = 1440;
+    }
+    return summary;
+  }
   // Existing same-scope last-valid measurements belong only in summaries.
   const field = {
     avg_ttft_ms: 'ttft',
@@ -184,4 +195,13 @@ export function chartSummary(group, metric, now = Date.now()) {
     }
   }
   return { value: null, kind: 'missing' };
+}
+
+// An unsupported/unsampled metric should not become an empty comparison panel.
+export function hasChartData(groups, metric) {
+  return groups.some(
+    (g) =>
+      chartSummary(g, metric).value != null ||
+      (g.series || []).some((p) => chartDisplayValue(p, metric) != null),
+  );
 }

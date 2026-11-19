@@ -31,6 +31,7 @@ import {
   chartDomain,
   contiguousChartPoints,
   chartSummary,
+  hasChartData,
 } from '../../helpers/modelChartDisplay';
 
 export const GROUP_CHART_COLORS = ['#16b8a6', '#f5a623', '#5285ed', '#9b72cf'];
@@ -43,18 +44,19 @@ const date = (ts, daily = false) =>
 
 export default function ModelMetricChart({
   title,
-  groups,
+  groups: candidates,
   metric,
   bar = false,
   t,
   expandedView = false,
   bucketSeconds = 3600,
 }) {
+  const groups = candidates.filter((group) => hasChartData([group], metric));
   const [hover, setHover] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [width, setWidth] = useState(400);
   const plotRef = useRef(null);
-  useEffect(() => {
+  const resizePlot = () => {
     const element = plotRef.current;
     if (!element) return;
     const observer = new ResizeObserver(([entry]) =>
@@ -62,7 +64,7 @@ export default function ModelMetricChart({
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  };
   const timestamps = [
     ...new Set(
       groups.flatMap((group) => (group.series || []).map((point) => point.ts)),
@@ -79,13 +81,19 @@ export default function ModelMetricChart({
   const summaries = groups.map((group) => chartSummary(group, metric));
   const hasReference = summaries.some((summary) => summary.kind === 'external');
   const hasSnapshot = summaries.some((summary) => summary.value != null);
-  const externalWindow =
+  const showPlot = Boolean(nums.length || hasSnapshot);
+  useEffect(resizePlot, [showPlot]);
+  const externalWindow = (summary) =>
     metric === 'uptime_rate'
       ? t('最近 {{hours}} 小时', { hours: 24 })
-      : t('近30分钟') + ' · P50';
+      : (summary.windowMinutes === 1440
+          ? t('最近 {{hours}} 小时', { hours: 24 })
+          : t('近30分钟')) +
+        ' · ' +
+        t('参考 P50');
   const summaryLabel = (summary) =>
     summary.kind === 'external'
-      ? externalWindow
+      ? externalWindow(summary)
       : summary.kind === 'history'
         ? t('最近有效统计')
         : summary.kind === 'measured'
@@ -140,6 +148,7 @@ export default function ModelMetricChart({
       timestamps.length - 1,
     ]),
   ].filter((i) => i >= 0);
+  if (!showPlot) return null;
   return (
     <article
       className={
@@ -371,7 +380,7 @@ export default function ModelMetricChart({
                 ? t('暂无统计数据')
                 : format(summaries[i].value)}
               {summaries[i].kind === 'external' && nums.length > 0 && (
-                <small> · {externalWindow}</small>
+                <small> · {externalWindow(summaries[i])}</small>
               )}
             </strong>
           </div>
