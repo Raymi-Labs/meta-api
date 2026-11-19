@@ -18,14 +18,6 @@ import (
 
 // 限流配置
 const (
-	// 普通工单：每小时3个
-	normalTicketRateLimit    = 3
-	normalTicketRateDuration = time.Hour
-
-	// 申诉工单：每日1个（实际由数据库约束保证）
-	appealTicketRateLimit    = 1
-	appealTicketRateDuration = 24 * time.Hour
-
 	// 工单回复：每小时10条
 	ticketReplyRateLimit    = 10
 	ticketReplyRateDuration = time.Hour
@@ -48,27 +40,6 @@ type ReplyTicketRequest struct {
 // UpdateTicketStatusRequest 更新工单状态请求
 type UpdateTicketStatusRequest struct {
 	Status string `json:"status" binding:"required"`
-}
-
-// checkTicketCreateRateLimit 检查工单创建限流
-func checkTicketCreateRateLimit(ctx context.Context, userID int, category string) error {
-	var key string
-	var limit int
-	var duration time.Duration
-
-	if category == model.TicketCategoryAppeal {
-		// 申诉工单：每日1个
-		key = fmt.Sprintf("ticket_create_appeal:%d", userID)
-		limit = appealTicketRateLimit
-		duration = appealTicketRateDuration
-	} else {
-		// 普通工单：每小时3个
-		key = fmt.Sprintf("ticket_create_normal:%d", userID)
-		limit = normalTicketRateLimit
-		duration = normalTicketRateDuration
-	}
-
-	return common.CheckRateLimit(ctx, key, limit, int64(duration.Seconds()))
 }
 
 // checkTicketReplyRateLimit 检查工单回复限流
@@ -95,15 +66,6 @@ func CreateTicket(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请通过申诉入口提交"})
 		return
 	}
-	// 限流检查
-	if err := checkTicketCreateRateLimit(ctx, userID, req.Category); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
-
 	// 创建工单
 	ticket, err := model.CreateTicket(ctx, userID, req.Subject, req.Category, req.RequestID, req.Body)
 	if err != nil {
@@ -161,15 +123,6 @@ func CreateAppealTicket(c *gin.Context) {
 
 	userID := c.GetInt("appeal_user_id")
 	ctx := c.Request.Context()
-
-	// 限流检查
-	if err := checkTicketCreateRateLimit(ctx, userID, req.Category); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
 
 	// 创建工单
 	ticket, err := model.CreateTicket(ctx, userID, req.Subject, req.Category, req.RequestID, req.Body)
@@ -239,13 +192,8 @@ func GetTicket(c *gin.Context) {
 		return
 	}
 
-	// 标记为已读
-	if ticket.UserUnread {
-		_ = model.MarkTicketUserRead(ctx, ticketID, userID)
-	}
-
 	// 获取消息
-	messages, err := model.GetTicketMessages(ctx, ticketID, false)
+	messages, err := model.ReadTicketMessages(ctx, ticket, false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -522,13 +470,8 @@ func AdminGetTicket(c *gin.Context) {
 		return
 	}
 
-	// 标记为已读
-	if ticket.StaffUnread {
-		_ = model.MarkTicketStaffRead(ctx, ticketID)
-	}
-
 	// 获取消息（包括内部备注）
-	messages, err := model.GetTicketMessages(ctx, ticketID, true)
+	messages, err := model.ReadTicketMessages(ctx, ticket, true)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -932,13 +875,8 @@ func GetAppealTicket(c *gin.Context) {
 		return
 	}
 
-	// 标记为已读
-	if ticket.UserUnread {
-		_ = model.MarkTicketUserRead(ctx, ticketID, userID)
-	}
-
 	// 获取消息（不包括内部备注）
-	messages, err := model.GetTicketMessages(ctx, ticketID, false)
+	messages, err := model.ReadTicketMessages(ctx, ticket, false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

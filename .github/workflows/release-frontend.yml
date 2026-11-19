@@ -70,6 +70,9 @@ jobs:
           bun install --frozen-lockfile
           DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build
           DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$VERSION" bun run build:docs
+      - name: Verify ticket browser flows and response ordering
+        working-directory: web
+        run: bun run test:tickets
       - name: Bind artifact to source and version
         run: python3 .release-tools/scripts/release/frontend-artifact.py pack --directory .release-artifact --version "$VERSION"
       - name: Upload shared frontend

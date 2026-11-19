@@ -83,9 +83,7 @@ func notifyTicketCreated(ticketID int, subject, category string) {
 	}
 
 	notify := dto.NewNotify(NotifyTypeTicketNew, "新工单提醒", content, nil)
-	queueTicketNotification(func() {
-		sendTicketNotification(root.Id, root.Email, settings, notify)
-	})
+	sendTicketNotification(root.Id, root.Email, settings, notify)
 }
 
 func notifyTicketReply(ticket *model.Ticket, recipientID int, recipientEmail string, recipientSettings dto.UserSetting) {
@@ -105,32 +103,47 @@ func notifyTicketReply(ticket *model.Ticket, recipientID int, recipientEmail str
 	}
 
 	notify := dto.NewNotify(NotifyTypeTicketReply, "工单回复提醒", content, nil)
-	queueTicketNotification(func() {
-		sendTicketNotification(recipientID, recipientEmail, recipientSettings, notify)
-	})
+	sendTicketNotification(recipientID, recipientEmail, recipientSettings, notify)
 }
 
 func NotifyTicketUserReply(ticket *model.Ticket) {
+	id := ticket.ID
+	queueTicketNotification(func() { notifyTicketUserReply(id) })
+}
+
+// Resolve recipients inside the queued work: old assignment and role snapshots
+// must not survive reassignment, demotion, a ban or an address change.
+func notifyTicketUserReply(ticketID int) {
+	ticket, err := model.GetTicket(context.Background(), ticketID)
+	if err != nil {
+		return
+	}
 	if ticket.Assignee > 0 {
 		user, err := model.GetUserById(ticket.Assignee, false)
-		if err == nil && user.Status == common.UserStatusEnabled {
+		if err == nil && user.Status == common.UserStatusEnabled && user.Role >= common.RoleAdminUser {
 			notifyTicketReply(ticket, user.Id, user.Email, user.GetSetting())
 			return
 		}
 	}
-
 	root := model.GetRootUser()
-	if root != nil && root.Id > 0 && root.Status == common.UserStatusEnabled {
+	if root != nil && root.Id > 0 && root.Status == common.UserStatusEnabled && root.Role == common.RoleRootUser {
 		notifyTicketReply(ticket, root.Id, root.Email, root.GetSetting())
 	}
 }
 
 func NotifyTicketStaffReply(ticket *model.Ticket) {
-	user, err := model.GetUserById(ticket.UserID, false)
-	if err != nil || (user.Status != common.UserStatusEnabled && ticket.Category != model.TicketCategoryAppeal) {
-		return
-	}
-	notifyTicketReply(ticket, user.Id, user.Email, user.GetSetting())
+	id := ticket.ID
+	queueTicketNotification(func() {
+		current, err := model.GetTicket(context.Background(), id)
+		if err != nil {
+			return
+		}
+		user, err := model.GetUserById(current.UserID, false)
+		if err != nil || (user.Status != common.UserStatusEnabled && current.Category != model.TicketCategoryAppeal) {
+			return
+		}
+		notifyTicketReply(current, user.Id, user.Email, user.GetSetting())
+	})
 }
 
 func NotifyTicketCreated(ticketID int, subject, category string) {

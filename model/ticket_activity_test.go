@@ -2,6 +2,9 @@ package model
 
 import (
 	"context"
+	"errors"
+	"github.com/QuantumNous/new-api/common"
+	"gorm.io/gorm"
 	"sync"
 	"testing"
 	"time"
@@ -27,6 +30,126 @@ func TestTicketDatabaseMatrix(t *testing.T) {
 				})
 				return ticket
 			}
+			t.Run("read_snapshot_keeps_later_reply_unread", func(t *testing.T) {
+				ticket := create(TicketStatusOpen)
+				id := ticket.ID
+				readLocked, releaseRead := make(chan struct{}), make(chan struct{})
+				require.NoError(t, DB.Callback().Query().After("gorm:query").Register("ticket_read_barrier", func(tx *gorm.DB) {
+					if tx.Statement.Schema != nil && tx.Statement.Schema.Table == "ticket_messages" {
+						close(readLocked)
+						<-releaseRead
+					}
+				}))
+				readDone := make(chan error, 1)
+				go func() { _, err := ReadTicketMessages(ctx, ticket, true); readDone <- err }()
+				<-readLocked
+				writeDone := make(chan error, 1)
+				go func() {
+					writeDone <- TicketReplyAndTransition(ctx, id, 900001, TicketSenderUser, "arrived during read", false, "", TicketStatusOpen)
+				}()
+				close(releaseRead)
+				require.NoError(t, <-readDone)
+				require.NoError(t, <-writeDone)
+				require.NoError(t, DB.Callback().Query().Remove("ticket_read_barrier"))
+				got, err := GetTicket(ctx, id)
+				require.NoError(t, err)
+				require.True(t, got.StaffUnread, "new reply must not be acknowledged by the earlier read")
+			})
+			t.Run("successful_creation_quota_is_atomic_and_rolls_back", func(t *testing.T) {
+				require.NoError(t, DB.AutoMigrate(&User{}))
+				user := &User{Username: common.GetUUID()[:12], AffCode: common.GetUUID()[:12], Status: 1}
+				require.NoError(t, DB.Create(user).Error)
+				t.Cleanup(func() {
+					var ids []int
+					require.NoError(t, DB.Model(&Ticket{}).Where("user_id = ?", user.Id).Pluck("id", &ids).Error)
+					if len(ids) > 0 {
+						require.NoError(t, DB.Where("ticket_id IN ?", ids).Delete(&TicketMessage{}).Error)
+					}
+					require.NoError(t, DB.Where("user_id = ?", user.Id).Delete(&Ticket{}).Error)
+					require.NoError(t, DB.Unscoped().Delete(user).Error)
+				})
+				for _, category := range []string{TicketCategoryAPI, TicketCategoryAppeal} {
+					_, err := CreateTicket(ctx, user.Id, "   ", category, "", "test")
+					require.Error(t, err)
+				}
+				// A failed first-message insert must roll back both ticket and quota.
+				require.NoError(t, DB.Callback().Create().Before("gorm:create").Register("ticket_fail_message", func(tx *gorm.DB) {
+					if tx.Statement.Schema != nil && tx.Statement.Schema.Table == "ticket_messages" {
+						tx.AddError(errors.New("fixture insert failure"))
+					}
+				}))
+				_, err := CreateTicket(ctx, user.Id, "failed", TicketCategoryAppeal, "", "body")
+				require.Error(t, err)
+				require.NoError(t, DB.Callback().Create().Remove("ticket_fail_message"))
+				for _, category := range []string{TicketCategoryAPI, TicketCategoryAppeal} {
+					var wg sync.WaitGroup
+					results := make(chan error, 8)
+					for i := 0; i < 8; i++ {
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							_, err := CreateTicket(ctx, user.Id, "concurrent", category, "", "body")
+							results <- err
+						}()
+					}
+					wg.Wait()
+					close(results)
+					successes := 0
+					for err := range results {
+						if err == nil {
+							successes++
+						}
+					}
+					limit, window := 3, int64(3600)
+					if category == TicketCategoryAppeal {
+						limit, window = 1, 86400
+					}
+					require.Equal(t, limit, successes)
+					require.NoError(t, DB.Model(&Ticket{}).Where("user_id = ? AND category = ?", user.Id, category).Update("status", TicketStatusClosed).Error)
+					_, err = CreateTicket(ctx, user.Id, "still limited", category, "", "body")
+					require.ErrorContains(t, err, "操作过于频繁")
+					require.NoError(t, DB.Model(&Ticket{}).Where("user_id = ? AND category = ?", user.Id, category).Update("created_at", time.Now().Unix()-window-1).Error)
+					_, err = CreateTicket(ctx, user.Id, "expired window", category, "", "body")
+					require.NoError(t, err)
+				}
+			})
+			t.Run("attachment_delete_requires_owner_and_open_state", func(t *testing.T) {
+				ticket := create(TicketStatusOpen)
+				for _, tc := range []struct {
+					uploader, actor                  int
+					admin, closed, internal, allowed bool
+				}{
+					{900001, 900001, false, false, false, true},
+					{900002, 900001, false, false, false, false},
+					{900001, 900003, false, false, false, false},
+					{900001, 900002, true, false, false, true},
+					{900001, 900001, false, true, false, false},
+					{900001, 900002, true, true, false, false},
+					{900001, 900001, false, false, true, false},
+				} {
+					status := TicketStatusOpen
+					if tc.closed {
+						status = TicketStatusClosed
+					}
+					require.NoError(t, DB.Model(ticket).Update("status", status).Error)
+					attachment := &TicketAttachment{TicketID: ticket.ID, UploadedByID: tc.uploader}
+					if tc.internal {
+						msg := &TicketMessage{TicketID: ticket.ID, IsInternal: true}
+						require.NoError(t, DB.Create(msg).Error)
+						attachment.MessageID = &msg.ID
+					}
+					require.NoError(t, DB.Create(attachment).Error)
+					_, err := DeleteTicketAttachment(ctx, attachment.ID, tc.actor, tc.admin)
+					if tc.allowed {
+						require.NoError(t, err)
+					} else {
+						require.Error(t, err)
+						_, err = GetTicketAttachment(ctx, attachment.ID)
+						require.NoError(t, err)
+					}
+				}
+			})
+
 			t.Run("same_second_replies_and_notes", func(t *testing.T) {
 				for _, internal := range []bool{false, true} {
 					ticket := create(TicketStatusOpen)

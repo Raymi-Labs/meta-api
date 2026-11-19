@@ -684,21 +684,24 @@ func TestTicketAttachmentPermission(t *testing.T) {
 	api.denied(bob.Id, common.RoleCommonUser, http.MethodDelete, fmt.Sprintf("/api/ticket/attachment/%d", attachment.ID), nil)
 }
 
-// TestTicketRateLimit 测试限流（需要Redis才能真正生效，这里仅测试调用链路）
+// TestTicketRateLimit verifies the successful-creation quota without Redis.
 func TestTicketRateLimit(t *testing.T) {
 	api := setupTicketAPI(t)
 	user := api.uniqueUser("alice", common.UserStatusEnabled)
 
-	// 创建多个工单（无Redis时不会真正限流，但验证接口可调用）
-	for i := 0; i < 2; i++ {
+	// Only the first three successful creations fit the hourly window.
+	for i := 0; i < 4; i++ {
 		resp := api.call(user.Id, common.RoleCommonUser, http.MethodPost, "/api/ticket", map[string]any{
 			"subject":  fmt.Sprintf("限流测试%d", i),
 			"category": model.TicketCategoryBilling,
 			"body":     "测试",
 		})
-		// 前几个应该成功（无Redis时全部成功）
+		// Rejected creations do not create rows.
 		if i < 3 {
 			require.True(t, resp.Success, "ticket %d should succeed", i)
+		} else {
+			require.False(t, resp.Success)
+			require.Contains(t, resp.Message, "3600")
 		}
 	}
 }
@@ -715,8 +718,8 @@ func TestTicketMaxOpenConstraint(t *testing.T) {
 			"category": model.TicketCategoryBilling,
 			"body":     "测试",
 		})
-		// 重置限流器避免触发限流
-		common.ResetTicketRateLimiter()
+		// Simulate older creations so this test isolates the open-ticket cap.
+		require.NoError(t, model.DB.Model(&model.Ticket{}).Where("user_id = ?", user.Id).Update("created_at", time.Now().Add(-2*time.Hour).Unix()).Error)
 	}
 
 	// 再创建一个应该失败（超过最大开放数）

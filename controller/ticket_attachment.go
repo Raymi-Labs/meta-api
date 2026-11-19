@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -267,9 +268,23 @@ func DeleteTicketAttachment(c *gin.Context) {
 	if !attachmentAccess(c, attachment) {
 		return
 	}
-	// Delete metadata first: a database failure must not destroy a still-visible attachment.
-	if err := model.DeleteTicketAttachment(ctx, attachmentID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "删除附件失败"})
+	actorID := c.GetInt("id")
+	if c.GetInt("appeal_user_id") > 0 {
+		actorID = c.GetInt("appeal_user_id")
+	}
+	isAdmin := c.GetInt("appeal_user_id") == 0 && c.GetInt("role") >= common.RoleAdminUser
+	attachment, err = model.DeleteTicketAttachment(ctx, attachmentID, actorID, isAdmin)
+	if err != nil {
+		status, message := http.StatusInternalServerError, "删除附件失败"
+		switch {
+		case errors.Is(err, model.ErrTicketUnauthorized):
+			status, message = http.StatusForbidden, "无权删除此附件"
+		case errors.Is(err, model.ErrTicketClosed):
+			status, message = http.StatusBadRequest, "工单已关闭"
+		case errors.Is(err, model.ErrTicketAttachmentNotFound):
+			status, message = http.StatusNotFound, "附件不存在"
+		}
+		c.JSON(status, gin.H{"success": false, "message": message})
 		return
 	}
 	if err := os.Remove(attachment.StoragePath); err != nil && !os.IsNotExist(err) {

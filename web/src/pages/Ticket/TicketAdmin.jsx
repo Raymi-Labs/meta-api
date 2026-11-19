@@ -68,6 +68,7 @@ function TicketAdmin() {
   const [params] = useSearchParams();
   const [status, setStatus] = useState('');
   const [tickets, setTickets] = useState([]);
+  const listRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [selectedTicketId, setSelectedTicketId] = useState(
     Number(params.get('id')) > 0 ? Number(params.get('id')) : null,
@@ -79,15 +80,19 @@ function TicketAdmin() {
   });
 
   const loadTickets = async (page = 1) => {
+    const request = ++listRequest.current;
     try {
       setLoading(true);
       const res = await API.get('/api/admin/ticket', {
+        disableDuplicate: true,
+        skipErrorHandler: true,
         params: {
           page,
           page_size: pagination.pageSize,
           status,
         },
       });
+      if (request !== listRequest.current) return;
       if (res.data.success) {
         setTickets(res.data.data.tickets || []);
         setPagination({
@@ -99,14 +104,17 @@ function TicketAdmin() {
         showError(res.data.message);
       }
     } catch (error) {
-      showError(error.message);
+      if (request === listRequest.current) showError(error.message);
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadTickets(1);
+    return () => {
+      listRequest.current += 1;
+    };
   }, [status]);
 
   const handlePageChange = (page) => {

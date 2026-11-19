@@ -199,6 +199,26 @@ func CreateTicket(ctx context.Context, userID int, subject, category, requestID,
 			return ErrTicketMaxOpen
 		}
 
+		// Count only committed creations while holding the same user row lock.
+		// Failed validation/writes never consume a successful-creation slot.
+		duration, limit := int64(3600), int64(3)
+		recent := tx.Model(&Ticket{}).Where("user_id = ?", userID)
+		if category == TicketCategoryAppeal {
+			duration, limit = 86400, 1
+			recent = recent.Where("category = ?", TicketCategoryAppeal)
+		} else {
+			recent = recent.Where("category <> ?", TicketCategoryAppeal)
+		}
+		now = time.Now().Unix()
+		var recentCount int64
+		if err := recent.Where("created_at > ?", now-duration).Count(&recentCount).Error; err != nil {
+			return err
+		}
+		if recentCount >= limit {
+			return fmt.Errorf("操作过于频繁，请在 %d 秒后重试", duration)
+		}
+		ticket.CreatedAt, ticket.UpdatedAt, ticket.LastMessageAt, ticket.StatusUpdatedAt = now, now, now, now
+
 		if err := tx.Create(ticket).Error; err != nil {
 			return err
 		}
@@ -284,6 +304,42 @@ func GetTicketMessages(ctx context.Context, ticketID int, includeInternal bool) 
 	}
 	var messages []TicketMessage
 	err := query.Order("id ASC").Find(&messages).Error
+	return messages, err
+}
+
+// ReadTicketMessages acknowledges only a successfully prepared snapshot. Writers
+// lock the same ticket row, so activity after this transaction remains unread.
+func ReadTicketMessages(ctx context.Context, ticket *Ticket, includeInternal bool) ([]TicketMessage, error) {
+	var messages []TicketMessage
+	var current Ticket
+	err := ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, ticket.ID).Error; err != nil {
+			return err
+		}
+		query := tx.Where("ticket_id = ?", current.ID)
+		if !includeInternal {
+			query = query.Where("is_internal = ?", false)
+		}
+		if err := query.Order("id ASC").Find(&messages).Error; err != nil {
+			return err
+		}
+		column := "user_unread"
+		if includeInternal {
+			column = "staff_unread"
+		}
+		if err := tx.Model(&Ticket{}).Where("id = ?", current.ID).Update(column, false).Error; err != nil {
+			return err
+		}
+		if includeInternal {
+			current.StaffUnread = false
+		} else {
+			current.UserUnread = false
+		}
+		return nil
+	})
+	if err == nil {
+		*ticket = current
+	}
 	return messages, err
 }
 
@@ -755,8 +811,41 @@ func GetTicketAttachmentByID(ctx context.Context, attachmentID int) (*TicketAtta
 	return &attachment, err
 }
 
-func DeleteTicketAttachment(ctx context.Context, attachmentID int) error {
-	return ticketDB(ctx).Delete(&TicketAttachment{}, attachmentID).Error
+// DeleteTicketAttachment keeps authorization and closure checks under the same
+// row lock used by uploads, replies and status transitions.
+func DeleteTicketAttachment(ctx context.Context, attachmentID, actorID int, isAdmin bool) (*TicketAttachment, error) {
+	attachment, err := GetTicketAttachment(ctx, attachmentID)
+	if err != nil {
+		return nil, err
+	}
+	err = ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		var ticket Ticket
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ticket, attachment.TicketID).Error; err != nil {
+			return err
+		}
+		if err := tx.First(attachment, attachmentID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTicketAttachmentNotFound
+			}
+			return err
+		}
+		if !isAdmin {
+			if ticket.UserID != actorID || attachment.UploadedByID != actorID {
+				return ErrTicketUnauthorized
+			}
+			if attachment.MessageID != nil {
+				var message TicketMessage
+				if err := tx.Where("id = ? AND ticket_id = ? AND is_internal = ?", *attachment.MessageID, ticket.ID, false).First(&message).Error; err != nil {
+					return ErrTicketUnauthorized
+				}
+			}
+		}
+		if ticket.Status == TicketStatusClosed {
+			return ErrTicketClosed
+		}
+		return tx.Delete(attachment).Error
+	})
+	return attachment, err
 }
 
 // GetTicketByID 获取工单（别名）

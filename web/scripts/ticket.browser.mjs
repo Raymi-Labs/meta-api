@@ -60,8 +60,10 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><Notices/>{mod
   await server.listen();
   browser = await puppeteer.launch({
     headless: true,
+    args: process.env.CI ? ['--no-sandbox'] : [],
     executablePath:
       process.env.CHROME_PATH ||
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   });
   const page = await browser.newPage();

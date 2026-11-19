@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { API } from '../../helpers/apiCore';
 import {
   getAnnouncementKey,
@@ -38,6 +38,11 @@ export const useNotifications = (statusState, userState) => {
   const [ticketUnread, setTicketUnread] = useState(0);
   const userID = userState?.user?.id;
   const admin = Number(userState?.user?.role) >= 10;
+  const ticketRequest = useRef(0);
+  const ticketAbort = useRef(null);
+  const identity = `${userID || ''}:${admin}`;
+  const currentIdentity = useRef(identity);
+  currentIdentity.current = identity;
   const [staffTicketUnread, setStaffTicketUnread] = useState(0);
 
   const announcements = useMemo(
@@ -92,24 +97,33 @@ export const useNotifications = (statusState, userState) => {
 
   const fetchTicketUnread = async () => {
     if (!userID) return;
+    ticketAbort.current?.abort();
+    const controller = new AbortController();
+    ticketAbort.current = controller;
+    const request = ++ticketRequest.current;
+    const isCurrent = () =>
+      request === ticketRequest.current && currentIdentity.current === identity;
+    const config = {
+      skipErrorHandler: true,
+      skipGlobalLoading: true,
+      disableDuplicate: true,
+      signal: controller.signal,
+      headers: { 'New-API-User': userID },
+    };
     try {
-      const res = await API.get('/api/ticket/unread', {
-        skipErrorHandler: true,
-        skipGlobalLoading: true,
-      });
+      const res = await API.get('/api/ticket/unread', config);
+      if (!isCurrent()) return;
       if (res?.data?.success) {
         setTicketUnread(Number(res.data.data?.count) || 0);
       }
       if (admin) {
-        const staff = await API.get('/api/admin/ticket/unread', {
-          skipErrorHandler: true,
-          skipGlobalLoading: true,
-        });
+        const staff = await API.get('/api/admin/ticket/unread', config);
+        if (!isCurrent()) return;
         if (staff.data?.success)
           setStaffTicketUnread(Number(staff.data.data?.count) || 0);
       }
     } catch (_) {
-      // silent: keep previous value to avoid badge flicker
+      // Keep the current account's last value on a transient failure.
     }
   };
 
@@ -131,7 +145,11 @@ export const useNotifications = (statusState, userState) => {
     setStaffTicketUnread(0);
     fetchTicketUnread();
     const timer = setInterval(fetchTicketUnread, 60000);
-    return () => clearInterval(timer);
+    return () => {
+      ticketRequest.current += 1;
+      ticketAbort.current?.abort();
+      clearInterval(timer);
+    };
   }, [userID, admin]);
 
   // 操作函数
