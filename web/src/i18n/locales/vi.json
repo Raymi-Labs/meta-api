@@ -8232,6 +8232,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Tài khoản của bạn hiện đang bị cấm. Bạn có thể gửi phiếu khiếu nại qua trang này.",
     "工单提交与跟踪": "Gửi và Theo dõi Phiếu",
     "客户工单处理": "Xử lý Phiếu Khách hàng",
-    "我": "Tôi"
+    "我": "Tôi",
+    "文件大小不能超过5MB": "Tệp không được vượt quá 5MB",
+    "下载失败": "Tải xuống thất bại",
+    "上传附件": "Tải tệp đính kèm lên",
+    "单个附件不超过5MB，每个工单最多10个附件": "Tối đa 5MB mỗi tệp và 10 tệp cho mỗi phiếu hỗ trợ",
+    "附件": "Tệp đính kèm"
   }
 }

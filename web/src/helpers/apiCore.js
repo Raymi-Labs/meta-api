@@ -99,6 +99,11 @@ function attachAPIInterceptors(instance) {
   instance.interceptors.response.use(
     (response) => {
       markGlobalLoadingFinished(response.config);
+      if (response.data?.data?.appeal_available === true) {
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/appeal')
+          window.location.assign('/appeal');
+      }
       return response;
     },
     (error) => {

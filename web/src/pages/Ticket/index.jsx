@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -83,7 +83,8 @@ function Ticket() {
 
   // 检查是否从其他页面传入的 requestId
   useEffect(() => {
-    const requestId = searchParams.get('request_id');
+    const id = Number(searchParams.get('id'));
+    if (Number.isSafeInteger(id) && id > 0) setSelectedTicketId(id);
     const shouldCreate = searchParams.get('create');
     if (shouldCreate === '1') {
       setCreateModalVisible(true);
@@ -165,7 +166,7 @@ function Ticket() {
       width: 120,
       render: (status) => (
         <Tag color={STATUS_COLORS[status] || 'grey'}>
-          {STATUS_LABELS[status] || status}
+          {t(STATUS_LABELS[status] || status)}
         </Tag>
       ),
     },
@@ -217,19 +218,15 @@ function Ticket() {
             onPageChange: handlePageChange,
           }}
           loading={loading}
-          empty={
-            <Empty
-              image={<Empty.IllustrationNoContent />}
-              description={t('暂无工单')}
-            />
-          }
+          empty={<Empty description={t('暂无工单')} />}
         />
       </Card>
 
       <CreateTicketModal
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
-        onSuccess={() => {
+        onSuccess={(id) => {
+          setSelectedTicketId(id);
           setCreateModalVisible(false);
           loadTickets(1);
         }}
@@ -254,24 +251,24 @@ function CreateTicketModal({
   initialRequestId = null,
 }) {
   const { t } = useTranslation();
-  const [form] = Form.useForm();
+  const form = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible && initialRequestId) {
-      form.setValues({ request_id: initialRequestId });
+      form.current?.setValues({ request_id: initialRequestId });
     }
   }, [visible, initialRequestId]);
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validate();
+      const values = await form.current?.validate();
       setSubmitting(true);
       const res = await API.post('/api/ticket', values);
       if (res.data.success) {
         showSuccess(t('工单创建成功'));
-        form.reset();
-        onSuccess();
+        form.current?.reset();
+        onSuccess(res.data.data.id);
       } else {
         showError(res.data.message);
       }
@@ -293,7 +290,13 @@ function CreateTicketModal({
       confirmLoading={submitting}
       width={600}
     >
-      <Form form={form} labelPosition='left' labelWidth={100}>
+      <Form
+        getFormApi={(api) => {
+          form.current = api;
+        }}
+        labelPosition='left'
+        labelWidth={100}
+      >
         <Form.Input
           field='subject'
           label={t('标题')}
@@ -305,7 +308,10 @@ function CreateTicketModal({
           field='category'
           label={t('分类')}
           rules={[{ required: true, message: t('请选择分类') }]}
-          optionList={TICKET_CATEGORIES}
+          optionList={TICKET_CATEGORIES.map((o) => ({
+            ...o,
+            label: t(o.label),
+          }))}
         />
         <Form.TextArea
           field='body'

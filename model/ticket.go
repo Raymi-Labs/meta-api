@@ -122,8 +122,12 @@ func ValidTicketRequestID(requestID string) bool {
 	return ticketRequestIDPattern.MatchString(requestID)
 }
 
+func invalidTicketBodyRune(r rune) bool {
+	return unicode.IsControl(r) && r != '\n' && r != '\r' && r != '\t'
+}
+
 func ValidTicketMessageBody(body string) bool {
-	return len([]rune(body)) <= 5000
+	return strings.TrimSpace(body) != "" && len([]rune(body)) <= 5000
 }
 
 func ValidTicketSubject(subject string) bool {
@@ -146,7 +150,7 @@ func CreateTicket(ctx context.Context, userID int, subject, category, requestID,
 	if !ValidTicketMessageBody(body) {
 		return nil, ErrTicketMessageTooLong
 	}
-	if strings.IndexFunc(subject, unicode.IsControl) >= 0 || strings.IndexFunc(body, unicode.IsControl) >= 0 {
+	if strings.IndexFunc(subject, unicode.IsControl) >= 0 || strings.IndexFunc(body, invalidTicketBodyRune) >= 0 {
 		return nil, errors.New("标题或内容包含无效字符")
 	}
 
@@ -167,7 +171,7 @@ func CreateTicket(ctx context.Context, userID int, subject, category, requestID,
 
 	err := ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
 		var user User
-		if err := tx.Select("id", "status").First(&user, userID).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "status").First(&user, userID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("用户不存在")
 			}
@@ -179,8 +183,12 @@ func CreateTicket(ctx context.Context, userID int, subject, category, requestID,
 		}
 
 		var openCount int64
-		if err := tx.Model(&Ticket{}).Where("user_id = ? AND status IN ?", userID,
-			[]string{TicketStatusOpen, TicketStatusInProgress, TicketStatusWaitingUser}).Count(&openCount).Error; err != nil {
+		countQuery := tx.Model(&Ticket{}).Where("user_id = ? AND status IN ?", userID,
+			[]string{TicketStatusOpen, TicketStatusInProgress, TicketStatusWaitingUser})
+		if category == TicketCategoryAppeal {
+			countQuery = tx.Model(&Ticket{}).Where("user_id = ? AND category = ? AND status <> ?", userID, TicketCategoryAppeal, TicketStatusClosed)
+		}
+		if err := countQuery.Count(&openCount).Error; err != nil {
 			return err
 		}
 		if category == TicketCategoryAppeal {
@@ -296,7 +304,7 @@ func CreateTicketMessage(ctx context.Context, ticketID, senderID int, senderRole
 	if !ValidTicketMessageBody(body) {
 		return nil, ErrTicketMessageTooLong
 	}
-	if strings.IndexFunc(body, unicode.IsControl) >= 0 {
+	if strings.IndexFunc(body, invalidTicketBodyRune) >= 0 {
 		return nil, errors.New("消息内容包含无效字符")
 	}
 
@@ -356,7 +364,23 @@ func CreateTicketEventMessage(ctx context.Context, ticketID int, event, body str
 func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (*TicketAttachment, error) {
 	now := time.Now().Unix()
 	attachment.CreatedAt = now
-	err := ticketDB(ctx).Create(attachment).Error
+	err := ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
+		var ticket Ticket
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ticket, attachment.TicketID).Error; err != nil {
+			return err
+		}
+		if ticket.Status == TicketStatusClosed {
+			return ErrTicketClosed
+		}
+		var count int64
+		if err := tx.Model(&TicketAttachment{}).Where("ticket_id = ?", attachment.TicketID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count >= 10 {
+			return errors.New("每个工单最多10个附件")
+		}
+		return tx.Create(attachment).Error
+	})
 	return attachment, err
 }
 
@@ -374,7 +398,7 @@ func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, sende
 	if !ValidTicketMessageBody(body) {
 		return ErrTicketMessageTooLong
 	}
-	if strings.IndexFunc(body, unicode.IsControl) >= 0 {
+	if strings.IndexFunc(body, invalidTicketBodyRune) >= 0 {
 		return errors.New("消息内容包含无效字符")
 	}
 	if newStatus != "" && !ValidTicketStatus(newStatus) {
@@ -480,9 +504,9 @@ func CloseTicket(ctx context.Context, ticketID, userID int, oldStatus string) er
 		}
 
 		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(map[string]interface{}{
-			"status":           TicketStatusClosed,
+			"status":            TicketStatusClosed,
 			"status_updated_at": now,
-			"updated_at":       now,
+			"updated_at":        now,
 		})
 		if result.Error != nil {
 			return result.Error
@@ -512,9 +536,9 @@ func UpdateTicketStatus(ctx context.Context, ticketID int, newStatus, oldStatus 
 	now := time.Now().Unix()
 	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(map[string]interface{}{
-			"status":           newStatus,
+			"status":            newStatus,
 			"status_updated_at": now,
-			"updated_at":       now,
+			"updated_at":        now,
 		})
 		if result.Error != nil {
 			return result.Error
@@ -629,22 +653,22 @@ func CountTicketStaffPending(ctx context.Context) (int64, error) {
 
 func ListTicketsForAutoTransition(ctx context.Context, status string, staleThreshold int64, limit int) ([]Ticket, error) {
 	var tickets []Ticket
-	err := ticketDB(ctx).Where("status = ? AND status_updated_at < ?", status, staleThreshold).
+	err := ticketDB(ctx).Where("status = ? AND status_updated_at < ? AND last_message_at < ?", status, staleThreshold, staleThreshold).
 		Order("id ASC").Limit(limit).Find(&tickets).Error
 	return tickets, err
 }
 
-func AutoTransitionTicketStatus(ctx context.Context, ticketID int, fromStatus, toStatus string) error {
+func AutoTransitionTicketStatus(ctx context.Context, ticketID int, fromStatus, toStatus string, staleThreshold int64) error {
 	if !ValidTicketStatus(fromStatus) || !ValidTicketStatus(toStatus) {
 		return ErrTicketInvalidStatus
 	}
 
 	now := time.Now().Unix()
 	return ticketDB(ctx).Transaction(func(tx *gorm.DB) error {
-		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, fromStatus).Updates(map[string]interface{}{
-			"status":           toStatus,
+		result := tx.Model(&Ticket{}).Where("id = ? AND status = ? AND status_updated_at < ? AND last_message_at < ?", ticketID, fromStatus, staleThreshold, staleThreshold).Updates(map[string]interface{}{
+			"status":            toStatus,
 			"status_updated_at": now,
-			"updated_at":       now,
+			"updated_at":        now,
 		})
 		if result.Error != nil {
 			return result.Error

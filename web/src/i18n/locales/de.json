@@ -7625,6 +7625,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Ihr Konto ist derzeit gesperrt. Sie können über diese Seite eine Beschwerde einreichen.",
     "工单提交与跟踪": "Ticket-Einreichung und -Verfolgung",
     "客户工单处理": "Kunden-Ticket-Bearbeitung",
-    "我": "Ich"
+    "我": "Ich",
+    "文件大小不能超过5MB": "Dateien dürfen 5 MB nicht überschreiten",
+    "下载失败": "Download fehlgeschlagen",
+    "上传附件": "Anhang hochladen",
+    "单个附件不超过5MB，每个工单最多10个附件": "Maximal 5 MB pro Anhang und 10 Anhänge pro Ticket",
+    "附件": "Anhänge"
   }
 }

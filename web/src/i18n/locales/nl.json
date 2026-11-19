@@ -7625,6 +7625,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Uw account is momenteel verbannen. U kunt via deze pagina een bezwaar indienen.",
     "工单提交与跟踪": "Ticket Indienen en Volgen",
     "客户工单处理": "Klantticketbeheer",
-    "我": "Ik"
+    "我": "Ik",
+    "文件大小不能超过5MB": "Bestanden mogen niet groter zijn dan 5 MB",
+    "下载失败": "Download mislukt",
+    "上传附件": "Bijlage uploaden",
+    "单个附件不超过5MB，每个工单最多10个附件": "Maximaal 5 MB per bijlage en 10 bijlagen per ticket",
+    "附件": "Bijlagen"
   }
 }

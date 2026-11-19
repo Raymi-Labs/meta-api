@@ -12,6 +12,7 @@ import (
 )
 
 func SetApiRouter(router *gin.Engine) {
+	SetupTicketRouter(router)
 	// Register separately from gzip: each synthetic SSE frame must flush immediately.
 	router.GET("/api/route-probe", middleware.RouteTag("api"), middleware.RouteProbeRateLimit(false), controller.RouteProbe)
 	router.GET("/api/route-probe/stream", middleware.RouteTag("api"), middleware.RouteProbeRateLimit(true), controller.RouteProbeStream)

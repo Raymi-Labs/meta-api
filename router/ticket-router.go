@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
 
@@ -10,7 +11,7 @@ import (
 func SetupTicketRouter(router *gin.Engine) {
 	// 用户工单路由
 	ticketGroup := router.Group("/api/ticket")
-	ticketGroup.Use(middleware.UserAuth())
+	ticketGroup.Use(middleware.UserAuth(), middleware.TicketAccountAuth(common.RoleCommonUser))
 	{
 		ticketGroup.POST("", controller.CreateTicket)
 		ticketGroup.GET("", controller.GetMyTickets)
@@ -24,6 +25,10 @@ func SetupTicketRouter(router *gin.Engine) {
 	appealGroup := router.Group("/api/appeal")
 	appealGroup.Use(middleware.AppealAuth())
 	{
+		appealGroup.GET("/tickets/:id/attachments", controller.ListTicketAttachments)
+		appealGroup.POST("/attachment/upload", controller.UploadTicketAttachment)
+		appealGroup.GET("/attachment/:id/download", controller.DownloadTicketAttachment)
+		appealGroup.DELETE("/attachment/:id", controller.DeleteTicketAttachment)
 		appealGroup.GET("/session", controller.GetAppealSession)
 		appealGroup.POST("/tickets", controller.CreateAppealTicket)
 		appealGroup.GET("/tickets", controller.GetAppealTickets)
@@ -33,7 +38,7 @@ func SetupTicketRouter(router *gin.Engine) {
 
 	// 管理员工单路由
 	adminGroup := router.Group("/api/admin/ticket")
-	adminGroup.Use(middleware.AdminAuth())
+	adminGroup.Use(middleware.AdminAuth(), middleware.TicketAccountAuth(common.RoleAdminUser))
 	{
 		adminGroup.GET("", controller.AdminGetTickets)
 		adminGroup.GET("/unread", controller.AdminGetUnreadTicketCount)
@@ -45,7 +50,7 @@ func SetupTicketRouter(router *gin.Engine) {
 
 	// 附件路由
 	attachmentGroup := router.Group("/api/ticket")
-	attachmentGroup.Use(middleware.UserAuth())
+	attachmentGroup.Use(middleware.UserAuth(), middleware.TicketAccountAuth(common.RoleCommonUser))
 	{
 		attachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)
 		attachmentGroup.POST("/attachment/upload", controller.UploadTicketAttachment)
@@ -55,7 +60,7 @@ func SetupTicketRouter(router *gin.Engine) {
 
 	// 管理员附件路由
 	adminAttachmentGroup := router.Group("/api/admin/ticket")
-	adminAttachmentGroup.Use(middleware.AdminAuth())
+	adminAttachmentGroup.Use(middleware.AdminAuth(), middleware.TicketAccountAuth(common.RoleAdminUser))
 	{
 		adminAttachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)
 		adminAttachmentGroup.GET("/attachment/:id/download", controller.DownloadTicketAttachment)

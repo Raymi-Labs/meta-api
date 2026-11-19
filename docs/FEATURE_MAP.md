@@ -1,5 +1,7 @@
 # 功能地图
 
+工单与封禁申诉（2026-11-19）：[用户工单](../web/src/pages/Ticket/index.jsx)、[工单管理](../web/src/pages/Ticket/TicketAdmin.jsx)、[申诉页](../web/src/pages/Ticket/Appeal.jsx) → [工单API](../router/ticket-router.go) → [控制器](../controller/ticket.go)/[模型](../model/ticket.go)。普通及管理接口复查账号状态与角色，申诉在完整认证后签发15分钟独立会话；5MB附件、管理员下载、内部消息隔离；Redis同秒限流、状态筛选、未读入口与主节点7天自动流转。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-18-support-tickets.md)。
+
 [精确型号推理档位](../.agents/notes/implemented/feature/2026-11-18-platform-reasoning-profiles.md)：复用管理员模型编辑；`/api/user/models?include=reasoning_profiles` 仅在已过滤账号目录内返回档位和默认值。未请求时保持旧响应，不改变转发或结算。
 
 企业资金可靠性（2026-11-17，本地实现）：[平台钱包](../web/src/pages/EnterpriseAdmin/WalletModal.jsx)、[成员额度](../web/src/pages/EnterpriseConsole/AmountModal.jsx)、[人工预留](../web/src/pages/EnterpriseAdmin/Reservations.jsx) → 原企业权限路由 → [controller](../controller/enterprise.go) → [持久操作回执](../model/enterprise_operation.go)。入账/调账/分配/回收/人工结算要求Idempotency-Key，同键同参取原结果；资金/审计/回执同事务。回执查询复核当前主库身份和成员代次，金额为精确整数；全部回收绑定原可用额。浏览器保留待确认原操作，重开先查询，退出/认证失效清草稿；窄屏保留可达主操作。发布工具增加enterprise_operations_v1能力屏障，回执表存在后禁止不兼容回退。SQLite/race/本地组件通过，MySQL/PostgreSQL待CI；不改普通用户生图规则。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-17-enterprise-financial-operations.md)。 预留已离开待对账列表时，当前账号仍有原操作查询入口；首次升级兼容回退不满足时保留旧服务并中止，过渡发布待安排。

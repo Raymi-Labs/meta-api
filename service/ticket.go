@@ -22,13 +22,14 @@ const (
 	NotifyTypeTicketNew   = "ticket_new"
 	NotifyTypeTicketReply = "ticket_reply"
 
-	ticketAutoTransitionInterval     = 30 * time.Minute
-	ticketAutoTransitionBatchSize    = 200
-	ticketWaitingUserDays            = 7
-	ticketResolvedDays               = 7
+	ticketAutoTransitionInterval  = 30 * time.Minute
+	ticketAutoTransitionBatchSize = 200
+	ticketWaitingUserDays         = 7
+	ticketResolvedDays            = 7
 )
 
 var (
+	ticketNotifications         sync.WaitGroup
 	ticketAutoTransitionOnce    sync.Once
 	ticketAutoTransitionRunning atomic.Bool
 )
@@ -45,6 +46,18 @@ func ticketLink(ticketID int, isAppeal bool) string {
 		return base + "/login"
 	}
 	return fmt.Sprintf("%s/console/tickets?id=%d", base, ticketID)
+}
+
+func staffTicketLink(ticketID int) string {
+	return fmt.Sprintf("%s/console/ticket-admin?id=%d", strings.TrimRight(system_setting.ServerAddress, "/"), ticketID)
+}
+
+// WaitTicketNotifications drains queued notifications after request producers stop.
+func WaitTicketNotifications() { ticketNotifications.Wait() }
+
+func queueTicketNotification(run func()) {
+	ticketNotifications.Add(1)
+	gopool.Go(func() { defer ticketNotifications.Done(); run() })
 }
 
 func sendTicketNotification(userID int, email string, settings dto.UserSetting, notify dto.Notify) {
@@ -64,14 +77,13 @@ func notifyTicketCreated(ticketID int, subject, category string) {
 		medium = dto.NotifyTypeEmail
 	}
 
-	isAppeal := category == model.TicketCategoryAppeal
-	content := fmt.Sprintf("用户提交了新工单 #%d\n标题：%s\n分类：%s\n链接：%s", ticketID, subject, formatTicketCategory(category), ticketLink(ticketID, isAppeal))
+	content := fmt.Sprintf("用户提交了新工单 #%d\n标题：%s\n分类：%s\n链接：%s", ticketID, subject, formatTicketCategory(category), staffTicketLink(ticketID))
 	if medium == "" || medium == dto.NotifyTypeEmail {
 		content = strings.ReplaceAll(html.EscapeString(content), "\n", "<br/>")
 	}
 
 	notify := dto.NewNotify(NotifyTypeTicketNew, "新工单提醒", content, nil)
-	gopool.Go(func() {
+	queueTicketNotification(func() {
 		sendTicketNotification(root.Id, root.Email, settings, notify)
 	})
 }
@@ -83,13 +95,17 @@ func notifyTicketReply(ticket *model.Ticket, recipientID int, recipientEmail str
 	}
 
 	isAppeal := ticket.Category == model.TicketCategoryAppeal
-	content := fmt.Sprintf("工单 #%d 有新回复\n标题：%s\n链接：%s", ticket.ID, ticket.Subject, ticketLink(ticket.ID, isAppeal))
+	link := ticketLink(ticket.ID, isAppeal)
+	if recipientID != ticket.UserID {
+		link = staffTicketLink(ticket.ID)
+	}
+	content := fmt.Sprintf("工单 #%d 有新回复\n标题：%s\n链接：%s", ticket.ID, ticket.Subject, link)
 	if medium == "" || medium == dto.NotifyTypeEmail {
 		content = strings.ReplaceAll(html.EscapeString(content), "\n", "<br/>")
 	}
 
 	notify := dto.NewNotify(NotifyTypeTicketReply, "工单回复提醒", content, nil)
-	gopool.Go(func() {
+	queueTicketNotification(func() {
 		sendTicketNotification(recipientID, recipientEmail, recipientSettings, notify)
 	})
 }
@@ -111,14 +127,14 @@ func NotifyTicketUserReply(ticket *model.Ticket) {
 
 func NotifyTicketStaffReply(ticket *model.Ticket) {
 	user, err := model.GetUserById(ticket.UserID, false)
-	if err != nil || user.Status != common.UserStatusEnabled {
+	if err != nil || (user.Status != common.UserStatusEnabled && ticket.Category != model.TicketCategoryAppeal) {
 		return
 	}
 	notifyTicketReply(ticket, user.Id, user.Email, user.GetSetting())
 }
 
 func NotifyTicketCreated(ticketID int, subject, category string) {
-	gopool.Go(func() {
+	queueTicketNotification(func() {
 		notifyTicketCreated(ticketID, subject, category)
 	})
 }
@@ -165,7 +181,7 @@ func runTicketAutoTransitionOnce(now time.Time) {
 		logger.LogError(ctx, fmt.Sprintf("ticket auto-transition: failed to list waiting_user tickets: %v", err))
 	} else {
 		for _, ticket := range waitingTickets {
-			if err := model.AutoTransitionTicketStatus(ctx, ticket.ID, model.TicketStatusWaitingUser, model.TicketStatusResolved); err != nil {
+			if err := model.AutoTransitionTicketStatus(ctx, ticket.ID, model.TicketStatusWaitingUser, model.TicketStatusResolved, waitingUserThreshold); err != nil {
 				logger.LogWarn(ctx, fmt.Sprintf("ticket auto-transition: failed to transition ticket %d from waiting_user to resolved: %v", ticket.ID, err))
 			}
 		}
@@ -176,7 +192,7 @@ func runTicketAutoTransitionOnce(now time.Time) {
 		logger.LogError(ctx, fmt.Sprintf("ticket auto-transition: failed to list resolved tickets: %v", err))
 	} else {
 		for _, ticket := range resolvedTickets {
-			if err := model.AutoTransitionTicketStatus(ctx, ticket.ID, model.TicketStatusResolved, model.TicketStatusClosed); err != nil {
+			if err := model.AutoTransitionTicketStatus(ctx, ticket.ID, model.TicketStatusResolved, model.TicketStatusClosed, resolvedThreshold); err != nil {
 				logger.LogWarn(ctx, fmt.Sprintf("ticket auto-transition: failed to transition ticket %d from resolved to closed: %v", ticket.ID, err))
 			}
 		}

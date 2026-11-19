@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/gin-contrib/sessions"
@@ -67,8 +68,8 @@ func setupTicketAPI(t *testing.T) *ticketAPI {
 	common.ResetTicketRateLimiter()
 
 	t.Cleanup(func() {
-		// 等待异步通知goroutine完成，避免panic
-		time.Sleep(100 * time.Millisecond)
+		// Drain notifications before replacing shared database pointers.
+		service.WaitTicketNotifications()
 		model.DB, model.LOG_DB = oldDB, oldLogDB
 		common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled = oldSQLite, oldMySQL, oldPG, oldRedis
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldGroupRatio))
@@ -104,7 +105,6 @@ func setupTicketAPI(t *testing.T) *ticketAPI {
 		c.Next()
 	})
 	SetApiRouter(engine)
-	SetupTicketRouter(engine)
 	return &ticketAPI{t: t, engine: engine}
 }
 
@@ -336,7 +336,7 @@ func TestAppealTicketCreate(t *testing.T) {
 	bannedUser := api.uniqueUser("banned", common.UserStatusDisabled)
 
 	// 申诉用户创建工单
-	resp := api.callAppeal(bannedUser.Id, http.MethodPost, "/api/ticket/appeal", map[string]any{
+	resp := api.callAppeal(bannedUser.Id, http.MethodPost, "/api/appeal/tickets", map[string]any{
 		"subject":  "账号申诉",
 		"category": model.TicketCategoryAppeal,
 		"body":     "我的账号被误封，请求解封",
@@ -415,7 +415,8 @@ func TestAdminAssignTicket(t *testing.T) {
 	ticket, err := model.GetTicketByID(nil, ticketID)
 	require.NoError(t, err)
 	require.Equal(t, admin.Id, ticket.Assignee)
-	require.Equal(t, model.TicketStatusInProgress, ticket.Status)
+	// 指派和状态是独立操作；指派不得覆盖并发状态变化。
+	require.Equal(t, model.TicketStatusOpen, ticket.Status)
 }
 
 // TestAdminUpdateStatus 测试管理员更新状态
@@ -730,7 +731,7 @@ func TestTicketAppealMaxConstraint(t *testing.T) {
 	bannedUser := api.uniqueUser("banned", common.UserStatusDisabled)
 
 	// 创建第一个申诉工单
-	resp := api.callAppeal(bannedUser.Id, http.MethodPost, "/api/ticket/appeal", map[string]any{
+	resp := api.callAppeal(bannedUser.Id, http.MethodPost, "/api/appeal/tickets", map[string]any{
 		"subject":  "第一次申诉",
 		"category": model.TicketCategoryAppeal,
 		"body":     "请求解封",
@@ -741,7 +742,7 @@ func TestTicketAppealMaxConstraint(t *testing.T) {
 	common.ResetTicketRateLimiter()
 
 	// 尝试创建第二个申诉工单（应失败）
-	resp = api.callAppeal(bannedUser.Id, http.MethodPost, "/api/ticket/appeal", map[string]any{
+	resp = api.callAppeal(bannedUser.Id, http.MethodPost, "/api/appeal/tickets", map[string]any{
 		"subject":  "第二次申诉",
 		"category": model.TicketCategoryAppeal,
 		"body":     "再次请求",
@@ -749,4 +750,3 @@ func TestTicketAppealMaxConstraint(t *testing.T) {
 	require.False(t, resp.Success, "second appeal should fail")
 	require.Contains(t, resp.Message, "未关闭的申诉工单")
 }
-

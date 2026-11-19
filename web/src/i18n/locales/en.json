@@ -7837,6 +7837,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Your account is currently banned. You can submit an appeal ticket through this page.",
     "工单提交与跟踪": "Ticket Submission and Tracking",
     "客户工单处理": "Customer Ticket Management",
-    "我": "Me"
+    "我": "Me",
+    "文件大小不能超过5MB": "Files must not exceed 5MB",
+    "下载失败": "Download failed",
+    "上传附件": "Upload attachment",
+    "单个附件不超过5MB，每个工单最多10个附件": "Up to 5MB per attachment and 10 attachments per ticket",
+    "附件": "Attachments"
   }
 }

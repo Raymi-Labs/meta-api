@@ -66,7 +66,7 @@ local expiration = tonumber(ARGV[4])
 redis.call('ZREMRANGEBYSCORE', key, 0, window_start)
 local current = redis.call('ZCARD', key)
 if current < max_requests then
-    redis.call('ZADD', key, now, now)
+    redis.call('ZADD', key, now, ARGV[5])
     redis.call('EXPIRE', key, expiration)
     return 1
 else
@@ -74,7 +74,7 @@ else
 end
 `
 
-	result, err := RDB.Eval(ctx, script, []string{key}, nowTs, windowStart, maxRequestNum, int(expiration.Seconds())).Result()
+	result, err := RDB.Eval(ctx, script, []string{key}, nowTs, windowStart, maxRequestNum, int(expiration.Seconds()), GetUUID()).Result()
 	if err != nil {
 		return false, err
 	}

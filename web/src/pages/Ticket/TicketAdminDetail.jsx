@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -33,9 +33,10 @@ import {
   Empty,
   Select,
   Checkbox,
-  Collapsible,
+  Collapse,
   Table,
 } from '@douyinfe/semi-ui';
+import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
 
@@ -87,7 +88,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [replyForm] = Form.useForm();
+  const replyForm = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
@@ -119,12 +120,12 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
 
   const handleReply = async () => {
     try {
-      const values = await replyForm.validate();
+      const values = await replyForm.current?.validate();
       setSubmitting(true);
       const res = await API.post(`/api/admin/ticket/${ticketId}/reply`, values);
       if (res.data.success) {
         showSuccess(t('回复成功'));
-        replyForm.reset();
+        replyForm.current?.reset();
         await loadTicketDetail();
         onUpdate && onUpdate();
       } else {
@@ -259,7 +260,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
             </Title>
             <Space>
               <Tag color={STATUS_COLORS[ticket.status]}>
-                {STATUS_LABELS[ticket.status] || ticket.status}
+                {t(STATUS_LABELS[ticket.status] || ticket.status)}
               </Tag>
               {ticket.category === 'appeal' && (
                 <Tag color='red'>{t('申诉工单')}</Tag>
@@ -276,7 +277,8 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
             </Text>
             <Divider layout='vertical' />
             <Text type='tertiary'>
-              {t('分类')}: {CATEGORY_LABELS[ticket.category] || ticket.category}
+              {t('分类')}:{' '}
+              {t(CATEGORY_LABELS[ticket.category] || ticket.category)}
             </Text>
             <Divider layout='vertical' />
             <Text type='tertiary'>
@@ -308,7 +310,10 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
               onChange={handleStatusChange}
               disabled={statusUpdating}
               style={{ width: 150 }}
-              optionList={STATUS_OPTIONS}
+              optionList={STATUS_OPTIONS.map((o) => ({
+                ...o,
+                label: t(o.label),
+              }))}
             />
             <Button type='tertiary' onClick={handleAssignToMe}>
               {t('指派给我')}
@@ -321,8 +326,8 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
         {/* 关联日志 */}
         {logs && logs.length > 0 && (
           <>
-            <Collapsible>
-              <Collapsible.Panel
+            <Collapse>
+              <Collapse.Panel
                 header={t('关联请求日志') + ` (${logs.length})`}
                 itemKey='logs'
               >
@@ -332,12 +337,17 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
                   pagination={false}
                   size='small'
                 />
-              </Collapsible.Panel>
-            </Collapsible>
+              </Collapse.Panel>
+            </Collapse>
             <Divider />
           </>
         )}
 
+        <TicketAttachments
+          ticketId={ticketId}
+          mode='admin'
+          closed={ticket.status === 'closed'}
+        />
         {/* 消息列表 */}
         <div style={{ marginBottom: 24 }}>
           {messages.length === 0 ? (
@@ -358,15 +368,25 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
                 >
                   <div style={{ marginBottom: 8 }}>
                     <Tag size='small'>
-                      {SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role}
+                      {t(
+                        SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role,
+                      )}
                     </Tag>
                     {msg.sender_id && (
-                      <Text type='tertiary' size='small' style={{ marginLeft: 8 }}>
+                      <Text
+                        type='tertiary'
+                        size='small'
+                        style={{ marginLeft: 8 }}
+                      >
                         #{msg.sender_id}
                       </Text>
                     )}
                     {msg.is_internal && (
-                      <Tag color='purple' size='small' style={{ marginLeft: 8 }}>
+                      <Tag
+                        color='purple'
+                        size='small'
+                        style={{ marginLeft: 8 }}
+                      >
                         {t('内部备注')}
                       </Tag>
                     )}
@@ -393,7 +413,12 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
         {canReply && (
           <>
             <Divider />
-            <Form form={replyForm} labelPosition='top'>
+            <Form
+              getFormApi={(api) => {
+                replyForm.current = api;
+              }}
+              labelPosition='top'
+            >
               <Form.TextArea
                 field='body'
                 label={t('回复内容')}

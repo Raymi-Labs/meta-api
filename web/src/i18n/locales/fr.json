@@ -7957,6 +7957,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Votre compte est actuellement banni. Vous pouvez soumettre un recours via cette page.",
     "工单提交与跟踪": "Soumission et Suivi des Tickets",
     "客户工单处理": "Gestion des Tickets Clients",
-    "我": "Moi"
+    "我": "Moi",
+    "文件大小不能超过5MB": "Le fichier ne doit pas dépasser 5 Mo",
+    "下载失败": "Échec du téléchargement",
+    "上传附件": "Ajouter une pièce jointe",
+    "单个附件不超过5MB，每个工单最多10个附件": "5 Mo par pièce jointe et 10 pièces jointes par ticket maximum",
+    "附件": "Pièces jointes"
   }
 }

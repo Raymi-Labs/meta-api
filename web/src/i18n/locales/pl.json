@@ -7625,6 +7625,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Twoje konto jest obecnie zablokowane. Możesz złożyć odwołanie za pośrednictwem tej strony.",
     "工单提交与跟踪": "Składanie i Śledzenie Zgłoszeń",
     "客户工单处理": "Obsługa Zgłoszeń Klientów",
-    "我": "Ja"
+    "我": "Ja",
+    "文件大小不能超过5MB": "Plik nie może przekraczać 5 MB",
+    "下载失败": "Pobieranie nie powiodło się",
+    "上传附件": "Prześlij załącznik",
+    "单个附件不超过5MB，每个工单最多10个附件": "Maksymalnie 5 MB na załącznik i 10 załączników na zgłoszenie",
+    "附件": "Załączniki"
   }
 }

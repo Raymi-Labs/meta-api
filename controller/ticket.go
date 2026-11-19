@@ -91,6 +91,10 @@ func CreateTicket(c *gin.Context) {
 	userID := c.GetInt("id")
 	ctx := c.Request.Context()
 
+	if req.Category == model.TicketCategoryAppeal {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请通过申诉入口提交"})
+		return
+	}
 	// 限流检查
 	if err := checkTicketCreateRateLimit(ctx, userID, req.Category); err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -125,7 +129,7 @@ func CreateTicket(c *gin.Context) {
 	}
 
 	// 异步通知
-	go service.NotifyTicketCreated(ticket.ID, req.Subject, req.Category)
+	service.NotifyTicketCreated(ticket.ID, req.Subject, req.Category)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -138,7 +142,12 @@ func CreateTicket(c *gin.Context) {
 
 // CreateAppealTicket 创建申诉工单（申诉会话）
 func CreateAppealTicket(c *gin.Context) {
-	var req CreateTicketRequest
+	var req struct {
+		Subject   string `json:"subject" binding:"required"`
+		Body      string `json:"body" binding:"required"`
+		Category  string `json:"category"`
+		RequestID string `json:"request_id"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -180,7 +189,7 @@ func CreateAppealTicket(c *gin.Context) {
 	}
 
 	// 异步通知
-	go service.NotifyTicketCreated(ticket.ID, req.Subject, req.Category)
+	service.NotifyTicketCreated(ticket.ID, req.Subject, req.Category)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -377,7 +386,7 @@ func ReplyTicket(c *gin.Context) {
 	}
 
 	// 异步通知
-	go service.NotifyTicketUserReply(ticket)
+	service.NotifyTicketUserReply(ticket)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -454,11 +463,17 @@ func AdminGetTickets(c *gin.Context) {
 		pageSize = 20
 	}
 
-	// 筛选参数
-	_ = c.Query("status")
+	filter := model.TicketFilter{Status: c.Query("status"), Category: c.Query("category"), Keyword: c.Query("keyword"), Unassigned: c.Query("unassigned") == "true", StaffUnreadOnly: c.Query("unread") == "true"}
+	if c.Query("assigned_to_me") == "true" {
+		filter.AssignedToMe = c.GetInt("id")
+	}
+	if (filter.Status != "" && !model.ValidTicketStatus(filter.Status)) || (filter.Category != "" && !model.ValidTicketCategory(filter.Category)) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "筛选参数无效"})
+		return
+	}
 	offset := (page - 1) * pageSize
 
-	tickets, total, err := model.GetAllTickets(ctx, offset, pageSize)
+	tickets, total, err := model.ListTickets(ctx, filter, offset, pageSize)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -609,7 +624,7 @@ func AdminReplyTicket(c *gin.Context) {
 
 	// 异步通知（仅非内部备注）
 	if !req.IsInternal {
-		go service.NotifyTicketStaffReply(ticket)
+		service.NotifyTicketStaffReply(ticket)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -852,7 +867,7 @@ func GetAppealTickets(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// 只返回该用户的申诉工单
-	tickets, _, err := model.GetUserTickets(ctx, userID, 0, 100)
+	tickets, _, err := model.ListTickets(ctx, model.TicketFilter{UserID: userID, Category: model.TicketCategoryAppeal}, 0, 100)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -1027,7 +1042,7 @@ func ReplyAppealTicket(c *gin.Context) {
 	}
 
 	// 异步通知
-	go service.NotifyTicketUserReply(ticket)
+	service.NotifyTicketUserReply(ticket)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

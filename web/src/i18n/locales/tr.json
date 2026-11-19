@@ -7625,6 +7625,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Hesabınız şu anda yasaklı. Bu sayfa üzerinden itiraz gönderebilirsiniz.",
     "工单提交与跟踪": "Bilet Gönderimi ve Takibi",
     "客户工单处理": "Müşteri Bilet İşleme",
-    "我": "Ben"
+    "我": "Ben",
+    "文件大小不能超过5MB": "Dosya boyutu 5 MB sınırını aşamaz",
+    "下载失败": "İndirme başarısız",
+    "上传附件": "Ek yükle",
+    "单个附件不超过5MB，每个工单最多10个附件": "Ek başına en fazla 5 MB, talep başına en fazla 10 ek",
+    "附件": "Ekler"
   }
 }

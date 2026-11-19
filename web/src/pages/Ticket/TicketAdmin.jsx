@@ -17,7 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Card,
@@ -26,6 +27,7 @@ import {
   Tag,
   Typography,
   Space,
+  Select,
   Empty,
 } from '@douyinfe/semi-ui';
 import { API } from '../../helpers/apiCore';
@@ -63,9 +65,13 @@ const CATEGORY_LABELS = {
 
 function TicketAdmin() {
   const { t } = useTranslation();
+  const [params] = useSearchParams();
+  const [status, setStatus] = useState('');
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [selectedTicketId, setSelectedTicketId] = useState(
+    Number(params.get('id')) > 0 ? Number(params.get('id')) : null,
+  );
   const [pagination, setPagination] = useState({
     currentPage: 1,
     pageSize: 20,
@@ -79,6 +85,7 @@ function TicketAdmin() {
         params: {
           page,
           page_size: pagination.pageSize,
+          status,
         },
       });
       if (res.data.success) {
@@ -99,8 +106,8 @@ function TicketAdmin() {
   };
 
   useEffect(() => {
-    loadTickets();
-  }, []);
+    loadTickets(1);
+  }, [status]);
 
   const handlePageChange = (page) => {
     loadTickets(page);
@@ -145,7 +152,7 @@ function TicketAdmin() {
         const isAppeal = category === 'appeal';
         return (
           <Tag color={isAppeal ? 'red' : 'blue'}>
-            {CATEGORY_LABELS[category] || category}
+            {t(CATEGORY_LABELS[category] || category)}
           </Tag>
         );
       },
@@ -156,7 +163,7 @@ function TicketAdmin() {
       width: 120,
       render: (status) => (
         <Tag color={STATUS_COLORS[status] || 'grey'}>
-          {STATUS_LABELS[status] || status}
+          {t(STATUS_LABELS[status] || status)}
         </Tag>
       ),
     },
@@ -187,6 +194,18 @@ function TicketAdmin() {
         >
           <Title heading={3}>{t('工单管理')}</Title>
           <Space>
+            <Select
+              value={status}
+              onChange={setStatus}
+              style={{ width: 160 }}
+              optionList={[
+                { value: '', label: t('全部') },
+                ...Object.entries(STATUS_LABELS).map(([value, label]) => ({
+                  value,
+                  label: t(label),
+                })),
+              ]}
+            />
             <Button
               icon={<IconRefresh />}
               onClick={() => loadTickets(pagination.currentPage)}
@@ -206,12 +225,7 @@ function TicketAdmin() {
             onPageChange: handlePageChange,
           }}
           loading={loading}
-          empty={
-            <Empty
-              image={<Empty.IllustrationNoContent />}
-              description={t('暂无工单')}
-            />
-          }
+          empty={<Empty description={t('暂无工单')} />}
         />
       </Card>
 

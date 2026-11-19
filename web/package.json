@@ -92,7 +92,8 @@
     "sync:handbook": "node scripts/sync-handbook.mjs",
     "test:image-pricing": "bun scripts/image-pricing.test.mjs && node scripts/image-pricing.browser.mjs",
     "test:model-catalog-facets": "bun test scripts/model-catalog-facets.test.mjs",
-    "test:model-catalog-facets:browser": "node scripts/model-catalog-facets.browser.mjs"
+    "test:model-catalog-facets:browser": "node scripts/model-catalog-facets.browser.mjs",
+    "test:tickets": "node scripts/ticket.browser.mjs"
   },
   "eslintConfig": {
     "extends": [

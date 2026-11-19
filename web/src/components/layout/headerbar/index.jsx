@@ -59,6 +59,8 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     noticeVisible,
     unreadCount,
     announcementUnread,
+    ticketUnread,
+    staffTicketUnread,
     pendingWithdrawalCount,
     pendingWithdrawals,
     pendingInvoiceCount,
@@ -67,7 +69,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     handleNoticeOpen,
     handleNoticeClose,
     getUnreadKeys,
-  } = useNotifications(statusState);
+  } = useNotifications(statusState, userState);
 
   const { mainNavLinks } = useNavigation(t, docsLink, headerNavModules);
 
@@ -80,6 +82,9 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
         <Suspense fallback={null}>
           <NoticeModal
             visible={noticeVisible}
+            ticketUnread={ticketUnread}
+            staffTicketUnread={staffTicketUnread}
+            showTicketTab={!!userState?.user?.id}
             onClose={handleNoticeClose}
             isMobile={isMobile}
             defaultTab={

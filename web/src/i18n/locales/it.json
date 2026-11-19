@@ -7625,6 +7625,11 @@
     "您的账号当前处于封禁状态。您可以通过此页面提交申诉工单。": "Il tuo account è attualmente bannato. Puoi inviare un ricorso tramite questa pagina.",
     "工单提交与跟踪": "Invio e Monitoraggio Ticket",
     "客户工单处理": "Gestione Ticket Clienti",
-    "我": "Io"
+    "我": "Io",
+    "文件大小不能超过5MB": "Il file non deve superare 5 MB",
+    "下载失败": "Download non riuscito",
+    "上传附件": "Carica allegato",
+    "单个附件不超过5MB，每个工单最多10个附件": "Massimo 5 MB per allegato e 10 allegati per ticket",
+    "附件": "Allegati"
   }
 }
