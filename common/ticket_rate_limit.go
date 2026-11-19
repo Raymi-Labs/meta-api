@@ -44,6 +44,9 @@ func checkRedisRateLimit(ctx context.Context, key string, maxRequestNum int, dur
 }
 
 func checkMemoryRateLimit(key string, maxRequestNum int, duration int64) error {
+	// Retention must cover every requested window, including daily appeals.
+	// Init only increases retention and is safe when requests run concurrently.
+	ticketInMemoryRateLimiter.Init(time.Duration(duration) * time.Second)
 	if !ticketInMemoryRateLimiter.Request(key, maxRequestNum, duration) {
 		return fmt.Errorf("操作过于频繁，请在 %d 秒后重试", duration)
 	}

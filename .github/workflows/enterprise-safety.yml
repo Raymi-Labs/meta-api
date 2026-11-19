@@ -49,7 +49,7 @@ jobs:
         env:
           TEST_COMPAT_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/enterprise_test?charset=utf8mb4&parseTime=true
           TEST_COMPAT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
-        run: go test -p 2 ./model -run Enterprise -count=1 -timeout=180s -v
+        run: go test -p 2 ./model -run 'Enterprise|TicketDatabaseMatrix' -count=1 -timeout=180s -v
       - name: Verify HTTP, settlement and personal payer isolation
         run: go test -p 2 ./router ./service ./controller ./middleware ./pkg/group_health ./pkg/route_insight ./relay ./relay/helper ./relay/channel/openai -count=1 -timeout=240s
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020

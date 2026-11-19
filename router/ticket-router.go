@@ -8,21 +8,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupTicketRouter(router *gin.Engine) {
+func SetupTicketRouter(router *gin.RouterGroup) {
+	jsonBodyLimit := middleware.TicketRequestBodyLimit()
 	// 用户工单路由
-	ticketGroup := router.Group("/api/ticket")
+	ticketGroup := router.Group("/ticket")
 	ticketGroup.Use(middleware.UserAuth(), middleware.TicketAccountAuth(common.RoleCommonUser))
 	{
-		ticketGroup.POST("", controller.CreateTicket)
+		ticketGroup.POST("", jsonBodyLimit, controller.CreateTicket)
 		ticketGroup.GET("", controller.GetMyTickets)
 		ticketGroup.GET("/unread", controller.GetUnreadTicketCount)
 		ticketGroup.GET("/:id", controller.GetTicket)
-		ticketGroup.POST("/:id/reply", controller.ReplyTicket)
-		ticketGroup.POST("/:id/close", controller.CloseTicket)
+		ticketGroup.POST("/:id/reply", jsonBodyLimit, controller.ReplyTicket)
+		ticketGroup.POST("/:id/close", jsonBodyLimit, controller.CloseTicket)
 	}
 
 	// 申诉用户工单路由
-	appealGroup := router.Group("/api/appeal")
+	appealGroup := router.Group("/appeal")
 	appealGroup.Use(middleware.AppealAuth())
 	{
 		appealGroup.GET("/tickets/:id/attachments", controller.ListTicketAttachments)
@@ -30,26 +31,26 @@ func SetupTicketRouter(router *gin.Engine) {
 		appealGroup.GET("/attachment/:id/download", controller.DownloadTicketAttachment)
 		appealGroup.DELETE("/attachment/:id", controller.DeleteTicketAttachment)
 		appealGroup.GET("/session", controller.GetAppealSession)
-		appealGroup.POST("/tickets", controller.CreateAppealTicket)
+		appealGroup.POST("/tickets", jsonBodyLimit, controller.CreateAppealTicket)
 		appealGroup.GET("/tickets", controller.GetAppealTickets)
 		appealGroup.GET("/tickets/:id", controller.GetAppealTicket)
-		appealGroup.POST("/tickets/:id/reply", controller.ReplyAppealTicket)
+		appealGroup.POST("/tickets/:id/reply", jsonBodyLimit, controller.ReplyAppealTicket)
 	}
 
 	// 管理员工单路由
-	adminGroup := router.Group("/api/admin/ticket")
+	adminGroup := router.Group("/admin/ticket")
 	adminGroup.Use(middleware.AdminAuth(), middleware.TicketAccountAuth(common.RoleAdminUser))
 	{
 		adminGroup.GET("", controller.AdminGetTickets)
 		adminGroup.GET("/unread", controller.AdminGetUnreadTicketCount)
 		adminGroup.GET("/:id", controller.AdminGetTicket)
-		adminGroup.POST("/:id/reply", controller.AdminReplyTicket)
-		adminGroup.PUT("/:id/status", controller.AdminUpdateTicketStatus)
-		adminGroup.PUT("/:id/assign", controller.AdminAssignTicket)
+		adminGroup.POST("/:id/reply", jsonBodyLimit, controller.AdminReplyTicket)
+		adminGroup.PUT("/:id/status", jsonBodyLimit, controller.AdminUpdateTicketStatus)
+		adminGroup.PUT("/:id/assign", jsonBodyLimit, controller.AdminAssignTicket)
 	}
 
 	// 附件路由
-	attachmentGroup := router.Group("/api/ticket")
+	attachmentGroup := router.Group("/ticket")
 	attachmentGroup.Use(middleware.UserAuth(), middleware.TicketAccountAuth(common.RoleCommonUser))
 	{
 		attachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)
@@ -59,7 +60,7 @@ func SetupTicketRouter(router *gin.Engine) {
 	}
 
 	// 管理员附件路由
-	adminAttachmentGroup := router.Group("/api/admin/ticket")
+	adminAttachmentGroup := router.Group("/admin/ticket")
 	adminAttachmentGroup.Use(middleware.AdminAuth(), middleware.TicketAccountAuth(common.RoleAdminUser))
 	{
 		adminAttachmentGroup.GET("/:id/attachments", controller.ListTicketAttachments)

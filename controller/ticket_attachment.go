@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 	"io"
 	"mime"
@@ -176,6 +177,12 @@ func UploadTicketAttachment(c *gin.Context) {
 		os.Remove(storagePath)
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "创建附件记录失败"})
 		return
+	}
+
+	if userID == ticket.UserID {
+		service.NotifyTicketUserReply(ticket)
+	} else {
+		service.NotifyTicketStaffReply(ticket)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

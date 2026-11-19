@@ -28,9 +28,10 @@ import '/src/index.css';
 i18n.init({lng:'zh',resources:{zh:{translation:{}}}});
 localStorage.setItem('user',JSON.stringify({id:1,role:100}));
 window.calls=[];
-const item={id:1,user_id:2,subject:'QA ticket',category:'api',status:'open',created_at:1,request_id:'req-test'};
-API.get=async(url,config)=>{window.calls.push({method:'GET',url,config});return {data:{success:true,data:url.endsWith('/session')?{user_id:1,username:'QA',expires_at:9999999999}:url.endsWith('/attachments')?[]:url.endsWith('/unread')?{count:2}:/\\/1$/.test(url)?{ticket:item,messages:[{id:1,sender_role:'user',body:'hello',created_at:1}],logs:[{id:1,request_id:'req-test'}]}:{tickets:url==='/api/appeal/tickets'?[]:[item],total:url==='/api/appeal/tickets'?0:1}}};};
-API.post=async(url,body)=>{window.calls.push({method:'POST',url,body:JSON.parse(JSON.stringify(body))});return {data:{success:true,data:{id:1}}};};
+const item={id:1,user_id:2,subject:'QA ticket',category:'api',status:new URLSearchParams(location.search).get('state')||'open',created_at:1,request_id:'req-test'};
+const files=[];
+API.get=async(url,config)=>{window.calls.push({method:'GET',url,config});return {data:{success:true,data:url.endsWith('/session')?{user_id:1,username:'QA',expires_at:9999999999}:url.endsWith('/attachments')?files:url.endsWith('/unread')?{count:2}:/\\/1$/.test(url)?{ticket:item,messages:[{id:1,sender_role:'user',body:'hello',created_at:1}],logs:[{id:1,request_id:'req-test'}]}:{tickets:url==='/api/appeal/tickets'&&!location.search.includes('state=')?[]:[item],total:url==='/api/appeal/tickets'&&!location.search.includes('state=')?0:1}}};};
+API.post=async(url,body)=>{if(body instanceof FormData){files.push({id:1,filename:body.get('file').name});item.status='open';body={ticket_id:body.get('ticket_id'),filename:body.get('file').name};}window.calls.push({method:'POST',url,body:JSON.parse(JSON.stringify(body))});return {data:{success:true,data:{id:1}}};};
 API.put=async(url,body)=>{window.calls.push({method:'PUT',url,body});return {data:{success:true}};};
 function Notices(){const result=useNotifications({status:{}},{user:{id:1,role:100}});return <div id='counts'>{result.ticketUnread}:{result.staffTicketUnread}</div>;}
 const mode=new URLSearchParams(location.search).get('mode');
@@ -148,9 +149,24 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><Notices/>{mod
         c.body.subject === 'appeal subject',
     ),
   );
+  await fs.writeFile(path.join(fixture, 'evidence.txt'), 'new evidence');
+  for (const mode of ['', 'appeal']) {
+    await page.goto(url + '?mode=' + mode + '&id=1&state=resolved');
+    if (mode === 'appeal') await click('QA ticket');
+    await page.waitForSelector('input[type=file]');
+    await page.waitForFunction(() => document.querySelector('.semi-modal-body')?.textContent.includes('已解决'));
+    const input = await page.$('input[type=file]');
+    await input.uploadFile(path.join(fixture, 'evidence.txt'));
+    await page.waitForFunction(() =>
+      document.querySelector('.semi-modal-body')?.textContent.includes('evidence.txt') &&
+      document.querySelector('.semi-modal-body')?.textContent.includes('待处理') &&
+      window.calls.filter(c => c.method === 'GET' && /\/1$/.test(c.url)).length >= 2,
+    );
+    assert.equal(await page.evaluate(() => window.calls.some(c => c.method === 'POST' && c.body.filename === 'evidence.txt' && c.body.ticket_id === '1')), true);
+  }
   assert.deepEqual(errors, [], 'appeal runtime');
   console.log(
-    'Ticket browser flows passed: forms, multiline reply, logs, appeal payload, request ID, unread counts.',
+    'Ticket browser flows passed: forms, multiline reply, logs, appeal payload, request ID, unread counts, attachment status refresh.',
   );
 } finally {
   await browser?.close();

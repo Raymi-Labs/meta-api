@@ -33,21 +33,23 @@ func (l *InMemoryRateLimiter) Init(expirationDuration time.Duration) {
 func (l *InMemoryRateLimiter) clearExpiredItems() {
 	for {
 		time.Sleep(rateLimiterCleanupInterval)
+		l.clearExpiredItemsAt(time.Now().Unix())
+	}
+}
 
-		l.mutex.Lock()
-		now := time.Now().Unix()
-		expirationSeconds := int64(l.expirationDuration.Seconds())
-		if expirationSeconds <= 0 {
-			expirationSeconds = int64(rateLimiterCleanupInterval.Seconds())
+func (l *InMemoryRateLimiter) clearExpiredItemsAt(now int64) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	expirationSeconds := int64(l.expirationDuration.Seconds())
+	if expirationSeconds <= 0 {
+		expirationSeconds = int64(rateLimiterCleanupInterval.Seconds())
+	}
+	for key, queue := range l.store {
+		size := len(*queue)
+		// Remove entries idle for more than the configured retention window.
+		if size == 0 || now-(*queue)[size-1] > expirationSeconds {
+			delete(l.store, key)
 		}
-		for key, queue := range l.store {
-			size := len(*queue)
-			// Remove entries idle for more than the configured retention window.
-			if size == 0 || now-(*queue)[size-1] > expirationSeconds {
-				delete(l.store, key)
-			}
-		}
-		l.mutex.Unlock()
 	}
 }
 

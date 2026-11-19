@@ -471,6 +471,10 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
           ticketId={ticketId}
           mode='appeal'
           closed={ticket.status === 'closed'}
+          onUpload={async () => {
+            await loadTicketDetail();
+            onUpdate?.();
+          }}
         />
         {/* 消息列表 - 简化版 */}
         <div style={{ marginBottom: 24 }}>

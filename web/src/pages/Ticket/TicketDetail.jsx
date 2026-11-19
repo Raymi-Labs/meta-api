@@ -223,6 +223,10 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
           ticketId={ticketId}
           mode='user'
           closed={ticket.status === 'closed'}
+          onUpload={async () => {
+            await loadTicketDetail();
+            onUpdate?.();
+          }}
         />
         {/* 消息列表 */}
         <div style={{ marginBottom: 24 }}>

@@ -45,7 +45,7 @@ func (r ticketAPIResponse) object() map[string]any {
 	return out
 }
 
-func setupTicketAPI(t *testing.T) *ticketAPI {
+func setupTicketAPI(t *testing.T, globalLimit ...bool) *ticketAPI {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
@@ -53,6 +53,10 @@ func setupTicketAPI(t *testing.T) *ticketAPI {
 	sqlDB, err := db.DB()
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(1)
+
+	oldGlobalLimit := common.GlobalApiRateLimitEnable
+	common.GlobalApiRateLimitEnable = len(globalLimit) > 0 && globalLimit[0]
+	t.Cleanup(func() { common.GlobalApiRateLimitEnable = oldGlobalLimit })
 
 	oldDB, oldLogDB := model.DB, model.LOG_DB
 	oldSQLite, oldMySQL, oldPG, oldRedis := common.UsingSQLite, common.UsingMySQL, common.UsingPostgreSQL, common.RedisEnabled

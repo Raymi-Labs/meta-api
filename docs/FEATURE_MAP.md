@@ -1,6 +1,6 @@
 # 功能地图
 
-工单与封禁申诉（2026-11-19）：[用户工单](../web/src/pages/Ticket/index.jsx)、[工单管理](../web/src/pages/Ticket/TicketAdmin.jsx)、[申诉页](../web/src/pages/Ticket/Appeal.jsx) → [工单API](../router/ticket-router.go) → [控制器](../controller/ticket.go)/[模型](../model/ticket.go)。普通及管理接口复查账号状态与角色，申诉在完整认证后签发15分钟独立会话；5MB附件、管理员下载、内部消息隔离；Redis同秒限流、状态筛选、未读入口与主节点7天自动流转。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-18-support-tickets.md)。
+工单与封禁申诉（2026-11-19）：[用户工单](../web/src/pages/Ticket/index.jsx)、[工单管理](../web/src/pages/Ticket/TicketAdmin.jsx)、[申诉页](../web/src/pages/Ticket/Appeal.jsx) → [工单API](../router/ticket-router.go) → [控制器](../controller/ticket.go)/[模型](../model/ticket.go)。普通及管理接口复查账号状态与角色，申诉在完整认证后签发15分钟独立会话；5MB附件、管理员下载、内部消息隔离；Redis同秒/内存24小时限流、统一API防护与64KiB JSON上限；MySQL同秒回复与幂等指派、附件活动/未读/重开、状态筛选、未读入口与主节点7天自动流转。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-18-support-tickets.md)。
 
 [精确型号推理档位](../.agents/notes/implemented/feature/2026-11-18-platform-reasoning-profiles.md)：复用管理员模型编辑；`/api/user/models?include=reasoning_profiles` 仅在已过滤账号目录内返回档位和默认值。未请求时保持旧响应，不改变转发或结算。
 

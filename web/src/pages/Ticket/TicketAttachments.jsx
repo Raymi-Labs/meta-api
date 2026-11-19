@@ -9,6 +9,7 @@ export default function TicketAttachments({
   ticketId,
   mode = 'user',
   closed = false,
+  onUpload,
 }) {
   const { t } = useTranslation();
   const [files, setFiles] = useState([]);
@@ -54,6 +55,7 @@ export default function TicketAttachments({
       });
       if (!data.success) throw Error(data.message);
       await load();
+      await onUpload?.();
     } catch (e) {
       showError(e.response?.data?.message || e.message);
     } finally {

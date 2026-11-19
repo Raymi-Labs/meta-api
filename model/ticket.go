@@ -379,7 +379,22 @@ func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (
 		if count >= 10 {
 			return errors.New("每个工单最多10个附件")
 		}
-		return tx.Create(attachment).Error
+		internal := false
+		if attachment.MessageID != nil {
+			var message TicketMessage
+			if err := tx.Where("id = ? AND ticket_id = ?", *attachment.MessageID, ticket.ID).First(&message).Error; err != nil {
+				return err
+			}
+			internal = message.IsInternal
+		}
+		if err := tx.Create(attachment).Error; err != nil {
+			return err
+		}
+		role := TicketSenderStaff
+		if attachment.UploadedByID == ticket.UserID {
+			role = TicketSenderUser
+		}
+		return updateTicketActivity(tx, &ticket, role, internal, "", now)
 	})
 	return attachment, err
 }
@@ -426,61 +441,60 @@ func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, sende
 		if ticket.Status != oldStatus {
 			return errors.New("工单状态已变更")
 		}
+		if ticket.Status == TicketStatusClosed {
+			return ErrTicketClosed
+		}
 
 		if err := tx.Create(message).Error; err != nil {
 			return err
 		}
 
-		updates := map[string]interface{}{
-			"last_message_at": now,
-			"updated_at":      now,
-		}
+		return updateTicketActivity(tx, &ticket, senderRole, isInternal, newStatus, now)
+	})
+}
 
+// updateTicketActivity requires the caller to hold the ticket row lock in tx.
+// MySQL may report zero changed rows for same-second activity; that is not a
+// conflict after the locked row's status has been checked.
+func updateTicketActivity(tx *gorm.DB, ticket *Ticket, senderRole string, isInternal bool, newStatus string, now int64) error {
+	updates := map[string]interface{}{
+		"last_message_at": now,
+		"updated_at":      now,
+	}
+	status := ticket.Status
+	if !isInternal {
 		if senderRole == TicketSenderUser {
 			updates["user_unread"] = false
 			updates["staff_unread"] = true
-			if ticket.Status == TicketStatusWaitingUser || ticket.Status == TicketStatusResolved {
-				updates["status"] = TicketStatusOpen
-				updates["status_updated_at"] = now
+			if status == TicketStatusWaitingUser || status == TicketStatusResolved {
+				status = TicketStatusOpen
 			}
-		} else if !isInternal {
+		} else {
 			updates["user_unread"] = true
 			updates["staff_unread"] = false
-			if newStatus != "" && newStatus != ticket.Status {
-				updates["status"] = newStatus
-				updates["status_updated_at"] = now
-			} else if newStatus == "" {
-				updates["status"] = TicketStatusWaitingUser
-				updates["status_updated_at"] = now
+			status = newStatus
+			if status == "" {
+				status = TicketStatusWaitingUser
 			}
 		}
-
-		result := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticketID, oldStatus).Updates(updates)
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected == 0 {
-			return errors.New("工单状态已变更")
-		}
-
-		if !isInternal && newStatus != "" && newStatus != oldStatus {
-			eventBody := fmt.Sprintf("工单状态由 %s 变更为 %s", formatTicketStatus(oldStatus), formatTicketStatus(newStatus))
-			eventMsg := &TicketMessage{
-				TicketID:   ticketID,
-				SenderID:   0,
-				SenderRole: TicketSenderSystem,
-				Event:      "status_" + newStatus,
-				Body:       eventBody,
-				IsInternal: false,
-				CreatedAt:  now,
-			}
-			if err := tx.Create(eventMsg).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
+	}
+	if status != ticket.Status {
+		updates["status"] = status
+		updates["status_updated_at"] = now
+	}
+	if err := tx.Model(&Ticket{}).Where("id = ? AND status = ?", ticket.ID, ticket.Status).Updates(updates).Error; err != nil {
+		return err
+	}
+	if status != ticket.Status {
+		return tx.Create(&TicketMessage{
+			TicketID:   ticket.ID,
+			SenderRole: TicketSenderSystem,
+			Event:      "status_" + status,
+			Body:       fmt.Sprintf("工单状态由 %s 变更为 %s", formatTicketStatus(ticket.Status), formatTicketStatus(status)),
+			CreatedAt:  now,
+		}).Error
+	}
+	return nil
 }
 
 func CloseTicket(ctx context.Context, ticketID, userID int, oldStatus string) error {
@@ -584,7 +598,9 @@ func UpdateTicketCategory(ctx context.Context, ticketID int, category string) er
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return ErrTicketNotFound
+		// MySQL reports changed rows, so an idempotent update may return zero.
+		_, err := GetTicket(ctx, ticketID)
+		return err
 	}
 	return nil
 }
@@ -616,7 +632,9 @@ func UpdateTicketAssignee(ctx context.Context, ticketID, assignee int) error {
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return ErrTicketNotFound
+		// MySQL reports changed rows, so an idempotent update may return zero.
+		_, err := GetTicket(ctx, ticketID)
+		return err
 	}
 	return nil
 }

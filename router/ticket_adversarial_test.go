@@ -2,12 +2,15 @@ package router
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/stretchr/testify/require"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"net/http/httptest"
 	"net/textproto"
 	"os"
@@ -31,6 +34,75 @@ func TestTicketAdversarialMultilineAndFilter(t *testing.T) {
 	r = a.ok(admin.Id, 10, "GET", "/api/admin/ticket?status=open", nil)
 	require.EqualValues(t, 1, r.object()["total"])
 	require.False(t, a.call(u.Id, 1, "POST", "/api/ticket", map[string]any{"subject": "test", "category": "api", "body": "\n\t"}).Success)
+}
+
+func TestTicketAttachmentActivityThroughRoutes(t *testing.T) {
+	for _, appeal := range []bool{false, true} {
+		t.Run(fmt.Sprintf("appeal=%v", appeal), func(t *testing.T) {
+			a := setupTicketAPI(t)
+			u := a.user("attachment-owner", 1)
+			category, base := "api", "/api/ticket"
+			if appeal {
+				category, base = "appeal", "/api/appeal"
+				require.NoError(t, model.DB.Model(u).Update("status", 2).Error)
+			}
+			tk, err := model.CreateTicket(context.Background(), u.Id, "evidence", category, "", "test")
+			require.NoError(t, err)
+			require.NoError(t, model.DB.Model(tk).Updates(map[string]any{"status": "resolved", "staff_unread": false}).Error)
+			setAuth := func(req *http.Request) {
+				if appeal {
+					req.Header.Set("X-Test-Appeal-User", strconv.Itoa(u.Id))
+				} else {
+					req.Header.Set("X-Test-User", strconv.Itoa(u.Id))
+					req.Header.Set("X-Test-Role", "1")
+					req.Header.Set("New-Api-User", strconv.Itoa(u.Id))
+				}
+			}
+			content := bytes.Repeat([]byte("evidence\n"), 128*1024)
+			var body bytes.Buffer
+			writer := multipart.NewWriter(&body)
+			require.NoError(t, writer.WriteField("ticket_id", strconv.Itoa(tk.ID)))
+			part, err := writer.CreateFormFile("file", "evidence.txt")
+			require.NoError(t, err)
+			_, err = part.Write(content)
+			require.NoError(t, err)
+			require.NoError(t, writer.Close())
+			req := httptest.NewRequest("POST", base+"/attachment/upload", &body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			setAuth(req)
+			w := httptest.NewRecorder()
+			a.engine.ServeHTTP(w, req)
+			require.Equal(t, 200, w.Code, w.Body.String())
+			var response struct {
+				Success bool
+				Data    model.TicketAttachment
+			}
+			require.NoError(t, common.Unmarshal(w.Body.Bytes(), &response))
+			require.True(t, response.Success)
+			got, err := model.GetTicket(context.Background(), tk.ID)
+			require.NoError(t, err)
+			require.Equal(t, "open", got.Status)
+			require.True(t, got.StaffUnread)
+			// Inherited gzip middleware must preserve authenticated binary downloads.
+			req = httptest.NewRequest("GET", fmt.Sprintf("%s/attachment/%d/download", base, response.Data.ID), nil)
+			req.Header.Set("Accept-Encoding", "gzip")
+			setAuth(req)
+			w = httptest.NewRecorder()
+			a.engine.ServeHTTP(w, req)
+			require.Equal(t, 200, w.Code)
+			var reader io.Reader = w.Body
+			if w.Header().Get("Content-Encoding") == "gzip" {
+				gz, err := gzip.NewReader(w.Body)
+				require.NoError(t, err)
+				defer gz.Close()
+				reader = gz
+			}
+			data, err := io.ReadAll(reader)
+			require.NoError(t, err)
+			require.Equal(t, content, data)
+			require.Contains(t, w.Header().Get("Content-Disposition"), "attachment")
+		})
+	}
 }
 
 func TestTicketAppealOrdinaryAndPayload(t *testing.T) {

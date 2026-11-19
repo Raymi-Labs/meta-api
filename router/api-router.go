@@ -12,7 +12,6 @@ import (
 )
 
 func SetApiRouter(router *gin.Engine) {
-	SetupTicketRouter(router)
 	// Register separately from gzip: each synthetic SSE frame must flush immediately.
 	router.GET("/api/route-probe", middleware.RouteTag("api"), middleware.RouteProbeRateLimit(false), controller.RouteProbe)
 	router.GET("/api/route-probe/stream", middleware.RouteTag("api"), middleware.RouteProbeRateLimit(true), controller.RouteProbeStream)
@@ -22,6 +21,7 @@ func SetApiRouter(router *gin.Engine) {
 	apiRouter.Use(middleware.BodyStorageCleanup()) // 清理请求体存储
 	apiRouter.Use(middleware.GlobalAPIRateLimit())
 	setInviteTierRouter(apiRouter)
+	SetupTicketRouter(apiRouter)
 	anonymousRequestBodyLimit := middleware.AnonymousRequestBodyLimit()
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
