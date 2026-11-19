@@ -276,6 +276,13 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(mixed).toContain('0%');
       expect(mixed).toContain('100%');
       expect(mixed).toContain('最近 24 小时');
+      const requests = render('request_count', [
+        { group: '已采集', request_count: 14824 },
+        { group: '未采集', request_count: 0 },
+      ]);
+      expect(requests).toContain('14.8K');
+      expect(requests).not.toContain('暂无统计数据');
+      expect(requests).not.toContain('未采集');
       const zero = render('avg_output_tps', [
         { group: '实测', avg_output_tps: 0, series: [] },
       ]);
@@ -305,11 +312,7 @@ if (process.env.META_MODEL_CHART_TEST === import.meta.url) {
       expect(success).toContain('fill="#a8aeb9"');
       expect(success).toContain('100%');
       const empty = render('avg_ttft_ms', [{ group: '无样本', series: [] }]);
-      expect(empty).toContain('暂无统计数据');
-      expect(empty).toContain(
-        '<strong title="暂无统计数据">暂无统计数据</strong>',
-      );
-      expect(empty).not.toContain('<table>');
+      expect(empty).toBe('');
       const usage = render(
         'total_tokens',
         [

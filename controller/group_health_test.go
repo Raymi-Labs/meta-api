@@ -219,13 +219,14 @@ func TestModelHealthBatchIsBoundedPrivateAndUsesCurrentPermissions(t *testing.T)
 	require.Equal(t, http.StatusForbidden, request(query, 1, GetModelHealthSummaries).Code)
 }
 
-func TestGroupHealthHistorySatisfiesPerformanceReference(t *testing.T) {
+func TestGroupHealthChecksFreshORBeforeHistoricalReference(t *testing.T) {
 	m := grouphealth.Metrics{LastValid: &grouphealth.MeasurementReferences{TTFT: &grouphealth.MeasurementReference{Value: 15034, Ts: 1}, OutputTPS: &grouphealth.MeasurementReference{Value: 73.7, Ts: 1}}}
-	require.False(t, needsPerformanceReference(m))
+	require.True(t, needsPerformanceReference(m))
 	m.LastValid.OutputTPS = nil
 	require.True(t, needsPerformanceReference(m))
 	zero := 0.0
 	m.AvgOutputTPS = &zero
+	m.AvgTTFTMs = &zero
 	require.False(t, needsPerformanceReference(m))
 }
 

@@ -32,12 +32,12 @@ test('P50 fills missing fields individually without changing measured statistics
   assert.equal(calculate({ avg_output_tps: 0 }).throughput, 0);
   assert.equal(calculate().latency.value, 1915);
 });
-test('same-scope historical TTFT wins; external TTFT cannot fill completion latency', () => {
+test('fresh OR TTFT precedes old site history; external TTFT cannot fill completion latency', () => {
   const display = calculate({
     last_valid: { ttft: { value: 3250, ts: now / 1000 - 3600 } },
   });
-  assert.equal(display.latency.value, 3250);
-  assert.equal(display.externalLatency, false);
+  assert.equal(display.latency.value, 1915);
+  assert.equal(display.externalLatency, true);
   assert.equal(calculate({}, 'completion').latency.value, undefined);
 });
 test('expired, missing, malformed or non-P50 references remain unknown', () => {
@@ -61,7 +61,10 @@ test('historical throughput fills independently and current zero wins over histo
     },
   };
   const before = structuredClone(stats);
-  const display = calculate(stats);
+  const display = calculate({
+    ...stats,
+    performance_reference: { ...reference, output_tps: null },
+  });
   assert.equal(display.throughput, stats.last_valid.output_tps.value);
   assert.equal(display.throughputReferenceTs, stats.last_valid.output_tps.ts);
   assert.equal(display.externalThroughput, false);
@@ -155,4 +158,32 @@ test('all external performance fields share the same bounded freshness contract'
     assert.equal(result.externalLatency, false);
     assert.equal(result.externalThroughput, false);
   }
+});
+
+test('model-level OR fills a non-OR route independently per metric, never fabricating uptime', () => {
+  const stats = {
+    performance_reference: { ...reference, output_tps: null },
+    market_speed_reference: {
+      ...reference,
+      ttft_ms: 9999,
+      output_tps: 64,
+      uptime_rate: 100,
+      uptime_window_seconds: 86400,
+    },
+  };
+  assert.equal(calculate(stats).latency.value, 1915);
+  assert.equal(calculate(stats).throughput, 64);
+  assert.equal(calculate({ ...stats, avg_output_tps: 0 }).throughput, 0);
+  assert.equal(
+    calculate({ ...stats, performance_reference: null }).latency.value,
+    9999,
+  );
+  assert.equal(
+    calculate({
+      ...stats,
+      market_speed_reference: { ...reference, expires_at: now / 1000 },
+    }).throughput,
+    undefined,
+  );
+  assert.equal(modelUptime(stats, now).external, false);
 });

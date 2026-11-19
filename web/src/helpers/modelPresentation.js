@@ -81,6 +81,7 @@ export function chartMetricValue(point, metric) {
   const value = point?.[metric];
   if (
     metric === 'request_count' &&
+    !(Number(value) > 0) &&
     !point?.observed_count &&
     !point?.model_usage_reference
   )

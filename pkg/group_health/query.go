@@ -31,19 +31,22 @@ func IsModelAuthorized(name string, role int) bool {
 
 // PerformanceReference is display-only: it never contributes to measured metrics.
 type PerformanceReference struct {
-	Source              string   `json:"source"`
-	Model               string   `json:"model"`
-	Provider            string   `json:"provider"`
-	Percentile          int      `json:"percentile"`
-	FetchedAt           int64    `json:"fetched_at"`
-	ExpiresAt           int64    `json:"expires_at"`
-	TTFTMs              *float64 `json:"ttft_ms"`
-	OutputTPS           *float64 `json:"output_tps"`
-	UptimeRate          *float64 `json:"uptime_rate,omitempty"`
-	UptimeWindowSeconds int64    `json:"uptime_window_seconds,omitempty"`
+	LatencyWindowMinutes    int      `json:"latency_window_minutes,omitempty"`
+	ThroughputWindowMinutes int      `json:"throughput_window_minutes,omitempty"`
+	Source                  string   `json:"source"`
+	Model                   string   `json:"model"`
+	Provider                string   `json:"provider"`
+	Percentile              int      `json:"percentile"`
+	FetchedAt               int64    `json:"fetched_at"`
+	ExpiresAt               int64    `json:"expires_at"`
+	TTFTMs                  *float64 `json:"ttft_ms"`
+	OutputTPS               *float64 `json:"output_tps"`
+	UptimeRate              *float64 `json:"uptime_rate,omitempty"`
+	UptimeWindowSeconds     int64    `json:"uptime_window_seconds,omitempty"`
 }
 
 type Metrics struct {
+	MarketSpeedReference    *PerformanceReference  `json:"market_speed_reference,omitempty"`
 	PerformanceReference    *PerformanceReference  `json:"performance_reference,omitempty"`
 	LastValid               *MeasurementReferences `json:"last_valid,omitempty"`
 	ProbeCount              int64                  `json:"probe_count"`

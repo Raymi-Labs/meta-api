@@ -24,33 +24,41 @@ import {
 } from '../components/group-health/healthUtils';
 
 const valid = (value) =>
-  value != null && Number.isFinite(Number(value)) && Number(value) >= 0;
+  value != null &&
+  value !== '' &&
+  Number.isFinite(Number(value)) &&
+  Number(value) >= 0;
 
 // Display fallback only. Never feed references into historical buckets or aggregates.
 export function modelPerformance(stats, metric = 'ttft', now = Date.now()) {
   const latency = getHealthLatency(stats, metric, true);
   const throughput = getHealthMeasurement(stats, 'output_tps', true);
-  const reference = stats?.performance_reference;
-  const fresh =
-    isFreshModelReference(reference, now) && reference.percentile === 50;
-  const externalLatency =
-    metric === 'ttft' &&
-    !valid(latency.value) &&
-    fresh &&
-    typeof reference.ttft_ms === 'number' &&
-    valid(reference.ttft_ms);
-  const externalThroughput =
-    !valid(throughput.value) && fresh && valid(reference.output_tps);
+  // Site window, then a fresh OR sample for this exact model, then site history.
+  // Resolve per field: a route can provide TTFT while only the market has speed.
+  const refs = [
+    stats?.performance_reference,
+    stats?.market_speed_reference,
+  ].filter((ref) => isFreshModelReference(ref, now) && ref.percentile === 50);
+  const orValue = (field) =>
+    refs.find((r) => typeof r[field] === 'number' && valid(r[field]));
+  const ttftRef =
+    metric === 'ttft' && (!valid(latency.value) || latency.referenceTs)
+      ? orValue('ttft_ms')
+      : undefined;
+  const speedRef =
+    !valid(throughput.value) || throughput.referenceTs
+      ? orValue('output_tps')
+      : undefined;
+  const ttft = ttftRef?.ttft_ms,
+    speed = speedRef?.output_tps;
   return {
-    latency: externalLatency
-      ? { value: Number(reference.ttft_ms), count: 0 }
-      : latency,
-    throughput: externalThroughput
-      ? Number(reference.output_tps)
-      : throughput.value,
-    throughputReferenceTs: throughput.referenceTs,
-    externalLatency: Boolean(externalLatency),
-    externalThroughput: Boolean(externalThroughput),
+    latencyWindow: ttftRef?.latency_window_minutes ?? 30,
+    speedWindow: speedRef?.throughput_window_minutes ?? 30,
+    latency: ttft != null ? { value: ttft, count: 0 } : latency,
+    throughput: speed ?? throughput.value,
+    throughputReferenceTs: speed != null ? undefined : throughput.referenceTs,
+    externalLatency: ttft != null,
+    externalThroughput: speed != null,
   };
 }
 

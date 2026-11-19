@@ -25,6 +25,7 @@ import {
   GroupHealthCollectionNote,
   GroupHealthLegend,
 } from '../../components/group-health';
+import { hasChartData } from '../../helpers/modelChartDisplay';
 import ModelMetricChart from '../ModelDetail/ModelMetricChart';
 import { supportsTextGenerationMetrics } from '../../helpers/modelHealthMetrics';
 
@@ -62,6 +63,9 @@ export default function ComparisonMetrics({ models, health, group, t }) {
       models.find((model) => model.model_name === group.group),
     ),
   );
+  const hasUptime = hasChartData(series, 'uptime_rate');
+  const hasTokens = hasChartData(series, 'total_tokens');
+  const hasRequests = hasChartData(series, 'request_count');
   return (
     <>
       <section className='model-detail-section'>
@@ -97,12 +101,14 @@ export default function ComparisonMetrics({ models, health, group, t }) {
         ))}
         {authenticated && (
           <div className='model-performance-grid'>
-            <ModelMetricChart
-              title={'Uptime · ' + t('可用率')}
-              groups={series}
-              metric='uptime_rate'
-              t={t}
-            />
+            {hasUptime && (
+              <ModelMetricChart
+                title={'Uptime · ' + t('可用率')}
+                groups={series}
+                metric='uptime_rate'
+                t={t}
+              />
+            )}
             {generationSeries.length > 0 && (
               <>
                 <ModelMetricChart
@@ -121,37 +127,43 @@ export default function ComparisonMetrics({ models, health, group, t }) {
             )}
           </div>
         )}
-        {authenticated && <GroupHealthLegend uptime />}
+        {authenticated && hasUptime && <GroupHealthLegend uptime />}
       </section>
-      <section className='model-detail-section'>
-        <h2>{t('用量')}</h2>
-        <p className='model-detail-caption'>
-          {t(
-            '沿用上方分组与时间范围。Token 仅包含已采集的成功请求用量，请求数包含计入健康统计的失败；不是个人账单。',
+      {(hasTokens || hasRequests) && (
+        <section className='model-detail-section'>
+          <h2>{t('用量')}</h2>
+          <p className='model-detail-caption'>
+            {t(
+              '沿用上方分组与时间范围。Token 仅包含已采集的成功请求用量，请求数包含计入健康统计的失败；不是个人账单。',
+            )}
+          </p>
+          {authenticated && (
+            <div className='model-compare-usage'>
+              {hasTokens && (
+                <ModelMetricChart
+                  title={t('Tokens')}
+                  groups={series}
+                  metric='total_tokens'
+                  bar
+                  t={t}
+                />
+              )}
+              {hasRequests && (
+                <ModelMetricChart
+                  title={t('请求次数')}
+                  groups={series}
+                  metric='request_count'
+                  bar
+                  t={t}
+                />
+              )}
+            </div>
           )}
-        </p>
-        {authenticated && (
-          <div className='model-compare-usage'>
-            <ModelMetricChart
-              title={t('Tokens')}
-              groups={series}
-              metric='total_tokens'
-              bar
-              t={t}
-            />
-            <ModelMetricChart
-              title={t('请求次数')}
-              groups={series}
-              metric='request_count'
-              bar
-              t={t}
-            />
-          </div>
-        )}
-        <p className='model-detail-caption'>
-          {t('历史缺失数据不补零；新增指标从部署后开始采集。')}
-        </p>
-      </section>
+          <p className='model-detail-caption'>
+            {t('历史缺失数据不补零；新增指标从部署后开始采集。')}
+          </p>
+        </section>
+      )}
     </>
   );
 }

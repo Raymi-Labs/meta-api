@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -195,4 +196,57 @@ func TestAvailabilityUsesConfiguredProviderNotHighestPercentage(t *testing.T) {
 	require.Nil(t, r.UptimeRate, "do not use a pricier endpoint to fill missing uptime")
 	s.FetchedAt = time.Now().Add(-performanceTTL)
 	require.Nil(t, selectPerformance(s, performancePolicy{}, "vendor/model"))
+}
+
+func TestMarketSpeedNonORScopeAndReference(t *testing.T) {
+	oldDB, oldClient, oldCache := model.DB, httpClient, openRouterPerformanceCache
+	t.Cleanup(func() { model.DB = oldDB; httpClient = oldClient; openRouterPerformanceCache = oldCache })
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	model.DB = db
+	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Ability{}))
+	n := "gpt-6.2-astra"
+	slug := "openai/" + n
+	require.NoError(t, db.Create(&model.Channel{Id: 1, Type: 1, Status: 1, Key: "not-for-metadata"}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{{Group: "public", Model: n, ChannelId: 1, Enabled: true}, {Group: "off", Model: n, ChannelId: 1, Enabled: false}}).Error)
+	openRouterPerformanceCache = newPerformanceCache()
+	t.Setenv("OPENROUTER_PERFORMANCE_METADATA_KEY", "test-metadata")
+	calls := 0
+	httpClient = &http.Client{Transport: performanceTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		require.Equal(t, "Bearer test-metadata", r.Header.Get("Authorization"))
+		require.Equal(t, "https://openrouter.ai/api/v1/models/"+slug+"/endpoints", r.URL.String())
+		return fixtureClient(strings.ReplaceAll(performanceFixture, "vendor/model", slug)).Do(r)
+	})}
+	fetch := func(groups []string) map[string]map[string]*grouphealth.PerformanceReference {
+		return OpenRouterMarketSpeed(context.Background(), groups, []string{n, "private-internal-alias"})
+	}
+	require.Empty(t, fetch([]string{"off", "other"}))
+	require.Equal(t, 0, calls)
+	r := fetch([]string{"public", "off"})
+	require.Len(t, r, 1)
+	require.Len(t, r[n], 1)
+	ref := r[n]["public"]
+	require.Equal(t, slug, ref.Model)
+	require.Equal(t, 1915., *ref.TTFTMs)
+	require.Equal(t, 20., *ref.OutputTPS)
+	require.Nil(t, ref.UptimeRate)
+	require.NotEmpty(t, fetch([]string{"public"}))
+	require.Equal(t, 1, calls)
+}
+
+func TestMarketSpeedTextWorkloadNotVideoAndNoAuthLeak(t *testing.T) {
+	raw := `{"data":{"id":"vendor/model","endpoints":[{"tag":"one","status":0,"pricing":{"prompt":"0","completion":"0"},"perf_last_30m_by_workload":{"text_generation":{"latency":{"p50":513},"throughput":{"p50":51}},"video_generation":{"latency":{"p50":88000}}}}]}}`
+	client := &http.Client{Transport: performanceTransport(func(r *http.Request) (*http.Response, error) {
+		require.Empty(t, r.Header.Get("Authorization"))
+		return fixtureClient(raw).Do(r)
+	})}
+	snap, err := fetchPerformance(context.Background(), client, "", "vendor/model")
+	require.NoError(t, err)
+	ref := marketSpeed(snap, "vendor/model")
+	require.NotNil(t, ref)
+	require.Equal(t, 513., *ref.TTFTMs)
+	require.Equal(t, 51., *ref.OutputTPS)
+	snap.Endpoints[0].Workloads.Text = nil
+	require.Nil(t, marketSpeed(snap, "vendor/model"))
 }
