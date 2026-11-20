@@ -26,6 +26,9 @@ plans
 electron/node_modules
 electron/dist
 data/
+!/model/data/
+/model/data/*
+!/model/data/official_reasoning_profiles.json
 .gomodcache/
 .gocache-temp
 .gopath

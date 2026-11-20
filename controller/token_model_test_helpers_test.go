@@ -57,7 +57,7 @@ func setupTokenModelHelperDB(t *testing.T) {
 		model.InvalidateModelPermissionCache()
 	})
 
-	if err := db.AutoMigrate(&model.User{}, &model.Token{}, &model.Ability{}, &model.Channel{}, &model.Model{}, &model.ModelPermission{}, &model.Vendor{}); err != nil {
+	if err := db.AutoMigrate(&model.User{}, &model.Token{}, &model.Ability{}, &model.Channel{}, &model.Model{}, &model.ModelPermission{}, &model.Vendor{}, &model.OfficialReasoningSnapshot{}); err != nil {
 		t.Fatalf("migrate db: %v", err)
 	}
 
