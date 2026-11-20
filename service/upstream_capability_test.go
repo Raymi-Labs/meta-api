@@ -129,3 +129,22 @@ func TestUpstreamCapabilityRetrySafety(t *testing.T) {
 		})
 	}
 }
+
+func TestClaudeUpstreamCapabilityRejections(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		want bool
+	}{
+		{`{"error":{"type":"invalid_request_error","code":"claude_conversion_unsupported","message":"The request cannot be represented by the selected Anthropic protocol"}}`, true},
+		{`{"error":{"type":"invalid_request_error","code":"unknown_error","message":"claude-opus-5-5 requires adaptive thinking; omit thinking or use thinking.type=adaptive and output_config.effort"}}`, true},
+		{`{"error":{"type":"invalid_request_error","code":"claude_conversion_unsupported","message":"bad argument"}}`, false},
+		{`{"error":{"type":"invalid_request_error","message":"invalid tool arguments"}}`, false},
+	} {
+		for _, status := range []int{400, 401, 500, 200} {
+			err := parseCapabilityTestError(tc.body, status, false)
+			require.Equal(t, tc.want && status == 400, IsClaudeUpstreamCapabilityError(err))
+		}
+	}
+	local := types.WithOpenAIError(types.OpenAIError{Code: "claude_conversion_unsupported", Message: "The request cannot be represented by the selected Anthropic protocol"}, 400)
+	require.False(t, IsClaudeUpstreamCapabilityError(local))
+}

@@ -17,6 +17,7 @@ type RouteAttemptMetric struct {
 	ID                    string `gorm:"type:varchar(36);primaryKey" json:"-"`
 	BucketTs              int64  `gorm:"index:idx_route_attempt_window,priority:1" json:"bucket_ts"`
 	ChannelID             int    `gorm:"index:idx_route_attempt_window,priority:2" json:"channel_id"`
+	Probe                 bool   `gorm:"not null;default:false" json:"probe"`
 	GroupName             string `gorm:"size:64" json:"group"`
 	ModelName             string `gorm:"size:255" json:"model"`
 	AttemptCount          int64  `gorm:"not null;default:0" json:"attempts"`
@@ -167,4 +168,15 @@ func GetAllSatisfiedChannels(group, modelName string, allowedChannels, excludeCh
 		}
 	}
 	return result, true
+}
+
+// QueryRouteAttemptHistory supplies a bounded channel/model aggregate, not full
+// minute histograms. Tests do not change customers' historical success rate.
+func QueryRouteAttemptHistory(ctx context.Context, start, end int64) ([]RouteAttemptMetric, error) {
+	var rows []RouteAttemptMetric
+	err := DB.WithContext(ctx).Model(&RouteAttemptMetric{}).
+		Select("channel_id, model_name, SUM(success_count) AS success_count, SUM(service_failure_count) AS service_failure_count, SUM(rate_limited_count) AS rate_limited_count, SUM(unknown_failure_count) AS unknown_failure_count").
+		Where("bucket_ts >= ? AND bucket_ts <= ? AND probe = ?", start, end, false).
+		Group("channel_id, model_name").Find(&rows).Error
+	return rows, err
 }

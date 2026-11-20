@@ -2,6 +2,8 @@
 
 Status: implemented
 
+后续[回退与健康证据闭环](2026-11-20-routing-health-recovery.md)部分替代首次超时仅一次切换的预算限制；其余交付、权限与协议保护保持。
+
 ## Problem
 
 生产只读诊断确认：请求等待上游响应头60秒后返回do_request_failed/504，已发送保活时传输状态为200。当前超时固定skipRetry，RetryTimes=1也不会切换；用户明确选择网关最多换一个渠道。

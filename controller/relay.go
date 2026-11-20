@@ -301,10 +301,10 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	// lastRelayError 保留最近一次上游错误，避免重试找不到新渠道时用 (retry) 错误覆盖原始错误。
 	var lastRelayError *types.NewAPIError
 	vmCapacityRetries := 0
-	headerTimeoutFailover := false
+	safeFailureRetry := false
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
-		if headerTimeoutFailover && len(c.GetStringSlice("use_channel")) >= 2 {
+		if safeFailureRetry && len(c.GetStringSlice("use_channel")) >= common.RetryTimes+1 {
 			break
 		}
 		if c.Request.Context().Err() != nil {
@@ -524,8 +524,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 		service.ApplyChannelFailureRetryExclusion(retryParam, channel, newAPIError)
 
-		if canFailoverResponseHeaderTimeout(c, relayInfo, newAPIError) {
-			headerTimeoutFailover = true
+		if canFailoverClaudeCapability(c, relayInfo, newAPIError) || canFailoverResponseHeaderTimeout(c, relayInfo, newAPIError) {
+			safeFailureRetry = true
 			continue
 		}
 

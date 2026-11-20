@@ -191,6 +191,13 @@ export default function RouteInsightTab() {
     },
     { title: t('尝试'), render: (_, row) => row.window.attempts },
     {
+      title: t('模型测试'),
+      render: (_, row) =>
+        row.probe_window?.attempts
+          ? `${t('成功')} ${row.probe_window.success} / ${row.probe_window.attempts}`
+          : '-',
+    },
+    {
       title: t('成功率（下界）'),
       render: (_, row) =>
         `${formatPercent(row.success_rate)} (${formatPercent(row.success_lower_bound)})`,

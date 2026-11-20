@@ -6,6 +6,7 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
+	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,7 @@ func TestChannelHealthProbeActualExecution(t *testing.T) {
 	}
 	db := useRelayMatrixProcessDB(t)
 	common.RedisEnabled = false
+	require.NoError(t, db.AutoMigrate(&model.RouteAttemptMetric{}, &model.RouteShadowMetric{}))
 	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"probe-model":0}`))
 	require.NoError(t, db.Create(&model.User{Id: 8001, Username: "probe-tester", Group: "admin-group", Status: common.UserStatusEnabled}).Error)
 	ch := &model.Channel{Id: 8002, Type: constant.ChannelTypeOpenAI, Name: "probe", Group: "public,paid", Models: "probe-model,untested-model", Key: "fixture-key", Status: common.ChannelStatusEnabled, BaseURL: common.GetPointer("https://probe.invalid"), ModelMapping: common.GetPointer(`{"probe-model":"upstream-model"}`)}
@@ -57,6 +59,19 @@ func TestChannelHealthProbeActualExecution(t *testing.T) {
 	require.NotNil(t, testChannel(ch, 0, "sora-2", "", nil, nil).preflight)
 	require.Error(t, testChannel(ch, 0, "probe-model", "", nil, nil).localErr)
 	require.NoError(t, grouphealth.Flush(context.Background()))
+	require.NoError(t, routeinsight.Flush(context.Background()))
+	attempts, e := model.QueryRouteAttemptMetrics(context.Background(), time.Now().Add(-time.Hour).Unix(), time.Now().Unix(), "")
+	require.NoError(t, e)
+	var count, success int64
+	for _, a := range attempts {
+		require.Equal(t, "probe-model", a.ModelName)
+		require.True(t, a.Probe)
+		require.Equal(t, ch.Id, a.ChannelID)
+		count += a.AttemptCount
+		success += a.SuccessCount
+	}
+	require.EqualValues(t, 3, count)
+	require.EqualValues(t, 1, success)
 	rows, err := model.QueryGroupHealthMetrics(context.Background(), []string{"public", "paid", "private", "auto", "admin-group"}, "", time.Now().Add(-time.Hour).Unix(), time.Now().Unix())
 	require.NoError(t, err)
 	require.Len(t, rows, 3)

@@ -8,15 +8,27 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 )
 
 func canFailoverResponseHeaderTimeout(c *gin.Context, info *relaycommon.RelayInfo, err *types.NewAPIError) bool {
-	if c == nil || c.Request == nil || info == nil || err == nil || !err.ResponseHeaderTimeout || err.StatusCode != http.StatusGatewayTimeout || common.RetryTimes < 1 || len(c.GetStringSlice("use_channel")) != 1 {
+	if c == nil || c.Request == nil || info == nil || err == nil || !err.ResponseHeaderTimeout || err.StatusCode != http.StatusGatewayTimeout || common.RetryTimes < 1 || len(c.GetStringSlice("use_channel")) < 1 || len(c.GetStringSlice("use_channel")) > common.RetryTimes {
 		return false
 	}
+	return canReplayConversationBeforeOutput(c, info)
+}
+
+func canFailoverClaudeCapability(c *gin.Context, info *relaycommon.RelayInfo, err *types.NewAPIError) bool {
+	if c == nil || c.Request == nil || info == nil || common.RetryTimes < 1 || len(c.GetStringSlice("use_channel")) < 1 || len(c.GetStringSlice("use_channel")) > common.RetryTimes || !service.IsClaudeUpstreamCapabilityError(err) {
+		return false
+	}
+	return canReplayConversationBeforeOutput(c, info)
+}
+
+func canReplayConversationBeforeOutput(c *gin.Context, info *relaycommon.RelayInfo) bool {
 	if _, fixed := c.Get("specific_channel_id"); fixed {
 		return false
 	}

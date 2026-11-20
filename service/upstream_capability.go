@@ -16,6 +16,8 @@ import (
 var unknownProviderModelPattern = regexp.MustCompile(`^unknown provider for model [^\s]+$`)
 var responsesToolCapabilityPattern = regexp.MustCompile(`^[^\s]+ requires responses for tool calls; this account only supports chat completions\.?$`)
 
+var claudeAdaptiveCapabilityPattern = regexp.MustCompile(`^claude-[a-zA-Z0-9.-]+ requires adaptive thinking; omit thinking or use (thinking|\*\*\*)\.type=adaptive and output_config\.effort(?: \([^\r\n]*\))?$`)
+
 // IsUpstreamCapabilityError recognizes explicit pre-execution rejections, not
 // generic model_not_found or invalid_request errors. Require an actual upstream
 // 400 so local validation and errors inside an already-started 200 stream do not
@@ -31,6 +33,25 @@ func IsUpstreamCapabilityError(err *types.NewAPIError) bool {
 	message := strings.ToLower(strings.Join(strings.Fields(oai.Message), " "))
 	return (oai.Code == "model_not_found" && unknownProviderModelPattern.MatchString(message)) ||
 		((oai.Code == nil || oai.Code == "" || oai.Code == "invalid_request_error") && responsesToolCapabilityPattern.MatchString(message))
+}
+
+// Only upstream parser-produced 400 errors reach this matcher. Do not infer
+// capability failure from arbitrary prompt/validation text or status alone.
+func IsClaudeUpstreamCapabilityError(err *types.NewAPIError) bool {
+	if err == nil || types.IsSkipRetryError(err) || err.UpstreamStatusCode != http.StatusBadRequest || err.GetErrorType() != types.ErrorTypeOpenAIError {
+		return false
+	}
+	oai := err.ToOpenAIError()
+	message := strings.TrimSpace(oai.Message)
+	if oai.Code == "claude_conversion_unsupported" {
+		return message == "The request cannot be represented by the selected Anthropic protocol"
+	}
+	// A model-specific pre-execution rejection; preserve the original request
+	// so another authorized adapter may represent it without dropping thinking.
+	if oai.Code != nil && oai.Code != "" && oai.Code != "unknown_error" {
+		return false
+	}
+	return claudeAdaptiveCapabilityPattern.MatchString(message)
 }
 
 // GuardUpstreamCapabilityRetry leaves provider-owned conversation references on

@@ -22,6 +22,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	grouphealth "github.com/QuantumNous/new-api/pkg/group_health"
+	routeinsight "github.com/QuantumNous/new-api/pkg/route_insight"
 	"github.com/QuantumNous/new-api/relay"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
@@ -544,6 +545,18 @@ func executeChannelStyleTest(
 	// Only actual channel probes reach this point. Local preflight/configuration
 	// errors and billed playground requests must not become availability samples.
 	if options.isChannelTest {
+		probeStarted := time.Now()
+		defer func() {
+			// Record the actual requested model once, independent of display
+			// probes that fan out to the channel's other configured models.
+			groups := channel.GetGroups()
+			if len(groups) == 0 {
+				return
+			}
+			outcome := routeinsight.ClassifyAttempt(routeinsight.AttemptInput{Info: relayInfo, Err: result.newAPIError, Delivered: result.localErr == nil && result.newAPIError == nil})
+			duration := time.Since(probeStarted).Milliseconds()
+			routeinsight.RecordAttempt(routeinsight.Attempt{ChannelID: channel.Id, Group: groups[0], Model: relayInfo.OriginModelName, Probe: true, Outcome: outcome, DurationMs: &duration})
+		}()
 		targets, groupErr := model.ChannelHealthProbeTargets(c.Request.Context(), channel.Id)
 		if groupErr != nil {
 			common.SysError("failed to resolve channel health probe groups: " + groupErr.Error())

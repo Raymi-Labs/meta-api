@@ -19,7 +19,7 @@ func TestHeaderTimeoutFailoverGuards(t *testing.T) {
 	old := common.RetryTimes
 	common.RetryTimes = 3
 	t.Cleanup(func() { common.RetryTimes = old })
-	for _, name := range []string{"plain", "function_tool", "ordinary_504", "second_attempt", "output", "canceled", "fixed", "responses", "container", "mcp", "server_tool", "extra_body", "override", "passthrough", "disabled"} {
+	for _, name := range []string{"plain", "function_tool", "ordinary_504", "second_attempt", "budget_exhausted", "output", "canceled", "fixed", "responses", "container", "mcp", "server_tool", "extra_body", "override", "passthrough", "disabled"} {
 		t.Run(name, func(t *testing.T) {
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 			c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
@@ -35,6 +35,8 @@ func TestHeaderTimeoutFailoverGuards(t *testing.T) {
 				err.ResponseHeaderTimeout = false
 			case "second_attempt":
 				c.Set("use_channel", []string{"1", "2"})
+			case "budget_exhausted":
+				c.Set("use_channel", []string{"1", "2", "3", "4"})
 			case "output":
 				c.Writer.Write([]byte("data: body\n\n"))
 			case "canceled":
@@ -69,7 +71,10 @@ func TestHeaderTimeoutFailoverGuards(t *testing.T) {
 				common.RetryTimes = 0
 				defer func() { common.RetryTimes = 3 }()
 			}
-			require.Equal(t, name == "plain" || name == "function_tool", canFailoverResponseHeaderTimeout(c, info, err))
+			require.Equal(t, name == "plain" || name == "function_tool" || name == "second_attempt", canFailoverResponseHeaderTimeout(c, info, err))
+			claudeErr := types.WithOpenAIError(types.OpenAIError{Code: "claude_conversion_unsupported", Message: "The request cannot be represented by the selected Anthropic protocol"}, http.StatusBadRequest)
+			claudeErr.UpstreamStatusCode = http.StatusBadRequest
+			require.Equal(t, name == "plain" || name == "function_tool" || name == "second_attempt" || name == "ordinary_504", canFailoverClaudeCapability(c, info, claudeErr), "Claude rejection shares the replay safety boundary")
 		})
 	}
 }

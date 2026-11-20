@@ -58,6 +58,14 @@ func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 				require.NoError(t, db.AutoMigrate(&RouteAttemptMetric{}, &RouteShadowMetric{}))
 			}
 
+			// Upgrade an old table without provenance; existing rows remain real traffic.
+			require.NoError(t, db.Migrator().DropColumn(&RouteAttemptMetric{}, "Probe"))
+			require.NoError(t, db.Omit("Probe").Create(&RouteAttemptMetric{ID: "legacy", ChannelID: 9, GroupName: "g", ModelName: "old"}).Error)
+			require.NoError(t, db.AutoMigrate(&RouteAttemptMetric{}))
+			var legacy RouteAttemptMetric
+			require.NoError(t, db.First(&legacy, "id = ?", "legacy").Error)
+			require.False(t, legacy.Probe)
+			require.NoError(t, db.Delete(&RouteAttemptMetric{}, "id = ?", "legacy").Error)
 			ctx := context.Background()
 			now := time.Now()
 			ts := now.Unix() / 60 * 60
@@ -74,6 +82,11 @@ func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 			require.EqualValues(t, 5, got[0].AttemptCount)
 			require.Equal(t, rows[0].TTFTHistogram, got[0].TTFTHistogram)
 
+			require.NoError(t, SaveRouteAttemptSnapshots(ctx, []RouteAttemptMetric{{ID: "probe", BucketTs: ts, ChannelID: 1, GroupName: "g", ModelName: "m", Probe: true, AttemptCount: 10, SuccessCount: 10}}))
+			historical, historyErr := QueryRouteAttemptHistory(ctx, now.Add(-24*time.Hour).Unix(), now.Unix())
+			require.NoError(t, historyErr)
+			require.Len(t, historical, 1)
+			require.EqualValues(t, 4, historical[0].SuccessCount)
 			shadow := []RouteShadowMetric{{ID: "00000000-0000-0000-0000-00000000000c", BucketTs: now.Unix() / 3600 * 3600, ModelName: "m", DecisionCount: 2, DisagreeCount: 1}}
 			require.NoError(t, SaveRouteShadowSnapshots(ctx, shadow))
 			shadow[0].DecisionCount = 3
@@ -85,7 +98,7 @@ func TestRouteInsightTablesAcrossDialects(t *testing.T) {
 			require.NoError(t, DeleteExpiredRouteInsightMetrics(ctx, now))
 			all, err := QueryRouteAttemptMetrics(ctx, 0, now.Unix(), "")
 			require.NoError(t, err)
-			require.Len(t, all, 1, "attempt rows older than 3 days are removed")
+			require.Len(t, all, 2, "attempt rows older than 3 days are removed")
 		})
 	}
 }

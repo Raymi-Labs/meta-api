@@ -12,6 +12,7 @@ type ChannelReport struct {
 	ChannelID     int          `json:"channel_id"`
 	Group         string       `json:"group"`
 	Model         string       `json:"model"`
+	ProbeWindow   Window       `json:"probe_window"`
 	Window        Window       `json:"window"`
 	SuccessRate   *float64     `json:"success_rate"`
 	WilsonLower   *float64     `json:"success_lower_bound"`
@@ -40,6 +41,7 @@ func ChannelReports(ctx context.Context, now time.Time, minutes int, modelName s
 		group, model string
 	}
 	windows := map[key]*Window{}
+	probeWindows := map[key]Window{}
 	for _, row := range rows {
 		k := key{row.ChannelID, row.GroupName, row.ModelName}
 		w := windows[k]
@@ -48,6 +50,12 @@ func ChannelReports(ctx context.Context, now time.Time, minutes int, modelName s
 			w = &nw
 			windows[k] = w
 		}
+		if row.Probe {
+			probe := probeWindows[k]
+			probe.addRow(row.AttemptCount, row.SuccessCount, row.ServiceFailureCount, row.RateLimitedCount, row.CapacityRejectedCount, row.UnknownFailureCount, row.UserErrorCount, row.ClientCanceledCount, row.LocalDeliveryCount, newHistogram(), newHistogram())
+			probeWindows[k] = probe
+			continue
+		}
 		w.addRow(row.AttemptCount, row.SuccessCount, row.ServiceFailureCount, row.RateLimitedCount, row.CapacityRejectedCount,
 			row.UnknownFailureCount, row.UserErrorCount, row.ClientCanceledCount, row.LocalDeliveryCount,
 			decodeHistogram(row.TTFTHistogram), decodeHistogram(row.DurationHistogram))
@@ -55,7 +63,7 @@ func ChannelReports(ctx context.Context, now time.Time, minutes int, modelName s
 	reports := make([]ChannelReport, 0, len(windows))
 	for k, w := range windows {
 		current := Health(k.channelID, k.model)
-		report := ChannelReport{ChannelID: k.channelID, Group: k.group, Model: k.model, Window: *w,
+		report := ChannelReport{ChannelID: k.channelID, Group: k.group, Model: k.model, Window: *w, ProbeWindow: probeWindows[k],
 			SuccessRate: w.SuccessRate(), TTFTP50Ms: w.TTFT.Quantile(0.5), TTFTP95Ms: w.TTFT.Quantile(0.95),
 			DurationP50Ms: w.Duration.Quantile(0.5), DurationP95Ms: w.Duration.Quantile(0.95), TTFTSamples: w.TTFT.Count(),
 			CurrentStatus: current.Status, CurrentReason: current.Reason,

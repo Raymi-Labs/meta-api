@@ -1,5 +1,7 @@
 # 功能地图
 
+故障回退与健康证据闭环（2026-11-20）：[安全回退](../controller/relay_header_timeout.go)复用授权选路和保活交付保护，超时/明确Claude兼容拒绝受实际尝试数RetryTimes+1约束；[健康快照](../pkg/route_insight/run.go)合并短期突发、24小时真实调用聚合与精确型号测试，测试独立来源不改真实成功率；智能路由页显示测试成功/次数。原分组展示补样保持，禁止用其他型号测试恢复路由；无新探测调度、不改令牌。见[决策](../.agents/notes/implemented/bug-fix/2026-11-20-routing-health-recovery.md)。
+
 平台企业管理 → [待对账](../web/src/pages/EnterpriseAdmin/Reservations.jsx)：支持企业 ID 与请求 ID 组合查询待核对预留；平台管理员只读，处理仍要求 Root。不是全部历史流水。[历史记录 → 用量](../web/src/pages/EnterpriseAdmin/HistoryModal.jsx)支持在选定企业内按完整请求 ID 查询，包括已退回；不改变资金流水。
 
 工单与封禁申诉（2026-11-19）：[用户工单](../web/src/pages/Ticket/index.jsx)、[工单管理](../web/src/pages/Ticket/TicketAdmin.jsx)、[申诉页](../web/src/pages/Ticket/Appeal.jsx) → [工单API](../router/ticket-router.go) → [控制器](../controller/ticket.go)/[模型](../model/ticket.go)。普通及管理接口复查账号状态与角色，申诉在完整认证后签发15分钟独立会话；5MB附件、管理员下载、内部消息隔离；成功创建额度在数据库事务计数，回复/上传保留Redis/内存限流；统一API防护与64KiB JSON上限；MySQL同秒回复与幂等指派、附件活动/未读/重开、状态筛选、成功读取后确认未读、关闭附件保护、通知权限复查及旧请求结果隔离；主节点7天自动流转。见[决策与验证边界](../.agents/notes/implemented/feature/2026-11-18-support-tickets.md)。

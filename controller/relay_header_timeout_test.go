@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
@@ -33,14 +34,21 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 		retries                                  int
 		ping, allFail, fixed, restricted, native bool
 		fallback500                              bool
+		badCount                                 int
+		rejection                                string
 		calls                                    int
 		success                                  bool
 	}{
 		{name: "chat_to_claude", retries: 1, calls: 2, success: true},
 		{name: "chat_heartbeat", retries: 1, ping: true, calls: 2, success: true},
 		{name: "messages_heartbeat", retries: 1, ping: true, native: true, calls: 2, success: true},
-		{name: "both_timeout_bounded", retries: 5, allFail: true, calls: 2},
-		{name: "fallback_500_still_bounded", retries: 5, fallback500: true, calls: 2},
+		{name: "third_channel_success", retries: 5, badCount: 2, calls: 3, success: true},
+		{name: "fifth_channel_success", retries: 5, badCount: 4, calls: 5, success: true},
+		{name: "both_timeout_bounded", retries: 5, allFail: true, calls: 6},
+		{name: "two_timeouts_budget_one", retries: 1, allFail: true, calls: 2},
+		{name: "claude_conversion_rejection", retries: 5, calls: 2, success: true, rejection: `{"error":{"type":"invalid_request_error","code":"claude_conversion_unsupported","message":"The request cannot be represented by the selected Anthropic protocol"}}`},
+		{name: "claude_adaptive_rejection_ping", retries: 5, ping: true, calls: 2, success: true, rejection: `{"error":{"type":"invalid_request_error","code":"unknown_error","message":"claude-opus-5-5 requires adaptive thinking; omit thinking or use thinking.type=adaptive and output_config.effort"}}`},
+		{name: "fallback_500_still_bounded", retries: 5, fallback500: true, calls: 6},
 		{name: "disabled", calls: 1},
 		{name: "fixed", retries: 1, fixed: true, calls: 1},
 		{name: "whitelist", retries: 1, restricted: true, calls: 1},
@@ -83,6 +91,14 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 			bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				calls.Add(1)
 				io.Copy(io.Discard, r.Body)
+				if tc.rejection != "" {
+					if tc.ping {
+						time.Sleep(1050 * time.Millisecond)
+					}
+					w.WriteHeader(400)
+					fmt.Fprint(w, tc.rejection)
+					return
+				}
 				select {
 				case <-r.Context().Done():
 				case <-time.After(2 * time.Second):
@@ -102,16 +118,38 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 				fmt.Fprint(w, "data: "+`{"type":"message_start","message":{"id":"msg_fixture","model":"claude-timeout-fixture","usage":{"input_tokens":100,"output_tokens":1}}}`+"\n\n"+"data: "+`{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK"}}`+"\n\n"+"data: "+`{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":20}}`+"\n\ndata: "+`{"type":"message_stop"}`+"\n\n")
 			}))
 			t.Cleanup(good.Close)
+			groups := []string{"default"}
+			if tc.badCount > 0 {
+				oldGroup, oldUsable := ratio_setting.GroupRatio2JSONString(), setting.UserUsableGroups2JSONString()
+				t.Cleanup(func() {
+					require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(oldGroup))
+					require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(oldUsable))
+				})
+				require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"g1":1,"g2":1,"g3":1,"enterprise":3}`))
+				require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"","g1":"","g2":"","g3":"","enterprise":""}`))
+				for i := 1; i < tc.badCount; i++ {
+					groups = append(groups, fmt.Sprintf("g%d", i))
+				}
+				groups = append(groups, "enterprise")
+			}
 			channels := []*model.Channel{}
-			for i := 0; i < 3; i++ {
+			for i := 0; i < 7; i++ {
 				base := good.URL
-				if i == 0 || tc.allFail {
+				if i == 0 || i < tc.badCount || tc.allFail {
 					base = bad.URL
 				}
-				ch := &model.Channel{Id: 998703 + i, Name: "timeout-fixture", Type: constant.ChannelTypeAnthropic, Status: common.ChannelStatusEnabled, Key: "fixture", BaseURL: &base, Group: "default", Models: "claude-timeout-fixture", AutoBan: common.GetPointer(0)}
+				group := "default"
+				if tc.badCount > 0 {
+					if i >= tc.badCount {
+						group = "enterprise"
+					} else {
+						group = groups[i]
+					}
+				}
+				ch := &model.Channel{Id: 998703 + i, Name: "timeout-fixture", Type: constant.ChannelTypeAnthropic, Status: common.ChannelStatusEnabled, Key: "fixture", BaseURL: &base, Group: group, Models: "claude-timeout-fixture", AutoBan: common.GetPointer(0)}
 				channels = append(channels, ch)
 				require.NoError(t, db.Create(ch).Error)
-				require.NoError(t, db.Create(&model.Ability{Group: "default", Model: ch.Models, ChannelId: ch.Id, Enabled: true, Priority: common.GetPointer(int64(1)), Weight: 1}).Error)
+				require.NoError(t, db.Create(&model.Ability{Group: group, Model: ch.Models, ChannelId: ch.Id, Enabled: true, Priority: common.GetPointer(int64(1)), Weight: 1}).Error)
 			}
 			path := "/v1/chat/completions"
 			format := types.RelayFormat(types.RelayFormatOpenAI)
@@ -128,6 +166,12 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 				common.SetContextKey(c, constant.ContextKeyUsingGroup, "default")
 				common.SetContextKey(c, constant.ContextKeyTokenGroup, "default")
 				common.SetContextKey(c, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+				if tc.badCount > 0 {
+					raw, e := common.Marshal(model.TokenRoutingConfig{Groups: groups})
+					require.NoError(t, e)
+					common.SetContextKey(c, constant.ContextKeyTokenRoutingConfig, string(raw))
+					common.SetContextKey(c, constant.ContextKeyUserGroup, "default")
+				}
 				c.Set(common.RequestIdKey, "header-timeout-"+tc.name)
 				if tc.fixed {
 					c.Set("specific_channel_id", channels[0].Id)
@@ -153,7 +197,13 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 			var details map[string]interface{}
 			require.NoError(t, common.UnmarshalJsonStr(log.Other, &details))
 			attempts := details["admin_info"].(map[string]interface{})["attempts"].([]interface{})
-			require.EqualValues(t, 504, attempts[0].(map[string]interface{})["status_code"])
+			expectedFirst := 504
+			if tc.rejection != "" {
+				expectedFirst = 400
+			} else if tc.fallback500 && tc.calls > 5 {
+				expectedFirst = 500
+			}
+			require.EqualValues(t, expectedFirst, attempts[0].(map[string]interface{})["status_code"])
 			if tc.ping {
 				require.Equal(t, 200, w.Code)
 				if tc.native {
@@ -165,9 +215,12 @@ func TestRelayResponseHeaderTimeoutFailover(t *testing.T) {
 			if tc.success {
 				require.Equal(t, model.LogTypeConsume, log.Type)
 				require.Positive(t, log.Quota)
+				if tc.badCount > 0 {
+					require.Equal(t, "enterprise", log.Group)
+				}
 				require.Contains(t, w.Body.String(), "OK")
 				require.NotContains(t, w.Body.String(), "upstream response header timeout")
-				require.Len(t, attempts, 1)
+				require.Len(t, attempts, tc.calls-1)
 			} else {
 				require.Equal(t, model.LogTypeError, log.Type)
 				require.Zero(t, log.Quota)

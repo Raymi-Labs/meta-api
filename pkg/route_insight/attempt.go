@@ -1,6 +1,6 @@
 // Package routeinsight measures every upstream attempt per channel and records
 // what a health/cost-aware router would have chosen ("shadow decisions"). It
-// is observation only: nothing here changes channel selection or billing.
+// supplies health snapshots to the ordered router; it never changes billing.
 package routeinsight
 
 import (
@@ -87,6 +87,7 @@ func ClassifyAttempt(in AttemptInput) Outcome {
 }
 
 type Attempt struct {
+	Probe      bool
 	ChannelID  int
 	Group      string
 	Model      string
@@ -97,6 +98,7 @@ type Attempt struct {
 }
 
 type attemptKey struct {
+	probe        bool
 	channelID    int
 	group, model string
 	ts           int64
@@ -128,7 +130,7 @@ func (c *attemptCollector) record(a Attempt) {
 	if a.At.IsZero() {
 		a.At = time.Now()
 	}
-	key := attemptKey{channelID: a.ChannelID, group: a.Group, model: a.Model, ts: a.At.Unix() / AttemptBucketSeconds * AttemptBucketSeconds}
+	key := attemptKey{probe: a.Probe, channelID: a.ChannelID, group: a.Group, model: a.Model, ts: a.At.Unix() / AttemptBucketSeconds * AttemptBucketSeconds}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	entry := c.buckets[key]
@@ -140,7 +142,7 @@ func (c *attemptCollector) record(a Attempt) {
 			return
 		}
 		entry = &attemptRow{
-			row:      model.RouteAttemptMetric{ID: uuid.NewString(), BucketTs: key.ts, ChannelID: a.ChannelID, GroupName: a.Group, ModelName: a.Model},
+			row:      model.RouteAttemptMetric{ID: uuid.NewString(), Probe: a.Probe, BucketTs: key.ts, ChannelID: a.ChannelID, GroupName: a.Group, ModelName: a.Model},
 			ttft:     newHistogram(),
 			duration: newHistogram(),
 		}
@@ -196,7 +198,7 @@ func (c *attemptCollector) flush(ctx context.Context, now time.Time) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, saved := range rows {
-		c.persisted[attemptKey{channelID: saved.ChannelID, group: saved.GroupName, model: saved.ModelName, ts: saved.BucketTs}] = saved.AttemptCount
+		c.persisted[attemptKey{probe: saved.Probe, channelID: saved.ChannelID, group: saved.GroupName, model: saved.ModelName, ts: saved.BucketTs}] = saved.AttemptCount
 	}
 	for key, entry := range c.buckets {
 		if key.ts < current && c.persisted[key] == entry.row.AttemptCount {

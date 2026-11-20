@@ -8,7 +8,7 @@ import (
 // (route_routing_setting.unhealthy_below_percent, default 90%); the others
 // are fixed initial values to be tuned against observed baselines.
 const (
-	MinSamples            = 10   // below this the route is unknown, never "healthy"
+	MinSamples            = 10   // minimum for the ordinary live-window rate; recovery uses separate evidence
 	DefaultUnhealthyBelow = 0.90 // success rate below this marks a route unhealthy
 	BurstMinSamples       = 5    // 5m burst detector needs at least this many
 	BurstFailureRate      = 0.5  // 5m upstream failure share that marks a burst
@@ -117,12 +117,12 @@ func Evaluate(short, long Window, unhealthyBelow float64) RouteHealth {
 		unhealthyBelow = DefaultUnhealthyBelow
 	}
 	health := RouteHealth{Short: short, Long: long, Status: StatusUnknown, Reason: "insufficient_samples"}
-	if long.Evidence() < MinSamples {
-		return health
-	}
 	health.Score = long.WilsonLower()
 	if n := short.Evidence(); n >= BurstMinSamples && float64(short.Failures())/float64(n) >= BurstFailureRate {
 		health.Status, health.Reason = StatusUnhealthy, "recent_failure_burst"
+		return health
+	}
+	if long.Evidence() < MinSamples {
 		return health
 	}
 	if rate := long.SuccessRate(); rate != nil && *rate < unhealthyBelow {
@@ -131,4 +131,32 @@ func Evaluate(short, long Window, unhealthyBelow float64) RouteHealth {
 	}
 	health.Status, health.Reason = StatusHealthy, "ok"
 	return health
+}
+
+// EvaluateEvidence combines exact-model tests and customer observations without
+// adding synthetic successes to customer success rates. Recent failures win;
+// historical failure can recover using new evidence, never mere inactivity.
+func EvaluateEvidence(short, long, history, probes Window, threshold float64) RouteHealth {
+	h := Evaluate(short, long, threshold)
+	if short.Evidence() >= 3 && short.Success == 0 && short.Failures() >= 3 || probes.Failures() > 0 {
+		h.Status, h.Reason = StatusUnhealthy, "recent_failure_burst"
+		return h
+	}
+	if h.Status != StatusUnknown {
+		return h
+	}
+	// Fresh real success or repeated exact-model successful probes can release
+	// a low-volume route from historical failure. A single probe cannot erase it.
+	if short.Failures() == 0 && (short.Success >= 3 || probes.Success >= 2) {
+		h.Status, h.Reason = StatusHealthy, "ok"
+		return h
+	}
+	if threshold <= 0 || threshold >= 1 {
+		threshold = DefaultUnhealthyBelow
+	}
+	historical := Evaluate(Window{}, history, threshold)
+	if historical.Status == StatusUnhealthy || history.Failures() >= 3 && history.SuccessRate() != nil && *history.SuccessRate() < threshold {
+		h.Status, h.Reason = StatusUnhealthy, "low_success_rate"
+	}
+	return h
 }

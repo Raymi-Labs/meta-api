@@ -38,8 +38,8 @@ type routeKey struct {
 	model     string
 }
 
-// Enabled covers both attempt telemetry and shadow decisions; neither affects
-// scheduling, so the default is on. Set ROUTE_INSIGHT_ENABLED=false to stop.
+// Enabled covers attempt telemetry and shadow decisions. Ordered routing also
+// consumes its health snapshot. Set ROUTE_INSIGHT_ENABLED=false to stop collection.
 func Enabled() bool {
 	return enabled
 }
@@ -141,16 +141,52 @@ func Flush(ctx context.Context) error {
 	return errors.Join(attempts.flush(ctx, now), shadows.flush(ctx, now))
 }
 
+// Two scheduled tests must fit in the evidence window. Bound stale tests even
+// when the configured schedule is extremely sparse; no new probes are started.
+func probeEvidenceWindow() time.Duration {
+	monitor := operation_setting.GetMonitorSetting()
+	if !monitor.AutoTestChannelEnabled || !(monitor.AutoTestChannelMinutes > 0) {
+		return ShortWindow
+	}
+	if monitor.AutoTestChannelMinutes >= 720 {
+		return 24 * time.Hour
+	}
+	return max(ShortWindow, time.Duration(2*monitor.AutoTestChannelMinutes*float64(time.Minute))+time.Minute)
+}
+
 func refreshSnapshot(ctx context.Context, now time.Time) error {
-	rows, err := model.QueryRouteAttemptMetrics(ctx, now.Add(-LongWindow).Unix(), now.Unix(), "")
+	probeWindow := probeEvidenceWindow()
+	longStart := now.Add(-LongWindow).Unix()
+	probeStart := now.Add(-probeWindow).Unix()
+	rows, err := model.QueryRouteAttemptMetrics(ctx, now.Add(-max(LongWindow, probeWindow)).Unix(), now.Unix(), "")
 	if err != nil {
 		return err
 	}
 	shortStart := now.Add(-ShortWindow).Unix()
+	historyRows, err := model.QueryRouteAttemptHistory(ctx, now.Add(-24*time.Hour).Unix(), now.Unix())
+	if err != nil {
+		return err
+	}
+	history := map[routeKey]Window{}
+	for _, row := range historyRows {
+		history[routeKey{channelID: row.ChannelID, model: row.ModelName}] = Window{Success: row.SuccessCount, ServiceFailure: row.ServiceFailureCount, RateLimited: row.RateLimitedCount, UnknownFailure: row.UnknownFailureCount}
+	}
+	probes := map[routeKey]Window{}
 	shortWindows := map[routeKey]*Window{}
 	longWindows := map[routeKey]*Window{}
 	for _, row := range rows {
 		key := routeKey{channelID: row.ChannelID, model: row.ModelName}
+		if row.Probe {
+			if row.BucketTs >= probeStart {
+				w := probes[key]
+				w.addRow(row.AttemptCount, row.SuccessCount, row.ServiceFailureCount, row.RateLimitedCount, row.CapacityRejectedCount, row.UnknownFailureCount, row.UserErrorCount, row.ClientCanceledCount, row.LocalDeliveryCount, newHistogram(), newHistogram())
+				probes[key] = w
+			}
+			continue
+		}
+		if row.BucketTs < longStart {
+			continue
+		}
 		long := longWindows[key]
 		if long == nil {
 			w := newWindow()
@@ -170,8 +206,20 @@ func refreshSnapshot(ctx context.Context, now time.Time) error {
 	setting := operation_setting.GetRouteRoutingSetting()
 	threshold := float64(setting.UnhealthyBelowPercent) / 100
 	next := make(map[routeKey]RouteHealth, len(longWindows))
+	for key := range history {
+		if longWindows[key] == nil {
+			w, s := newWindow(), newWindow()
+			longWindows[key], shortWindows[key] = &w, &s
+		}
+	}
+	for key := range probes {
+		if longWindows[key] == nil {
+			w, s := newWindow(), newWindow()
+			longWindows[key], shortWindows[key] = &w, &s
+		}
+	}
 	for key, long := range longWindows {
-		next[key] = Evaluate(*shortWindows[key], *long, threshold)
+		next[key] = EvaluateEvidence(*shortWindows[key], *long, history[key], probes[key], threshold)
 	}
 	ApplySlowTTFT(next, longWindows, setting.SlowTTFTRatio, int64(setting.SlowTTFTMinSeconds)*1000)
 	snapshotMu.Lock()
