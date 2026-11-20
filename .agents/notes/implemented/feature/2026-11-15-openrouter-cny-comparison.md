@@ -27,3 +27,5 @@ Status: implemented
 ## Consequences
 
 6.7是用户指定固定对照汇率，不宣称市场实时汇率或实际结算汇率；按5闪电折算的消费不代表真实净到账或现金利润。改变区间CSV单位需写入兼容说明。
+
+累计购入和累计消费的含费展示见[账户累计金额展示手续费](../bug-fix/2026-11-20-openrouter-account-fee.md)。
