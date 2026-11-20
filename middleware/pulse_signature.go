@@ -53,6 +53,24 @@ func PulseUsageAuth() gin.HandlerFunc { return pulseServiceAuthForRoles("pulse-u
 
 func pulseUsageSecrets(cfg common.PulseConfig) []string {
 	key := strings.TrimSpace(os.Getenv("PULSE_USAGE_HMAC_SECRET"))
+	if key == "" {
+		roots := pulseServiceHMACSecretsWithConfig(cfg)
+		var derived []string
+		for _, root := range roots {
+			if len(root) < 32 {
+				return nil
+			}
+			for name, value := range cfg {
+				if strings.Contains(name, "Secret") && name != "PulseServiceHMACSecret" && name != "PulseServiceHMACSecretPrevious" && strings.TrimSpace(value) == root {
+					return nil
+				}
+			}
+			mac := hmac.New(sha256.New, []byte(root))
+			mac.Write([]byte("meta-api:pulse-usage:yesterday:v1"))
+			derived = append(derived, hex.EncodeToString(mac.Sum(nil)))
+		}
+		return derived
+	}
 	if len(key) < 32 {
 		return nil
 	}

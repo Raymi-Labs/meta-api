@@ -265,3 +265,61 @@ func TestPulseUsageRoleIsolation(t *testing.T) {
 	t.Setenv("PULSE_SERVICE_HMAC_SECRET", key)
 	require.False(t, call("pulse-usage", key, "daily-overlap"))
 }
+
+func TestPulseUsageDerivedKeys(t *testing.T) {
+	const root = "0123456789abcdef0123456789abcdef"
+	const vector = "8fec39829e502445230624c42244098b5a90e25e9ece66f48f3639d088381de3"
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", "")
+	cfg := common.PulseConfig{"PulseEnv": "production", "PulseServiceHMACSecret": root}
+	require.Equal(t, []string{vector}, pulseUsageSecrets(cfg))
+	cfg["PulseServiceHMACSecretPrevious"] = root
+	cfg["PulseServiceHMACSecret"] = strings.Repeat("v", 32)
+	keys := pulseUsageSecrets(cfg)
+	require.Len(t, keys, 2)
+	require.Equal(t, vector, keys[1])
+	require.NotEqual(t, keys[0], keys[1])
+	cfg["PulseForumSSOSecret"] = root
+	require.Empty(t, pulseUsageSecrets(cfg))
+	delete(cfg, "PulseForumSSOSecret")
+	cfg["PulseServiceHMACSecretPrevious"] = ""
+	require.Len(t, pulseUsageSecrets(cfg), 1)
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", "disabled")
+	require.Empty(t, pulseUsageSecrets(cfg))
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", "")
+	cfg["PulseServiceHMACSecret"] = ""
+	require.Empty(t, pulseUsageSecrets(cfg))
+}
+
+func TestPulseUsageDerivedRequest(t *testing.T) {
+	const root = "0123456789abcdef0123456789abcdef"
+	const child = "8fec39829e502445230624c42244098b5a90e25e9ece66f48f3639d088381de3"
+	t.Setenv("PULSE_ENV", "test")
+	t.Setenv("PULSE_SERVICE_HMAC_SECRET", root)
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", "")
+	const path = "/api/internal/pulse/usage/yesterday"
+	r := gin.New()
+	r.GET(path, PulseUsageAuth(), func(c *gin.Context) {
+		require.Equal(t, uint64(42), c.GetUint64(pulseServiceUserIDKey))
+		c.Status(http.StatusNoContent)
+	})
+	send := func(key, nonce string) int {
+		ts := time.Now().Unix()
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		mac := hmac.New(sha256.New, []byte(key))
+		mac.Write([]byte(pulseCanonicalPayload(http.MethodGet, path, "42", "pulse-usage", ts, nonce, nil)))
+		req.Header.Set(pulseUserHeader, "42")
+		req.Header.Set(pulseRoleHeader, "pulse-usage")
+		req.Header.Set(pulseTimestampHeader, strconv.FormatInt(ts, 10))
+		req.Header.Set(pulseNonceHeader, nonce)
+		req.Header.Set(pulseSignatureHeader, hex.EncodeToString(mac.Sum(nil)))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w.Code
+	}
+	require.Equal(t, 204, send(child, "derived-demo"))
+	require.Equal(t, 401, send(child, "derived-demo"))
+	require.Equal(t, 401, send(root, "raw-worker"))
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", strings.Repeat("i", 32))
+	require.Equal(t, 401, send(child, "overridden"))
+	require.Equal(t, 204, send(strings.Repeat("i", 32), "explicit-usage"))
+}

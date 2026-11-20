@@ -18,3 +18,5 @@ SQLite 覆盖起止秒、退款排除、跨账号隔离、空结果；控制器�
 不恢复消费权益；日志留存与账单不同。
 
 与 [退役消费贡献](../simplification/2026-11-08-retire-pulse-consumption-api.md) 和 [移除板块](../simplification/2026-11-08-remove-pulse-panels.md) 部分重叠：两项决定继续生效，仅提供日志读数。
+
+后续[自动派生只读凭据](2026-11-20-pulse-derived-usage-key.md)替代独立密钥必填决定。
