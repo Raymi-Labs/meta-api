@@ -2,6 +2,7 @@ import { test, expect } from 'bun:test';
 import {
   filterOpenRouterActivity,
   openRouterUSD,
+  openRouterUSDWithFee,
 } from '../src/pages/UpstreamAccounts/openRouterFinance.js';
 
 test('USD preserves zero and negative balance but leaves missing values unknown', () => {
@@ -10,6 +11,14 @@ test('USD preserves zero and negative balance but leaves missing values unknown'
   for (const value of [null, undefined, NaN, Infinity])
     expect(openRouterUSD(value)).toBe('--');
 });
+test('lifetime USD includes the fixed fee before rounding', () => {
+  expect(openRouterUSDWithFee(400)).toBe('$420.000000');
+  expect(openRouterUSDWithFee(400.200081)).toBe('$420.210085');
+  expect(openRouterUSDWithFee(0)).toBe('$0.000000');
+  for (const value of [null, undefined, NaN, Infinity, '400'])
+    expect(openRouterUSDWithFee(value)).toBe('--');
+});
+
 test('date and model/provider filters intersect without adding BYOK external costs', () => {
   const data = [
     {

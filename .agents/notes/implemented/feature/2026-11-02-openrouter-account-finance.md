@@ -46,3 +46,5 @@ Bun 金额与筛选回归通过；真实 Chrome 组件验证创建/编辑/删除
 入口及预热范围由[统一充值与消耗看板](../simplification/2026-11-15-unify-openrouter-usage.md)接续：日常页面只使用 finance 快照，保留旧 cash API 和历史数据；旧现金报表不再自动预热。
 
 区间展示由[人民币对照](2026-11-15-openrouter-cny-comparison.md)扩展为用户指定固定比例；原始数据和累计金额仍为USD。
+
+累计购入和累计消费的含费展示见[账户累计金额展示手续费](../bug-fix/2026-11-20-openrouter-account-fee.md)。

@@ -3,6 +3,10 @@ export const openRouterUSD = (amount) =>
     ? `$${amount.toFixed(6)}`
     : '--';
 
+// Apply the report's fixed 5% fee to lifetime purchases and usage only.
+export const openRouterUSDWithFee = (amount) =>
+  openRouterUSD(Number.isFinite(amount) ? amount * 1.05 : null);
+
 export function filterOpenRouterActivity(activity, search = '', date = '') {
   const query = search.trim().toLowerCase();
   return (activity || []).filter(

@@ -159,6 +159,19 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     .getByText('正在后台准备快照，完成后自动显示', { exact: true })
     .waitFor();
   await page.getByText('channel-1-00 (#1)', { exact: true }).waitFor();
+  await page.getByText('$105.000000', { exact: true }).waitFor();
+  await page.getByText('$42.000000', { exact: true }).waitFor();
+  await page.getByText('$60.000000', { exact: true }).waitFor();
+  const scope = page.getByText(/^最近 30 个完整 UTC 日；/);
+  const rates = page.getByText(/^人民币换算：/);
+  assert.equal(await scope.isVisible(), false);
+  assert.equal(await rates.isVisible(), false);
+  await button('区间消耗 说明').click();
+  await scope.waitFor();
+  await rates.waitFor();
+  await button('区间消耗 说明').click();
+  await scope.waitFor({ state: 'hidden' });
+  await rates.waitFor({ state: 'hidden' });
   assert.equal(await button('启用现金收益').count(), 0);
   assert.equal(await tab('待核对').count(), 0);
   await page.locator('.semi-page-item').filter({ hasText: /^2$/ }).click();
@@ -195,7 +208,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   await page.getByText('¥4.600000', { exact: true }).first().waitFor();
   await button('30 天').click();
   await button('按渠道').click();
-  await page.getByText('$100.000000', { exact: true }).waitFor();
+  await page.getByText('$105.000000', { exact: true }).waitFor();
   assert.equal(
     requests.filter((p) => p.endsWith('/openrouter/finance')).length,
     before,
@@ -210,7 +223,7 @@ createRoot(document.getElementById('root')).render(<App/>);`,
   fail = true;
   await button('刷新').click();
   await page.getByText('synthetic report failure', { exact: true }).waitFor();
-  await page.getByText('$100.000000', { exact: true }).waitFor();
+  await page.getByText('$105.000000', { exact: true }).waitFor();
   fail = false;
   partial = false;
   delay = 600;
@@ -220,9 +233,9 @@ createRoot(document.getElementById('root')).render(<App/>);`,
       { id: 2, name: 'Other', account_type: 'openrouter', enabled: true },
     ]),
   );
-  await page.getByText('$200.000000', { exact: true }).waitFor();
+  await page.getByText('$210.000000', { exact: true }).waitFor();
   await page.waitForTimeout(700);
-  assert.equal(await page.getByText('$100.000000', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('$105.000000', { exact: true }).count(), 0);
   await page.screenshot({
     path: path.join(output, 'unified-desktop.png'),
     fullPage: true,

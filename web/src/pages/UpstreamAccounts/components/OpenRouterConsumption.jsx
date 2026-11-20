@@ -6,11 +6,14 @@ import {
   Input,
   Space,
   Table,
+  Tooltip,
   Typography,
 } from '@douyinfe/semi-ui';
+import { IconInfoCircle } from '@douyinfe/semi-icons';
 import { cashCSV } from '../cashFinance';
 import {
   openRouterUSD,
+  openRouterUSDWithFee,
   openRouterUsageCNY,
   openRouterQuotaCNY,
   readOpenRouterQuotaScale,
@@ -156,15 +159,15 @@ export default function OpenRouterConsumption({ data, loading, t }) {
           <Banner key={i} type='warning' description={error} />
         ))}
       <Card title={t('充值与消耗')}>
-        <Text type='tertiary' className='mb-3 block'>
-          {t('账户累计')}
-        </Text>
         {cards([
           [
             t('累计购入额度') + ' (USD)',
-            openRouterUSD(data?.credits?.total_credits),
+            openRouterUSDWithFee(data?.credits?.total_credits),
           ],
-          [t('累计消费') + ' (USD)', openRouterUSD(data?.credits?.total_usage)],
+          [
+            t('累计消费') + ' (USD)',
+            openRouterUSDWithFee(data?.credits?.total_usage),
+          ],
           [
             t('余额') + ' (USD)',
             openRouterUSD(
@@ -175,15 +178,38 @@ export default function OpenRouterConsumption({ data, loading, t }) {
           ],
         ])}
       </Card>
-      <Card title={t('区间消耗')}>
-        <Text type='tertiary'>
-          {t(
-            '最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。',
-          )}
-        </Text>
-        <Text type='tertiary' className='mt-2 block'>
-          {t('人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。')}
-        </Text>
+      <Card
+        title={
+          <Space>
+            {t('区间消耗')}
+            <Tooltip
+              trigger='click'
+              clickTriggerToHide
+              content={
+                <div>
+                  <p>
+                    {t(
+                      '最近 30 个完整 UTC 日；上游为账户消费，本站为当前归属渠道的留存消费日志。密钥更换、日志清理及站外调用可能造成差异；消耗对照不代表现金利润。',
+                    )}
+                  </p>
+                  <p className='mt-2'>
+                    {t('人民币换算：1 美元 = 6.7 元，5 闪电 = 1 元。')}
+                  </p>
+                </div>
+              }
+            >
+              <Button
+                aria-label={`${t('区间消耗')} ${t('说明')}`}
+                htmlType='button'
+                icon={<IconInfoCircle />}
+                size='small'
+                theme='borderless'
+                type='tertiary'
+              />
+            </Tooltip>
+          </Space>
+        }
+      >
         <Space wrap className='my-4'>
           <input
             type='date'
@@ -280,11 +306,6 @@ export default function OpenRouterConsumption({ data, loading, t }) {
           }}
           empty={t('暂无数据')}
         />
-        <Text type='tertiary' size='small'>
-          {t(
-            '区间金额统一折合人民币；未匹配到的单侧数据以 -- 显示，BYOK 外部成本单列。',
-          )}
-        </Text>
       </Card>
     </div>
   );
