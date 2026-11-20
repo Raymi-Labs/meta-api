@@ -50,6 +50,7 @@ func SetApiRouter(router *gin.Engine) {
 			pulseBenefitRoute.GET("/query/:source_ref", middleware.PulseBenefitQueryAuth(), middleware.PulseBenefitRateLimit(), controller.QueryPulseBenefit)
 			pulseBenefitRoute.POST("/rollback", middleware.PulseRollbackAuth(), middleware.PulseBenefitRateLimit(), controller.RollbackPulseBenefit)
 		}
+		apiRouter.GET("/internal/pulse/usage/yesterday", middleware.PulseUsageAuth(), middleware.PulseBenefitRateLimit(), controller.PulseYesterdayUsage)
 		apiRouter.GET("/forum/sso/start", middleware.CriticalRateLimit(), controller.ForumSSOStart)
 
 		apiRouter.POST("/usage/public_token", middleware.PublicTokenUsageRateLimit(), controller.GetPublicTokenUsage)

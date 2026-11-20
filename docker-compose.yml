@@ -32,6 +32,7 @@ services:
       - TZ=Asia/Shanghai
       # Meta Pulse：仅允许内网/网关转发的服务签名接口；请通过部署密钥注入。
 #      - PULSE_ENV=production
+      - PULSE_USAGE_HMAC_SECRET=${PULSE_USAGE_HMAC_SECRET:-}
 #      - PULSE_SERVICE_HMAC_SECRET=replace-with-a-strong-random-secret
 #      - PULSE_FORUM_SSO_SECRET=replace-with-a-strong-random-secret
 #      - PULSE_FORUM_SSO_CALLBACK_URL=https://forum.example.com/api/user-center/login/callback
