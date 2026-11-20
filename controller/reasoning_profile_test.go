@@ -82,3 +82,67 @@ func TestReasoningProfileAdminAndVisibleCatalog(t *testing.T) {
 	require.NoError(t, cleared.UpdateOmittingMetadata(clear.omittedMetadataFields()))
 	require.Equal(t, map[string]any{}, catalog("group=default&include=reasoning_profiles")["reasoningProfiles"])
 }
+
+func TestOfficialReasoningVisibleCatalogWithoutManualSetup(t *testing.T) {
+	setupTokenModelHelperDB(t)
+	require.NoError(t, model.DB.AutoMigrate(&model.Model{}))
+	got, err := model.VisibleReasoningProfiles([]string{"gpt-6-astra", "gpt-6-luna", "gpt-5.5", "gpt-unknown", "GPT-6-ASTRA"})
+	require.NoError(t, err)
+	require.Len(t, got, 3)
+	require.Equal(t, []string{"low", "medium", "high", "xhigh", "max", "ultra"}, got["gpt-6-astra"].SupportedLevels)
+	require.Len(t, got["gpt-6-luna"].SupportedLevels, 5)
+	require.Len(t, got["gpt-5.5"].SupportedLevels, 4)
+	limited := model.Model{ModelName: "gpt-6-astra", Status: 1, ReasoningProfile: &model.ReasoningProfile{SupportedLevels: []string{"medium"}, DefaultLevel: "medium"}}
+	require.NoError(t, model.DB.Create(&limited).Error)
+	got, err = model.VisibleReasoningProfiles([]string{"gpt-6-astra"})
+	require.NoError(t, err)
+	require.Equal(t, limited.ReasoningProfile, got["gpt-6-astra"])
+	require.NoError(t, model.DB.Model(&limited).Update("reasoning_profile", nil).Error)
+	got, err = model.VisibleReasoningProfiles([]string{"gpt-6-astra"})
+	require.NoError(t, err)
+	require.Len(t, got["gpt-6-astra"].SupportedLevels, 6)
+	require.NoError(t, model.DB.Model(&limited).Update("capabilities", model.ModelCapabilities{"reasoning": false}).Error)
+	got, err = model.VisibleReasoningProfiles([]string{"gpt-6-astra"})
+	require.NoError(t, err)
+	require.Equal(t, []string{}, got["gpt-6-astra"].SupportedLevels)
+	// A community-owned bool must not override a manual discrete declaration.
+	require.NoError(t, model.DB.Model(&limited).Updates(map[string]any{"model_capability_sync_state": `{"version":1,"source":"https://example.invalid","capabilities":{"reasoning":false}}`, "reasoning_profile": `{"supportedLevels":["medium"],"defaultLevel":"medium"}`}).Error)
+	got, err = model.VisibleReasoningProfiles([]string{"gpt-6-astra"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"medium"}, got["gpt-6-astra"].SupportedLevels)
+}
+
+func TestOfficialReasoningLastGoodSurvivesSourceOutageAndReplicaRead(t *testing.T) {
+	setupTokenModelHelperDB(t)
+	raw := []byte(`{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"low"}]}]}`)
+	require.NoError(t, model.ReplaceOfficialReasoningCatalog(model.CodexCatalog, raw))
+	require.Error(t, model.ReplaceOfficialReasoningCatalog(model.CodexCatalog, []byte(`{}`)))
+	got, err := model.VisibleReasoningProfiles([]string{"gpt-6-astra", "gpt-6-sol", "gemini-4-hydrogen"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"low"}, got["gpt-6-astra"].SupportedLevels)
+	require.Empty(t, got["gpt-6-astra"].DefaultLevel)
+	require.Empty(t, got["gpt-6-sol"].SupportedLevels)
+	require.NotEmpty(t, got["gemini-4-hydrogen"].SupportedLevels)
+}
+
+func TestOfficialReasoningClaudeLinkLossIsNotAWithdrawal(t *testing.T) {
+	setupTokenModelHelperDB(t)
+	const label = "Claude Fixture Four"
+	const first = "[Claude Fixture Four](https://platform.claude.com/docs/en/models/non-derivable-id/overview)"
+	const second = "[Claude Fixture Five](https://platform.claude.com/docs/en/models/other-id/overview)"
+	const table = "### Effort levels\n| `low` | L | T |\n| `medium` | M | T |\n| `high` | H | T |\n| `max` | Available on Claude Fixture Five. | T |\n| `xhigh` | Available on Claude Fixture Five. | T |\n\n## Availability\n| Available | Claude API, other | "
+	apply := func(names string) error {
+		return model.ReplaceOfficialReasoningCatalog(model.ClaudeCatalog, []byte(table+names+" |"))
+	}
+	require.NoError(t, apply(first+", "+second))
+	require.NoError(t, apply(label+", "+second)) // ID is retained using previously verified evidence, not name inference.
+	require.Error(t, apply("Claude An Unlinked Rename, "+second))
+	read := func() []string {
+		p, err := model.VisibleReasoningProfiles([]string{"claude-non-derivable-id"})
+		require.NoError(t, err)
+		return p["claude-non-derivable-id"].SupportedLevels
+	}
+	require.Equal(t, []string{"low", "medium", "high"}, read())
+	require.NoError(t, apply(second))
+	require.Empty(t, read())
+}

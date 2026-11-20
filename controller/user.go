@@ -1059,6 +1059,7 @@ func writeUserModels(c *gin.Context, visible []string) {
 	if c.Query("include") == "reasoning_profiles" {
 		if profiles, err := model.VisibleReasoningProfiles(visible); err == nil {
 			response["reasoningProfiles"] = profiles
+			response["reasoningCatalogVersion"] = 2 // Includes official defaults as well as manual declarations.
 		} else {
 			common.SysError("读取模型推理档位失败: " + err.Error())
 		}
