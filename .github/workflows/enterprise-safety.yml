@@ -48,7 +48,7 @@ jobs:
       - name: Verify migrations, wallet concurrency and filtering on all databases
         env:
           TEST_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/enterprise_test?charset=utf8mb4&parseTime=true
-          TEST_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
+          TEST_POSTGRES_DSN: postgres://postgres:fixture-only@127.0.0.1:5432/enterprise_test?sslmode=disable
           TEST_COMPAT_MYSQL_DSN: root:fixture-only@tcp(127.0.0.1:3306)/enterprise_test?charset=utf8mb4&parseTime=true
           TEST_COMPAT_POSTGRES_DSN: host=127.0.0.1 port=5432 user=postgres password=fixture-only dbname=enterprise_test sslmode=disable
         run: go test -p 2 ./model -run 'Enterprise|TicketDatabaseMatrix|RouteInsightTablesAcrossDialects' -count=1 -timeout=180s -v
