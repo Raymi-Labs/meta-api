@@ -71,3 +71,9 @@ Grant 的请求体 `user_id` 必须与已验签的 `X-Pulse-User-Id` 一致。�
 系统设置保留 `/api/option/pulse`，密钥生成迁移到 `/api/option/pulse/secret/generate`，均要求超级管理员权限。Internal Benefit 和论坛 SSO 路由、鉴权与幂等恢复能力保持不变。
 
 论坛登录入口为 `/api/forum/sso/start`。未登录用户先回到 `/login?next=/api/forum/sso/start`，登录（含 2FA）成功后由后端签发短期、单次 Login Ticket，并重定向到已配置的固定回调地址。浏览器不能通过 query 参数声明可信 `user_id`。
+
+## 只读查询昨日消费
+
+仅在受控网络部署：向 Meta API 和受信 Pulse 后端单独注入同一随机密钥 `PULSE_USAGE_HMAC_SECRET`（至少 32 字符，不可复用其他角色密钥；未设置即关闭）。不交给浏览器。Pulse 后端必须先从社区受保护绑定取得元衡用户 ID，拒绝未绑定账号，不得给客户端提供可指定任意用户 ID 的签名代理。Meta API 信任签名服务的绑定声明，不持有社区绑定数据库。
+
+`GET /api/internal/pulse/usage/yesterday` 无参数、空请求体。角色 `pulse-usage`，沿用 Benefit 的 X-Pulse 签名头与规范（方法、转义路径、绑定用户 ID、角色、Unix 秒、nonce、空 body 的 SHA-256 小写 hex，以换行连接后做 HMAC-SHA256）。生产使用 Redis 防重放。返回示例：`{"date":"2026-11-19","recorded_consume_quota":12345,"completeness":"unknown"}`。北京时间昨日零点含至今日零点不含，按日志 user_id 而非付款方汇总，含该身份下企业请求，仅统计消费类型、不抵扣退款。无记录返回 null，不推定为零；日志保留期、写入失败和历史开关无法追溯，非空值也不保证完整。当前关闭消费日志或数据库异常返回 503。该接口不恢复消费贡献、不返回明细，不授予数据库权限。

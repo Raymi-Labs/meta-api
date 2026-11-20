@@ -295,3 +295,5 @@ Claude 增量缓存默认开启（2026-11-15）：[渠道编辑](../web/src/comp
 | Seedance 2.5 参考照片 | [适配器](../relay/channel/task/doubao/reference_images.go)、[调用说明](channel/seedance-reference-images.md) | 复用视频鉴权、渠道模型映射、出站快照与计费；统一 images/image/input_reference 默认 reference_image，显式模式保留首尾帧 | 仅两个精确 2.5 上游型号；30张参考边界、素材互斥/来源冲突和帧比例提交前校验；内嵌照片解码/大小/像素预算、独立脚本首尾帧参数与安全错误分类覆盖查询/列表；旧型号图片行为不变；2026-11-15线上单图已生成并下载验收，多图/首尾帧仍仅本地验证。见[决策](../.agents/notes/implemented/bug-fix/2026-11-14-seedance-reference-images.md) |
 
 | 邀请档位、周期账单与风控 | [钱包档位](../web/src/components/common/invitation/InviteTierPanel.jsx)、[管理配置](../web/src/pages/Setting/Operation/SettingsInviteTier.jsx)、[接口](../router/invite-tier-router.go) | 复用支付入池、邀请台账、提现、支付风险单；六档矩阵、周/月账单、提前发放、欠款、部门、实名与改绑 | 默认关闭，启用要求持久化密钥；历史邀请不补发、历史下级不计晋级。集中注册仅记风险、人工冻结；[使用说明](INVITE_TIERS.md)、[验收](reviews/2026-11-19-invite-tier.md) |
+
+Pulse 昨日消费只读查询：独立服务角色、北京时间、已记录消费口径及授权边界见 [Pulse 对接](META_PULSE.md#只读查询昨日消费)。

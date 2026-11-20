@@ -246,3 +246,22 @@ func TestPulseServiceAuthImmediatelyUsesConsoleRotationAndEnvironmentOverride(t 
 	router.ServeHTTP(response, signedPulseRoleRequest(t, "/grant", "pulse-settlement", "old-environment-worker-key", "cleared-console-key"))
 	require.Equal(t, http.StatusUnauthorized, response.Code)
 }
+
+func TestPulseUsageRoleIsolation(t *testing.T) {
+	key := strings.Repeat("u", 32)
+	t.Setenv("PULSE_ENV", "test")
+	t.Setenv("PULSE_USAGE_HMAC_SECRET", key)
+	t.Setenv("PULSE_SERVICE_HMAC_SECRET", "worker-key")
+	call := func(role, secret, nonce string) bool {
+		ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+		ctx.Request = signedPulseRoleRequest(t, "/api/internal/pulse/usage/yesterday", role, secret, nonce)
+		PulseUsageAuth()(ctx)
+		return !ctx.IsAborted()
+	}
+	require.True(t, call("pulse-usage", key, "daily-ok"))
+	require.False(t, call("pulse-usage", key, "daily-ok"))
+	require.False(t, call("pulse-usage", "worker-key", "daily-wrong-key"))
+	require.False(t, call("pulse-settlement", "worker-key", "daily-wrong-role"))
+	t.Setenv("PULSE_SERVICE_HMAC_SECRET", key)
+	require.False(t, call("pulse-usage", key, "daily-overlap"))
+}

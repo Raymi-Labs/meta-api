@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,6 +49,21 @@ func PulseBenefitQueryAuth() gin.HandlerFunc {
 	return pulseServiceAuthForRoles("pulse-settlement", "pulse-rollback")
 }
 
+func PulseUsageAuth() gin.HandlerFunc { return pulseServiceAuthForRoles("pulse-usage") }
+
+func pulseUsageSecrets(cfg common.PulseConfig) []string {
+	key := strings.TrimSpace(os.Getenv("PULSE_USAGE_HMAC_SECRET"))
+	if len(key) < 32 {
+		return nil
+	}
+	for name, value := range cfg {
+		if strings.Contains(name, "Secret") && strings.TrimSpace(value) == key {
+			return nil
+		}
+	}
+	return pulseHMACSecretsWithConfig(key, "", cfg)
+}
+
 func PulseRollbackAuth() gin.HandlerFunc { return pulseServiceAuthForRoles("pulse-rollback") }
 
 func pulseServiceAuthForRoles(allowedRoles ...string) gin.HandlerFunc {
@@ -64,6 +80,9 @@ func pulseServiceAuthForRoles(allowedRoles ...string) gin.HandlerFunc {
 		secrets := pulseServiceHMACSecretsWithConfig(cfg)
 		if role == "pulse-rollback" {
 			secrets = pulseRollbackHMACSecretsWithConfig(cfg)
+		}
+		if role == "pulse-usage" {
+			secrets = pulseUsageSecrets(cfg)
 		}
 		if !allowed || !verifyPulseServiceRequestForRoleWithConfig(c.Request, secrets, role, cfg) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
@@ -162,7 +181,7 @@ func verifyPulseServiceRequestForRoleWithConfig(req *http.Request, secrets []str
 		return false
 	}
 	role := strings.TrimSpace(req.Header.Get(pulseRoleHeader))
-	if role != expectedRole || (role != "pulse-settlement" && role != "pulse-rollback") {
+	if role != expectedRole || (role != "pulse-settlement" && role != "pulse-rollback" && role != "pulse-usage") {
 		return false
 	}
 	nonce := strings.TrimSpace(req.Header.Get(pulseNonceHeader))
