@@ -298,4 +298,4 @@ Claude 增量缓存默认开启（2026-11-15）：[渠道编辑](../web/src/comp
 
 | 邀请档位、周期账单与风控 | [钱包档位](../web/src/components/common/invitation/InviteTierPanel.jsx)、[管理配置](../web/src/pages/Setting/Operation/SettingsInviteTier.jsx)、[接口](../router/invite-tier-router.go) | 复用支付入池、邀请台账、提现、支付风险单；六档矩阵、周/月账单、提前发放、欠款、部门、实名与改绑 | 默认关闭，启用要求持久化密钥；历史邀请不补发、历史下级不计晋级。集中注册仅记风险、人工冻结；[使用说明](INVITE_TIERS.md)、[验收](reviews/2026-11-19-invite-tier.md) |
 
-Pulse 昨日消费只读查询：独立服务角色、北京时间、已记录消费口径及授权边界见 [Pulse 对接](META_PULSE.md#只读查询昨日消费)。
+Pulse 昨日消费只读查询：独立服务角色、自动派生或显式查询密钥、北京时间、已记录消费口径及授权边界见 [Pulse 对接](META_PULSE.md#只读查询昨日消费)。

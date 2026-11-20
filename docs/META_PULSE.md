@@ -74,6 +74,14 @@ Grant 的请求体 `user_id` 必须与已验签的 `X-Pulse-User-Id` 一致。�
 
 ## 只读查询昨日消费
 
-仅在受控网络部署：向 Meta API 和受信 Pulse 后端单独注入同一随机密钥 `PULSE_USAGE_HMAC_SECRET`（至少 32 字符，不可复用其他角色密钥；未设置即关闭）。不交给浏览器。Pulse 后端必须先从社区受保护绑定取得元衡用户 ID，拒绝未绑定账号，不得给客户端提供可指定任意用户 ID 的签名代理。Meta API 信任签名服务的绑定声明，不持有社区绑定数据库。
+已有奖励结算对接时，**无需新增配置**。受信 Worker 使用当前生效的结算密钥（不是撤销或 SSO 密钥）派生查询密钥：
+
+```text
+usage_key = lowercase_hex(HMAC_SHA256(key=UTF8(trim(worker_secret)), message=UTF8("meta-api:pulse-usage:yesterday:v1")))
+```
+
+请求签名的 key 是上述 **64 个小写 hex 字符的 ASCII 字节**，不做 hex 解码。测试向量：虚构 worker_secret 为 `0123456789abcdef0123456789abcdef` 时，usage_key 为 `8fec39829e502445230624c42244098b5a90e25e9ece66f48f3639d088381de3`。Worker 自己签名即可，不要把原始结算密钥复制给 API 进程。Meta API 使用当前有效配置（包括后台设置），轮换窗口也接受上一把结算密钥派生的签名。派生要求根密钥至少 32 字符且不与其他用途重用；未建立受信结算关系时不会匿名放行。
+
+兼容 v1.41.0：如已显式配置独立的 `PULSE_USAGE_HMAC_SECRET`，仍只接受该密钥，不并行接受派生密钥。要明确禁用查询，可设为 `disabled`；不要靠清空该变量来禁用。仅在受控网络部署，两类密钥都不交给浏览器。Pulse 后端必须先从社区受保护绑定取得元衡用户 ID，拒绝未绑定账号，不得给客户端提供可指定任意用户 ID 的签名代理。Meta API 信任签名服务的绑定声明，不持有社区绑定数据库。
 
 `GET /api/internal/pulse/usage/yesterday` 无参数、空请求体。角色 `pulse-usage`，沿用 Benefit 的 X-Pulse 签名头与规范（方法、转义路径、绑定用户 ID、角色、Unix 秒、nonce、空 body 的 SHA-256 小写 hex，以换行连接后做 HMAC-SHA256）。生产使用 Redis 防重放。返回示例：`{"date":"2026-11-19","recorded_consume_quota":12345,"completeness":"unknown"}`。北京时间昨日零点含至今日零点不含，按日志 user_id 而非付款方汇总，含该身份下企业请求，仅统计消费类型、不抵扣退款。无记录返回 null，不推定为零；日志保留期、写入失败和历史开关无法追溯，非空值也不保证完整。当前关闭消费日志或数据库异常返回 503。该接口不恢复消费贡献、不返回明细，不授予数据库权限。
