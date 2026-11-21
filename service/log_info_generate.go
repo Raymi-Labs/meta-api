@@ -135,15 +135,12 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, m
 
 	adminInfo := make(map[string]interface{})
 	adminInfo["use_channel"] = ctx.GetStringSlice("use_channel")
-	if (relayInfo.ClaudeFallback != nil && relayInfo.ClaudeFallback.ServingModel == relaycommon.ClaudeFallbackTarget) || common.GetContextKeyString(ctx, constant.ContextKeyAdminRejectReason) == "claude_stop_reason=refusal" {
+	if common.GetContextKeyString(ctx, constant.ContextKeyAdminRejectReason) == "claude_stop_reason=refusal" {
 		if relayInfo.ClaudeMessageID != "" {
 			adminInfo["claude_message_id"] = relayInfo.ClaudeMessageID
 		}
 		if relayInfo.ClaudeRefusalCategory != "" {
 			adminInfo["claude_refusal_category"] = relayInfo.ClaudeRefusalCategory
-		}
-		if state := relayInfo.ClaudeFallback; state != nil && state.PrimaryCategory != "" {
-			adminInfo["claude_primary_refusal_category"] = state.PrimaryCategory
 		}
 	}
 	if attempts, exists := ctx.Get(requestFailureAttemptsKey); exists {

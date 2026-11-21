@@ -1,7 +1,6 @@
 {
   "translation": {
     "Claude 官方备选模型": "Official Claude fallback model",
-    "Opus 5.5 拒答时，允许 Opus 4.8 接续，包括流式输出中途。两次尝试可能分别计费。": "If Opus 5.5 refuses, allow Opus 4.8 to continue, including mid-stream. Each attempt may be billed separately.",
     "上游未提供完整的逐次用量": "The provider did not report complete per-attempt usage",
     "创作空间": "Creative Space",
     "参考 P50": "Reference P50",

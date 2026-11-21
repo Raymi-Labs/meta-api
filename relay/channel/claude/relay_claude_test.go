@@ -15,6 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestResponseClaude2OpenAIJoinsTextBlocks(t *testing.T) {
+	var response dto.ClaudeResponse
+	require.NoError(t, common.UnmarshalJsonStr(`{"type":"message","content":[{"type":"text","text":"first "},{"type":"thinking","thinking":"step"},{"type":"text","text":"second"}],"stop_reason":"end_turn"}`, &response))
+	converted := ResponseClaude2OpenAI(&response)
+	require.Equal(t, "first second", converted.Choices[0].Message.StringContent())
+}
+
 func TestIsEffectiveClaudeStreamOutput(t *testing.T) {
 	text := "hello"
 	thinking := "reasoning"

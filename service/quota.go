@@ -300,9 +300,6 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 }
 
 func PostClaudeConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.Usage) {
-	if PostClaudeFallbackUsage(ctx, relayInfo, usage) {
-		return
-	}
 	ObserveGroupHealthCacheUsage(relayInfo, usage)
 	if usage != nil {
 		ObserveChannelAffinityUsageCacheByRelayInfo(ctx, usage, relayInfo)

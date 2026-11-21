@@ -91,9 +91,6 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *rel
 	}
 	req.Set("anthropic-version", anthropicVersion)
 	CommonClaudeHeadersOperation(c, req, info)
-	if info.ClaudeFallback != nil {
-		addFallbackBeta(*req)
-	}
 	return nil
 }
 
@@ -128,10 +125,6 @@ func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommo
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
-	requestBody, err := prepareOfficialFallback(c, info, requestBody)
-	if err != nil {
-		return nil, err
-	}
 	return channel.DoApiRequest(a, c, info, requestBody)
 }
 

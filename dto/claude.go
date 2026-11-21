@@ -16,18 +16,12 @@ type ClaudeMetadata struct {
 	UserId string `json:"user_id"`
 }
 
-type ClaudeModelRef struct {
-	Model string `json:"model"`
-}
 type ClaudeRefusalDetails struct {
 	Type     string `json:"type,omitempty"`
 	Category string `json:"category,omitempty"`
 }
 
 type ClaudeMediaMessage struct {
-	From         *ClaudeModelRef       `json:"from,omitempty"`
-	To           *ClaudeModelRef       `json:"to,omitempty"`
-	Trigger      *ClaudeRefusalDetails `json:"trigger,omitempty"`
 	StopDetails  *ClaudeRefusalDetails `json:"stop_details,omitempty"`
 	Type         string                `json:"type,omitempty"`
 	Text         *string               `json:"text,omitempty"`
@@ -617,7 +611,6 @@ func (c *ClaudeResponse) GetClaudeError() *types.ClaudeError {
 }
 
 type ClaudeUsage struct {
-	Iterations               json.RawMessage `json:"iterations,omitempty"`
 	cacheReadPresent         bool
 	cacheCreationPresent     bool
 	inputTokensPresent       bool
