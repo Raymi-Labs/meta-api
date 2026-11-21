@@ -353,7 +353,8 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
           ? Math.max(1, Math.ceil((end - start) / 3600))
           : 24;
       const res = await API.get(
-        `/api/perf-metrics/summary?hours=${Math.min(hours, 24 * 30)}`,
+        `/api/${isAdminUser ? 'data/' : ''}perf-metrics/summary?hours=${Math.min(hours, 24 * 30)}`,
+        { disableDuplicate: true },
       );
       if (!perfMetricsRequestGuard.isLatestRequest(requestId)) {
         return [];
@@ -374,7 +375,7 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
         setPerfMetricsLoading(false);
       }
     }
-  }, [inputs.start_timestamp, inputs.end_timestamp, perfMetricsRequestGuard]);
+  }, [inputs.start_timestamp, inputs.end_timestamp, isAdminUser, perfMetricsRequestGuard]);
 
   const loadModelChannelTagStats = useCallback(
     async (daysOverride) => {

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 )
@@ -58,6 +60,34 @@ func EnableChannel(channelId int, usingKey string, channelName string) {
 	}
 }
 
+// RelayErrorSource distinguishes provider failures from local validation before applying health rules.
+func RelayErrorSource(err *types.NewAPIError) string {
+	if err == nil {
+		return ""
+	}
+	if _, ok := relaycommon.AsParamOverrideReturnError(err); ok {
+		return "local"
+	}
+	switch {
+	case types.IsChannelError(err):
+		return "channel"
+	case err.GetErrorCode() == types.ErrorCodeDoRequestFailed:
+		return "transport"
+	case err.UpstreamStatusCode > 0 || err.GetErrorType() != types.ErrorTypeNewAPIError:
+		return "upstream"
+	}
+	switch err.GetErrorCode() {
+	case types.ErrorCodeReadResponseBodyFailed, types.ErrorCodeBadResponseStatusCode, types.ErrorCodeBadResponse,
+		types.ErrorCodeBadResponseBody, types.ErrorCodeEmptyResponse, types.ErrorCodeAwsInvokeError:
+		return "upstream"
+	}
+	var inner *types.NewAPIError
+	if errors.As(err.Unwrap(), &inner) && inner != err {
+		return RelayErrorSource(inner)
+	}
+	return "local"
+}
+
 func ShouldDisableChannel(channelType int, err *types.NewAPIError) bool {
 	if !common.AutomaticDisableChannelEnabled {
 		return false
@@ -65,8 +95,11 @@ func ShouldDisableChannel(channelType int, err *types.NewAPIError) bool {
 	if err == nil {
 		return false
 	}
-	if types.IsChannelError(err) {
+	switch RelayErrorSource(err) {
+	case "channel":
 		return true
+	case "local":
+		return false
 	}
 	if types.IsSkipRetryError(err) {
 		return false
@@ -168,7 +201,7 @@ func IsQuotaRelatedError(err *types.NewAPIError) bool {
 }
 
 func IsChannelModelMismatchError(err *types.NewAPIError) bool {
-	if err == nil {
+	if err == nil || RelayErrorSource(err) == "local" {
 		return false
 	}
 
@@ -193,7 +226,7 @@ func IsChannelModelMismatchError(err *types.NewAPIError) bool {
 }
 
 func IsUpstreamModelTemporaryUnavailableError(err *types.NewAPIError) bool {
-	if err == nil {
+	if err == nil || RelayErrorSource(err) == "local" {
 		return false
 	}
 

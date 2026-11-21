@@ -179,3 +179,13 @@ func TestPublicPricingMetadataBoundaryPreservesAdminAndCache(t *testing.T) {
 	require.NoError(t, err)
 	require.JSONEq(t, string(cached), string(current))
 }
+
+func TestPricingRestrictsSharedModelGroups(t *testing.T) {
+	items := []model.Pricing{{ModelName: "shared", EnableGroup: []string{"default", "secret"}}, {ModelName: "hidden", EnableGroup: []string{"secret"}}, {ModelName: "global", EnableGroup: []string{"all", "secret"}}}
+	out := filterPricingByUsableGroups(items, map[string]string{"default": ""})
+	require.Len(t, out, 2)
+	require.Equal(t, []string{"default"}, out[0].EnableGroup)
+	require.Equal(t, []string{"all"}, out[1].EnableGroup)
+	require.Equal(t, []string{"default", "secret"}, items[0].EnableGroup)
+	require.Empty(t, filterPricingByUsableGroups(items, map[string]string{}))
+}

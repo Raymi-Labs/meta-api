@@ -50,7 +50,7 @@ func DecisionsHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 	if len(info.ParamOverride) > 0 {
 		jsonData, err = relaycommon.ApplyParamOverrideWithRelayInfo(jsonData, info)
 		if err != nil {
-			return types.NewError(err, types.ErrorCodeChannelParamOverrideInvalid, types.ErrOptionWithSkipRetry())
+			return newAPIErrorFromParamOverride(err)
 		}
 	}
 	// Native protocol always retains the mapped model and policy overrides,

@@ -523,6 +523,7 @@ func SetApiRouter(router *gin.Engine) {
 
 		dataRoute := apiRouter.Group("/data")
 		dataRoute.GET("/", middleware.AdminAuth(), controller.GetAllQuotaDates)
+		dataRoute.GET("/perf-metrics/summary", middleware.AdminAuth(), controller.GetDashboardPerfMetricsSummary)
 		dataRoute.GET("/users", middleware.AdminAuth(), controller.GetQuotaDatesByUser)
 		dataRoute.GET("/model-channel-tags", middleware.AdminAuth(), controller.GetModelChannelTagStats)
 		dataRoute.GET("/user-balance-trend", middleware.AdminAuth(), controller.GetUserBalanceTrend)

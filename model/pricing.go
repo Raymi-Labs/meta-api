@@ -403,5 +403,7 @@ func updatePricing() {
 
 // GetSupportedEndpointMap 返回全局端点到路径的映射
 func GetSupportedEndpointMap() map[string]common.EndpointInfo {
+	modelSupportEndpointsLock.RLock()
+	defer modelSupportEndpointsLock.RUnlock()
 	return supportedEndpointMap
 }

@@ -87,7 +87,7 @@ func ClearUserScopedCircuit(c *gin.Context, channel *model.Channel) {
 }
 
 func shouldRecordUserScopedCircuitFailure(c *gin.Context, channel *model.Channel, err *types.NewAPIError) bool {
-	if c == nil || channel == nil || err == nil || types.IsSkipRetryError(err) {
+	if c == nil || channel == nil || err == nil || types.IsSkipRetryError(err) || RelayErrorSource(err) == "local" {
 		return false
 	}
 	if IsRetryableUpstreamOverloadError(err) {

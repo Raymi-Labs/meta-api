@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
+
+	"gorm.io/gorm"
 	"net"
 	"net/http"
 	"strconv"
@@ -223,6 +226,10 @@ func TokenAuthQuery() func(c *gin.Context) {
 		}
 
 		userCache, err := model.GetUserCache(token.UserId)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			abortWithOpenAiMessage(c, http.StatusUnauthorized, "无效的令牌")
+			return
+		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -348,6 +355,10 @@ func TokenAuth() func(c *gin.Context) {
 		}
 
 		userCache, err := model.GetUserCache(token.UserId)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			abortWithOpenAiMessage(c, http.StatusUnauthorized, "无效的令牌")
+			return
+		}
 		if err != nil {
 			abortWithOpenAiMessage(c, http.StatusInternalServerError, err.Error())
 			return

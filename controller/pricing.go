@@ -3,6 +3,8 @@ package controller
 import (
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
+
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -70,36 +72,66 @@ func pricingVendorsForModels(pricing []model.Pricing, vendors []model.PricingVen
 	return result
 }
 
-func GetPricing(c *gin.Context) {
-	role := getRequestRole(c)
-	pricing := model.FilterPricingByVisibility(model.GetPricing(), role)
-	pricing = pricingWithDiscountPolicy(pricing)
-	pricing, publicVendors := model.PublicPricingMetadata(pricing, pricingVendorsForModels(pricing, model.GetVendors()))
-	userId, exists := c.Get("id")
-	usableGroup := map[string]string{}
-	groupRatio := map[string]float64{}
-	for s, f := range ratio_setting.GetGroupRatioCopy() {
-		groupRatio[s] = f
+func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string]string) []model.Pricing {
+	if len(pricing) == 0 {
+		return pricing
 	}
-	var group string
-	if exists {
-		user, err := model.GetUserCache(userId.(int))
-		if err == nil {
-			group = user.Group
-			for g := range groupRatio {
-				ratio, ok := ratio_setting.GetGroupGroupRatio(group, g)
-				if ok {
-					groupRatio[g] = ratio
-				}
+	if len(usableGroup) == 0 {
+		return []model.Pricing{}
+	}
+
+	filtered := make([]model.Pricing, 0, len(pricing))
+	for _, item := range pricing {
+		// The pricing cache is shared by all viewers.
+		groups := make([]string, 0, len(item.EnableGroup))
+		for _, group := range item.EnableGroup {
+			if _, ok := usableGroup[group]; ok || group == "all" {
+				groups = append(groups, group)
+			}
+		}
+		if len(groups) > 0 {
+			item.EnableGroup = groups
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered
+}
+
+func catalogViewer(c *gin.Context) (int, string) {
+	if id := c.GetInt("id"); id > 0 {
+		user, err := model.GetUserById(id, false)
+		if err != nil || user.Status != common.UserStatusEnabled {
+			return common.RoleGuestUser, ""
+		}
+		return user.Role, user.Group
+	}
+	return getRequestRole(c), ""
+}
+
+func GetPricing(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	role, group := catalogViewer(c)
+	usableGroup := service.GetUserUsableGroups(group)
+	pricing := model.FilterPricingByVisibility(model.GetPricing(), role)
+	pricing = pricingWithDiscountPolicy(filterPricingByUsableGroups(pricing, usableGroup))
+	pricing, publicVendors := model.PublicPricingMetadata(pricing, pricingVendorsForModels(pricing, model.GetVendors()))
+	groupRatio := ratio_setting.GetGroupRatioCopy()
+	for name := range groupRatio {
+		if _, ok := usableGroup[name]; !ok {
+			delete(groupRatio, name)
+		} else if group != "" {
+			if ratio, ok := ratio_setting.GetGroupGroupRatio(group, name); ok {
+				groupRatio[name] = ratio
 			}
 		}
 	}
-
-	usableGroup = service.GetUserUsableGroups(group)
-	// check groupRatio contains usableGroup
-	for group := range ratio_setting.GetGroupRatioCopy() {
-		if _, ok := usableGroup[group]; !ok {
-			delete(groupRatio, group)
+	endpoints := make(map[string]common.EndpointInfo)
+	catalogEndpoints := model.GetSupportedEndpointMap()
+	for _, item := range pricing {
+		for _, kind := range item.SupportedEndpointTypes {
+			if endpoint, ok := catalogEndpoints[string(kind)]; ok {
+				endpoints[string(kind)] = endpoint
+			}
 		}
 	}
 	now := time.Now()
@@ -110,7 +142,7 @@ func GetPricing(c *gin.Context) {
 		"vendors":            publicVendors,
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,
-		"supported_endpoint": model.GetSupportedEndpointMap(),
+		"supported_endpoint": endpoints,
 		"auto_groups":        service.GetUserAutoGroup(group),
 		"time_ratio":         buildPricingTimeRatioMap(pricing, usableGroup, group, now),
 		"time_ratio_at":      now.Format(time.RFC3339),

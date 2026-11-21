@@ -26,7 +26,8 @@ func GetOpenAIChatCapabilities(model, effort string) OpenAIChatCapabilities {
 	isGPT5 := model == "gpt-5" || strings.HasPrefix(model, "gpt-5-") || strings.HasPrefix(model, "gpt-5.")
 	isGPT6SolLuna := isOpenAIModelSnapshot(model, "gpt-6-sol") || isOpenAIModelSnapshot(model, "gpt-6-luna")
 	isGPT61Terra := isOpenAIModelSnapshot(model, "gpt-6.1-terra")
-	if !isGPT5 && !isGPT6SolLuna && !isGPT61Terra && !isOpenAIModelSnapshot(model, "gpt-6-astra") && !isOpenAIModelSnapshot(model, "gpt-6.1-sol") {
+	isGPT62 := isOpenAIModelSnapshot(model, "gpt-6.2-astra") || isOpenAIModelSnapshot(model, "gpt-6.2-sol")
+	if !isGPT62 && !isGPT5 && !isGPT6SolLuna && !isGPT61Terra && !isOpenAIModelSnapshot(model, "gpt-6-astra") && !isOpenAIModelSnapshot(model, "gpt-6.1-sol") {
 		return c
 	}
 	c.UseMaxCompletionTokens, c.UseDeveloperRole = true, true

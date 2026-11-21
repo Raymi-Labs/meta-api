@@ -40,6 +40,7 @@ func (a *Adaptor) ConvertGeminiRequest(c *gin.Context, info *relaycommon.RelayIn
 			}
 		}
 	}
+	normalizeGemini4Level(request, info, "")
 	return request, nil
 }
 

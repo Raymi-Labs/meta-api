@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -688,5 +689,37 @@ func TestApplyChannelFailureRetryExclusion_RequestTooLargeUsesBaseURLGroup(t *te
 	}
 	if slices.Contains(param.ExcludeChannels, 43) {
 		t.Fatalf("did not expect unrelated base_url channel to be excluded: %v", param.ExcludeChannels)
+	}
+}
+
+func TestShouldDisableChannelIgnoresLocalErrors(t *testing.T) {
+	previousAutoDisable := common.AutomaticDisableChannelEnabled
+	common.AutomaticDisableChannelEnabled = true
+	t.Cleanup(func() { common.AutomaticDisableChannelEnabled = previousAutoDisable })
+	upstreamKeyErr := types.WithOpenAIError(types.OpenAIError{Message: "Incorrect API key provided", Type: "invalid_request_error", Code: "invalid_api_key"}, http.StatusUnauthorized)
+	for _, tc := range []struct {
+		name        string
+		err         *types.NewAPIError
+		source      string
+		wantDisable bool
+	}{
+		{name: "upstream invalid key", err: upstreamKeyErr, source: "upstream", wantDisable: true},
+		{name: "upstream keyword in a 403 response", err: types.NewOpenAIError(errors.New("Permission denied"), types.ErrorCodeBadResponseStatusCode, http.StatusForbidden), source: "upstream", wantDisable: true},
+		{name: "upstream keyword in an adaptor-parsed body", err: types.NewError(errors.New("Your credit balance is too low"), types.ErrorCodeBadResponseBody), source: "upstream", wantDisable: true},
+		{name: "channel key error", err: types.NewError(errors.New("invalid auth"), types.ErrorCodeChannelInvalidKey), source: "channel", wantDisable: true},
+		{name: "channel model mapping error", err: types.NewError(errors.New("bad mapping"), types.ErrorCodeChannelModelMappedError, types.ErrOptionWithSkipRetry()), source: "channel", wantDisable: true},
+		{name: "local 401 from request conversion", err: types.NewErrorWithStatusCode(errors.New("bad image"), types.ErrorCodeConvertRequestFailed, http.StatusUnauthorized), source: "local", wantDisable: false},
+		{name: "local error carrying a disable keyword from client input", err: types.NewError(errors.New("fetch https://x.invalid/Permission denied failed"), types.ErrorCodeConvertRequestFailed), source: "local", wantDisable: false},
+		{name: "override condition type mismatch", err: types.NewErrorWithStatusCode(errors.New("comparison failed for path temperature"), types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry()), source: "local", wantDisable: false},
+		{name: "local wrapper around an upstream key error", err: types.NewErrorWithStatusCode(upstreamKeyErr, types.ErrorCodeInvalidRequest, http.StatusUnauthorized), source: "upstream", wantDisable: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			assert.Equal(t, tc.source, RelayErrorSource(tc.err))
+			assert.Equal(t, tc.wantDisable, ShouldDisableChannel(0, tc.err))
+			if tc.source == "local" {
+				assert.False(t, ShouldRetryChannelError(c, tc.err, 1))
+			}
+		})
 	}
 }

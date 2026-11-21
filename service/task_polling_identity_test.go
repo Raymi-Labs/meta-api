@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -85,4 +86,45 @@ func TestSunoPollingIgnoresResultsOutsideCredentialBatch(t *testing.T) {
 	require.NoError(t, updateSunoBatch(context.Background(), ch, []string{"requested"}, tasks, 1, "key-one"))
 	require.Equal(t, model.TaskStatus(model.TaskStatusInProgress), tasks["other"].Status)
 	require.Empty(t, tasks["other"].FailReason)
+}
+
+func TestFullProgressTaskTimeoutRefundOnce(t *testing.T) {
+	truncate(t)
+	const userID = 7632
+	seedUser(t, userID, 1000)
+	task := makeTask(userID, 0, 60, 0, BillingSourceWallet, 0)
+	task.Progress = "100%"
+	task.SubmitTime = time.Now().Add(-2 * time.Hour).Unix()
+	require.NoError(t, model.DB.Create(task).Error)
+	timeout := constant.TaskTimeoutMinutes
+	constant.TaskTimeoutMinutes = 60
+	t.Cleanup(func() { constant.TaskTimeoutMinutes = timeout })
+	for i := 0; i < 2; i++ {
+		sweepTimedOutTasks(context.Background())
+	}
+	var stored model.Task
+	require.NoError(t, model.DB.First(&stored, task.ID).Error)
+	require.EqualValues(t, model.TaskStatusFailure, stored.Status)
+	require.Equal(t, 1060, getUserQuota(t, userID))
+}
+
+func TestSunoFullProgressFailureRefundOnce(t *testing.T) {
+	truncate(t)
+	const userID = 7633
+	seedUser(t, userID, 1000)
+	task := makeTask(userID, 0, 60, 0, BillingSourceWallet, 0)
+	task.TaskID, task.Progress = "full-progress", "100%"
+	require.NoError(t, model.DB.Create(task).Error)
+	old := GetTaskAdaptorFunc
+	t.Cleanup(func() { GetTaskAdaptorFunc = old })
+	GetTaskAdaptorFunc = func(constant.TaskPlatform) TaskPollingAdaptor {
+		return &taskBatchIdentityAdaptor{check: func(*relaycommon.RelayInfo, string, map[string]any) {},
+			response: `{"code":"success","data":[{"task_id":"full-progress","fail_reason":"failed"}]}`}
+	}
+	for i := 0; i < 2; i++ {
+		stale := *task
+		require.NoError(t, updateSunoBatch(context.Background(), &model.Channel{}, []string{task.TaskID}, map[string]*model.Task{task.TaskID: &stale}, userID, "key"))
+	}
+	require.Equal(t, 1060, getUserQuota(t, userID))
+	require.Empty(t, model.GetAllUnFinishSyncTasks(10))
 }

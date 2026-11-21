@@ -1,5 +1,7 @@
 # 功能地图
 
+模型广场按当前账号角色和可用分组裁剪模型、厂商、协议和价格。公共性能接口在聚合前筛选数据库与内存样本，管理仪表盘通过独立鉴权入口读取全站汇总。Gemini 文本分片、推理档位、GPT-6.2 参数、任务终态、渠道错误和密钥撤销的入口与适配取舍见[上游修复记录](../.agents/notes/implemented/bug-fix/2026-11-21-upstream-relay-corrections.md)。
+
 故障回退与健康证据闭环（2026-11-20）：[安全回退](../controller/relay_header_timeout.go)复用授权选路和保活交付保护，超时/明确Claude兼容拒绝受实际尝试数RetryTimes+1约束；[健康快照](../pkg/route_insight/run.go)合并短期突发、24小时真实调用聚合与精确型号测试，测试独立来源不改真实成功率；智能路由页显示测试成功/次数。原分组展示补样保持，禁止用其他型号测试恢复路由；无新探测调度、不改令牌。见[决策](../.agents/notes/implemented/bug-fix/2026-11-20-routing-health-recovery.md)。
 
 平台企业管理 → [待对账](../web/src/pages/EnterpriseAdmin/Reservations.jsx)：支持企业 ID 与请求 ID 组合查询待核对预留；平台管理员只读，处理仍要求 Root。不是全部历史流水。[历史记录 → 用量](../web/src/pages/EnterpriseAdmin/HistoryModal.jsx)支持在选定企业内按完整请求 ID 查询，包括已退回；不改变资金流水。

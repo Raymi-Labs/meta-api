@@ -7,6 +7,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ func IsRetryableUpstreamQuotaError(err *types.NewAPIError) bool {
 	if err == nil || types.IsSkipRetryError(err) {
 		return false
 	}
-	return IsQuotaRelatedError(err)
+	return RelayErrorSource(err) != "local" && IsQuotaRelatedError(err)
 }
 
 func IsTemporaryUpstreamError(err *types.NewAPIError) bool {
@@ -69,8 +70,15 @@ func ShouldRetryChannelError(c *gin.Context, openaiErr *types.NewAPIError, retry
 	if ShouldSkipRetryAfterChannelAffinityFailure(c, openaiErr) {
 		return false
 	}
-	if types.IsChannelError(openaiErr) {
+	source := RelayErrorSource(openaiErr)
+	if source == "channel" {
 		return true
+	}
+	if source == "local" {
+		// An explicit return_error rule can opt into normal status-based retry.
+		if _, configured := relaycommon.AsParamOverrideReturnError(openaiErr); !configured {
+			return false
+		}
 	}
 	if types.IsSkipRetryError(openaiErr) {
 		return false

@@ -19,9 +19,10 @@ type Sample struct {
 }
 
 type QueryParams struct {
-	Model string
-	Group string
-	Hours int
+	AllowedGroups []string
+	Model         string
+	Group         string
+	Hours         int
 }
 
 type BucketPoint struct {

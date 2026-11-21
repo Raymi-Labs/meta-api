@@ -48,10 +48,16 @@ func UpsertPerfMetric(metric *PerfMetric) error {
 	}).Create(metric).Error
 }
 
-func GetPerfMetrics(modelName string, group string, startTs int64, endTs int64) ([]PerfMetric, error) {
+func GetPerfMetrics(modelName string, group string, startTs int64, endTs int64, groups []string) ([]PerfMetric, error) {
 	var metrics []PerfMetric
 	query := DB.Model(&PerfMetric{}).
 		Where("model_name = ? AND bucket_ts >= ? AND bucket_ts <= ?", modelName, startTs, endTs)
+	if groups != nil {
+		if len(groups) == 0 {
+			return metrics, nil
+		}
+		query = query.Where(commonGroupCol+" IN ?", groups)
+	}
 	if group != "" {
 		query = query.Where(commonGroupCol+" = ?", group)
 	}

@@ -2,6 +2,7 @@ package relay
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -72,7 +73,11 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 	} else {
 		convertedRequest, err := adaptor.ConvertImageRequest(c, info, *request)
 		if err != nil {
-			return types.NewError(err, types.ErrorCodeConvertRequestFailed)
+			var apiErr *types.NewAPIError
+			if errors.As(err, &apiErr) {
+				return apiErr
+			}
+			return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 		}
 		relaycommon.AppendRequestConversionFromRequest(info, convertedRequest)
 

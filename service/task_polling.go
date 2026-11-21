@@ -331,7 +331,7 @@ func updateSunoBatch(ctx context.Context, ch *model.Channel, taskIds []string, t
 			continue
 		}
 		task := taskM[responseItem.TaskID]
-		if task == nil || !taskNeedsUpdate(task, responseItem) {
+		if task == nil || task.Status == model.TaskStatusFailure || task.Status == model.TaskStatusSuccess || !taskNeedsUpdate(task, responseItem) {
 			continue
 		}
 
@@ -344,33 +344,26 @@ func updateSunoBatch(ctx context.Context, ch *model.Channel, taskIds []string, t
 		if responseItem.FailReason != "" || task.Status == model.TaskStatusFailure {
 			logger.LogInfo(ctx, task.TaskID+" 构建失败，"+task.FailReason)
 			task.Progress = "100%"
-			if task.EnterpriseId <= 0 {
-				RefundTaskQuota(ctx, task, task.FailReason)
-			}
+			task.Status = model.TaskStatusFailure
 		}
 		if responseItem.Status == model.TaskStatusSuccess {
 			task.Progress = "100%"
 		}
 		task.Data = responseItem.Data
 
-		if task.EnterpriseId > 0 {
-			if task.FailReason != "" {
-				task.Status = model.TaskStatusFailure
-			}
-			won, updateErr := task.UpdateWithStatus(previousStatus)
-			if updateErr != nil {
-				return updateErr
-			}
-			if won && (task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure) {
-				if err := finalizeEnterpriseTask(ctx, task); err != nil {
-					return err
-				}
-			}
+		won, updateErr := task.UpdateWithStatus(previousStatus)
+		if updateErr != nil {
+			return updateErr
+		}
+		if !won {
 			continue
 		}
-		err = task.Update()
-		if err != nil {
-			common.SysLog("UpdateSunoTask task error: " + err.Error())
+		if task.EnterpriseId > 0 && (task.Status == model.TaskStatusSuccess || task.Status == model.TaskStatusFailure) {
+			if err := finalizeEnterpriseTask(ctx, task); err != nil {
+				return err
+			}
+		} else if task.EnterpriseId <= 0 && task.Status == model.TaskStatusFailure {
+			RefundTaskQuota(ctx, task, task.FailReason)
 		}
 	}
 	return nil

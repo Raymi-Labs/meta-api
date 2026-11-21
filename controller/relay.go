@@ -512,7 +512,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		allowSameChannelFailover := common.QuotaStabilityEnabled &&
 			common.MultiKeySameChannelFailoverOnce &&
 			channel.ChannelInfo.IsMultiKey &&
-			service.IsQuotaRelatedError(newAPIError) &&
+			service.IsRetryableUpstreamQuotaError(newAPIError) &&
 			!retryParam.SameChannelFailoverDone
 
 		if allowSameChannelFailover {
@@ -717,7 +717,7 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		errorMessage = fmt.Sprintf("%s, upstream={%s}", errorMessage, diagnostics)
 	}
 	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, errorMessage))
-	isQuotaRelated := service.IsQuotaRelatedError(err)
+	isQuotaRelated := service.IsRetryableUpstreamQuotaError(err)
 	// 多 Key 且额度类错误：先给当前 key 打冷却，避免下一次又选到同一个 key。
 	if common.QuotaStabilityEnabled && channelError.IsMultiKey && isQuotaRelated {
 		keyIndex, hasKeyIndex := common.GetContextKeyType[int](c, constant.ContextKeyChannelMultiKeyIndex)

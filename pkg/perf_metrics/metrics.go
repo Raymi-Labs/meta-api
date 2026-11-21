@@ -87,7 +87,7 @@ func Query(params QueryParams) (QueryResult, error) {
 	startTs := endTs - int64(params.Hours)*3600
 
 	merged := map[bucketKey]counters{}
-	rows, err := model.GetPerfMetrics(params.Model, params.Group, startTs, endTs)
+	rows, err := model.GetPerfMetrics(params.Model, params.Group, startTs, endTs, params.AllowedGroups)
 	if err != nil {
 		return QueryResult{}, err
 	}
@@ -107,8 +107,12 @@ func Query(params QueryParams) (QueryResult, error) {
 		})
 	}
 
+	allowed := allowedGroupSet(params.AllowedGroups)
 	hotBuckets.Range(func(key, value any) bool {
 		k := key.(bucketKey)
+		if _, ok := allowed[k.group]; allowed != nil && !ok {
+			return true
+		}
 		if k.model != params.Model || k.bucketTs < startTs || k.bucketTs > endTs {
 			return true
 		}
