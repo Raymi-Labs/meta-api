@@ -61,8 +61,8 @@
   max-width: 100%;
   padding: 7px 12px;
   min-height: 36px;
-  border: 1px solid var(--semi-color-border);
-  border-radius: 22px;
+  border: 1px solid var(--catalog-border, var(--semi-color-border));
+  border-radius: var(--catalog-radius-control, 7px);
   background: transparent;
   color: var(--semi-color-text-1);
   cursor: pointer;
@@ -75,8 +75,8 @@
 }
 .pricing-filter-chip-count {
   flex-shrink: 0;
-  border-radius: 14px;
-  padding: 1px 7px;
+  border-radius: 5px;
+  padding: 1px 6px;
   background: var(--semi-color-fill-0);
   font-size: 12px;
 }
@@ -85,12 +85,20 @@
   flex-shrink: 0;
 }
 .pricing-filter-chip[aria-pressed='true'] {
-  border-color: var(--semi-color-primary);
-  background: var(--semi-color-primary-light-default);
-  color: var(--semi-color-primary);
+  border-color: color-mix(
+    in srgb,
+    var(--catalog-accent, var(--semi-color-primary)) 45%,
+    transparent
+  );
+  background: var(
+    --catalog-accent-soft,
+    var(--semi-color-primary-light-default)
+  );
+  color: var(--catalog-accent, var(--semi-color-primary));
 }
-.pricing-filter-chip:hover:not(:disabled) {
-  border-color: var(--semi-color-primary);
+.pricing-filter-chip:hover:not(:disabled):not([aria-pressed='true']) {
+  border-color: var(--catalog-border-strong, var(--semi-color-border));
+  background: var(--catalog-soft, var(--semi-color-fill-0));
 }
 .pricing-filter-chip:disabled {
   cursor: not-allowed;
@@ -98,7 +106,7 @@
 }
 .pricing-filter-chip:focus-visible,
 .pricing-filter-section > summary:focus-visible {
-  outline: 2px solid var(--semi-color-primary);
+  outline: 2px solid var(--catalog-accent, var(--semi-color-primary));
   outline-offset: 3px;
 }
 .pricing-filter-footer {
