@@ -817,36 +817,35 @@ func AddToken(c *gin.Context) {
 		return
 	}
 	cleanToken := model.Token{
-		UserId:                c.GetInt("id"),
-		Name:                  token.Name,
-		Key:                   key,
-		CreatedTime:           common.GetTimestamp(),
-		AccessedTime:          common.GetTimestamp(),
-		ExpiredTime:           token.ExpiredTime,
-		RemainQuota:           token.RemainQuota,
-		UnlimitedQuota:        token.UnlimitedQuota,
-		ModelLimitsEnabled:    token.ModelLimitsEnabled,
-		ModelLimits:           token.ModelLimits,
-		ChannelLimitsEnabled:  token.ChannelLimitsEnabled,
-		ChannelLimits:         token.ChannelLimits,
-		AllowIps:              token.AllowIps,
-		Group:                 token.Group,
-		ClaudeRefusalFallback: token.ClaudeRefusalFallback,
-		CrossGroupRetry:       token.CrossGroupRetry,
-		AutoGroupFallback:     token.AutoGroupFallback,
-		RoutingConfig:         token.RoutingConfig,
-		MaxConcurrency:        token.MaxConcurrency,
-		WindowRequestLimit:    token.WindowRequestLimit,
-		WindowSeconds:         token.WindowSeconds,
-		PackageEnabled:        token.PackageEnabled,
-		PackageLimitQuota:     token.PackageLimitQuota,
-		PackagePeriod:         token.PackagePeriod,
-		PackageCustomSeconds:  token.PackageCustomSeconds,
-		PackagePeriodMode:     token.PackagePeriodMode,
-		PackageUsedQuota:      token.PackageUsedQuota,
-		PackageNextResetTime:  token.PackageNextResetTime,
-		EnterpriseId:          token.EnterpriseId,
-		MembershipId:          token.MembershipId,
+		UserId:               c.GetInt("id"),
+		Name:                 token.Name,
+		Key:                  key,
+		CreatedTime:          common.GetTimestamp(),
+		AccessedTime:         common.GetTimestamp(),
+		ExpiredTime:          token.ExpiredTime,
+		RemainQuota:          token.RemainQuota,
+		UnlimitedQuota:       token.UnlimitedQuota,
+		ModelLimitsEnabled:   token.ModelLimitsEnabled,
+		ModelLimits:          token.ModelLimits,
+		ChannelLimitsEnabled: token.ChannelLimitsEnabled,
+		ChannelLimits:        token.ChannelLimits,
+		AllowIps:             token.AllowIps,
+		Group:                token.Group,
+		CrossGroupRetry:      token.CrossGroupRetry,
+		AutoGroupFallback:    token.AutoGroupFallback,
+		RoutingConfig:        token.RoutingConfig,
+		MaxConcurrency:       token.MaxConcurrency,
+		WindowRequestLimit:   token.WindowRequestLimit,
+		WindowSeconds:        token.WindowSeconds,
+		PackageEnabled:       token.PackageEnabled,
+		PackageLimitQuota:    token.PackageLimitQuota,
+		PackagePeriod:        token.PackagePeriod,
+		PackageCustomSeconds: token.PackageCustomSeconds,
+		PackagePeriodMode:    token.PackagePeriodMode,
+		PackageUsedQuota:     token.PackageUsedQuota,
+		PackageNextResetTime: token.PackageNextResetTime,
+		EnterpriseId:         token.EnterpriseId,
+		MembershipId:         token.MembershipId,
 	}
 	if err := model.ValidateTokenQuotaPackageRelation(&cleanToken); err != nil {
 		common.ApiError(c, err)
@@ -888,9 +887,8 @@ func UpdateToken(c *gin.Context) {
 	statusOnly := c.Query("status_only")
 	payload := struct {
 		model.Token
-		ClaudeRefusalFallback *bool   `json:"claude_refusal_fallback"`
-		RoutingConfig         *string `json:"routing_config"`
-		EnterpriseLimitQuota  *int64  `json:"enterprise_limit_quota"`
+		RoutingConfig        *string `json:"routing_config"`
+		EnterpriseLimitQuota *int64  `json:"enterprise_limit_quota"`
 	}{}
 	err := c.ShouldBindJSON(&payload)
 	token := payload.Token
@@ -998,9 +996,6 @@ func UpdateToken(c *gin.Context) {
 			cleanToken.ChannelLimitsEnabled = token.ChannelLimitsEnabled
 			cleanToken.ChannelLimits = token.ChannelLimits
 			cleanToken.AllowIps = token.AllowIps
-			if payload.ClaudeRefusalFallback != nil {
-				cleanToken.ClaudeRefusalFallback = *payload.ClaudeRefusalFallback
-			}
 			cleanToken.CrossGroupRetry = token.CrossGroupRetry
 			cleanToken.AutoGroupFallback = token.AutoGroupFallback
 			cleanToken.RoutingConfig = token.RoutingConfig

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -36,12 +37,32 @@ func stopReasonClaude2OpenAI(reason string) string {
 	return reasonmap.ClaudeStopReasonToOpenAIFinishReason(reason)
 }
 
-func maybeMarkClaudeRefusal(c *gin.Context, stopReason string) {
-	if c == nil {
+var claudeMessageIDPattern = regexp.MustCompile(`^msg_[A-Za-z0-9_-]{1,96}$`)
+
+func observeClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, response *dto.ClaudeResponse) {
+	id := response.Id
+	if response.Type == "message_start" && response.Message != nil {
+		id = response.Message.Id
+	}
+	if id != "" && claudeMessageIDPattern.MatchString(id) {
+		info.ClaudeMessageID = id
+	}
+	stop, details := response.StopReason, response.StopDetails
+	if response.Delta != nil && response.Delta.StopReason != nil {
+		stop = *response.Delta.StopReason
+		if response.Delta.StopDetails != nil {
+			details = response.Delta.StopDetails
+		}
+	}
+	if !strings.EqualFold(stop, "refusal") {
 		return
 	}
-	if strings.EqualFold(stopReason, "refusal") {
-		common.SetContextKey(c, constant.ContextKeyAdminRejectReason, "claude_stop_reason=refusal")
+	common.SetContextKey(c, constant.ContextKeyAdminRejectReason, "claude_stop_reason=refusal")
+	if details != nil {
+		switch details.Category {
+		case "cyber", "bio", "frontier_llm", "reasoning_extraction", "general_harms":
+			info.ClaudeRefusalCategory = details.Category
+		}
 	}
 }
 
@@ -843,22 +864,7 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	if claudeInfo.RequireMessageStop && claudeResponse.Type == "message_stop" && !claudeInfo.MessageStarted {
 		return types.NewErrorWithStatusCode(errors.New("Claude stream message_stop preceded message_start"), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
 	}
-	if claudeResponse.StopReason != "" {
-		maybeMarkClaudeRefusal(c, claudeResponse.StopReason)
-	}
-	if claudeResponse.Delta != nil && claudeResponse.Delta.StopReason != nil {
-		maybeMarkClaudeRefusal(c, *claudeResponse.Delta.StopReason)
-	}
-	observeOfficialFallback(info, &claudeResponse)
-	if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
-		if claudeInfo.Model != state.ServingModel && claudeResponse.Type != "message_start" {
-			// Counters on the two sides of a handoff belong to different models.
-			claudeInfo.Usage = &dto.Usage{}
-			claudeInfo.HasInputUsage, claudeInfo.HasFinalOutputUsage = false, false
-			claudeInfo.ResponseText.Reset()
-		}
-		claudeInfo.Model = state.ServingModel
-	}
+	observeClaudeRefusal(c, info, &claudeResponse)
 	if isEffectiveClaudeStreamOutput(&claudeResponse) {
 		info.SetFirstEffectiveOutputTime()
 	}
@@ -940,11 +946,7 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 			claudeInfo.PendingFinish = nil
 		}
 		if info.ShouldIncludeUsage {
-			model := info.UpstreamModelName
-			if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
-				model = state.ServingModel
-			}
-			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, model, *claudeInfo.Usage)
+			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, info.UpstreamModelName, *claudeInfo.Usage)
 			err := helper.ObjectData(c, response)
 			if err != nil {
 				return err
@@ -1046,8 +1048,7 @@ func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		logClaudeUpstreamError("non_stream", claudeError, statusCode)
 		return types.WithClaudeError(*claudeError, statusCode)
 	}
-	observeOfficialFallback(info, &claudeResponse)
-	maybeMarkClaudeRefusal(c, claudeResponse.StopReason)
+	observeClaudeRefusal(c, info, &claudeResponse)
 	info.ObserveResponseModel(claudeResponse.Model)
 	if claudeInfo.Usage == nil {
 		claudeInfo.Usage = &dto.Usage{}

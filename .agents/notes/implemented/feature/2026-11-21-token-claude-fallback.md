@@ -2,6 +2,8 @@
 
 Status: implemented
 
+启用及出站规则由[令牌退出 Claude 自动换模型](../simplification/2026-11-21-retire-token-claude-fallback.md)取代，以下记录供 v1.42.0 历史账单和版本维护使用。
+
 ## Problem
 
 上游可用 HTTP 200 和正常 SSE 结束帧报告 refusal。渠道故障重试已经结束，文件生成客户端此时可能没有可用内容。一次接续会改变模型与费用，每个令牌需要独立选择。

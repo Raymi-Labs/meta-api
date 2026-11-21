@@ -203,9 +203,6 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 }
 
 func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.Usage, extraContent ...string) {
-	if service.PostClaudeFallbackUsage(ctx, relayInfo, usage) {
-		return
-	}
 	service.ObserveGroupHealthCacheUsage(relayInfo, usage)
 	originUsage := usage
 	if usage == nil {
