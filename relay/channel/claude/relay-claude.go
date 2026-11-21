@@ -641,14 +641,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 		Object:  "chat.completion",
 		Created: common.GetTimestamp(),
 	}
-	var responseText string
-	var responseThinking string
-	if len(claudeResponse.Content) > 0 {
-		responseText = claudeResponse.Content[0].GetText()
-		if claudeResponse.Content[0].Thinking != nil {
-			responseThinking = *claudeResponse.Content[0].Thinking
-		}
-	}
+	var responseText strings.Builder
 	tools := make([]dto.ToolCallResponse, 0)
 	thinkingContent := ""
 
@@ -671,7 +664,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 				thinkingContent = *message.Thinking
 			}
 		case "text":
-			responseText = message.GetText()
+			responseText.WriteString(message.GetText())
 		}
 	}
 	choice := dto.OpenAITextResponseChoice{
@@ -681,10 +674,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 		},
 		FinishReason: stopReasonClaude2OpenAI(claudeResponse.StopReason),
 	}
-	choice.SetStringContent(responseText)
-	if len(responseThinking) > 0 {
-		choice.ReasoningContent = responseThinking
-	}
+	choice.SetStringContent(responseText.String())
 	if len(tools) > 0 {
 		choice.Message.SetToolCalls(tools)
 	}

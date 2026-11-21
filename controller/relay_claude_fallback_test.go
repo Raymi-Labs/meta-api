@@ -43,6 +43,7 @@ func TestRelayClaudeOfficialFallback(t *testing.T) {
 		{"model not allowed", types.RelayFormatClaude, false, true, false, false, 10},
 		{"target in another group", types.RelayFormatClaude, false, true, true, false, 10},
 		{"complete", types.RelayFormatClaude, false, true, true, false, 36},
+		{"converted complete", types.RelayFormatOpenAI, false, true, true, false, 36},
 		{"midstream", types.RelayFormatClaude, true, true, true, false, 139},
 		{"converted stream", types.RelayFormatOpenAI, true, true, true, false, 139},
 		{"alternative refuses", types.RelayFormatOpenAI, false, true, true, true, 0},
@@ -98,6 +99,9 @@ func TestRelayClaudeOfficialFallback(t *testing.T) {
 						stop, completion = "refusal", 0
 					}
 					usage := fmt.Sprintf(`{"input_tokens":10,"output_tokens":%d,"iterations":[{"type":"message","model":"claude-opus-5-5","input_tokens":%d,"output_tokens":%d},{"type":"fallback_message","model":"claude-opus-4-8","input_tokens":10,"output_tokens":%d}]}`, completion, in, out, completion)
+					if !tc.refused && !tc.stream {
+						block += `,{"type":"text","text":"first "},{"type":"text","text":"second"}`
+					}
 					data = fmt.Sprintf(`{"type":"message","id":"msg_fixture","model":"claude-opus-4-8","content":[%s],"stop_reason":"%s","usage":%s}`, block, stop, usage)
 					if tc.stream {
 						ct = "text/event-stream"
@@ -134,6 +138,9 @@ func TestRelayClaudeOfficialFallback(t *testing.T) {
 			common.CleanupBodyStorage(ctx)
 			require.Equal(t, 200, w.Code, w.Body.String())
 			require.Equal(t, 1, count)
+			if tc.name == "converted complete" {
+				require.Equal(t, "first second", gjson.Get(w.Body.String(), "choices.0.message.content").String())
+			}
 			if tc.stream {
 				require.Contains(t, w.Body.String(), "before ")
 				require.Contains(t, w.Body.String(), "after")
