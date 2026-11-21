@@ -1,10 +1,31 @@
 /* Compact catalog proportions, mapped to the existing pricing/filter components. */
+/* Tokens match EnterpriseHome; the drawer renders in a portal, so it gets them too. */
+.pricing-page.pricing-catalog,
+.pricing-filter-drawer {
+  --catalog-border: #e9edf4;
+  --catalog-border-strong: #d7deea;
+  --catalog-muted: #72798a;
+  --catalog-soft: #f8faff;
+  --catalog-ink: #171c29;
+  --catalog-accent: #3265e8;
+  --catalog-accent-hover: #2455d3;
+  --catalog-accent-soft: #edf3ff;
+  --catalog-radius-panel: 12px;
+  --catalog-radius-card: 10px;
+  --catalog-radius-control: 7px;
+}
+html.dark .pricing-page.pricing-catalog,
+html.dark .pricing-filter-drawer {
+  --catalog-border: #263143;
+  --catalog-border-strong: #33425d;
+  --catalog-muted: #9ba7ba;
+  --catalog-soft: #111824;
+  --catalog-ink: #edf1fa;
+  --catalog-accent: #7ba2ff;
+  --catalog-accent-hover: #93b3ff;
+  --catalog-accent-soft: #1c2b49;
+}
 .pricing-page.pricing-catalog {
-  --catalog-border: #e9e9ed;
-  --catalog-muted: #656871;
-  --catalog-soft: #f7f7f8;
-  --catalog-ink: #1d1e22;
-  --catalog-accent: #5362dc;
   height: auto;
   min-height: calc(100dvh - 64px);
   max-width: 1440px;
@@ -13,13 +34,6 @@
   overflow: visible;
   color: var(--catalog-ink);
   background: var(--semi-color-bg-0);
-}
-html.dark .pricing-page.pricing-catalog {
-  --catalog-border: #34343c;
-  --catalog-muted: #aaabb6;
-  --catalog-soft: #24242c;
-  --catalog-ink: #eeeef3;
-  --catalog-accent: #a7adff;
 }
 .pricing-catalog-heading,
 .pricing-catalog-title {
@@ -39,7 +53,7 @@ html.dark .pricing-page.pricing-catalog {
   font-size: 30px;
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.7px;
+  letter-spacing: -1px;
 }
 .pricing-catalog .pricing-title-count {
   padding: 0;
@@ -71,7 +85,7 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-catalog-toolbar .semi-select,
 .pricing-catalog-toolbar > .semi-button {
   height: 34px;
-  border-radius: 6px !important;
+  border-radius: var(--catalog-radius-control) !important;
   font-size: 13px;
 }
 .pricing-catalog-toolbar .semi-input-wrapper,
@@ -130,9 +144,9 @@ html.dark .pricing-page.pricing-catalog {
   padding: 14px 18px;
   margin-bottom: 16px;
   border: 1px solid var(--catalog-border);
-  border-radius: 16px;
+  border-radius: var(--catalog-radius-panel);
   background: var(--semi-color-bg-0);
-  box-shadow: 0 2px 4px #00000005;
+  box-shadow: 0 1px 2px #1d326608;
 }
 .pricing-catalog-vendors {
   display: flex;
@@ -165,11 +179,14 @@ html.dark .pricing-page.pricing-catalog {
   padding: 2px 8px;
   gap: 5px;
   border: 1px solid var(--catalog-border);
-  border-radius: 7px;
+  border-radius: var(--catalog-radius-control);
   background: var(--semi-color-bg-0);
   color: var(--catalog-ink);
   font-size: 12px;
   line-height: 19px;
+  transition:
+    border-color 160ms,
+    background 160ms;
 }
 .pricing-catalog .pricing-vendors button {
   white-space: nowrap;
@@ -177,13 +194,14 @@ html.dark .pricing-page.pricing-catalog {
 }
 .pricing-catalog .pricing-vendors button:hover,
 .pricing-catalog-filters .pricing-filter-chip:hover {
+  border-color: var(--catalog-border-strong);
   background: var(--catalog-soft);
 }
 .pricing-catalog .pricing-vendors button[aria-pressed='true'],
 .pricing-catalog-filters .pricing-filter-chip[aria-pressed='true'] {
-  background: #5963dc;
-  border-color: #5963dc;
-  color: #fff;
+  background: var(--catalog-accent-soft);
+  border-color: color-mix(in srgb, var(--catalog-accent) 45%, transparent);
+  color: var(--catalog-accent);
 }
 .pricing-catalog-filters .pricing-filter-section {
   padding: 6px 0;
@@ -229,13 +247,17 @@ html.dark .pricing-page.pricing-catalog {
   max-width: 100%;
   padding: 3px 8px;
   border: 1px solid var(--catalog-border);
-  border-radius: 7px;
+  border-radius: var(--catalog-radius-control);
   color: var(--catalog-muted);
   background: var(--catalog-soft);
   font: inherit;
   font-size: 12px;
   text-align: left;
   cursor: pointer;
+}
+.pricing-active-filters button:hover {
+  border-color: var(--catalog-border-strong);
+  color: var(--catalog-ink);
 }
 .pricing-active-filters button span {
   overflow-wrap: anywhere;
@@ -290,20 +312,31 @@ html.dark .pricing-page.pricing-catalog {
   min-width: 0;
   padding: 14px;
   border: 1px solid var(--catalog-border);
-  border-radius: 14px;
+  border-radius: var(--catalog-radius-card);
   background: var(--semi-color-bg-0);
   box-shadow: 0 2px 7px #00000005;
   cursor: pointer;
   transition:
-    border-color 160ms,
-    box-shadow 160ms;
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
 }
 .pricing-model-card:hover {
-  border-color: #b7b8df;
-  box-shadow: 0 3px 10px #535edc0a;
+  border-color: color-mix(
+    in srgb,
+    var(--catalog-accent) 38%,
+    var(--catalog-border)
+  );
+  box-shadow: 0 12px 28px -14px #1d326626;
+  transform: translateY(-2px);
 }
+html.dark .pricing-model-card:hover {
+  box-shadow: 0 12px 28px -14px #00000080;
+}
+/* Only explicit selection or keyboard focus on the title marks the card;
+   clicking the inner copy button should not. */
 .pricing-model-card.is-selected,
-.pricing-model-card:focus-within {
+.pricing-model-card:has(.pricing-model-identity a:focus-visible) {
   border-color: var(--catalog-accent);
 }
 .pricing-model-card-header {
@@ -355,9 +388,9 @@ html.dark .pricing-page.pricing-catalog {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 12px;
   margin: 12px 0 0;
-  padding: 9px 10px;
+  padding: 10px 12px;
   min-width: 0;
-  border-radius: 7px 7px 0 0;
+  border-radius: var(--catalog-radius-control) var(--catalog-radius-control) 0 0;
   background: var(--catalog-soft);
 }
 .pricing-card-prices > div {
@@ -376,7 +409,7 @@ html.dark .pricing-page.pricing-catalog {
   align-items: center;
   gap: 5px;
   color: var(--catalog-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 20px;
   margin: 0;
   overflow-wrap: anywhere;
@@ -388,21 +421,22 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-card-prices dd {
   margin: 0;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   min-width: 0;
   gap: 3px;
   color: var(--catalog-ink);
   font-size: 12px;
-  line-height: 20px;
+  line-height: 22px;
 }
 .pricing-card-prices strong {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.2px;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 .pricing-card-prices dd span {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--catalog-muted);
   white-space: nowrap;
 }
@@ -410,9 +444,9 @@ html.dark .pricing-page.pricing-catalog {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--semi-color-bg-0);
-  border-radius: 0 0 7px 7px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--catalog-border);
+  border-radius: 0 0 var(--catalog-radius-control) var(--catalog-radius-control);
   margin: 0;
   background: var(--catalog-soft);
 }
@@ -439,7 +473,7 @@ html.dark .pricing-page.pricing-catalog {
 .pricing-card-performance dd {
   margin: 0;
   line-height: 20px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--catalog-ink);
   font-variant-numeric: tabular-nums;
@@ -483,7 +517,7 @@ html.dark .pricing-page.pricing-catalog {
 }
 .pricing-card-ratios {
   color: var(--catalog-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   margin: 8px 0 0;
   overflow-wrap: anywhere;
@@ -506,12 +540,12 @@ html.dark .pricing-page.pricing-catalog {
   padding-top: 9px;
 }
 .pricing-model-tags span {
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 5px;
   background: var(--catalog-soft);
   color: var(--catalog-muted);
-  font-size: 10px;
-  line-height: 17px;
+  font-size: 11px;
+  line-height: 18px;
   overflow-wrap: anywhere;
 }
 .pricing-model-skeleton {
@@ -699,14 +733,21 @@ html.dark .pricing-page.pricing-catalog {
   padding: 5px 9px;
   min-height: 31px;
   max-width: 100%;
-  border: 1px solid var(--semi-color-border);
-  border-radius: 8px;
+  border: 1px solid var(--catalog-border, var(--semi-color-border));
+  border-radius: var(--catalog-radius-control, 7px);
   background: var(--semi-color-bg-0);
-  color: var(--semi-color-text-1);
+  color: var(--catalog-ink, var(--semi-color-text-1));
   font-size: 12px;
   line-height: 19px;
   overflow-wrap: anywhere;
   cursor: pointer;
+  transition:
+    border-color 160ms,
+    background 160ms;
+}
+.catalog-facet-options button:hover:not(:disabled):not([aria-pressed='true']) {
+  border-color: var(--catalog-border-strong, var(--semi-color-border));
+  background: var(--catalog-soft, var(--semi-color-fill-0));
 }
 .catalog-facet-options button svg {
   flex-shrink: 0;
@@ -717,9 +758,16 @@ html.dark .pricing-page.pricing-catalog {
   font-variant-numeric: tabular-nums;
 }
 .catalog-facet-options button[aria-pressed='true'] {
-  color: var(--semi-color-primary);
-  background: var(--semi-color-primary-light-default);
-  border-color: var(--semi-color-primary);
+  color: var(--catalog-accent, var(--semi-color-primary));
+  background: var(
+    --catalog-accent-soft,
+    var(--semi-color-primary-light-default)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--catalog-accent, var(--semi-color-primary)) 45%,
+    transparent
+  );
 }
 .catalog-facet-options button:disabled {
   opacity: 0.4;
@@ -727,7 +775,7 @@ html.dark .pricing-page.pricing-catalog {
 }
 .catalog-facet-options button:focus-visible,
 .catalog-facet-expand:focus-visible {
-  outline: 2px solid var(--semi-color-primary);
+  outline: 2px solid var(--catalog-accent, var(--semi-color-primary));
   outline-offset: 2px;
 }
 .catalog-facet-expand {
