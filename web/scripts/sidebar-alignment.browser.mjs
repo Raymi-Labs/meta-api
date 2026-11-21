@@ -1,26 +1,23 @@
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { createServer, loadConfigFromFile } from 'vite';
+import { preview } from 'vite';
 import { stop as stopEsbuild } from 'esbuild';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 process.chdir(root);
-const { config } = await loadConfigFromFile(
-  { command: 'serve', mode: 'development' },
-  path.join(root, 'vite.config.js'),
-);
-const server = await createServer({
-  ...config,
+// Build first: bunx vite build --outDir /tmp/meta-native-chat-production
+// Use production mode so React development effect replay does not compete
+// for the playground's cross-tab session lock.
+const server = await preview({
   root,
   configFile: false,
-  server: { host: '127.0.0.1', port: 0, proxy: {} },
-  plugins: config.plugins
-    .flat(Infinity)
-    .filter((p) => p?.name !== '@code-inspector/vite'),
+  build: {
+    outDir:
+      process.env.SIDEBAR_PREVIEW_DIR || '/tmp/meta-native-chat-production',
+  },
+  preview: { host: '127.0.0.1', port: 0 },
 });
-await server.listen();
 const base = `http://127.0.0.1:${server.httpServer.address().port}`;
 let browser;
 try {
@@ -30,17 +27,19 @@ try {
       process.env.CHROME_PATH ||
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   });
-  for (const [width, role, dark] of [
+  for (const [width, role, dark, hidden = false, brokenChats = false] of [
     [1440, 100, false],
     [1440, 100, true],
     [390, 1, false],
+    [390, 1, true, false, true],
+    [1440, 1, false, true],
   ]) {
     const page = await browser.newPage(),
       errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewport({ width, height: 1100 });
     await page.evaluateOnNewDocument(
-      (role, dark) => {
+      (role, dark, brokenChats) => {
         localStorage.setItem(
           'user',
           JSON.stringify({ id: 7, role, username: 'fixture' }),
@@ -51,7 +50,9 @@ try {
         localStorage.setItem('theme-mode', dark ? 'dark' : 'light');
         localStorage.setItem(
           'chats',
-          JSON.stringify([{ 测试会话: 'https://example.invalid/' }]),
+          brokenChats
+            ? '{invalid'
+            : JSON.stringify([{ 测试会话: 'https://example.invalid/' }]),
         );
         localStorage.setItem(
           'newapi:user-onboarding:regular:v1:user:7',
@@ -60,6 +61,7 @@ try {
       },
       role,
       dark,
+      brokenChats,
     );
     await page.setRequestInterception(true);
     page.on('request', async (req) => {
@@ -75,6 +77,9 @@ try {
           quota_per_unit: 500000,
           enable_data_export: true,
           chats: [{ 测试会话: 'https://example.invalid/' }],
+          SidebarModulesAdmin: JSON.stringify({
+            chat: { enabled: true, imagePlayground: true, chat: !hidden },
+          }),
         };
       if (u.pathname === '/api/token/' || u.pathname === '/api/log/')
         data = { items: [], total: 0, page: 1, page_size: 10 };
@@ -115,6 +120,25 @@ try {
               };
             }),
       );
+    await page.waitForFunction(
+      () =>
+        Array.from(
+          document.querySelectorAll(
+            '.sidebar-nav .semi-navigation-item-normal',
+          ),
+        ).filter((el) => el.getBoundingClientRect().height > 0).length >= 7,
+    );
+    const toolGroup = await page.$eval(
+      '[data-onboarding="sidebar-chat-section"]',
+      (el) => ({
+        title: el.parentElement.querySelector('.sidebar-group-label')
+          ?.textContent,
+        labels: el.innerText,
+      }),
+    );
+    assert.equal(toolGroup.title, '创作空间');
+    assert.ok(toolGroup.labels.includes('元衡生图'));
+    assert.ok(!toolGroup.labels.includes('聊天'));
     let metrics = await measure();
     if (width === 1440 && !dark) {
       const oldStyle = await page.addStyleTag({
@@ -129,7 +153,7 @@ try {
       await oldStyle.evaluate((el) => el.remove());
       metrics = await measure();
     }
-    assert(metrics.length >= 8);
+    assert(metrics.length >= 7);
     for (const m of metrics) {
       assert(m.difference < 1, JSON.stringify(m));
       assert(m.arrowDifference < 1, JSON.stringify(m));
@@ -146,25 +170,25 @@ try {
       !!(await page.$('[data-onboarding="sidebar-channel"]')),
       role === 100,
     );
-    await page.click('.sidebar-nav .semi-navigation-sub-title');
-    await page.waitForSelector(
-      '.sidebar-nav .semi-navigation-sub-title[aria-expanded="true"]',
-    );
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector('[data-onboarding="sidebar-chat0"]')
-          ?.getBoundingClientRect().height > 0,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    metrics = await measure();
-    for (const m of metrics)
-      assert(m.difference < 1 && m.arrowDifference < 1, JSON.stringify(m));
+    assert.equal(await page.$('.sidebar-nav .semi-navigation-sub-title'), null);
+    assert.equal(await page.$('[data-onboarding="sidebar-chat0"]'), null);
+    const nativeLink = await page.$('.sidebar-nav a[href="/playground"]');
+    assert.equal(!!nativeLink, !hidden);
+    if (!hidden) {
+      assert.equal(
+        await page.$eval(
+          '[data-onboarding="sidebar-chat"]',
+          (el) => el.textContent,
+        ),
+        '模型体验',
+      );
+    }
     await page.screenshot({
-      path: `/tmp/sidebar-aligned-${width}-${dark}.png`,
+      path: `/tmp/sidebar-native-chat-${width}-${dark}-${hidden}.png`,
     });
     if (width >= 768) {
-      await page.click('.sidebar-collapse-button button');
+      await page.focus('.sidebar-collapse-button button');
+      await page.keyboard.press('Enter');
       await page.waitForFunction(() =>
         document.body.classList.contains('sidebar-collapsed'),
       );
@@ -175,7 +199,8 @@ try {
       );
       assert(heights.length > 0);
       heights.forEach((h) => assert.equal(h, 44));
-      await page.click('.sidebar-collapse-button button');
+      await page.focus('.sidebar-collapse-button button');
+      await page.keyboard.press('Enter');
       await page.waitForFunction(
         () => !document.body.classList.contains('sidebar-collapsed'),
       );
@@ -185,15 +210,50 @@ try {
     }
     await page.click('.sidebar-nav a[href="/console/log"]');
     await page.waitForFunction(() => location.pathname === '/console/log');
+    if (!hidden) {
+      if (width < 768) await page.click('[aria-label="打开侧边栏"]');
+      await page.focus('.sidebar-nav a[href="/playground"]');
+      await page.keyboard.press('Enter');
+      await page
+        .waitForFunction(() => location.pathname === '/playground', {
+          timeout: 10000,
+        })
+        .catch(async (error) => {
+          console.error('Destination:', page.url(), 'Errors:', errors);
+          await page.screenshot({
+            path: '/tmp/native-chat-navigation-error.png',
+          });
+          throw error;
+        });
+      await page
+        .waitForSelector('textarea, [contenteditable="true"]', {
+          timeout: 10000,
+        })
+        .catch(async (error) => {
+          console.error(
+            'Worktable:',
+            page.url(),
+            'Errors:',
+            errors,
+            'Text:',
+            await page.$eval('body', (el) => el.innerText.slice(-1500)),
+          );
+          await page.screenshot({
+            path: '/tmp/native-chat-navigation-error.png',
+          });
+          throw error;
+        });
+      assert.equal(await page.$('iframe[title="Token Frame"]'), null);
+    }
     assert.deepEqual(errors, []);
     console.log(
-      `PASS ${width}px role=${role} dark=${dark}: text/icon/arrow centers, submenu, selected state, navigation and collapse`,
+      `PASS ${width}px role=${role} dark=${dark}: native chat link, old submenu removed, visibility, selected state, navigation and collapse`,
     );
     await page.close();
   }
 } finally {
   await browser?.close();
-  await server.close();
+  await new Promise((resolve) => server.httpServer.close(resolve));
   stopEsbuild();
   console.log('Browser and server closed; no retained test processes.');
 }
