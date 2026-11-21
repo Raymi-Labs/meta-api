@@ -232,15 +232,14 @@ export default function SettingsSidebarModulesAdmin(props) {
   const sectionConfigs = [
     {
       key: 'chat',
-      title: t('聊天区域'),
-      description: t('聊天会话管理'),
+      title: t('创作空间'),
       modules: [
         {
           key: 'imagePlayground',
           title: t('元衡生图'),
           description: t('图片生成工作台'),
         },
-        { key: 'chat', title: t('聊天'), description: t('聊天会话管理') },
+        { key: 'chat', title: t('模型体验') },
       ],
     },
     {
@@ -368,19 +367,22 @@ export default function SettingsSidebarModulesAdmin(props) {
                 >
                   {section.title}
                 </div>
-                <Text
-                  type='secondary'
-                  size='small'
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--semi-color-text-2)',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  {section.description}
-                </Text>
+                {section.description && (
+                  <Text
+                    type='secondary'
+                    size='small'
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--semi-color-text-2)',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    {section.description}
+                  </Text>
+                )}
               </div>
               <Switch
+                aria-label={section.title}
                 checked={sidebarModulesAdmin[section.key]?.enabled}
                 onChange={handleSectionChange(section.key)}
                 size='default'
@@ -420,21 +422,24 @@ export default function SettingsSidebarModulesAdmin(props) {
                         >
                           {module.title}
                         </div>
-                        <Text
-                          type='secondary'
-                          size='small'
-                          style={{
-                            fontSize: '12px',
-                            color: 'var(--semi-color-text-2)',
-                            lineHeight: '1.4',
-                            display: 'block',
-                          }}
-                        >
-                          {module.description}
-                        </Text>
+                        {module.description && (
+                          <Text
+                            type='secondary'
+                            size='small'
+                            style={{
+                              fontSize: '12px',
+                              color: 'var(--semi-color-text-2)',
+                              lineHeight: '1.4',
+                              display: 'block',
+                            }}
+                          >
+                            {module.description}
+                          </Text>
+                        )}
                       </div>
                       <div style={{ marginLeft: '16px' }}>
                         <Switch
+                          aria-label={module.title}
                           checked={
                             sidebarModulesAdmin[section.key]?.[module.key]
                           }

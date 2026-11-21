@@ -257,15 +257,14 @@ const NotificationSettings = ({
   const sectionConfigs = [
     {
       key: 'chat',
-      title: t('聊天区域'),
-      description: t('聊天会话管理'),
+      title: t('创作空间'),
       modules: [
         {
           key: 'imagePlayground',
           title: t('元衡生图'),
           description: t('图片生成工作台'),
         },
-        { key: 'chat', title: t('聊天'), description: t('聊天会话管理') },
+        { key: 'chat', title: t('模型体验') },
       ],
     },
     {
@@ -888,19 +887,22 @@ const NotificationSettings = ({
                             <div className='font-semibold text-base text-gray-900 mb-1'>
                               {section.title}
                             </div>
-                            <Typography.Text
-                              type='secondary'
-                              size='small'
-                              style={{
-                                fontSize: '12px',
-                                lineHeight: '1.5',
-                                color: 'var(--semi-color-text-2)',
-                              }}
-                            >
-                              {section.description}
-                            </Typography.Text>
+                            {section.description && (
+                              <Typography.Text
+                                type='secondary'
+                                size='small'
+                                style={{
+                                  fontSize: '12px',
+                                  lineHeight: '1.5',
+                                  color: 'var(--semi-color-text-2)',
+                                }}
+                              >
+                                {section.description}
+                              </Typography.Text>
+                            )}
                           </div>
                           <Switch
+                            aria-label={section.title}
                             checked={
                               sidebarModulesUser[section.key]?.enabled !== false
                             }
@@ -939,22 +941,25 @@ const NotificationSettings = ({
                                       <div className='font-semibold text-sm text-gray-900 mb-1'>
                                         {module.title}
                                       </div>
-                                      <Typography.Text
-                                        type='secondary'
-                                        size='small'
-                                        className='block'
-                                        style={{
-                                          fontSize: '12px',
-                                          lineHeight: '1.5',
-                                          color: 'var(--semi-color-text-2)',
-                                          marginTop: '4px',
-                                        }}
-                                      >
-                                        {module.description}
-                                      </Typography.Text>
+                                      {module.description && (
+                                        <Typography.Text
+                                          type='secondary'
+                                          size='small'
+                                          className='block'
+                                          style={{
+                                            fontSize: '12px',
+                                            lineHeight: '1.5',
+                                            color: 'var(--semi-color-text-2)',
+                                            marginTop: '4px',
+                                          }}
+                                        >
+                                          {module.description}
+                                        </Typography.Text>
+                                      )}
                                     </div>
                                     <div className='ml-4'>
                                       <Switch
+                                        aria-label={module.title}
                                         checked={
                                           sidebarModulesUser[section.key]?.[
                                             module.key
