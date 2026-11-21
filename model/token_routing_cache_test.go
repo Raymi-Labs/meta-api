@@ -19,7 +19,7 @@ func TestTokenRoutingRedisCompatibility(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: address})
 	oldClient, oldEnabled := common.RDB, common.RedisEnabled
 	common.RDB, common.RedisEnabled = client, true
-	token := Token{Id: 1, Key: fmt.Sprintf("token-route-test-%d", time.Now().UnixNano()), Group: "default", RemainQuota: 12345, RoutingConfig: `{"groups":["default","vip"]}`}
+	token := Token{Id: 1, Key: fmt.Sprintf("token-route-test-%d", time.Now().UnixNano()), ClaudeRefusalFallback: true, Group: "default", RemainQuota: 12345, RoutingConfig: `{"groups":["default","vip"]}`}
 	t.Cleanup(func() {
 		_ = cacheDeleteToken(token.Key)
 		common.RDB, common.RedisEnabled = oldClient, oldEnabled
@@ -29,12 +29,14 @@ func TestTokenRoutingRedisCompatibility(t *testing.T) {
 	cached, err := cacheGetTokenByKey(token.Key)
 	require.NoError(t, err)
 	require.Equal(t, token.RoutingConfig, cached.RoutingConfig)
+	require.True(t, cached.ClaudeRefusalFallback)
 	require.Equal(t, token.RemainQuota, cached.RemainQuota)
 	// A hash written by the previous application version has no new field.
 	key := "token:" + common.GenerateHMAC(token.Key)
-	require.NoError(t, client.HDel(t.Context(), key, "RoutingConfig").Err())
+	require.NoError(t, client.HDel(t.Context(), key, "RoutingConfig", "ClaudeRefusalFallback").Err())
 	cached, err = cacheGetTokenByKey(token.Key)
 	require.NoError(t, err)
 	require.Empty(t, cached.RoutingConfig)
+	require.False(t, cached.ClaudeRefusalFallback)
 	require.Equal(t, token.RemainQuota, cached.RemainQuota)
 }

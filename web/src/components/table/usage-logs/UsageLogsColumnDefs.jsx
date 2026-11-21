@@ -262,6 +262,16 @@ function renderFirstUseTime(type) {
 
 function renderModelName(record, copyText, t) {
   const other = getLogOther(record.other);
+  if (other?.claude_fallback?.serving_model) {
+    const served = other.claude_fallback.serving_model;
+    return (
+      <Tooltip content={`${t('实际模型')} · ${served}`}>
+        {renderModelTag(served, {
+          onClick: (event) => copyText(event, served),
+        })}
+      </Tooltip>
+    );
+  }
   const observed = getResponseModelInfo(other, record.model_name);
   const modelMapped =
     other?.is_model_mapped &&
@@ -452,6 +462,18 @@ function getUsageLogDetailSummary(record, text, billingDisplayMode, t) {
     return null;
   }
 
+  if (other.claude_fallback) {
+    const fallback = other.claude_fallback;
+    return {
+      segments: [
+        { text: t('Claude 官方备选模型'), tone: 'primary' },
+        ...(fallback.attempts || []).map((attempt) => ({
+          text: `${attempt.model} · ${renderQuota(attempt.quota, 6)}`,
+          tone: 'secondary',
+        })),
+      ],
+    };
+  }
   if (isVideoConsumption(record, other))
     return { segments: videoLogSegments(record, other, renderQuota, t) };
   const timeRatioText = formatTimeRatioLogSummary(other, t);

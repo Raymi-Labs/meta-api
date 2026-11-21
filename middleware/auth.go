@@ -449,6 +449,7 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	}
 	// Keep the effective inherited group consistent for relay retries and rate limits.
 	common.SetContextKey(c, constant.ContextKeyTokenGroup, service.ResolveTokenGroup(common.GetContextKeyString(c, constant.ContextKeyUserGroup), token.Group))
+	common.SetContextKey(c, constant.ContextKeyTokenClaudeRefusalFallback, token.ClaudeRefusalFallback && token.SourceType != model.TokenSourceTypeSellableToken)
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
 	common.SetContextKey(c, constant.ContextKeyTokenAutoGroupFallback, token.AllowsGroupFallback())
 	if len(parts) > 1 {

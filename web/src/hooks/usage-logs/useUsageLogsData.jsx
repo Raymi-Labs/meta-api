@@ -690,6 +690,16 @@ export const useLogsData = (admin = isAdmin()) => {
           value: logs[i].request_id,
         });
       }
+      if (isAdminUser && other?.admin_info) {
+        for (const key of [
+          'claude_message_id',
+          'claude_primary_refusal_category',
+          'claude_refusal_category',
+        ]) {
+          if (other.admin_info[key])
+            expandDataLocal.push({ key, value: other.admin_info[key] });
+        }
+      }
       if (isAdminUser && other?.admin_info?.preconsume) {
         expandDataLocal.push({
           key: t('请求预扣费额度'),
@@ -711,6 +721,32 @@ export const useLogsData = (admin = isAdmin()) => {
           expandDataLocal.push({
             key: t('渠道尝试记录'),
             value: JSON.stringify(other.admin_info.attempts, null, 2),
+          });
+        }
+      }
+      const fallback = other?.claude_fallback;
+      if (fallback) {
+        expandDataLocal.push({
+          key: t('实际模型'),
+          value: fallback.serving_model || '—',
+        });
+        for (const attempt of fallback.attempts || []) {
+          const costLabel = fallback.settled ? t('费用') : t('预计费用');
+          expandDataLocal.push({
+            key: attempt.model,
+            value: [
+              `${t('输入 Tokens')} ${attempt.input_tokens}`,
+              `${t('输出 Tokens')} ${attempt.output_tokens}`,
+              `${t('缓存 Tokens')} ${attempt.cache_read_input_tokens}`,
+              `${t('缓存创建 Tokens')} ${attempt.cache_creation_input_tokens}`,
+              `${costLabel} ${renderQuota(attempt.quota, 6)}`,
+            ].join(' · '),
+          });
+        }
+        if (fallback.incomplete_usage) {
+          expandDataLocal.push({
+            key: t('用量'),
+            value: t('上游未提供完整的逐次用量'),
           });
         }
       }
@@ -753,6 +789,7 @@ export const useLogsData = (admin = isAdmin()) => {
       }
       if (logs[i].type === 2) {
         if (
+          !other?.claude_fallback &&
           other?.billing_mode !== 'tiered_expr' &&
           !isVideoConsumption(logs[i], other)
         ) {
@@ -823,7 +860,7 @@ export const useLogsData = (admin = isAdmin()) => {
         }
 
         const observed = getResponseModelInfo(other, logs[i].model_name);
-        if (observed) {
+        if (observed && !other?.claude_fallback) {
           expandDataLocal.push({
             key: t('上游声明模型'),
             value: observed.returned,
@@ -846,6 +883,7 @@ export const useLogsData = (admin = isAdmin()) => {
         let content = '';
         if (
           !isViolationFeeLog &&
+          !other?.claude_fallback &&
           other?.billing_mode !== 'tiered_expr' &&
           !isVideoConsumption(logs[i], other)
         ) {
@@ -878,7 +916,10 @@ export const useLogsData = (admin = isAdmin()) => {
               .join(' · '),
           });
         }
-        if (['priority', 'ultrafast'].includes(other?.requested_service_tier) && Number.isFinite(other?.service_tier_multiplier)) {
+        if (
+          ['priority', 'ultrafast'].includes(other?.requested_service_tier) &&
+          Number.isFinite(other?.service_tier_multiplier)
+        ) {
           expandDataLocal.push({
             key: t('速度档位'),
             value: `${other.requested_service_tier === 'priority' ? 'Fast' : 'UltraFast'} ×${other.service_tier_multiplier}`,

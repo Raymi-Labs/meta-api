@@ -93,3 +93,18 @@ func RequestModelRoutingGroups(c *gin.Context, group, name string) []string {
 	return TokenRoutingGroups(common.GetContextKeyString(c, constant.ContextKeyUserGroup), group,
 		common.GetContextKeyBool(c, constant.ContextKeyTokenAutoGroupFallback))
 }
+
+func RequestModelPermissionRole(c *gin.Context) int {
+	if role := common.GetContextKeyInt(c, constant.ContextKeyUserRole); role != common.RoleGuestUser {
+		return role
+	}
+	if role := c.GetInt("role"); role != common.RoleGuestUser {
+		return role
+	}
+	if userId := c.GetInt("id"); userId > 0 {
+		if userCache, err := model.GetUserCache(userId); err == nil {
+			return userCache.Role
+		}
+	}
+	return common.RoleGuestUser
+}

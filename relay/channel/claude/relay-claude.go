@@ -859,6 +859,16 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	if claudeResponse.Delta != nil && claudeResponse.Delta.StopReason != nil {
 		maybeMarkClaudeRefusal(c, *claudeResponse.Delta.StopReason)
 	}
+	observeOfficialFallback(info, &claudeResponse)
+	if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
+		if claudeInfo.Model != state.ServingModel && claudeResponse.Type != "message_start" {
+			// Counters on the two sides of a handoff belong to different models.
+			claudeInfo.Usage = &dto.Usage{}
+			claudeInfo.HasInputUsage, claudeInfo.HasFinalOutputUsage = false, false
+			claudeInfo.ResponseText.Reset()
+		}
+		claudeInfo.Model = state.ServingModel
+	}
 	if isEffectiveClaudeStreamOutput(&claudeResponse) {
 		info.SetFirstEffectiveOutputTime()
 	}
@@ -940,7 +950,11 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 			claudeInfo.PendingFinish = nil
 		}
 		if info.ShouldIncludeUsage {
-			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, info.UpstreamModelName, *claudeInfo.Usage)
+			model := info.UpstreamModelName
+			if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
+				model = state.ServingModel
+			}
+			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, model, *claudeInfo.Usage)
 			err := helper.ObjectData(c, response)
 			if err != nil {
 				return err
@@ -1042,6 +1056,7 @@ func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		logClaudeUpstreamError("non_stream", claudeError, statusCode)
 		return types.WithClaudeError(*claudeError, statusCode)
 	}
+	observeOfficialFallback(info, &claudeResponse)
 	maybeMarkClaudeRefusal(c, claudeResponse.StopReason)
 	info.ObserveResponseModel(claudeResponse.Model)
 	if claudeInfo.Usage == nil {
