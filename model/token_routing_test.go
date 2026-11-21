@@ -55,8 +55,9 @@ func TestTokenRoutingMigration(t *testing.T) {
 			// models the old version without touching application tables.
 			require.NoError(t, db.Table(table).AutoMigrate(&Token{}))
 			require.NoError(t, db.Table(table).Migrator().DropColumn(&Token{}, "routing_config"))
+			require.NoError(t, db.Table(table).Migrator().DropColumn(&Token{}, "claude_refusal_fallback"))
 			old := Token{Key: "legacy-test-key", Group: "default", RemainQuota: 12345, UsedQuota: 678, AutoGroupFallback: true}
-			require.NoError(t, db.Table(table).Omit("routing_config").Create(&old).Error)
+			require.NoError(t, db.Table(table).Omit("routing_config", "claude_refusal_fallback").Create(&old).Error)
 			for range 2 {
 				require.NoError(t, db.Table(table).AutoMigrate(&Token{}))
 			}
@@ -66,6 +67,7 @@ func TestTokenRoutingMigration(t *testing.T) {
 			require.Equal(t, old.RemainQuota, restored.RemainQuota)
 			require.Equal(t, old.UsedQuota, restored.UsedQuota)
 			require.True(t, restored.AutoGroupFallback)
+			require.False(t, restored.ClaudeRefusalFallback)
 			config := `{"groups":["default","vip"],"model_groups":{"模型-A":["vip"]}}`
 			require.NoError(t, db.Table(table).Where("id = ?", old.Id).Update("routing_config", config).Error)
 			require.NoError(t, db.Table(table).First(&restored, old.Id).Error)

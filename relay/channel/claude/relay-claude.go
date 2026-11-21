@@ -641,14 +641,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 		Object:  "chat.completion",
 		Created: common.GetTimestamp(),
 	}
-	var responseText string
-	var responseThinking string
-	if len(claudeResponse.Content) > 0 {
-		responseText = claudeResponse.Content[0].GetText()
-		if claudeResponse.Content[0].Thinking != nil {
-			responseThinking = *claudeResponse.Content[0].Thinking
-		}
-	}
+	var responseText strings.Builder
 	tools := make([]dto.ToolCallResponse, 0)
 	thinkingContent := ""
 
@@ -671,7 +664,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 				thinkingContent = *message.Thinking
 			}
 		case "text":
-			responseText = message.GetText()
+			responseText.WriteString(message.GetText())
 		}
 	}
 	choice := dto.OpenAITextResponseChoice{
@@ -681,10 +674,7 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 		},
 		FinishReason: stopReasonClaude2OpenAI(claudeResponse.StopReason),
 	}
-	choice.SetStringContent(responseText)
-	if len(responseThinking) > 0 {
-		choice.ReasoningContent = responseThinking
-	}
+	choice.SetStringContent(responseText.String())
 	if len(tools) > 0 {
 		choice.Message.SetToolCalls(tools)
 	}
@@ -859,6 +849,16 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	if claudeResponse.Delta != nil && claudeResponse.Delta.StopReason != nil {
 		maybeMarkClaudeRefusal(c, *claudeResponse.Delta.StopReason)
 	}
+	observeOfficialFallback(info, &claudeResponse)
+	if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
+		if claudeInfo.Model != state.ServingModel && claudeResponse.Type != "message_start" {
+			// Counters on the two sides of a handoff belong to different models.
+			claudeInfo.Usage = &dto.Usage{}
+			claudeInfo.HasInputUsage, claudeInfo.HasFinalOutputUsage = false, false
+			claudeInfo.ResponseText.Reset()
+		}
+		claudeInfo.Model = state.ServingModel
+	}
 	if isEffectiveClaudeStreamOutput(&claudeResponse) {
 		info.SetFirstEffectiveOutputTime()
 	}
@@ -940,7 +940,11 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 			claudeInfo.PendingFinish = nil
 		}
 		if info.ShouldIncludeUsage {
-			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, info.UpstreamModelName, *claudeInfo.Usage)
+			model := info.UpstreamModelName
+			if state := info.ClaudeFallback; state != nil && state.ServingModel == relaycommon.ClaudeFallbackTarget {
+				model = state.ServingModel
+			}
+			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, model, *claudeInfo.Usage)
 			err := helper.ObjectData(c, response)
 			if err != nil {
 				return err
@@ -1042,6 +1046,7 @@ func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		logClaudeUpstreamError("non_stream", claudeError, statusCode)
 		return types.WithClaudeError(*claudeError, statusCode)
 	}
+	observeOfficialFallback(info, &claudeResponse)
 	maybeMarkClaudeRefusal(c, claudeResponse.StopReason)
 	info.ObserveResponseModel(claudeResponse.Model)
 	if claudeInfo.Usage == nil {

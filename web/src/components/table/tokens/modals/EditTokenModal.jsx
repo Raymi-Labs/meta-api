@@ -166,6 +166,7 @@ const EditTokenModal = (props) => {
     // New tokens fall back to platform groups by default; the picker's
     // checkbox explains the price impact. Edits keep the stored value.
     auto_group_fallback: true,
+    claude_refusal_fallback: false,
     max_concurrency: 0,
     window_request_limit: 0,
     window_seconds: 0,
@@ -2032,6 +2033,14 @@ const EditTokenModal = (props) => {
                           : t('未设置额外限制')}
                       </span>
                     </summary>
+                    <Form.Switch
+                      field='claude_refusal_fallback'
+                      label={t('Claude 官方备选模型')}
+                      extraText={t(
+                        'Opus 5.5 拒答时，允许 Opus 4.8 接续，包括流式输出中途。两次尝试可能分别计费。',
+                      )}
+                      disabled={isSellableToken}
+                    />
                     {/* 访问限制 */}
                     <Card className='!rounded-2xl shadow-sm border-0'>
                       <div className='flex items-center mb-2'>

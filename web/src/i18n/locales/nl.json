@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Claude 官方备选模型": "Officieel uitwijkmodel van Claude",
+    "Opus 5.5 拒答时，允许 Opus 4.8 接续，包括流式输出中途。两次尝试可能分别计费。": "Laat Opus 4.8 bij een weigering van Opus 5.5 doorgaan, ook tijdens het streamen. Elke poging kan afzonderlijk in rekening worden gebracht.",
+    "上游未提供完整的逐次用量": "De aanbieder heeft het verbruik per poging niet volledig opgegeven",
     "创作空间": "Creatieve ruimte",
     "参考 P50": "Referentie-P50",
     "官方参考价待同步": "Officiële referentieprijs wacht op synchronisatie",

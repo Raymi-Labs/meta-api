@@ -295,6 +295,9 @@ type RelayInfo struct {
 	ParamOverrideAudit                    []string
 	StreamStatus                          *StreamStatus
 	ResponsesCompletedSummary             *ResponsesCompletedSummary
+	ClaudeMessageID                       string
+	ClaudeRefusalCategory                 string
+	ClaudeFallback                        *ClaudeFallback
 	KimiUsageEvidence                     *KimiUsageEvidence
 	ChatToolProtocol                      dto.ChatToolProtocol
 	ChatToolCount                         int
@@ -329,6 +332,8 @@ type RelayInfo struct {
 func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	// Observations belong to this attempt, not an earlier failed channel.
 	info.ResponseModel = nil
+	info.ClaudeFallback = nil
+	info.ClaudeMessageID, info.ClaudeRefusalCategory = "", ""
 	info.KimiUsageEvidence = nil
 	if info.ReasoningAdaptation != nil {
 		info.ReasoningEffort = ""

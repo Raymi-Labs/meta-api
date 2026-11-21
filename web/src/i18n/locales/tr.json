@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Claude 官方备选模型": "Claude resmî yedek modeli",
+    "Opus 5.5 拒答时，允许 Opus 4.8 接续，包括流式输出中途。两次尝试可能分别计费。": "Opus 5.5 isteği reddederse akış sırasında da Opus 4.8 devam edebilir. Her deneme ayrı ücretlendirilebilir.",
+    "上游未提供完整的逐次用量": "Sağlayıcı her denemenin kullanımını eksiksiz bildirmedi",
     "创作空间": "Yaratıcı alan",
     "参考 P50": "Referans P50",
     "官方参考价待同步": "Resmî referans fiyat eşitleme bekliyor",

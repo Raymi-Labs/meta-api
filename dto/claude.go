@@ -16,21 +16,33 @@ type ClaudeMetadata struct {
 	UserId string `json:"user_id"`
 }
 
+type ClaudeModelRef struct {
+	Model string `json:"model"`
+}
+type ClaudeRefusalDetails struct {
+	Type     string `json:"type,omitempty"`
+	Category string `json:"category,omitempty"`
+}
+
 type ClaudeMediaMessage struct {
-	Type         string               `json:"type,omitempty"`
-	Text         *string              `json:"text,omitempty"`
-	Model        string               `json:"model,omitempty"`
-	Source       *ClaudeMessageSource `json:"source,omitempty"`
-	Usage        *ClaudeUsage         `json:"usage,omitempty"`
-	StopReason   *string              `json:"stop_reason,omitempty"`
-	PartialJson  *string              `json:"partial_json,omitempty"`
-	Role         string               `json:"role,omitempty"`
-	Thinking     *string              `json:"thinking,omitempty"`
-	Signature    string               `json:"signature,omitempty"`
-	Delta        string               `json:"delta,omitempty"`
-	Citations    any                  `json:"citations,omitempty"`
-	ErrorCode    string               `json:"error_code,omitempty"`
-	CacheControl json.RawMessage      `json:"cache_control,omitempty"`
+	From         *ClaudeModelRef       `json:"from,omitempty"`
+	To           *ClaudeModelRef       `json:"to,omitempty"`
+	Trigger      *ClaudeRefusalDetails `json:"trigger,omitempty"`
+	StopDetails  *ClaudeRefusalDetails `json:"stop_details,omitempty"`
+	Type         string                `json:"type,omitempty"`
+	Text         *string               `json:"text,omitempty"`
+	Model        string                `json:"model,omitempty"`
+	Source       *ClaudeMessageSource  `json:"source,omitempty"`
+	Usage        *ClaudeUsage          `json:"usage,omitempty"`
+	StopReason   *string               `json:"stop_reason,omitempty"`
+	PartialJson  *string               `json:"partial_json,omitempty"`
+	Role         string                `json:"role,omitempty"`
+	Thinking     *string               `json:"thinking,omitempty"`
+	Signature    string                `json:"signature,omitempty"`
+	Delta        string                `json:"delta,omitempty"`
+	Citations    any                   `json:"citations,omitempty"`
+	ErrorCode    string                `json:"error_code,omitempty"`
+	CacheControl json.RawMessage       `json:"cache_control,omitempty"`
 	// tool_calls
 	Id        string `json:"id,omitempty"`
 	Name      string `json:"name,omitempty"`
@@ -539,19 +551,20 @@ type ClaudeErrorWithStatusCode struct {
 }
 
 type ClaudeResponse struct {
-	Id           string               `json:"id,omitempty"`
-	Type         string               `json:"type"`
-	Role         string               `json:"role,omitempty"`
-	Content      []ClaudeMediaMessage `json:"content,omitempty"`
-	Completion   string               `json:"completion,omitempty"`
-	StopReason   string               `json:"stop_reason,omitempty"`
-	Model        string               `json:"model,omitempty"`
-	Error        any                  `json:"error,omitempty"`
-	Usage        *ClaudeUsage         `json:"usage,omitempty"`
-	Index        *int                 `json:"index,omitempty"`
-	ContentBlock *ClaudeMediaMessage  `json:"content_block,omitempty"`
-	Delta        *ClaudeMediaMessage  `json:"delta,omitempty"`
-	Message      *ClaudeMediaMessage  `json:"message,omitempty"`
+	StopDetails  *ClaudeRefusalDetails `json:"stop_details,omitempty"`
+	Id           string                `json:"id,omitempty"`
+	Type         string                `json:"type"`
+	Role         string                `json:"role,omitempty"`
+	Content      []ClaudeMediaMessage  `json:"content,omitempty"`
+	Completion   string                `json:"completion,omitempty"`
+	StopReason   string                `json:"stop_reason,omitempty"`
+	Model        string                `json:"model,omitempty"`
+	Error        any                   `json:"error,omitempty"`
+	Usage        *ClaudeUsage          `json:"usage,omitempty"`
+	Index        *int                  `json:"index,omitempty"`
+	ContentBlock *ClaudeMediaMessage   `json:"content_block,omitempty"`
+	Delta        *ClaudeMediaMessage   `json:"delta,omitempty"`
+	Message      *ClaudeMediaMessage   `json:"message,omitempty"`
 }
 
 // set index
@@ -604,6 +617,7 @@ func (c *ClaudeResponse) GetClaudeError() *types.ClaudeError {
 }
 
 type ClaudeUsage struct {
+	Iterations               json.RawMessage `json:"iterations,omitempty"`
 	cacheReadPresent         bool
 	cacheCreationPresent     bool
 	inputTokensPresent       bool

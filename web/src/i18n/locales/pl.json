@@ -1,5 +1,8 @@
 {
   "translation": {
+    "Claude 官方备选模型": "Oficjalny model zapasowy Claude",
+    "Opus 5.5 拒答时，允许 Opus 4.8 接续，包括流式输出中途。两次尝试可能分别计费。": "Po odmowie Opus 5.5 pozwól Opus 4.8 kontynuować, także w trakcie transmisji. Każda próba może być rozliczona osobno.",
+    "上游未提供完整的逐次用量": "Dostawca nie zgłosił pełnego zużycia dla każdej próby",
     "创作空间": "Przestrzeń twórcza",
     "参考 P50": "Referencyjny P50",
     "官方参考价待同步": "Oficjalna cena referencyjna oczekuje na synchronizację",

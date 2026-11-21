@@ -67,7 +67,7 @@ func Distribute() func(c *gin.Context) {
 		c.Set("original_model", modelRequest.Model)
 		responsesImageGenerationTool := isResponsesCreateRequest(c) && modelRequest.HasImageGenerationTool()
 		if shouldSelectChannel && strings.TrimSpace(modelRequest.Model) != "" {
-			role := getModelPermissionRole(c)
+			role := service.RequestModelPermissionRole(c)
 			permissionModel := ratio_setting.FormatMatchingModelName(modelRequest.Model)
 			if !model.IsModelCallableByRole(permissionModel, role) {
 				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权调用模型 %s", modelRequest.Model), types.ErrorCodeAccessDenied)
@@ -207,21 +207,6 @@ func isResponsesCreateRequest(c *gin.Context) bool {
 func isImageGenerationToolCallableByRole(role int) bool {
 	scope := model_setting.GetGlobalSettings().ImageGenerationToolCallPermission
 	return model.IsModelPermissionScopeCallableByRole(scope, role)
-}
-
-func getModelPermissionRole(c *gin.Context) int {
-	if role := common.GetContextKeyInt(c, constant.ContextKeyUserRole); role != common.RoleGuestUser {
-		return role
-	}
-	if role := c.GetInt("role"); role != common.RoleGuestUser {
-		return role
-	}
-	if userId := c.GetInt("id"); userId > 0 {
-		if userCache, err := model.GetUserCache(userId); err == nil {
-			return userCache.Role
-		}
-	}
-	return common.RoleGuestUser
 }
 
 func appendUniqueChannelID(ids []int, channelID int) []int {
