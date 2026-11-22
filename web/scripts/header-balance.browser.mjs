@@ -127,7 +127,7 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
       '$150.00',
   );
   for (const [type, value] of [
-    ['CNY', '¥1050.00'],
+    ['CNY', '¥1,050.00'],
     ['CUSTOM', '⚡300.00'],
     ['TOKENS', '75.0M'],
     ['USD', '$150.00'],
@@ -141,7 +141,7 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
     );
     assert.equal(
       await page.$eval('.wallet-statistics strong', (e) => e.textContent),
-      value,
+      value.replaceAll(',', ''),
     );
   }
   const user = {
@@ -207,7 +207,7 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
           document
             .querySelector('.header-balance')
             .getAttribute('aria-label')
-            .includes((q / 500000).toFixed(2)),
+            .includes((q / 500000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })),
         {},
         quota,
       );
@@ -246,7 +246,8 @@ function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialStat
   await page.evaluate(() => window.headerQA.language('en'));
   await page.waitForFunction(
     () =>
-      document.querySelector('.header-balance-label').textContent === 'Balance',
+      document.querySelector('.header-balance').getAttribute('aria-label').startsWith('Balance ') &&
+      document.querySelector('.header-balance').textContent === document.querySelector('.header-balance-amount').textContent,
   );
   assert(
     !requests.some((x) => x.path.startsWith('/api/user/self')),

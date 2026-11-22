@@ -46,7 +46,7 @@ export default function HeaderBalance({ user, loading, t }) {
     // A malformed preference must not break the shared header.
   }
   const low = known && (quota <= 0 || quota < threshold);
-  const amount = known ? renderQuota(quota) : '—';
+  const amount = known ? renderQuota(quota, 2, { groupThousands: true }) : '—';
   const label = `${t('余额')} ${amount}`;
   const enterpriseAvailable = enterprise.data?.member?.available;
   const enterpriseKnown =
@@ -85,7 +85,6 @@ export default function HeaderBalance({ user, loading, t }) {
         aria-label={`${label} · ${t('钱包管理')}${low ? ` · ${t('余额不足')}` : ''}`}
         aria-busy={loading || undefined}
       >
-        <span className='header-balance-label'>{t('余额')}</span>
         <span className='header-balance-amount'>{amount}</span>
       </Link>
     </>

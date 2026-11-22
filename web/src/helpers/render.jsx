@@ -1168,15 +1168,15 @@ export function convertUSDToCurrency(usdAmount, digits = 2) {
   return symbol + convertedAmount.toFixed(digits);
 }
 
-export function renderQuota(quota, digits = 2) {
-  return formatQuota(quota, digits, false);
+export function renderQuota(quota, digits = 2, { groupThousands = false } = {}) {
+  return formatQuota(quota, digits, false, groupThousands);
 }
 
 export function renderEnterpriseBalance(quota) {
   return formatQuota(quota, 2, true);
 }
 
-function formatQuota(quota, digits, preserveSmallBalance) {
+function formatQuota(quota, digits, preserveSmallBalance, groupThousands = false) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
   quotaPerUnit = parseFloat(quotaPerUnit);
@@ -1218,6 +1218,11 @@ function formatQuota(quota, digits, preserveSmallBalance) {
   if (parseFloat(fixedResult) === 0 && quota > 0 && value > 0) {
     const minValue = Math.pow(10, -digits);
     return symbol + minValue.toFixed(digits);
+  }
+  if (groupThousands) {
+    const [integer, fraction] = fixedResult.split('.');
+    return symbol + integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+      (fraction === undefined ? '' : '.' + fraction);
   }
   return symbol + fixedResult;
 }
