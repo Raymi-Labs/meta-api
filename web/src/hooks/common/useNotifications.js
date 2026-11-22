@@ -28,6 +28,8 @@ import {
   subscribeNoticeReadState,
 } from '../../helpers/noticeReadState';
 
+export const TICKET_QUEUE_CHANGED = 'ticket-queue-changed';
+
 export const useNotifications = (statusState, userState) => {
   const [noticeVisible, setNoticeVisible] = useState(false);
   const [announcementUnread, setAnnouncementUnread] = useState(0);
@@ -43,7 +45,10 @@ export const useNotifications = (statusState, userState) => {
   const identity = `${userID || ''}:${admin}`;
   const currentIdentity = useRef(identity);
   currentIdentity.current = identity;
-  const [staffTicketUnread, setStaffTicketUnread] = useState(0);
+  const [staffCounts, setStaffCounts] = useState(null);
+  const currentStaffCounts =
+    admin && staffCounts?.identity === identity ? staffCounts : null;
+  const staffTicketUnread = currentStaffCounts?.unread || 0;
 
   const announcements = useMemo(
     () =>
@@ -110,21 +115,27 @@ export const useNotifications = (statusState, userState) => {
       signal: controller.signal,
       headers: { 'New-API-User': userID },
     };
-    try {
-      const res = await API.get('/api/ticket/unread', config);
-      if (!isCurrent()) return;
-      if (res?.data?.success) {
-        setTicketUnread(Number(res.data.data?.count) || 0);
+    const readCount = async (path, apply) => {
+      try {
+        const res = await API.get(path, config);
+        if (isCurrent() && res.data?.success) apply(res.data.data);
+      } catch (_) {
+        // Keep the current account's last value on a transient failure.
       }
-      if (admin) {
-        const staff = await API.get('/api/admin/ticket/unread', config);
-        if (!isCurrent()) return;
-        if (staff.data?.success)
-          setStaffTicketUnread(Number(staff.data.data?.count) || 0);
-      }
-    } catch (_) {
-      // Keep the current account's last value on a transient failure.
+    };
+    const userRequest = readCount('/api/ticket/unread', (data) =>
+      setTicketUnread(Number(data?.count) || 0),
+    );
+    if (admin) {
+      await readCount('/api/admin/ticket/unread', (data) =>
+        setStaffCounts({
+          identity,
+          unread: Number(data?.count) || 0,
+          pending: Number(data?.pending_count) || 0,
+        }),
+      );
     }
+    await userRequest;
   };
 
   // Effects
@@ -142,12 +153,15 @@ export const useNotifications = (statusState, userState) => {
 
   useEffect(() => {
     setTicketUnread(0);
-    setStaffTicketUnread(0);
+    setStaffCounts(null);
     fetchTicketUnread();
+    if (!userID) return;
+    window.addEventListener(TICKET_QUEUE_CHANGED, fetchTicketUnread);
     const timer = setInterval(fetchTicketUnread, 60000);
     return () => {
       ticketRequest.current += 1;
       ticketAbort.current?.abort();
+      window.removeEventListener(TICKET_QUEUE_CHANGED, fetchTicketUnread);
       clearInterval(timer);
     };
   }, [userID, admin]);
@@ -176,6 +190,7 @@ export const useNotifications = (statusState, userState) => {
     announcementUnread,
     ticketUnread,
     staffTicketUnread,
+    hasPendingStaffTickets: currentStaffCounts?.pending > 0,
     pendingWithdrawalCount,
     pendingWithdrawals,
     pendingInvoiceCount,

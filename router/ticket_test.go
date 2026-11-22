@@ -506,6 +506,39 @@ func TestUnreadCount(t *testing.T) {
 	require.Equal(t, 0, count)
 }
 
+func TestTicketAdminPendingCounts(t *testing.T) {
+	api := setupTicketAPI(t)
+	user := api.user("alice", common.UserStatusEnabled)
+	admin := api.user("admin", common.UserStatusEnabled)
+	const endpoint = "/api/admin/ticket/unread"
+	check := func(unread, pending int) {
+		t.Helper()
+		data := api.ok(admin.Id, admin.Role, http.MethodGet, endpoint, nil).object()
+		require.EqualValues(t, unread, data["count"])
+		require.EqualValues(t, pending, data["pending_count"])
+	}
+	api.denied(user.Id, user.Role, http.MethodGet, endpoint, nil)
+	check(0, 0)
+	resp := api.ok(user.Id, user.Role, http.MethodPost, "/api/ticket", map[string]any{
+		"subject": "工单提醒", "category": model.TicketCategoryAPI, "body": "请协助处理",
+	})
+	id := int(resp.object()["id"].(float64))
+	path := fmt.Sprintf("/api/admin/ticket/%d", id)
+	check(1, 1)
+	api.ok(admin.Id, admin.Role, http.MethodGet, path, nil)
+	check(0, 1)
+	api.ok(admin.Id, admin.Role, http.MethodPut, path+"/status", map[string]any{"status": model.TicketStatusInProgress})
+	check(0, 1)
+	api.ok(admin.Id, admin.Role, http.MethodPost, path+"/reply", map[string]any{"body": "请补充信息"})
+	check(0, 0)
+	api.ok(user.Id, user.Role, http.MethodPost, fmt.Sprintf("/api/ticket/%d/reply", id), map[string]any{"body": "已补充"})
+	check(1, 1)
+	for _, status := range []string{model.TicketStatusResolved, model.TicketStatusClosed} {
+		api.ok(admin.Id, admin.Role, http.MethodPut, path+"/status", map[string]any{"status": status})
+		check(0, 0)
+	}
+}
+
 // TestTicketAttachmentUpload 测试附件上传
 func TestTicketAttachmentUpload(t *testing.T) {
 	api := setupTicketAPI(t)

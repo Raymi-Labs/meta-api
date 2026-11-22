@@ -22,6 +22,8 @@ import i18n from 'i18next';
 import {API} from '/src/helpers/apiCore';
 import Ticket from '/src/pages/Ticket';
 import Admin from '/src/pages/Ticket/TicketAdmin';
+import SiderBar from '/src/components/layout/SiderBar';
+import {StatusProvider} from '/src/context/Status';
 import Appeal from '/src/pages/Ticket/Appeal';
 import {useNotifications} from '/src/hooks/common/useNotifications';
 import '/src/index.css';
@@ -30,10 +32,25 @@ localStorage.setItem('user',JSON.stringify({id:1,role:100}));
 window.calls=[];
 const item={id:1,user_id:2,subject:'QA ticket',category:'api',status:new URLSearchParams(location.search).get('state')||'open',created_at:1,request_id:'req-test'};
 const files=[];
-API.get=async(url,config)=>{window.calls.push({method:'GET',url,config});return {data:{success:true,data:url.endsWith('/session')?{user_id:1,username:'QA',expires_at:9999999999}:url.endsWith('/attachments')?files:url.endsWith('/unread')?{count:2}:/\\/1$/.test(url)?{ticket:item,messages:[{id:1,sender_role:'user',body:'hello',created_at:1}],logs:[{id:1,request_id:'req-test'}]}:{tickets:url==='/api/appeal/tickets'&&!location.search.includes('state=')?[]:[item],total:url==='/api/appeal/tickets'&&!location.search.includes('state=')?0:1}}};};
-API.post=async(url,body)=>{if(body instanceof FormData){files.push({id:1,filename:body.get('file').name});item.status='open';body={ticket_id:body.get('ticket_id'),filename:body.get('file').name};}window.calls.push({method:'POST',url,body:JSON.parse(JSON.stringify(body))});return {data:{success:true,data:{id:1}}};};
+API.get=async(url,config)=>{
+  window.calls.push({method:'GET',url,config});
+  if (url === '/api/admin/ticket/unread' && mode === 'admin') {
+    return {data:{success:true,data:{count:0,pending_count:item.status==='open'?1:0}}};
+  }
+  return {data:{success:true,data:url.endsWith('/session')?{user_id:1,username:'QA',expires_at:9999999999}:url.endsWith('/attachments')?files:url.endsWith('/unread')?{count:2}:/\\/1$/.test(url)?{ticket:item,messages:[{id:1,sender_role:'user',body:'hello',created_at:1}],logs:[{id:1,request_id:'req-test'}]}:{tickets:url==='/api/appeal/tickets'&&!location.search.includes('state=')?[]:[item],total:url==='/api/appeal/tickets'&&!location.search.includes('state=')?0:1}}};};
+API.post=async(url,body)=>{
+  if (url==='/api/admin/ticket/1/reply') item.status='waiting_user';
+  if(body instanceof FormData){files.push({id:1,filename:body.get('file').name});item.status='open';body={ticket_id:body.get('ticket_id'),filename:body.get('file').name};}window.calls.push({method:'POST',url,body:JSON.parse(JSON.stringify(body))});return {data:{success:true,data:{id:1}}};};
 API.put=async(url,body)=>{window.calls.push({method:'PUT',url,body});return {data:{success:true}};};
-function Notices(){const result=useNotifications({status:{}},{user:{id:1,role:100}});return <div id='counts'>{result.ticketUnread}:{result.staffTicketUnread}</div>;}
+function Notices() {
+  const result = useNotifications({status:{}},{user:{id:1,role:100}});
+  return <>
+    <div id='counts'>{result.ticketUnread}:{result.staffTicketUnread}</div>
+    {mode==='admin' && <StatusProvider>
+      <SiderBar hasPendingStaffTickets={result.hasPendingStaffTickets}/>
+    </StatusProvider>}
+  </>;
+}
 const mode=new URLSearchParams(location.search).get('mode');
 createRoot(document.getElementById('root')).render(<BrowserRouter><Notices/>{mode==='admin'?<Admin/>:mode==='appeal'?<Appeal/>:<Ticket/>}</BrowserRouter>);
 `,
@@ -128,6 +145,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><Notices/>{mod
     ),
   );
   await page.goto(url + '?mode=admin');
+  const dot = 'a[href="/console/ticket-admin"] .ticket-pending-dot';
+  await page.waitForSelector(dot, { visible: true });
+  await page.click('.sidebar-collapse-button button');
+  await page.waitForSelector('body.sidebar-collapsed ' + dot, { visible: true });
+
   await click('QA ticket');
   await page.waitForSelector('textarea');
   await click('关联请求日志 (1)');
@@ -136,6 +158,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><Notices/>{mod
   await page.waitForFunction(() =>
     window.calls.some((c) => c.url === '/api/admin/ticket/1/reply'),
   );
+  await page.waitForSelector(dot, { hidden: true });
   assert.deepEqual(errors, [], 'admin details runtime including logs');
   await page.goto(url + '?mode=appeal');
   await click('创建申诉工单');

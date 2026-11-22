@@ -30,6 +30,7 @@ import {reducer,initialState} from '../src/context/User/reducer';
 import {StatusContext} from '../src/context/Status';
 import {ThemeProvider} from '../src/context/Theme';
 import {setStatusData} from '../src/helpers/data';
+import {useNotifications} from '../src/hooks/common/useNotifications';
 import HeaderBar from '../src/components/layout/headerbar';
 import WalletOverview from '../src/components/topup/WalletOverview';
 import '../src/index.css';
@@ -39,7 +40,7 @@ await initialLocaleReady;
 const user={id:901,username:'fixture-account',role:1,quota:64250000,setting:JSON.stringify({quota_warning_threshold:500000})};
 let status={system_name:'UI fixture',logo:'/logo.png',quota_per_unit:500000,quota_display_type:'USD',usd_exchange_rate:7,custom_currency_symbol:'⚡',custom_currency_exchange_rate:2,HeaderNavModules:JSON.stringify({home:true,console:true,docs:true,pricing:true})};
 setStatusData(status);localStorage.setItem('user',JSON.stringify(user));localStorage.setItem('newapi:user-onboarding:regular:v1:user:901','done');
-function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialState,user});const [statusState,setStatus]=React.useState({status});window.headerQA={setUser:u=>{if(u)localStorage.setItem('user',JSON.stringify(u));else localStorage.removeItem('user');dispatch({type:u?'login':'logout',payload:u});},setDisplay:type=>{status={...status,quota_display_type:type};setStatusData(status);setStatus({status});},setLoading:loading=>setStatus(loading?{}:{status}),language:lng=>i18n.changeLanguage(lng)};return <StatusContext.Provider value={[statusState,()=>{}]}><UserContext.Provider value={[userState,dispatch]}><BrowserRouter><ThemeProvider><HeaderBar onMobileMenuToggle={()=>{}} drawerOpen={false}/><div style={{padding:20}}><WalletOverview user={userState.user} loading={false} error={false} onRefresh={()=>dispatch({type:'login',payload:{...userState.user,quota:75000000}})} t={i18n.t.bind(i18n)}/></div></ThemeProvider></BrowserRouter></UserContext.Provider></StatusContext.Provider>};createRoot(document.getElementById('root')).render(<Fixture/>);`,
+function Fixture(){const [userState,dispatch]=useReducer(reducer,{...initialState,user});const [statusState,setStatus]=React.useState({status});const notifications=useNotifications(statusState,userState);window.headerQA={setUser:u=>{if(u)localStorage.setItem('user',JSON.stringify(u));else localStorage.removeItem('user');dispatch({type:u?'login':'logout',payload:u});},setDisplay:type=>{status={...status,quota_display_type:type};setStatusData(status);setStatus({status});},setLoading:loading=>setStatus(loading?{}:{status}),language:lng=>i18n.changeLanguage(lng)};return <StatusContext.Provider value={[statusState,()=>{}]}><UserContext.Provider value={[userState,dispatch]}><BrowserRouter><ThemeProvider><HeaderBar notifications={notifications} onMobileMenuToggle={()=>{}} drawerOpen={false}/><div style={{padding:20}}><WalletOverview user={userState.user} loading={false} error={false} onRefresh={()=>dispatch({type:'login',payload:{...userState.user,quota:75000000}})} t={i18n.t.bind(i18n)}/></div></ThemeProvider></BrowserRouter></UserContext.Provider></StatusContext.Provider>};createRoot(document.getElementById('root')).render(<Fixture/>);`,
   );
   server = await createServer({
     root,

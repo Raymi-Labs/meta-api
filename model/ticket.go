@@ -718,11 +718,23 @@ func CountTicketUserUnread(ctx context.Context, userID int) (int64, error) {
 	return count, err
 }
 
+type StaffTicketCounts struct {
+	UnreadCount  int64 `json:"count"`
+	PendingCount int64 `json:"pending_count"`
+}
+
+func GetStaffTicketCounts(ctx context.Context) (StaffTicketCounts, error) {
+	var counts StaffTicketCounts
+	err := ticketDB(ctx).Model(&Ticket{}).
+		Where("status IN ?", []string{TicketStatusOpen, TicketStatusInProgress}).
+		Select("COUNT(CASE WHEN staff_unread = ? THEN 1 END) AS unread_count, COUNT(*) AS pending_count", true).
+		Scan(&counts).Error
+	return counts, err
+}
+
 func CountTicketStaffPending(ctx context.Context) (int64, error) {
-	var count int64
-	err := ticketDB(ctx).Model(&Ticket{}).Where("staff_unread = ? AND status IN ?", true,
-		[]string{TicketStatusOpen, TicketStatusInProgress}).Count(&count).Error
-	return count, err
+	counts, err := GetStaffTicketCounts(ctx)
+	return counts.UnreadCount, err
 }
 
 func ListTicketsForAutoTransition(ctx context.Context, status string, staleThreshold int64, limit int) ([]Ticket, error) {

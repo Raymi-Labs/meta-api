@@ -36,6 +36,7 @@ import {
   Collapse,
   Table,
 } from '@douyinfe/semi-ui';
+import { TICKET_QUEUE_CHANGED } from '../../hooks/common/useNotifications';
 import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
@@ -124,6 +125,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
       setSubmitting(true);
       const res = await API.post(`/api/admin/ticket/${ticketId}/reply`, values);
       if (res.data.success) {
+        window.dispatchEvent(new Event(TICKET_QUEUE_CHANGED));
         showSuccess(t('回复成功'));
         replyForm.current?.reset();
         await loadTicketDetail();
@@ -147,6 +149,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
         status: newStatus,
       });
       if (res.data.success) {
+        window.dispatchEvent(new Event(TICKET_QUEUE_CHANGED));
         showSuccess(t('状态更新成功'));
         await loadTicketDetail();
         onUpdate && onUpdate();

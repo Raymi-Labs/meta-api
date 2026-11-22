@@ -261,6 +261,17 @@ code {
   transition: all 0.2s ease;
 }
 
+.ticket-pending-dot {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--semi-color-danger);
+  box-shadow: 0 0 0 1px var(--semi-color-bg-0);
+}
+
 .sidebar-sub-icon-container {
   width: 18px;
   height: 18px;

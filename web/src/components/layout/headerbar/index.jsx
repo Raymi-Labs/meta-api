@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { Suspense, lazy } from 'react';
 import { useHeaderBar } from '../../../hooks/common/useHeaderBar';
-import { useNotifications } from '../../../hooks/common/useNotifications';
 import { useNavigation } from '../../../hooks/common/useNavigation';
 import MobileMenuButton from './MobileMenuButton';
 import HeaderLogo from './HeaderLogo';
@@ -28,10 +27,9 @@ import ActionButtons from './ActionButtons';
 
 const NoticeModal = lazy(() => import('../NoticeModal'));
 
-const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
+const HeaderBar = ({ onMobileMenuToggle, drawerOpen, notifications }) => {
   const {
     userState,
-    statusState,
     isMobile,
     collapsed,
     logoLoaded,
@@ -69,7 +67,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     handleNoticeOpen,
     handleNoticeClose,
     getUnreadKeys,
-  } = useNotifications(statusState, userState);
+  } = notifications;
 
   const { mainNavLinks } = useNavigation(t, docsLink, headerNavModules);
 

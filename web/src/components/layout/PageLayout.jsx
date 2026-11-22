@@ -31,6 +31,7 @@ import React, {
   useState,
 } from 'react';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
+import { useNotifications } from '../../hooks/common/useNotifications';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers/apiCore';
@@ -49,8 +50,8 @@ const { Sider, Content, Header } = Layout;
 const SiderBar = lazy(() => import('./SiderBar'));
 
 const PageLayout = () => {
-  const [, userDispatch] = useContext(UserContext);
-  const [, statusDispatch] = useContext(StatusContext);
+  const [userState, userDispatch] = useContext(UserContext);
+  const [statusState, statusDispatch] = useContext(StatusContext);
   const isMobile = useIsMobile();
   const [collapsed, , setCollapsed] = useSidebarCollapsed();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -92,6 +93,11 @@ const PageLayout = () => {
       setCollapsed(false);
     }
   }, [isMobile, drawerOpen, collapsed, setCollapsed]);
+
+  const notifications = useNotifications(
+    statusState,
+    isStandalonePage || hideHeaderForCustomLanding ? null : userState,
+  );
 
   const loadUser = async () => {
     const storedUser = localStorage.getItem('user');
@@ -187,6 +193,7 @@ const PageLayout = () => {
           }}
         >
           <HeaderBar
+            notifications={notifications}
             onMobileMenuToggle={() => setDrawerOpen((prev) => !prev)}
             drawerOpen={drawerOpen}
           />
@@ -220,6 +227,7 @@ const PageLayout = () => {
           >
             <Suspense fallback={null}>
               <SiderBar
+                hasPendingStaffTickets={notifications.hasPendingStaffTickets}
                 onNavigate={() => {
                   if (isMobile) setDrawerOpen(false);
                 }}

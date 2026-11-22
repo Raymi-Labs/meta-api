@@ -751,7 +751,7 @@ func GetUnreadTicketCount(c *gin.Context) {
 func AdminGetUnreadTicketCount(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	count, err := model.GetStaffUnreadTicketCount(ctx)
+	counts, err := model.GetStaffTicketCounts(ctx)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -763,9 +763,7 @@ func AdminGetUnreadTicketCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": gin.H{
-			"count": count,
-		},
+		"data":    counts,
 	})
 }
 

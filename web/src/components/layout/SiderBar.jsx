@@ -63,7 +63,7 @@ const routerMap = {
   ticketAdmin: '/console/ticket-admin',
 };
 
-const SiderBar = ({ onNavigate = () => {} }) => {
+const SiderBar = ({ onNavigate = () => {}, hasPendingStaffTickets }) => {
   const { t } = useTranslation();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const {
@@ -383,8 +383,15 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           </span>
         }
         icon={
-          <div className='sidebar-icon-container flex-shrink-0'>
+          <div className='sidebar-icon-container relative flex-shrink-0'>
             {getLucideIcon(item.itemKey, isSelected)}
+            {item.itemKey === 'ticketAdmin' && hasPendingStaffTickets && (
+              <span
+                role='img'
+                aria-label={t('待处理')}
+                className='ticket-pending-dot'
+              />
+            )}
           </div>
         }
         className={item.className}
