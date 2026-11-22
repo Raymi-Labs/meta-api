@@ -11,6 +11,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
@@ -36,14 +37,14 @@ func TestRelayClaudeRefusalRetrySuccess(t *testing.T) {
 	oldRatio := ratio_setting.ModelRatio2JSONString()
 	oldGroup := ratio_setting.GroupRatio2JSONString()
 	oldUsable := setting.UserUsableGroups2JSONString()
-	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
-	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`["default"]`))
 	t.Cleanup(func() {
 		ratio_setting.UpdateModelRatioByJSONString(oldRatio)
 		ratio_setting.UpdateGroupRatioByJSONString(oldGroup)
 		setting.UpdateUserUsableGroupsByJSONString(oldUsable)
 	})
+	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"默认分组"}`))
 
 	bundle := billing_setting.TieredBundle{
 		BillingMode: billing_setting.GetBillingModeCopy(),
@@ -117,12 +118,12 @@ func TestRelayClaudeRefusalRetrySuccess(t *testing.T) {
 
 				if apiKey == "ch1-refuses" {
 					// First channel refuses
-					data = `{"type":"message","id":"msg_refusal","model":"` + testModel + `","content":[],"stop_reason":"refusal","stop_details":{"category":"policy_violation"},"usage":{"input_tokens":10,"output_tokens":0}}`
+					data = `{"type":"message","id":"msg_refusal","model":"` + testModel + `","content":[],"stop_reason":"refusal","stop_details":{"category":"general_harms"},"usage":{"input_tokens":10,"output_tokens":0}}`
 					if tc.stream {
 						ct = "text/event-stream"
 						frames := []string{
 							`{"type":"message_start","message":{"id":"msg_refusal","model":"` + testModel + `","usage":{"input_tokens":10,"output_tokens":0}}}`,
-							`{"type":"message_delta","delta":{"stop_reason":"refusal","stop_details":{"category":"policy_violation"}},"usage":{"output_tokens":0}}`,
+							`{"type":"message_delta","delta":{"stop_reason":"refusal","stop_details":{"category":"general_harms"}},"usage":{"output_tokens":0}}`,
 							`{"type":"message_stop"}`,
 						}
 						data = "data: " + strings.Join(frames, "\n\ndata: ") + "\n\n"
@@ -167,6 +168,10 @@ func TestRelayClaudeRefusalRetrySuccess(t *testing.T) {
 			ctx.Set(common.RequestIdKey, "refusal-retry-test")
 			common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
 			require.NoError(t, middleware.SetupContextForToken(ctx, &token))
+			common.SetContextKey(ctx, constant.ContextKeyUsingGroup, token.Group)
+			common.SetContextKey(ctx, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+			require.Nil(t, middleware.SetupContextForSelectedChannel(ctx, &ch1, testModel))
+			t.Cleanup(func() { common.CleanupBodyStorage(ctx) })
 
 			Relay(ctx, tc.format)
 
@@ -195,11 +200,10 @@ func TestRelayClaudeRefusalRetrySuccess(t *testing.T) {
 			require.Len(t, logs, 1, "should have exactly 1 consumption log (only successful attempt)")
 
 			log := logs[0]
-			modelName := gjson.Get(log.Other, "model_name").String()
-			require.Equal(t, testModel, modelName)
+			require.Equal(t, model.LogTypeConsume, log.Type)
+			require.Equal(t, testModel, log.ModelName)
 			require.Equal(t, ch2.Id, log.ChannelId, "log should be for the second (successful) channel")
-			quotaDelta := gjson.Get(log.Other, "quota").Int()
-			require.Greater(t, quotaDelta, int64(0), "should have charged for the successful request")
+			require.Positive(t, log.Quota, "should have charged for the successful request")
 
 			// Check admin_info.attempts for refusal retry record
 			adminInfo := gjson.Get(log.Other, "admin_info")
@@ -210,7 +214,7 @@ func TestRelayClaudeRefusalRetrySuccess(t *testing.T) {
 			require.Equal(t, "claude_refusal", attempt.Get("retry_kind").String())
 			require.Equal(t, "claude_refusal", attempt.Get("error_code").String())
 			require.Equal(t, "msg_refusal", attempt.Get("claude_message_id").String())
-			require.Equal(t, "policy_violation", attempt.Get("claude_refusal_category").String())
+			require.Equal(t, "general_harms", attempt.Get("claude_refusal_category").String())
 
 			// Success log should not have claude_message_id or reject_reason at top level
 			require.False(t, adminInfo.Get("claude_message_id").Exists())
@@ -232,14 +236,14 @@ func TestRelayClaudeRefusalRetryAllRefuse(t *testing.T) {
 	oldRatio := ratio_setting.ModelRatio2JSONString()
 	oldGroup := ratio_setting.GroupRatio2JSONString()
 	oldUsable := setting.UserUsableGroups2JSONString()
-	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
-	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`["default"]`))
 	t.Cleanup(func() {
 		ratio_setting.UpdateModelRatioByJSONString(oldRatio)
 		ratio_setting.UpdateGroupRatioByJSONString(oldGroup)
 		setting.UpdateUserUsableGroupsByJSONString(oldUsable)
 	})
+	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"默认分组"}`))
 
 	bundle := billing_setting.TieredBundle{
 		BillingMode: billing_setting.GetBillingModeCopy(),
@@ -341,6 +345,10 @@ func TestRelayClaudeRefusalRetryAllRefuse(t *testing.T) {
 			ctx.Set(common.RequestIdKey, "all-refuse-test")
 			common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
 			require.NoError(t, middleware.SetupContextForToken(ctx, &token))
+			common.SetContextKey(ctx, constant.ContextKeyUsingGroup, token.Group)
+			common.SetContextKey(ctx, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+			require.Nil(t, middleware.SetupContextForSelectedChannel(ctx, &ch1, testModel))
+			t.Cleanup(func() { common.CleanupBodyStorage(ctx) })
 
 			Relay(ctx, tc.format)
 
@@ -382,14 +390,14 @@ func TestRelayClaudeRefusalNoRetryWhenRetryTimesZero(t *testing.T) {
 	oldRatio := ratio_setting.ModelRatio2JSONString()
 	oldGroup := ratio_setting.GroupRatio2JSONString()
 	oldUsable := setting.UserUsableGroups2JSONString()
-	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
-	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`["default"]`))
 	t.Cleanup(func() {
 		ratio_setting.UpdateModelRatioByJSONString(oldRatio)
 		ratio_setting.UpdateGroupRatioByJSONString(oldGroup)
 		setting.UpdateUserUsableGroupsByJSONString(oldUsable)
 	})
+	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"默认分组"}`))
 
 	bundle := billing_setting.TieredBundle{
 		BillingMode: billing_setting.GetBillingModeCopy(),
@@ -459,6 +467,10 @@ func TestRelayClaudeRefusalNoRetryWhenRetryTimesZero(t *testing.T) {
 	ctx.Set(common.RequestIdKey, "no-retry-test")
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
 	require.NoError(t, middleware.SetupContextForToken(ctx, &token))
+	common.SetContextKey(ctx, constant.ContextKeyUsingGroup, token.Group)
+	common.SetContextKey(ctx, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+	require.Nil(t, middleware.SetupContextForSelectedChannel(ctx, &ch, testModel))
+	t.Cleanup(func() { common.CleanupBodyStorage(ctx) })
 
 	Relay(ctx, types.RelayFormatClaude)
 
@@ -490,14 +502,14 @@ func TestRelayClaudeRefusalNoRetryWithSpecificChannel(t *testing.T) {
 	oldRatio := ratio_setting.ModelRatio2JSONString()
 	oldGroup := ratio_setting.GroupRatio2JSONString()
 	oldUsable := setting.UserUsableGroups2JSONString()
-	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
-	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
-	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`["default"]`))
 	t.Cleanup(func() {
 		ratio_setting.UpdateModelRatioByJSONString(oldRatio)
 		ratio_setting.UpdateGroupRatioByJSONString(oldGroup)
 		setting.UpdateUserUsableGroupsByJSONString(oldUsable)
 	})
+	require.NoError(t, ratio_setting.UpdateModelRatioByJSONString(`{"`+testModel+`":1}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1}`))
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"默认分组"}`))
 
 	bundle := billing_setting.TieredBundle{
 		BillingMode: billing_setting.GetBillingModeCopy(),
@@ -570,6 +582,10 @@ func TestRelayClaudeRefusalNoRetryWithSpecificChannel(t *testing.T) {
 	ctx.Set("specific_channel_id", ch1.Id) // Simulate specific channel request
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
 	require.NoError(t, middleware.SetupContextForToken(ctx, &token))
+	common.SetContextKey(ctx, constant.ContextKeyUsingGroup, token.Group)
+	common.SetContextKey(ctx, constant.ContextKeyUserSetting, dto.UserSetting{BillingPreference: "wallet_only"})
+	require.Nil(t, middleware.SetupContextForSelectedChannel(ctx, &ch1, testModel))
+	t.Cleanup(func() { common.CleanupBodyStorage(ctx) })
 
 	Relay(ctx, types.RelayFormatClaude)
 
