@@ -60,7 +60,7 @@ html.dark .dashboard-overview {
 }
 .dashboard-stat-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 20px;
 }
@@ -257,12 +257,12 @@ html.dark .dashboard-overview {
   outline-offset: 2px;
 }
 
-/* Compact query controls, followed by five range metrics. */
+/* Applied range and query controls share the toolbar. */
 .dashboard-overview-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px 20px;
   margin-bottom: 16px;
 }
@@ -290,7 +290,8 @@ html.dark .dashboard-overview {
   }
 }
 @media (min-width: 381px) and (max-width: 767px) {
-  .dashboard-stat-card:last-child {
+  .dashboard-stat-card:nth-last-child(2),
+  .dashboard-wallet {
     grid-column: 1 / -1;
   }
 }
@@ -354,5 +355,39 @@ html.dark .dashboard-overview {
 @media (max-width: 767px) {
   .dashboard-overview {
     padding: 20px 16px 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-overview-header {
+    gap: 8px;
+  }
+  .dashboard-applied-range {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 4px;
+    line-height: 1.35;
+    font-size: 12px;
+  }
+  .dashboard-applied-range > svg {
+    grid-row: span 2;
+  }
+  .dashboard-applied-range > span {
+    white-space: normal;
+  }
+  .dashboard-applied-range > span[aria-hidden] {
+    display: none;
+  }
+  .dashboard-header-right {
+    flex: none;
+  }
+  .dashboard-query-actions {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .dashboard-range-control,
+  .dashboard-range-select {
+    width: 82px;
+    min-width: 0;
   }
 }

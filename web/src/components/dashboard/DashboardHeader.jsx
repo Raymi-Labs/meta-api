@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import WalletSummary from './WalletSummary';
 import { Button } from '@douyinfe/semi-ui';
 import {
   CalendarDays,
@@ -47,7 +46,6 @@ export default function DashboardHeader({
   showSearchModal,
   refresh,
   loading,
-  walletRefreshVersion,
   t,
 }) {
   return (
@@ -59,7 +57,6 @@ export default function DashboardHeader({
         <span>{displayTime(inputs.end_timestamp)}</span>
       </div>
       <div className='dashboard-header-right'>
-        <WalletSummary refreshVersion={walletRefreshVersion} />
         <div className='dashboard-query-actions'>
           <Button
             icon={<SlidersHorizontal size={15} />}

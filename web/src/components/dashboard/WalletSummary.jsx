@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Wallet, ChevronDown, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { ChevronDown, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { UserContext } from '../../context/User';
 import { API } from '../../helpers/apiCore';
 import { renderQuota } from '../../helpers/render';
@@ -105,7 +105,9 @@ function WalletSummaryContent({ userId, refreshVersion }) {
             : estimate.kind === 'idle'
               ? t('暂无净消耗')
               : t('暂不估算');
-  const amount = data ? renderQuota(data.balance) : '—';
+  const amount = data
+    ? renderQuota(data.balance, 2, { groupThousands: true })
+    : '—';
   const reason =
     data?.usage.status === 'not_recorded'
       ? t('消费日志未启用，暂不估算。')
@@ -113,32 +115,42 @@ function WalletSummaryContent({ userId, refreshVersion }) {
         ? t('加载失败，请重试')
         : null;
   return (
-    <div className='dashboard-wallet' ref={root}>
-      <div className='dashboard-wallet-strip'>
-        <button
-          ref={trigger}
-          type='button'
-          className='dashboard-wallet-trigger'
-          aria-expanded={open}
-          aria-controls='dashboard-wallet-details'
-          onClick={() => setOpen((v) => !v)}
-        >
-          <Wallet size={15} aria-hidden='true' />
-          <span>{t('余额')}</span>
-          <strong aria-busy={state.loading}>{amount}</strong>
-          <ChevronDown size={12} aria-hidden='true' />
-        </button>
-        <span
-          className={`dashboard-wallet-status is-${data?.balance <= 0 ? 'empty' : estimate.kind}`}
-        >
-          <i aria-hidden='true' />
-          {status}
+    <div
+      className='dashboard-wallet dashboard-stat-card'
+      ref={root}
+      aria-busy={state.loading}
+    >
+      <button
+        ref={trigger}
+        type='button'
+        className='dashboard-wallet-trigger'
+        aria-expanded={open}
+        aria-controls={open ? 'dashboard-wallet-details' : undefined}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className='dashboard-stat-heading'>
+          {t('预计可用')}
+          <ChevronDown size={16} aria-hidden='true' />
         </span>
-        <Link className='dashboard-wallet-topup' to='/console/topup'>
-          {t('充值')}
-          <ArrowUpRight size={13} aria-hidden='true' />
-        </Link>
-      </div>
+        <span
+          className={`dashboard-stat-value dashboard-wallet-status is-${data?.balance <= 0 ? 'empty' : estimate.kind}`}
+        >
+          {!state.loading &&
+          !state.error &&
+          data?.balance > 0 &&
+          ['normal', 'low'].includes(estimate.kind)
+            ? new Intl.NumberFormat(i18n.language, {
+                style: 'unit',
+                unit: 'day',
+                unitDisplay: 'long',
+                maximumFractionDigits: 1,
+              }).format(Math.floor(estimate.days * 10) / 10)
+            : status}
+        </span>
+        <span className='dashboard-wallet-current'>
+          {t('当前余额')} <strong aria-busy={state.loading}>{amount}</strong>
+        </span>
+      </button>
       {open && (
         <section
           id='dashboard-wallet-details'
@@ -195,6 +207,9 @@ function WalletSummaryContent({ userId, refreshVersion }) {
               {t('钱包余额为零不影响仍有额度的套餐。')}
             </p>
           )}
+          <Link className='dashboard-wallet-topup' to='/console/topup'>
+            {t('充值')} <ArrowUpRight size={13} aria-hidden='true' />
+          </Link>
           {data && (
             <time
               className='dashboard-wallet-time'

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import WalletSummary from './WalletSummary';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@douyinfe/semi-ui';
 import { CircleDollarSign, Activity, Hash, Gauge, Coins } from 'lucide-react';
@@ -30,6 +31,7 @@ const icons = {
   'unit-price': Coins,
 };
 export default function StatsCards({
+  walletRefreshVersion,
   groupedStatsData,
   loading,
   quotaError,
@@ -84,6 +86,7 @@ export default function StatsCards({
           </section>
         );
       })}
+      <WalletSummary refreshVersion={walletRefreshVersion} />
     </div>
   );
 }

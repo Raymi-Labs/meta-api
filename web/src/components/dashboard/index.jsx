@@ -242,7 +242,6 @@ const DashboardContent = () => {
         onRangeChange={dashboardData.selectRangePreset}
         showSearchModal={dashboardData.showSearchModal}
         refresh={handleRefresh}
-        walletRefreshVersion={walletRefreshVersion}
         loading={dashboardData.loading}
         t={dashboardData.t}
       />
@@ -273,6 +272,7 @@ const DashboardContent = () => {
         </div>
       )}
       <StatsCards
+        walletRefreshVersion={walletRefreshVersion}
         groupedStatsData={groupedStatsData}
         loading={dashboardData.loading}
         quotaError={dashboardData.quotaError}

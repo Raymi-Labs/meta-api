@@ -18,7 +18,7 @@ try {
   );
   await fs.writeFile(
     path.join(fixture, 'main.jsx'),
-    `import React from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route}from'react-router-dom';import{UserContext}from'../src/context/User';import Header from'../src/components/dashboard/DashboardHeader';import{useTranslation}from'react-i18next';import{initialLocaleReady}from'../src/i18n/i18n';import{changeSiteLanguage}from'../src/helpers/siteLanguage';import'../src/index.css';import'../src/components/dashboard/dashboardOverview.css';await initialLocaleReady;function App(){const{t}=useTranslation();const[id,setId]=React.useState(1);const[version,refresh]=React.useState(0);const[range,setRange]=React.useState('custom');window.walletAccount=setId;window.walletRefresh=()=>refresh(v=>v+1);window.walletLanguage=changeSiteLanguage;return <UserContext.Provider value={[{user:{id,role:1}},()=>{}]}><MemoryRouter initialEntries={['/console']}><Routes><Route path='/console' element={<div className='dashboard-overview'><Header t={t} inputs={{start_timestamp:'2026-11-06T04:22:00',end_timestamp:'2026-11-07T04:22:00'}} rangePreset={range} onRangeChange={setRange} refresh={window.walletRefresh} walletRefreshVersion={version} showSearchModal={()=>{}}/><div style={{padding:24,background:'var(--semi-color-bg-0)',border:'1px solid #ddd',borderRadius:10}}>使用统计 · 本地合成数据</div></div>}/><Route path='/console/topup' element={<p data-wallet-destination>钱包管理</p>}/></Routes></MemoryRouter></UserContext.Provider>}createRoot(document.getElementById('root')).render(<App/>);`,
+    `import React from 'react';import{createRoot}from'react-dom/client';import{MemoryRouter,Routes,Route}from'react-router-dom';import{UserContext}from'../src/context/User';import StatsCards from'../src/components/dashboard/StatsCards';import Header from'../src/components/dashboard/DashboardHeader';import{useTranslation}from'react-i18next';import{initialLocaleReady}from'../src/i18n/i18n';import{changeSiteLanguage}from'../src/helpers/siteLanguage';import'../src/index.css';import'../src/components/dashboard/dashboardOverview.css';await initialLocaleReady;function App(){const{t}=useTranslation();const[id,setId]=React.useState(1);const[version,refresh]=React.useState(0);const[range,setRange]=React.useState('custom');window.walletAccount=setId;window.walletRefresh=()=>refresh(v=>v+1);window.walletLanguage=changeSiteLanguage;return <UserContext.Provider value={[{user:{id,role:1}},()=>{}]}><MemoryRouter initialEntries={['/console']}><Routes><Route path='/console' element={<div className='dashboard-overview'><Header t={t} inputs={{start_timestamp:'2026-11-06T04:22:00',end_timestamp:'2026-11-07T04:22:00'}} rangePreset={range} onRangeChange={setRange} refresh={window.walletRefresh} showSearchModal={()=>{}}/><StatsCards walletRefreshVersion={version} groupedStatsData={['spend','requests','tokens','cache','unit-price'].map(id=>({id,title:id,value:'0'}))}/></div>}/><Route path='/console/topup' element={<p data-wallet-destination>钱包管理</p>}/></Routes></MemoryRouter></UserContext.Provider>}createRoot(document.getElementById('root')).render(<App/>);`,
   );
   const { config } = await loadConfigFromFile(
     { command: 'serve', mode: 'development' },
@@ -100,19 +100,22 @@ try {
       .querySelector('.dashboard-wallet-trigger strong')
       ?.textContent.includes('125.55'),
   );
-  const pos = await page.evaluate(() => {
-    const b = document
-        .querySelector('.dashboard-wallet')
-        .getBoundingClientRect(),
-      a = document
-        .querySelector('.dashboard-query-actions')
-        .getBoundingClientRect();
-    return { gap: a.left - b.right, y: a.top - b.top };
-  });
-  assert(
-    pos.gap >= 10 && pos.gap <= 14 && Math.abs(pos.y) < 8,
-    'wallet sits next to controls',
-  );
+  const placement = () =>
+    page.evaluate(() => {
+      const box = (selector) =>
+        document.querySelector(selector).getBoundingClientRect();
+      const date = box('.dashboard-applied-range'),
+        actions = box('.dashboard-query-actions');
+      const wallet = box('.dashboard-wallet'),
+        third = box('.dashboard-stat-card:nth-child(3)'),
+        fifth = box('.dashboard-stat-card:nth-child(5)');
+      return {
+        sameRow: date.top < actions.bottom && actions.top < date.bottom,
+        sixth: wallet.left === third.left && wallet.top === fifth.top,
+        first: wallet.top < box('.dashboard-stat-card').top,
+      };
+    });
+  assert((await placement()).sixth);
   await page.screenshot({ path: path.join(output, 'desktop.png') });
   const before = calls;
   await page.select('.dashboard-range-select', '7d');
@@ -127,8 +130,10 @@ try {
   await page.screenshot({ path: path.join(output, 'detail.png') });
   await page.keyboard.press('Escape');
   assert.equal(await page.$('#dashboard-wallet-details'), null);
-  for (const width of [1280, 1024, 768, 390]) {
+  for (const width of [1280, 1024, 768, 320, 390]) {
     await page.setViewport({ width, height: 900 });
+    const layout = await placement();
+    assert(layout.sameRow && (width >= 768 ? layout.sixth : layout.first));
     assert(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -145,7 +150,8 @@ try {
   await page.waitForFunction(() =>
     document
       .querySelector('.dashboard-wallet-trigger')
-      ?.textContent.includes('Balance'),
+      ?.textContent.toLowerCase()
+      .includes('balance'),
   );
   assert(
     await page.evaluate(
@@ -235,6 +241,7 @@ try {
       await page.$eval('.dashboard-wallet-trigger strong', (e) => e.textContent)
     ).includes('197.53'),
   );
+  await page.click('.dashboard-wallet-trigger');
   await page.click('.dashboard-wallet-topup');
   await page.screenshot({ path: path.join(output, 'after-link.png') });
 
@@ -245,7 +252,7 @@ try {
       passed: true,
       output,
       checks:
-        'adjacent-controls,independent-date-range,popover,Escape,5-widths,mobile-dark,English,partial-failure,retry,new-user,identity-and-late-response,wallet-destination',
+        'desktop-sixth,mobile-first,same-row-controls,independent-date-range,popover,Escape,6-widths,mobile-dark,English,partial-failure,retry,new-user,identity-and-late-response,wallet-destination',
     }),
   );
 } finally {

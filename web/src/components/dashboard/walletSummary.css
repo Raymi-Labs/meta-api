@@ -9,50 +9,27 @@
   position: relative;
   min-width: 0;
 }
-.dashboard-wallet-strip {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid #dce6f2;
-  border-radius: 8px;
-  background: linear-gradient(110deg, #eff7fc, #f5f8ff);
-}
 .dashboard-wallet-trigger {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: start;
   border: 0;
-  background: none;
-  padding: 7px 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
   cursor: pointer;
-  color: #66768a;
+}
+.dashboard-wallet-trigger > .dashboard-stat-value {
+  display: block;
+}
+.dashboard-wallet-current {
+  color: var(--overview-muted);
   font-size: 12px;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-.dashboard-wallet-trigger strong {
-  color: #253950;
-  font-size: 15px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.dashboard-wallet-status {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding-left: 12px;
-  border-left: 1px solid #d9e1ec;
-  color: #7c899a;
-  font-size: 11px;
-  line-height: 1.5;
-}
-.dashboard-wallet-status i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
+.dashboard-wallet-current strong {
+  font-weight: 500;
 }
 .dashboard-wallet-status.is-low {
   color: #9e6c12;
@@ -143,19 +120,6 @@
   font-size: 10px;
   color: var(--overview-muted);
 }
-html.dark .dashboard-wallet-strip {
-  background: linear-gradient(110deg, #202d38, #242c3c);
-  border-color: #354153;
-}
-html.dark .dashboard-wallet-trigger {
-  color: #abb9cb;
-}
-html.dark .dashboard-wallet-trigger strong {
-  color: #e1eaf6;
-}
-html.dark .dashboard-wallet-status {
-  border-color: #455064;
-}
 html.dark .dashboard-wallet-status.is-low {
   color: #e6b768;
 }
@@ -170,24 +134,8 @@ html.dark .dashboard-wallet-topup {
   color: #8ebcff;
 }
 @media (max-width: 767px) {
-  .dashboard-header-right {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .dashboard-header-right > .dashboard-wallet {
-    order: 2;
-    width: 100%;
-  }
-  .dashboard-wallet-strip {
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 6px 10px;
-  }
-  .dashboard-wallet-status {
-    flex: 1;
+  .dashboard-wallet {
+    order: -1;
   }
   .dashboard-wallet-popover {
     left: 0;
