@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -39,7 +40,7 @@ func stopReasonClaude2OpenAI(reason string) string {
 
 var claudeMessageIDPattern = regexp.MustCompile(`^msg_[A-Za-z0-9_-]{1,96}$`)
 
-func observeClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, response *dto.ClaudeResponse) {
+func observeClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, response *dto.ClaudeResponse) bool {
 	id := response.Id
 	if response.Type == "message_start" && response.Message != nil {
 		id = response.Message.Id
@@ -55,7 +56,7 @@ func observeClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, response 
 		}
 	}
 	if !strings.EqualFold(stop, "refusal") {
-		return
+		return false
 	}
 	common.SetContextKey(c, constant.ContextKeyAdminRejectReason, "claude_stop_reason=refusal")
 	if details != nil {
@@ -64,6 +65,7 @@ func observeClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, response 
 			info.ClaudeRefusalCategory = details.Category
 		}
 	}
+	return true
 }
 
 func supportsClaudeAdaptiveReasoning(model string) bool {
@@ -722,6 +724,66 @@ type ClaudeResponseInfo struct {
 	PendingFinish        *dto.ChatCompletionsStreamResponse
 	ToolCallStreamStates map[int]*ToolCallStreamState
 	NextToolCallIndex    int
+	refusalHold          bool
+	refusalHoldStart     time.Time
+	heldWrites           []func() error
+}
+
+func (info *ClaudeResponseInfo) StartRefusalHold() {
+	info.refusalHold = true
+	info.refusalHoldStart = time.Now()
+}
+
+func (info *ClaudeResponseInfo) ReleaseHeld() error {
+	if !info.refusalHold || len(info.heldWrites) == 0 {
+		return nil
+	}
+	for _, write := range info.heldWrites {
+		if err := write(); err != nil {
+			return err
+		}
+	}
+	info.refusalHold = false
+	info.heldWrites = nil
+	return nil
+}
+
+var claudeRefusalHoldLimit = 30 * time.Second
+
+func CanRetryClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo) bool {
+	return common.GetContextKeyBool(c, constant.ContextKeyClaudeRefusalRetryAllowed) && helper.CanRetryHeaderTimeoutBeforeOutput(c, info.RelayFormat)
+}
+
+func newClaudeRefusalError() *types.NewAPIError {
+	return types.NewErrorWithStatusCode(errors.New("upstream Claude model refused the request"), types.ErrorCodeClaudeRefusal, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
+}
+
+func isHoldableClaudeFrame(response *dto.ClaudeResponse) bool {
+	if response == nil {
+		return false
+	}
+	switch response.Type {
+	case "message_start", "ping", "content_block_stop":
+		return true
+	case "content_block_start":
+		if response.ContentBlock != nil {
+			if response.ContentBlock.Type == "text" || response.ContentBlock.Type == "thinking" {
+				t := response.ContentBlock.GetText()
+				th := ""
+				if response.ContentBlock.Thinking != nil {
+					th = *response.ContentBlock.Thinking
+				}
+				return strings.TrimSpace(t) == "" && strings.TrimSpace(th) == ""
+			}
+		}
+	case "content_block_delta":
+		if response.Delta != nil {
+			return (response.Delta.Text == nil || strings.TrimSpace(*response.Delta.Text) == "") &&
+				(response.Delta.Thinking == nil || strings.TrimSpace(*response.Delta.Thinking) == "") ||
+				response.Delta.Signature != ""
+		}
+	}
+	return false
 }
 
 type ToolCallStreamState struct {
@@ -864,7 +926,24 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	if claudeInfo.RequireMessageStop && claudeResponse.Type == "message_stop" && !claudeInfo.MessageStarted {
 		return types.NewErrorWithStatusCode(errors.New("Claude stream message_stop preceded message_start"), types.ErrorCodeBadResponseBody, http.StatusBadGateway, types.ErrOptionWithSkipRetry())
 	}
-	observeClaudeRefusal(c, info, &claudeResponse)
+
+	isRefusal := observeClaudeRefusal(c, info, &claudeResponse)
+	if claudeInfo.refusalHold && isRefusal {
+		if time.Since(claudeInfo.refusalHoldStart) > claudeRefusalHoldLimit {
+			claudeInfo.refusalHold = false
+			if err := claudeInfo.ReleaseHeld(); err != nil {
+				return newClaudeDeliveryError(c, err)
+			}
+		} else if CanRetryClaudeRefusal(c, info) {
+			return newClaudeRefusalError()
+		} else {
+			claudeInfo.refusalHold = false
+			if err := claudeInfo.ReleaseHeld(); err != nil {
+				return newClaudeDeliveryError(c, err)
+			}
+		}
+	}
+
 	if isEffectiveClaudeStreamOutput(&claudeResponse) {
 		info.SetFirstEffectiveOutputTime()
 	}
@@ -890,7 +969,18 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 				data = patchClaudeMessageDeltaUsageData(data, buildMessageDeltaPatchUsage(&claudeResponse, claudeInfo))
 			}
 		}
-		if err := helper.ClaudeChunkData(c, claudeResponse, data); err != nil {
+
+		writeOut := func() error {
+			return helper.ClaudeChunkData(c, claudeResponse, data)
+		}
+		if claudeInfo.refusalHold && isHoldableClaudeFrame(&claudeResponse) {
+			claudeInfo.heldWrites = append(claudeInfo.heldWrites, writeOut)
+			return nil
+		}
+		if err := claudeInfo.ReleaseHeld(); err != nil {
+			return newClaudeDeliveryError(c, err)
+		}
+		if err := writeOut(); err != nil {
 			return newClaudeDeliveryError(c, err)
 		}
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
@@ -915,8 +1005,17 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 			return nil
 		}
 
-		err = helper.ObjectData(c, response)
-		if err != nil {
+		writeOut := func() error {
+			return helper.ObjectData(c, response)
+		}
+		if claudeInfo.refusalHold && isHoldableClaudeFrame(&claudeResponse) {
+			claudeInfo.heldWrites = append(claudeInfo.heldWrites, writeOut)
+			return nil
+		}
+		if err := claudeInfo.ReleaseHeld(); err != nil {
+			return newClaudeDeliveryError(c, err)
+		}
+		if err := writeOut(); err != nil {
 			return newClaudeDeliveryError(c, err)
 		}
 	}
@@ -965,6 +1064,9 @@ func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.
 		ResponseText:       strings.Builder{},
 		Usage:              &dto.Usage{},
 		RequireMessageStop: true,
+	}
+	if CanRetryClaudeRefusal(c, info) {
+		claudeInfo.StartRefusalHold()
 	}
 	var err *types.NewAPIError
 	helper.StreamScannerHandler(c, resp, info, func(data string) bool {
@@ -1048,7 +1150,10 @@ func HandleClaudeResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		logClaudeUpstreamError("non_stream", claudeError, statusCode)
 		return types.WithClaudeError(*claudeError, statusCode)
 	}
-	observeClaudeRefusal(c, info, &claudeResponse)
+	isRefusal := observeClaudeRefusal(c, info, &claudeResponse)
+	if isRefusal && CanRetryClaudeRefusal(c, info) {
+		return newClaudeRefusalError()
+	}
 	info.ObserveResponseModel(claudeResponse.Model)
 	if claudeInfo.Usage == nil {
 		claudeInfo.Usage = &dto.Usage{}

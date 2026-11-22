@@ -82,6 +82,7 @@ const (
 	ErrorCodeModelNotFound          ErrorCode = "model_not_found"
 	ErrorCodeNoAvailableChannel     ErrorCode = "no_available_channel"
 	ErrorCodePromptBlocked          ErrorCode = "prompt_blocked"
+	ErrorCodeClaudeRefusal          ErrorCode = "claude_refusal"
 
 	// sql error
 	ErrorCodeQueryDataError  ErrorCode = "query_data_error"

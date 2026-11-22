@@ -301,6 +301,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	// lastRelayError 保留最近一次上游错误，避免重试找不到新渠道时用 (retry) 错误覆盖原始错误。
 	var lastRelayError *types.NewAPIError
 	vmCapacityRetries := 0
+	refusalRetries := 0
 	safeFailureRetry := false
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
@@ -361,6 +362,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 				grouphealth.ResetAttempt(relayInfo)
 				healthWriter.beginAttempt()
 			}
+
+			// Pre-authorize Claude refusal retry for this attempt
+			common.SetContextKey(c, constant.ContextKeyClaudeRefusalRetryAllowed, claudeRefusalRetryAllowed(c, relayInfo, retryParam, channel, refusalRetries))
 
 			switch relayFormat {
 			case types.RelayFormatOpenAIRealtime:
@@ -442,6 +446,21 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			}
 			continue
 		}
+
+		// Claude refusal retry: switch to another channel with the same model
+		if newAPIError.GetErrorCode() == types.ErrorCodeClaudeRefusal {
+			service.AppendClaudeRefusalAttempt(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, "", channel.GetAutoBan()), newAPIError, relayInfo.ClaudeMessageID, relayInfo.ClaudeRefusalCategory)
+			common.SetContextKey(c, constant.ContextKeyAdminRejectReason, "")
+			relayInfo.ResetFirstResponseTime()
+			retryParam.ExcludeChannels = appendUniqueInt(retryParam.ExcludeChannels, channel.Id)
+			refusalRetries++
+			retryParam.ResetRetryNextTry()
+			safeFailureRetry = true
+			lastRelayError = newAPIError
+			logger.LogInfo(c, fmt.Sprintf("Claude refusal; retrying same model on another channel: channel=%d refusal_retries=%d/%d", channel.Id, refusalRetries, common.RetryTimes))
+			continue
+		}
+
 		newAPIError = service.NormalizeContentSafetyPolicyError(newAPIError)
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		newAPIError = service.NormalizeResponsesConversationStateError(newAPIError)

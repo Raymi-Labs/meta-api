@@ -225,3 +225,15 @@ func StartStreamKeepAlive(c *gin.Context, interval time.Duration, format types.R
 	}()
 	return w.stop
 }
+
+// StreamPing writes a ping event to the client, updating the keepalive evidence if available.
+func StreamPing(c *gin.Context, format types.RelayFormat) error {
+	if w, ok := c.Writer.(*streamKeepAliveWriter); ok {
+		return w.ping()
+	}
+	if format == types.RelayFormatClaude {
+		return ClaudePingData(c)
+	}
+	return PingData(c)
+}
+

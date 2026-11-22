@@ -103,6 +103,25 @@ func AppendRequestFailureAttempt(c *gin.Context, channel types.ChannelError, err
 	c.Set(requestFailureAttemptsKey, list)
 }
 
+// AppendClaudeRefusalAttempt records a Claude refusal retry attempt with additional metadata.
+func AppendClaudeRefusalAttempt(c *gin.Context, channel types.ChannelError, err *types.NewAPIError, messageID, category string) {
+	AppendRequestFailureAttempt(c, channel, err)
+	if !constant.ErrorLogEnabled || c == nil || err == nil {
+		return
+	}
+	value, _ := c.Get(requestFailureAttemptsKey)
+	if attempts, ok := value.([]map[string]interface{}); ok && len(attempts) > 0 {
+		attempt := attempts[len(attempts)-1]
+		attempt["retry_kind"] = "claude_refusal"
+		if messageID != "" {
+			attempt["claude_message_id"] = messageID
+		}
+		if category != "" {
+			attempt["claude_refusal_category"] = category
+		}
+	}
+}
+
 // Reuse the existing admin-only attempt list for same-channel adjustments too.
 func AppendRequestAdjustmentAttempt(c *gin.Context, channel types.ChannelError, err *types.NewAPIError, adjustment string) {
 	AppendRequestFailureAttempt(c, channel, err)

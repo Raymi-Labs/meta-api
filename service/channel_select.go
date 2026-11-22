@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -413,6 +414,19 @@ func buildBaseChannelSelectionFilters(param *RetryParam) []model.ChannelFilter {
 	}
 	filters = append(filters, inputCapabilityFilter(param.Ctx, param.ModelName))
 	return filters
+}
+
+// HasAlternateChannelCandidate checks if there are any other channels available
+// after excluding the given channelID. This is a read-only probe that does not
+// advance group state or consume retry budget.
+func HasAlternateChannelCandidate(param *RetryParam, channelID int) bool {
+	if param == nil {
+		return false
+	}
+	probe := *param
+	probe.ExcludeChannels = append(slices.Clone(param.ExcludeChannels), channelID)
+	channels, _, err := CacheGetSatisfiedChannelCandidates(&probe)
+	return err == nil && len(channels) > 0
 }
 
 // buildClientFilter creates a ChannelFilter that checks client restriction settings.

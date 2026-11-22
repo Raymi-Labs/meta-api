@@ -51,6 +51,8 @@ func ClassifyFailure(err *NewAPIError) FailureClass {
 		case ErrorCodeGetChannelFailed, ErrorCodeChannelNoAvailableKey, ErrorCodeChannelInvalidKey,
 			ErrorCodeChannelModelMappedError, ErrorCodeChannelParamOverrideInvalid, ErrorCodeChannelHeaderOverrideInvalid:
 			return FailureService
+		case ErrorCodeClaudeRefusal:
+			return FailureUserRequest
 		}
 	}
 	// Structured upstream parameter errors are narrower than generic 400/404.

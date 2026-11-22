@@ -821,6 +821,11 @@ func (info *RelayInfo) SetFirstResponseTime() {
 	}
 }
 
+func (info *RelayInfo) ResetFirstResponseTime() {
+	info.isFirstResponse = true
+	info.FirstResponseTime = info.StartTime.Add(-time.Second)
+}
+
 func (info *RelayInfo) SetFirstEffectiveOutputTime() {
 	if info == nil {
 		return

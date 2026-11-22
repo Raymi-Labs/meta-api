@@ -14,7 +14,6 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -162,12 +161,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			status.SetEndReason(relaycommon.StreamEndReasonTimeout, nil)
 			return
 		case <-ping:
-			var err error
-			if info != nil && info.RelayFormat == types.RelayFormatClaude {
-				err = ClaudePingData(c)
-			} else {
-				err = PingData(c)
-			}
+			err := StreamPing(c, info.RelayFormat)
 			if err != nil {
 				status.SetEndReason(relaycommon.StreamEndReasonPingFail, err)
 				return

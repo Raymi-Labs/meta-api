@@ -34,7 +34,20 @@ func canReplayConversationBeforeOutput(c *gin.Context, info *relaycommon.RelayIn
 	}
 	// Opaque pass-through bodies and channel parameter overrides may add provider
 	// state or server tools absent from the parsed client request.
-	if model_setting.GetGlobalSettings().PassThroughRequestEnabled || (info.ChannelMeta != nil && (info.ChannelSetting.PassThroughBodyEnabled || len(info.ParamOverride) > 0)) {
+	channelPassThrough := model_setting.GetGlobalSettings().PassThroughRequestEnabled
+	hasParamOverride := false
+	if info.ChannelMeta != nil {
+		channelPassThrough = channelPassThrough || info.ChannelSetting.PassThroughBodyEnabled
+		hasParamOverride = len(info.ParamOverride) > 0
+	}
+	if !canReplayConversationRequest(c, info, channelPassThrough, hasParamOverride) {
+		return false
+	}
+	return helper.CanRetryHeaderTimeoutBeforeOutput(c, info.RelayFormat)
+}
+
+func canReplayConversationRequest(c *gin.Context, info *relaycommon.RelayInfo, channelPassThrough, hasParamOverride bool) bool {
+	if channelPassThrough || hasParamOverride {
 		return false
 	}
 	// Only self-contained conversational requests. Task creation, Responses state,
@@ -70,7 +83,7 @@ func canReplayConversationBeforeOutput(c *gin.Context, info *relaycommon.RelayIn
 	default:
 		return false
 	}
-	return helper.CanRetryHeaderTimeoutBeforeOutput(c, info.RelayFormat)
+	return true
 }
 
 func hasTimeoutReplayState(data []byte) bool {

@@ -271,6 +271,9 @@ func awsStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, a *Adaptor) (
 		ResponseText: strings.Builder{},
 		Usage:        &dto.Usage{},
 	}
+	if claude.CanRetryClaudeRefusal(c, info) {
+		claudeInfo.StartRefusalHold()
+	}
 
 	for event := range stream.Events() {
 		switch v := event.(type) {
