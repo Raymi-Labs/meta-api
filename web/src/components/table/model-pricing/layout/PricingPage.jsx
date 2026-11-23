@@ -99,9 +99,18 @@ const PricingPage = () => {
             </span>
           </div>
         </div>
-        <Link to='/docs/api-examples'>
-          {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
-        </Link>
+        <div className='pricing-catalog-links'>
+          <a
+            href='https://metarhub.com/models'
+            target='_blank'
+            rel='noopener noreferrer'
+          >
+            {pricingData.t('社区模型榜')} <span aria-hidden='true'>↗</span>
+          </a>
+          <Link to='/docs/api-examples'>
+            {pricingData.t('API 文档')} <span aria-hidden='true'>↗</span>
+          </Link>
+        </div>
       </header>
       <PricingTopSection {...allProps} sidebarProps={allProps} />
       <PricingCatalogFilters {...allProps} />

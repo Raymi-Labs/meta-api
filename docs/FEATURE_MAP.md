@@ -1,5 +1,7 @@
 # 功能地图
 
+[模型广场](../web/src/components/table/model-pricing/layout/PricingPage.jsx)标题区可直接打开[社区模型榜](https://metarhub.com/models)；评分由社区维护，本站不采集或重算。[入口取舍](../.agents/notes/implemented/simplification/2026-11-23-community-model-ranking.md)。
+
 模型广场按当前账号角色和可用分组裁剪模型、厂商、协议和价格。公共性能接口在聚合前筛选数据库与内存样本，管理仪表盘通过独立鉴权入口读取全站汇总。Gemini 文本分片、推理档位、GPT-6.2 参数、任务终态、渠道错误和密钥撤销的入口与适配取舍见[上游修复记录](../.agents/notes/implemented/bug-fix/2026-11-21-upstream-relay-corrections.md)。
 
 故障回退与健康证据闭环（2026-11-20）：[安全回退](../controller/relay_header_timeout.go)复用授权选路和保活交付保护，超时/明确Claude兼容拒绝受实际尝试数RetryTimes+1约束；[健康快照](../pkg/route_insight/run.go)合并短期突发、24小时真实调用聚合与精确型号测试，测试独立来源不改真实成功率；智能路由页显示测试成功/次数。原分组展示补样保持，禁止用其他型号测试恢复路由；无新探测调度、不改令牌。见[决策](../.agents/notes/implemented/bug-fix/2026-11-20-routing-health-recovery.md)。

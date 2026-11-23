@@ -43,6 +43,7 @@ html.dark .pricing-filter-drawer {
 }
 .pricing-catalog-heading {
   justify-content: space-between;
+  flex-wrap: wrap;
   margin-bottom: 18px;
 }
 .pricing-catalog-title {
@@ -62,10 +63,19 @@ html.dark .pricing-filter-drawer {
   font-size: 12px;
   font-weight: 400;
 }
-.pricing-catalog-heading > a {
+.pricing-catalog-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.pricing-catalog-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
   color: var(--catalog-accent);
   font-size: 13px;
-  flex-shrink: 0;
 }
 .pricing-catalog-toolbar {
   display: flex;
@@ -607,7 +617,7 @@ html.dark .pricing-model-card:hover {
     align-items: flex-start;
     gap: 10px;
   }
-  .pricing-catalog-heading > a {
+  .pricing-catalog-links a {
     font-size: 12px;
   }
   .pricing-catalog-search {

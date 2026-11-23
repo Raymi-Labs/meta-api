@@ -243,6 +243,21 @@ try {
   await page.goto(`${base}/${name}.html`, { waitUntil: 'networkidle0' });
   await count(27);
   await page.waitForSelector('.pricing-model-card[aria-label]');
+  const rankingLink =
+    '.pricing-catalog-heading a[href="https://metarhub.com/models"]';
+  assert.equal(await page.$$eval(rankingLink, (links) => links.length), 1);
+  assert.ok(
+    await page.$eval(
+      rankingLink,
+      (link) =>
+        link.target === '_blank' &&
+        link.relList.contains('noopener') &&
+        link.relList.contains('noreferrer'),
+    ),
+  );
+  await page.waitForSelector(
+    '.pricing-catalog-heading a[href="/docs/api-examples"]',
+  );
   const assertCleanTags = async (selector) => {
     const text = await page.$eval(selector, (e) => e.textContent);
     for (const tag of [
@@ -429,12 +444,17 @@ try {
         fs.readFileSync(path.join(root, 'src/i18n/locales', file)),
       ).translation;
     await page.select('[data-site-language]', lang);
+    assert.ok(t['社区模型榜']);
     await page.waitForFunction(
-      (label) =>
+      (label, ranking, selector) =>
         document.querySelector('[data-facet="function"] .catalog-facet-title')
-          ?.textContent === label,
+          ?.textContent === label &&
+        document.querySelector(selector)?.firstChild.textContent.trim() ===
+          ranking,
       {},
       t['功能'],
+      t['社区模型榜'],
+      rankingLink,
     );
   }
   await page.select('[data-site-language]', 'zh-CN');
@@ -447,6 +467,12 @@ try {
   await page.screenshot({ path: path.join(artifacts, 'catalog-dark.png') });
   await page.evaluate(() => document.body.removeAttribute('theme-mode'));
   await page.setViewport({ width: 390, height: 844 });
+  assert.ok(
+    await page.$eval(rankingLink, (link) => {
+      const { left, right, height } = link.getBoundingClientRect();
+      return left >= 0 && right <= innerWidth && height >= 24;
+    }),
+  );
   await clickText('更多筛选');
   await page.waitForSelector('.pricing-filter-drawer .catalog-facets-drawer');
   await assertCleanTags('.catalog-facets-drawer [data-facet="tag"]');
