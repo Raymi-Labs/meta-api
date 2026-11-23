@@ -244,3 +244,61 @@ func TestToolStreamIntegrityNativeAndOpenAIEnds(t *testing.T) {
 		}
 	}
 }
+
+func TestToolOnlyChatStreamWithRefusalHold(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		fragments []string
+		wantArgs  string
+	}{
+		{"fragmented", []string{`{"city":"New`, " ", `York"}`}, `{"city":"New York"}`},
+		{"parameterless", nil, "{}"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest("POST", "/v1/chat/completions", nil)
+			info := &relaycommon.RelayInfo{RelayFormat: types.RelayFormatOpenAI, ShouldIncludeUsage: true, ChannelMeta: &relaycommon.ChannelMeta{}}
+			state := &ClaudeResponseInfo{RequireMessageStop: true}
+			state.StartRefusalHold()
+			send := func(event string) {
+				t.Helper()
+				require.Nil(t, HandleStreamResponseData(c, info, state, event))
+			}
+			send(usageStart)
+			require.Empty(t, w.Body.String())
+			send(`{"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"call_1","name":"lookup","input":{}}}`)
+			for _, fragment := range tc.fragments {
+				part, err := common.Marshal(fragment)
+				require.NoError(t, err)
+				send(`{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":` + string(part) + `}}`)
+				require.Contains(t, w.Body.String(), `"arguments":`+string(part))
+			}
+			send(`{"type":"content_block_stop","index":1}`)
+			require.Contains(t, w.Body.String(), `"id":"call_1"`)
+			send(`{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":5}}`)
+			require.NotContains(t, w.Body.String(), `"finish_reason":"tool_calls"`)
+			send(usageStop)
+			require.NoError(t, HandleStreamFinalResponse(c, info, state))
+
+			calls := make(map[int]*dto.ToolCallResponse)
+			out := w.Body.String()
+			for _, line := range strings.Split(out, "\n") {
+				if !strings.HasPrefix(line, "data: {") {
+					continue
+				}
+				var chunk dto.ChatCompletionsStreamResponse
+				require.NoError(t, common.UnmarshalJsonStr(strings.TrimPrefix(line, "data: "), &chunk))
+				appendToolStreamChunk(t, calls, &chunk)
+			}
+			require.Len(t, calls, 1)
+			require.NotNil(t, calls[0])
+			require.Equal(t, "call_1", calls[0].ID)
+			require.Equal(t, "lookup", calls[0].Function.Name)
+			require.Equal(t, tc.wantArgs, calls[0].Function.Arguments)
+			require.Equal(t, 1, strings.Count(out, `"finish_reason":"tool_calls"`))
+			require.Contains(t, out, `"completion_tokens":5`)
+			require.True(t, strings.HasSuffix(strings.TrimSpace(out), "data: [DONE]"))
+		})
+	}
+}

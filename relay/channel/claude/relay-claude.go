@@ -735,16 +735,14 @@ func (info *ClaudeResponseInfo) StartRefusalHold() {
 }
 
 func (info *ClaudeResponseInfo) ReleaseHeld() error {
-	if !info.refusalHold || len(info.heldWrites) == 0 {
-		return nil
-	}
-	for _, write := range info.heldWrites {
+	info.refusalHold = false
+	writes := info.heldWrites
+	info.heldWrites = nil
+	for _, write := range writes {
 		if err := write(); err != nil {
 			return err
 		}
 	}
-	info.refusalHold = false
-	info.heldWrites = nil
 	return nil
 }
 
@@ -778,9 +776,14 @@ func isHoldableClaudeFrame(response *dto.ClaudeResponse) bool {
 		}
 	case "content_block_delta":
 		if response.Delta != nil {
-			return (response.Delta.Text == nil || strings.TrimSpace(*response.Delta.Text) == "") &&
-				(response.Delta.Thinking == nil || strings.TrimSpace(*response.Delta.Thinking) == "") ||
-				response.Delta.Signature != ""
+			switch response.Delta.Type {
+			case "text_delta":
+				return strings.TrimSpace(response.Delta.GetText()) == ""
+			case "thinking_delta":
+				return response.Delta.Thinking == nil || strings.TrimSpace(*response.Delta.Thinking) == ""
+			case "signature_delta":
+				return true
+			}
 		}
 	}
 	return false
@@ -928,16 +931,14 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	}
 
 	isRefusal := observeClaudeRefusal(c, info, &claudeResponse)
-	if claudeInfo.refusalHold && isRefusal {
-		if time.Since(claudeInfo.refusalHoldStart) > claudeRefusalHoldLimit {
-			claudeInfo.refusalHold = false
-			if err := claudeInfo.ReleaseHeld(); err != nil {
-				return newClaudeDeliveryError(c, err)
-			}
-		} else if CanRetryClaudeRefusal(c, info) {
+	if claudeInfo.refusalHold {
+		inWindow := time.Since(claudeInfo.refusalHoldStart) <= claudeRefusalHoldLimit
+		if isRefusal && inWindow && CanRetryClaudeRefusal(c, info) {
 			return newClaudeRefusalError()
-		} else {
-			claudeInfo.refusalHold = false
+		}
+		// Decide on the upstream event: a tool_use start can produce no Chat
+		// chunk yet, and the Chat finish is deferred until message_stop.
+		if isRefusal || !inWindow || !isHoldableClaudeFrame(&claudeResponse) {
 			if err := claudeInfo.ReleaseHeld(); err != nil {
 				return newClaudeDeliveryError(c, err)
 			}
@@ -973,12 +974,9 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		writeOut := func() error {
 			return helper.ClaudeChunkData(c, claudeResponse, data)
 		}
-		if claudeInfo.refusalHold && isHoldableClaudeFrame(&claudeResponse) {
+		if claudeInfo.refusalHold {
 			claudeInfo.heldWrites = append(claudeInfo.heldWrites, writeOut)
 			return nil
-		}
-		if err := claudeInfo.ReleaseHeld(); err != nil {
-			return newClaudeDeliveryError(c, err)
 		}
 		if err := writeOut(); err != nil {
 			return newClaudeDeliveryError(c, err)
@@ -1008,12 +1006,9 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		writeOut := func() error {
 			return helper.ObjectData(c, response)
 		}
-		if claudeInfo.refusalHold && isHoldableClaudeFrame(&claudeResponse) {
+		if claudeInfo.refusalHold {
 			claudeInfo.heldWrites = append(claudeInfo.heldWrites, writeOut)
 			return nil
-		}
-		if err := claudeInfo.ReleaseHeld(); err != nil {
-			return newClaudeDeliveryError(c, err)
 		}
 		if err := writeOut(); err != nil {
 			return newClaudeDeliveryError(c, err)

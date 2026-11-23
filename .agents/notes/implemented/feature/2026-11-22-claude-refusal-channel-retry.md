@@ -39,7 +39,8 @@ Claude 可在 HTTP 200 或正常结束的事件流中报告拒答，客户端可
   - `content_block_stop`（内容块结束）
   - 空 delta（无实际内容变化）
   - thinking signature（思考标记）
-- 遇到实际内容帧（文本、图像等）立即释放所有暂存帧并正常输出
+- 收到工具块开始、实际内容或正常结束事件时，先按顺序释放暂存帧，再转换当前事件。Chat 转换器在首个参数分片或无参工具块结束时才产生工具增量，若按“当前是否生成了 Chat chunk”决定释放时机，纯工具回复可能只剩结束原因和用量。
+- 每次收到上游事件时检查 30 秒窗口；超时后的首个事件释放暂存队列。
 - 识别拒答时：
   - 若在暂存窗口内且允许重试 → 丢弃所有暂存帧，换渠道重试
   - 若已超时或不允许重试 → 释放暂存帧，正常返回拒答
@@ -187,6 +188,7 @@ if newAPIError.GetErrorCode() == types.ErrorCodeClaudeRefusal {
 
 ### 集成测试
 
+- `TestToolOnlyChatStreamWithRefusalHold` 逐帧验证分片参数与无参调用的工具名、ID、参数、用量和结束顺序。
 - `TestRelayClaudeRefusalRetrySuccess`: 第一渠道拒答，第二渠道成功
   - Claude Messages 非流式/流式
   - OpenAI Chat Completions 非流式/流式

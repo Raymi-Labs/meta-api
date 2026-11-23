@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
@@ -213,5 +214,30 @@ func TestClaudeStreamRealHTTPClosesAfterTerminal(t *testing.T) {
 				t.Fatal("upstream worker did not exit")
 			}
 		})
+	}
+}
+
+func TestClaudeRefusalHoldExpiryDeliversPrefix(t *testing.T) {
+	for _, format := range []types.RelayFormat{types.RelayFormatClaude, types.RelayFormatOpenAI} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+		common.SetContextKey(c, constant.ContextKeyClaudeRefusalRetryAllowed, true)
+		info := &relaycommon.RelayInfo{RelayFormat: format, ChannelMeta: &relaycommon.ChannelMeta{}}
+		state := &ClaudeResponseInfo{RequireMessageStop: true}
+		state.StartRefusalHold()
+		require.Nil(t, HandleStreamResponseData(c, info, state, usageStart))
+		require.Empty(t, w.Body.String())
+
+		state.refusalHoldStart = time.Now().Add(-claudeRefusalHoldLimit)
+		require.Nil(t, HandleStreamResponseData(c, info, state, `{"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":1}}`))
+		require.Contains(t, w.Body.String(), "msg_fixture")
+		require.Nil(t, HandleStreamResponseData(c, info, state, usageStop))
+		require.NoError(t, HandleStreamFinalResponse(c, info, state))
+		if format == types.RelayFormatOpenAI {
+			require.Contains(t, w.Body.String(), `"finish_reason":"content_filter"`)
+		} else {
+			require.Contains(t, w.Body.String(), `"stop_reason":"refusal"`)
+		}
 	}
 }
