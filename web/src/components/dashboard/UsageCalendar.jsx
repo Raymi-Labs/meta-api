@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, Info, RotateCw } from 'lucide-react';
 import { API } from '../../helpers/apiCore';
 import './usageCalendar.css';
-import { activityWeeks, validActivity } from '../../helpers/usageCalendar';
+import { activityWeeks, calendarMonthLabels, validActivity } from '../../helpers/usageCalendar';
 
 export default function UsageCalendar({ t, userId, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -60,6 +60,7 @@ export default function UsageCalendar({ t, userId, defaultOpen = false }) {
   }, [defaultOpen, load]);
   const data = state.data;
   const weeks = data ? activityWeeks(data.days) : [];
+  const monthLabels = calendarMonthLabels(weeks);
   const peak = data ? Math.max(1, ...data.days.map((d) => d.requests)) : 1;
   const level = (count) =>
     count === 0
@@ -142,13 +143,7 @@ export default function UsageCalendar({ t, userId, defaultOpen = false }) {
                   {weeks.map((week, i) => (
                     <div className='usage-calendar-week' key={i}>
                       <span className='usage-calendar-month'>
-                        {week
-                          .find(
-                            (d) =>
-                              d &&
-                              (d.date.endsWith('-01') || d === data.days[0]),
-                          )
-                          ?.date.slice(0, 7) || ''}
+                        {monthLabels[i]}
                       </span>
                       {week.map((day, j) =>
                         day ? (

@@ -59,3 +59,15 @@ export function validActivity(data) {
     Math.abs(data.weekly_average - (total * 7) / 365) < 1e-8
   );
 }
+
+export function calendarMonthLabels(weeks) {
+  const labels = weeks.map((week) =>
+    week.find((day) => day?.date.endsWith('-01'))?.date.slice(0, 7) || '',
+  );
+  // Week columns are 18px apart; a YYYY-MM label needs three columns.
+  // Only show the partial first month if it fits before the first month boundary.
+  if (weeks.length && !labels.slice(0, 3).some(Boolean)) {
+    labels[0] = weeks[0].find(Boolean)?.date.slice(0, 7) || '';
+  }
+  return labels;
+}

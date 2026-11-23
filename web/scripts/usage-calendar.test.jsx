@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { activityWeeks, validActivity } from '../src/helpers/usageCalendar';
+import { activityWeeks, calendarMonthLabels, validActivity } from '../src/helpers/usageCalendar';
 const days = Array.from({ length: 365 }, (_, i) => ({
   date: new Date(Date.UTC(2023, 2, 14 + i)).toISOString().slice(0, 10),
   requests: i > 361 ? 1 : 0,
@@ -48,4 +48,24 @@ test('a retained empty window is valid without invented streaks', () => {
       weekly_average: 0,
     }),
   );
+});
+
+test('partial first month cannot overlap or replace the next month label', () => {
+  for (let start = 1; start <= 30; start++) {
+    const window = Array.from({ length: 365 }, (_, i) => ({
+      date: new Date(Date.UTC(2025, 10, start + i)).toISOString().slice(0, 10),
+    }));
+    const weeks = activityWeeks(window);
+    const labels = calendarMonthLabels(weeks);
+    let previous = -3;
+    labels.forEach((label, i) => {
+      if (!label) return;
+      assert(i - previous >= 3);
+      previous = i;
+    });
+    for (const day of window.filter(d => d.date.endsWith('-01'))) {
+      assert.equal(labels[weeks.findIndex(w => w.includes(day))], day.date.slice(0, 7));
+    }
+    if (start === 2) assert.equal(labels[0], '2025-11');
+  }
 });
