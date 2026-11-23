@@ -456,6 +456,7 @@
     "API 密钥无效、过期或已停用": "La chiave API non è valida, è scaduta o è disabilitata",
     "API 密钥（测试环境）": "Chiave API (ambiente di test)",
     "API 密钥（生产环境）": "Chiave API (ambiente di produzione)",
+    "社区模型榜": "Classifica dei modelli della community",
     "API 文档": "Documentazione dell'API",
     "API 服务的实际可用范围、计量方式及使用限制仍以平台规则和双方书面约定为准。": "L'effettiva portata disponibile, i metodi di misurazione e le limitazioni di utilizzo del servizio API restano soggetti alle regole della piattaforma e all'accordo scritto tra le parti.",
     "API 直连": "Connessione diretta API",

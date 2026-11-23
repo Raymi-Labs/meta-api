@@ -281,6 +281,7 @@
     "API 密钥无效、过期或已停用": "La clave API no es válida, ha caducado o está deshabilitada",
     "API 密钥（测试环境）": "Clave API (entorno de prueba)",
     "API 密钥（生产环境）": "Clave API (entorno de producción)",
+    "社区模型榜": "Ranking de modelos de la comunidad",
     "API 文档": "Documentación API",
     "API 服务的实际可用范围、计量方式及使用限制仍以平台规则和双方书面约定为准。": "El alcance real disponible, los métodos de medición y las restricciones de uso del servicio API aún están sujetos a las reglas de la plataforma y al acuerdo escrito entre las partes.",
     "API 直连": "Conexión directa API",

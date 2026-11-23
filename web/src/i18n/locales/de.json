@@ -281,6 +281,7 @@
     "API 密钥无效、过期或已停用": "Der API-Schlüssel ist ungültig, abgelaufen oder deaktiviert",
     "API 密钥（测试环境）": "API-Schlüssel (Testumgebung)",
     "API 密钥（生产环境）": "API-Schlüssel (Produktionsumgebung)",
+    "社区模型榜": "Modellranking der Community",
     "API 文档": "API-Dokumentation",
     "API 服务的实际可用范围、计量方式及使用限制仍以平台规则和双方书面约定为准。": "Der tatsächlich verfügbare Umfang, die Messmethoden und die Nutzungsbeschränkungen des API-Dienstes unterliegen weiterhin den Plattformregeln und der schriftlichen Vereinbarung zwischen den Parteien.",
     "API 直连": "API-Direktverbindung",
