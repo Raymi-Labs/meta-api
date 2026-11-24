@@ -65,20 +65,34 @@ async function loadKeyCount(signal) {
 }
 
 async function loadChatModel(signal) {
-  const [names, catalog] = await Promise.all([
+  const [names, catalog, usage] = await Promise.all([
     readData('/api/user/models', signal),
     readData('/api/pricing', signal),
+    readData('/api/perf-metrics/summary?hours=24', signal).catch(() => null),
   ]);
   if (!Array.isArray(names) || !Array.isArray(catalog))
     throw new Error('Invalid model data');
   const allowed = new Set(names);
-  return (
-    catalog.find(
+  const eligible = catalog
+    .filter(
       (entry) =>
         allowed.has(entry.model_name) &&
         canOfferTextProtocolExamples(entry) &&
         entry.supported_endpoint_types.includes('openai'),
-    )?.model_name || ''
+    )
+    .map((entry) => entry.model_name);
+  if (!eligible.length) return '';
+
+  const counts = new Map();
+  for (const row of Array.isArray(usage?.models) ? usage.models : []) {
+    if (Number.isSafeInteger(row?.request_count) && row.request_count > 0)
+      counts.set(row.model_name, row.request_count);
+  }
+  const preferred = eligible.includes('gpt-6-sol') ? 'gpt-6-sol' : eligible[0];
+  return eligible.reduce(
+    (best, name) =>
+      (counts.get(name) || 0) > (counts.get(best) || 0) ? name : best,
+    preferred,
   );
 }
 

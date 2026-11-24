@@ -38,7 +38,14 @@ try {
   };
   let keys = 0,
     keyError = false,
-    models = ['image-only', 'chat-example'];
+    models = ['image-only', 'glm-5', 'gpt-6-sol'];
+  let counts = [
+    { model_name: 'private-chat', request_count: 1000 },
+    { model_name: 'image-only', request_count: 900 },
+    { model_name: 'glm-5', request_count: 8 },
+    { model_name: 'gpt-6-sol', request_count: 12 },
+  ];
+  let failUsage = false;
   const requests = [];
   const errors = [];
   page.on('pageerror', (err) => errors.push(err.message));
@@ -47,7 +54,10 @@ try {
     const url = new URL(req.url());
     if (url.origin !== new URL(origin).origin) return req.abort();
     if (!url.pathname.startsWith('/api/')) return req.continue();
-    requests.push(url.pathname);
+    requests.push(
+      url.pathname +
+        (url.pathname === '/api/perf-metrics/summary' ? url.search : ''),
+    );
     const fixtures = {
       '/api/status': status,
       '/api/home_page_content': '',
@@ -55,13 +65,15 @@ try {
       '/api/user/self': user,
       '/api/token/': { total: keys, items: [] },
       '/api/user/models': models,
+      '/api/perf-metrics/summary': { models: counts },
       '/api/pricing': [
         { model_name: 'private-chat', supported_endpoint_types: ['openai'] },
         {
           model_name: 'image-only',
           supported_endpoint_types: ['image-generation'],
         },
-        { model_name: 'chat-example', supported_endpoint_types: ['openai'] },
+        { model_name: 'glm-5', supported_endpoint_types: ['openai'] },
+        { model_name: 'gpt-6-sol', supported_endpoint_types: ['openai'] },
       ],
       '/api/uptime/status': [
         {
@@ -76,7 +88,9 @@ try {
     await req.respond({
       contentType: 'application/json',
       body: JSON.stringify({
-        success: !(keyError && url.pathname === '/api/token/'),
+        success:
+          !(keyError && url.pathname === '/api/token/') &&
+          !(failUsage && url.pathname === '/api/perf-metrics/summary'),
         data: fixtures[url.pathname] ?? [],
       }),
     });
@@ -109,7 +123,48 @@ try {
   assert.match(await text(), /正常 1\/2/);
   const code = await page.$eval(guide + ' code', (el) => el.textContent);
   assert.match(code, /https:\/\/gateway.example\/v1\/chat\/completions/);
-  assert.match(code, /"model": "chat-example"/);
+  assert.match(code, /"model": "gpt-6-sol"/);
+  assert.ok(requests.includes('/api/perf-metrics/summary?hours=24'));
+  const checkAfterRefresh = async (model) => {
+    const refresh =
+      '.dashboard-query-actions button[aria-label="刷新"]:not(.semi-button-loading)';
+    await page.waitForSelector(refresh, { visible: true });
+    await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          new URL(res.url()).pathname === '/api/perf-metrics/summary' &&
+          res.ok(),
+      ),
+      page.click(refresh),
+    ]);
+    await page.waitForFunction(
+      (selector, expected) => {
+        const panel = document.querySelector(selector);
+        return (
+          panel
+            ?.querySelector('code')
+            ?.textContent.includes('"model": "' + expected + '"') &&
+          [...panel.querySelectorAll('dd')].some(
+            (el) => el.textContent === expected,
+          )
+        );
+      },
+      {},
+      guide,
+      model,
+    );
+  };
+  counts[2].request_count = 15;
+  await checkAfterRefresh('glm-5');
+  counts[3].request_count = 15;
+  await checkAfterRefresh('gpt-6-sol');
+  counts = [];
+  await checkAfterRefresh('gpt-6-sol');
+  failUsage = true;
+  await checkAfterRefresh('gpt-6-sol');
+  models = ['glm-5', 'image-only'];
+  await checkAfterRefresh('glm-5');
+  failUsage = false;
   assert.match(code, /Bearer \$META_API_KEY/);
   assert.equal(await page.$('.newapi-onboarding-layer'), null);
   assert.equal(await page.$(guide + ' a[href="/console/channel"]'), null);
