@@ -163,6 +163,8 @@ func describeRequestFailure(err *types.NewAPIError, upstream bool) (category, re
 		return "model_unavailable", "当前令牌可用范围内未找到该模型", "请使用同一令牌查询 /v1/models，核对模型名称、令牌分组及渠道限制。"
 	case upstream && err.StatusCode == http.StatusBadRequest && upstreamError.Type == "invalid_request_error" && IsDeepSeekMissingThinkingHistory(upstreamError.Message):
 		return "thinking_history", "对话历史缺少思考内容", "请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。"
+	case upstream && isChatBudgetRejection(err):
+		return "output_budget_parameter", "上游拒绝了 max_tokens 参数", "此模型在 Chat Completions 中使用 max_completion_tokens。若已使用该字段，请携带请求 ID 联系管理员核对渠道。"
 	case upstream && isReasoningEffortRejection(err):
 		return "reasoning_parameter", "上游不支持当前思考强度", "请调整思考强度；若仍失败，请携带请求 ID 联系管理员核对渠道思考参数适配。"
 	case upstream && err.StatusCode == http.StatusBadRequest && rejectedSampling != "":

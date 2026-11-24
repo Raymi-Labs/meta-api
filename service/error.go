@@ -193,6 +193,7 @@ func buildUpstreamDiagnostics(resp *http.Response, responseLength int64) *types.
 		diagnostics.RequestIDHeader = header
 	}
 	if resp.Request != nil {
+		diagnostics.OutputBudget, _ = resp.Request.Context().Value(chatBudgetDiagnosticKey{}).(*types.ChatOutputBudget)
 		diagnostics.RequestLength = resp.Request.ContentLength
 		if resp.Request.URL != nil {
 			diagnostics.URL = sanitizeUpstreamURL(resp.Request.URL)

@@ -167,3 +167,23 @@ export const getCancellationDetails = (other, t) => {
   }
   return details;
 };
+
+export const getChatBudgetDetails = (other, t) => {
+  const budget = other?.admin_info?.upstream?.output_budget;
+  if (!budget) return [];
+  const fields = (keys) =>
+    Array.isArray(keys) ? keys.join(', ') || t('无') : t('未知');
+  return [
+    {
+      key: t('输出预算字段（入站 → 出站）'),
+      value: [
+        fields(budget.inbound_fields) + ' → ' + fields(budget.outbound_fields),
+        budget.protocol,
+        budget.model,
+        budget.passthrough && t('透传请求体'),
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    },
+  ];
+};

@@ -110,20 +110,30 @@ type NewAPIError struct {
 	ResponseHeaderTimeout bool `json:"-"`
 }
 
+// ChatOutputBudget contains only field names. A nil list means it could not be observed.
+type ChatOutputBudget struct {
+	InboundFields  []string `json:"inbound_fields"`
+	OutboundFields []string `json:"outbound_fields"`
+	Protocol       string   `json:"protocol"`
+	Model          string   `json:"model,omitempty"`
+	Passthrough    bool     `json:"passthrough"`
+}
+
 type UpstreamDiagnostics struct {
-	RequestID         string `json:"request_id,omitempty"`
-	RequestIDHeader   string `json:"request_id_header,omitempty"`
-	RequestLength     int64  `json:"request_length,omitempty"`
-	ResponseLength    int64  `json:"response_length,omitempty"`
-	URL               string `json:"url,omitempty"`
-	ConfiguredBaseURL string `json:"configured_base_url,omitempty"`
+	OutputBudget      *ChatOutputBudget `json:"output_budget,omitempty"`
+	RequestID         string            `json:"request_id,omitempty"`
+	RequestIDHeader   string            `json:"request_id_header,omitempty"`
+	RequestLength     int64             `json:"request_length,omitempty"`
+	ResponseLength    int64             `json:"response_length,omitempty"`
+	URL               string            `json:"url,omitempty"`
+	ConfiguredBaseURL string            `json:"configured_base_url,omitempty"`
 }
 
 func (d *UpstreamDiagnostics) IsZero() bool {
 	if d == nil {
 		return true
 	}
-	return d.RequestID == "" &&
+	return d.OutputBudget == nil && d.RequestID == "" &&
 		d.RequestIDHeader == "" &&
 		d.RequestLength <= 0 &&
 		d.ResponseLength <= 0 &&

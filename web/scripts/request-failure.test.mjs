@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   getRequestFailureDetails,
   buildRequestFailureReport,
+  getChatBudgetDetails,
 } from '../src/helpers/requestFailure.js';
 const t = (text) => text;
 test('HTTP 200 stream failure includes diagnosis without private diagnostics', () => {
@@ -46,6 +47,10 @@ test('legacy errors are readable and successful usage has no failure panel', () 
 
 test('model, sampling and thinking diagnoses translate without exposing adjustment attempts', () => {
   const diagnoses = [
+    [
+      '上游拒绝了 max_tokens 参数',
+      '此模型在 Chat Completions 中使用 max_completion_tokens。若已使用该字段，请携带请求 ID 联系管理员核对渠道。',
+    ],
     [
       '对话历史缺少思考内容',
       '请完整回传历史思考内容，或新建会话、关闭思考模式后重试；若仍失败，请携带请求 ID 联系管理员。',
@@ -275,4 +280,34 @@ test('delivery diagnostics keep unknown separate from zero and stay out of repor
   assert.ok(
     !getCancellationDetails(other, t).some((d) => d.key === '已写出有效内容帧'),
   );
+});
+
+test('chat budget evidence is admin-only, distinguish absent fields and unknown fields', () => {
+  const other = {
+    request_failure: true,
+    admin_info: {
+      upstream: {
+        output_budget: {
+          protocol: 'chat/completions',
+          model: 'channel-private-model',
+          inbound_fields: [],
+          outbound_fields: null,
+          passthrough: false,
+        },
+      },
+    },
+  };
+  assert.deepEqual(getChatBudgetDetails({}, t), []);
+  assert.equal(
+    getChatBudgetDetails(other, t)[0].value,
+    '无 → 未知 · chat/completions · channel-private-model',
+  );
+  other.admin_info.upstream.output_budget.passthrough = true;
+  assert.match(getChatBudgetDetails(other, t)[0].value, /透传请求体/);
+  const log = { type: 5, created_at: 100, other: JSON.stringify(other) };
+  for (const admin of [false, true])
+    assert.doesNotMatch(
+      buildRequestFailureReport(log, t, admin),
+      /channel-private-model|output_budget/,
+    );
 });

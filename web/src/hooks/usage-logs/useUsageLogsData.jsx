@@ -46,6 +46,7 @@ import {
 import {
   getRequestFailureDetails,
   getCancellationDetails,
+  getChatBudgetDetails,
 } from '../../helpers/requestFailure';
 import { getResponseModelInfo } from '../../helpers/responseModel';
 import {
@@ -710,6 +711,7 @@ export const useLogsData = (admin = isAdmin()) => {
         expandDataLocal.push(...getRequestFailureDetails(logs[i], t));
         if (isAdminUser) {
           expandDataLocal.push(...getCancellationDetails(other, t));
+          expandDataLocal.push(...getChatBudgetDetails(other, t));
         }
         if (isAdminUser && other?.admin_info?.error_message) {
           expandDataLocal.push({
@@ -717,12 +719,18 @@ export const useLogsData = (admin = isAdmin()) => {
             value: other.admin_info.error_message,
           });
         }
-        if (isAdminUser && other?.admin_info?.attempts?.length) {
-          expandDataLocal.push({
-            key: t('渠道尝试记录'),
-            value: JSON.stringify(other.admin_info.attempts, null, 2),
-          });
-        }
+      }
+      const attempts = other?.admin_info?.attempts;
+      if (
+        isAdminUser &&
+        attempts?.length &&
+        (logs[i].type === 5 ||
+          attempts.some((entry) => entry.upstream?.output_budget))
+      ) {
+        expandDataLocal.push({
+          key: t('渠道尝试记录'),
+          value: JSON.stringify(attempts, null, 2),
+        });
       }
       const fallback = other?.claude_fallback;
       if (fallback) {

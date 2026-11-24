@@ -89,3 +89,11 @@ Chat Completions 和独立 Messages 请求等待上游响应头超时时，如�
 - EOF 前没有对应正常终态时，记录为未完整返回；保留部分输出，禁止自动重放已经输出内容或执行工具的请求。记录本站请求 ID、HTTP 状态及流内错误码，不记录密钥或附件正文。
 
 上述脚本约定需在调用方实现；服务器更新不等于已修改外部脚本。
+
+## Chat 输出预算字段
+
+原生 Chat Completions 请求经共用 HTTP 转发到 Chat Completions 或 Responses，且上游返回 4xx/5xx 时，管理员可在使用日志展开“输出预算字段（入站 → 出站）”。每条渠道尝试的证据位于 `admin_info.attempts[].upstream.output_budget`，最终错误位于 `admin_info.upstream.output_budget`。
+
+`inbound_fields` 和 `outbound_fields` 只包含实际出现的顶层预算字段名；空数组表示均未提供，null 表示未观测到。模型取自出站请求体；`passthrough` 表示实际使用原始请求体。对照字段名可以判断下一跳收到旧参数的说法是否与网关准备的出站内容一致。确切的 Chat 400 拒绝会提示使用 `max_completion_tokens`，用户可凭请求 ID 联系管理员。普通用户报告仅含处理建议。
+
+历史日志、重定向、连接失败和 HTTP 200 中的流内错误没有这份 HTTP 拒绝快照。

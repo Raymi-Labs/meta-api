@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -338,6 +339,13 @@ func attachNewAPIRequestIDHeader(header http.Header, info *common.RelayInfo) {
 }
 
 func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
+	// Keep a view of the serialized payload before the transport advances its reader.
+	// Tier validation checks the same bytes. Inspect fields only on HTTP rejection.
+	var wire []byte
+	if buf, ok := requestBody.(*bytes.Buffer); ok {
+		wire = buf.Bytes()
+	}
+	originalReader := requestBody
 	var tierErr error
 	requestBody, tierErr = common.ValidatePaidServiceTierBody(info, requestBody)
 	if tierErr != nil {
@@ -371,6 +379,9 @@ func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 	resp, err := doRequest(c, req, info)
 	if err != nil {
 		return nil, fmt.Errorf("do request failed: %w", err)
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		service.RecordChatBudgetRejection(c, req, resp, originalReader, wire)
 	}
 	return resp, nil
 }

@@ -302,10 +302,18 @@ func CreateBodyStorageFromReader(reader io.Reader, contentLength int64, maxBytes
 	return storage, nil
 }
 
+type readerOnly struct{ io.Reader }
+
 // ReaderOnly wraps an io.Reader to hide io.Closer, preventing http.NewRequest
 // from type-asserting io.ReadCloser and closing the underlying BodyStorage.
 func ReaderOnly(r io.Reader) io.Reader {
-	return struct{ io.Reader }{r}
+	return readerOnly{r}
+}
+
+// IsOriginalBodyReader reports whether the outbound reader forwards this exact cached request.
+func IsOriginalBodyReader(reader io.Reader, storage BodyStorage) bool {
+	wrapped, ok := reader.(readerOnly)
+	return ok && storage != nil && wrapped.Reader == storage
 }
 
 // CleanupOldCacheFiles 清理旧的缓存文件（用于启动时清理残留）
