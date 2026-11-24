@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Automatic wallet top-up",
+    "余额低于": "Balance below",
+    "等待支付授权": "Awaiting payment authorization",
+    "等待余额恢复至阈值": "Waiting for the balance to reach the threshold",
+    "已暂停，请重新授权": "Paused. Authorize again to resume.",
+    "前往 Stripe 授权": "Authorize with Stripe",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "When your balance falls below {{threshold}}, you authorize Stripe to charge {{charge}} and add {{credit}} to your wallet each time.",
+    "可随时停用。已经开始的充值仍会完成。": "You can turn this off at any time. A top-up already in progress will still complete.",
     "单次支付": "Pay once",
     "自动续费": "Auto-renew",
     "到期停止续费": "Stop renewal at period end",

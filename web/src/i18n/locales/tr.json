@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Otomatik cüzdan yüklemesi",
+    "余额低于": "Bakiye şu tutarın altına düştüğünde",
+    "等待支付授权": "Ödeme onayı bekleniyor",
+    "等待余额恢复至阈值": "Bakiyenin eşiğe ulaşması bekleniyor",
+    "已暂停，请重新授权": "Duraklatıldı. Yeniden yetkilendirin.",
+    "前往 Stripe 授权": "Stripe ile yetkilendir",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Bakiyeniz {{threshold}} altına düştüğünde Stripe’ın her seferinde {{charge}} tahsil ederek cüzdana {{credit}} eklemesine izin verirsiniz.",
+    "可随时停用。已经开始的充值仍会完成。": "İstediğiniz zaman kapatabilirsiniz. Başlamış bir yükleme tamamlanır.",
     "单次支付": "Tek seferlik ödeme",
     "自动续费": "Otomatik yenileme",
     "到期停止续费": "Dönem sonunda yenilemeyi durdur",

@@ -229,6 +229,15 @@ func StripeWebhook(c *gin.Context) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
+		if strings.HasPrefix(event.GetObjectValue("client_reference_id"), "autoset_") {
+			if err := autoTopupCheckout(c.Request.Context(), event); err != nil {
+				log.Printf("Stripe 自动充值授权回调失败 event=%s", event.ID)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			c.Status(http.StatusOK)
+			return
+		}
 		if !isStripeTopUpEnabled() && !strings.HasPrefix(event.GetObjectValue("client_reference_id"), "sub_") {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
@@ -238,6 +247,10 @@ func StripeWebhook(c *gin.Context) {
 	switch event.Type {
 	case stripe.EventTypeCheckoutSessionCompleted, stripe.EventTypeCheckoutSessionAsyncPaymentSucceeded:
 		processingErr = sessionCompleted(event, c.ClientIP())
+	case stripe.EventTypeSetupIntentSucceeded:
+		processingErr = autoTopupSetupSucceeded(event)
+	case stripe.EventTypePaymentIntentSucceeded:
+		processingErr = autoTopupPaymentSucceeded(event)
 	case stripe.EventTypeInvoicePaid:
 		processingErr = stripeInvoicePaid(c.Request.Context(), event)
 	case stripe.EventTypeCustomerSubscriptionDeleted, stripe.EventTypeCustomerSubscriptionUpdated:
@@ -531,17 +544,7 @@ func resolveStripePriceCurrency(ctx context.Context) (string, error) {
 }
 
 func stripeAmountFromMinorUnits(amount int64, currency string) float64 {
-	if amount <= 0 || model.NormalizePaymentCurrency(currency) == "" {
-		return 0
-	}
-	switch strings.ToUpper(currency) {
-	case "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF":
-		return float64(amount)
-	case "BHD", "JOD", "KWD", "OMR", "TND":
-		return float64(amount) / 1000
-	default:
-		return float64(amount) / 100
-	}
+	return model.StripeMoneyFromMinor(amount, currency)
 }
 
 func stripePaymentDetailsFromCheckout(checkout stripeCheckoutSessionEvent) (model.TopUpPaymentDetails, error) {

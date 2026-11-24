@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import WalletAutoTopup from './WalletAutoTopup';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Avatar,
@@ -105,6 +106,7 @@ const RechargeCard = ({
   const hasSelectedPayMethod = Boolean(payWay);
   const topupContent = (
     <Space vertical style={{ width: '100%' }}>
+      <WalletAutoTopup t={t} enabled={enableStripeTopUp} />
       <div className='wallet-recharge-form'>
         {/* 在线充值表单 */}
         {statusLoading ? (

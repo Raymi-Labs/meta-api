@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Guthaben automatisch aufladen",
+    "余额低于": "Guthaben unter",
+    "等待支付授权": "Zahlungsfreigabe ausstehend",
+    "等待余额恢复至阈值": "Warten, bis das Guthaben den Schwellenwert erreicht",
+    "已暂停，请重新授权": "Pausiert. Bitte erneut autorisieren.",
+    "前往 Stripe 授权": "Mit Stripe autorisieren",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Sinkt dein Guthaben unter {{threshold}}, darf Stripe jeweils {{charge}} abbuchen und deinem Konto {{credit}} gutschreiben.",
+    "可随时停用。已经开始的充值仍会完成。": "Jederzeit deaktivierbar. Bereits begonnene Aufladungen werden abgeschlossen.",
     "单次支付": "Einmalig bezahlen",
     "自动续费": "Automatisch verlängern",
     "到期停止续费": "Verlängerung zum Laufzeitende stoppen",

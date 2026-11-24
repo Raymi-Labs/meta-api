@@ -222,7 +222,7 @@ export default function SettingsPaymentGateway(props) {
           />
           <Banner
             type='warning'
-            description='checkout.session.completed · checkout.session.async_payment_succeeded · checkout.session.expired · invoice.paid · customer.subscription.updated · customer.subscription.deleted'
+            description='checkout.session.completed · checkout.session.async_payment_succeeded · checkout.session.expired · setup_intent.succeeded · payment_intent.succeeded · invoice.paid · customer.subscription.updated · customer.subscription.deleted'
           />
           <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}>
             <Col xs={24} md={12}>

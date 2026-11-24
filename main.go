@@ -142,6 +142,7 @@ func main() {
 	}
 
 	// Subscription quota reset task (daily/weekly/monthly/custom)
+	controller.StartWalletAutoTopupTask()
 	service.StartSubscriptionQuotaResetTask()
 	service.StartChannelPeriodQuotaResetTask()
 	// 邀请充值返佣结算任务（T+1 日批）。

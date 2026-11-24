@@ -248,8 +248,8 @@
         "/docs/guides/compatibility",
         "/docs/account/payments"
       ],
-      "status": "unsupported",
-      "reason": "未确认本站提供银行卡托管及保存付款方式管理；仅说明实际开放的充值收银台流程。"
+      "status": "adapted",
+      "reason": "钱包使用 Stripe 托管的授权页设置自动充值付款方式，可在钱包停用授权。"
     },
     {
       "title": "自动充值",
@@ -262,8 +262,8 @@
         "/docs/account/payments",
         "/docs/account/notifications"
       ],
-      "status": "unsupported",
-      "reason": "本站未确认具备余额不足自动扣款充值契约，替代方式是主动充值与额度提醒。"
+      "status": "adapted",
+      "reason": "钱包可设置低余额阈值和每次充值量，通过 Stripe 授权离线扣款。"
     },
     {
       "title": "消息中心",

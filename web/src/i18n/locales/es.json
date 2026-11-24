@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Recarga automática del saldo",
+    "余额低于": "Saldo inferior a",
+    "等待支付授权": "Pendiente de autorización",
+    "等待余额恢复至阈值": "Esperando a que el saldo alcance el umbral",
+    "已暂停，请重新授权": "En pausa. Vuelve a autorizar el pago.",
+    "前往 Stripe 授权": "Autorizar con Stripe",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Cuando tu saldo baje de {{threshold}}, autorizas a Stripe a cobrar {{charge}} y abonar {{credit}} en cada recarga.",
+    "可随时停用。已经开始的充值仍会完成。": "Puedes desactivarlo en cualquier momento. Una recarga en curso se completará.",
     "单次支付": "Pago único",
     "自动续费": "Renovación automática",
     "到期停止续费": "Cancelar la renovación al finalizar el período",

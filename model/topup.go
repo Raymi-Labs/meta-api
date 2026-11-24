@@ -320,6 +320,9 @@ func RechargeWithPaymentDetails(referenceId string, customerId string, callerIp 
 		applyTopUpPaymentDetails(topUp, details)
 		if topUp.Status == common.TopUpStatusSuccess {
 			alreadyCompleted = true
+			if err := finishWalletAutoTopupTx(tx, topUp); err != nil {
+				return err
+			}
 			return tx.Save(topUp).Error
 		}
 		if topUp.Status != common.TopUpStatusPending {
@@ -353,6 +356,9 @@ func RechargeWithPaymentDetails(referenceId string, customerId string, callerIp 
 			return err
 		}
 
+		if err := finishWalletAutoTopupTx(tx, topUp); err != nil {
+			return err
+		}
 		return EnqueueInviteCommissionFromTopUpTx(tx, topUp)
 	})
 

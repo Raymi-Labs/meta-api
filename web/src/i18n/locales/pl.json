@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Automatyczne doładowanie portfela",
+    "余额低于": "Saldo poniżej",
+    "等待支付授权": "Oczekiwanie na autoryzację płatności",
+    "等待余额恢复至阈值": "Oczekiwanie na powrót salda do progu",
+    "已暂停，请重新授权": "Wstrzymano. Ponownie autoryzuj płatność.",
+    "前往 Stripe 授权": "Autoryzuj w Stripe",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Gdy saldo spadnie poniżej {{threshold}}, upoważniasz Stripe do pobierania za każdym razem {{charge}} i zasilania portfela kwotą {{credit}}.",
+    "可随时停用。已经开始的充值仍会完成。": "Możesz wyłączyć tę funkcję w każdej chwili. Rozpoczęte doładowanie zostanie zakończone.",
     "单次支付": "Płatność jednorazowa",
     "自动续费": "Automatyczne odnawianie",
     "到期停止续费": "Zatrzymaj odnawianie po tym okresie",

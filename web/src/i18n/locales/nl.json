@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Portemonnee automatisch opwaarderen",
+    "余额低于": "Saldo lager dan",
+    "等待支付授权": "Wachten op betaalmachtiging",
+    "等待余额恢复至阈值": "Wachten tot het saldo de drempel bereikt",
+    "已暂停，请重新授权": "Gepauzeerd. Geef opnieuw toestemming.",
+    "前往 Stripe 授权": "Machtigen via Stripe",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Als je saldo onder {{threshold}} komt, machtig je Stripe om telkens {{charge}} af te schrijven en {{credit}} bij te schrijven.",
+    "可随时停用。已经开始的充值仍会完成。": "Je kunt dit op elk moment uitzetten. Een lopende opwaardering wordt afgerond.",
     "单次支付": "Eenmalig betalen",
     "自动续费": "Automatisch verlengen",
     "到期停止续费": "Verlenging stoppen na deze periode",

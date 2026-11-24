@@ -1,5 +1,13 @@
 {
   "translation": {
+    "余额自动充值": "Tự động nạp ví",
+    "余额低于": "Số dư dưới",
+    "等待支付授权": "Đang chờ ủy quyền thanh toán",
+    "等待余额恢复至阈值": "Đang chờ số dư trở lại ngưỡng",
+    "已暂停，请重新授权": "Đã tạm dừng. Vui lòng ủy quyền lại.",
+    "前往 Stripe 授权": "Ủy quyền qua Stripe",
+    "余额低于 {{threshold}} 时，授权 Stripe 每次扣款 {{charge}}，到账 {{credit}}。": "Khi số dư thấp hơn {{threshold}}, bạn cho phép Stripe thu {{charge}} và cộng {{credit}} vào ví cho mỗi lần nạp.",
+    "可随时停用。已经开始的充值仍会完成。": "Bạn có thể tắt bất kỳ lúc nào. Lần nạp đang xử lý sẽ được hoàn tất.",
     "单次支付": "Thanh toán một lần",
     "到期停止续费": "Dừng gia hạn khi hết kỳ",
     "已设置到期停止续费": "Gia hạn sẽ dừng khi hết kỳ",
