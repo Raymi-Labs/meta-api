@@ -128,53 +128,6 @@ func TestExtractHealableParam(t *testing.T) {
 	}
 }
 
-func TestTryHealClaudeParamErrorRemovesEmptyThinkingAndRetriesOnce(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	recorder := httptest.NewRecorder()
-	context, _ := gin.CreateTestContext(recorder)
-	context.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
-	requestJSON := []byte(`{"model":"claude-test","messages":[{"role":"assistant","content":[{"type":"thinking","thinking":""},{"type":"thinking","thinking":"valid","signature":"keep"},{"type":"text","text":"answer"}]}]}`)
-	originalResp := &http.Response{
-		StatusCode: http.StatusBadRequest,
-		Body:       io.NopCloser(strings.NewReader(`{"type":"error","error":{"type":"invalid_request_error","message":"each thinking block must contain thinking"}}`)),
-	}
-	healedResp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"ok":true}`))}
-	adaptor := &claudeThinkingHealTestAdaptor{response: healedResp}
-	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{
-		ChannelType:       constant.ChannelTypeAnthropic,
-		ChannelId:         123,
-		UpstreamModelName: "claude-test",
-	}}
-
-	got, healed := tryHealClaudeParamError(context, info, adaptor, requestJSON, originalResp)
-	if !healed || got != healedResp {
-		t.Fatalf("tryHealClaudeParamError() = (%v, %v), want healed response", got, healed)
-	}
-	if len(adaptor.requests) != 1 {
-		t.Fatalf("retry requests = %d, want 1", len(adaptor.requests))
-	}
-	if strings.Contains(adaptor.requests[0], `"thinking":""`) {
-		t.Fatalf("retry still contains empty thinking: %s", adaptor.requests[0])
-	}
-	if !strings.Contains(adaptor.requests[0], `"thinking":"valid"`) || !strings.Contains(adaptor.requests[0], `"signature":"keep"`) {
-		t.Fatalf("retry lost valid thinking fields: %s", adaptor.requests[0])
-	}
-	if context.Writer.Header().Get("X-Request-Adjusted") != "empty_thinking" {
-		t.Fatalf("X-Request-Adjusted = %q", context.Writer.Header().Get("X-Request-Adjusted"))
-	}
-
-	secondResp := &http.Response{
-		StatusCode: http.StatusBadRequest,
-		Body:       io.NopCloser(strings.NewReader(`{"type":"error","error":{"type":"invalid_request_error","message":"each thinking block must contain thinking"}}`)),
-	}
-	if got, healed := tryHealClaudeParamError(context, info, adaptor, requestJSON, secondResp); healed || got != secondResp {
-		t.Fatalf("second self-heal should be blocked, got (%v, %v)", got, healed)
-	}
-	if len(adaptor.requests) != 1 {
-		t.Fatalf("second self-heal retried unexpectedly: %d requests", len(adaptor.requests))
-	}
-}
-
 type healTrackedBody struct {
 	io.Reader
 	closed bool
@@ -204,6 +157,8 @@ func TestClaudeSamplingHealBoundaries(t *testing.T) {
 		{name: "wrong_type", body: strings.ReplaceAll(rejection, "invalid_request_error", "authentication_error")},
 		{name: "incidental_text", body: `{"error":{"type":"invalid_request_error","message":"bad request"},"detail":"claude-haiku-5-5 does not support non-default temperature"}`},
 		{name: "invalid_json", body: rejection + "junk"},
+		{name: "empty_thinking_history", body: `{"error":{"type":"invalid_request_error","message":"each thinking block must contain thinking"}}`,
+			request: `{"messages":[{"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"fixture-signed"}]}]}`},
 		{name: "oversized", body: rejection + strings.Repeat(" ", maxClaudeHealErrorBytes)},
 		{name: "multiple_parameters", body: strings.ReplaceAll(rejection, "non-default temperature", "non-default temperature with top_p")},
 		{name: "missing_parameter", body: rejection, request: `{"model":"unknown","messages":[]}`},

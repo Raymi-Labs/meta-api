@@ -110,7 +110,17 @@ func TestRelayClaudeSamplingCompatibility(t *testing.T) {
 						endpoint = "/v1/chat/completions"
 					}
 					var requestID string
-					request := fmt.Sprintf(`{"model":"claude-haiku-5-5","max_tokens":256,"temperature":0.2,"messages":[{"role":"user","content":"preserve body"}],"stream":%t}`, stream)
+					messages := `[{"role":"user","content":"preserve body"}]`
+					if format == types.RelayFormatClaude {
+						messages = `[
+							{"role":"user","content":"start"},
+							{"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"fixture-signed"}]},
+							{"role":"user","content":"continue"},
+							{"role":"assistant","content":[{"type":"thinking","thinking":""},{"type":"redacted_thinking","data":"opaque"},{"type":"text","text":"answer"}]},
+							{"role":"user","content":"next","output_config":{"effort":"high"}}
+						]`
+					}
+					request := fmt.Sprintf(`{"model":"claude-haiku-5-5","max_tokens":256,"temperature":0.2,"messages":%s,"stream":%t}`, messages, stream)
 					temperature := 0.2
 					if scenario == "default_accepted" {
 						temperature = 1
@@ -145,6 +155,11 @@ func TestRelayClaudeSamplingCompatibility(t *testing.T) {
 						calls = 2
 					}
 					require.Len(t, transport.requests, calls)
+					if format == types.RelayFormatClaude {
+						for _, sent := range transport.requests {
+							require.JSONEq(t, messages, gjson.Get(sent, "messages").Raw)
+						}
+					}
 					require.InDelta(t, temperature, gjson.Get(transport.requests[0], "temperature").Float(), 0.00001, transport.requests)
 					if adjusted {
 						require.False(t, gjson.Get(transport.requests[1], "temperature").Exists())

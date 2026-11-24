@@ -26,3 +26,5 @@ dto、relay、Claude、AWS、model_setting 全包回归通过；相关定向竞�
 [DeepSeek 历史思考兼容](2026-10-23-deepseek-messages-thinking-history.md)仅在官方明确拒绝缺失历史时改变本请求的思考开关，原有历史 thinking 块与扩展字段仍保真；正常原生请求维持本篇约定。
 
 [明确 adaptive 拒绝兼容](2026-10-25-claude-adaptive-refusal-heal.md)仅在已确认的本次上游拒绝后迁移手动模式；正常请求继续保真，未知 thinking 扩展不会被该补救静默删除。
+
+原生消息历史和上游拒绝空块时的处理见[保留 Claude 消息历史中的空思考块](2026-11-24-claude-thinking-history-integrity.md)。

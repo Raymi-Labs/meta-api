@@ -11,7 +11,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
-	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
@@ -52,21 +51,6 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 	}
 	passThroughEnabled := model_setting.GetGlobalSettings().PassThroughRequestEnabled || info.ChannelSetting.PassThroughBodyEnabled
-	if !passThroughEnabled {
-		sanitizeResult, sanitizeErr := sanitizeClaudeRequestEmptyThinking(request)
-		if sanitizeErr != nil {
-			return types.NewError(sanitizeErr, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
-		}
-		if sanitizeResult.Changed() {
-			logger.LogWarn(c, fmt.Sprintf(
-				"Claude request sanitized: removed %d empty thinking block(s), removed %d empty message(s), merged %d message(s)",
-				sanitizeResult.RemovedBlocks,
-				sanitizeResult.RemovedMessages,
-				sanitizeResult.MergedMessages,
-			))
-			c.Header("X-Request-Adjusted", "empty_thinking")
-		}
-	}
 	if info.TextProtocolPlan != nil {
 		if err := info.TextProtocolPlan.ValidatePassThrough(passThroughEnabled); err != nil {
 			return types.NewErrorWithStatusCode(err, types.ErrorCodeConvertRequestFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -22,7 +21,6 @@ import (
 // Explicit upstream refusals are evidence for this request only. Do not cache
 // them as model-wide capabilities or strip parameters on other channels.
 const claudeParamHealDoneKey = "claude_param_heal_done"
-const emptyClaudeThinkingError = "each thinking block must contain thinking"
 const maxClaudeHealErrorBytes = 64 << 10
 
 type claudeHealError struct {
@@ -104,38 +102,6 @@ func tryHealClaudeParamError(
 	}
 	if adjusted, effort, ok := adaptRejectedClaudeThinking(info, requestJSON, message); ok {
 		return retryClaudeAdaptiveThinking(c, info, adaptor, httpResp, body, adjusted, effort)
-	}
-	if strings.Contains(strings.ToLower(message), emptyClaudeThinkingError) {
-		cleanedJSON, result, err := sanitizeEmptyClaudeThinkingJSON(requestJSON)
-		if err != nil || !result.Changed() {
-			return httpResp, false
-		}
-
-		c.Set(claudeParamHealDoneKey, true)
-		recordClaudeAdjustment(c, info, httpResp, body, "empty_thinking")
-		logger.LogWarn(c, fmt.Sprintf(
-			"request self-heal: upstream rejected empty thinking; removed %d block(s), removed %d message(s), merged %d message(s), retrying once (channel #%d, model %s)",
-			result.RemovedBlocks,
-			result.RemovedMessages,
-			result.MergedMessages,
-			info.ChannelId,
-			info.UpstreamModelName,
-		))
-
-		retryResp, retryErr := adaptor.DoRequest(c, info, bytes.NewBuffer(cleanedJSON))
-		if retryErr != nil {
-			logger.LogWarn(c, fmt.Sprintf("empty thinking self-heal retry failed, falling back to original 400: %v", retryErr))
-			return httpResp, false
-		}
-		healedResp, ok := retryResp.(*http.Response)
-		if !ok || healedResp == nil {
-			return httpResp, false
-		}
-		if healedResp != httpResp && httpResp.Body != nil {
-			_ = httpResp.Body.Close()
-		}
-		c.Header("X-Request-Adjusted", "empty_thinking")
-		return healedResp, true
 	}
 	param := service.RejectedSamplingParameter(message)
 	if param == "" {
