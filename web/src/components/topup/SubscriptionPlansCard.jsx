@@ -88,6 +88,7 @@ const SubscriptionPlansCard = ({
   activeSubscriptions = [],
   activeQuantityByPlan = {},
   allSubscriptions = [],
+  stripeRenewals = [],
   reloadSubscriptionSelf,
   withCard = true,
 }) => {
@@ -236,7 +237,7 @@ const SubscriptionPlansCard = ({
     return false;
   };
 
-  const payStripe = async () => {
+  const payStripe = async (autoRenew) => {
     if (!selectedPlan?.plan?.stripe_price_id) {
       showError(t('该套餐未配置 Stripe'));
       return;
@@ -246,6 +247,7 @@ const SubscriptionPlansCard = ({
     setPaying(true);
     try {
       const res = await API.post('/api/subscription/stripe/pay', {
+        auto_renew: autoRenew,
         plan_id: selectedPlan.plan.id,
         purchase_mode: selectedPurchaseMode,
         purchase_quantity: selectedPurchaseQuantity,
@@ -266,6 +268,21 @@ const SubscriptionPlansCard = ({
       showError(t('支付请求失败'));
     } finally {
       setPaying(false);
+    }
+  };
+
+  const [cancellingRenewal, setCancellingRenewal] = useState(null);
+  const cancelRenewal = async (id) => {
+    setCancellingRenewal(id);
+    try {
+      const { data } = await API.post(`/api/subscription/stripe/renewals/${id}/cancel`);
+      if (!data.success) { showError(data.message || t('请求失败，请重试')); return; }
+      showSuccess(t('已设置到期停止续费'));
+      await reloadSubscriptionSelf?.();
+    } catch {
+      showError(t('请求失败，请重试'));
+    } finally {
+      setCancellingRenewal(null);
     }
   };
 
@@ -512,6 +529,19 @@ const SubscriptionPlansCard = ({
               </Text>
             )}
 
+            {stripeRenewals.map((renewal) => (
+              <div key={renewal.id} className='flex flex-wrap items-center justify-between gap-2 my-2'>
+                <Text>{renewal.title} · Stripe #{renewal.id} · {t('自动续费')}</Text>
+                {renewal.cancel_at_period_end ? (
+                  <Text type='tertiary'>{t('已设置到期停止续费')}</Text>
+                ) : (
+                  <Button size='small' loading={cancellingRenewal === renewal.id}
+                    disabled={cancellingRenewal !== null} onClick={() => cancelRenewal(renewal.id)}>
+                    {t('到期停止续费')}
+                  </Button>
+                )}
+              </div>
+            ))}
             {hasAnySubscription ? (
               <>
                 <Divider margin={8} />

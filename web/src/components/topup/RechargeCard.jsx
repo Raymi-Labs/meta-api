@@ -84,12 +84,14 @@ const RechargeCard = ({
   activeSubscriptions = [],
   activeQuantityByPlan = {},
   allSubscriptions = [],
+  stripeRenewals = [],
+  stripeSubscriptionsEnabled = false,
   reloadSubscriptionSelf,
 }) => {
   const onlineFormApiRef = useRef(null);
   const [activeTab, setActiveTab] = useState('topup');
   const shouldShowSubscription =
-    !subscriptionLoading && subscriptionPlans.length > 0;
+    !subscriptionLoading && (subscriptionPlans.length > 0 || stripeRenewals.length > 0);
   const shouldShowTabs = shouldShowSubscription;
 
   useEffect(() => {
@@ -534,7 +536,8 @@ const RechargeCard = ({
                     plans={subscriptionPlans}
                     payMethods={payMethods}
                     enableOnlineTopUp={enableOnlineTopUp}
-                    enableStripeTopUp={enableStripeTopUp}
+                    enableStripeTopUp={stripeSubscriptionsEnabled}
+                    stripeRenewals={stripeRenewals}
                     enableCreemTopUp={enableCreemTopUp}
                     billingPreference={billingPreference}
                     onChangeBillingPreference={onChangeBillingPreference}

@@ -1,5 +1,13 @@
 # 本地兼容更新
 
+## v1.45.0 — 2026-11-24
+
+- 钱包的订阅套餐新增 Stripe 自动续费。用户可单次支付，也可在新购时选择每期扣款，并在“我的订阅”中设置到期停止续费。
+- 首期及后续已付账单按服务期发放额度，重试按账单去重。旧版 Stripe 合约在收到相关事件时通过原始 Checkout 订单号关联。历史漏发或已人工补发的账单需先核对再重放。
+- 升级配置：在 Stripe 的 `/api/stripe/webhook` 端点保留 Checkout 完成、异步成功和过期事件，增加 `invoice.paid`、`customer.subscription.updated`、`customer.subscription.deleted`。在套餐编辑页填写与本地金额、币种及周期一致的固定周期 Price ID，再开启“Stripe · 自动续费”。使用受限密钥时，需允许读取价格、查询/创建 Checkout 和读取/更新订阅。服务启动时自动补齐数据库字段。
+- 新客户端和旧客户端的普通 Stripe 套餐下单默认为单次支付；API 客户端主动订阅时传 `auto_renew: true` 和 `purchase_mode: "stack"`。已有 Stripe 合约继续执行原扣款约定。
+- 包含主分支已合入的社区模型榜入口、调用日历跨月标签和 PITR 远端对象读回修复。
+
 ## v1.44.1 — 2026-11-23
 
 - 修复 Claude 通过 OpenAI Chat Completions 流式调用工具时，在满足拒答换渠道条件且回复仅包含工具调用的情况下，客户端可能只收到结束原因与用量的问题。工具 ID、名称和参数分片在结束帧前交付，无参工具返回 `{}`。

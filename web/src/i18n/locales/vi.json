@@ -1,5 +1,8 @@
 {
   "translation": {
+    "单次支付": "Thanh toán một lần",
+    "到期停止续费": "Dừng gia hạn khi hết kỳ",
+    "已设置到期停止续费": "Gia hạn sẽ dừng khi hết kỳ",
     "Claude 官方备选模型": "Mô hình dự phòng chính thức của Claude",
     "上游未提供完整的逐次用量": "Nhà cung cấp chưa báo cáo đầy đủ mức sử dụng của từng lần thử",
     "创作空间": "Không gian sáng tạo",

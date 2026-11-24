@@ -92,7 +92,14 @@ func GetSubscriptionSelf(c *gin.Context) {
 	// 供前端直接展示动态可买上限，避免前后端算法漂移。
 	activeQuantityByPlan := buildActiveQuantityByPlan(activeSubscriptions)
 
+	renewals, err := model.ListStripeRenewals(userId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	common.ApiSuccess(c, gin.H{
+		"stripe_renewals":         renewals,
+		"stripe_configured":       isStripeWebhookEnabled(),
 		"billing_preference":      pref,
 		"subscriptions":           activeSubscriptions, // 全部生效订阅
 		"all_subscriptions":       allSubscriptions,    // 全部订阅（含已过期）
@@ -223,6 +230,10 @@ type AdminUpsertSubscriptionPlanRequest struct {
 func normalizeSubscriptionPlanPurchaseRule(plan *model.SubscriptionPlan) error {
 	if plan == nil {
 		return nil
+	}
+	if plan.StripeAutoRenew && (strings.TrimSpace(plan.StripePriceId) == "" || plan.PriceAmount <= 0 ||
+		(plan.DurationUnit != model.SubscriptionDurationDay && plan.DurationUnit != model.SubscriptionDurationMonth && plan.DurationUnit != model.SubscriptionDurationYear)) {
+		return errors.New("Stripe 自动续费需要周期价格 ID、正价格和日、月或年有效期")
 	}
 	if plan.PurchaseQuantityMin <= 0 {
 		plan.PurchaseQuantityMin = 1
@@ -377,6 +388,7 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 			"custom_seconds":             req.Plan.CustomSeconds,
 			"enabled":                    req.Plan.Enabled,
 			"sort_order":                 req.Plan.SortOrder,
+			"stripe_auto_renew":          req.Plan.StripeAutoRenew,
 			"stripe_price_id":            req.Plan.StripePriceId,
 			"creem_product_id":           req.Plan.CreemProductId,
 			"max_purchase_per_user":      req.Plan.MaxPurchasePerUser,

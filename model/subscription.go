@@ -186,8 +186,9 @@ type SubscriptionPlan struct {
 	Enabled   bool `json:"enabled" gorm:"default:true"`
 	SortOrder int  `json:"sort_order" gorm:"type:int;default:0"`
 
-	StripePriceId  string `json:"stripe_price_id" gorm:"type:varchar(128);default:''"`
-	CreemProductId string `json:"creem_product_id" gorm:"type:varchar(128);default:''"`
+	StripeAutoRenew bool   `json:"stripe_auto_renew" gorm:"default:false"`
+	StripePriceId   string `json:"stripe_price_id" gorm:"type:varchar(128);default:''"`
+	CreemProductId  string `json:"creem_product_id" gorm:"type:varchar(128);default:''"`
 
 	// 每个用户最大购买次数（0 表示不限制）
 	MaxPurchasePerUser int `json:"max_purchase_per_user" gorm:"type:int;default:0"`
@@ -244,6 +245,14 @@ type SubscriptionOrder struct {
 	CompleteTime              int64  `json:"complete_time"`
 
 	ProviderPayload string `json:"provider_payload" gorm:"type:text"`
+	// Only the original Checkout order owns the Stripe subscription.
+	StripeSubscriptionID *string `json:"-" gorm:"type:varchar(191);uniqueIndex"`
+	StripeRecurringPrice string  `json:"-" gorm:"type:varchar(191)"`
+	StripeCurrency       string  `json:"-" gorm:"type:varchar(8)"`
+	StripeCancelAtEnd    bool    `json:"-" gorm:"default:false"`
+	StripeEnded          bool    `json:"-" gorm:"default:false"`
+	StripePeriodStart    int64   `json:"-"`
+	StripePeriodEnd      int64   `json:"-"`
 }
 
 func (o *SubscriptionOrder) Insert() error {
@@ -695,6 +704,10 @@ func downgradeUserGroupForSubscriptionTx(tx *gorm.DB, sub *UserSubscription, now
 }
 
 func createUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *SubscriptionPlan, source string, enforcePurchaseLimit bool) (*UserSubscription, error) {
+	return createSubscriptionForPeriodTx(tx, userId, plan, source, enforcePurchaseLimit, 0, 0)
+}
+
+func createSubscriptionForPeriodTx(tx *gorm.DB, userId int, plan *SubscriptionPlan, source string, enforcePurchaseLimit bool, start, end int64) (*UserSubscription, error) {
 	if tx == nil {
 		return nil, errors.New("tx is nil")
 	}
@@ -717,10 +730,21 @@ func createUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 		}
 	}
 	nowUnix := GetDBTimestampTx(newSubscriptionMutationSessionTx(tx))
-	now := time.Unix(nowUnix, 0)
-	endUnix, err := calcPlanEndTime(now, plan)
-	if err != nil {
-		return nil, err
+	if start == 0 {
+		start = nowUnix
+	}
+	now := time.Unix(start, 0)
+	endUnix := end
+	if endUnix == 0 {
+		var err error
+		endUnix, err = calcPlanEndTime(now, plan)
+		if err != nil {
+			return nil, err
+		}
+	}
+	status := "active"
+	if endUnix <= nowUnix {
+		status = "expired"
 	}
 	resetBase := now
 	nextReset := calcNextResetTime(resetBase, plan, endUnix)
@@ -730,10 +754,18 @@ func createUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 	}
 	upgradeGroup := strings.TrimSpace(plan.UpgradeGroup)
 	prevGroup := ""
-	if upgradeGroup != "" {
+	if upgradeGroup != "" && status == "active" {
 		currentGroup, err := getUserGroupByIdTx(tx, userId)
 		if err != nil {
 			return nil, err
+		}
+		if end > 0 && currentGroup == upgradeGroup {
+			// The preceding paid period may still be waiting for the expiry job.
+			if err := newSubscriptionMutationSessionTx(tx).Model(&UserSubscription{}).
+				Where("user_id = ? AND upgrade_group = ? AND status = ? AND prev_user_group <> ''", userId, upgradeGroup, "active").
+				Order("end_time desc, id desc").Limit(1).Pluck("prev_user_group", &prevGroup).Error; err != nil {
+				return nil, err
+			}
 		}
 		if currentGroup != upgradeGroup {
 			prevGroup = currentGroup
@@ -750,7 +782,7 @@ func createUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 		AmountUsed:    0,
 		StartTime:     now.Unix(),
 		EndTime:       endUnix,
-		Status:        "active",
+		Status:        status,
 		Source:        source,
 		LastResetTime: lastReset,
 		NextResetTime: nextReset,
@@ -924,7 +956,11 @@ func CompleteSubscriptionOrderWithPayment(tradeNo string, providerPayload string
 		return nil
 	}
 
-	result.AutoIssued, result.IssueSummary = autoIssuePaidSubscriptionOrder(result.TradeNo, result.IssuanceId, result.UserId)
+	if !result.AutoIssued {
+		result.AutoIssued, result.IssueSummary = autoIssuePaidSubscriptionOrder(result.TradeNo, result.IssuanceId, result.UserId)
+	} else if result.UpgradeGroup != "" {
+		_ = UpdateUserGroupCache(result.UserId, result.UpgradeGroup)
+	}
 
 	if result.UserId > 0 {
 		if result.PurchaseQuantity <= 0 {
@@ -960,6 +996,7 @@ type subscriptionOrderCompletionResult struct {
 	PurchaseQuantity int
 	IssuanceId       int
 	AlreadyCompleted bool
+	UpgradeGroup     string
 	AutoIssued       bool
 	IssueSummary     string
 }
@@ -1031,6 +1068,27 @@ func completeSubscriptionOrderCoreTx(tx *gorm.DB, tradeNo string, providerPayloa
 	}
 	if err := CreateSubscriptionIssuanceTx(tx, issuance); err != nil {
 		return subscriptionOrderCompletionResult{}, err
+	}
+	if order.StripePeriodEnd > 0 {
+		if err := lockUserForSubscriptionMutationTx(tx, order.UserId); err != nil {
+			return result, err
+		}
+		grant := withBenefitContextTx(tx, BenefitSourceSubscriptionOrder, tradeNo, SubscriptionPurchaseModeStack, issuance.Id)
+		for i := 0; i < order.PurchaseQuantity; i++ {
+			sub, err := createSubscriptionForPeriodTx(grant, order.UserId, plan, "stripe_subscription", false, order.StripePeriodStart, order.StripePeriodEnd)
+			if err != nil {
+				return result, err
+			}
+			if sub.Status == "active" {
+				result.UpgradeGroup = sub.UpgradeGroup
+			}
+		}
+		issuance.Status = SubscriptionIssuanceStatusIssued
+		issuance.IssuedTime = common.GetTimestamp()
+		if err := persistIssuedSubscriptionIssuanceTx(tx, issuance); err != nil {
+			return result, err
+		}
+		result.AutoIssued = true
 	}
 	if err := upsertSubscriptionTopUpTx(tx, &order); err != nil {
 		return subscriptionOrderCompletionResult{}, err
@@ -1117,6 +1175,7 @@ func upsertSubscriptionTopUpTx(tx *gorm.DB, order *SubscriptionOrder) error {
 			Amount:          0,
 			Money:           order.Money,
 			PaidMoney:       order.Money,
+			PaidCurrency:    order.StripeCurrency,
 			TradeNo:         order.TradeNo,
 			PaymentMethod:   order.PaymentMethod,
 			PaymentProvider: order.PaymentProvider,

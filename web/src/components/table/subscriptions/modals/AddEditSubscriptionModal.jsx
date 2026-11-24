@@ -100,6 +100,7 @@ const AddEditSubscriptionModal = ({
     total_amount: 0,
     upgrade_group: '',
     stripe_price_id: '',
+    stripe_auto_renew: false,
     creem_product_id: '',
   });
 
@@ -129,6 +130,7 @@ const AddEditSubscriptionModal = ({
       ),
       upgrade_group: p.upgrade_group || '',
       stripe_price_id: p.stripe_price_id || '',
+      stripe_auto_renew: !!p.stripe_auto_renew,
       creem_product_id: p.creem_product_id || '',
     };
   };
@@ -609,6 +611,11 @@ const AddEditSubscriptionModal = ({
                         label='Stripe PriceId'
                         placeholder='price_...'
                         showClear
+                      />
+                      <Form.Switch
+                        field='stripe_auto_renew'
+                        label={`Stripe · ${t('自动续费')}`}
+                        extraText='Webhook: invoice.paid, customer.subscription.updated, customer.subscription.deleted'
                       />
                     </Col>
 

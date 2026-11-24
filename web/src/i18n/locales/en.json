@@ -1,5 +1,9 @@
 {
   "translation": {
+    "单次支付": "Pay once",
+    "自动续费": "Auto-renew",
+    "到期停止续费": "Stop renewal at period end",
+    "已设置到期停止续费": "Renewal stops at period end",
     "Claude 官方备选模型": "Official Claude fallback model",
     "上游未提供完整的逐次用量": "The provider did not report complete per-attempt usage",
     "创作空间": "Creative Space",

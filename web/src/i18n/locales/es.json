@@ -1,5 +1,9 @@
 {
   "translation": {
+    "单次支付": "Pago único",
+    "自动续费": "Renovación automática",
+    "到期停止续费": "Cancelar la renovación al finalizar el período",
+    "已设置到期停止续费": "La renovación se detendrá al finalizar el período",
     "Claude 官方备选模型": "Modelo alternativo oficial de Claude",
     "上游未提供完整的逐次用量": "El proveedor no informó del uso completo de cada intento",
     "创作空间": "Espacio creativo",

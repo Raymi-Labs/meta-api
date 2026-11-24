@@ -411,17 +411,23 @@ const SubscriptionPurchaseModal = ({
 
               {/* Stripe / Creem */}
               {(hasStripe || hasCreem) && (
-                <div className='flex gap-2'>
+                <div className='flex flex-wrap gap-2'>
                   {hasStripe && (
                     <Button
                       theme='light'
                       className='flex-1'
                       icon={<SiStripe size={14} color='#635BFF' />}
-                      onClick={onPayStripe}
+                      onClick={() => onPayStripe(false)}
                       loading={paying}
                       disabled={limitBlocked}
                     >
-                      Stripe
+                      Stripe · {t('单次支付')}
+                    </Button>
+                  )}
+                  {hasStripe && plan?.stripe_auto_renew && normalizedMode === 'stack' && (
+                    <Button theme='light' className='flex-1' onClick={() => onPayStripe(true)}
+                      loading={paying} disabled={limitBlocked}>
+                      Stripe · {t('自动续费')}
                     </Button>
                   )}
                   {hasCreem && (

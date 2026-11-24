@@ -241,6 +241,8 @@ const TopUpContent = () => {
     useState('subscription_first');
   const [activeSubscriptions, setActiveSubscriptions] = useState([]);
   const [activeQuantityByPlan, setActiveQuantityByPlan] = useState({});
+  const [stripeRenewals, setStripeRenewals] = useState([]);
+  const [stripeSubscriptionsEnabled, setStripeSubscriptionsEnabled] = useState(false);
   const [allSubscriptions, setAllSubscriptions] = useState([]);
 
   // 预设充值金额选项
@@ -626,6 +628,8 @@ const TopUpContent = () => {
         setActiveSubscriptions(d?.subscriptions || []);
         setActiveQuantityByPlan(d?.active_quantity_by_plan || {});
         setAllSubscriptions(d?.all_subscriptions || []);
+        setStripeRenewals(d?.stripe_renewals || []);
+        setStripeSubscriptionsEnabled(!!d?.stripe_configured);
         setPendingSubscriptionIssuances(d?.pending_issuances || []);
       }
     } catch (e) {}
@@ -1140,6 +1144,8 @@ const TopUpContent = () => {
             activeSubscriptions={activeSubscriptions}
             activeQuantityByPlan={activeQuantityByPlan}
             allSubscriptions={allSubscriptions}
+            stripeRenewals={stripeRenewals}
+            stripeSubscriptionsEnabled={stripeSubscriptionsEnabled}
             reloadSubscriptionSelf={getSubscriptionSelf}
           />
         </div>

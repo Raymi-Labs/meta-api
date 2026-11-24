@@ -1,5 +1,9 @@
 {
   "translation": {
+    "单次支付": "Tek seferlik ödeme",
+    "自动续费": "Otomatik yenileme",
+    "到期停止续费": "Dönem sonunda yenilemeyi durdur",
+    "已设置到期停止续费": "Yenileme dönem sonunda duracak",
     "Claude 官方备选模型": "Claude resmî yedek modeli",
     "上游未提供完整的逐次用量": "Sağlayıcı her denemenin kullanımını eksiksiz bildirmedi",
     "创作空间": "Yaratıcı alan",

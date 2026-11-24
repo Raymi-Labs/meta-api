@@ -1,5 +1,9 @@
 {
   "translation": {
+    "单次支付": "Eenmalig betalen",
+    "自动续费": "Automatisch verlengen",
+    "到期停止续费": "Verlenging stoppen na deze periode",
+    "已设置到期停止续费": "Verlenging stopt na deze periode",
     "Claude 官方备选模型": "Officieel uitwijkmodel van Claude",
     "上游未提供完整的逐次用量": "De aanbieder heeft het verbruik per poging niet volledig opgegeven",
     "创作空间": "Creatieve ruimte",

@@ -63,6 +63,7 @@ type stripeCheckoutResult struct {
 }
 
 type stripeCheckoutSessionEvent struct {
+	Subscription      any    `json:"subscription"`
 	Customer          any    `json:"customer"`
 	ClientReferenceID string `json:"client_reference_id"`
 	Status            string `json:"status"`
@@ -221,10 +222,26 @@ func StripeWebhook(c *gin.Context) {
 		return
 	}
 
+	// A plan can have a Stripe price without enabling wallet top-ups.
+	switch event.Type {
+	case stripe.EventTypeCheckoutSessionCompleted, stripe.EventTypeCheckoutSessionAsyncPaymentSucceeded, stripe.EventTypeCheckoutSessionExpired:
+		if event.Data == nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		if !isStripeTopUpEnabled() && !strings.HasPrefix(event.GetObjectValue("client_reference_id"), "sub_") {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+	}
 	var processingErr error
 	switch event.Type {
 	case stripe.EventTypeCheckoutSessionCompleted, stripe.EventTypeCheckoutSessionAsyncPaymentSucceeded:
 		processingErr = sessionCompleted(event, c.ClientIP())
+	case stripe.EventTypeInvoicePaid:
+		processingErr = stripeInvoicePaid(c.Request.Context(), event)
+	case stripe.EventTypeCustomerSubscriptionDeleted, stripe.EventTypeCustomerSubscriptionUpdated:
+		processingErr = syncStripeSubscription(c.Request.Context(), event)
 	case stripe.EventTypeCheckoutSessionExpired:
 		sessionExpired(event)
 	default:
@@ -249,6 +266,14 @@ func sessionCompleted(event stripe.Event, callerIp string) error {
 		return err
 	}
 	referenceId := strings.TrimSpace(checkout.ClientReferenceID)
+	if checkout.Status == "complete" && strings.HasPrefix(referenceId, "sub_auto_") {
+		order, err := model.GetSubscriptionOrderByTradeNoWithError(referenceId)
+		if err != nil {
+			return err
+		}
+		// The invoice is the sole fulfillment event for every paid period.
+		return model.BindStripeSubscription(order, stripeCheckoutCustomerID(checkout.Subscription), order.StripeRecurringPrice, order.StripeCurrency)
+	}
 	if checkout.Status != "complete" || checkout.PaymentStatus != "paid" {
 		log.Println("错误的Stripe Checkout支付状态:", checkout.Status, checkout.PaymentStatus, ",", referenceId)
 		return nil
