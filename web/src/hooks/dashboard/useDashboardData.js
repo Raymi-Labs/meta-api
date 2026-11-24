@@ -307,9 +307,11 @@ export const useDashboardData = (userState, userDispatch, statusState) => {
           setActiveUptimeTab(data[0].categoryName);
         }
       } else {
+        setUptimeData([]);
         showError(message);
       }
     } catch (err) {
+      if (uptimeRequestGuard.isLatestRequest(requestId)) setUptimeData([]);
       console.error(err);
     } finally {
       if (uptimeRequestGuard.isLatestRequest(requestId)) {

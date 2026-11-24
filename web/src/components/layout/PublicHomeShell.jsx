@@ -47,7 +47,7 @@ import PublicLanguageSelector from './PublicLanguageSelector';
 import { usePublicNotifications } from '../../hooks/common/usePublicNotifications';
 import { getPublicShellPage } from '../../helpers/publicRoutes';
 import {
-  DEFAULT_HEADER_NAV_MODULES,
+  parseHeaderModules,
   getTopNavigationLinks,
   getTopNavigationTarget,
 } from '../../helpers/topNavigation';
@@ -58,22 +58,6 @@ const DesktopDownload = lazy(() => import('../../pages/DesktopDownload'));
 const Enterprise = lazy(() => import('../../pages/Enterprise'));
 const PublicLegal = lazy(() => import('../../pages/PublicLegal'));
 const PublicNoticeModal = lazy(() => import('./PublicNoticeModal'));
-
-const parseHeaderModules = (rawConfig) => {
-  if (!rawConfig) return DEFAULT_HEADER_NAV_MODULES;
-  try {
-    const modules = JSON.parse(rawConfig);
-    if (typeof modules.pricing === 'boolean') {
-      modules.pricing = {
-        enabled: modules.pricing,
-        requireAuth: false,
-      };
-    }
-    return modules;
-  } catch (error) {
-    return DEFAULT_HEADER_NAV_MODULES;
-  }
-};
 
 const PublicHomeShell = () => {
   const location = useLocation();

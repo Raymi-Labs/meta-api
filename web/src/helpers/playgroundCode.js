@@ -50,8 +50,9 @@ export function getPlaygroundEndpoint(address) {
     url.search = '';
     url.hash = '';
     url.pathname =
-      url.pathname.replace(/\/+$/, '').replace(/\/v1$/, '') +
-      '/v1/chat/completions';
+      url.pathname
+        .replace(/\/+$/, '')
+        .replace(/\/v1(?:\/chat\/completions)?$/, '') + '/v1/chat/completions';
     return url.toString();
   } catch {
     return '';

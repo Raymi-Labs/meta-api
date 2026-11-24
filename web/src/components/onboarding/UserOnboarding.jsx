@@ -257,6 +257,12 @@ const UserOnboarding = () => {
     if (!location.pathname.startsWith('/console')) return;
     if (readTourState(storageKey)) return;
 
+    if (location.pathname.replace(/\/+$/, '') === '/console') {
+      writeTourState(storageKey, 'dashboard');
+      setDismissedInSession(true);
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       setActiveIndex(0);
       setVisible(true);

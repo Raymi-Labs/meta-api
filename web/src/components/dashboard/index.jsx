@@ -23,6 +23,7 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 
 import DashboardHeader from './DashboardHeader';
+import SetupGuide from './SetupGuide';
 import './dashboardOverview.css';
 import StatsCards from './StatsCards';
 import ChartsPanel from './ChartsPanel';
@@ -243,6 +244,19 @@ const DashboardContent = () => {
         showSearchModal={dashboardData.showSearchModal}
         refresh={handleRefresh}
         loading={dashboardData.loading}
+        t={dashboardData.t}
+      />
+
+      <SetupGuide
+        user={userState.user}
+        status={statusState?.status}
+        accountLoading={dashboardData.accountLoading}
+        accountError={dashboardData.accountError}
+        onRetryAccount={dashboardData.getUserData}
+        revision={walletRefreshVersion}
+        uptimeEnabled={dashboardData.uptimeEnabled}
+        uptimeLoading={dashboardData.uptimeLoading}
+        uptimeData={dashboardData.uptimeData}
         t={dashboardData.t}
       />
 

@@ -29,6 +29,22 @@ export const DEFAULT_HEADER_NAV_MODULES = {
   usage: false,
 };
 
+export const parseHeaderModules = (rawConfig) => {
+  if (!rawConfig) return DEFAULT_HEADER_NAV_MODULES;
+  try {
+    const modules = JSON.parse(rawConfig);
+    if (typeof modules.pricing === 'boolean') {
+      modules.pricing = {
+        enabled: modules.pricing,
+        requireAuth: false,
+      };
+    }
+    return modules;
+  } catch (error) {
+    return DEFAULT_HEADER_NAV_MODULES;
+  }
+};
+
 export const getTopNavigationLinks = (t, docsLink, headerNavModules) => {
   docsLink = withDocsLanguage(docsLink);
   const modules = headerNavModules || DEFAULT_HEADER_NAV_MODULES;

@@ -37,6 +37,10 @@ mock.module('@douyinfe/semi-ui', () => ({
 mock.module('react-i18next', () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
+// WalletSummary has its own account, routing, and currency integration tests.
+mock.module('../src/components/dashboard/WalletSummary', () => ({
+  default: () => null,
+}));
 const { default: Header } = await import(
   '../src/components/dashboard/DashboardHeader.jsx'
 );
