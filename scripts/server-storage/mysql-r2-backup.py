@@ -279,7 +279,8 @@ class CryptRemote:
                                     stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, env=self.env)
 
     def reader(self, destination):
-        return self.processes.start(self.command("cat", destination),
+        # A plain cat can enumerate every sibling in long-lived archive directories.
+        return self.processes.start(self.command("cat", destination, "--no-traverse"),
                                     stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, env=self.env)
 
     def put_verified(self, destination, data):

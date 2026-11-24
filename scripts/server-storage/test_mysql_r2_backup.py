@@ -149,6 +149,14 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(all(child.poll() is not None for child in processes.children))
         return str(caught.exception)
 
+    def test_known_object_reader_disables_directory_traversal(self):
+        processes = mock.Mock()
+        remote = backup.CryptRemote("r2-backup:pitr", self.config, processes)
+        destination = "r2-backup:pitr/epoch/receipts/000000000001.json"
+        remote.reader(destination)
+        command = processes.start.call_args.args[0]
+        self.assertEqual(command[command.index("cat"):], ["cat", destination, "--no-traverse"])
+
     def test_success_is_read_back_and_receipts_are_private(self):
         receipt = backup.execute(self.args)
         self.assertEqual(receipt["status"], "success")
