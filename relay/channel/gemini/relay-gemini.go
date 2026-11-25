@@ -799,6 +799,27 @@ func cleanFunctionParametersWithDepth(params interface{}, depth int) interface{}
 
 	switch v := params.(type) {
 	case map[string]interface{}:
+		for _, keyword := range []string{"anyOf", "oneOf"} {
+			members, ok := v[keyword].([]any)
+			if !ok {
+				continue
+			}
+			member, ok := nullableToolMember(v, keyword, members, func(branch any) (string, int) {
+				fields, _ := branch.(map[string]any)
+				typ, _ := fields["type"].(string)
+				return typ, len(fields)
+			})
+			if ok {
+				cleaned := cleanFunctionParametersWithDepth(member, depth+1).(map[string]any)
+				for key, annotation := range v {
+					if key != keyword {
+						cleaned[key] = annotation
+					}
+				}
+				cleaned["nullable"] = true
+				return cleaned
+			}
+		}
 		// Keep only Gemini-supported OpenAPI schema subset fields (per official SDK Schema).
 		cleanedMap := make(map[string]interface{}, len(v))
 		for k, val := range v {

@@ -70,3 +70,23 @@ func TestGeminiConversionPreservesToolAndOutputSchema(t *testing.T) {
 	}
 	require.False(t, gjson.GetBytes(encoded, "generationConfig.responseSchema.properties.reasoning.title").Exists())
 }
+
+func TestNullableToolUnion(t *testing.T) {
+	for _, tc := range []struct{ name, schema, want string }{
+		{"CronCreate", `{"description":"delay","anyOf":[{"type":"integer","description":"inner","exclusiveMinimum":0,"maximum":525600},{"type":"null"}]}`, `{"type":"INTEGER","nullable":true,"description":"delay","maximum":525600}`},
+		{"reversed_nested", `{"type":"array","items":{"oneOf":[{"type":"null"},{"type":"object","properties":{"model":{"anyOf":[{"type":"string"},{"type":"null"}]}},"required":["model"]}]}}`, `{"type":"ARRAY","items":{"type":"OBJECT","nullable":true,"properties":{"model":{"type":"STRING","nullable":true}},"required":["model"]}}`},
+		{"real_union", `{"anyOf":[{"type":"string"},{"type":"integer"}]}`, `{"anyOf":[{"type":"STRING"},{"type":"INTEGER"}]}`},
+		{"outer_constraint", `{"type":"integer","anyOf":[{"type":"integer"},{"type":"null"}]}`, `{"type":"INTEGER","anyOf":[{"type":"INTEGER"},{"nullable":true}]}`},
+		{"constrained_null", `{"anyOf":[{"type":"string"},{"type":"null","enum":[]}]}`, `{"anyOf":[{"type":"STRING"},{"enum":[],"nullable":true}]}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var legacy any
+			require.NoError(t, common.Unmarshal([]byte(tc.schema), &legacy))
+			for _, input := range []any{json.RawMessage(tc.schema), legacy} {
+				cleaned, err := common.Marshal(cleanFunctionParameters(input))
+				require.NoError(t, err)
+				require.JSONEq(t, tc.want, string(cleaned))
+			}
+		})
+	}
+}
