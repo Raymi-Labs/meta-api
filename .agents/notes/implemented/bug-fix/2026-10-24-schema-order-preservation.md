@@ -20,6 +20,12 @@ Status: implemented
 
 [DeepSeek 原生 Responses](../../implemented/bug-fix/2026-10-18-deepseek-native-responses.md)部分重叠，保留最终出站与大整数约束；[历史 thinking 兼容](../../implemented/bug-fix/2026-10-23-deepseek-messages-thinking-history.md)部分重叠，保持有限重试与有效历史；[认证用户身份头](../../implemented/feature/2026-10-21-authenticated-user-header.md)部分重叠但独立管理出站头信任，不改变其规则。PITR/发布的数据库 schema 笔记无关，没有应替换或否决的活跃提案。
 
+### 2026-11-25 工具参数 nullable 联合
+
+OpenAI → Gemini / Vertex 的函数参数清洗识别 `anyOf` 和 `oneOf` 中顺序任意的具体类型和纯 null 两个分支，输出具体类型与 `nullable: true`。包装层只能携带支持的注释字段；同名注释采用外层值。外层带校验条件时需做约束交集，沿用原有清洗。父对象的 required 独立决定参数是否可省略。
+
+旧版在 CronCreate 回归中将 null 分支清成缺少 type 的对象。两个适配器的出站 JSON 回归覆盖可空整数、可省略参数、字段顺序与大整数；raw/map 清洗另覆盖嵌套、相反分支顺序及复杂联合。沿用原有字段白名单，maximum 保留，exclusiveMinimum 仍会被过滤。改发 parametersJsonSchema 需要重新验证各兼容端点支持范围；客户端补丁需要每个调用方维护。
+
 ## Alternatives considered
 
 - 整体移植上游 RelayKit 可获得统一转换实现，但会替换本地资金、工具与历史兼容边界，范围远大于保真修复。

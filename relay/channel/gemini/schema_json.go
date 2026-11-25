@@ -2,9 +2,11 @@ package gemini
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // Visit object fields in source order. Only explicitly transformed values are
@@ -49,6 +51,57 @@ func cleanRawFunctionParameters(raw json.RawMessage) any {
 	return cleanRawFunctionSchema(raw, 0)
 }
 
+// A union can be flattened without intersecting constraints only when the
+// wrapper carries annotations and one of its two members accepts only null.
+func nullableToolMember[T any](wrapper map[string]T, keyword string, members []T, inspect func(T) (string, int)) (T, bool) {
+	var zero T
+	if len(members) != 2 {
+		return zero, false
+	}
+	for key := range wrapper {
+		switch key {
+		case keyword, "title", "description", "default", "example":
+		default:
+			return zero, false
+		}
+	}
+	for i, member := range members {
+		typ, fields := inspect(member)
+		if fields != 1 || !strings.EqualFold(typ, "null") {
+			continue
+		}
+		other := members[1-i]
+		typ, _ = inspect(other)
+		switch strings.ToLower(typ) {
+		case "integer", "number", "boolean", "string", "object", "array":
+			return other, true
+		}
+	}
+	return zero, false
+}
+
+func cleanRawNullableToolUnion(schema gjson.Result, keyword string, union gjson.Result, depth int) (json.RawMessage, bool) {
+	if !union.IsArray() {
+		return nil, false
+	}
+	member, ok := nullableToolMember(schema.Map(), keyword, union.Array(), func(branch gjson.Result) (string, int) {
+		return branch.Get("type").String(), len(branch.Map())
+	})
+	if !ok {
+		return nil, false
+	}
+	cleaned := cleanRawFunctionSchema(json.RawMessage(member.Raw), depth+1)
+	// Keys accepted by nullableToolMember are literal annotation names.
+	schema.ForEach(func(key, value gjson.Result) bool {
+		if key.String() != keyword {
+			cleaned, _ = sjson.SetRawBytes(cleaned, key.String(), []byte(value.Raw))
+		}
+		return true
+	})
+	cleaned, _ = sjson.SetRawBytes(cleaned, "nullable", []byte("true"))
+	return cleaned, true
+}
+
 func cleanRawFunctionSchema(raw json.RawMessage, depth int) json.RawMessage {
 	value := gjson.ParseBytes(raw)
 	if value.IsArray() {
@@ -61,6 +114,15 @@ func cleanRawFunctionSchema(raw json.RawMessage, depth int) json.RawMessage {
 	}
 	if !value.IsObject() {
 		return raw
+	}
+	if depth < geminiFunctionSchemaMaxDepth {
+		for _, keyword := range []string{"anyOf", "oneOf"} {
+			if union := value.Get(keyword); union.Exists() {
+				if cleaned, ok := cleanRawNullableToolUnion(value, keyword, union, depth); ok {
+					return cleaned
+				}
+			}
+		}
 	}
 	typeFields := make(map[string]any)
 	if field := value.Get("type"); field.Exists() {
