@@ -35,7 +35,6 @@ import {
   renderNumber,
   getLogOther,
   formatTimeRatioLogDetail,
-  copy,
   renderClaudeLogContent,
   renderLogContent,
   renderAudioModelPrice,
@@ -48,6 +47,7 @@ import {
   getCancellationDetails,
   getChatBudgetDetails,
 } from '../../helpers/requestFailure';
+import { copy } from '../../helpers/clipboard';
 import { getResponseModelInfo } from '../../helpers/responseModel';
 import {
   getCacheCreationBreakdown,
@@ -1222,11 +1222,13 @@ export const useLogsData = (admin = isAdmin()) => {
   // Copy text function
   const copyText = async (e, text) => {
     e.stopPropagation();
-    if (await copy(text)) {
+    const ok = await copy(text);
+    if (ok) {
       if (aliveRef.current) showSuccess(t('已复制到剪贴板！'));
     } else if (aliveRef.current) {
       Modal.error({ title: t('无法复制到剪贴板，请手动复制'), content: text });
     }
+    return ok;
   };
 
   useEffect(() => {

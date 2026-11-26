@@ -92,7 +92,7 @@ const launchBrowser = async () => {
   });
 };
 
-const makePage = async (role = 1, dark = false) => {
+const makePage = async (role = 1, dark = false, logs = [logRecord]) => {
   const page = await browser.newPage();
   const errors = [];
   const apiRequests = [];
@@ -136,7 +136,7 @@ const makePage = async (role = 1, dark = false) => {
     if (url.pathname === '/api/log/self/' || url.pathname === '/api/log/') {
       body = {
         success: true,
-        data: { items: [logRecord], page: 1, page_size: 10, total: 1 },
+        data: { items: logs, page: 1, page_size: 10, total: logs.length },
       };
     }
     if (
@@ -354,6 +354,112 @@ try {
   assert.deepEqual(admin.errors, []);
   await admin.page.close();
   console.log('Administrator full columns and controls passed');
+
+  const failureLogs = [1, 2].map((id) => ({
+    ...logRecord,
+    id,
+    type: 5,
+    request_id: `diagnostic-${id}`,
+  }));
+  for (const mobile of [false, true]) {
+    const { page, errors } = await makePage(
+      mobile ? 10 : 1,
+      mobile,
+      failureLogs,
+    );
+    await page.goto(`${baseURL}/console/log`, { waitUntil: 'networkidle0' });
+    if (mobile) {
+      await clickButton(page, '详情');
+      await page.waitForFunction(() => {
+        const details = document
+          .querySelector('.usage-log-copy-report')
+          ?.closest('.semi-collapsible-wrapper');
+        return (
+          details?.clientHeight > 0 &&
+          !details.classList.contains('semi-collapsible-transition')
+        );
+      });
+    } else {
+      await page.waitForSelector('.usage-logs-table .semi-table-expand-icon');
+      for (const icon of await page.$$(
+        '.usage-logs-table .semi-table-expand-icon',
+      )) {
+        await icon.click();
+      }
+    }
+    const selector = '.usage-log-copy-report';
+    await page.waitForSelector(selector, { visible: true });
+    await page.evaluate(() => {
+      window.writes = [];
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText(text) {
+            window.writes.push(text);
+            return new Promise((resolve, reject) => {
+              window.finishCopy = resolve;
+              window.denyCopy = reject;
+            });
+          },
+        },
+      });
+      document.execCommand = () => false;
+    });
+    const button = await page.$(selector);
+    await button.evaluate((el) =>
+      el.scrollIntoView({ block: 'center', behavior: 'instant' }),
+    );
+    await button.hover();
+    await page.mouse.down();
+    assert.notEqual(
+      await button.evaluate((el) => getComputedStyle(el).transform),
+      'none',
+    );
+    await page.mouse.up();
+    await page.waitForSelector(
+      `${selector}.semi-button-loading[aria-busy="true"]`,
+    );
+    await button.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => window.writes.length), 1);
+    await page.evaluate(() => window.finishCopy());
+    await page.waitForFunction(
+      (el) => el.innerText.trim() === '已复制',
+      {},
+      button,
+    );
+    const texts = await page.$$eval(selector, (buttons) =>
+      buttons.map((el) => el.innerText.trim()),
+    );
+    assert.equal(texts.filter((label) => label === '已复制').length, 1);
+    const report = await page.evaluate(() => window.writes[0]);
+    assert.match(report, /Request ID: diagnostic-1/);
+    assert.equal(report.includes('令牌名称: fixture-key'), mobile);
+    await page.waitForFunction(
+      (el) => el.innerText.trim() === '复制排查信息',
+      {},
+      button,
+    );
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.writes.length === 2);
+    await page.evaluate(() => window.denyCopy());
+    await page.waitForSelector('.semi-modal', { visible: true });
+    assert.ok(
+      (await page.$eval('.semi-modal', (el) => el.textContent)).includes(
+        report,
+      ),
+    );
+    assert.equal(
+      await button.evaluate((el) => el.innerText.trim()),
+      '复制排查信息',
+    );
+    assert.deepEqual(errors, []);
+    await page.close();
+    console.log(
+      `${mobile ? 'Mobile/admin' : 'Desktop/user'} failure log copy feedback passed`,
+    );
+  }
 } finally {
   await browser?.close();
   await server.close();

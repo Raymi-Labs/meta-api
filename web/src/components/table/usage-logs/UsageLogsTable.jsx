@@ -17,8 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Empty, Descriptions, Button, Space } from '@douyinfe/semi-ui';
+import { Check, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CardTable from '../../common/ui/CardTable';
 import {
@@ -27,6 +28,55 @@ import {
 } from '@douyinfe/semi-illustrations';
 import { buildRequestFailureReport } from '../../../helpers/requestFailure';
 import { getLogsColumns } from './UsageLogsColumnDefs';
+
+function FailureReportCopyButton({ record, copyText, isAdminUser, t }) {
+  const [status, setStatus] = useState('idle');
+  const pending = status === 'pending';
+  const copied = status === 'copied';
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setStatus('idle'), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopy = async (event) => {
+    event.stopPropagation();
+    if (pending) return;
+    setStatus('pending');
+    const ok = await copyText(
+      event,
+      buildRequestFailureReport(record, t, isAdminUser),
+    );
+    setStatus(ok ? 'copied' : 'idle');
+  };
+
+  return (
+    <Button
+      size='small'
+      className='usage-log-copy-report'
+      icon={
+        copied ? (
+          <Check size={14} color='var(--semi-color-success)' />
+        ) : (
+          <Copy size={14} />
+        )
+      }
+      loading={pending}
+      aria-busy={pending}
+      onClick={handleCopy}
+    >
+      <span className='inline-grid'>
+        <span aria-hidden='true' className='invisible col-start-1 row-start-1'>
+          {t('复制排查信息')}
+        </span>
+        <span aria-live='polite' className='col-start-1 row-start-1'>
+          {copied ? t('已复制') : t('复制排查信息')}
+        </span>
+      </span>
+    </Button>
+  );
+}
 
 const LogsTable = (logsData) => {
   const {
@@ -112,17 +162,13 @@ const LogsTable = (logsData) => {
         <Descriptions data={expandData[record.key]} />
         <Space style={{ marginTop: 12 }}>
           {record.type === 5 && (
-            <Button
-              size='small'
-              onClick={(event) => {
-                copyText(
-                  event,
-                  buildRequestFailureReport(record, t, isAdminUser),
-                );
-              }}
-            >
-              {t('复制排查信息')}
-            </Button>
+            <FailureReportCopyButton
+              key={record.key}
+              record={record}
+              copyText={copyText}
+              isAdminUser={isAdminUser}
+              t={t}
+            />
           )}
           <Button
             size='small'

@@ -161,6 +161,11 @@
 .usage-logs-detail .semi-descriptions-item {
   white-space: pre-wrap;
 }
+.usage-log-copy-report:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
 .usage-logs-pagination {
   display: flex;
   justify-content: space-between;
