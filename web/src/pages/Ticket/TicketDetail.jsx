@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -26,17 +26,17 @@ import {
   Divider,
   Button,
   Space,
-  Form,
-  TextArea,
   Spin,
   Timeline,
   Empty,
 } from '@douyinfe/semi-ui';
+import TicketReply from './TicketReply';
+import TicketMessageBody, { conversationMessages } from './TicketMessageBody';
 import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 const STATUS_COLORS = {
   open: 'blue',
@@ -67,7 +67,6 @@ const CATEGORY_LABELS = {
 const SENDER_ROLE_LABELS = {
   user: '用户',
   staff: '管理员',
-  system: '系统',
 };
 
 function TicketDetail({ ticketId, onClose, onUpdate }) {
@@ -75,8 +74,6 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
-  const replyForm = useRef(null);
-  const [submitting, setSubmitting] = useState(false);
   const [closing, setClosing] = useState(false);
 
   const loadTicketDetail = async () => {
@@ -85,7 +82,7 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
       const res = await API.get(`/api/ticket/${ticketId}`);
       if (res.data.success) {
         setTicket(res.data.data.ticket);
-        setMessages(res.data.data.messages || []);
+        setMessages(conversationMessages(res.data.data.messages));
       } else {
         showError(res.data.message);
         onClose();
@@ -103,28 +100,6 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
       loadTicketDetail();
     }
   }, [ticketId]);
-
-  const handleReply = async () => {
-    try {
-      const values = await replyForm.current?.validate();
-      setSubmitting(true);
-      const res = await API.post(`/api/ticket/${ticketId}/reply`, values);
-      if (res.data.success) {
-        showSuccess(t('回复成功'));
-        replyForm.current?.reset();
-        await loadTicketDetail();
-        onUpdate && onUpdate();
-      } else {
-        showError(res.data.message);
-      }
-    } catch (error) {
-      if (error.message) {
-        showError(error.message);
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleClose = async () => {
     try {
@@ -246,19 +221,8 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
                         SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role,
                       )}
                     </Tag>
-                    {msg.event && (
-                      <Text
-                        type='tertiary'
-                        size='small'
-                        style={{ marginLeft: 8 }}
-                      >
-                        [{msg.event}]
-                      </Text>
-                    )}
                   </div>
-                  <Paragraph style={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.body}
-                  </Paragraph>
+                  <TicketMessageBody message={msg} base='/api/ticket' />
                 </Timeline.Item>
               ))}
             </Timeline>
@@ -269,49 +233,16 @@ function TicketDetail({ ticketId, onClose, onUpdate }) {
         {canReply && (
           <>
             <Divider />
-            <Form
-              getFormApi={(api) => {
-                replyForm.current = api;
+            <TicketReply
+              key={ticketId}
+              path={`/api/ticket/${ticketId}/reply`}
+              onCloseTicket={handleClose}
+              closing={closing}
+              onSent={async () => {
+                await loadTicketDetail();
+                onUpdate?.();
               }}
-              labelPosition='top'
-            >
-              <Form.TextArea
-                field='body'
-                label={t('回复内容')}
-                rules={[{ required: true, message: t('请输入回复内容') }]}
-                maxLength={5000}
-                rows={4}
-                showClear
-              />
-            </Form>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 8,
-                marginTop: 16,
-              }}
-            >
-              {ticket.status !== 'closed' && (
-                <Button
-                  type='tertiary'
-                  onClick={handleClose}
-                  loading={closing}
-                  disabled={submitting}
-                >
-                  {t('关闭工单')}
-                </Button>
-              )}
-              <Button
-                theme='solid'
-                type='primary'
-                onClick={handleReply}
-                loading={submitting}
-                disabled={closing}
-              >
-                {t('发送回复')}
-              </Button>
-            </div>
+            />
           </>
         )}
 

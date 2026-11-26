@@ -1,0 +1,50 @@
+.ticket-message {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.ticket-message > * + * {
+  margin-top: 0.65em;
+}
+.ticket-message :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 600;
+}
+.ticket-message h1 {
+  font-size: 1.35em;
+}
+.ticket-message h2 {
+  font-size: 1.2em;
+}
+.ticket-message ul,
+.ticket-message ol {
+  padding-inline-start: 1.6em;
+}
+.ticket-message ul {
+  list-style: disc;
+}
+.ticket-message ol {
+  list-style: decimal;
+}
+.ticket-message a {
+  color: var(--semi-color-link);
+  text-decoration: underline;
+}
+.ticket-message blockquote {
+  border-inline-start: 3px solid var(--semi-color-border);
+  padding-inline-start: 0.8em;
+}
+.ticket-message pre,
+.ticket-message :not(pre) > code {
+  background: var(--semi-color-fill-0);
+  border-radius: 4px;
+}
+.ticket-message pre {
+  overflow-x: auto;
+  padding: 10px;
+}
+.ticket-message :not(pre) > code {
+  padding: 1px 4px;
+}
+.ticket-message :is(th, td) {
+  padding: 3px 8px;
+  border: 1px solid var(--semi-color-border);
+}

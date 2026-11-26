@@ -45,7 +45,7 @@ func TestTicketDatabaseMatrix(t *testing.T) {
 				<-readLocked
 				writeDone := make(chan error, 1)
 				go func() {
-					writeDone <- TicketReplyAndTransition(ctx, id, 900001, TicketSenderUser, "arrived during read", false, "", TicketStatusOpen)
+					writeDone <- TicketReplyAndTransition(ctx, id, 900001, TicketSenderUser, "arrived during read", false, "", TicketStatusOpen, nil)
 				}()
 				close(releaseRead)
 				require.NoError(t, <-readDone)
@@ -158,7 +158,7 @@ func TestTicketDatabaseMatrix(t *testing.T) {
 						role = TicketSenderStaff
 					}
 					for i := 0; i < 20; i++ {
-						require.NoError(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, role, "same second", internal, "", TicketStatusOpen))
+						require.NoError(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, role, "same second", internal, "", TicketStatusOpen, nil))
 					}
 					var count int64
 					require.NoError(t, DB.Model(&TicketMessage{}).Where("ticket_id = ?", ticket.ID).Count(&count).Error)
@@ -183,7 +183,7 @@ func TestTicketDatabaseMatrix(t *testing.T) {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						errs <- TicketReplyAndTransition(ctx, ticket.ID, 900002, TicketSenderStaff, "note", true, "", TicketStatusOpen)
+						errs <- TicketReplyAndTransition(ctx, ticket.ID, 900002, TicketSenderStaff, "note", true, "", TicketStatusOpen, nil)
 					}()
 				}
 				wg.Wait()
@@ -197,8 +197,8 @@ func TestTicketDatabaseMatrix(t *testing.T) {
 			})
 			t.Run("closed_and_conflicting_status_do_not_persist_messages", func(t *testing.T) {
 				ticket := create(TicketStatusClosed)
-				require.ErrorContains(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, TicketSenderUser, "stale", false, "", TicketStatusOpen), "状态已变更")
-				require.ErrorIs(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, TicketSenderUser, "closed", false, "", TicketStatusClosed), ErrTicketClosed)
+				require.ErrorContains(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, TicketSenderUser, "stale", false, "", TicketStatusOpen, nil), "状态已变更")
+				require.ErrorIs(t, TicketReplyAndTransition(ctx, ticket.ID, 900001, TicketSenderUser, "closed", false, "", TicketStatusClosed, nil), ErrTicketClosed)
 				var count int64
 				require.NoError(t, DB.Model(&TicketMessage{}).Where("ticket_id = ?", ticket.ID).Count(&count).Error)
 				require.Zero(t, count)

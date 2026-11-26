@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -26,22 +26,21 @@ import {
   Divider,
   Button,
   Space,
-  Form,
-  TextArea,
   Spin,
   Timeline,
   Empty,
   Select,
-  Checkbox,
   Collapse,
   Table,
 } from '@douyinfe/semi-ui';
 import { TICKET_QUEUE_CHANGED } from '../../hooks/common/useNotifications';
+import TicketReply from './TicketReply';
+import TicketMessageBody, { conversationMessages } from './TicketMessageBody';
 import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 const STATUS_COLORS = {
   open: 'blue',
@@ -80,7 +79,6 @@ const CATEGORY_LABELS = {
 const SENDER_ROLE_LABELS = {
   user: '用户',
   staff: '管理员',
-  system: '系统',
 };
 
 function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
@@ -89,8 +87,6 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [logs, setLogs] = useState([]);
-  const replyForm = useRef(null);
-  const [submitting, setSubmitting] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const loadTicketDetail = async () => {
@@ -99,7 +95,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
       const res = await API.get(`/api/admin/ticket/${ticketId}`);
       if (res.data.success) {
         setTicket(res.data.data.ticket);
-        setMessages(res.data.data.messages || []);
+        setMessages(conversationMessages(res.data.data.messages));
         setLogs(res.data.data.logs || []);
       } else {
         showError(res.data.message);
@@ -118,29 +114,6 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
       loadTicketDetail();
     }
   }, [ticketId]);
-
-  const handleReply = async () => {
-    try {
-      const values = await replyForm.current?.validate();
-      setSubmitting(true);
-      const res = await API.post(`/api/admin/ticket/${ticketId}/reply`, values);
-      if (res.data.success) {
-        window.dispatchEvent(new Event(TICKET_QUEUE_CHANGED));
-        showSuccess(t('回复成功'));
-        replyForm.current?.reset();
-        await loadTicketDetail();
-        onUpdate && onUpdate();
-      } else {
-        showError(res.data.message);
-      }
-    } catch (error) {
-      if (error.message) {
-        showError(error.message);
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -361,13 +334,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
                 <Timeline.Item
                   key={msg.id}
                   time={new Date(msg.created_at * 1000).toLocaleString('zh-CN')}
-                  type={
-                    msg.sender_role === 'staff'
-                      ? 'ongoing'
-                      : msg.sender_role === 'system'
-                        ? 'success'
-                        : 'default'
-                  }
+                  type={msg.sender_role === 'staff' ? 'ongoing' : 'default'}
                 >
                   <div style={{ marginBottom: 8 }}>
                     <Tag size='small'>
@@ -375,7 +342,7 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
                         SENDER_ROLE_LABELS[msg.sender_role] || msg.sender_role,
                       )}
                     </Tag>
-                    {msg.sender_id && (
+                    {msg.sender_id > 0 && (
                       <Text
                         type='tertiary'
                         size='small'
@@ -393,19 +360,8 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
                         {t('内部备注')}
                       </Tag>
                     )}
-                    {msg.event && (
-                      <Text
-                        type='tertiary'
-                        size='small'
-                        style={{ marginLeft: 8 }}
-                      >
-                        [{msg.event}]
-                      </Text>
-                    )}
                   </div>
-                  <Paragraph style={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.body}
-                  </Paragraph>
+                  <TicketMessageBody message={msg} base='/api/admin/ticket' />
                 </Timeline.Item>
               ))}
             </Timeline>
@@ -416,41 +372,16 @@ function TicketAdminDetail({ ticketId, onClose, onUpdate }) {
         {canReply && (
           <>
             <Divider />
-            <Form
-              getFormApi={(api) => {
-                replyForm.current = api;
+            <TicketReply
+              key={ticketId}
+              path={`/api/admin/ticket/${ticketId}/reply`}
+              admin
+              onSent={async () => {
+                window.dispatchEvent(new Event(TICKET_QUEUE_CHANGED));
+                await loadTicketDetail();
+                onUpdate?.();
               }}
-              labelPosition='top'
-            >
-              <Form.TextArea
-                field='body'
-                label={t('回复内容')}
-                rules={[{ required: true, message: t('请输入回复内容') }]}
-                maxLength={5000}
-                rows={4}
-                showClear
-              />
-              <Form.Checkbox field='is_internal' noLabel>
-                {t('内部备注（用户不可见）')}
-              </Form.Checkbox>
-            </Form>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 8,
-                marginTop: 16,
-              }}
-            >
-              <Button
-                theme='solid'
-                type='primary'
-                onClick={handleReply}
-                loading={submitting}
-              >
-                {t('发送回复')}
-              </Button>
-            </div>
+            />
           </>
         )}
 

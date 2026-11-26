@@ -790,3 +790,82 @@ func TestTicketAppealMaxConstraint(t *testing.T) {
 	require.False(t, resp.Success, "second appeal should fail")
 	require.Contains(t, resp.Message, "未关闭的申诉工单")
 }
+
+func TestTicketImageReplies(t *testing.T) {
+	api := setupTicketAPI(t)
+	owner := api.user("owner", common.UserStatusEnabled)
+	admin := api.user("admin", common.UserStatusEnabled)
+	other := api.user("other", common.UserStatusEnabled)
+	appeal := api.user("appeal", common.UserStatusDisabled)
+	ticket, err := model.CreateTicket(nil, owner.Id, "subject", model.TicketCategoryAPI, "", "opening")
+	require.NoError(t, err)
+	appealTicket, err := model.CreateTicket(nil, appeal.Id, "appeal", model.TicketCategoryAppeal, "", "opening")
+	require.NoError(t, err)
+
+	send := func(actor *model.User, prefix string, id int, caption string, file []byte, internal bool) ticketAPIResponse {
+		t.Helper()
+		var buf bytes.Buffer
+		form := multipart.NewWriter(&buf)
+		require.NoError(t, form.WriteField("body", caption))
+		require.NoError(t, form.WriteField("is_internal", strconv.FormatBool(internal)))
+		part, err := form.CreateFormFile("file", "screenshot.png")
+		require.NoError(t, err)
+		_, err = part.Write(file)
+		require.NoError(t, err)
+		require.NoError(t, form.Close())
+		req := httptest.NewRequest("POST", fmt.Sprintf("%s/%d/reply", prefix, id), &buf)
+		req.Header.Set("Content-Type", form.FormDataContentType())
+		req.Header.Set("New-Api-User", strconv.Itoa(actor.Id))
+		if actor.Status == common.UserStatusDisabled {
+			req.Header.Set("X-Test-Appeal-User", strconv.Itoa(actor.Id))
+		} else {
+			req.Header.Set("X-Test-User", strconv.Itoa(actor.Id))
+			req.Header.Set("X-Test-Role", strconv.Itoa(actor.Role))
+		}
+		w := httptest.NewRecorder()
+		api.engine.ServeHTTP(w, req)
+		var res ticketAPIResponse
+		require.NoError(t, common.Unmarshal(w.Body.Bytes(), &res))
+		return res
+	}
+	png := append([]byte("\x89PNG\r\n\x1a\n"), make([]byte, 70*1024)...)
+	require.False(t, send(other, "/api/ticket", ticket.ID, "", png, false).Success)
+	require.False(t, send(appeal, "/api/appeal/tickets", ticket.ID, "", png, false).Success)
+	require.True(t, send(appeal, "/api/appeal/tickets", appealTicket.ID, "", png, false).Success)
+	require.False(t, send(owner, "/api/ticket", ticket.ID, "", []byte("plain text"), false).Success)
+	require.True(t, send(owner, "/api/ticket", ticket.ID, "", png, true).Success)
+	require.True(t, send(admin, "/api/admin/ticket", ticket.ID, "**private**", png, true).Success)
+
+	read := func(adminView bool) []model.TicketMessage {
+		t.Helper()
+		messages, err := model.ReadTicketMessages(nil, ticket, adminView)
+		require.NoError(t, err)
+		return messages
+	}
+	public := read(false)
+	require.Len(t, public, 2)
+	require.Empty(t, public[1].Body)
+	require.Len(t, public[1].Attachments, 1)
+	require.Equal(t, public[1].ID, *public[1].Attachments[0].MessageID)
+	all := read(true)
+	require.Len(t, all, 3)
+	require.Equal(t, "**private**", all[2].Body)
+	require.Len(t, all[2].Attachments, 1)
+	require.True(t, all[2].IsInternal)
+	require.Equal(t, all[2].ID, *all[2].Attachments[0].MessageID)
+	api.denied(owner.Id, owner.Role, "GET", fmt.Sprintf("/api/ticket/attachment/%d/download", all[2].Attachments[0].ID), nil)
+
+	for i := 2; i < controller.MaxTicketAttachmentsPerTicket; i++ {
+		require.NoError(t, model.DB.Create(&model.TicketAttachment{TicketID: ticket.ID}).Error)
+	}
+	before, err := os.ReadDir(controller.TicketAttachmentStorageDir)
+	require.NoError(t, err)
+	require.Contains(t, send(admin, "/api/admin/ticket", ticket.ID, "public", png, false).Message, "10")
+	after, err := os.ReadDir(controller.TicketAttachmentStorageDir)
+	require.NoError(t, err)
+	require.Len(t, after, len(before))
+	require.Len(t, read(true), 3)
+	require.Equal(t, model.TicketStatusOpen, ticket.Status)
+	api.ok(owner.Id, owner.Role, "POST", fmt.Sprintf("/api/ticket/%d/close", ticket.ID), nil)
+	require.False(t, send(admin, "/api/admin/ticket", ticket.ID, "", png, false).Success)
+}

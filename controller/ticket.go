@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -251,95 +252,86 @@ func GetMyTickets(c *gin.Context) {
 
 // ReplyTicket 回复工单（用户）
 func ReplyTicket(c *gin.Context) {
+	replyToTicket(c, c.GetInt("id"), false, false)
+}
+
+func replyToTicket(c *gin.Context, actorID int, admin, appeal bool) {
 	ticketID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "无效的工单ID",
-		})
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "无效的工单ID"})
 		return
 	}
-
-	var req ReplyTicketRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "参数错误",
-		})
-		return
-	}
-
-	userID := c.GetInt("id")
 	ctx := c.Request.Context()
-
-	// 限流检查
-	if err := checkTicketReplyRateLimit(ctx, userID); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
-
-	// 获取工单检查权限
-	ticket, err := model.GetTicketByID(ctx, ticketID)
-	if err != nil {
-		if errors.Is(err, model.ErrTicketNotFound) {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "工单不存在",
-			})
+	if !admin {
+		if err := checkTicketReplyRateLimit(ctx, actorID); err != nil {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("获取工单失败：%v", err),
-		})
+	}
+	ticket, err := model.GetTicketByID(ctx, ticketID)
+	if errors.Is(err, model.ErrTicketNotFound) {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "工单不存在"})
 		return
 	}
-
-	if ticket.UserID != userID {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "无权访问此工单",
-		})
-		return
-	}
-
-	// 检查工单状态
-	if ticket.Status == model.TicketStatusClosed {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "工单已关闭，无法回复",
-		})
-		return
-	}
-
-	// 用户不能设置内部备注
-	req.IsInternal = false
-
-	// 回复并转换状态
-	var newStatus string
-	if ticket.Status == model.TicketStatusWaitingUser {
-		newStatus = model.TicketStatusOpen
-	}
-
-	err = model.TicketReplyAndTransition(ctx, ticketID, userID, model.SenderRoleUser, req.Body, req.IsInternal, newStatus, ticket.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("回复工单失败：%v", err),
-		})
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": fmt.Sprintf("获取工单失败：%v", err)})
+		return
+	}
+	if (!admin && ticket.UserID != actorID) || (appeal && ticket.Category != model.TicketCategoryAppeal) {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "无权访问此工单"})
+		return
+	}
+	if ticket.Status == model.TicketStatusClosed {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "工单已关闭，无法回复"})
+		return
+	}
+	var req ReplyTicketRequest
+	var image *model.TicketAttachment
+	if c.ContentType() == "multipart/form-data" {
+		if !allowTicketUpload(c, actorID) || !parseTicketUpload(c) {
+			return
+		}
+		defer c.Request.MultipartForm.RemoveAll()
+		if len(c.Request.MultipartForm.File) != 1 || len(c.Request.MultipartForm.File["file"]) != 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "每条回复可发送一张图片"})
+			return
+		}
+		req.Body = c.PostForm("body")
+		if internal, ok := c.GetPostForm("is_internal"); ok {
+			req.IsInternal, err = strconv.ParseBool(internal)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数错误"})
+				return
+			}
+		}
+		image = saveTicketFile(c, ticketID, actorID, true)
+		if image == nil {
+			return
+		}
+	} else if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "参数错误"})
 		return
 	}
 
-	// 异步通知
-	service.NotifyTicketUserReply(ticket)
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "回复成功",
-	})
+	role := model.SenderRoleUser
+	internal := admin && req.IsInternal
+	if admin {
+		role = model.SenderRoleStaff
+	}
+	err = model.TicketReplyAndTransition(ctx, ticketID, actorID, role, req.Body, internal, "", ticket.Status, image)
+	if err != nil {
+		if image != nil {
+			os.Remove(image.StoragePath)
+		}
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": fmt.Sprintf("回复工单失败：%v", err)})
+		return
+	}
+	if !admin {
+		service.NotifyTicketUserReply(ticket)
+	} else if !internal {
+		service.NotifyTicketStaffReply(ticket)
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "回复成功"})
 }
 
 // CloseTicket 关闭工单（用户）
@@ -499,81 +491,7 @@ func AdminGetTicket(c *gin.Context) {
 
 // AdminReplyTicket 管理员回复工单
 func AdminReplyTicket(c *gin.Context) {
-	ticketID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "无效的工单ID",
-		})
-		return
-	}
-
-	var req ReplyTicketRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "参数错误",
-		})
-		return
-	}
-
-	staffID := c.GetInt("id")
-	ctx := c.Request.Context()
-
-	// 获取工单
-	ticket, err := model.GetTicketByID(ctx, ticketID)
-	if err != nil {
-		if errors.Is(err, model.ErrTicketNotFound) {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "工单不存在",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("获取工单失败：%v", err),
-		})
-		return
-	}
-
-	// 检查工单状态
-	if ticket.Status == model.TicketStatusClosed {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "工单已关闭，无法回复",
-		})
-		return
-	}
-
-	// 回复并转换状态（非内部备注时转为waiting_user）
-	var newStatus string
-	if !req.IsInternal {
-		if ticket.Status == model.TicketStatusOpen {
-			newStatus = model.TicketStatusWaitingUser
-		} else if ticket.Status == model.TicketStatusInProgress {
-			newStatus = model.TicketStatusWaitingUser
-		}
-	}
-
-	err = model.TicketReplyAndTransition(ctx, ticketID, staffID, model.SenderRoleStaff, req.Body, req.IsInternal, newStatus, ticket.Status)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("回复工单失败：%v", err),
-		})
-		return
-	}
-
-	// 异步通知（仅非内部备注）
-	if !req.IsInternal {
-		service.NotifyTicketStaffReply(ticket)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "回复成功",
-	})
+	replyToTicket(c, c.GetInt("id"), true, false)
 }
 
 // AdminUpdateTicketStatus 管理员更新工单状态
@@ -894,94 +812,5 @@ func GetAppealTicket(c *gin.Context) {
 
 // ReplyAppealTicket 回复申诉工单
 func ReplyAppealTicket(c *gin.Context) {
-	ticketID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "无效的工单ID",
-		})
-		return
-	}
-
-	var req ReplyTicketRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "参数错误",
-		})
-		return
-	}
-
-	userID := c.GetInt("appeal_user_id")
-	ctx := c.Request.Context()
-
-	// 限流检查
-	if err := checkTicketReplyRateLimit(ctx, userID); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
-
-	// 获取工单检查权限
-	ticket, err := model.GetTicketByID(ctx, ticketID)
-	if err != nil {
-		if errors.Is(err, model.ErrTicketNotFound) {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "工单不存在",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("获取工单失败：%v", err),
-		})
-		return
-	}
-
-	// 检查权限：必须是本人且分类为申诉
-	if ticket.UserID != userID || ticket.Category != model.TicketCategoryAppeal {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "无权访问此工单",
-		})
-		return
-	}
-
-	// 检查工单状态
-	if ticket.Status == model.TicketStatusClosed {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "工单已关闭，无法回复",
-		})
-		return
-	}
-
-	// 用户不能设置内部备注
-	req.IsInternal = false
-
-	// 回复并转换状态
-	var newStatus string
-	if ticket.Status == model.TicketStatusWaitingUser {
-		newStatus = model.TicketStatusOpen
-	}
-
-	err = model.TicketReplyAndTransition(ctx, ticketID, userID, model.SenderRoleUser, req.Body, req.IsInternal, newStatus, ticket.Status)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("回复工单失败：%v", err),
-		})
-		return
-	}
-
-	// 异步通知
-	service.NotifyTicketUserReply(ticket)
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "回复成功",
-	})
+	replyToTicket(c, c.GetInt("appeal_user_id"), false, true)
 }

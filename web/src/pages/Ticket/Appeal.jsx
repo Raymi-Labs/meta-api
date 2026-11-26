@@ -31,12 +31,14 @@ import {
   List,
   Tag,
   Modal,
+  Divider,
   Form,
 } from '@douyinfe/semi-ui';
+import TicketReply from './TicketReply';
+import TicketMessageBody, { conversationMessages } from './TicketMessageBody';
 import TicketAttachments from './TicketAttachments';
 import { API } from '../../helpers/apiCore';
 import { showError, showSuccess } from '../../helpers/toast';
-import TicketDetail from './TicketDetail';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -351,8 +353,6 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
   const [messages, setMessages] = useState([]);
-  const replyForm = useRef(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const loadTicketDetail = async () => {
     try {
@@ -362,7 +362,7 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
       });
       if (res.data.success) {
         setTicket(res.data.data.ticket);
-        setMessages(res.data.data.messages || []);
+        setMessages(conversationMessages(res.data.data.messages));
       } else {
         if (res.status === 401) {
           showError(t('申诉会话已过期'));
@@ -385,32 +385,6 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
       loadTicketDetail();
     }
   }, [ticketId]);
-
-  const handleReply = async () => {
-    try {
-      const values = await replyForm.current?.validate();
-      setSubmitting(true);
-      const res = await API.post(
-        `/api/appeal/tickets/${ticketId}/reply`,
-        values,
-        {
-          skipErrorHandler: true,
-        },
-      );
-      if (res.data.success) {
-        showSuccess(t('回复成功'));
-        replyForm.current?.reset();
-        await loadTicketDetail();
-        onUpdate && onUpdate();
-      } else {
-        showError(res.data.message);
-      }
-    } catch (error) {
-      showError(error.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   // 复用 TicketDetail 组件的样式
   if (loading) {
@@ -499,9 +473,7 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
                   {new Date(msg.created_at * 1000).toLocaleString('zh-CN')}
                 </Text>
               </div>
-              <Paragraph style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
-                {msg.body}
-              </Paragraph>
+              <TicketMessageBody message={msg} base='/api/appeal' />
             </div>
           ))}
         </div>
@@ -509,36 +481,15 @@ function AppealTicketDetail({ ticketId, onClose, onUpdate }) {
         {/* 回复区域 */}
         {canReply && (
           <>
-            <Form
-              getFormApi={(api) => {
-                replyForm.current = api;
+            <Divider />
+            <TicketReply
+              key={ticketId}
+              path={`/api/appeal/tickets/${ticketId}/reply`}
+              onSent={async () => {
+                await loadTicketDetail();
+                onUpdate?.();
               }}
-            >
-              <Form.TextArea
-                field='body'
-                label={t('回复内容')}
-                rules={[{ required: true, message: t('请输入回复内容') }]}
-                maxLength={5000}
-                rows={4}
-                showClear
-              />
-            </Form>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: 16,
-              }}
-            >
-              <Button
-                theme='solid'
-                type='primary'
-                onClick={handleReply}
-                loading={submitting}
-              >
-                {t('发送回复')}
-              </Button>
-            </div>
+            />
           </>
         )}
 

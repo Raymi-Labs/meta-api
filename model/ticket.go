@@ -72,14 +72,15 @@ type Ticket struct {
 }
 
 type TicketMessage struct {
-	ID         int    `json:"id" gorm:"primaryKey"`
-	TicketID   int    `json:"ticket_id" gorm:"not null;index"`
-	SenderID   int    `json:"sender_id" gorm:"not null;index"`
-	SenderRole string `json:"sender_role" gorm:"size:16;not null"`
-	Event      string `json:"event" gorm:"size:64;default:''"`
-	Body       string `json:"body" gorm:"type:text"`
-	IsInternal bool   `json:"is_internal" gorm:"not null;default:false"`
-	CreatedAt  int64  `json:"created_at" gorm:"not null;index"`
+	Attachments []TicketAttachment `json:"attachments,omitempty" gorm:"-"`
+	ID          int                `json:"id" gorm:"primaryKey"`
+	TicketID    int                `json:"ticket_id" gorm:"not null;index"`
+	SenderID    int                `json:"sender_id" gorm:"not null;index"`
+	SenderRole  string             `json:"sender_role" gorm:"size:16;not null"`
+	Event       string             `json:"event" gorm:"size:64;default:''"`
+	Body        string             `json:"body" gorm:"type:text"`
+	IsInternal  bool               `json:"is_internal" gorm:"not null;default:false"`
+	CreatedAt   int64              `json:"created_at" gorm:"not null;index"`
 }
 
 type TicketAttachment struct {
@@ -323,6 +324,19 @@ func ReadTicketMessages(ctx context.Context, ticket *Ticket, includeInternal boo
 		if err := query.Order("id ASC").Find(&messages).Error; err != nil {
 			return err
 		}
+		// Attach only to messages in the authorized snapshot.
+		var images []TicketAttachment
+		if err := tx.Where("ticket_id = ? AND message_id IS NOT NULL", current.ID).Order("id ASC").Find(&images).Error; err != nil {
+			return err
+		}
+		byMessage := make(map[int][]TicketAttachment)
+		for _, image := range images {
+			id := *image.MessageID
+			byMessage[id] = append(byMessage[id], image)
+		}
+		for i := range messages {
+			messages[i].Attachments = byMessage[messages[i].ID]
+		}
 		column := "user_unread"
 		if includeInternal {
 			column = "staff_unread"
@@ -428,13 +442,6 @@ func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (
 		if ticket.Status == TicketStatusClosed {
 			return ErrTicketClosed
 		}
-		var count int64
-		if err := tx.Model(&TicketAttachment{}).Where("ticket_id = ?", attachment.TicketID).Count(&count).Error; err != nil {
-			return err
-		}
-		if count >= 10 {
-			return errors.New("每个工单最多10个附件")
-		}
 		internal := false
 		if attachment.MessageID != nil {
 			var message TicketMessage
@@ -443,7 +450,7 @@ func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (
 			}
 			internal = message.IsInternal
 		}
-		if err := tx.Create(attachment).Error; err != nil {
+		if err := insertTicketAttachment(tx, attachment); err != nil {
 			return err
 		}
 		role := TicketSenderStaff
@@ -455,6 +462,17 @@ func CreateTicketAttachment(ctx context.Context, attachment *TicketAttachment) (
 	return attachment, err
 }
 
+func insertTicketAttachment(tx *gorm.DB, attachment *TicketAttachment) error {
+	var count int64
+	if err := tx.Model(&TicketAttachment{}).Where("ticket_id = ?", attachment.TicketID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count >= 10 {
+		return errors.New("每个工单最多10个附件")
+	}
+	return tx.Create(attachment).Error
+}
+
 func GetTicketAttachment(ctx context.Context, attachmentID int) (*TicketAttachment, error) {
 	var attachment TicketAttachment
 	err := ticketDB(ctx).First(&attachment, attachmentID).Error
@@ -464,9 +482,9 @@ func GetTicketAttachment(ctx context.Context, attachmentID int) (*TicketAttachme
 	return &attachment, err
 }
 
-func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, senderRole, body string, isInternal bool, newStatus string, oldStatus string) error {
+func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, senderRole, body string, isInternal bool, newStatus string, oldStatus string, image *TicketAttachment) error {
 	body = strings.TrimSpace(body)
-	if !ValidTicketMessageBody(body) {
+	if (body != "" || image == nil) && !ValidTicketMessageBody(body) {
 		return ErrTicketMessageTooLong
 	}
 	if strings.IndexFunc(body, invalidTicketBodyRune) >= 0 {
@@ -503,6 +521,16 @@ func TicketReplyAndTransition(ctx context.Context, ticketID, senderID int, sende
 
 		if err := tx.Create(message).Error; err != nil {
 			return err
+		}
+
+		if image != nil {
+			image.TicketID = ticket.ID
+			image.MessageID = &message.ID
+			image.UploadedByID = senderID
+			image.CreatedAt = now
+			if err := insertTicketAttachment(tx, image); err != nil {
+				return err
+			}
 		}
 
 		return updateTicketActivity(tx, &ticket, senderRole, isInternal, newStatus, now)

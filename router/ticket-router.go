@@ -10,6 +10,11 @@ import (
 
 func SetupTicketRouter(router *gin.RouterGroup) {
 	jsonBodyLimit := middleware.TicketRequestBodyLimit()
+	replyLimit := func(c *gin.Context) {
+		if c.ContentType() != "multipart/form-data" {
+			jsonBodyLimit(c)
+		}
+	}
 	// 用户工单路由
 	ticketGroup := router.Group("/ticket")
 	ticketGroup.Use(middleware.UserAuth(), middleware.TicketAccountAuth(common.RoleCommonUser))
@@ -18,7 +23,7 @@ func SetupTicketRouter(router *gin.RouterGroup) {
 		ticketGroup.GET("", controller.GetMyTickets)
 		ticketGroup.GET("/unread", controller.GetUnreadTicketCount)
 		ticketGroup.GET("/:id", controller.GetTicket)
-		ticketGroup.POST("/:id/reply", jsonBodyLimit, controller.ReplyTicket)
+		ticketGroup.POST("/:id/reply", replyLimit, controller.ReplyTicket)
 		ticketGroup.POST("/:id/close", jsonBodyLimit, controller.CloseTicket)
 	}
 
@@ -34,7 +39,7 @@ func SetupTicketRouter(router *gin.RouterGroup) {
 		appealGroup.POST("/tickets", jsonBodyLimit, controller.CreateAppealTicket)
 		appealGroup.GET("/tickets", controller.GetAppealTickets)
 		appealGroup.GET("/tickets/:id", controller.GetAppealTicket)
-		appealGroup.POST("/tickets/:id/reply", jsonBodyLimit, controller.ReplyAppealTicket)
+		appealGroup.POST("/tickets/:id/reply", replyLimit, controller.ReplyAppealTicket)
 	}
 
 	// 管理员工单路由
@@ -44,7 +49,7 @@ func SetupTicketRouter(router *gin.RouterGroup) {
 		adminGroup.GET("", controller.AdminGetTickets)
 		adminGroup.GET("/unread", controller.AdminGetUnreadTicketCount)
 		adminGroup.GET("/:id", controller.AdminGetTicket)
-		adminGroup.POST("/:id/reply", jsonBodyLimit, controller.AdminReplyTicket)
+		adminGroup.POST("/:id/reply", replyLimit, controller.AdminReplyTicket)
 		adminGroup.PUT("/:id/status", jsonBodyLimit, controller.AdminUpdateTicketStatus)
 		adminGroup.PUT("/:id/assign", jsonBodyLimit, controller.AdminAssignTicket)
 	}

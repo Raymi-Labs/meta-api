@@ -76,9 +76,7 @@ func UploadTicketAttachment(c *gin.Context) {
 		userID = c.GetInt("appeal_user_id")
 	}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxTicketAttachmentSize+64*1024)
-	if err := c.Request.ParseMultipartForm(MaxTicketAttachmentSize); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "文件大小不能超过5MB或上传格式无效"})
+	if !parseTicketUpload(c) {
 		return
 	}
 	defer c.Request.MultipartForm.RemoveAll()
@@ -97,8 +95,7 @@ func UploadTicketAttachment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "工单已关闭"})
 		return
 	}
-	if err := common.CheckRateLimit(ctx, fmt.Sprintf("ticket_upload:%d", userID), 20, 3600); err != nil {
-		c.JSON(http.StatusTooManyRequests, gin.H{"success": false, "message": err.Error()})
+	if !allowTicketUpload(c, userID) {
 		return
 	}
 	// 检查附件数量限制
@@ -112,70 +109,13 @@ func UploadTicketAttachment(c *gin.Context) {
 		return
 	}
 
-	// 读取上传文件
-	file, header, err := c.Request.FormFile("file")
+	attachment := saveTicketFile(c, ticketID, userID, false)
+	if attachment == nil {
+		return
+	}
+	_, err = model.CreateTicketAttachment(ctx, attachment)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
-		return
-	}
-	defer file.Close()
-
-	// 检查文件大小
-	if header.Size > MaxTicketAttachmentSize {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": fmt.Sprintf("文件大小不能超过%dMB", MaxTicketAttachmentSize/(1024*1024))})
-		return
-	}
-
-	// Sniff the content; browser supplied MIME and suffixes are not trusted.
-	prefix := make([]byte, 512)
-	n, err := file.Read(prefix)
-	if err != nil && err != io.EOF {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
-		return
-	}
-	mimeType := strings.Split(http.DetectContentType(prefix[:n]), ";")[0]
-	if !allowedAttachmentMimeTypes[mimeType] {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "不支持的文件类型"})
-		return
-	}
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
-		return
-	}
-	filename := sanitizeFilename(header.Filename)
-	if err := os.MkdirAll(TicketAttachmentStorageDir, 0700); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存文件失败"})
-		return
-	}
-	storagePath := filepath.Join(TicketAttachmentStorageDir, common.GetUUID())
-	// 保存文件
-	out, err := os.Create(storagePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存文件失败"})
-		return
-	}
-	defer out.Close()
-
-	written, err := io.Copy(out, file)
-	if err != nil {
-		os.Remove(storagePath)
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入文件失败"})
-		return
-	}
-
-	// 创建附件记录
-	attachment := &model.TicketAttachment{
-		TicketID:     ticketID,
-		MessageID:    nil,
-		Filename:     filename,
-		MimeType:     mimeType,
-		Size:         int(written),
-		StoragePath:  storagePath,
-		UploadedByID: userID,
-	}
-	attachment, err = model.CreateTicketAttachment(ctx, attachment)
-	if err != nil {
-		os.Remove(storagePath)
+		os.Remove(attachment.StoragePath)
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "创建附件记录失败"})
 		return
 	}
@@ -197,6 +137,88 @@ func UploadTicketAttachment(c *gin.Context) {
 			"created_at": attachment.CreatedAt,
 		},
 	})
+}
+
+func parseTicketUpload(c *gin.Context) bool {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxTicketAttachmentSize+64*1024)
+	if err := c.Request.ParseMultipartForm(MaxTicketAttachmentSize); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "文件大小不能超过5MB或上传格式无效"})
+		return false
+	}
+	return true
+}
+
+func allowTicketUpload(c *gin.Context, userID int) bool {
+	if err := common.CheckRateLimit(c.Request.Context(), fmt.Sprintf("ticket_upload:%d", userID), 20, 3600); err != nil {
+		c.JSON(http.StatusTooManyRequests, gin.H{"success": false, "message": err.Error()})
+		return false
+	}
+	return true
+}
+
+// saveTicketFile stages a sniffed file. The caller removes it on transaction failure.
+func saveTicketFile(c *gin.Context, ticketID, userID int, imageOnly bool) *model.TicketAttachment {
+	// 读取上传文件
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
+		return nil
+	}
+	defer file.Close()
+
+	// 检查文件大小
+	if header.Size > MaxTicketAttachmentSize {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": fmt.Sprintf("文件大小不能超过%dMB", MaxTicketAttachmentSize/(1024*1024))})
+		return nil
+	}
+
+	// Sniff the content; browser supplied MIME and suffixes are not trusted.
+	prefix := make([]byte, 512)
+	n, err := file.Read(prefix)
+	if err != nil && err != io.EOF {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
+		return nil
+	}
+	mimeType := strings.Split(http.DetectContentType(prefix[:n]), ";")[0]
+	if !allowedAttachmentMimeTypes[mimeType] || (imageOnly && !strings.HasPrefix(mimeType, "image/")) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "不支持的文件类型"})
+		return nil
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "读取文件失败"})
+		return nil
+	}
+	filename := sanitizeFilename(header.Filename)
+	if err := os.MkdirAll(TicketAttachmentStorageDir, 0700); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存文件失败"})
+		return nil
+	}
+	storagePath := filepath.Join(TicketAttachmentStorageDir, common.GetUUID())
+	// 保存文件
+	out, err := os.Create(storagePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存文件失败"})
+		return nil
+	}
+
+	written, writeErr := io.Copy(out, file)
+	closeErr := out.Close()
+	if writeErr != nil || closeErr != nil {
+		os.Remove(storagePath)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入文件失败"})
+		return nil
+	}
+
+	// 创建附件记录
+	return &model.TicketAttachment{
+		TicketID:     ticketID,
+		MessageID:    nil,
+		Filename:     filename,
+		MimeType:     mimeType,
+		Size:         int(written),
+		StoragePath:  storagePath,
+		UploadedByID: userID,
+	}
 }
 
 // DownloadTicketAttachment 下载工单附件

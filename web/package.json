@@ -39,6 +39,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "sse.js": "^2.6.0",
+    "turndown": "7.2.5",
     "unist-util-visit": "^5.0.0",
     "use-debounce": "^10.0.4"
   },
