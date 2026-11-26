@@ -272,7 +272,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	})
 	if terminalError != nil {
 		info.StreamStatus.MarkOutcome(relaycommon.ResponseOutcomeFailed)
-		return nil, finishChatStreamError(c, info, terminalError)
+		return nil, FinishChatStreamError(c, info, terminalError)
 	}
 	info.StreamStatus.RequireTerminal()
 	if completed || (info.StreamStatus != nil && info.StreamStatus.EndReason == relaycommon.StreamEndReasonDone) {
@@ -285,7 +285,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 		if c.Request.Context().Err() != nil {
 			return nil, types.NewClientCanceledError()
 		}
-		return nil, finishChatStreamError(c, info, types.NewOpenAIError(
+		return nil, FinishChatStreamError(c, info, types.NewOpenAIError(
 			fmt.Errorf("upstream stream ended unsuccessfully: %s", info.StreamStatus.EndReason),
 			types.ErrorCodeBadResponseBody, http.StatusBadGateway))
 	}
@@ -344,7 +344,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 		}
 		if err != nil {
 			info.StreamStatus.RecordError("failed to finalize Messages stream")
-			return nil, finishChatStreamError(c, info, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusBadGateway))
+			return nil, FinishChatStreamError(c, info, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusBadGateway))
 		}
 	} else {
 		HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)

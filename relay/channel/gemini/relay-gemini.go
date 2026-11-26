@@ -1492,6 +1492,24 @@ func GeminiChatStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *
 			}
 		}
 
+		// Messages emits its own start frame and needs the final usage in message_delta.
+		if info.RelayFormat == types.RelayFormatClaude {
+			if len(response.Choices) == 0 {
+				return true
+			}
+			for i := range response.Choices {
+				if reason := response.Choices[i].FinishReason; reason != nil {
+					finishReason = *reason
+					response.Choices[i].FinishReason = nil
+				}
+			}
+			if err := handleStream(c, info, response); err != nil {
+				info.StreamStatus.RecordError(err.Error())
+				return false
+			}
+			return true
+		}
+
 		logger.LogDebug(c, fmt.Sprintf("info.SendResponseCount = %d", info.SendResponseCount))
 		if info.SendResponseCount == 0 {
 			// send first response
@@ -1536,6 +1554,22 @@ func GeminiChatStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *
 
 	if err != nil {
 		return usage, err
+	}
+
+	if info.RelayFormat == types.RelayFormatClaude {
+		if !info.StreamStatus.IsSuccessful() {
+			if c.Request.Context().Err() != nil {
+				return nil, types.NewClientCanceledError()
+			}
+			return nil, openai.FinishChatStreamError(c, info, types.NewOpenAIError(errors.New("Gemini stream did not complete"), types.ErrorCodeBadResponseBody, http.StatusBadGateway))
+		}
+		terminal := helper.GenerateStopResponse(id, createAt, info.UpstreamModelName, finishReason)
+		terminal.Usage = usage
+		if err := handleStream(c, info, terminal); err != nil {
+			info.StreamStatus.RecordError(err.Error())
+			return nil, openai.FinishChatStreamError(c, info, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusBadGateway))
+		}
+		return usage, nil
 	}
 
 	response := helper.GenerateFinalUsageResponse(id, createAt, info.UpstreamModelName, *usage)
@@ -1585,10 +1619,7 @@ func GeminiChatHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.R
 
 		switch info.RelayFormat {
 		case types.RelayFormatClaude:
-			c.JSON(newAPIError.StatusCode, gin.H{
-				"type":  "error",
-				"error": newAPIError.ToClaudeError(),
-			})
+			return nil, newAPIError
 		default:
 			c.JSON(newAPIError.StatusCode, gin.H{
 				"error": newAPIError.ToOpenAIError(),

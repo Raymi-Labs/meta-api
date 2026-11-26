@@ -65,7 +65,7 @@ func deliverClaudeStreamEvent(c *gin.Context, info *relaycommon.RelayInfo, event
 
 // Any committed lifecycle frame or ping rules out channel failover. A stream
 // error must stay an error even if the HTTP headers already say 200.
-func finishChatStreamError(c *gin.Context, info *relaycommon.RelayInfo, apiErr *types.NewAPIError) *types.NewAPIError {
+func FinishChatStreamError(c *gin.Context, info *relaycommon.RelayInfo, apiErr *types.NewAPIError) *types.NewAPIError {
 	if info.SendResponseCount == 0 && !c.Writer.Written() {
 		return apiErr
 	}

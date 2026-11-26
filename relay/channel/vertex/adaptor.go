@@ -17,6 +17,7 @@ import (
 	"github.com/QuantumNous/new-api/relay/channel/openai"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/QuantumNous/new-api/types"
@@ -93,6 +94,19 @@ func removeFunctionResponseID(request *dto.GeminiChatRequest) {
 }
 
 func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.ClaudeRequest) (any, error) {
+	if a.RequestMode == RequestModeGemini && !strings.HasPrefix(info.UpstreamModelName, "imagen") {
+		chatRequest, err := service.ClaudeToOpenAIRequest(c, *request, info)
+		if err != nil {
+			return nil, err
+		}
+		info.AppendRequestConversion(types.RelayFormatOpenAI)
+		geminiRequest, err := a.convertGeminiChat(c, info, chatRequest)
+		if err != nil {
+			return nil, err
+		}
+		geminiRequest.GenerationConfig.TopK = float64(request.TopK)
+		return geminiRequest, nil
+	}
 	if v, ok := claudeModelMap[info.UpstreamModelName]; ok {
 		c.Set("request_model", v)
 	} else {
@@ -239,6 +253,15 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *rel
 	return nil
 }
 
+func (a *Adaptor) convertGeminiChat(c *gin.Context, info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) (*dto.GeminiChatRequest, error) {
+	converted, err := gemini.CovertOpenAI2Gemini(c, *request, info)
+	if err != nil {
+		return nil, err
+	}
+	c.Set("request_model", request.Model)
+	return converted, nil
+}
+
 func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
@@ -307,12 +330,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 		info.UpstreamModelName = claudeReq.Model
 		return vertexClaudeReq, nil
 	} else if a.RequestMode == RequestModeGemini {
-		geminiRequest, err := gemini.CovertOpenAI2Gemini(c, *request, info)
-		if err != nil {
-			return nil, err
-		}
-		c.Set("request_model", request.Model)
-		return geminiRequest, nil
+		return a.convertGeminiChat(c, info, request)
 	} else if a.RequestMode == RequestModeOpenSource {
 		return request, nil
 	}
